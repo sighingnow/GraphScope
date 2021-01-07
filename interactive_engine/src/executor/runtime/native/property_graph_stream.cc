@@ -504,7 +504,6 @@ std::shared_ptr<Object> GlobalPGStreamBuilder::_Seal(Client& client) {
   }
 
   VINEYARD_CHECK_OK(client.CreateMetaData(gstream->meta_, gstream->id_));
-  VINEYARD_CHECK_OK(client.Persist(gstream->id_));
   return std::dynamic_pointer_cast<Object>(gstream);
 }
 
