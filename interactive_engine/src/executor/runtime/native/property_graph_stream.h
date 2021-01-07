@@ -222,7 +222,7 @@ class PropertyGraphOutStream : public Registered<PropertyGraphOutStream> {
 
     s->meta_.SetTypeName(type_name<PropertyGraphOutStream>());
     s->meta_.AddKeyValue("graph_name", std::string(graph_name));
-    s->meta_.AddKeyValue("stream_index", std::to_string(s->stream_index_));
+    s->meta_.AddKeyValue("stream_index", s->stream_index_);
     s->meta_.AddKeyValue("graph_schema", s->graph_schema_->ToJSONString());
     s->meta_.AddMember("vertex_stream", s->vertex_stream_->meta());
     s->meta_.AddMember("edge_stream", s->edge_stream_->meta());
