@@ -287,14 +287,14 @@ class Session(object):
                 "The `show_log` parameter has been deprecated and has no effect, "
                 "please use `graphscope.set_option(show_log=%s)` instead."
                 % kw.pop("show_log", None),
-                category=warnings.DeprecationWarning,
+                category=DeprecationWarning,
             )
         if "log_level" in kw:
             warnings.warn(
                 "The `log_level` parameter has been deprecated and has no effect, "
                 "please use `graphscope.set_option(log_level=%r)` instead."
                 % kw.pop("show_log", None),
-                category=warnings.DeprecationWarning,
+                category=DeprecationWarning,
             )
 
         # deploy minikube on virtual machine
