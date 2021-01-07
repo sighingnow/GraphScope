@@ -206,6 +206,7 @@ jobs:
         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/graphscope/lib:/opt/graphscope/lib64
         export WITH_LEARNING_ENGINE=ON
         pushd python
+        pip3 install vineyard -U -i https://pypi.org/simple
         pip3 install -U setuptools
         pip3 install -r requirements.txt -r requirements-dev.txt
         python3 setup.py bdist_wheel
@@ -293,6 +294,7 @@ jobs:
         tar -xf ./gle-${{ github.sha }}/gle.tar
         cp -R -n opt/graphscope/* /usr/local/
         ls -la /usr/local/bin/
+        python3 -m pip install vineyard -U -i https://pypi.org/simple
         pushd /usr/local/dist/ && pip3 install ./*.whl && popd
         python3 -m pip install -r python/requirements.txt
         python3 -m pip install -r python/requirements-dev.txt
@@ -368,6 +370,7 @@ jobs:
                           --network=host \
                           -f ./manager.Dockerfile .
         popd
+        sudo python3 -m pip install vineyard -U -i https://pypi.org/simple
         sudo python3 -m pip install -r python/requirements.txt
         sudo python3 -m pip install -r python/requirements-dev.txt
         sudo python3 -m pip install pytest-cov
@@ -446,6 +449,7 @@ jobs:
                           --network=host \
                           -f ./manager.Dockerfile .
         popd
+        sudo python3 -m pip install vineyard -U -i https://pypi.org/simple
         sudo python3 -m pip install -r python/requirements.txt
         sudo python3 -m pip install -r python/requirements-dev.txt
         sudo python3 -m pip install pytest-cov
