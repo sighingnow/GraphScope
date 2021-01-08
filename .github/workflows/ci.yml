@@ -305,7 +305,7 @@ jobs:
       if: matrix.experimental == 'OFF'
       run: |
         # prelaunch the etcd
-        /usr/local/bin/etcd --data-dir=/tmp/default.etcd &
+        /usr/local/bin/etcd --data-dir=/dev/shm/default.etcd &
 
         export GS_TEST_DIR='/root/gstest'
         cd python
@@ -321,17 +321,11 @@ jobs:
         file: ./python/coverage.xml
         fail_ci_if_error: true
 
-    - name: Setup tmate session
-      if: true
-      uses: mxschmitt/action-tmate@v3
-      with:
-        sudo: false
-
     - name: App Test with Expr On
       if: matrix.experimental == 'ON'
       run: |
         # prelaunch the etcd
-        /usr/local/bin/etcd --data-dir=/tmp/default.etcd &
+        /usr/local/bin/etcd --data-dir=/dev/shm/default.etcd &
 
         export GS_TEST_DIR='/root/gstest'
         python3 -m pytest --exitfirst -s -v python/graphscope/experimental/nx/tests/classes
