@@ -304,10 +304,15 @@ jobs:
     - name: App Test with Expr Off
       if: matrix.experimental == 'OFF'
       run: |
+        # prelaunch the etcd
+        /usr/local/bin/etcd &
+
         export GS_TEST_DIR='/root/gstest'
         cd python
         python3 -m pytest --cov=graphscope --cov-config=.coveragerc --cov-report=xml \
                           --cov-report=term --exitfirst -s -v tests
+
+        pkill -TERM etcd || true
 
     - name: Upload Coverage
       if: matrix.experimental == 'OFF'
@@ -319,11 +324,16 @@ jobs:
     - name: App Test with Expr On
       if: matrix.experimental == 'ON'
       run: |
+        # prelaunch the etcd
+        /usr/local/bin/etcd &
+
         export GS_TEST_DIR='/root/gstest'
         python3 -m pytest --exitfirst -s -v python/graphscope/experimental/nx/tests/classes
         python3 -m pytest --exitfirst -s -v python/graphscope/experimental/nx/tests/test_nx.py
         python3 -m pytest --exitfirst -s -v python/graphscope/experimental/nx/tests/algorithms/builtin \
                                             python/graphscope/experimental/nx/tests/test_utils.py
+
+        pkill -TERM etcd || true
 
   k8s-test:
     runs-on: self-hosted
