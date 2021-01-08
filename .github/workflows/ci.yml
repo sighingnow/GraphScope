@@ -321,6 +321,12 @@ jobs:
         file: ./python/coverage.xml
         fail_ci_if_error: true
 
+    - name: Setup tmate session
+      if: true
+      uses: siyuan0322/action-tmate@master
+      with:
+        sudo: false
+
     - name: App Test with Expr On
       if: matrix.experimental == 'ON'
       run: |
