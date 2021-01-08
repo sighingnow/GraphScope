@@ -157,9 +157,9 @@ GraphBuilder get_graph_builder(const char *graph_name, const int index) {
   LOG(INFO) << "get name " << graph_name << " yields ID "
             << vineyard::VYObjectIDToString(id);
 #endif
-#ifndef NDEBUG
   vineyard::ObjectMeta meta;
   VINEYARD_CHECK_OK(client.GetMetaData(id, meta, true));
+#ifndef NDEBUG
   meta.PrintMeta();
 #endif
   auto gstream =

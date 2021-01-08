@@ -321,12 +321,6 @@ jobs:
         file: ./python/coverage.xml
         fail_ci_if_error: true
 
-    - name: Setup tmate session
-      if: true
-      uses: siyuan0322/action-tmate@master
-      with:
-        sudo: false
-
     - name: App Test with Expr On
       if: matrix.experimental == 'ON'
       run: |
@@ -344,7 +338,6 @@ jobs:
   k8s-test:
     runs-on: self-hosted
     needs: [build-gae, build-gie, build-gle, build-manager]
-    if: false
     steps:
     - name: Clean up
       run: |
@@ -418,7 +411,6 @@ jobs:
   gie-test:
     runs-on: self-hosted
     needs: [build-gae, build-gie, build-gle, build-manager]
-    if: false
     steps:
     - name: Clean up
       run: |

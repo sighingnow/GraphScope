@@ -10,7 +10,7 @@ FROM registry.cn-hongkong.aliyuncs.com/graphscope/graphscope-vineyard:$BASE_VERS
 ARG CI=true
 ENV CI=$CI
 
-ARG EXPERIMENTAL_ON=OFF
+ARG EXPERIMENTAL_ON=ON
 ENV EXPERIMENTAL_ON=$EXPERIMENTAL_ON
 
 ARG profile=release
