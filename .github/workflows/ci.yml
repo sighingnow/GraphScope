@@ -264,7 +264,7 @@ jobs:
         retention-days: 5
 
   python-test:
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     needs: [build-gae, build-gle]
     defaults:
       run:
