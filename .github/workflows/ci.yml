@@ -329,7 +329,7 @@ jobs:
 
         export GS_TEST_DIR='/root/gstest'
         python3 -m pytest --exitfirst -s -v python/graphscope/experimental/nx/tests/classes
-        python3 -m pytest --exitfirst -s -v python/graphscope/experimental/nx/tests/test_nx.py
+        python3 -m pytest --exitfirst -s -v python/graphscope/experimental/nx/tests/test_nx.py -k "test_implicit_project_to_simple"
         python3 -m pytest --exitfirst -s -v python/graphscope/experimental/nx/tests/algorithms/builtin \
                                             python/graphscope/experimental/nx/tests/test_utils.py
 
