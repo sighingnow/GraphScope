@@ -198,7 +198,7 @@ def compile_app(workspace: str, app_name: str, attr, engine_config: dict):
     cmake_process.wait()
 
     make_process = subprocess.Popen(
-        ["make", "-j4"],
+        ["make"],
         env=os.environ.copy(),
         universal_newlines=True,
         encoding="utf-8",
@@ -308,7 +308,7 @@ def compile_graph_frame(
     cmake_process.wait()
 
     make_process = subprocess.Popen(
-        ["make", "-j4"],
+        ["make"],
         env=os.environ.copy(),
         universal_newlines=True,
         encoding="utf-8",
