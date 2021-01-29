@@ -9,5 +9,6 @@ numpy
 pandas
 protobuf
 PyYAML
+requests
 scipy
 vineyard==0.1.8
