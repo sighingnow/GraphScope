@@ -141,7 +141,7 @@ class GRPCClient(object):
         while True:
             try:
                 response = self.send_heartbeat()
-            except Exception as e:
+            except Exception:
                 # grpc disconnect is expect
                 response = None
             finally:
@@ -295,10 +295,16 @@ class GRPCGatewayClient(GRPCClient):
 
     def _run_gateway_stub(self, path, request, response):
         json_payload = json_format.MessageToDict(request)
-        body = requests.post(
+        response = requests.post(
             "%s/gs.rpc.CoordinatorService/%s" % (self._endpoint, path),
             json=json_payload,
-        ).json()
+        )
+        if response.status_code != 200:
+            raise GRPCError(
+                "requests call '%s': failed with error %s, message is %s"
+                % (path, response.status_code, response.text)
+            )
+        body = response.json()
         if "status" not in body:
             code = body.get("code", "")
             message = body.get("message", "")
