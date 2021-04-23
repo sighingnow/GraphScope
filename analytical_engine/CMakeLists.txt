@@ -193,6 +193,8 @@ if (BUILD_TESTS)
 
     add_vineyard_app(run_vy_app SRCS test/run_vy_app.cc)
 
+    add_vineyard_app(run_vy_app_lpa SRCS test/run_vy_app_lpa.cc)
+
     add_vineyard_app(run_load_from_stream SRCS test/run_load_from_stream.cc)
 
     add_vineyard_app(run_vy_ldbc SRCS test/run_vy_ldbc.cc)

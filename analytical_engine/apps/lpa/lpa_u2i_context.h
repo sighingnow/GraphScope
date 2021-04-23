@@ -70,10 +70,18 @@ class LPAU2IContext : public LabeledVertexPropertyContext<FRAG_T> {
     auto& frag = this->fragment();
     auto iv = frag.InnerVertices(0);
 
+    auto total_props = frag.vertex_property_num(0) - 1; // the last column is id
+
     for (auto v : iv) {
-      os << frag.GetId(v) << "\t";
+      os << frag.GetId(v) << ",";
       for (auto val : label[0][v]) {
-        os << val << "\t";
+        os << val << ",";
+      }
+      for (size_t prop_id = prop_num; prop_id < total_props; ++prop_id) {
+        os << frag.template GetData<double>(v, prop_id);
+        if (prop_id + 1 < total_props) {
+          os << ",";
+        }
       }
       os << std::endl;
     }
@@ -86,7 +94,7 @@ class LPAU2IContext : public LabeledVertexPropertyContext<FRAG_T> {
   std::vector<grape::VertexArray<vid_t, vid_t>> out_degree;
   std::vector<grape::VertexArray<vid_t, vid_t>> out_nbr_in_degree_sum;
   std::vector<int64_t> label_column_indices;
-  static constexpr uint32_t prop_num = 2;
+  static constexpr uint32_t prop_num = 1;
 };
 }  // namespace gs
 #endif  // ANALYTICAL_ENGINE_APPS_LPA_LPA_U2I_CONTEXT_H_
