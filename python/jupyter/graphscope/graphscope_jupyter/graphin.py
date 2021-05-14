@@ -355,6 +355,14 @@ def repr_graphscope_graph(graph, *args, **kwargs):
         )
 
 
+def in_ipython():
+    try:
+        get_ipython().__class__.__name__
+        return True
+    except NameError:
+        return False
+
+
 def in_notebook():
     try:
         shell = get_ipython().__class__.__name__
@@ -385,14 +393,18 @@ def __register_graphin_for_graphscope():
     if "graphscope" in sys.modules:
         __graphin_for_graphscope(sys.modules["graphscope"])  # noqa: F821
 
+    hookpoint = get_ipython().user_ns
+
     # added to graphscope extension lists
-    if "__graphscope_extensions__" not in globals():
-        globals()["__graphscope_extensions__"] = []
-    globals()["__graphscope_extensions__"].append(
+    if "__graphscope_extensions__" not in hookpoint:
+        hookpoint["__graphscope_extensions__"] = []
+    hookpoint["__graphscope_extensions__"].append(
         __graphin_for_graphscope  # noqa: F821
     )
 
 
-__register_graphin_for_graphscope()
+if in_ipython():
+    __register_graphin_for_graphscope()
+
 del __graphin_for_graphscope
 del __register_graphin_for_graphscope
