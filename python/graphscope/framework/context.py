@@ -156,6 +156,12 @@ class BaseContext(object):
         return decode_dataframe(raw_values)
 
     def to_vineyard_tensor(self, selector=None, vertex_range=None, axis=0):
+        """Get the context data as a vineyard tensor and return the vineyard object id.
+        """
+        object_id, _ = self.to_vineyard_tensor_extra(selector, vertex_range)
+        return object_id
+
+    def to_vineyard_tensor_extra(self, selector=None, vertex_range=None, axis=0):
         """Return results as a vineyard tensor.
         Only object id is returned.
 
@@ -167,11 +173,16 @@ class BaseContext(object):
         vertex_range = utils.transform_vertex_range(vertex_range)
 
         op = dag_utils.to_vineyard_tensor(self, selector, vertex_range, axis)
-        ret = op.eval()
-        object_id = json.loads(ret)["object_id"]
-        return object_id
+        ret = json.loads(op.eval())
+        return ret["object_id"], ret["meta"]
 
     def to_vineyard_dataframe(self, selector=None, vertex_range=None):
+        """Get the context data as a vineyard dataframe and return the vineyard object id.
+        """
+        object_id, _ = self.to_vineyard_dataframe_extra(selector, vertex_range)
+        return object_id
+
+    def to_vineyard_dataframe_extra(self, selector=None, vertex_range=None):
         """Return results as a vineyard dataframe.
         Only object id is returned.
 
@@ -201,9 +212,8 @@ class BaseContext(object):
             selector = json.dumps(selector)
         vertex_range = utils.transform_vertex_range(vertex_range)
         op = dag_utils.to_vineyard_dataframe(self, selector, vertex_range)
-        ret = op.eval()
-        object_id = json.loads(ret)["object_id"]
-        return object_id
+        ret = json.loads(op.eval())
+        return ret["object_id"], ret["meta"]
 
     def output(self, fd, selector, vertex_range=None, **kwargs):
         """Dump results to `fd`.

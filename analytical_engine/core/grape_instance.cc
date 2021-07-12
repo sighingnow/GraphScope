@@ -466,8 +466,10 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
   auto s_id = vineyard::ObjectIDToString(id);
 
   client_->PutName(id, s_id);
+  vineyard::ObjectMeta meta;
+  client_->GetMetaData(id, meta);
 
-  return toJson({{"object_id", s_id}});
+  return toJson({{"object_id", s_id}, {"meta", meta.MetaData().dump()}});
 }
 
 bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
@@ -532,8 +534,10 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
   auto s_id = vineyard::ObjectIDToString(id);
 
   client_->PutName(id, s_id);
+  vineyard::ObjectMeta meta;
+  client_->GetMetaData(id, meta);
 
-  return toJson({{"object_id", s_id}});
+  return toJson({{"object_id", s_id}, {"meta", meta.MetaData().dump()}});
 }
 
 bl::result<rpc::GraphDef> GrapeInstance::addColumn(
@@ -1060,12 +1064,12 @@ bl::result<std::shared_ptr<DispatchResult>> GrapeInstance::OnReceive(
   }
   case rpc::TO_VINEYARD_TENSOR: {
     BOOST_LEAF_AUTO(vy_obj_id_in_json, contextToVineyardTensor(params));
-    r->set_data(vy_obj_id_in_json);
+    r->set_data(vy_obj_id_in_json, DispatchResult::AggregatePolicy::kPickFirst);
     break;
   }
   case rpc::TO_VINEYARD_DATAFRAME: {
     BOOST_LEAF_AUTO(vy_obj_id_in_json, contextToVineyardDataFrame(params));
-    r->set_data(vy_obj_id_in_json);
+    r->set_data(vy_obj_id_in_json, DispatchResult::AggregatePolicy::kPickFirst);
     break;
   }
   case rpc::ADD_COLUMN: {

@@ -26,8 +26,10 @@ import logging
 import os
 import queue
 import random
+import shutil
 import signal
 import string
+import subprocess
 import sys
 import threading
 import time
@@ -120,6 +122,7 @@ class CoordinatorServiceServicer(
             self._launcher._analytical_engine_endpoint = GS_DEBUG_ENDPOINT
         else:
             if not self._launcher.start():
+                logger.error("Failed to launch engine: ...")
                 raise RuntimeError("Coordinator Launching failed.")
 
         self._launcher_type = self._launcher.type()
@@ -154,6 +157,10 @@ class CoordinatorServiceServicer(
                 ),
             )
             self._dangling_detecting_timer.start()
+
+        # run step caches
+        self._running_step = None
+        self._running_step_thread = None
 
         atexit.register(self._cleanup)
 
@@ -249,6 +256,49 @@ class CoordinatorServiceServicer(
             )
 
     def RunStep(self, request, context):  # noqa: C901
+        if request.tag:
+            # in no-wait mode
+            if self._running_step == None:
+                # run and return
+                def run_the_step(target, req, ctx):
+                    response = target.RunStepImpl(req, ctx)
+                    target._running_step = (req.tag, response)
+                self._running_step = request.tag
+                self._running_step_thread = threading.Thread(
+                        target=run_the_step, args=(self, request, context))
+                self._running_step_thread.start()
+                return self._make_response(
+                        message_pb2.RunStepResponse,
+                        error_codes_pb2.UNKNOWN,
+                        "running")
+            elif self._running_step == request.tag:
+                # return running status
+                return self._make_response(
+                        message_pb2.RunStepResponse,
+                        error_codes_pb2.UNKNOWN,
+                        "running")
+            elif isinstance(self._running_step, str):
+                # return pending status
+                return self._make_response(
+                        message_pb2.RunStepResponse,
+                        error_codes_pb2.UNKNOWN,
+                        "pending")
+            elif isinstance(self._running_step, tuple) and self._running_step[0] == request.tag:
+                # result ready
+                response = self._running_step[1]
+                self._running_step = None
+                return response
+            else:
+                # mismatch
+                self._running_step = None
+                return self._make_response(
+                        message_pb2.RunStepResponse,
+                        error_codes_pb2.UNKNOWN,
+                        "The requested dag def and the result is not matched, please try again")
+        else:
+            return self.RunStepImpl(request, context)
+
+    def RunStepImpl(self, request, context):  # noqa: C901
         # only one op in one step is allowed.
         if len(request.dag_def.op) != 1:
             return self._make_response(
@@ -425,17 +475,19 @@ class CoordinatorServiceServicer(
 
     def FetchLogs(self, request, context):
         while self._streaming_logs:
-            try:
-                message = sys.stdout.poll(timeout=3)
-            except queue.Empty:
-                pass
-            else:
-                if self._streaming_logs:
-                    yield self._make_response(
-                        message_pb2.FetchLogsResponse,
-                        error_codes_pb2.OK,
-                        message=message,
-                    )
+            messages = []
+            while True:
+                try:
+                    messages.append(sys.stdout.poll(timeout=1))
+                except queue.Empty:
+                    break
+            if self._streaming_logs:
+                yield self._make_response(
+                    message_pb2.FetchLogsResponse,
+                    error_codes_pb2.OK,
+                    message=json.dumps(messages),
+                )
+            time.sleep(3)
 
     def CloseSession(self, request, context):
         """
@@ -974,6 +1026,18 @@ def parse_sys_args():
     return parser.parse_args()
 
 
+def launch_grpc_gateway(port, gateway_port):
+    command = shutil.which('graphscope-grpc-gateway')
+    proc = subprocess.Popen(
+        [command, '-gateway-address', ':%s' % gateway_port, '-grpc-server-endpoint', 'localhost:%s' % port],
+        env=os.environ.copy(),
+        stdout=subprocess.STDOUT,
+        stderr=subprocess.STDERR,
+        encoding="utf-8",
+    )
+    return proc
+
+
 def launch_graphscope():
     args = parse_sys_args()
     logger.info("Launching with args %s", args)
@@ -1044,10 +1108,17 @@ def launch_graphscope():
     server.add_insecure_port("0.0.0.0:{}".format(args.port))
     logger.info("Coordinator server listen at 0.0.0.0:%d", args.port)
 
+    proc = None
+    try:
+        proc = launch_grpc_gateway(args.port, args.port + 1)
+    except Exception as e:
+        logger.warn("Failed to start grpc gateway: %s", e)
     server.start()
 
     # handle SIGTERM signal
     def terminate(signum, frame):
+        if proc:
+            proc.terminate()
         global coordinator_service_servicer
         coordinator_service_servicer._cleanup()
 
@@ -1057,6 +1128,8 @@ def launch_graphscope():
         # Grpc has handled SIGINT
         server.wait_for_termination()
     except KeyboardInterrupt:
+        if proc:
+            proc.terminate()
         coordinator_service_servicer._cleanup()
 
 
