@@ -3,11 +3,13 @@
 
 #include <vector>
 
-#include "core/vertex_map/hash_policy.h"
 #include <mpi.h>
+#include "core/vertex_map/hash_policy.h"
 // #include "grape/id_encoder/id_encoder.h"
 //#include "vineyard/graph/utils/string_collection.h"
-
+#include "core/utils/immutable_vector.h"
+#include "grape/serialization/in_archive.h"
+#include "grape/serialization/out_archive.h"
 #ifdef GRAPE_SDK_CPP_GRAPE_GEN_DEF
 #include "grape-gen.h"
 #endif
@@ -75,7 +77,6 @@ struct BufferUtils {
     CHECK(adaptor->Read(buffer.data(), sizeof(T) * size));
   }
 };
-
 
 }  // namespace id_encoder_impl
 

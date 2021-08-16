@@ -96,12 +96,12 @@ class JavaNativeVertexMapBuilder {
   friend class JavaGlobalVertexMapBeta;
 };
 
-// static inline std::string generate_vm_path(int pid, int fid) {
-//  char str[1024];
-//  snprintf(str, sizeof(str), "/proc-%d.vm.frag.%u", pid, fid);
-//  std::string ret = str;
-//  return ret;
-//}
+static inline std::string generate_vm_path(int pid, int fid) {
+  char str[1024];
+  snprintf(str, sizeof(str), "/proc-%d.vm.frag.%u", pid, fid);
+  std::string ret = str;
+  return ret;
+}
 
 template <typename OID_T, typename VID_T, template <typename> class Hasher>
 class JavaGlobalVertexMapBeta : public VertexMapBase<OID_T, VID_T> {
