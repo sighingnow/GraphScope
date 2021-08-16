@@ -18,7 +18,8 @@
 #include "grape/graph/edge.h"
 #include "grape/graph/vertex.h"
 #include "grape/utils/concurrent_queue.h"
-#include "grape/utils/ref_string.h"
+//#include "grape/utils/ref_string.h"
+#include "vineyard/graph/utils/string_collection.h"
 #include "grape/utils/vertex_array.h"
 #include "grape/worker/comm_spec.h"
 

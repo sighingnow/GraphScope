@@ -46,6 +46,11 @@ include(CheckLibraryExists)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include_directories(${PROJECT_SOURCE_DIR})
 
+# find jni---------------------------------------------------------------------
+find_package(JNI REQUIRED)
+include_directories(SYSTEM ${JAVA_INCLUDE_PATH})
+include_directories(SYSTEM ${JAVA_INCLUDE_PATH2})
+
 # Set flags
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -182,8 +187,8 @@ if (BUILD_TESTS)
 
     add_executable(run_java_app test/run_java_app.cc)
     target_include_directories(run_java_app PRIVATE ${LIBGRAPELITE_INCLUDE_DIRS}/grape/analytical_apps utils apps)
-    target_link_libraries(run_java_app ${LIBGRAPELITE_LIBRARIES} ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES}
-                                        ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${JAVA_JVM_LIBRARY})
+    target_link_libraries(run_java_app ${LIBGRAPELITE_LIBRARIES} ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES}
+                                        ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${JAVA_JVM_LIBRARY} ${CMAKE_JNI_LINKER_FLAGS})
 
     macro(add_vineyard_app target)
         set(options)

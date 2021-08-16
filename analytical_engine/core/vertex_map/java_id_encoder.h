@@ -4,8 +4,9 @@
 #include <vector>
 
 #include "core/vertex_map/hash_policy.h"
+#include <mpi.h>
 // #include "grape/id_encoder/id_encoder.h"
-#include "vineyard/graph/utils/string_collection.h"
+//#include "vineyard/graph/utils/string_collection.h"
 
 #ifdef GRAPE_SDK_CPP_GRAPE_GEN_DEF
 #include "grape-gen.h"
@@ -75,40 +76,6 @@ struct BufferUtils {
   }
 };
 
-template <>
-struct BufferUtils<RefString> {
-  using mutable_type = RSVector;
-  using immutable_type = ImmutableRSVector;
-
-  static void dump_buffer(const RSVector& buffer, const std::string& path) {
-    buffer.dump(path);
-  }
-
-  static void send_buffer(const RSVector& buffer, int dst_worker_id,
-                          MPI_Comm comm) {
-    buffer.SendTo(dst_worker_id, comm);
-  }
-
-  static void recv_buffer(RSVector& buffer, int src_worker_id, MPI_Comm comm) {
-    buffer.RecvFrom(src_worker_id, comm);
-  }
-
-  static void load_buffer(ImmutableRSVector& buffer, const std::string& path) {
-    buffer.load(path);
-  }
-
-  template <typename IOADAPTOR_T>
-  static void serialize_buffer(const RSVector& buffer,
-                               std::unique_ptr<IOADAPTOR_T>& adaptor) {
-    buffer.Serialize<IOADAPTOR_T>(adaptor);
-  }
-
-  template <typename IOADAPTOR_T>
-  static void deserialize_buffer(RSVector& buffer,
-                                 std::unique_ptr<IOADAPTOR_T>& adaptor) {
-    buffer.Deserialize<IOADAPTOR_T>(adaptor);
-  }
-};
 
 }  // namespace id_encoder_impl
 

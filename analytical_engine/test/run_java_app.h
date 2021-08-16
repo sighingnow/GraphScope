@@ -18,22 +18,26 @@
 #include <utility>
 #include <vector>
 
-#include "alibaba-ffi.h"
-#include "flags.h"
-#include "grape-gen.h"
-#include "grape/fragment/java_immutable_edgecut_fragment.h"
-#include "grape/fragment/java_pie_fragment_loader.h"
+//#include "alibaba-ffi.h"
+#include "core/fragment/java_immutable_edgecut_fragment.h"
+#include "core/loader/java_immutable_edgecut_fragment_loader.h"
 #include "grape/grape.h"
 #include "grape/types.h"
 #include "grape/util.h"
-#include "grape/utils/odps_types.h"
-#include "javaapp/javaapp_pie.h"
-#include "javaapp/javaapp_pie_parallel.h"
-#include "javaapp/javasdk.h"
-#include "pie-user-ffi.h"
-#include "user_type_info.h"
+#include "java_pie/java_pie_default_app.h"
+#include "java_pie/java_pie_parallel_app.h"
+#include "java_pie/javasdk.h"
 // #define USE_X
 namespace grape {
+
+using OID_T = int64_t;
+using VID_T = uint32_t;
+using VDATA_T = int;
+using EDATA_T = int;
+char const* OID_T_str = "std::vector<std::vector<int64_t>";
+char const* VID_T_str = "std::vector<std::vector<uint32_t>>";
+char const* VDATA_T_str = "std::vector<std::vector<int>>";
+char const* EDATA_T_str = "std::vector<std::vector<int>>";
 
 void Init() {
   InitMPIComm();
@@ -251,8 +255,8 @@ std::shared_ptr<FRAG_T> ConstructInCPP(
     std::vector<std::vector<typename FRAG_T::oid_t>>& edst_buffers,
     std::vector<std::vector<typename FRAG_T::edata_t>>& edata_buffers,
     bool serialize, std::string& prefix) {
-  std::shared_ptr<JavaPIEFragmentLoader<FRAG_T>> fragment_loader =
-      std::make_shared<JavaPIEFragmentLoader<FRAG_T>>();
+  std::shared_ptr<JavaImmutableEdgecutFragmentLoader<FRAG_T>> fragment_loader =
+      std::make_shared<JavaImmutableEdgecutFragmentLoader<FRAG_T>>();
   fragment_loader->Init();
   MPI_Barrier(comm_spec.comm());
   double loading_cpp_duration = -GetCurrentTime();

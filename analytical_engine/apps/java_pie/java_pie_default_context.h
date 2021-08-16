@@ -23,7 +23,6 @@ limitations under the License.
 #include <limits>
 #include <vector>
 
-#include "flags.h"
 #include "java_pie/javasdk.h"
 
 namespace grape {

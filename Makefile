@@ -56,7 +56,7 @@ coordinator: client
 gae:
 	mkdir -p $(WORKING_DIR)/analytical_engine/build
 	cd $(WORKING_DIR)/analytical_engine/build && \
-	cmake -DCMAKE_INSTALL_PREFIX=$(INSTALL_PREFIX) -DNETWORKX=$(NETWORKX) -DBUILD_TESTS=${BUILD_TEST} -DOPENSSL_ROOT_DIR=/opt/homebrew/Cellar/openssl@1.1/1.1.1k -DOPENSSL_LIBRARIES=/opt/homebrew/Cellar/openssl@1.1/1.1.1k/lib .. && \
+	cmake -DCMAKE_INSTALL_PREFIX=$(INSTALL_PREFIX) -DNETWORKX=$(NETWORKX) -DBUILD_TESTS=${BUILD_TEST} .. && \
 	make -j$(NUM_PROC) && \
 	sudo make install
 
