@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "grape/id_encoder/hash_policy.h"
-#include "grape/id_encoder/id_encoder.h"
+#include "core/vertex_map/hash_policy.h"
+// #include "grape/id_encoder/id_encoder.h"
 #include "grape/utils/ref_string.h"
 
 #ifdef GRAPE_SDK_CPP_GRAPE_GEN_DEF
