@@ -1,0 +1,308 @@
+/** Copyright 2020 Alibaba Group Holding Limited.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+#ifndef EXAMPLES_ANALYTICAL_APPS_JAVAAPP_JAVASDK_H_
+#define EXAMPLES_ANALYTICAL_APPS_JAVAAPP_JAVASDK_H_
+
+#include <jni.h>
+#include <stdlib.h> /* getenv */
+
+#include <queue>
+#include <utility>
+#include <vector>
+#include "grape/grape.h"
+
+namespace grape {
+
+static JavaVM* _jvm = NULL;
+static jclass FFITypeFactoryClass = NULL;
+static jmethodID FFITypeFactory_getTypeMethodID = NULL;
+static jmethodID FFITypeFactory_getTypeMethodID_plus = NULL;
+static jclass FFIVectorClass = NULL;
+static jclass StdVectorClass = NULL;
+
+std::string jstring2string(JNIEnv* env, jstring jStr);
+bool InitWellKnownClasses(JNIEnv* env) {
+  FFITypeFactoryClass = env->FindClass("com/alibaba/ffi/FFITypeFactory");
+  FFIVectorClass = env->FindClass("com/alibaba/ffi/FFIVector");
+  StdVectorClass = env->FindClass("com/alibaba/grape/stdcxx/StdVector");
+
+  if ((FFITypeFactoryClass == NULL) || (FFIVectorClass == NULL) ||
+      (StdVectorClass == NULL)) {
+    return false;
+  }
+
+  // save into Global Handle
+  FFITypeFactoryClass = (jclass) env->NewGlobalRef(FFITypeFactoryClass);
+  FFITypeFactory_getTypeMethodID = env->GetStaticMethodID(
+      FFITypeFactoryClass, "getType", "(Ljava/lang/String;)Ljava/lang/Class;");
+  FFITypeFactory_getTypeMethodID_plus = env->GetStaticMethodID(
+      FFITypeFactoryClass, "getType",
+      "(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Class;");
+
+  if ((FFITypeFactory_getTypeMethodID == NULL) ||
+      (FFITypeFactory_getTypeMethodID_plus == NULL)) {
+    LOG(ERROR) << "get gettype method failed";
+    return false;
+  }
+
+  return true;
+}
+
+JavaVM* CreateJavaVM() {
+  char *p, *q;
+  char* jvm_opts = getenv("JVM_OPTS");
+  if (jvm_opts == NULL)
+    return NULL;
+
+  if (*jvm_opts == '\0')
+    return NULL;
+
+  int num_of_opts = 1;
+  for (char* p = jvm_opts; *p; p++) {
+    if (*p == ' ')
+      num_of_opts++;
+  }
+
+  if (num_of_opts == 0)
+    return NULL;
+
+  JavaVM* jvm = NULL;
+  JNIEnv* env = NULL;
+  int i = 0;
+  int status = 1;
+  JavaVMInitArgs vm_args;
+
+  JavaVMOption* options = new JavaVMOption[num_of_opts];
+  memset(options, 0, sizeof(JavaVMOption) * num_of_opts);
+
+  for (p = q = jvm_opts;; p++) {
+    if (*p == ' ' || *p == '\0') {
+      if (q >= p) {
+        goto ret;
+      }
+      char* opt = new char[p - q + 1];
+      memcpy(opt, q, p - q);
+      opt[p - q] = '\0';
+      options[i++].optionString = opt;
+      q = p + 1;  // assume opts are separated by single space
+      if (*p == '\0')
+        break;
+    }
+  }
+
+  memset(&vm_args, 0, sizeof(vm_args));
+  vm_args.version = JNI_VERSION_1_8;
+  vm_args.nOptions = num_of_opts;
+  vm_args.options = options;
+
+  status = JNI_CreateJavaVM(&jvm, reinterpret_cast<void**>(&env), &vm_args);
+  if (status == JNI_OK) {
+    InitWellKnownClasses(env);
+  } else if (status == JNI_EEXIST) {
+  } else {
+    LOG(ERROR) << "error, create java virtual machine failed. return JNI_CODE ("
+               << status << ")\n";
+  }
+
+ret:
+  for (int i = 0; i < num_of_opts; i++) {
+    delete[] options[i].optionString;
+  }
+  delete[] options;
+  return jvm;
+}
+
+JavaVM* GetJavaVM() {
+  if (_jvm == NULL) {
+    _jvm = CreateJavaVM();
+  }
+  return _jvm;
+}
+
+struct JNIEnvMark {
+  JNIEnv* _env;
+
+  JNIEnvMark() : _env(NULL) {
+    if (!GetJavaVM())
+      return;
+    int status = GetJavaVM()->AttachCurrentThread(
+        reinterpret_cast<void**>(&_env), nullptr);
+    if (status != JNI_OK) {
+      LOG(ERROR) << "Error attach current thread: " << status;
+    }
+  }
+
+  ~JNIEnvMark() {
+    if (_env)
+      GetJavaVM()->DetachCurrentThread();
+  }
+
+  JNIEnv* env() { return _env; }
+};
+
+jobject createObject(JNIEnv* env, jclass clazz, const char* class_name) {
+  jmethodID ctor = env->GetMethodID(clazz, "<init>", "()V");
+  if (ctor == NULL) {
+    LOG(ERROR) << "Cannot find default constructor " << class_name;
+    return NULL;
+  }
+  jobject object = env->NewObject(clazz, ctor);
+  return object;
+}
+jobject createStdVectorObject(JNIEnv* env, const char* type_name,
+                              jlong pointer) {
+  // must be properly encoded
+  StdVectorClass = env->FindClass("com/alibaba/grape/stdcxx/StdVector");
+  jstring jstring_name = env->NewStringUTF(type_name);
+  jclass clzClazz = env->GetObjectClass(StdVectorClass);
+  jmethodID method_getName =
+      env->GetMethodID(clzClazz, "getSimpleName", "()Ljava/lang/String;");
+  jstring name =
+      (jstring) env->CallObjectMethod(StdVectorClass, method_getName);
+  LOG(INFO) << "stdvector class" << jstring2string(env, name);
+  env->DeleteLocalRef(clzClazz);
+
+  jclass the_class = (jclass) env->CallStaticObjectMethod(
+      FFITypeFactoryClass, FFITypeFactory_getTypeMethodID_plus, StdVectorClass,
+      jstring_name);
+  if (env->ExceptionOccurred()) {
+    LOG(ERROR) << std::string("Exception occurred in get stdVector class");
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+    // env->DeleteLocalRef(main_class);
+    return NULL;
+  }
+  if (the_class == NULL) {
+    LOG(ERROR) << "Cannot find Class for " << type_name;
+    return NULL;
+  }
+
+  jmethodID the_ctor = env->GetMethodID(the_class, "<init>", "(J)V");
+  if (the_ctor == NULL) {
+    LOG(ERROR) << "Cannot find <init>(J)V constructor in " << type_name;
+    return NULL;
+  }
+
+  jobject the_object = env->NewObject(the_class, the_ctor, pointer);
+  if (the_object == NULL) {
+    LOG(ERROR) << "Cannot call <init>(J)V constructor in " << type_name;
+    return NULL;
+  }
+
+  // LOG(INFO) << "successfully created StdVector [ " << type_name << " ]"
+  //           << the_object;
+  return the_object;
+}
+jobject createFFIPointerObject(JNIEnv* env, const char* type_name,
+                               jlong pointer) {
+  // must be properly encoded
+  jstring jstring_name = env->NewStringUTF(type_name);
+
+  jclass the_class = (jclass) env->CallStaticObjectMethod(
+      FFITypeFactoryClass, FFITypeFactory_getTypeMethodID, jstring_name);
+  if (env->ExceptionOccurred()) {
+    LOG(ERROR) << std::string("Exception occurred in get ffi class: ")
+               << type_name;
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+    // env->DeleteLocalRef(main_class);
+    return NULL;
+  }
+  if (the_class == NULL) {
+    LOG(ERROR) << "Cannot find Class for " << type_name;
+    return NULL;
+  }
+
+  jmethodID the_ctor = env->GetMethodID(the_class, "<init>", "(J)V");
+  if (the_ctor == NULL) {
+    LOG(ERROR) << "Cannot find <init>(J)V constructor in " << type_name;
+    return NULL;
+  }
+
+  jobject the_object = env->NewObject(the_class, the_ctor, pointer);
+  if (the_object == NULL) {
+    LOG(ERROR) << "Cannot call <init>(J)V constructor in " << type_name;
+    return NULL;
+  }
+  // LOG(INFO) << "successfully created ffipointer object" << type_name;
+  return the_object;
+}
+std::string jstring2string(JNIEnv* env, jstring jStr) {
+  if (!jStr)
+    return "";
+
+  const jclass stringClass = env->GetObjectClass(jStr);
+  const jmethodID getBytes =
+      env->GetMethodID(stringClass, "getBytes", "(Ljava/lang/String;)[B");
+  const jbyteArray stringJbytes = (jbyteArray) env->CallObjectMethod(
+      jStr, getBytes, env->NewStringUTF("UTF-8"));
+
+  size_t length = (size_t) env->GetArrayLength(stringJbytes);
+  jbyte* pBytes = env->GetByteArrayElements(stringJbytes, NULL);
+
+  std::string ret = std::string((char*) pBytes, length);
+  env->ReleaseByteArrayElements(stringJbytes, pBytes, JNI_ABORT);
+
+  env->DeleteLocalRef(stringJbytes);
+  env->DeleteLocalRef(stringClass);
+  return ret;
+}
+
+jobject createFFIVectorObject(JNIEnv* env, const char* type_name,
+                              jlong pointer) {
+  // must be properly encoded
+  jstring jstring_name = env->NewStringUTF(type_name);
+
+  jclass the_class = (jclass) env->CallStaticObjectMethod(
+      FFITypeFactoryClass, FFITypeFactory_getTypeMethodID_plus, FFIVectorClass,
+      jstring_name);
+  if (env->ExceptionOccurred()) {
+    LOG(ERROR) << std::string("Exception occurred in get ffi vector class");
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+    // env->DeleteLocalRef(main_class);
+    return NULL;
+  }
+  if (the_class == NULL) {
+    LOG(ERROR) << "Cannot find Class for " << type_name;
+    return NULL;
+  }
+  // jclass clsClazz = env->GetObjectClass(the_class);
+  // jmethodID mid_getName =
+  //     env->GetMethodID(clsClazz, "getName", "()Ljava/lang/String;");
+  // jstring name = (jstring) env->CallObjectMethod(the_class, mid_getName);
+  // LOG(INFO) << "found class" << jstring2string(env, name);
+
+  jmethodID the_ctor = env->GetMethodID(the_class, "<init>", "(J)V");
+  if (the_ctor == NULL) {
+    LOG(ERROR) << "Cannot find <init>(J)V constructor in " << type_name;
+    return NULL;
+  }
+
+  jobject the_object = env->NewObject(the_class, the_ctor, pointer);
+  if (the_object == NULL) {
+    LOG(ERROR) << "Cannot call <init>(J)V constructor in " << type_name;
+    return NULL;
+  }
+
+  // LOG(INFO) << "successfully created ffivector [ " << type_name << " ]"
+  //           << the_object;
+  return the_object;
+}
+
+}  // namespace grape
+
+#endif  // EXAMPLES_ANALYTICAL_APPS_JAVAAPP_JAVASDK_H_
