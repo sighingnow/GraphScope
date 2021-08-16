@@ -254,8 +254,7 @@ class JavaIdEncoderBuilder {
     size_t mod_function_index = hash_policy_.get_mod_function_index();
     arc << static_cast<int>(max_lookups_) << num_elements_
         << num_slots_minus_one_ << mod_function_index;
-    std::vector<char> arc_buf;
-    arc.SwapVector(arc_buf);
+    std::vector<char> arc_buf(arc.GetBuffer(), arc.GetBuffer() + arc.GetSize());
     dump_vector<char>(arc_buf, path + ".desc");
 
     CHECK_EQ(keys_.size(), num_elements_);

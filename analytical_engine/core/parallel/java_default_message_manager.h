@@ -397,10 +397,6 @@ class JavaDefaultMessageManager : public JavaMessageManagerBase<GRAPH_T> {
     return true;
   }
 
-  void SetMessageToFragment(fid_t fid, std::vector<char>& buf) {
-    to_send_[fid].SwapVector(buf);
-  }
-
   // template <typename GRAPH_T, typename MESSAGE_T>
   void sendBatchMessage(fid_t fid, std::vector<jint> gids,
                         std::vector<std::string> buf) {

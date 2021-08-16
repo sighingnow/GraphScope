@@ -85,12 +85,6 @@ class PodVector {
 
   const T& operator[](size_t index) const { return data_[index]; }
 
-  ConstBlob toConstBlob() const {
-    return ConstBlob(reinterpret_cast<const void*>(data_), size_ * sizeof(T));
-  }
-
-  ConstBlob offsetToConstBlob() const { return ConstBlob(NULL, 0); }
-
  private:
   T* data_;
   size_t size_;
