@@ -24,10 +24,10 @@ limitations under the License.
 
 #include "grape/communication/sync_comm.h"
 // #include "grape/fragment/immutable_edgecut_fragment.h"
-#include "core/parallel/java_message_manager_base.h"
 #include "grape/graph/adj_list.h"
 #include "grape/serialization/in_archive.h"
 #include "grape/serialization/out_archive.h"
+#include "parallel/java_message_manager_base.h"
 //#include "grape/utils/long_vector.h"
 #include "grape/worker/comm_spec.h"
 
@@ -350,7 +350,6 @@ class JavaDefaultMessageManager : public JavaMessageManagerBase<GRAPH_T> {
     to_recv_[cur_] >> msg;
     return true;
   }
-
 
   /**
    * @brief Get a message and its target vertex from message buffer.

@@ -19,14 +19,14 @@
 #include <vector>
 
 //#include "alibaba-ffi.h"
-#include "core/fragment/java_immutable_edgecut_fragment.h"
-#include "core/loader/java_immutable_edgecut_fragment_loader.h"
+#include "fragment/java_immutable_edgecut_fragment.h"
 #include "grape/grape.h"
 #include "grape/types.h"
 #include "grape/util.h"
 #include "java_pie/java_pie_default_app.h"
 #include "java_pie/java_pie_parallel_app.h"
 #include "java_pie/javasdk.h"
+#include "loader/java_immutable_edgecut_fragment_loader.h"
 // #define USE_X
 namespace grape {
 
@@ -339,18 +339,19 @@ void LoadAndQuery(const CommSpec& comm_spec, JNIEnvMark& m,
                   bool& serialize, bool& deserialize,
                   std::string& serialize_prefix,
                   std::vector<std::string>& java_args) {
-   using OID_T = typename FRAG_T::oid_t;
-   using VID_T = typename FRAG_T::vid_t;
-   using VDATA_T = typename FRAG_T::vdata_t;
-   using EDATA_T = typename FRAG_T::edata_t;
+  using OID_T = typename FRAG_T::oid_t;
+  using VID_T = typename FRAG_T::vid_t;
+  using VDATA_T = typename FRAG_T::vdata_t;
+  using EDATA_T = typename FRAG_T::edata_t;
   // load_jni_library(m.env());
   std::shared_ptr<FRAG_T> fragment(nullptr);
   if (deserialize && (!serialize)) {
     if (serialize_prefix.size() <= 0) {
       LOG(FATAL) << "serialize prefix empty";
     }
-    std::shared_ptr<JavaImmutableEdgecutFragmentLoader<FRAG_T>> fragment_loader =
-        std::make_shared<JavaImmutableEdgecutFragmentLoader<FRAG_T>>();
+    std::shared_ptr<JavaImmutableEdgecutFragmentLoader<FRAG_T>>
+        fragment_loader =
+            std::make_shared<JavaImmutableEdgecutFragmentLoader<FRAG_T>>();
     fragment_loader->Init();
     bool deserialized =
         fragment_loader->DeserializeFragment(fragment, serialize_prefix);
@@ -377,9 +378,9 @@ void LoadAndQuery(const CommSpec& comm_spec, JNIEnvMark& m,
     std::vector<std::vector<OID_T>> esrc_buffers(fnum), edst_buffers(fnum);
     std::vector<std::vector<EDATA_T>> edata_buffers(fnum);
     if (m.env()) {
-      LoadingFromJava<OID_T,VID_T,VDATA_T,EDATA_T>(m.env(), comm_spec, app_class_name,
-				vid_buffers, vdata_buffers, esrc_buffers, edst_buffers,
-                      edata_buffers);
+      LoadingFromJava<OID_T, VID_T, VDATA_T, EDATA_T>(
+          m.env(), comm_spec, app_class_name, vid_buffers, vdata_buffers,
+          esrc_buffers, edst_buffers, edata_buffers);
       if (m.env()->ExceptionOccurred()) {
         LOG(ERROR) << std::string(
             "Exception occurred in calling "

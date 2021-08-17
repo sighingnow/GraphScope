@@ -27,7 +27,6 @@ limitations under the License.
 #include <string>
 #include <vector>
 
-#include "core/vertex_map/java_global_vertex_map_beta.h"
 #include "flat_hash_map/flat_hash_map.hpp"
 #include "grape/config.h"
 #include "grape/fragment/edgecut_fragment_base.h"
@@ -41,6 +40,7 @@ limitations under the License.
 #include "grape/util.h"
 #include "grape/utils/vertex_array.h"
 #include "grape/worker/comm_spec.h"
+#include "vertex_map/java_global_vertex_map_beta.h"
 
 namespace grape {
 class CommSpec;

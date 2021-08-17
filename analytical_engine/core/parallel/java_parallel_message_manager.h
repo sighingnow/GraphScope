@@ -11,14 +11,14 @@
 #include <utility>
 #include <vector>
 
-#include "core/parallel/java_message_in_buffer.h"
-#include "core/parallel/java_message_manager_base.h"
 #include "grape/communication/sync_comm.h"
 #include "grape/parallel/thread_local_message_buffer.h"
 #include "grape/serialization/in_archive.h"
 #include "grape/serialization/out_archive.h"
 #include "grape/utils/concurrent_queue.h"
 #include "grape/worker/comm_spec.h"
+#include "parallel/java_message_in_buffer.h"
+#include "parallel/java_message_manager_base.h"
 
 #ifdef GRAPE_SDK_CPP_GRAPE_GEN_DEF
 #include "grape_gen_def.h"

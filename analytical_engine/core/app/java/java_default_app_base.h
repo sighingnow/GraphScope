@@ -19,11 +19,10 @@ limitations under the License.
 #include <memory>
 
 // #include "grape/parallel/java_default_message_manager.h"
-#include "core/worker/java_default_worker.h"
-#include "core/parallel/java_default_message_manager.h"
 #include "grape/types.h"
+#include "parallel/java_default_message_manager.h"
+#include "worker/java_default_worker.h"
 namespace grape {
-
 
 template <typename FRAG_T, typename CONTEXT_T>
 class JavaDefaultAppBase {
@@ -71,7 +70,7 @@ class JavaDefaultAppBase {
   using fragment_t = FRAG_T;                                          \
   using context_t = CONTEXT_T;                                        \
   using message_manager_t = grape::JavaDefaultMessageManager<FRAG_T>; \
-  using worker_t = grape::JavaDefaultWorker<APP_T>;                       \
+  using worker_t = grape::JavaDefaultWorker<APP_T>;                   \
   virtual ~APP_T() {}                                                 \
   static std::shared_ptr<worker_t> CreateWorker(                      \
       std::shared_ptr<APP_T> app, std::shared_ptr<FRAG_T> frag) {     \

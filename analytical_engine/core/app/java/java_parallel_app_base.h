@@ -19,9 +19,9 @@ limitations under the License.
 #include <memory>
 
 // #include "grape/parallel/java_parallel_message_manager.h"
-#include "core/worker/java_parallel_worker.h"
-#include "core/parallel/java_parallel_message_manager.h"
 #include "grape/types.h"
+#include "parallel/java_parallel_message_manager.h"
+#include "worker/java_parallel_worker.h"
 
 namespace grape {
 

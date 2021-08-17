@@ -21,9 +21,9 @@ limitations under the License.
 #include <type_traits>
 #include <utility>
 
-#include "core/parallel/java_default_message_manager.h"
 #include "grape/communication/communicator.h"
 #include "grape/config.h"
+#include "parallel/java_default_message_manager.h"
 // #include "grape/parallel/parallel_engine.h"
 #include "grape/util.h"
 #include "grape/worker/comm_spec.h"
