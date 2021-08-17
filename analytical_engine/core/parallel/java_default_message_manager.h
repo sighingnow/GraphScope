@@ -31,11 +31,11 @@ limitations under the License.
 //#include "grape/utils/long_vector.h"
 #include "grape/worker/comm_spec.h"
 
-// only include codegen types in JNI library building, skip this in normal
-// building
-#ifdef GRAPE_SDK_CPP_GRAPE_GEN_DEF
-#include "grape_gen_def.h"
-#endif
+// // only include codegen types in JNI library building, skip this in normal
+// // building
+// #ifdef GRAPE_SDK_CPP_GRAPE_GEN_DEF
+// #include "grape_gen_def.h"
+// #endif
 
 namespace grape {
 
