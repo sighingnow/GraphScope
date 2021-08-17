@@ -30,15 +30,6 @@
 // #define USE_X
 namespace grape {
 
-using OID_T = int64_t;
-using VID_T = uint32_t;
-using VDATA_T = int;
-using EDATA_T = int;
-char const* OID_T_str = "std::vector<std::vector<int64_t>";
-char const* VID_T_str = "std::vector<std::vector<uint32_t>>";
-char const* VDATA_T_str = "std::vector<std::vector<int>>";
-char const* EDATA_T_str = "std::vector<std::vector<int>>";
-
 void Init() {
   InitMPIComm();
   CommSpec comm_spec;
@@ -108,15 +99,7 @@ jclass getClassByJavaPath(JNIEnv* env, const std::string& main_class_name) {
   }
   return main_class;
 }
-void load_jni_library(JNIEnv* env) {
-  jclass load_lib_class =
-      getClassByJavaPath(env, "com.alibaba.grape.utils.LoadLibrary");
-  if (load_lib_class == NULL) {
-    LOG(FATAL) << "get load libgrary failed";
-    return;
-  }
-}
-// for javaapp_pie_context's usage
+
 std::string generate_cpp_fragment_signature() {
   std::stringstream ss;
   ss << "grape::JavaImmutableEdgecutFragment<";
@@ -224,9 +207,7 @@ void LoadingFromJava(JNIEnv* env, const CommSpec& comm_spec,
       env, OID_T_str, reinterpret_cast<jlong>(&esrc_buffers));
   jobject edst_buffers_obj = createFFIVectorObject(
       env, OID_T_str, reinterpret_cast<jlong>(&edst_buffers));
-  // NOTICE: ffivector used here
   jobject edata_buffers_obj = createFFIVectorObject(
-      // jobject edata_buffers_obj = createFFIPointerObject(
       env, EDATA_T_str, reinterpret_cast<jlong>(&edata_buffers));
 
   env->CallVoidMethod(main_class_object, loadFragment_method, vid_buffers_obj,
@@ -342,7 +323,7 @@ void LoadAndQuery(const CommSpec& comm_spec, JNIEnvMark& m,
                   bool& serialize, bool& deserialize,
                   std::string& serialize_prefix,
                   std::vector<std::string>& java_args) {
-  load_jni_library(m.env());
+  // load_jni_library(m.env());
   std::shared_ptr<FRAG_T> fragment(nullptr);
   if (deserialize && (!serialize)) {
     if (serialize_prefix.size() <= 0) {
@@ -422,6 +403,7 @@ void LoadAndQuery(const CommSpec& comm_spec, JNIEnvMark& m,
 // args 2: app class name
 // args 3: app context class name
 // args 4...: other params
+template <typename OID_T, typename VID_T, typename VDATA_T, typename EDATA_T>
 void Run(int argc, char** argv) {
   if (argc < 4) {
     LOG(INFO)
