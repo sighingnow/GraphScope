@@ -46,11 +46,6 @@ include(CheckLibraryExists)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include_directories(${PROJECT_SOURCE_DIR})
 
-# find jni---------------------------------------------------------------------
-find_package(JNI REQUIRED)
-include_directories(SYSTEM ${JAVA_INCLUDE_PATH})
-include_directories(SYSTEM ${JAVA_INCLUDE_PATH2})
-
 # Set flags
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
