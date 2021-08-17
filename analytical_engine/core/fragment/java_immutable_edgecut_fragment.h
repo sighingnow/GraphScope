@@ -1122,38 +1122,38 @@ class JavaImmutableEdgecutFragment
                             oeoffset_[v.GetValue() + 1]);
   }
 
-  inline adj_list_t GetIncomingAdjList(const vertex_t& v, fid_t src() fid) {
+  inline adj_list_t GetIncomingAdjList(const vertex_t& v, fid_t src_fid) {
     assert(IsInnerVertex(v));
     assert(!iespliters_.empty());
-    assert(src() fid != fid_);
-    return adj_list_t(iespliters_[src() fid][v.GetValue()],
-                      iespliters_[src() fid + 1][v.GetValue()]);
+    assert(src_fid != fid_);
+    return adj_list_t(iespliters_[src_fid][v.GetValue()],
+                      iespliters_[src_fid + 1][v.GetValue()]);
   }
 
   inline const_adj_list_t GetIncomingAdjList(const vertex_t& v,
-                                             fid_t src() fid) const {
+                                             fid_t src_fid) const {
     assert(IsInnerVertex(v));
     assert(!iespliters_.empty());
-    assert(src() fid != fid_);
-    return const_adj_list_t(iespliters_[src() fid][v.GetValue()],
-                            iespliters_[src() fid + 1][v.GetValue()]);
+    assert(src_fid != fid_);
+    return const_adj_list_t(iespliters_[src_fid][v.GetValue()],
+                            iespliters_[src_fid + 1][v.GetValue()]);
   }
 
-  inline adj_list_t GetOutgoingAdjList(const vertex_t& v, fid_t dst() fid) {
+  inline adj_list_t GetOutgoingAdjList(const vertex_t& v, fid_t dst_fid) {
     assert(IsInnerVertex(v));
     assert(!oespliters_.empty());
-    assert(dst() fid != fid_);
-    return adj_list_t(oespliters_[dst() fid][v.GetValue()],
-                      oespliters_[dst() fid + 1][v.GetValue()]);
+    assert(dst_fid != fid_);
+    return adj_list_t(oespliters_[dst_fid][v.GetValue()],
+                      oespliters_[dst_fid + 1][v.GetValue()]);
   }
 
   inline const_adj_list_t GetOutgoingAdjList(const vertex_t& v,
-                                             fid_t dst() fid) const {
+                                             fid_t dst_fid) const {
     assert(IsInnerVertex(v));
     assert(!oespliters_.empty());
-    assert(dst() fid != fid_);
-    return const_adj_list_t(oespliters_[dst() fid][v.GetValue()],
-                            oespliters_[dst() fid + 1][v.GetValue()]);
+    assert(dst_fid != fid_);
+    return const_adj_list_t(oespliters_[dst_fid][v.GetValue()],
+                            oespliters_[dst_fid + 1][v.GetValue()]);
   }
 
   inline const std::vector<vertex_t>& MirrorVertices(fid_t fid) const {

@@ -440,7 +440,7 @@ void Run(int argc, char** argv) {
                                        LoadStrategy::kBothOutIn>;
       // sssp should be onlyOut, here use both outin for deserialization
       // consistent
-      using APP_T = JavaAppPIEParallel<FRAG_T>;
+      using APP_T = JavaPieParalleApp<FRAG_T>;
       LoadAndQuery<FRAG_T, APP_T>(comm_spec, m, app_class_name,
                                   app_context_name, serialize, deserialize,
                                   serialize_prefix, java_args);
@@ -448,7 +448,7 @@ void Run(int argc, char** argv) {
       using FRAG_T =
           JavaImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T,
                                        LoadStrategy::kBothOutIn>;
-      using APP_T = JavaAppPIEParallel<FRAG_T>;
+      using APP_T = JavaPieParalleApp<FRAG_T>;
       LoadAndQuery<FRAG_T, APP_T>(comm_spec, m, app_class_name,
                                   app_context_name, serialize, deserialize,
                                   serialize_prefix, java_args);
@@ -460,7 +460,7 @@ void Run(int argc, char** argv) {
                                        LoadStrategy::kBothOutIn>;
       // sssp should be onlyOut, here use both outin for deserialization
       // consistent
-      using APP_T = JavaAppPIE<FRAG_T>;
+      using APP_T = JavaPIEDefaultApp<FRAG_T>;
       LoadAndQuery<FRAG_T, APP_T>(comm_spec, m, app_class_name,
                                   app_context_name, serialize, deserialize,
                                   serialize_prefix, java_args);
@@ -468,7 +468,7 @@ void Run(int argc, char** argv) {
       using FRAG_T =
           JavaImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T,
                                        LoadStrategy::kBothOutIn>;
-      using APP_T = JavaAppPIE<FRAG_T>;
+      using APP_T = JavaPIEDefaultApp<FRAG_T>;
       LoadAndQuery<FRAG_T, APP_T>(comm_spec, m, app_class_name,
                                   app_context_name, serialize, deserialize,
                                   serialize_prefix, java_args);
