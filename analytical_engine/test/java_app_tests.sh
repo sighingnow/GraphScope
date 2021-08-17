@@ -50,17 +50,9 @@ prefix=default
 export maxiter=100
 export source_oid=1
 export thread_num=1
-while getopts "s:p:m:a:d:t:ych" opt;
+while getopts "s:p:m:a:d:t:ch" opt;
 do
     case $opt in
-    y)
-	   echo "sending jars to others"
-	   for target in `cat ${hostfile}`
-	   do
-                scp ${grape_demo_jar} admin@${target}:${grape_demo_jar}
-                scp ${grape_processor_jar} admin@${target}:${grape_processor_jar}
-                scp ${grape_sdk_jar} admin@${target}:${grape_processor_jar}
-	   done
     t)
 	   echo "setting test direction"
        export dataset_dir=${OPTARG}
@@ -178,7 +170,9 @@ then
     if [[ -d ${DIR}/grape-ffi ]];
     then
         rm -rf ${DIR}/grape-ffi
-    done
+    else 
+        mkdir ${DIR}/grape-ffi
+    fi
     echo "finish removing ffi, now run pie preprocess..."
     export PRE_CP=${grape_demo_jar}:${grape_sdk_jar}:${grape_processor_jar}
     export JVM_OPTS="-Djava.library.path=${GAE_DIR}/build: -Djava.class.path=${PRE_CP}"
