@@ -108,7 +108,6 @@ class JavaImmutableEdgecutFragment
   using oid_t = OID_T;
   using vdata_t = VDATA_T;
   using edata_t = EDATA_T;
-  using internal_oid_t = typename InternalOID<OID_T>::type;
 
   // using vertex_map_t = GlobalVertexMap<oid_t, vid_t>;
   using vertex_map_t = JavaGlobalVertexMapBeta<OID_T, VID_T, std::hash>;
