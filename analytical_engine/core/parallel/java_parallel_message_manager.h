@@ -20,9 +20,9 @@
 #include "parallel/java_message_in_buffer.h"
 #include "parallel/java_message_manager_base.h"
 
-#ifdef GRAPE_SDK_CPP_GRAPE_GEN_DEF
-#include "grape_gen_def.h"
-#endif
+// #ifdef GRAPE_SDK_CPP_GRAPE_GEN_DEF
+// #include "grape_gen_def.h"
+// #endif
 
 namespace grape {
 
