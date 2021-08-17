@@ -1178,12 +1178,12 @@ class JavaImmutableEdgecutFragment
  private:
   void initMessageDestination(const MessageStrategy& msg_strategy) {
     if (msg_strategy == MessageStrategy::kAlongOutgoingEdgeToOuterVertex) {
-      initDestFidList(false, true, odst(), odoffset_);
+      initDestFidList(false, true, odst_, odoffset_);
     } else if (msg_strategy ==
                MessageStrategy::kAlongIncomingEdgeToOuterVertex) {
-      initDestFidList(true, false, idst(), idoffset_);
+      initDestFidList(true, false, idst_, idoffset_);
     } else if (msg_strategy == MessageStrategy::kAlongEdgeToOuterVertex) {
-      initDestFidList(true, true, iodst(), iodoffset_);
+      initDestFidList(true, true, iodst_, iodoffset_);
     }
   }
 
@@ -1321,7 +1321,7 @@ class JavaImmutableEdgecutFragment
   std::vector<VertexRange<VID_T>> mirrors_range_;
   std::vector<std::vector<vertex_t>> mirrors_of_frag_;
 
-  Array<fid_t, Allocator<fid_t>> idst(), odst(), iodst();
+  Array<fid_t, Allocator<fid_t>> idst_, odst_, iodst_;
   Array<fid_t*, Allocator<fid_t*>> idoffset_, odoffset_, iodoffset_;
 
   std::vector<Array<nbr_t*, Allocator<nbr_t*>>> iespliters_, oespliters_;
