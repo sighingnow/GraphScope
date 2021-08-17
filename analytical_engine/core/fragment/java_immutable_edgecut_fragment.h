@@ -156,7 +156,7 @@ class JavaImmutableEdgecutFragment
             outer_vertices.push_back(e.src());
           }
         } else {
-          e.src() = invalid_vid;
+          e.set_src(invalid_vid);
         }
       };
       auto first_iter_out = [&is_iv_gid, invalid_vid](
@@ -167,7 +167,7 @@ class JavaImmutableEdgecutFragment
             outer_vertices.push_back(e.dst());
           }
         } else {
-          e.src() = invalid_vid;
+          e.set_src(invalid_vid);
         }
       };
       auto first_iter_out_in = [&is_iv_gid, invalid_vid](
@@ -180,7 +180,7 @@ class JavaImmutableEdgecutFragment
         } else if (is_iv_gid(e.dst())) {
           outer_vertices.push_back(e.src());
         } else {
-          e.src() = invalid_vid;
+          e.set_src(invalid_vid);
         }
       };
 
@@ -233,13 +233,13 @@ class JavaImmutableEdgecutFragment
                                          std::vector<int>& odegree) {
         if (e.src() != invalid_vid) {
           if (is_iv_gid(e.src())) {
-            e.src() = iv_gid_to_lid(e.src());
+            e.set_src(iv_gid_to_lid(e.src()));
           } else {
-            e.src() = ov_gid_to_lid(e.src());
+            e.set_src(ov_gid_to_lid(e.src()));
             ++odegree[e.src()];
             ++oenum_;
           }
-          e.dst() = iv_gid_to_lid(e.dst());
+          e.set_dst(iv_gid_to_lid(e.dst()));
           ++idegree[e.dst()];
           ++ienum_;
         }
@@ -250,11 +250,11 @@ class JavaImmutableEdgecutFragment
                                           std::vector<int>& idegree,
                                           std::vector<int>& odegree) {
         if (e.src() != invalid_vid) {
-          e.src() = iv_gid_to_lid(e.src());
+          e.set_src(iv_gid_to_lid(e.src()));
           if (is_iv_gid(e.dst())) {
-            e.dst() = iv_gid_to_lid(e.dst());
+            e.set_dst(iv_gid_to_lid(e.dst()));
           } else {
-            e.dst() = ov_gid_to_lid(e.dst());
+            e.set_dst(ov_gid_to_lid(e.dst()));
             ++idegree[e.dst()];
             ++ienum_;
           }
@@ -268,8 +268,8 @@ class JavaImmutableEdgecutFragment
                                     std::vector<int>& idegree,
                                     std::vector<int>& odegree) {
         if (e.src() != invalid_vid) {
-          e.src() = gid_to_lid(e.src());
-          e.dst() = gid_to_lid(e.dst());
+          e.set_src(gid_to_lid(e.src()));
+          e.set_dst(gid_to_lid(e.dst()));
           ++odegree[e.src()];
           ++idegree[e.dst()];
           ++oenum_;
@@ -1179,12 +1179,12 @@ class JavaImmutableEdgecutFragment
  private:
   void initMessageDestination(const MessageStrategy& msg_strategy) {
     if (msg_strategy == MessageStrategy::kAlongOutgoingEdgeToOuterVertex) {
-      initDestFidList(false, true, odst(), odoffset_);
+      initDestFidList(false, true, odst_, odoffset_);
     } else if (msg_strategy ==
                MessageStrategy::kAlongIncomingEdgeToOuterVertex) {
-      initDestFidList(true, false, idst(), idoffset_);
+      initDestFidList(true, false, idst_, idoffset_);
     } else if (msg_strategy == MessageStrategy::kAlongEdgeToOuterVertex) {
-      initDestFidList(true, true, iodst(), iodoffset_);
+      initDestFidList(true, true, iodst_, iodoffset_);
     }
   }
 
@@ -1322,7 +1322,7 @@ class JavaImmutableEdgecutFragment
   std::vector<VertexRange<VID_T>> mirrors_range_;
   std::vector<std::vector<vertex_t>> mirrors_of_frag_;
 
-  Array<fid_t, Allocator<fid_t>> idst(), odst(), iodst();
+  Array<fid_t, Allocator<fid_t>> idst_, odst_, iodst_;
   Array<fid_t*, Allocator<fid_t*>> idoffset_, odoffset_, iodoffset_;
 
   std::vector<Array<nbr_t*, Allocator<nbr_t*>>> iespliters_, oespliters_;
