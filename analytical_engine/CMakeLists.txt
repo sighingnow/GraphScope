@@ -46,15 +46,10 @@ include(CheckLibraryExists)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include_directories(${PROJECT_SOURCE_DIR})
 
-# find jni---------------------------------------------------------------------
-find_package(JNI REQUIRED)
-include_directories(SYSTEM ${JAVA_INCLUDE_PATH})
-include_directories(SYSTEM ${JAVA_INCLUDE_PATH2})
-
 # Set flags
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wstringop-overflow")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 if (APPLE)
     set(CMAKE_MACOSX_RPATH ON)
