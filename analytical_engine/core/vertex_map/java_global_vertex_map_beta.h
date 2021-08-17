@@ -128,6 +128,23 @@ class JavaGlobalVertexMapBeta : public VertexMapBase<OID_T, VID_T> {
 
   size_t GetInnerVertexSize(fid_t fid) { return id_encoders_[fid].size(); }
 
+  void Clear() { LOG(INFO) << "Clear Not implemented."; }
+  void AddVertex(fid_t fid, const OID_T& oid) {
+    LOG(FATAL) << "addVertex Not implemented, pls use vertexBuilder.";
+  }
+  bool AddVertex(fid_t fid, const OID_T& oid, VID_T& gid) {
+    LOG(FATAL) << "addVertex Not implemented, pls use vertexBuilder.";
+    return false;
+  }
+  void Construct() {
+    LOG(FATAL)
+        << "Construct Not implemented, pls construct from vertexMapBuilder.";
+  }
+
+  void UpdateToBalance(std::vector<VID_T>& vnum_list,
+                       std::vector<std::vector<VID_T>>& gid_maps){
+      LOG(FATAL) << "Not Implemented."}
+
   JavaNativeVertexMapBuilder<OID_T, VID_T, Hasher> CreateNativeBuilder() {
     return JavaNativeVertexMapBuilder<OID_T, VID_T, Hasher>(
         Base::GetCommSpec().fid(), Base::GetFidOffset());
