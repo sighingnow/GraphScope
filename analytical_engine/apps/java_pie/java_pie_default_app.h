@@ -30,12 +30,12 @@ namespace grape {
  * @tparam FRAG_T
  */
 template <typename FRAG_T>
-class JavaAppPIE
+class JavaPIEDefaultApp
     : public JavaDefaultAppBase<FRAG_T, JavaPIEDefaultContext<FRAG_T>> {
  public:
   // specialize the templated worker.
-  INSTALL_JAVA_DEFAULT_WORKER(JavaAppPIE<FRAG_T>, JavaPIEDefaultContext<FRAG_T>,
-                              FRAG_T)
+  INSTALL_JAVA_DEFAULT_WORKER(JavaPIEDefaultApp<FRAG_T>,
+                              JavaPIEDefaultContext<FRAG_T>, FRAG_T)
   using vertex_t = typename fragment_t::vertex_t;
   using vid_t = typename fragment_t::vid_t;
   using oid_t = typename fragment_t::oid_t;
