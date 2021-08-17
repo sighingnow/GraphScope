@@ -41,7 +41,7 @@ class JavaContextBase {
    *
    * @param frag
    */
-  virtual void Output(const FRAG_T& frag) {}
+  virtual void Output(std::ostream & os) {}
 };
 
 }  // namespace grape

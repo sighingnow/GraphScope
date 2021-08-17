@@ -23,8 +23,8 @@ limitations under the License.
 #include <vector>
 
 #include "java_pie/javasdk.h"
-#include "core/context/java_context_base.h"
-#include "core/parallel/java_parallel_message_manager.h"
+#include "context/java_context_base.h"
+#include "parallel/java_parallel_message_manager.h"
 namespace grape {
 
 /**
@@ -188,7 +188,7 @@ class JavaPIEParallelContext : public JavaContextBase<FRAG_T> {
     }
   }
 
-  void Output(const FRAG_T& frag, std::ostream& os) {
+  void Output(std::ostream& os) {
     JNIEnvMark m;
     if (m.env()) {
       JNIEnv* env = m.env();

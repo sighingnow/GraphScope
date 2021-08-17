@@ -31,7 +31,16 @@ void Init() {
     VLOG(1) << "Workers are initialized.";
   }
 }
-
+inline uint64_t getTotalSystemMemory() {
+  long pages = sysconf(_SC_PHYS_PAGES);
+  long page_size = sysconf(_SC_PAGE_SIZE);
+  uint64_t ret = pages * page_size;
+  LOG(INFO) << "---> getTotalSystemMemory() -> " << ret;
+  ret = ret / 1024;
+  ret = ret / 1024;
+  ret = ret / 1024;
+  return ret;
+}
 void SetupEnv(const CommSpec& comm_spec) {
   int systemMemory = getTotalSystemMemory();
   LOG(INFO) << "System Memory = " << systemMemory << " GB";

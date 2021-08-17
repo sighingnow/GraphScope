@@ -127,7 +127,7 @@ class JavaDefaultWorker {
             << ", incEval " << inc_eval_time;
   }
 
-  void Output(std::ostream& os) { context_->Output(*graph_, os); }
+  void Output(std::ostream& os) { context_->Output(os); }
 
  private:
   std::shared_ptr<APP_T> app_;

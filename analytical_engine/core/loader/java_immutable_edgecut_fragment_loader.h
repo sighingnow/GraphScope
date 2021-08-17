@@ -7,7 +7,7 @@
 
 // #include "grape/fragment/basic_fragment_loader.h"
 // #include "grape/fragment/e_fragment_loader.h"
-#include "core/loader/basic_java_immutable_edgecut_fragment_loader.h"
+#include "loader/basic_java_immutable_edgecut_fragment_loader.h"
 #include "grape/io/local_io_adaptor.h"
 #include "grape/serialization/out_archive.h"
 #include "grape/worker/comm_spec.h"

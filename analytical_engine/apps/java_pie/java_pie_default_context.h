@@ -22,9 +22,9 @@ limitations under the License.
 #include <iomanip>
 #include <limits>
 #include <vector>
-#include "core/context/java_context_base.h"
+#include "context/java_context_base.h"
 #include "java_pie/javasdk.h"
-#include "core/parallel/java_default_message_manager.h"
+#include "parallel/java_default_message_manager.h"
 namespace grape {
 
 /**
@@ -184,7 +184,7 @@ class JavaPIEDefaultContext : public JavaContextBase<FRAG_T> {
     }
   }
 
-  void Output(const FRAG_T& frag, std::ostream& os) {
+  void Output(std::ostream& os) {
     JNIEnvMark m;
     if (m.env()) {
       JNIEnv* env = m.env();
