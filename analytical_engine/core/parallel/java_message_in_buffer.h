@@ -3,7 +3,7 @@
 
 #include <jni.h>
 
-#include "core/parallel/messages.h"
+#include "core/parallel/java_messages.h"
 #include "grape/serialization/out_archive.h"
 
 namespace grape {

@@ -19,11 +19,11 @@ limitations under the License.
 #include <memory>
 
 // #include "grape/parallel/java_parallel_message_manager.h"
-#include "core/worker/java_parallel_worker"
+#include "core/worker/java_parallel_worker.h"
+#include "core/parallel/java_parallel_message_manager.h"
 #include "grape/types.h"
 
 namespace grape {
-using JavaParallelMessageManager;
 
 /**
  * @brief ParallelAppBase is a base class for parallel apps. Users can process

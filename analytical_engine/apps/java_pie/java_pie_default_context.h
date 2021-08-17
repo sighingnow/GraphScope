@@ -22,9 +22,9 @@ limitations under the License.
 #include <iomanip>
 #include <limits>
 #include <vector>
-
+#include "core/context/java_context_base.h"
 #include "java_pie/javasdk.h"
-
+#include "core/parallel/java_default_message_manager.h"
 namespace grape {
 
 /**
@@ -72,8 +72,8 @@ class JavaPIEDefaultContext : public JavaContextBase<FRAG_T> {
 
   JavaPIEDefaultContext()
       : _app_class_name(NULL),
-        _app_object(NULL),
         _context_class_name(NULL),
+        _app_object(NULL),
         _context_object(NULL),
         _frag_object(NULL),
         _mm_object(NULL) {}

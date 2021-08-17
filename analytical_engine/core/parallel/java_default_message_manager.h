@@ -25,11 +25,10 @@ limitations under the License.
 #include "grape/communication/sync_comm.h"
 // #include "grape/fragment/immutable_edgecut_fragment.h"
 #include "core/parallel/java_message_manager_base.h"
-#include "core/parallel/messages.h"
 #include "grape/graph/adj_list.h"
 #include "grape/serialization/in_archive.h"
 #include "grape/serialization/out_archive.h"
-#include "grape/utils/long_vector.h"
+//#include "grape/utils/long_vector.h"
 #include "grape/worker/comm_spec.h"
 
 // only include codegen types in JNI library building, skip this in normal
@@ -352,24 +351,6 @@ class JavaDefaultMessageManager : public JavaMessageManagerBase<GRAPH_T> {
     return true;
   }
 
-  void ParseLongMessages(const GRAPH_T& frag, std::vector<LongVector>& msgsOut,
-                         std::vector<LongVector>& msgsIn) {
-    msgsOut.swap(msgsIn);
-    for (auto& vec : msgsOut) {
-      vec.clear();
-    }
-
-    typename GRAPH_T::vid_t gid, lid;
-    int64_t msg;
-
-    for (auto& arc : to_recv_) {
-      while (!arc.Empty()) {
-        arc >> gid >> msg;
-        lid = frag.GetInnerVertexLid(gid);
-        msgsIn[lid].push_back(msg);
-      }
-    }
-  }
 
   /**
    * @brief Get a message and its target vertex from message buffer.

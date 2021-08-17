@@ -143,7 +143,7 @@ class JavaGlobalVertexMapBeta : public VertexMapBase<OID_T, VID_T> {
 
   void UpdateToBalance(std::vector<VID_T>& vnum_list,
                        std::vector<std::vector<VID_T>>& gid_maps){
-      LOG(FATAL) << "Not Implemented."}
+      LOG(FATAL) << "Not Implemented."; }
 
   JavaNativeVertexMapBuilder<OID_T, VID_T, Hasher> CreateNativeBuilder() {
     return JavaNativeVertexMapBuilder<OID_T, VID_T, Hasher>(

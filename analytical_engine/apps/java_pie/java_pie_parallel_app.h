@@ -23,7 +23,7 @@ limitations under the License.
 
 #include "grape/types.h"
 #include "java_pie/java_pie_parallel_context.h"
-
+#include "core/app/java/java_parallel_app_base.h"
 namespace grape {
 
 /**

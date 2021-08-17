@@ -21,6 +21,7 @@ limitations under the License.
 #include "grape/grape.h"
 #include "grape/types.h"
 #include "java_pie/java_pie_default_context.h"
+#include "core/app/java/java_default_app_base.h"
 
 namespace grape {
 

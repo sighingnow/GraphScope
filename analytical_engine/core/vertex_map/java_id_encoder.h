@@ -61,7 +61,7 @@ struct BufferUtils {
   }
 
   template <typename IOADAPTOR_T>
-  static void serialize_buffer(const mutable_type& buffer,
+  static void serialize_buffer(mutable_type& buffer,
                                std::unique_ptr<IOADAPTOR_T>& adaptor) {
     size_t size = buffer.size();
     CHECK(adaptor->Write(&size, sizeof(size_t)));

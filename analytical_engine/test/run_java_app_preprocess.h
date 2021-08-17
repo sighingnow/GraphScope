@@ -20,7 +20,7 @@
 
 #include "grape/grape.h"
 #include "grape/util.h"
-#include "javaapp/javasdk.h"
+#include "java_pie/javasdk.h"
 namespace grape {
 
 void Init() {

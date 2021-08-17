@@ -18,20 +18,10 @@ limitations under the License.
 
 #include <mpi.h>
 
-#include "core/parallel/messages.h"
+#include "core/parallel/java_messages.h"
 #include "grape/config.h"
 
 namespace grape {
-
-struct TerminateInfo {
-  void Init(fid_t fnum) {
-    success = true;
-    info.resize(fnum);
-  }
-
-  bool success;
-  std::vector<std::string> info;
-};
 
 /**
  * @brief MessageManagerBase is the base class for message managers.

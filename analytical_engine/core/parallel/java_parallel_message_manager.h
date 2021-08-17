@@ -13,7 +13,6 @@
 
 #include "core/parallel/java_message_in_buffer.h"
 #include "core/parallel/java_message_manager_base.h"
-#include "core/parallel/messages.h"
 #include "grape/communication/sync_comm.h"
 #include "grape/parallel/thread_local_message_buffer.h"
 #include "grape/serialization/in_archive.h"

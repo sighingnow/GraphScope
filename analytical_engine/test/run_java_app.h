@@ -30,6 +30,11 @@
 // #define USE_X
 namespace grape {
 
+char const* OID_T_str = "std::vector<std::vector<int32_t>";
+char const* VID_T_str = "std::vector<std::vector<uint32_t>>";
+char const* VDATA_T_str = "std::vector<std::vector<int>>";
+char const* EDATA_T_str = "std::vector<std::vector<double>>";
+
 void Init() {
   InitMPIComm();
   CommSpec comm_spec;
@@ -37,6 +42,16 @@ void Init() {
   if (comm_spec.worker_id() == kCoordinatorRank) {
     VLOG(1) << "Workers are initialized.";
   }
+}
+inline uint64_t getTotalSystemMemory() {
+  long pages = sysconf(_SC_PHYS_PAGES);
+  long page_size = sysconf(_SC_PAGE_SIZE);
+  uint64_t ret = pages * page_size;
+  LOG(INFO) << "---> getTotalSystemMemory() -> " << ret;
+  ret = ret / 1024;
+  ret = ret / 1024;
+  ret = ret / 1024;
+  return ret;
 }
 
 void SetupEnv(const CommSpec& comm_spec) {
@@ -53,7 +68,7 @@ void SetupEnv(const CommSpec& comm_spec) {
 
   char* jvm_opts = getenv("JVM_OPTS");
 
-  char setStr[32000];
+  char setStr[32010];
   if (jvm_opts == NULL || *jvm_opts == '\0') {
     snprintf(setStr, sizeof(setStr), "JVM_OPTS=%s", kvPair);
     putenv(setStr);
@@ -141,14 +156,14 @@ void parseArgs(int argc, char** argv, std::string& app_class_name,
     serialize_prefix = argv[2];
     app_class_name = argv[3];
     app_context_name = argv[4];
-    for (size_t i = 5; i < argc; ++i) {
+    for (auto i = 5; i < argc; ++i) {
       std::string str = argv[i];
       java_args.push_back(str);
     }
   } else {
     app_class_name = argv[2];
     app_context_name = argv[3];
-    for (size_t i = 4; i < argc; ++i) {
+    for (auto i = 4; i < argc; ++i) {
       std::string str = argv[i];
       java_args.push_back(str);
     }
@@ -158,6 +173,7 @@ void parseArgs(int argc, char** argv, std::string& app_class_name,
   VLOG(2) << "app class name" << app_class_name;
   VLOG(2) << "context class name" << app_context_name;
 }
+template <typename OID_T, typename VID_T, typename VDATA_T, typename EDATA_T>
 void LoadingFromJava(JNIEnv* env, const CommSpec& comm_spec,
                      std::string main_class_name,
                      std::vector<std::vector<OID_T>>& vid_buffers,
@@ -323,14 +339,18 @@ void LoadAndQuery(const CommSpec& comm_spec, JNIEnvMark& m,
                   bool& serialize, bool& deserialize,
                   std::string& serialize_prefix,
                   std::vector<std::string>& java_args) {
+   using OID_T = typename FRAG_T::oid_t;
+   using VID_T = typename FRAG_T::vid_t;
+   using VDATA_T = typename FRAG_T::vdata_t;
+   using EDATA_T = typename FRAG_T::edata_t;
   // load_jni_library(m.env());
   std::shared_ptr<FRAG_T> fragment(nullptr);
   if (deserialize && (!serialize)) {
     if (serialize_prefix.size() <= 0) {
       LOG(FATAL) << "serialize prefix empty";
     }
-    std::shared_ptr<JavaPIEFragmentLoader<FRAG_T>> fragment_loader =
-        std::make_shared<JavaPIEFragmentLoader<FRAG_T>>();
+    std::shared_ptr<JavaImmutableEdgecutFragmentLoader<FRAG_T>> fragment_loader =
+        std::make_shared<JavaImmutableEdgecutFragmentLoader<FRAG_T>>();
     fragment_loader->Init();
     bool deserialized =
         fragment_loader->DeserializeFragment(fragment, serialize_prefix);
@@ -352,14 +372,13 @@ void LoadAndQuery(const CommSpec& comm_spec, JNIEnvMark& m,
   } else {
     // 0. Load fragment from java
     fid_t fnum = comm_spec.fnum();
-    std::vector<std::string> type_info;
     std::vector<std::vector<OID_T>> vid_buffers(fnum);
     std::vector<std::vector<VDATA_T>> vdata_buffers(fnum);
     std::vector<std::vector<OID_T>> esrc_buffers(fnum), edst_buffers(fnum);
     std::vector<std::vector<EDATA_T>> edata_buffers(fnum);
     if (m.env()) {
-      LoadingFromJava(m.env(), comm_spec, app_class_name, type_info,
-                      vid_buffers, vdata_buffers, esrc_buffers, edst_buffers,
+      LoadingFromJava<OID_T,VID_T,VDATA_T,EDATA_T>(m.env(), comm_spec, app_class_name,
+				vid_buffers, vdata_buffers, esrc_buffers, edst_buffers,
                       edata_buffers);
       if (m.env()->ExceptionOccurred()) {
         LOG(ERROR) << std::string(
@@ -440,7 +459,7 @@ void Run(int argc, char** argv) {
                                        LoadStrategy::kBothOutIn>;
       // sssp should be onlyOut, here use both outin for deserialization
       // consistent
-      using APP_T = JavaPieParalleApp<FRAG_T>;
+      using APP_T = JavaPIEParallelApp<FRAG_T>;
       LoadAndQuery<FRAG_T, APP_T>(comm_spec, m, app_class_name,
                                   app_context_name, serialize, deserialize,
                                   serialize_prefix, java_args);
@@ -448,7 +467,7 @@ void Run(int argc, char** argv) {
       using FRAG_T =
           JavaImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T,
                                        LoadStrategy::kBothOutIn>;
-      using APP_T = JavaPieParalleApp<FRAG_T>;
+      using APP_T = JavaPIEParallelApp<FRAG_T>;
       LoadAndQuery<FRAG_T, APP_T>(comm_spec, m, app_class_name,
                                   app_context_name, serialize, deserialize,
                                   serialize_prefix, java_args);
