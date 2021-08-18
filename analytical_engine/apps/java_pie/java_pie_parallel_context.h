@@ -90,7 +90,7 @@ class JavaPIEParallelContext : public JavaContextBase<FRAG_T> {
   }
 
   void GetJavaParallelManagerFFITypeName(std::string& name) {
-    name.append("grape::ParallelMessageManager<")
+    name.append("grape::JavaParallelMessageManager<")
         .append(_java_frag_type_name)
         .append(">");
   }
@@ -138,7 +138,7 @@ class JavaPIEParallelContext : public JavaContextBase<FRAG_T> {
 
       const char* descriptor =
           "(Lcom/alibaba/grape/fragment/ImmutableEdgecutFragment;"
-          "Lcom/alibaba/grape/message/messageManager/ParallelMessageManager;"
+          "Lcom/alibaba/grape/parallel/ParallelMessageManager;"
           "Lcom/alibaba/grape/stdcxx/StdVector;)V";
       jmethodID InitMethodID =
           env->GetMethodID(context_class, "Init", descriptor);

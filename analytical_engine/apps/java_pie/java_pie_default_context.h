@@ -91,7 +91,7 @@ class JavaPIEDefaultContext : public JavaContextBase<FRAG_T> {
   }
 
   void GetJavaDefaultManagerFFITypeName(std::string& name) {
-    name.append("grape::DefaultMessageManager<")
+    name.append("grape::JavaDefaultMessageManager<")
         .append(_java_frag_type_name)
         .append(">");
   }
@@ -139,7 +139,7 @@ class JavaPIEDefaultContext : public JavaContextBase<FRAG_T> {
 
       const char* descriptor =
           "(Lcom/alibaba/grape/fragment/ImmutableEdgecutFragment;"
-          "Lcom/alibaba/grape/message/messageManager/DefaultMessageManager;"
+          "Lcom/alibaba/grape/parallel/DefaultMessageManager;"
           "Lcom/alibaba/grape/stdcxx/StdVector;)V";
       jmethodID InitMethodID =
           env->GetMethodID(context_class, "Init", descriptor);

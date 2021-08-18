@@ -69,8 +69,7 @@ class JavaPIEParallelApp
       const char* descriptor =
           "(Lcom/alibaba/grape/fragment/ImmutableEdgecutFragment;"
           "Lcom/alibaba/grape/app/ParallelContextBase;"
-          "Lcom/alibaba/grape/message/messageManager/"
-          "ParallelMessageManager;)V";
+          "Lcom/alibaba/grape/parallel/ParallelMessageManager;)V";
       jmethodID PEvalMethodID =
           env->GetMethodID(app_class, "PEval", descriptor);
       if (PEvalMethodID == NULL) {
@@ -129,8 +128,7 @@ class JavaPIEParallelApp
       const char* descriptor =
           "(Lcom/alibaba/grape/fragment/ImmutableEdgecutFragment;"
           "Lcom/alibaba/grape/app/ParallelContextBase;"
-          "Lcom/alibaba/grape/message/messageManager/"
-          "ParallelMessageManager;)V";
+          "Lcom/alibaba/grape/parallel/ParallelMessageManager;)V";
       jmethodID IncEvalMethodID =
           env->GetMethodID(app_class, "IncEval", descriptor);
       if (IncEvalMethodID == NULL) {
