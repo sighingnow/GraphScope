@@ -18,10 +18,10 @@ limitations under the License.
 
 #include <utility>
 
+#include "app/java/java_default_app_base.h"
 #include "grape/grape.h"
 #include "grape/types.h"
 #include "java_pie/java_pie_default_context.h"
-#include "app/java/java_default_app_base.h"
 
 namespace grape {
 
@@ -67,7 +67,7 @@ class JavaPIEDefaultApp
           "(Lcom/alibaba/grape/fragment/ImmutableEdgecutFragment;"
           "Lcom/alibaba/grape/app/ContextBase;"
           "Lcom/alibaba/grape/message/messageManager/"
-          "JavaDefaultMessageManager;)V";
+          "DefaultMessageManager;)V";
       jmethodID PEvalMethodID =
           env->GetMethodID(app_class, "PEval", descriptor);
       if (PEvalMethodID == NULL) {
@@ -127,7 +127,7 @@ class JavaPIEDefaultApp
           "(Lcom/alibaba/grape/fragment/ImmutableEdgecutFragment;"
           "Lcom/alibaba/grape/app/ContextBase;"
           "Lcom/alibaba/grape/message/messageManager/"
-          "JavaDefaultMessageManager;)V";
+          "DefaultMessageManager;)V";
       jmethodID IncEvalMethodID =
           env->GetMethodID(app_class, "IncEval", descriptor);
       if (IncEvalMethodID == NULL) {

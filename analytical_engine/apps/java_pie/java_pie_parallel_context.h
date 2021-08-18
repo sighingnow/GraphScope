@@ -22,8 +22,8 @@ limitations under the License.
 #include <limits>
 #include <vector>
 
-#include "java_pie/javasdk.h"
 #include "context/java_context_base.h"
+#include "java_pie/javasdk.h"
 #include "parallel/java_parallel_message_manager.h"
 namespace grape {
 
@@ -90,7 +90,7 @@ class JavaPIEParallelContext : public JavaContextBase<FRAG_T> {
   }
 
   void GetJavaParallelManagerFFITypeName(std::string& name) {
-    name.append("grape::JavaParallelMessageManager<")
+    name.append("grape::ParallelMessageManager<")
         .append(_java_frag_type_name)
         .append(">");
   }
@@ -138,8 +138,7 @@ class JavaPIEParallelContext : public JavaContextBase<FRAG_T> {
 
       const char* descriptor =
           "(Lcom/alibaba/grape/fragment/ImmutableEdgecutFragment;"
-          "Lcom/alibaba/grape/message/messageManager/"
-          "JavaParallelMessageManager;"
+          "Lcom/alibaba/grape/message/messageManager/ParallelMessageManager;"
           "Lcom/alibaba/grape/stdcxx/StdVector;)V";
       jmethodID InitMethodID =
           env->GetMethodID(context_class, "Init", descriptor);
