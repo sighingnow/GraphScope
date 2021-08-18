@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
 
   grape::Init();
 
-  grape::Run<int32_t, uint32_t, int, double>(argc, argv);
+  grape::Run<jlong, uint64_t, jlong, jdouble>(argc, argv);
   // step 0: parse the config
 
   grape::Finalize();

@@ -213,7 +213,7 @@ void preprocess(int argc, char** argv) {
     std::string file_gen_path = jstring2string(m.env(), jres);
     LOG(INFO) << "generated file wrote to :" << file_gen_path;
     // set the value of code gen path to env for later compilation.
-    // set_codegen_path(file_gen_path, "codegen_path");
+    set_codegen_path(file_gen_path, "codegen_path");
     LOG(INFO) << "Exiting grape processor";
 
   } else {

@@ -61,7 +61,7 @@ class JavaParallelMessageManager : JavaMessageManagerBase<GRAPH_T> {
 
     sent_size_ = 0;
 
-    graph_ = graph;
+    graph_ = *(graph.get());
   }
 
   /**
@@ -507,7 +507,7 @@ class JavaParallelMessageManager : JavaMessageManagerBase<GRAPH_T> {
   TerminateInfo terminate_info_;
   bool force_continue_;
   size_t sent_size_;
-  std::shared_ptr<GRAPH_T> graph_;
+  GRAPH_T graph_;
 };
 
 }  // namespace grape

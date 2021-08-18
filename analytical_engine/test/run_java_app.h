@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-//#include "alibaba-ffi.h"
+#include "alibaba-ffi.h"
 #include "fragment/java_immutable_edgecut_fragment.h"
 #include "grape/grape.h"
 #include "grape/types.h"
@@ -30,10 +30,10 @@
 // #define USE_X
 namespace grape {
 
-char const* OID_T_str = "std::vector<std::vector<int32_t>";
-char const* VID_T_str = "std::vector<std::vector<uint32_t>>";
-char const* VDATA_T_str = "std::vector<std::vector<int>>";
-char const* EDATA_T_str = "std::vector<std::vector<double>>";
+char const* OID_T_str = "std::vector<std::vector<jlong>>";
+char const* VID_T_str = "std::vector<std::vector<uint64_t>>";
+char const* VDATA_T_str = "std::vector<std::vector<jlong>>";
+char const* EDATA_T_str = "std::vector<std::vector<jdouble>>";
 
 void Init() {
   InitMPIComm();
@@ -43,6 +43,7 @@ void Init() {
     VLOG(1) << "Workers are initialized.";
   }
 }
+
 inline uint64_t getTotalSystemMemory() {
   long pages = sysconf(_SC_PHYS_PAGES);
   long page_size = sysconf(_SC_PAGE_SIZE);
@@ -114,7 +115,14 @@ jclass getClassByJavaPath(JNIEnv* env, const std::string& main_class_name) {
   }
   return main_class;
 }
-
+void load_jni_library(JNIEnv* env) {
+  jclass load_lib_class =
+      getClassByJavaPath(env, "com.alibaba.grape.utils.LoadLibrary");
+  if (load_lib_class == NULL) {
+    LOG(FATAL) << "get load libgrary failed";
+    return;
+  }
+}
 std::string generate_cpp_fragment_signature() {
   std::stringstream ss;
   ss << "grape::JavaImmutableEdgecutFragment<";
@@ -343,7 +351,7 @@ void LoadAndQuery(const CommSpec& comm_spec, JNIEnvMark& m,
   using VID_T = typename FRAG_T::vid_t;
   using VDATA_T = typename FRAG_T::vdata_t;
   using EDATA_T = typename FRAG_T::edata_t;
-  // load_jni_library(m.env());
+  load_jni_library(m.env());
   std::shared_ptr<FRAG_T> fragment(nullptr);
   if (deserialize && (!serialize)) {
     if (serialize_prefix.size() <= 0) {

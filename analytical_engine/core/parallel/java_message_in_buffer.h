@@ -15,7 +15,7 @@ class JavaMessageInBuffer {
 
   explicit JavaMessageInBuffer(OutArchive&& arc) : arc_(std::move(arc)) {}
 
-  void Init(OutArchive&& arc, std::shared_ptr<GRAPH_T> graph) {
+  void Init(OutArchive&& arc, GRAPH_T& graph) {
     arc_ = std::move(arc);
     graph_ = graph;
   }
@@ -36,7 +36,7 @@ class JavaMessageInBuffer {
     }
     typename GRAPH_T::vid_t gid;
     arc_ >> gid >> msg;
-    graph_->Gid2Vertex(gid, v);
+    graph_.Gid2Vertex(gid, v);
     return true;
   }
 
@@ -47,7 +47,7 @@ class JavaMessageInBuffer {
     }
     typename GRAPH_T::vid_t gid;
     arc_ >> gid >> msg;
-    graph_->Gid2Vertex(gid, v);
+    graph_.Gid2Vertex(gid, v);
     return true;
   }
 
@@ -58,7 +58,7 @@ class JavaMessageInBuffer {
     }
     typename GRAPH_T::vid_t gid;
     arc_ >> gid >> msg;
-    graph_->Gid2Vertex(gid, v);
+    graph_.Gid2Vertex(gid, v);
     return true;
   }
   inline jboolean getMessageDouble(typename GRAPH_T::vertex_t& v,
@@ -68,13 +68,13 @@ class JavaMessageInBuffer {
     }
     typename GRAPH_T::vid_t gid;
     arc_ >> gid >> msg;
-    graph_->Gid2Vertex(gid, v);
+    graph_.Gid2Vertex(gid, v);
     return true;
   }
 
  private:
   OutArchive arc_;
-  std::shared_ptr<GRAPH_T> graph_;
+  GRAPH_T graph_;
 };
 
 }  // namespace grape

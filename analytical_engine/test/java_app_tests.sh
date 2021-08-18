@@ -27,7 +27,7 @@ usage(){
 	exit
 }
 DIR=$(pushd $(dirname $BASH_SOURCE[0]) > /dev/null && pwd && popd > /dev/null)
-GAE_DIR=../${DIR}
+GAE_DIR=${DIR}/../
 M2_REPO_GRAPE=~/.m2/repository/com/alibaba/grape
 
 export input_type=evfile
@@ -55,7 +55,7 @@ do
     case $opt in
     t)
 	   echo "setting test direction"
-       export dataset_dir=${OPTARG}
+           export dataset_dir=${OPTARG}
 	   ;;
 	s)
 	    echo "serialize option"${OPTARG}
@@ -91,6 +91,12 @@ do
             export task_main_class=com.alibaba.grape.SSSPMainClass
             export app_class=com.alibaba.grape.sample.sssp.SSSPDefault
             export app_context_class=com.alibaba.grape.sample.sssp.SSSPDefaultContext     
+         elif [ "${OPTARG}"x = "sssp-parallel"x ]
+	 then
+            export app_type=${OPTARG}
+            export task_main_class=com.alibaba.grape.SSSPMainClass
+            export app_class=com.alibaba.grape.sample.sssp.SSSPParallel
+            export app_context_class=com.alibaba.grape.sample.sssp.SSSPParallelContext
         elif [ "${OPTARG}"x = "traverse"x ]
         then
             export app_type=${OPTARG}
@@ -170,9 +176,8 @@ then
     if [[ -d ${DIR}/grape-ffi ]];
     then
         rm -rf ${DIR}/grape-ffi
-    else 
-        mkdir ${DIR}/grape-ffi
     fi
+    mkdir ${DIR}/grape-ffi
     echo "finish removing ffi, now run pie preprocess..."
     export PRE_CP=${grape_demo_jar}:${grape_sdk_jar}:${grape_processor_jar}
     export JVM_OPTS="-Djava.library.path=${GAE_DIR}/build: -Djava.class.path=${PRE_CP}"
@@ -180,20 +185,22 @@ then
                         ${task_main_class} \
                         ${grape_demo_jar} \
                         /tmp/demo.properties ${vfile_path} ${efile_path}
-    cp -r ${DIR}/`cat codegen_path` ${DIR}/grape-ffi
-    export GRAPE_GEN_PATH=${DIR}/grape-ffi
-    # compile the generated cpp files into one dynamic library.
-    echo "-------------------------------------------------"
-    echo "start compiling"
-    if [[ -d ${DIR}/build ]];
-    then
-        pushd ${DIR}/build
-        ../clang-cmake.sh ${DIR}/grape-ffi/SOURCE_OUTPUT
-        make -j    
-    fi
-    echo "-----------------------------------------"
-    echo "----------------compilation ok!----------"
+    cp -r `cat codegen_path`/* ${DIR}/grape-ffi
 fi
+export GRAPE_GEN_PATH=${DIR}/grape-ffi
+
+# compile the generated cpp files into one dynamic library.
+echo "-------------------------------------------------"
+echo "start compiling"
+if [[ -d ${DIR}/build ]];
+then
+pushd ${DIR}/build
+../clang-cmake.sh .. 
+make -j    
+fi
+popd
+echo "-----------------------------------------"
+echo "----------------compilation ok!----------"
 
 
 ########################################################
@@ -201,12 +208,17 @@ fi
 # Arguments:
 #   None
 ########################################################
-export RUN_CP=${RUN_CP}:grape-ffi/CLASS_OUTPUT
+GRAPE_LITE_JNI_SO_PATH=~/GAE-ODPSGraph/pie-sdk/grape-sdk/target/classes/
+export RUN_CP=${DIR}/grape-ffi/CLASS_OUTPUT
+#export RUN_CP=${RUN_CP}:${DIR}/../../../GAE-ODPSGraph/pie-sdk/grape-sdk/target/classes
 # put sdk before demo due to the version of guava, 15.0 vs 30-jre
 export RUN_CP=${RUN_CP}:~/.m2/repository/com/google/guava/guava/30.1.1-jre/guava-30.1.1-jre.jar
+export RUN_CP=${RUN_CP}:~/.m2/repository/com/alibaba/ffi/ffi/0.1/ffi-0.1.jar
 export RUN_CP=${RUN_CP}:${grape_sdk_jar}:${grape_demo_jar}
 export RUN_CP=${RUN_CP}:~/.m2/repository/com/alibaba/ffi/llvm4jni-runtime/0.1/llvm4jni-runtime-0.1-jar-with-dependencies.jar
-export RUN_JVM_OPTS="-Djava.library.path=${GAE_DIR}/build: -Djava.class.path=${RUN_CP} -Dcom.alibaba.ffi.rvBuffer=2147483648 -XX:+StartAttachListener -XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1 -XX:CompileCommandFile=${DIR}/compile-commands.txt"
+echo "run class path "${RUN_CP}
+echo "java libraray path "${GAE_DIR}/build:${DIR}/build:${GRAPE_LITE_JNI_SO_PATH}
+export RUN_JVM_OPTS="-Djava.library.path=${GAE_DIR}/build:${DIR}/build:${GRAPE_LITE_JNI_SO_PATH}:/usr/local/lib:/home/admin/alibaba-ffi/llvm/target/classes -Djava.class.path=${RUN_CP} -Dcom.alibaba.ffi.rvBuffer=2147483648 -XX:+StartAttachListener -XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1 -XX:CompileCommandFile=${DIR}/compile-commands.txt"
 
 export JVM_OPTS=${RUN_JVM_OPTS}
 for ((i=0;i<1;++i));
@@ -215,13 +227,18 @@ do
     if [ "${app_type}"x = "sssp-default"x ]
     then
         echo "source oid "${source_oid}
-        GLOG_v=2 mpirun -f ${hostfile} -n ${num_worker} \
-                    -envlist GLOG_v,JVM_OPTS, LD_PRELOAD,input_type \
+        GLOG_v=2 mpirun -n ${num_worker} \
+                    -envlist GLOG_v,JVM_OPTS,LD_PRELOAD,input_type \
                     ${DIR}/build/run_java_app ${serialize_opt} ${prefix} ${app_class} ${app_context_class} ${source_oid}
-
+    elif [[ "${app_type}"x = "sssp-parallel"x ]] 
+    then
+        echo "source oid "${source_oid}
+        GLOG_v=1 mpirun -n ${num_worker} \
+                    -envlist GLOG_v,JVM_OPTS,,LD_PRELOAD,input_type \
+                    ${DIR}/build/run_java_app ${serialize_opt} ${prefix} ${app_class} ${app_context_class} ${source_oid} ${thread_num}
     elif [ "${app_type}"x = "traverse"x ]
     then
-        GLOG_v=1 mpirun -f ${hostfile} -n ${num_worker} \
+        GLOG_v=1 mpirun -n ${num_worker} \
                     -envlist GLOG_v,JVM_OPTS,LD_PRELOAD,input_type \
                     ${DIR}/build/run_java_app ${serialize_opt} ${prefix} ${app_class} ${app_context_class} ${maxiter}
     elif [ "${app_type}"x = ""x ]
