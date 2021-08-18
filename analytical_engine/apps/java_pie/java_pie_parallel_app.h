@@ -21,9 +21,9 @@ limitations under the License.
 #include <queue>
 #include <utility>
 
+#include "app/java/java_parallel_app_base.h"
 #include "grape/types.h"
 #include "java_pie/java_pie_parallel_context.h"
-#include "app/java/java_parallel_app_base.h"
 namespace grape {
 
 /**
@@ -70,7 +70,7 @@ class JavaPIEParallelApp
           "(Lcom/alibaba/grape/fragment/ImmutableEdgecutFragment;"
           "Lcom/alibaba/grape/app/ParallelContextBase;"
           "Lcom/alibaba/grape/message/messageManager/"
-          "JavaParallelMessageManager;)V";
+          "ParallelMessageManager;)V";
       jmethodID PEvalMethodID =
           env->GetMethodID(app_class, "PEval", descriptor);
       if (PEvalMethodID == NULL) {
@@ -130,7 +130,7 @@ class JavaPIEParallelApp
           "(Lcom/alibaba/grape/fragment/ImmutableEdgecutFragment;"
           "Lcom/alibaba/grape/app/ParallelContextBase;"
           "Lcom/alibaba/grape/message/messageManager/"
-          "JavaParallelMessageManager;)V";
+          "ParallelMessageManager;)V";
       jmethodID IncEvalMethodID =
           env->GetMethodID(app_class, "IncEval", descriptor);
       if (IncEvalMethodID == NULL) {
