@@ -65,7 +65,7 @@ class JavaPIEDefaultApp
 
       const char* descriptor =
           "(Lcom/alibaba/grape/fragment/ImmutableEdgecutFragment;"
-          "Lcom/alibaba/grape/app/ContextBase;"
+          "Lcom/alibaba/grape/app/DefaultContextBase;"
           "Lcom/alibaba/grape/parallel/DefaultMessageManager;)V";
       jmethodID PEvalMethodID =
           env->GetMethodID(app_class, "PEval", descriptor);
@@ -124,7 +124,7 @@ class JavaPIEDefaultApp
 
       const char* descriptor =
           "(Lcom/alibaba/grape/fragment/ImmutableEdgecutFragment;"
-          "Lcom/alibaba/grape/app/ContextBase;"
+          "Lcom/alibaba/grape/app/DefaultContextBase;"
           "Lcom/alibaba/grape/parallel/DefaultMessageManager;)V";
       jmethodID IncEvalMethodID =
           env->GetMethodID(app_class, "IncEval", descriptor);
