@@ -25,6 +25,7 @@ from graphscope.framework.app import not_compatible_for
 from graphscope.framework.app import project_to_simple
 from graphscope.analytical.udf.utils import InMemoryZip
 from graphscope.analytical.udf.utils import CType
+import os
 __all__ = ["JavaAppAssets"]
 
 
@@ -53,7 +54,6 @@ class JavaAppAssets(AppAssets):
         s.close()
 
     """
-
     def __init__(self, jar_path : str , java_main_class : str, vd_type, md_type):
         vd_ctype = str(CType.from_string(vd_type)) # _t appended
         md_ctype = str(CType.from_string(md_type))
@@ -77,5 +77,10 @@ class JavaAppAssets(AppAssets):
             ]
         }
         garfile.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
-        super(AppAssets).__init__(algo = "java_app_set", context="vertex_data", gar=garfile.read_bytes())
+        super().__init__("java_app_set","vertex_data",garfile.read_bytes())
+    def to_gar(self, path):
+        if os.path.exists(path):
+            raise RuntimeError("Path exist: {}.".format(path))
+        with open(path, "wb") as f:
+            f.write(self.gar)
 
