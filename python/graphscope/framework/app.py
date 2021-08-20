@@ -206,7 +206,7 @@ class AppAssets(DAGNode):
 
     @property
     def type(self):
-        """Algorithm type, one of `cpp_pie`, `cython_pie` or `cython_pregel`.
+        """Algorithm type, one of `cpp_pie`, `cython_pie`, `java_pie` or `cython_pregel`.
 
         Returns:
             str: Algorithm type of this asset.
