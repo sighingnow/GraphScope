@@ -17,7 +17,7 @@
 #
 
 
-from python.graphscope.framework.app import load_app
+from graphscope.framework.app import load_app
 import yaml
 from graphscope.framework.app import AppAssets
 from graphscope.framework.app import not_compatible_for
