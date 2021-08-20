@@ -79,7 +79,7 @@ def java_app_set(jar_path : str, java_main_class : str, vd_type, md_type):
                 ]
             }
             garfile.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
-            super(AppAssets).__init__(algo = "java_app_set", context="vertex_data", gar=garfile.read_bytes())
+            super().__init__("java_app_set","vertex_data",garfile.read_bytes())
         
 
     java_app_set_ = JavaAppAssets(jar_path=jar_path, java_main_class=java_main_class, vd_type=vd_type, md_type=md_type)
