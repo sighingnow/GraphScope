@@ -194,6 +194,8 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         # run java app preprocess(codegen)
         assert os.path.isfile(os.path.join(app_dir, ".gs_conf.yaml"))
         assert os.path.isfile(os.path.join(app_dir, java_jar_path))
+        lib_path = get_lib_path(app_dir, library_name)
+        return lib_path
     elif app_type != "cpp_pie":
         if app_type == "cython_pregel":
             pxd_name = "pregel"

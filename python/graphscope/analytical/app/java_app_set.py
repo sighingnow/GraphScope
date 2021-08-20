@@ -78,6 +78,7 @@ class JavaAppAssets(AppAssets):
         }
         garfile.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
         super().__init__("java_app_set","vertex_data",garfile.read_bytes())
+        
     def to_gar(self, path):
         if os.path.exists(path):
             raise RuntimeError("Path exist: {}.".format(path))
