@@ -60,7 +60,7 @@ class JavaAppAssets(AppAssets):
         garfile = InMemoryZip()
         tmp_jar_file = open(jar_path, 'rb')
         bytes = tmp_jar_file.read()
-        garfile.append("{}".format(jar_path), bytes)
+        garfile.append("{}".format(jar_path.split("/")[-1]), bytes)
         gs_config = {
             "app": [
                 {
@@ -72,7 +72,7 @@ class JavaAppAssets(AppAssets):
                     "vd_type": vd_ctype,
                     "md_type": md_ctype,
                     "java_main_class" : java_main_class,
-                    "java_jar_path": jar_path
+                    "java_jar_path": jar_path.split("/")[-1]
                 }
             ]
         }
