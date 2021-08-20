@@ -29,8 +29,8 @@ __all__ = ["java_app_set"]
 
 @project_to_simple
 @not_compatible_for("arrow_property", "dynamic_property")
-def java_app_set(graph, jar_path : str, java_main_class : str, vd_type, md_type):
-    """Wrapper for a java jar, containing all java apps
+def java_app_set(jar_path : str, java_main_class : str, vd_type, md_type):
+    """Wrapper for a java jar, containing some java apps
 
     Args:
         graph (:class:`Graph`): A projected simple graph.
@@ -61,9 +61,9 @@ def java_app_set(graph, jar_path : str, java_main_class : str, vd_type, md_type)
     # )
     
     garfile = InMemoryZip()
-    tmp_jar_file = open(jar_path, 'r')
-    lines = tmp_jar_file.readlines()
-    garfile.append("{}".format(jar_path.split("/")[-1]), lines)
+    tmp_jar_file = open(jar_path, 'rb')
+    bytes = tmp_jar_file.read()
+    garfile.append("{}".format(jar_path), bytes)
 
     gs_config = {
         "app": [
@@ -74,20 +74,23 @@ def java_app_set(graph, jar_path : str, java_main_class : str, vd_type, md_type)
                 "class_name": "gs::JavaPropertyApp",
                 "compatible_graph": ["vineyard::ArrowFragment"],
                 "vd_type": vd_ctype,
-                "md_type": md_ctype
+                "md_type": md_ctype,
+                "java_main_class" : java_main_class,
+                "java_jar_path": jar_path
             }
         ]
     }
     garfile.append(".gs_conf.yaml", yaml.dump(gs_config))
 
     java_app_set_ = AppAssets(algo="java_app_set", context="vertex_data", gar=garfile.read_bytes())
-    # def init(self):
-    #     pass
+    def init(self):
+        pass
 
-    # def call(self, graph, **kwargs):
-    #     app_assets = load_app(algo="java_app_set", gar=)
-    #     print("called called")
-    #     # return app_assets(graph, **kwargs)
+    def call(self, graph, **kwargs):
+        print("called called")
+        return java_app_set_(graph, **kwargs)
 
     setattr(java_app_set_, "__decorated__", True)  # can't decorate on a decorated class
+    setattr(java_app_set_, "__init__", init)
+    setattr(java_app_set_, "__call__", call)
     return java_app_set_
