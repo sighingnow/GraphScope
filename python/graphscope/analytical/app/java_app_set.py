@@ -17,13 +17,13 @@
 #
 
 
-from python.graphscope.framework.app import load_app
+from graphscope.framework.app import load_app
 import yaml
 from graphscope.framework.app import AppAssets
 from graphscope.framework.app import not_compatible_for
 from graphscope.framework.app import project_to_simple
 from graphscope.analytical.udf.utils import InMemoryZip
-
+from graphscope.analytical.udf.utils import CType
 __all__ = ["java_app_set"]
 
 
@@ -36,6 +36,8 @@ def java_app_set(graph, jar_path : str, java_main_class : str, vd_type, md_type)
         graph (:class:`Graph`): A projected simple graph.
         java_main_class :java main class to run before codegen, geneerating 
                          configurations.
+        vd_type: int64, uint64
+        md_type: int64, uint64
 
     Returns:
         :class:`graphscope.framework.context.VertexDataContextDAGNode`:
@@ -52,9 +54,12 @@ def java_app_set(graph, jar_path : str, java_main_class : str, vd_type, md_type)
         s.close()
 
     """
-    java_app_set_ = AppAssets(algo="java_app_set", context="vertex_data")(
-        graph, jar_path, java_main_class
-    )
+    vd_ctype = str(CType.from_string(vd_type)) # _t appended
+    md_ctype = str(CType.from_string(md_type))
+    # java_app_set_ = AppAssets(algo="java_app_set", context="vertex_data")(
+    #     graph, jar_path, java_main_class
+    # )
+    
     garfile = InMemoryZip()
     tmp_jar_file = open(jar_path, 'r')
     lines = tmp_jar_file.readlines()
@@ -68,23 +73,21 @@ def java_app_set(graph, jar_path : str, java_main_class : str, vd_type, md_type)
                 "type": "java_pie",
                 "class_name": "gs::JavaPropertyApp",
                 "compatible_graph": ["vineyard::ArrowFragment"],
-                "vd_type": vd_type,
-                "md_type": md_type
+                "vd_type": vd_ctype,
+                "md_type": md_ctype
             }
         ]
     }
     garfile.append(".gs_conf.yaml", yaml.dump(gs_config))
 
-    def init(self):
-        pass
+    java_app_set_ = AppAssets(algo="java_app_set", context="vertex_data", gar=garfile.read_bytes())
+    # def init(self):
+    #     pass
 
-    def call(self, graph, **kwargs):
-        # app_assets = load_app(algo="java_app_set", gar=garfile.read_bytes())
-        # return app_assets(graph, **kwargs)
-        print("called called")
+    # def call(self, graph, **kwargs):
+    #     app_assets = load_app(algo="java_app_set", gar=)
+    #     print("called called")
+    #     # return app_assets(graph, **kwargs)
 
     setattr(java_app_set_, "__decorated__", True)  # can't decorate on a decorated class
-    setattr(java_app_set_, "_gar", garfile.read_bytes().getvalue())
-    setattr(java_app_set_, "__init__", init)
-    setattr(java_app_set_, "__call__", call)
     return java_app_set_
