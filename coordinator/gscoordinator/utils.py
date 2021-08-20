@@ -28,6 +28,7 @@ import logging
 import numbers
 import os
 import pickle
+from python.graphscope.framework import app
 import random
 import shutil
 import socket
@@ -114,6 +115,8 @@ def get_app_sha256(attr):
         vd_type,
         md_type,
         pregel_combine,
+        java_main_class,
+        java_java_path
     ) = _codegen_app_info(attr, DEFAULT_GS_CONFIG_FILE)
     graph_header, graph_type = _codegen_graph_info(attr)
     logger.info("Codegened graph type: %s, Graph header: %s", graph_type, graph_header)
@@ -150,6 +153,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     os.makedirs(app_dir, exist_ok=True)
 
     _extract_gar(app_dir, attr)
+    logger.info("after extracting gar", os.listdir(app_dir))
     # codegen app and graph info
     # vd_type and md_type is None in cpp_pie
     (
@@ -159,15 +163,19 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         vd_type,
         md_type,
         pregel_combine,
+        java_main_class,
+        java_jar_path
     ) = _codegen_app_info(attr, DEFAULT_GS_CONFIG_FILE)
     logger.info(
-        "Codegened application type: %s, app header: %s, app_class: %s, vd_type: %s, md_type: %s, pregel_combine: %s",
+        "Codegened application type: %s, app header: %s, app_class: %s, vd_type: %s, md_type: %s, pregel_combine: %s, java_main_class: %s",
         app_type,
         app_header,
         app_class,
         str(vd_type),
         str(md_type),
         str(pregel_combine),
+        java_main_class,
+        java_jar_path
     )
 
     graph_header, graph_type = _codegen_graph_info(attr)
@@ -181,12 +189,18 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         ".",
         "-DNETWORKX=" + engine_config["networkx"],
     ]
-    if app_type != "cpp_pie":
+    if app_type == "java_pie":
+        cmake_commands += ["-DJAVA_PIE_APP=True"]
+        # run java app preprocess(codegen)
+        assert os.path.isfile(os.path.join(app_dir, ".gs_conf.yaml"))
+        assert os.path.isfile(os.path.join(app_dir, java_jar_path))
+    elif app_type != "cpp_pie":
         if app_type == "cython_pregel":
             pxd_name = "pregel"
             cmake_commands += ["-DCYTHON_PREGEL_APP=True"]
             if pregel_combine:
                 cmake_commands += ["-DENABLE_PREGEL_COMBINE=True"]
+
         else:
             pxd_name = "pie"
             cmake_commands += ["-DCYTHON_PIE_APP=True"]
@@ -993,6 +1007,8 @@ def _codegen_app_info(attr, meta_file: str):
                     None,
                     None,
                     None,
+                    None,
+                    None
                 )
             if app_type in ("cython_pregel", "cython_pie"):
                 # cython app doesn't have c-header file
@@ -1003,6 +1019,19 @@ def _codegen_app_info(attr, meta_file: str):
                     app["vd_type"],
                     app["md_type"],
                     app["pregel_combine"],
+                    None,
+                    None
+                )
+            if app_type == "java_pie":
+                return (
+                    app_type,
+                    "",
+                    "{}<_GRAPH_TYPE>".format(app["class_name"]),
+                    app["vd_type"],
+                    app["md_type"],
+                    app["pregel_combine"],
+                    app["java_main_class"],
+                    app["java_jar_path"]
                 )
 
     raise KeyError("Algorithm does not exist in the gar resource.")
