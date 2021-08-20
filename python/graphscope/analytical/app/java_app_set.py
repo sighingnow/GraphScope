@@ -27,8 +27,8 @@ from graphscope.analytical.udf.utils import CType
 __all__ = ["java_app_set"]
 
 
-@project_to_simple
-@not_compatible_for("arrow_property", "dynamic_property")
+# @project_to_simple
+# @not_compatible_for("arrow_property", "dynamic_property")
 def java_app_set(jar_path : str, java_main_class : str, vd_type, md_type):
     """Wrapper for a java jar, containing some java apps
 
@@ -83,14 +83,14 @@ def java_app_set(jar_path : str, java_main_class : str, vd_type, md_type):
     garfile.append(".gs_conf.yaml", yaml.dump(gs_config))
 
     java_app_set_ = AppAssets(algo="java_app_set", context="vertex_data", gar=garfile.read_bytes())
-    def init(self):
-        pass
+    # def init(self):
+    #     pass
 
-    def call(self, graph, **kwargs):
-        print("called called")
-        return java_app_set_(graph, **kwargs)
+    # def call(self, graph, **kwargs):
+    #     print("called called")
+    #     return java_app_set_(graph, **kwargs)
 
     setattr(java_app_set_, "__decorated__", True)  # can't decorate on a decorated class
-    setattr(java_app_set_, "__init__", init)
-    setattr(java_app_set_, "__call__", call)
+    # setattr(java_app_set_, "__init__", init)
+    # setattr(java_app_set_, "__call__", call)
     return java_app_set_
