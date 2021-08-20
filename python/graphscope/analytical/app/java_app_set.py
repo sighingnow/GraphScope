@@ -25,12 +25,11 @@ from graphscope.framework.app import not_compatible_for
 from graphscope.framework.app import project_to_simple
 from graphscope.analytical.udf.utils import InMemoryZip
 from graphscope.analytical.udf.utils import CType
-__all__ = ["java_app_set"]
+import os
+__all__ = ["JavaAppAssets"]
 
 
- #@project_to_simple
-# @not_compatible_for("arrow_property", "dynamic_property")
-def java_app_set(jar_path : str, java_main_class : str, vd_type, md_type):
+class JavaAppAssets(AppAssets):
     """Wrapper for a java jar, containing some java apps
 
     Args:
@@ -55,33 +54,33 @@ def java_app_set(jar_path : str, java_main_class : str, vd_type, md_type):
         s.close()
 
     """
-    class JavaAppAssets(AppAssets):
-        def __init__(self, jar_path : str , java_main_class : str, vd_type, md_type):
-            vd_ctype = str(CType.from_string(vd_type)) # _t appended
-            md_ctype = str(CType.from_string(md_type))
-            garfile = InMemoryZip()
-            tmp_jar_file = open(jar_path, 'rb')
-            bytes = tmp_jar_file.read()
-            garfile.append("{}".format(jar_path), bytes)
-            gs_config = {
-                "app": [
-                    {
-                        "algo": "java_app_set",
-                        "context_type": "vertex_data",
-                        "type": "java_pie",
-                        "class_name": "gs::JavaPropertyApp",
-                        "compatible_graph": ["vineyard::ArrowFragment"],
-                        "vd_type": vd_ctype,
-                        "md_type": md_ctype,
-                        "java_main_class" : java_main_class,
-                        "java_jar_path": jar_path
-                    }
-                ]
-            }
-            garfile.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
-            super().__init__("java_app_set","vertex_data",garfile.read_bytes())
-        
+    def __init__(self, jar_path : str , java_main_class : str, vd_type, md_type):
+        vd_ctype = str(CType.from_string(vd_type)) # _t appended
+        md_ctype = str(CType.from_string(md_type))
+        garfile = InMemoryZip()
+        tmp_jar_file = open(jar_path, 'rb')
+        bytes = tmp_jar_file.read()
+        garfile.append("{}".format(jar_path), bytes)
+        gs_config = {
+            "app": [
+                {
+                    "algo": "java_app_set",
+                    "context_type": "vertex_data",
+                    "type": "java_pie",
+                    "class_name": "gs::JavaPropertyApp",
+                    "compatible_graph": ["vineyard::ArrowFragment"],
+                    "vd_type": vd_ctype,
+                    "md_type": md_ctype,
+                    "java_main_class" : java_main_class,
+                    "java_jar_path": jar_path
+                }
+            ]
+        }
+        garfile.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
+        super().__init__("java_app_set","vertex_data",garfile.read_bytes())
+    def to_gar(self, path):
+        if os.path.exists(path):
+            raise RuntimeError("Path exist: {}.".format(path))
+        with open(path, "wb") as f:
+            f.write(self.gar)
 
-    java_app_set_ = JavaAppAssets(jar_path=jar_path, java_main_class=java_main_class, vd_type=vd_type, md_type=md_type)
-    #setattr(java_app_set_, "__decorated__", True)  # can't decorate on a decorated class
-    return java_app_set_
