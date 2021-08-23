@@ -124,6 +124,11 @@ include_directories(${Protobuf_INCLUDE_DIRS})
 include("cmake/FindGRPC.cmake")
 include_directories(${GRPC_INCLUDE_DIR})
 
+# find jni---------------------------------------------------------------------
+find_package(JNI REQUIRED)
+include_directories(SYSTEM ${JAVA_INCLUDE_PATH})
+include_directories(SYSTEM ${JAVA_INCLUDE_PATH2})
+
 if (NETWORKX)
     include("cmake/FindFolly.cmake")
     include("cmake/FindDoubleConversion.cmake")
@@ -163,6 +168,11 @@ target_link_libraries(grape_engine PRIVATE gs_proto
         ${Boost_LIBRARIES}
         ${VINEYARD_LIBRARIES}
         )
+
+add_executable(run_java_app_preprocess ./core/run_java_app_preprocess.cc)
+target_include_directories(run_java_app_preprocess PRIVATE ${LIBGRAPELITE_INCLUDE_DIRS}/grape/analytical_apps core utils apps)
+target_link_libraries(run_java_app_preprocess ${LIBGRAPELITE_LIBRARIES} ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES}
+                                    ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${JAVA_JVM_LIBRARY})
 
 if (${LIBUNWIND_FOUND})
     target_link_libraries(grape_engine PRIVATE ${LIBUNWIND_LIBRARIES})
