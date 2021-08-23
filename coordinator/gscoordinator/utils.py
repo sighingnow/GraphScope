@@ -66,8 +66,14 @@ GRAPHSCOPE_HOME = os.path.join(COORDINATOR_HOME, "..")
 WORKSPACE = "/tmp/gs"
 DEFAULT_GS_CONFIG_FILE = ".gs_conf.yaml"
 ANALYTICAL_ENGINE_HOME = os.path.join(GRAPHSCOPE_HOME, "analytical_engine")
+ANALYTICAL_BUILD_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "build")
 ANALYTICAL_ENGINE_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "build", "grape_engine")
-
+JAVA_APP_PREPROCESSER = os.path.join(ANALYTICAL_ENGINE_HOME, "build", "run_java_app_preprocess")
+JAVA_APP_CONF_PATH = os.path.join(WORKSPACE, "java_pie.conf")
+JAVA_APP_FFI_SOURCE_PATH_BASE = os.path.join(WORKSPACE, "gs-ffi")
+M2_REPO_PATH = "~/.m2/repository/com/alibaba/grape"
+GRAPE_PROCESSOR_JAR=os.path.join(M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-jar-with-dependencies.jar")
+GRAPE_SDK_JAR=os.path.join(M2_REPO_PATH, "grape-sdk/0.1/grape-sdk-0.1-jar-with-dependencies.jar")
 if not os.path.isfile(ANALYTICAL_ENGINE_PATH):
     ANALYTICAL_ENGINE_HOME = "/usr/local/bin"
     ANALYTICAL_ENGINE_PATH = "/usr/local/bin/grape_engine"
@@ -114,6 +120,8 @@ def get_app_sha256(attr):
         vd_type,
         md_type,
         pregel_combine,
+        java_main_class,
+        java_jar_path,
     ) = _codegen_app_info(attr, DEFAULT_GS_CONFIG_FILE)
     graph_header, graph_type = _codegen_graph_info(attr)
     logger.info("Codegened graph type: %s, Graph header: %s", graph_type, graph_header)
@@ -159,15 +167,19 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         vd_type,
         md_type,
         pregel_combine,
+        java_main_class,
+        java_jar_path,
     ) = _codegen_app_info(attr, DEFAULT_GS_CONFIG_FILE)
     logger.info(
-        "Codegened application type: %s, app header: %s, app_class: %s, vd_type: %s, md_type: %s, pregel_combine: %s",
+        "Codegened application type: %s, app header: %s, app_class: %s, vd_type: %s, md_type: %s, pregel_combine: %s, java_main_class: %s, java_jar_path: %s",
         app_type,
         app_header,
         app_class,
         str(vd_type),
         str(md_type),
         str(pregel_combine),
+        str(java_main_class),
+        str(java_jar_path),
     )
 
     graph_header, graph_type = _codegen_graph_info(attr)
@@ -181,7 +193,35 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         ".",
         "-DNETWORKX=" + engine_config["networkx"],
     ]
-    if app_type != "cpp_pie":
+    if app_type == "java_pie":
+        #for java need to run preprocess
+        JAVA_APP_FFI_SOURCE_PATH = JAVA_APP_FFI_SOURCE_PATH_BASE + str(random.randint)
+        cmake_commands += ["-DJAVA_PIE_APP=True", "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
+        java_codegen_commands = [
+            JAVA_APP_PREPROCESSER,
+            java_main_class,
+            java_jar_path,
+            JAVA_APP_CONF_PATH, # actually not used.
+            JAVA_APP_FFI_SOURCE_PATH, # TODO: implement this in java
+        ]
+        java_env=os.environ.copy()
+        PRE_CP = "{}:{}:{}".format(java_jar_path, GRAPE_PROCESSOR_JAR, GRAPE_SDK_JAR)
+        java_env["JVM_OPTS"] = "-Djava.class.path={}".format(PRE_CP)
+        logger.info(" ".join(java_codegen_commands) , java_env["JVM_OPTS"])
+        java_codegen_process = subprocess.Popen(
+            java_codegen_commands,
+            java_env,
+            universal_newlines=True,
+            encoding="utf-8",
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE
+        )
+        java_codegen_stderr_watcher = PipeWatcher(java_codegen_process.stderr, sys.stdout)
+        setattr(java_codegen_process, "stderr_watcher", java_codegen_stderr_watcher)
+        java_codegen_process.wait()
+        logger.info("java codegen complete, output to {}".format(java_codegen_commands))
+        #TODO: current we don't send java_app.conf, pending this to the future
+    elif app_type != "cpp_pie":
         if app_type == "cython_pregel":
             pxd_name = "pregel"
             cmake_commands += ["-DCYTHON_PREGEL_APP=True"]
@@ -202,6 +242,8 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
             cc_file = os.path.join(app_dir, module_name + ".cc")
             subprocess.check_call(["cython", "-3", "--cplus", "-o", cc_file, pyx_file])
         app_header = "{}.h".format(module_name)
+
+
 
     # replace and generate cmakelist
     cmakelists_file_tmp = os.path.join(TEMPLATE_DIR, "CMakeLists.template")
@@ -984,12 +1026,14 @@ def _codegen_app_info(attr, meta_file: str):
     algo = attr[types_pb2.APP_ALGO].s.decode("utf-8")
     for app in config_yaml["app"]:
         if app["algo"] == algo:
-            app_type = app["type"]  # cpp_pie or cython_pregel or cython_pie
+            app_type = app["type"]  # cpp_pie or cython_pregel or cython_pie, java_pie 
             if app_type == "cpp_pie":
                 return (
                     app_type,
                     app["src"],
                     "{}<_GRAPH_TYPE>".format(app["class_name"]),
+                    None,
+                    None,
                     None,
                     None,
                     None,
@@ -1003,6 +1047,19 @@ def _codegen_app_info(attr, meta_file: str):
                     app["vd_type"],
                     app["md_type"],
                     app["pregel_combine"],
+                    None,
+                    None,
+                )
+            if app_type == "java_pie":
+                return (
+                    app_type, 
+                    app["src"],#cxx header
+                    "{}<_GRAPH_TYPE>".format(app["class_name"]), #cxx class name
+                    app["vd_type"],  # vd_type,
+                    app["md_type"],  # md_type
+                    None,  # pregel combine
+                    app["java_main_class"], # main class for preprocess
+                    app["java_jar_path"],
                 )
 
     raise KeyError("Algorithm does not exist in the gar resource.")

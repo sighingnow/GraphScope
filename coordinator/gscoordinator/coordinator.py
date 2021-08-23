@@ -1076,6 +1076,7 @@ class CoordinatorServiceServicer(
             space, lib_name, op.attr, self._analytical_engine_config
         )
         self._launcher.distribute_file(app_lib_path)
+        
         return app_lib_path
 
 
