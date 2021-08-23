@@ -17,7 +17,10 @@
 #
 
 
-from coordinator.gscoordinator.coordinator import DEFAULT_GS_CONFIG_FILE
+# from coordinator.gscoordinator.coordinator import DEFAULT_GS_CONFIG_FILE
+
+
+DEFAULT_GS_CONFIG_FILE = ".gs_conf.yaml"
 from graphscope.framework.app import load_app
 import yaml
 from graphscope.framework.app import AppAssets
