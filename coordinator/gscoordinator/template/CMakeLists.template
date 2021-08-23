@@ -12,10 +12,10 @@ option(PROJECT_FRAME "Whether to build project frame" False)
 
 option(ENABLE_PREGEL_COMBINE "Whether enable combinator in pregel app." False)
 
+option(NETWORKX "networkx on?" ON)
+
 if (NETWORKX)
     add_definitions(-DNETWORKX)
-    # TODO: need by vineyard, remove when vineyard version update.
-    add_definitions(-DEXPERIMENTAL_ON)
 endif ()
 
 if (ENABLE_PREGEL_COMBINE)
@@ -45,7 +45,7 @@ set(CMAKE_THREAD_PREFER_PTHREAD ON)
 find_package(Threads REQUIRED)
 
 # find vineyard-----------------------------------------------------------------
-find_package(vineyard 0.2.5 REQUIRED)
+find_package(vineyard 0.2.6 REQUIRED)
 include_directories(${VINEYARD_INCLUDE_DIRS})
 add_compile_options(-DENABLE_SELECTOR)
 
