@@ -54,7 +54,10 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 if (APPLE)
     set(CMAKE_MACOSX_RPATH ON)
 else ()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -Werror -Wl,-rpath,$ORIGIN -Wno-redundant-move -Wno-class-memaccess")
+#-Wl,-rpath,$ORIGIN 
+# -Wl,-rpath,$ORIGIN -Wno-redundant-move -Wno-class-memaccess
+#-Werror
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 endif ()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
