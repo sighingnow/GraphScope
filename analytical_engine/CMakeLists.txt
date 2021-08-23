@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.1)
 
 if ("${GRAPHSCOPE_VERSION}" STREQUAL "")
     set(GRAPHSCOPE_ANALYTICAL_MAJOR_VERSION 0)
-    set(GRAPHSCOPE_ANALYTICAL_MINOR_VERSION 5)
+    set(GRAPHSCOPE_ANALYTICAL_MINOR_VERSION 6)
     set(GRAPHSCOPE_ANALYTICAL_PATCH_VERSION 0)
     set(GRAPHSCOPE_ANALYTICAL_VERSION ${GRAPHSCOPE_ANALYTICAL_MAJOR_VERSION}.${GRAPHSCOPE_ANALYTICAL_MINOR_VERSION}.${GRAPHSCOPE_ANALYTICAL_PATCH_VERSION})
 else ()
@@ -22,8 +22,6 @@ option(BUILD_TESTS "Build unit test" ON)
 
 if (NETWORKX)
     add_definitions(-DNETWORKX)
-    # TODO: need by vineyard, remove when vineyard version update.
-    add_definitions(-DEXPERIMENTAL_ON)
 endif ()
 
 set(DEFAULT_BUILD_TYPE "Release")
@@ -114,7 +112,7 @@ endif ()
 find_package(libgrapelite REQUIRED)
 include_directories(${LIBGRAPELITE_INCLUDE_DIRS})
 
-find_package(vineyard 0.2.5 REQUIRED)
+find_package(vineyard 0.2.6 REQUIRED)
 include_directories(${VINEYARD_INCLUDE_DIRS})
 add_compile_options(-DENABLE_SELECTOR)
 
