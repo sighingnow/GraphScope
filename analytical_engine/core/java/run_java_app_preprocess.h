@@ -115,10 +115,11 @@ void set_codegen_path(std::string code_gen_path, std::string local_file_path) {
 // arg 1: main class to run
 // arg 2: path of jar
 // arg 3: conf path
+// args 4: output path
 // args 4.. : other cmdline parameters
 void preprocess(int argc, char** argv) {
-  if (argc < 4) {
-    LOG(INFO) << "3 args required, jar path and main class name, received "
+  if (argc < 5) {
+    LOG(INFO) << "at least 4 args required, jar path and main class name, received "
               << argc;
     return;
   }
@@ -142,14 +143,15 @@ void preprocess(int argc, char** argv) {
 
   if (m.env()) {
     std::vector<std::string> args;
-    for (int i = 4; i < argc; ++i) {
+    for (int i = 5; i < argc; ++i) {
       std::string v = argv[i];
       args.push_back(v);
     }
     std::string main_class_str = argv[1];
     std::string jar_path = argv[2];
     std::string conf_path = argv[3];
-    LOG(INFO) << "jar path" << jar_path << ", conf path " << conf_path;
+    std::string ffi_output_path = argv[4];
+    LOG(INFO) << "jar path" << jar_path << ", conf path " << conf_path << ", output destination:" << ffi_output_path ;
 
     jclass main_class = getMainClass(m.env(), main_class_str);
     if (main_class == NULL) {
@@ -192,17 +194,17 @@ void preprocess(int argc, char** argv) {
     }
     jmethodID process_method = m.env()->GetStaticMethodID(
         grape_process_class, "scanAppAndGenerate",
-        "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
+        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     if (process_method == NULL) {
       LOG(ERROR) << "fail to find process method";
       return;
     }
     jstring jar_path_jstring = m.env()->NewStringUTF(jar_path.c_str());
     jstring conf_path_jstring = m.env()->NewStringUTF(conf_path.c_str());
-
+    jstring ffi_output_path_jstring = m.env()->NewStringUTF(ffi_output_path.c_str());
     jstring jres = (jstring) m.env()->CallStaticObjectMethod(
         grape_process_class, process_method, jar_path_jstring,
-        conf_path_jstring);
+        conf_path_jstring, ffi_output_path_jstring);
     if (m.env()->ExceptionOccurred()) {
       LOG(ERROR) << "Exception occurred in grape process method";
       m.env()->ExceptionDescribe();

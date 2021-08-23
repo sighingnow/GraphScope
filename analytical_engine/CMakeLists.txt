@@ -22,8 +22,6 @@ option(BUILD_TESTS "Build unit test" ON)
 
 if (NETWORKX)
     add_definitions(-DNETWORKX)
-    # TODO: need by vineyard, remove when vineyard version update.
-    add_definitions(-DEXPERIMENTAL_ON)
 endif ()
 
 set(DEFAULT_BUILD_TYPE "Release")
@@ -42,6 +40,7 @@ else ()
     add_custom_target(ccache-stats COMMAND echo "ccache not found.")
 endif (ccache_EXECUTABLE)
 
+include(CheckCXXCompilerFlag)
 include(CheckLibraryExists)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include_directories(${PROJECT_SOURCE_DIR})
@@ -54,11 +53,17 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 if (APPLE)
     set(CMAKE_MACOSX_RPATH ON)
 else ()
-#-Wl,-rpath,$ORIGIN 
-# -Wl,-rpath,$ORIGIN -Wno-redundant-move -Wno-class-memaccess
-#-Werror
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,$ORIGIN")
 endif ()
+check_cxx_compiler_flag(-Wno-class-memaccess W_NO_CLASS_MEMACCESS)
+check_cxx_compiler_flag(-Wno-redundant-move W_NO_REDUNDANT_MOVE)
+if(W_NO_CLASS_MEMACCESS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-class-memaccess")
+endif()
+if(W_NO_REDUNDANT_MOVE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-redundant-move")
+endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
 if (NOT APPLE)
@@ -120,14 +125,14 @@ add_compile_options(-DENABLE_SELECTOR)
 
 find_package(Protobuf REQUIRED)
 include_directories(${Protobuf_INCLUDE_DIRS})
-
-include("cmake/FindGRPC.cmake")
-include_directories(${GRPC_INCLUDE_DIR})
-
 # find jni---------------------------------------------------------------------
 find_package(JNI REQUIRED)
 include_directories(SYSTEM ${JAVA_INCLUDE_PATH})
 include_directories(SYSTEM ${JAVA_INCLUDE_PATH2})
+
+
+include("cmake/FindGRPC.cmake")
+include_directories(${GRPC_INCLUDE_DIR})
 
 if (NETWORKX)
     include("cmake/FindFolly.cmake")
@@ -168,11 +173,11 @@ target_link_libraries(grape_engine PRIVATE gs_proto
         ${Boost_LIBRARIES}
         ${VINEYARD_LIBRARIES}
         )
-
 add_executable(run_java_app_preprocess ./core/java/run_java_app_preprocess.cc)
 target_include_directories(run_java_app_preprocess PRIVATE ${LIBGRAPELITE_INCLUDE_DIRS}/grape/analytical_apps core utils apps)
 target_link_libraries(run_java_app_preprocess ${LIBGRAPELITE_LIBRARIES} ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES}
                                     ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${JAVA_JVM_LIBRARY})
+
 
 if (${LIBUNWIND_FOUND})
     target_link_libraries(grape_engine PRIVATE ${LIBUNWIND_LIBRARIES})

@@ -7,10 +7,10 @@ grape_sdk_jar=${M2_REPO_GRAPE}/grape-sdk/0.1/grape-sdk-0.1-jar-with-dependencies
 grape_processor_jar=${M2_REPO_GRAPE}/grape-processor/0.1/grape-processor-0.1-jar-with-dependencies.jar
 
 PRE_CP=${grape_demo_jar}:${grape_sdk_jar}:${grape_processor_jar}
-JVM_OPTS="-Djava.class.path=${PRE_CP}"
+export JVM_OPTS="-Djava.class.path=${PRE_CP}"
 
 task_main_class=com.alibaba.grape.TraverseMainClass
 ${DIR}/build/run_java_app_preprocess \
                         ${task_main_class} \
                         ${grape_demo_jar} \
-                        /tmp/demo.properties vfile efile 
+                        /tmp/java_pie.conf /tmp/gs/gs-ffi123 vfile efile 

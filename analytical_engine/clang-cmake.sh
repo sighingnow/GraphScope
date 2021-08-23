@@ -7,7 +7,7 @@ export CC=${LLVM11_HOME}/bin/clang
 export CXX=${LLVM11_HOME}/bin/clang++
 
 CXX_FLAGS="-flto -fforce-emit-vtables"
-LINKER_FLAGS="-fuse-ld=${LLVM11_HOME}/bin/ld.lld -Xlinker "
+LINKER_FLAGS="-fuse-ld=${LLVM11_HOME}/bin/ld.lld -Xlinker -mllvm=-lto-embed-bitcode"
 #-Xlinker -lpthread
 # -mllvm=-lto-embed-bitcode 
 INSTALL_PREFIX=/usr/local
