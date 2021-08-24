@@ -21,10 +21,15 @@ limitations under the License.
 
 #include <iomanip>
 #include <limits>
+#include <map>
 #include <vector>
+#include "core/context/i_context.h"
 #include "core/context/java_context_base.h"
+#include "core/object/i_fragment_wrapper.h"
 #include "core/parallel/property_message_manager.h"
 #include "java_pie/javasdk.h"
+#include "vineyard/client/client.h"
+#define CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT "java_pie_property_default"
 namespace grape {
 
 /**
@@ -219,6 +224,78 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   jobject _context_object;
   jobject _frag_object;
   jobject _mm_object;
+};
+
+template <typename FRAG_T>
+class JavaPIEPropertyDefaultContextWrapper
+    : public IJavaPIEPropertyDefaultContextWrapper {
+  using fragment_t = FRAG_T;
+  using label_id_t = typename fragment_t::label_id_t;
+  using prop_id_t = typename fragment_t::prop_id_t;
+  using oid_t = typename fragment_t::oid_t;
+  using context_t = JavaPIEPropertyDefaultContext<fragment_t>;
+  static_assert(vineyard::is_property_fragment<FRAG_T>::value,
+                "JavaPIEPropertyDefaultContextWrapper is only available for "
+                "property graph");
+
+ public:
+  JavaPIEPropertyDefaultContextWrapper(
+      const std::string& id, std::shared_ptr<IFragmentWrapper> frag_wrapper,
+      std::shared_ptr<context_t> context)
+      : IJavaPIEPropertyDefaultContextWrapper(id),
+        frag_wrapper_(std::move(frag_wrapper)),
+        ctx_(std::move(context)) {}
+
+  std::string context_type() override {
+    return CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT;
+  }
+
+  std::shared_ptr<IFragmentWrapper> fragment_wrapper() override {
+    return frag_wrapper_;
+  }
+  bl::result<std::unique_ptr<grape::InArchive>> ToNdArray(
+      const grape::CommSpec& comm_spec, const LabeledSelector& selector,
+      const std::pair<std::string, std::string>& range) override {
+    auto arc = std::make_unique<grape::InArchive>();
+    return arc;
+  }
+
+  bl::result<std::unique_ptr<grape::InArchive>> ToDataframe(
+      const grape::CommSpec& comm_spec,
+      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
+      const std::pair<std::string, std::string>& range) override {
+    auto arc = std::make_unique<grape::InArchive>();
+    return arc;
+  }
+
+  bl::result<vineyard::ObjectID> ToVineyardTensor(
+      const grape::CommSpec& comm_spec, vineyard::Client& client,
+      const LabeledSelector& selector,
+      const std::pair<std::string, std::string>& range) override {
+    return vineyard::InvalidObjectID();
+  }
+
+  bl::result<vineyard::ObjectID> ToVineyardDataframe(
+      const grape::CommSpec& comm_spec, vineyard::Client& client,
+      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
+      const std::pair<std::string, std::string>& range) override {
+    return vineyard::InvalidObjectID();
+  }
+
+  bl::result<std::map<
+      label_id_t,
+      std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>>
+  ToArrowArrays(const grape::CommSpec& comm_spec,
+                const std::vector<std::pair<std::string, LabeledSelector>>&
+                    selectors) override {
+    std::map<std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
+        arrow_arrays;
+    return arrow_arrays;
+  }
+
+ private:
+  std::shared_ptr<IFragmentWrapper> frag_wrapper_;
+  std::shared_ptr<context_t> ctx_;
 };
 }  // namespace grape
 

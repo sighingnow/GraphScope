@@ -214,6 +214,44 @@ class ILabeledVertexPropertyContextWrapper : public IContextWrapper {
 };
 
 /**
+ * @brief A base class for LabeledVertexPropertyContext. Compared with
+ * ILabeledVertexDataContextWrapper, columns can be added at runtime.
+ */
+class IJavaPIEPropertyDefaultContextWrapper : public IContextWrapper {
+  using label_id_t = vineyard::property_graph_types::LABEL_ID_TYPE;
+
+ public:
+  explicit IJavaPIEPropertyDefaultContextWrapper(const std::string& id)
+      : IContextWrapper(id) {}
+
+  virtual bl::result<std::unique_ptr<grape::InArchive>> ToNdArray(
+      const grape::CommSpec& comm_spec, const LabeledSelector& selector,
+      const std::pair<std::string, std::string>& range) = 0;
+
+  virtual bl::result<std::unique_ptr<grape::InArchive>> ToDataframe(
+      const grape::CommSpec& comm_spec,
+      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
+      const std::pair<std::string, std::string>& range) = 0;
+
+  virtual bl::result<vineyard::ObjectID> ToVineyardTensor(
+      const grape::CommSpec& comm_spec, vineyard::Client& client,
+      const LabeledSelector& selector,
+      const std::pair<std::string, std::string>& range) = 0;
+
+  virtual bl::result<vineyard::ObjectID> ToVineyardDataframe(
+      const grape::CommSpec& comm_spec, vineyard::Client& client,
+      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
+      const std::pair<std::string, std::string>& range) = 0;
+
+  virtual bl::result<std::map<
+      label_id_t,
+      std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>>
+  ToArrowArrays(const grape::CommSpec& comm_spec,
+                const std::vector<std::pair<std::string, LabeledSelector>>&
+                    selectors) = 0;
+};
+
+/**
  * @brief An abstract ContextWrapper for the data not assigned to vertex/edges.
  */
 class ITensorContextWrapper : public IContextWrapper {
