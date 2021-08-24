@@ -18,7 +18,7 @@ limitations under the License.
 
 #include <utility>
 
-#include "core/app/java/java_default_app_base.h"
+#include "core/app/java/java_default_property_app_base.h"
 #include "grape/grape.h"
 #include "grape/types.h"
 #include "java_pie/java_pie_property_default_context.h"
@@ -32,16 +32,18 @@ namespace grape {
  */
 template <typename FRAG_T>
 class JavaPIEPropertyDefaultApp
-    : public JavaDefaultAppBase<FRAG_T, JavaPIEPropertyDefaultContext<FRAG_T>> {
+    : public JavaDefaultPropertyAppBase<FRAG_T,
+                                        JavaPIEPropertyDefaultContext<FRAG_T>> {
  public:
   // specialize the templated worker.
-  INSTALL_JAVA_DEFAULT_WORKER(JavaPIEPropertyDefaultApp<FRAG_T>,
-                              JavaPIEPropertyDefaultContext<FRAG_T>, FRAG_T)
+  INSTALL_JAVA_DEFAULT_PROPERTY_WORKER(JavaPIEPropertyDefaultApp<FRAG_T>,
+                                       JavaPIEPropertyDefaultContext<FRAG_T>,
+                                       FRAG_T)
   using vertex_t = typename fragment_t::vertex_t;
   using vid_t = typename fragment_t::vid_t;
   using oid_t = typename fragment_t::oid_t;
-  //using vdata_t = typename fragment_t::vdata_t;
-  //using edata_t = typename fragment_t::edata_t;
+  // using vdata_t = typename fragment_t::vdata_t;
+  // using edata_t = typename fragment_t::edata_t;
 
  public:
   void PEval(const fragment_t& frag, context_t& ctx,

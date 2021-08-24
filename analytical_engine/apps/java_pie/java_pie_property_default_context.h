@@ -24,9 +24,9 @@ limitations under the License.
 #include <map>
 #include <vector>
 //#include "core/context/i_context.h"
-#include "core/config.h"
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
+#include "core/config.h"
 #include "core/context/java_context_base.h"
 #include "core/object/i_fragment_wrapper.h"
 #include "core/parallel/property_message_manager.h"
@@ -77,8 +77,8 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   using fragment_t = FRAG_T;
   using oid_t = typename FRAG_T::oid_t;
   using vid_t = typename FRAG_T::vid_t;
-  //using vdata_t = typename FRAG_T::vdata_t;
-  //using edata_t = typename FRAG_T::edata_t;
+  // using vdata_t = typename FRAG_T::vdata_t;
+  // using edata_t = typename FRAG_T::edata_t;
 
   JavaPIEPropertyDefaultContext(const FRAG_T& fragment)
       : _app_class_name(NULL),
@@ -112,8 +112,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   //           std::string& frag_name, std::string& app_class_name,
   //           std::string& app_context_name, std::vector<std::string>& args) {
   // Instead of calling multiple params, wo pack it into a json string
-  void Init(gs::PropertyMessageManager& messages,
-            std::string& params) {
+  void Init(gs::PropertyMessageManager& messages, std::string& params) {
     if (params.empty()) {
       LOG(ERROR) << "no args received";
       return;
@@ -321,7 +320,8 @@ class JavaPIEPropertyDefaultContextWrapper
   ToArrowArrays(const grape::CommSpec& comm_spec,
                 const std::vector<std::pair<std::string, gs::LabeledSelector>>&
                     selectors) override {
-    std::map<label_id_t, std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
+    std::map<label_id_t,
+             std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
         arrow_arrays;
     return arrow_arrays;
   }
