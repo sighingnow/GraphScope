@@ -36,7 +36,7 @@ template <typename FRAG_T, typename CONTEXT_T>
 class JavaDefaultPropertyAppBase;
 
 template <typename APP_T>
-class JavaDefaulPropertytWorker {
+class JavaDefaultPropertyWorker {
   static_assert(
       std::is_base_of<JavaDefaultPropertyAppBase<typename APP_T::fragment_t,
                                                  typename APP_T::context_t>,
@@ -52,11 +52,11 @@ class JavaDefaulPropertytWorker {
   static_assert(check_app_fragment_consistency<APP_T, fragment_t>(),
                 "The loaded graph is not valid for application");
 
-  JavaDefaulPropertytWorker(std::shared_ptr<APP_T> app,
+  JavaDefaultPropertyWorker(std::shared_ptr<APP_T> app,
                             std::shared_ptr<fragment_t> graph)
       : app_(app), context_(std::make_shared<context_t>(*graph)) {}
 
-  virtual ~JavaDefaulPropertytWorker() {}
+  virtual ~JavaDefaultPropertyWorker() {}
 
   void Init(const CommSpec& comm_spec,
             const grape::ParallelEngineSpec& pe_spec =
@@ -68,7 +68,7 @@ class JavaDefaulPropertytWorker {
     comm_spec_ = comm_spec;
     MPI_Barrier(comm_spec_.comm());
     // TODO: remove graph parameter
-    messages_.Init(comm_spec_.comm(), std::make_shared<fragment_t>(graph));
+    messages_.Init(comm_spec_.comm());
 
     InitParallelEngine(app_, pe_spec);
     grape::InitCommunicator(app_, comm_spec_.comm());

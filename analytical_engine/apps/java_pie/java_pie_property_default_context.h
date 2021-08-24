@@ -112,7 +112,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   //           std::string& frag_name, std::string& app_class_name,
   //           std::string& app_context_name, std::vector<std::string>& args) {
   // Instead of calling multiple params, wo pack it into a json string
-  void Init(gs::PropertyMessageManager& messages, std::string& params) {
+  void Init(gs::PropertyMessageManager& messages, const std::string& params) {
     if (params.empty()) {
       LOG(ERROR) << "no args received";
       return;
