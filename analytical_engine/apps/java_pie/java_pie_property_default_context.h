@@ -22,7 +22,7 @@ limitations under the License.
 #include <iomanip>
 #include <limits>
 #include <vector>
-#include "context/java_context_base.h"
+#include "core/context/java_context_base.h"
 #include "core/parallel/property_message_manager.h"
 #include "java_pie/javasdk.h"
 namespace grape {
@@ -96,7 +96,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         .append(">");
   }
 
-  void Init(const FRAG_T& frag, PropertyMessageManager& messages,
+  void Init(const FRAG_T& frag, gs::PropertyMessageManager& messages,
             std::string& frag_name, std::string& app_class_name,
             std::string& app_context_name, std::vector<std::string>& args) {
     JNIEnvMark m;

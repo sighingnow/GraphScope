@@ -47,7 +47,7 @@
 // #else
 // #error "Missing macro _APP_TYPE or _APP_HEADER"
 // #endif
-#define APP_TYPE grape::JavaPIEDefaultApp<_GRAPH_TYPE>
+#define _APP_TYPE grape::JavaPIEDefaultApp<_GRAPH_TYPE>
 
 typedef struct worker_handler {
   std::shared_ptr<typename _APP_TYPE::worker_t> worker;

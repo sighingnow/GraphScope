@@ -19,7 +19,7 @@ limitations under the License.
 #include <mpi.h>
 
 #include "grape/config.h"
-#include "parallel/java_messages.h"
+#include "core/parallel/java_messages.h"
 #include "grape/parallel/message_manager_base.h"
 
 namespace grape {
