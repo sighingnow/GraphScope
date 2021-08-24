@@ -23,6 +23,7 @@
 #include "grape/app/vertex_data_context.h"
 #include "grape/app/void_context.h"
 
+#include "apps/java_pie/java_pie_property_default_context.h"
 #include "core/context/i_context.h"
 #include "core/context/labeled_vertex_property_context.h"
 #include "core/context/tensor_context.h"
@@ -147,6 +148,23 @@ struct CtxWrapperBuilder<CTX_T, typename std::enable_if<is_base_of_template<
 
     return std::make_shared<gs::TensorContextWrapper<_GRAPH_TYPE, data_t>>(
         id, frag_wrapper, ctx);
+  }
+};
+
+/**
+ * @brief A specialized CtxWrapperBuilder for JavaPropertyPIEctx
+ * @tparam CTX_T
+ */
+template <typename CTX_T>
+struct CtxWrapperBuilder<
+    CTX_T, typename std::enable_if<is_base_of_template<
+               CTX_T, JavaPIEPropertyDefaultContext>::value>::type> {
+  static std::shared_ptr<gs::IContextWrapper> build(
+      const std::string& id, std::shared_ptr<IFragmentWrapper> frag_wrapper,
+      std::shared_ptr<CTX_T> ctx) {
+    return std::make_shared<
+        gs::JavaPIEPropertyDefaultContextWrapper<_GRAPH_TYPE>>(id, frag_wrapper,
+                                                               ctx);
   }
 };
 }  // namespace gs
