@@ -33,7 +33,6 @@
 #include "core/context/selector.h"
 #include "core/error.h"
 #include "core/object/gs_object.h"
-#include "core/object/i_fragment_wrapper.h"
 #include "core/server/rpc_utils.h"
 
 namespace gs {
