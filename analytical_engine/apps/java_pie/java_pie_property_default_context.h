@@ -29,6 +29,7 @@ limitations under the License.
 #include "core/parallel/property_message_manager.h"
 #include "java_pie/javasdk.h"
 #include "vineyard/client/client.h"
+#include "vineyard/graph/fragment/fragment_traits.h"
 #define CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT "java_pie_property_default"
 namespace grape {
 
