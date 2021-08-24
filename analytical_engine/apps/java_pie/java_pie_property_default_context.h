@@ -23,7 +23,8 @@ limitations under the License.
 #include <limits>
 #include <map>
 #include <vector>
-#include "core/context/i_context.h"
+//#include "core/context/i_context.h"
+#include "core/config.h"
 #include "core/context/java_context_base.h"
 #include "core/object/i_fragment_wrapper.h"
 #include "core/parallel/property_message_manager.h"
@@ -229,7 +230,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
 
 template <typename FRAG_T>
 class JavaPIEPropertyDefaultContextWrapper
-    : public IJavaPIEPropertyDefaultContextWrapper {
+    : public gs::IJavaPIEPropertyDefaultContextWrapper {
   using fragment_t = FRAG_T;
   using label_id_t = typename fragment_t::label_id_t;
   using prop_id_t = typename fragment_t::prop_id_t;
@@ -241,9 +242,9 @@ class JavaPIEPropertyDefaultContextWrapper
 
  public:
   JavaPIEPropertyDefaultContextWrapper(
-      const std::string& id, std::shared_ptr<IFragmentWrapper> frag_wrapper,
+      const std::string& id, std::shared_ptr<gs::IFragmentWrapper> frag_wrapper,
       std::shared_ptr<context_t> context)
-      : IJavaPIEPropertyDefaultContextWrapper(id),
+      : gs::IJavaPIEPropertyDefaultContextWrapper(id),
         frag_wrapper_(std::move(frag_wrapper)),
         ctx_(std::move(context)) {}
 
@@ -251,51 +252,51 @@ class JavaPIEPropertyDefaultContextWrapper
     return CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT;
   }
 
-  std::shared_ptr<IFragmentWrapper> fragment_wrapper() override {
+  std::shared_ptr<gs::IFragmentWrapper> fragment_wrapper() override {
     return frag_wrapper_;
   }
-  bl::result<std::unique_ptr<grape::InArchive>> ToNdArray(
-      const grape::CommSpec& comm_spec, const LabeledSelector& selector,
+  gs::bl::result<std::unique_ptr<grape::InArchive>> ToNdArray(
+      const grape::CommSpec& comm_spec, const gs::LabeledSelector& selector,
       const std::pair<std::string, std::string>& range) override {
     auto arc = std::make_unique<grape::InArchive>();
     return arc;
   }
 
-  bl::result<std::unique_ptr<grape::InArchive>> ToDataframe(
+  gs::bl::result<std::unique_ptr<grape::InArchive>> ToDataframe(
       const grape::CommSpec& comm_spec,
-      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
+      const std::vector<std::pair<std::string, gs::LabeledSelector>>& selectors,
       const std::pair<std::string, std::string>& range) override {
     auto arc = std::make_unique<grape::InArchive>();
     return arc;
   }
 
-  bl::result<vineyard::ObjectID> ToVineyardTensor(
+  gs::bl::result<vineyard::ObjectID> ToVineyardTensor(
       const grape::CommSpec& comm_spec, vineyard::Client& client,
-      const LabeledSelector& selector,
+      const gs::LabeledSelector& selector,
       const std::pair<std::string, std::string>& range) override {
     return vineyard::InvalidObjectID();
   }
 
-  bl::result<vineyard::ObjectID> ToVineyardDataframe(
+  gs::bl::result<vineyard::ObjectID> ToVineyardDataframe(
       const grape::CommSpec& comm_spec, vineyard::Client& client,
-      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
+      const std::vector<std::pair<std::string, gs::LabeledSelector>>& selectors,
       const std::pair<std::string, std::string>& range) override {
     return vineyard::InvalidObjectID();
   }
 
-  bl::result<std::map<
+  gs::bl::result<std::map<
       label_id_t,
       std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>>
   ToArrowArrays(const grape::CommSpec& comm_spec,
-                const std::vector<std::pair<std::string, LabeledSelector>>&
+                const std::vector<std::pair<std::string, gs::LabeledSelector>>&
                     selectors) override {
-    std::map<std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
+    std::map<label_id_t, std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
         arrow_arrays;
     return arrow_arrays;
   }
 
  private:
-  std::shared_ptr<IFragmentWrapper> frag_wrapper_;
+  std::shared_ptr<gs::IFragmentWrapper> frag_wrapper_;
   std::shared_ptr<context_t> ctx_;
 };
 }  // namespace grape

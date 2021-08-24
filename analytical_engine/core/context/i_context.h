@@ -34,6 +34,7 @@
 #include "core/error.h"
 #include "core/object/gs_object.h"
 #include "core/server/rpc_utils.h"
+#include "core/object/i_fragment_wrapper.h"
 
 namespace gs {
 class IFragmentWrapper;
