@@ -18,7 +18,7 @@ limitations under the License.
 
 #include <utility>
 
-#include "app/java/java_default_app_base.h"
+#include "core/app/java/java_default_app_base.h"
 #include "grape/grape.h"
 #include "grape/types.h"
 #include "java_pie/java_pie_property_default_context.h"

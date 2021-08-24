@@ -19,14 +19,14 @@
 #include <vector>
 
 #include "alibaba-ffi.h"
-#include "fragment/java_immutable_edgecut_fragment.h"
+#include "core/fragment/java_immutable_edgecut_fragment.h"
+#include "core/loader/java_immutable_edgecut_fragment_loader.h"
 #include "grape/grape.h"
 #include "grape/types.h"
 #include "grape/util.h"
 #include "java_pie/java_pie_default_app.h"
 #include "java_pie/java_pie_parallel_app.h"
 #include "java_pie/javasdk.h"
-#include "loader/java_immutable_edgecut_fragment_loader.h"
 // #define USE_X
 namespace grape {
 

@@ -19,9 +19,9 @@ limitations under the License.
 #include <memory>
 
 // #include "grape/parallel/java_default_message_manager.h"
+#include "core/parallel/java_default_message_manager.h"
+#include "core/worker/java_default_worker.h"
 #include "grape/types.h"
-#include "parallel/java_default_message_manager.h"
-#include "worker/java_default_worker.h"
 namespace grape {
 
 template <typename FRAG_T, typename CONTEXT_T>

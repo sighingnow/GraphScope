@@ -21,7 +21,7 @@ limitations under the License.
 #include <queue>
 #include <utility>
 
-#include "app/java/java_parallel_app_base.h"
+#include "core/app/java/java_parallel_app_base.h"
 #include "grape/types.h"
 #include "java_pie/java_pie_parallel_context.h"
 namespace grape {

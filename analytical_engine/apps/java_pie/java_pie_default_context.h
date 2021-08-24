@@ -22,9 +22,9 @@ limitations under the License.
 #include <iomanip>
 #include <limits>
 #include <vector>
-#include "context/java_context_base.h"
+#include "core/context/java_context_base.h"
+#include "core/parallel/java_default_message_manager.h"
 #include "java_pie/javasdk.h"
-#include "parallel/java_default_message_manager.h"
 namespace grape {
 
 /**

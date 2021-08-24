@@ -170,7 +170,6 @@ elseif (JAVA_PIE_APP)
                                     ${ANALYTICAL_ENGINE_FRAME_DIR}/java_pie_app_frame.cc)
     target_compile_definitions(${FRAME_NAME} PRIVATE _VD_TYPE=$_vd_type
                     _MD_TYPE=$_md_type
-                    _MODULE_NAME=$_module_name
                     _GRAPH_TYPE=$_graph_type
                     _GRAPH_HEADER=$_graph_header)
     target_link_libraries(${FRAME_NAME} ${MPI_CXX_LIBRARIES}

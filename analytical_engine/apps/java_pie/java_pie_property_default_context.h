@@ -23,8 +23,8 @@ limitations under the License.
 #include <limits>
 #include <vector>
 #include "context/java_context_base.h"
+#include "core/parallel/property_message_manager.h"
 #include "java_pie/javasdk.h"
-#include "parallel/property_message_manager.h"
 namespace grape {
 
 /**
