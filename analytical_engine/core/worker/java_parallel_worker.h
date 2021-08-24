@@ -26,6 +26,8 @@ limitations under the License.
 #include "core/parallel/java_parallel_message_manager.h"
 #include "grape/communication/communicator.h"
 #include "grape/config.h"
+#include "grape/parallel/parallel_engine.h"
+#include "grape/worker/comm_spec.h"
 // #include "grape/parallel/parallel_engine.h"
 #include "grape/worker/comm_spec.h"
 
@@ -62,7 +64,8 @@ class JavaParallelWorker {
   virtual ~JavaParallelWorker() {}
 
   void Init(const CommSpec& comm_spec,
-            const ParallelEngineSpec& pe_spec = DefaultParallelEngineSpec()) {
+            const grape::ParallelEngineSpec& pe_spec =
+                grape::DefaultParallelEngineSpec()) {
     // prepare for the query
     graph_->PrepareToRunApp(APP_T::message_strategy, APP_T::need_split_edges);
 
