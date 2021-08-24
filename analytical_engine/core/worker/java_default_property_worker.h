@@ -47,7 +47,7 @@ class JavaDefaulPropertytWorker {
   using fragment_t = typename APP_T::fragment_t;
   using context_t = typename APP_T::context_t;
 
-  using message_manager_t = gs::PropertyMessageManager<fragment_t>;
+  using message_manager_t = gs::PropertyMessageManager;
 
   static_assert(check_app_fragment_consistency<APP_T, fragment_t>(),
                 "The loaded graph is not valid for application");

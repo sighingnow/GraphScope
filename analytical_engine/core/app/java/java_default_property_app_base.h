@@ -32,7 +32,7 @@ class JavaDefaultPropertyAppBase {
   static constexpr MessageStrategy message_strategy =
       MessageStrategy::kAlongOutgoingEdgeToOuterVertex;
 
-  using message_manager_t = gs::PropertyMessageManager<FRAG_T>;
+  using message_manager_t = gs::PropertyMessageManager;
 
   JavaDefaultPropertyAppBase() = default;
   virtual ~JavaDefaultPropertyAppBase() = default;
@@ -69,7 +69,7 @@ class JavaDefaultPropertyAppBase {
  public:                                                               \
   using fragment_t = FRAG_T;                                           \
   using context_t = CONTEXT_T;                                         \
-  using message_manager_t = gs::PropertyMessageManager<FRAG_T>;        \
+  using message_manager_t = gs::PropertyMessageManager;                \
   using worker_t = grape::JavaDefaultPropertyWorker<APP_T>;            \
   virtual ~APP_T() {}                                                  \
   static std::shared_ptr<worker_t> CreateWorker(                       \
