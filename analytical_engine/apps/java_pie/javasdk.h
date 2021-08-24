@@ -64,6 +64,8 @@ bool InitWellKnownClasses(JNIEnv* env) {
 JavaVM* CreateJavaVM() {
   char *p, *q;
   char* jvm_opts = getenv("JVM_OPTS");
+  std::string jvm_opts_str = jvm_opts;
+  LOG(INFO) << "jvm opts str " << jvm_opts_str;
   if (jvm_opts == NULL)
     return NULL;
 

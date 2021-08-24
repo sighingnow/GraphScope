@@ -319,6 +319,7 @@ endmacro()
 
 install_gsa_binary(grape_engine)
 install_gsa_binary(gs_proto)
+install_gsa_binary(run_java_app_preprocess)
 
 install_gsa_headers("${PROJECT_SOURCE_DIR}/apps")
 install_gsa_headers("${PROJECT_SOURCE_DIR}/benchmarks")

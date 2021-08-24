@@ -41,6 +41,7 @@ from io import BytesIO
 from queue import Empty as EmptyQueue
 from queue import Queue
 from string import Template
+from pathlib import Path
 
 import yaml
 from graphscope.framework import utils
@@ -71,12 +72,14 @@ ANALYTICAL_ENGINE_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "build", "grape_en
 JAVA_APP_PREPROCESSER = os.path.join(ANALYTICAL_ENGINE_HOME, "build", "run_java_app_preprocess")
 JAVA_APP_CONF_PATH = os.path.join(WORKSPACE, "java_pie.conf")
 JAVA_APP_FFI_SOURCE_PATH_BASE = os.path.join(WORKSPACE, "gs-ffi")
-M2_REPO_PATH = "~/.m2/repository/com/alibaba/grape"
+M2_REPO_PATH = os.path.join(str(Path.home()), ".m2/repository/com/alibaba/grape")
+#GRAPE_DEMO_JAR=os.path.join(M2_REPO_PATH, "grape-demo/0.1/grape-demo-0.1-jar-with-dependencies.jar")
 GRAPE_PROCESSOR_JAR=os.path.join(M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-jar-with-dependencies.jar")
 GRAPE_SDK_JAR=os.path.join(M2_REPO_PATH, "grape-sdk/0.1/grape-sdk-0.1-jar-with-dependencies.jar")
 if not os.path.isfile(ANALYTICAL_ENGINE_PATH):
     ANALYTICAL_ENGINE_HOME = "/usr/local/bin"
     ANALYTICAL_ENGINE_PATH = "/usr/local/bin/grape_engine"
+    JAVA_APP_PREPROCESSER = "/usr/local/bin/run_java_app_preprocess"
 TEMPLATE_DIR = os.path.join(COORDINATOR_HOME, "gscoordinator", "template")
 BUILTIN_APP_RESOURCE_PATH = os.path.join(
     COORDINATOR_HOME, "gscoordinator", "builtin/app/builtin_app.gar"
@@ -195,7 +198,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     ]
     if app_type == "java_pie":
         #for java need to run preprocess
-        JAVA_APP_FFI_SOURCE_PATH = JAVA_APP_FFI_SOURCE_PATH_BASE + str(random.randint)
+        JAVA_APP_FFI_SOURCE_PATH = JAVA_APP_FFI_SOURCE_PATH_BASE + str(random.randint(0, 9223372036854775807))
         cmake_commands += ["-DJAVA_PIE_APP=True", "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
         java_codegen_commands = [
             JAVA_APP_PREPROCESSER,
@@ -203,23 +206,25 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
             java_jar_path,
             JAVA_APP_CONF_PATH, # actually not used.
             JAVA_APP_FFI_SOURCE_PATH, # TODO: implement this in java
+            "vfile",
+            "efile",
         ]
         java_env=os.environ.copy()
-        PRE_CP = "{}:{}:{}".format(java_jar_path, GRAPE_PROCESSOR_JAR, GRAPE_SDK_JAR)
+        PRE_CP = "./{}:{}:{}".format(java_jar_path,  GRAPE_SDK_JAR, GRAPE_PROCESSOR_JAR)
         java_env["JVM_OPTS"] = "-Djava.class.path={}".format(PRE_CP)
-        logger.info(" ".join(java_codegen_commands) , java_env["JVM_OPTS"])
+        logger.info("%s, %s", " ".join(java_codegen_commands) , str(java_env["JVM_OPTS"]))
         java_codegen_process = subprocess.Popen(
             java_codegen_commands,
-            java_env,
+            env=java_env,
             universal_newlines=True,
             encoding="utf-8",
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         java_codegen_stderr_watcher = PipeWatcher(java_codegen_process.stderr, sys.stdout)
         setattr(java_codegen_process, "stderr_watcher", java_codegen_stderr_watcher)
         java_codegen_process.wait()
-        logger.info("java codegen complete, output to {}".format(java_codegen_commands))
+        logger.info("java codegen complete, output to {}".format(JAVA_APP_FFI_SOURCE_PATH))
         #TODO: current we don't send java_app.conf, pending this to the future
     elif app_type != "cpp_pie":
         if app_type == "cython_pregel":
@@ -1053,8 +1058,8 @@ def _codegen_app_info(attr, meta_file: str):
             if app_type == "java_pie":
                 return (
                     app_type, 
-                    app["src"],#cxx header
-                    "{}<_GRAPH_TYPE>".format(app["class_name"]), #cxx class name
+                    "",#cxx header
+                    "", #cxx class name
                     app["vd_type"],  # vd_type,
                     app["md_type"],  # md_type
                     None,  # pregel combine

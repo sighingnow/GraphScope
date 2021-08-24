@@ -54,12 +54,13 @@ void SetupEnv(const CommSpec& comm_spec) {
 
   char* jvm_opts = getenv("JVM_OPTS");
 
-  char setStr[32000];
+  char setStr[320010];
   if (jvm_opts == NULL || *jvm_opts == '\0') {
     snprintf(setStr, sizeof(setStr), "JVM_OPTS=%s", kvPair);
     putenv(setStr);
   } else {
     std::string jvmOptsStr = jvm_opts;
+    LOG(INFO) << "jvm opts: " <<jvmOptsStr;
     size_t pos = 0;
     std::string token;
     std::string delimiter = " ";
@@ -142,6 +143,19 @@ void preprocess(int argc, char** argv) {
   // args 3: conf path
 
   if (m.env()) {
+    jclass system_class = getMainClass(m.env(), "java/lang/System");
+    if (system_class == NULL){
+        LOG(ERROR) << "system class no found";
+    }
+    jmethodID get_property_method = m.env()->GetStaticMethodID(system_class, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
+    if (get_property_method == NULL){
+        LOG(ERROR) << "get property no found";
+    }
+    std::string class_path_name = "java.class.path";
+    jstring class_path_str = m.env()->NewStringUTF(class_path_name.c_str());
+    jstring jjres = (jstring) m.env()->CallStaticObjectMethod(system_class, get_property_method, class_path_str);
+    std::string res = jstring2string(m.env(), jjres);
+    LOG(INFO) << "java.class.path: " << res;
     std::vector<std::string> args;
     for (int i = 5; i < argc; ++i) {
       std::string v = argv[i];
