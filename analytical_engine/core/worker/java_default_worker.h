@@ -53,20 +53,21 @@ class JavaDefaultWorker {
 
   JavaDefaultWorker(std::shared_ptr<APP_T> app,
                     std::shared_ptr<fragment_t> graph)
-      : app_(app), graph_(graph) {}
+      : app_(app), context_(std::make_shared<context_t>(*graph)) {}
 
   virtual ~JavaDefaultWorker() {}
 
   void Init(const CommSpec& comm_spec,
             const grape::ParallelEngineSpec& pe_spec =
                 grape::DefaultParallelEngineSpec()) {
+    auto& graph = const_cast<fragment_t&>(context_->fragment());
     // prepare for the query
-    graph_->PrepareToRunApp(APP_T::message_strategy, APP_T::need_split_edges);
+    graph.PrepareToRunApp(APP_T::message_strategy, APP_T::need_split_edges);
 
     comm_spec_ = comm_spec;
     MPI_Barrier(comm_spec_.comm());
     // TODO: remove graph parameter
-    messages_.Init(comm_spec_.comm(), graph_);
+    messages_.Init(comm_spec_.comm(), std::make_shared<fragment_t>(graph));
 
     InitParallelEngine(app_, pe_spec);
     grape::InitCommunicator(app_, comm_spec_.comm());
@@ -76,10 +77,10 @@ class JavaDefaultWorker {
 
   template <class... Args>
   void Query(Args&&... args) {
+    auto& graph = context_->fragment();
     MPI_Barrier(comm_spec_.comm());
 
-    context_ = std::make_shared<context_t>();
-    context_->Init(*graph_, messages_, std::forward<Args>(args)...);
+    context_->Init(messages_, std::forward<Args>(args)...);
     if (comm_spec_.worker_id() == kCoordinatorRank) {
       VLOG(1) << "[Coordinator]: Finished Init context";
     }
@@ -90,7 +91,7 @@ class JavaDefaultWorker {
 
     messages_.StartARound();
     double peval_time = -GetCurrentTime();
-    app_->PEval(*graph_, *context_, messages_);
+    app_->PEval(graph, *context_, messages_);
     peval_time += GetCurrentTime();
 
     messages_.FinishARound();
@@ -111,7 +112,7 @@ class JavaDefaultWorker {
       start_around += GetCurrentTime();
 
       inc_eval_time -= GetCurrentTime();
-      app_->IncEval(*graph_, *context_, messages_);
+      app_->IncEval(graph, *context_, messages_);
       inc_eval_time += GetCurrentTime();
 
       finish_around -= GetCurrentTime();
@@ -138,7 +139,6 @@ class JavaDefaultWorker {
 
  private:
   std::shared_ptr<APP_T> app_;
-  std::shared_ptr<fragment_t> graph_;
   std::shared_ptr<context_t> context_;
   message_manager_t messages_;
 

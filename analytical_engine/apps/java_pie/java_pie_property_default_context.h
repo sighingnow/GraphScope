@@ -74,18 +74,21 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   }
 
  public:
+  using fragment_t = FRAG_T;
   using oid_t = typename FRAG_T::oid_t;
   using vid_t = typename FRAG_T::vid_t;
   //using vdata_t = typename FRAG_T::vdata_t;
   //using edata_t = typename FRAG_T::edata_t;
 
-  JavaPIEPropertyDefaultContext()
+  JavaPIEPropertyDefaultContext(const FRAG_T& fragment)
       : _app_class_name(NULL),
         _context_class_name(NULL),
         _app_object(NULL),
         _context_object(NULL),
         _frag_object(NULL),
-        _mm_object(NULL) {}
+        _mm_object(NULL),
+        fragment_(fragment) {}
+  const fragment_t& fragment() { return fragment_; }
 
   virtual ~JavaPIEPropertyDefaultContext() {
     delete[] _app_class_name;
@@ -182,8 +185,9 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       //   }
 
       _java_frag_type_name = frag_name;
-      jobject fragObject = createFFIPointerObject(
-          env, _java_frag_type_name.c_str(), reinterpret_cast<jlong>(&frag));
+      jobject fragObject =
+          createFFIPointerObject(env, _java_frag_type_name.c_str(),
+                                 reinterpret_cast<jlong>(&fragment_));
       if (fragObject == NULL) {
         LOG(ERROR) << "Cannot create fragment Java object";
         return;
@@ -252,6 +256,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   jobject _context_object;
   jobject _frag_object;
   jobject _mm_object;
+  const fragment_t& fragment_;
 };
 
 template <typename FRAG_T>
