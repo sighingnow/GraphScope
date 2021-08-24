@@ -201,37 +201,6 @@ class AppInvoker {
   }
 };
 
-/**
- * @brief Specialization for java context
- *
- * @tparam APP_T The App class
- */
-template <>
-class AppInvoker<grape::JavaPIEPropertyDefaultContext> {
-  using worker_t = typename APP_T::worker_t;
-  using context_t = typename APP_T::context_t;
-  using context_init_func_t = decltype(&context_t::Init);
-
-  template <std::size_t... I>
-  static void query_impl(std::shared_ptr<worker_t> worker,
-                         const rpc::QueryArgs& query_args,
-                         std::index_sequence<I...>) {
-    worker->Query(
-        ArgsUnpacker<typename std::remove_const<typename std::remove_reference<
-            typename ArgTypeAt<I + 2, context_init_func_t>::type>::type>::
-                         type>::unpack(query_args.args(I))...);
-  }
-
- public:
-  static bl::result<void> Query(std::shared_ptr<worker_t> worker,
-                                const rpc::QueryArgs& query_args) {
-    constexpr std::size_t args_num = ArgsNum<context_init_func_t>::value - 2;
-    CHECK_OR_RAISE(args_num == query_args.args_size());
-    query_impl(worker, query_args, std::make_index_sequence<args_num>());
-    return {};
-  }
-};
-
 }  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_APP_APP_INVOKER_H_
