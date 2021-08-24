@@ -24,8 +24,9 @@ limitations under the License.
 #include <map>
 #include <vector>
 //#include "core/context/i_context.h"
-#include <boost/algorithm/string/classification.hpp>  // Include boost::for is_any_of
-#include <boost/algorithm/string/split.hpp>  // Include for boost::split
+#include "boost/algorithm/string/classification.hpp"  // Include boost::for is_any_of
+#include "boost/algorithm/string/split.hpp"  // Include for boost::split
+#include "boost/property_tree/exceptions.hpp"
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "core/config.h"
@@ -124,7 +125,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     ss << params;
     try {
       boost::property_tree::read_json(ss, pt);
-    } catch (ptree_error& r) {
+    } catch (boost::property_tree::ptree_error& r) {
       LOG(ERROR) << "parse json failed: " << params;
       return;
     }
@@ -141,7 +142,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     std::vector<std::string> args;
     boost::split(args, args_str, boost::is_any_of(":"),
                  boost::token_compress_on);
-    LOG(INFO) << "pass args : " << args.size(;
+    LOG(INFO) << "pass args : " << args.size();
     for (auto arg : args) {
       LOG(INFO) << arg;
     }
