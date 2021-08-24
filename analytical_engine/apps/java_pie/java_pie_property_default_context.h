@@ -67,8 +67,8 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
  public:
   using oid_t = typename FRAG_T::oid_t;
   using vid_t = typename FRAG_T::vid_t;
-  using vdata_t = typename FRAG_T::vdata_t;
-  using edata_t = typename FRAG_T::edata_t;
+  //using vdata_t = typename FRAG_T::vdata_t;
+  //using edata_t = typename FRAG_T::edata_t;
 
   JavaPIEPropertyDefaultContext()
       : _app_class_name(NULL),

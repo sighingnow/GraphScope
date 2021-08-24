@@ -40,8 +40,8 @@ class JavaPIEPropertyDefaultApp
   using vertex_t = typename fragment_t::vertex_t;
   using vid_t = typename fragment_t::vid_t;
   using oid_t = typename fragment_t::oid_t;
-  using vdata_t = typename fragment_t::vdata_t;
-  using edata_t = typename fragment_t::edata_t;
+  //using vdata_t = typename fragment_t::vdata_t;
+  //using edata_t = typename fragment_t::edata_t;
 
  public:
   void PEval(const fragment_t& frag, context_t& ctx,
