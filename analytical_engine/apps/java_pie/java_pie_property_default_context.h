@@ -25,6 +25,8 @@ limitations under the License.
 #include <vector>
 //#include "core/context/i_context.h"
 #include "core/config.h"
+#include "boost/property_tree/json_parser.hpp"
+#include "boost/property_tree/ptree.hpp"
 #include "core/context/java_context_base.h"
 #include "core/object/i_fragment_wrapper.h"
 #include "core/parallel/property_message_manager.h"
@@ -103,9 +105,33 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         .append(">");
   }
 
+  // void Init(const FRAG_T& frag, gs::PropertyMessageManager& messages,
+  //           std::string& frag_name, std::string& app_class_name,
+  //           std::string& app_context_name, std::vector<std::string>& args) {
+  // Instead of calling multiple params, wo pack it into a json string
   void Init(const FRAG_T& frag, gs::PropertyMessageManager& messages,
-            std::string& frag_name, std::string& app_class_name,
-            std::string& app_context_name, std::vector<std::string>& args) {
+            std::string& params) {
+    if (params.empty()) {
+      LOG(ERROR) << "no args received";
+      return;
+    }
+    boost::property_tree::ptree pt;
+    std::stringstream ss;
+    ss << params;
+    boost::property_tree::read_json(ss, pt);
+
+    LOG(INFO) << "received json: " << params;
+    std::string frag_name = pt.get<std::string>("frag_name");
+    LOG(INFO) << "parse frag name: " << frag_name;
+    std::string app_class_name = pt.get<std::string>("app_class_name");
+    LOG(INFO) << "parse app class name: " << app_class_name;
+    std::string app_context_name = pt.get<std::string>("app_context_name");
+    LOG(INFO) << "pass app context name: " << app_context_name;
+    std::vector<std::string> args = pt.get<std::vector<std::string>>("args");
+    LOG(INFO) << "pass args : " << args.size();
+    for (auto arg : args) {
+      LOG(INFO) << arg;
+    }
     JNIEnvMark m;
     if (m.env()) {
       JNIEnv* env = m.env();
