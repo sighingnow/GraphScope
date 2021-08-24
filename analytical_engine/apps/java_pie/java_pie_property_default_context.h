@@ -24,6 +24,8 @@ limitations under the License.
 #include <map>
 #include <vector>
 //#include "core/context/i_context.h"
+#include <boost/algorithm/string/classification.hpp>  // Include boost::for is_any_of
+#include <boost/algorithm/string/split.hpp>  // Include for boost::split
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "core/config.h"
@@ -120,7 +122,12 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     boost::property_tree::ptree pt;
     std::stringstream ss;
     ss << params;
-    boost::property_tree::read_json(ss, pt);
+    try {
+      boost::property_tree::read_json(ss, pt);
+    } catch (ptree_error& r) {
+      LOG(ERROR) << "parse json failed: " << params;
+      return;
+    }
 
     LOG(INFO) << "received json: " << params;
     std::string frag_name = pt.get<std::string>("frag_name");
@@ -129,8 +136,12 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     LOG(INFO) << "parse app class name: " << app_class_name;
     std::string app_context_name = pt.get<std::string>("app_context_name");
     LOG(INFO) << "pass app context name: " << app_context_name;
-    std::vector<std::string> args = pt.get<std::vector<std::string>>("args");
-    LOG(INFO) << "pass args : " << args.size();
+    // std::vector<std::string> args = pt.get<std::vector<std::string>>("args");
+    std::string args_str = pt.get<std::string>("args");
+    std::vector<std::string> args;
+    boost::split(args, args_str, boost::is_any_of(":"),
+                 boost::token_compress_on);
+    LOG(INFO) << "pass args : " << args.size(;
     for (auto arg : args) {
       LOG(INFO) << arg;
     }
