@@ -116,7 +116,7 @@ class JavaAppAssets(AppAssets):
     def frag_name(self):
         return  "{}<{},{}>".format(
             "vineyard::ArrowFragment",
-            "int64_t"
+            "int64_t",
             "uint64_t",
         )
 
