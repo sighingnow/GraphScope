@@ -76,6 +76,7 @@ M2_REPO_PATH = os.path.join(str(Path.home()), ".m2/repository/com/alibaba/grape"
 #GRAPE_DEMO_JAR=os.path.join(M2_REPO_PATH, "grape-demo/0.1/grape-demo-0.1-jar-with-dependencies.jar")
 GRAPE_PROCESSOR_JAR=os.path.join(M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-jar-with-dependencies.jar")
 GRAPE_SDK_JAR=os.path.join(M2_REPO_PATH, "grape-sdk/0.1/grape-sdk-0.1-jar-with-dependencies.jar")
+VINEYARD_GRAPH_JAR=os.path.join(M2_REPO_PATH, "")
 if not os.path.isfile(ANALYTICAL_ENGINE_PATH):
     ANALYTICAL_ENGINE_HOME = "/usr/local/bin"
     ANALYTICAL_ENGINE_PATH = "/usr/local/bin/grape_engine"
