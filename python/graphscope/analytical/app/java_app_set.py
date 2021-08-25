@@ -166,8 +166,8 @@ class JavaAppDagNode(AppDAGNode):
         udf_workspace = os.path.join(WORKSPACE, self._session.session_id)
         # we can not determine the compiled lib path here, so we find all possible subdirectories,
         # and add them to java.library.path
-        possible_library_directories = [s.rstrip("/") for s in glob("{}/*".format(udf_workspace))]
-        user_jar = os.path.join(udf_workspace, self._app_assets.java_jar_path)
+        possible_library_directories = [s.rstrip("/") for s in glob("{}/[!gs\-ffi]*/".format(udf_workspace))]
+        user_jar = [s.rstrip("/") for s in glob("{}/*/*.jar".format(udf_workspace))]
         ffi_target_output = os.path.join(udf_workspace, "gs-ffi", "CLASS_OUTPUT")
         performance_args = "-Dcom.alibaba.ffi.rvBuffer=2147483648 -XX:+StartAttachListener " \
                         + "-XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC " \
