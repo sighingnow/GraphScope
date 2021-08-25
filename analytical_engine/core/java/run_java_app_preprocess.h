@@ -31,16 +31,7 @@ void Init() {
     VLOG(1) << "Workers are initialized.";
   }
 }
-inline uint64_t getTotalSystemMemory() {
-  long pages = sysconf(_SC_PHYS_PAGES);
-  long page_size = sysconf(_SC_PAGE_SIZE);
-  uint64_t ret = pages * page_size;
-  LOG(INFO) << "---> getTotalSystemMemory() -> " << ret;
-  ret = ret / 1024;
-  ret = ret / 1024;
-  ret = ret / 1024;
-  return ret;
-}
+
 void SetupEnv(const CommSpec& comm_spec) {
   int systemMemory = getTotalSystemMemory();
   LOG(INFO) << "System Memory = " << systemMemory << " GB";
@@ -119,8 +110,8 @@ void set_codegen_path(std::string code_gen_path, std::string local_file_path) {
 // args 4: output path
 // args 4.. : other cmdline parameters
 void preprocess(int argc, char** argv) {
-  if (argc < 5) {
-    LOG(INFO) << "at least 4 args required, jar path and main class name, received "
+  if (argc < 4) {
+    LOG(INFO) << "at least 4 args required, jar path, main class name,conf path, output path, and others received "
               << argc;
     return;
   }
@@ -156,17 +147,25 @@ void preprocess(int argc, char** argv) {
     jstring jjres = (jstring) m.env()->CallStaticObjectMethod(system_class, get_property_method, class_path_str);
     std::string res = jstring2string(m.env(), jjres);
     LOG(INFO) << "java.class.path: " << res;
-    std::vector<std::string> args;
-    for (int i = 5; i < argc; ++i) {
-      std::string v = argv[i];
-      args.push_back(v);
-    }
+
     std::string main_class_str = argv[1];
     std::string jar_path = argv[2];
     std::string conf_path = argv[3];
     std::string ffi_output_path = argv[4];
     LOG(INFO) << "jar path" << jar_path << ", conf path " << conf_path << ", output destination:" << ffi_output_path ;
 
+
+    std::vector<std::string> args;
+    //java main class need conf path as input 
+    args.push_back(conf_path);
+    for (int i = 0; i < argc; ++i) {
+        std::string tmp = argv[i];
+        LOG(INFO) << i << " " << tmp; 
+        if (i > 4){
+            std::string v = argv[i];
+            args.push_back(v);
+        }
+    }
     jclass main_class = getMainClass(m.env(), main_class_str);
     if (main_class == NULL) {
       LOG(ERROR) << "Fail to find mainclass" + main_class_str;
