@@ -167,6 +167,5 @@ class JavaAppDagNode(AppDAGNode):
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))
         return create_context_node(context_type, self, self._graph, *args, \
            dict(jvm_runtime_opt=jvm_runtime_opt_impl, **kwargs))
-        
 
 

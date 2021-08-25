@@ -90,7 +90,8 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         _context_object(NULL),
         _frag_object(NULL),
         _mm_object(NULL),
-        fragment_(fragment) {}
+        fragment_(fragment),
+        local_num_(0) {}
   const fragment_t& fragment() { return fragment_; }
 
   virtual ~JavaPIEPropertyDefaultContext() {
@@ -110,7 +111,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         .append(_java_frag_type_name)
         .append(">");
   }
-  void SetLocalNum(int local_num) { this.local_num_ = local_num; }
+  void SetLocalNum(int local_num) { local_num_ = local_num; }
   // void Init(const FRAG_T& frag, gs::PropertyMessageManager& messages,
   //           std::string& frag_name, std::string& app_class_name,
   //           std::string& app_context_name, std::vector<std::string>& args) {
