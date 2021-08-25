@@ -110,13 +110,12 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         .append(_java_frag_type_name)
         .append(">");
   }
-
+  void SetLocalNum(int local_num) { this.local_num_ = local_num; }
   // void Init(const FRAG_T& frag, gs::PropertyMessageManager& messages,
   //           std::string& frag_name, std::string& app_class_name,
   //           std::string& app_context_name, std::vector<std::string>& args) {
   // Instead of calling multiple params, wo pack it into a json string
-  void Init(gs::PropertyMessageManager& messages, int local_num,
-            const std::string& params) {
+  void Init(gs::PropertyMessageManager& messages, const std::string& params) {
     if (params.empty()) {
       LOG(ERROR) << "no args received";
       return;
@@ -159,7 +158,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       LOG(ERROR) << " failed to set jvm opts";
     }
     // set environment variables
-    SetupEnv(local_num);
+    SetupEnv(local_num_);
 
     // create jvm instance if not exists;
     JavaVM* jvm = GetJavaVM();
@@ -288,6 +287,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   jobject _frag_object;
   jobject _mm_object;
   const fragment_t& fragment_;
+  int local_num_;
 };
 
 template <typename FRAG_T>

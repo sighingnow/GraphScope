@@ -75,14 +75,14 @@ class JavaDefaultPropertyWorker {
   }
 
   void Finalize() {}
-
   template <class... Args>
   void Query(Args&&... args) {
     auto& graph = context_->fragment();
     MPI_Barrier(comm_spec_.comm());
+    // Local num is used to reserve java memory
+    context_->SetLocalNum(comm_spec_.local_num());
 
-    context_->Init(messages_, comm_spec_.local_num(),
-                   std::forward<Args>(args)...);
+    context_->Init(messages_, std::forward<Args>(args)...);
     if (comm_spec_.worker_id() == kCoordinatorRank) {
       VLOG(1) << "[Coordinator]: Finished Init context";
     }
