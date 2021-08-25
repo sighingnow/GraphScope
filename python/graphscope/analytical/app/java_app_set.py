@@ -162,10 +162,11 @@ class JavaAppDagNode(AppDAGNode):
                         + "-XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC " \
                         + "-XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
         jvm_runtime_opt_impl = "-Djava.library.path=/usr/local/lib:/usr/lib:{} ".format(udf_workspace)\
-                        + "\-Djava.class.path={}:{}:{}:{}:{} {}"\
+                        + "-Djava.class.path={}:{}:{}:{}:{} {}"\
                          .format(ffi_target_output,  GUAVA_JAR, GRAPE_SDK_JAR, user_jar, LLVM4JNI_JAR, performance_args)
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))
-        return create_context_node(context_type, self, self._graph, *args, \
-           dict(jvm_runtime_opt=jvm_runtime_opt_impl, **kwargs))
+        kwargs_extend = dict(jvm_runtime_opt=jvm_runtime_opt_impl, **kwargs)
+        logger.info("dumping to json {}".format(json.dumps(kwargs_extend)))
+        return create_context_node(context_type, self, self._graph, json.dumps(kwargs_extend))
 
 
