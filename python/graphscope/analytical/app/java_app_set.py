@@ -22,11 +22,11 @@
 
 import json
 import logging
-from python.graphscope.framework.dag_utils import bind_app
-from python.graphscope.framework.context import create_context_node
-from python.graphscope.framework.dag import DAGNode
-from python.graphscope.framework.graph_schema import Property
-from python.graphscope.framework.app import AppDAGNode
+from graphscope.framework.dag_utils import bind_app
+from graphscope.framework.context import create_context_node
+from graphscope.framework.dag import DAGNode
+from graphscope.framework.graph_schema import Property
+from graphscope.framework.app import AppDAGNode
 from graphscope.framework.app import load_app
 import yaml
 from graphscope.framework.app import AppAssets
@@ -108,7 +108,7 @@ class JavaAppAssets(AppAssets):
     def __call__(self, graph, *args, **kwargs):
         app_ = graph.session._wrapper(JavaAppDagNode(graph, self))
         return app_(*args, **kwargs)
-    @Property
+    @property
     def java_jar_path(self):
         return self.java_jar_path_
 
@@ -161,9 +161,9 @@ class JavaAppDagNode(AppDAGNode):
         performance_args = "-Dcom.alibaba.ffi.rvBuffer=2147483648 -XX:+StartAttachListener " \
                         + "-XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC " \
                         + "-XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
-        jvm_runtime_opt_impl = "-Djava.library.path=/usr/local/lib:/usr/lib:{} "\
+        jvm_runtime_opt_impl = "-Djava.library.path=/usr/local/lib:/usr/lib:{} ".format(udf_workspace)\
                         + "\-Djava.class.path={}:{}:{}:{}:{} {}"\
-                        .format(udf_workspace, ffi_target_output,  GUAVA_JAR, GRAPE_SDK_JAR, user_jar, LLVM4JNI_JAR, performance_args)
+                         .format(ffi_target_output,  GUAVA_JAR, GRAPE_SDK_JAR, user_jar, LLVM4JNI_JAR, performance_args)
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))
         return create_context_node(context_type, self, self._graph, *args, \
            dict(jvm_runtime_opt=jvm_runtime_opt_impl, **kwargs))
