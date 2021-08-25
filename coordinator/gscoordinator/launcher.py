@@ -164,6 +164,13 @@ class LocalLauncher(Launcher):
                 subprocess.check_call(["ssh", host, "mkdir -p {}".format(dir)])
                 subprocess.check_call(["scp", path, "{}:{}".format(host, path)])
 
+    def distribute_directory(self, directory):
+        dir = os.path.dirname(directory)
+        for host in self._hosts.split(","):
+            if host not in ("localhost", "127.0.0.1"):
+                subprocess.check_call(["ssh", host, "mkdir -p {}".format(dir)])
+                subprocess.check_call(["scp", " -r", directory + "/*", "{}:{}".format(host, directory)])
+
     def poll(self):
         if self._analytical_engine_process:
             return self._analytical_engine_process.poll()

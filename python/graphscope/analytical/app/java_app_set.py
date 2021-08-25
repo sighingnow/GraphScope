@@ -20,7 +20,13 @@
 # from coordinator.gscoordinator.coordinator import DEFAULT_GS_CONFIG_FILE
 
 
-DEFAULT_GS_CONFIG_FILE = ".gs_conf.yaml"
+import json
+import logging
+from python.graphscope.framework.dag_utils import bind_app
+from python.graphscope.framework.context import create_context_node
+from python.graphscope.framework.dag import DAGNode
+from python.graphscope.framework.graph_schema import Property
+from python.graphscope.framework.app import AppDAGNode
 from graphscope.framework.app import load_app
 import yaml
 from graphscope.framework.app import AppAssets
@@ -28,9 +34,21 @@ from graphscope.framework.app import not_compatible_for
 from graphscope.framework.app import project_to_simple
 from graphscope.analytical.udf.utils import InMemoryZip
 from graphscope.analytical.udf.utils import CType
+from graphscope.framework.app import check_argument
 import os
+from pathlib import Path
 __all__ = ["JavaAppAssets"]
 
+logger = logging.getLogger("graphscope")
+
+DEFAULT_GS_CONFIG_FILE = ".gs_conf.yaml"
+WORKSPACE = "/tmp/gs"
+GRAPE_M2_REPO_PATH = os.path.join(str(Path.home()), ".m2/repository/com/alibaba/grape")
+GRAPE_PROCESSOR_JAR=os.path.join(GRAPE_M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-jar-with-dependencies.jar")
+GRAPE_SDK_JAR=os.path.join(GRAPE_M2_REPO_PATH, "grape-sdk/0.1/grape-sdk-0.1-jar-with-dependencies.jar")
+FFI_M2_REPO_PATH=os.path.join(str(Path.home()), ".m2/repository/com/alibaba/ffi")
+LLVM4JNI_JAR=os.path.join(FFI_M2_REPO_PATH, "llvm4jni-runtime/0.1/llvm4jni-runtime-0.1-jar-with-dependencies.jar")
+GUAVA_JAR=os.path.join(str(Path.home()), ".m2/repository/com/google/guava/guava/30.1.1-jre/guava-30.1.1-jre.jar")
 
 class JavaAppAssets(AppAssets):
     """Wrapper for a java jar, containing some java apps
@@ -64,6 +82,7 @@ class JavaAppAssets(AppAssets):
         tmp_jar_file = open(jar_path, 'rb')
         bytes = tmp_jar_file.read()
         garfile.append("{}".format(jar_path.split("/")[-1]), bytes)
+        self.java_jar_path_ = jar_path.split("/")[-1]
         gs_config = {
             "app": [
                 {
@@ -75,16 +94,79 @@ class JavaAppAssets(AppAssets):
                     "vd_type": vd_ctype,
                     "md_type": md_ctype,
                     "java_main_class" : java_main_class,
-                    "java_jar_path": jar_path.split("/")[-1]
+                    "java_jar_path": self.java_jar_path
                 }
             ]
         }
         garfile.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
         super().__init__("java_app_set","java_pie_property_default_context",garfile.read_bytes())
-        
     def to_gar(self, path):
         if os.path.exists(path):
             raise RuntimeError("Path exist: {}.".format(path))
         with open(path, "wb") as f:
             f.write(self.gar)
+    def __call__(self, graph, *args, **kwargs):
+        app_ = graph.session._wrapper(JavaAppDagNode(graph, self))
+        return app_(*args, **kwargs)
+    @Property
+    def java_jar_path(self):
+        return self.java_jar_path_
+
+
+class JavaAppDagNode(AppDAGNode):
+    """retrict appassets to javaAppAssets"""
+    def __init__(self, graph, app_assets: JavaAppAssets):
+        """Create an application using given :code:`gar` file, or given application
+            class name.
+
+        Args:
+            graph (:class:`GraphDAGNode`): A :class:`GraphDAGNode` instance.
+            app_assets: A :class:`AppAssets` instance.
+        """
+        self._graph = graph
+
+        self._app_assets = app_assets
+        self._session = graph.session
+        self._app_assets.is_compatible(self._graph)
+
+        self._op = bind_app(graph, self._app_assets)
+        # add op to dag
+        self._session.dag.add_op(self._app_assets.op)
+        self._session.dag.add_op(self._op)
+
+    def __call__(self, *args, **kwargs):
+        """When called, check arguments based on app type, Then do build and query.
+
+        Raises:
+            InvalidArgumentError: If app_type is None,
+                or positional argument found when app_type not `cpp_pie`.
+
+        Returns:
+            :class:`Context`: Query context, include running results of the app.
+        """
+        app_type = self._app_assets.type
+        check_argument(app_type == "java_pie", "expect java_pie app")
+        context_type = self._app_assets.context_type
+
+        if not isinstance(self._graph, DAGNode) and not self._graph.loaded():
+            raise RuntimeError("The graph is not loaded")
+        check_argument(
+                not args, "Only support using keyword arguments in cython app."
+            )
+        # set the jvm_opts as a kw
+        jvm_runtime_opt_impl = ""
+        udf_workspace = os.path.join(WORKSPACE, self._session.session_id)
+        user_jar = os.path.join(udf_workspace, self._app_assets.java_jar_path)
+        ffi_target_output = os.path.join(udf_workspace, "gs-ffi", "CLASS_OUTPUT")
+        performance_args = "-Dcom.alibaba.ffi.rvBuffer=2147483648 -XX:+StartAttachListener " \
+                        + "-XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC " \
+                        + "-XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
+        jvm_runtime_opt_impl = "-Djava.library.path=/usr/local/lib:/usr/lib:{} "\
+                        + "\-Djava.class.path={}:{}:{}:{}:{} {}"\
+                        .format(udf_workspace, ffi_target_output,  GUAVA_JAR, GRAPE_SDK_JAR, user_jar, LLVM4JNI_JAR, performance_args)
+        logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))
+        return create_context_node(context_type, self, self._graph, *args, \
+           dict(jvm_runtime_opt=jvm_runtime_opt_impl, **kwargs))
+        
+
 

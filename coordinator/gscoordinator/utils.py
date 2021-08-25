@@ -192,6 +192,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     os.chdir(app_dir)
 
     module_name = ""
+    JAVA_APP_FFI_SOURCE_PATH = ""
     cmake_commands = [
         "cmake",
         ".",
@@ -199,7 +200,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     ]
     if app_type == "java_pie":
         #for java need to run preprocess
-        JAVA_APP_FFI_SOURCE_PATH = os.path.join(app_dir, JAVA_APP_FFI_SOURCE_PATH_BASE + str(random.randint(0, 9223372036854775807)))
+        JAVA_APP_FFI_SOURCE_PATH = os.path.join(app_dir, JAVA_APP_FFI_SOURCE_PATH_BASE)
         JAVA_APP_JOB_CONF_PATH = os.path.join(app_dir, JAVA_APP_CONF_PATH_BASE)
         cmake_commands += ["-DJAVA_PIE_APP=True", "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
         java_codegen_commands = [
@@ -296,7 +297,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     make_process.wait()
     lib_path = get_lib_path(app_dir, library_name)
     assert os.path.isfile(lib_path), "Error occurs when building the frame library."
-    return lib_path
+    return lib_path, java_jar_path, JAVA_APP_FFI_SOURCE_PATH, app_type
 
 
 def compile_graph_frame(workspace: str, library_name, attr: dict, engine_config: dict):
@@ -380,7 +381,7 @@ def compile_graph_frame(workspace: str, library_name, attr: dict, engine_config:
     make_process.wait()
     lib_path = get_lib_path(library_dir, library_name)
     assert os.path.isfile(lib_path), "Error occurs when building the frame library."
-    return lib_path
+    return lib_path, None, None, None
 
 
 def op_pre_process(op, op_result_pool, key_to_op, **kwargs):  # noqa: C901

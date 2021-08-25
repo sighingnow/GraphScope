@@ -336,6 +336,33 @@ class KubernetesClusterLauncher(Launcher):
                     "engine",
                 ]
             )
+    def distribute_directory(self, directory):
+        dir = os.path.dirname(directory)
+        for pod in self._pod_name_list:
+            subprocess.check_call(
+                [
+                    "kubectl",
+                    "exec",
+                    pod,
+                    "-c",
+                    "engine",
+                    "--",
+                    "mkdir",
+                    "-p",
+                    dir,
+                ]
+            )
+            subprocess.check_call(
+                [
+                    "kubectl",
+                    "cp",
+                    "-r",
+                    directory + "/*",
+                    "{}:{}".format(pod, directory),
+                    "-c",
+                    "engine",
+                ]
+            )
 
     def _create_mars_scheduler(self):
         logger.info("Launching mars scheduler pod for GraphScope ...")
