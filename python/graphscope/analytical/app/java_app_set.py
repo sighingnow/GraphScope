@@ -68,7 +68,7 @@ class JavaAppAssets(AppAssets):
             "app": [
                 {
                     "algo": "java_app_set",
-                    "context_type": "vertex_data",
+                    "context_type": "java_pie_property_default_context",
                     "type": "java_pie",
                     "class_name": "gs::JavaPropertyApp",
                     "compatible_graph": ["vineyard::ArrowFragment"],
@@ -80,7 +80,7 @@ class JavaAppAssets(AppAssets):
             ]
         }
         garfile.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
-        super().__init__("java_app_set","vertex_data",garfile.read_bytes())
+        super().__init__("java_app_set","java_pie_property_default_context",garfile.read_bytes())
         
     def to_gar(self, path):
         if os.path.exists(path):

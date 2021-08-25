@@ -18,7 +18,7 @@ limitations under the License.
 
 #include <jni.h>
 #include <stdlib.h> /* getenv */
-
+#include <unistd.h>
 #include <queue>
 #include <utility>
 #include <vector>
@@ -59,6 +59,60 @@ bool InitWellKnownClasses(JNIEnv* env) {
   }
 
   return true;
+}
+
+inline uint64_t getTotalSystemMemory() {
+  long pages = sysconf(_SC_PHYS_PAGES);
+  long page_size = sysconf(_SC_PAGE_SIZE);
+  uint64_t ret = pages * page_size;
+  // LOG(INFO) << "---> getTotalSystemMemory() -> " << ret;
+  ret = ret / 1024;
+  ret = ret / 1024;
+  ret = ret / 1024;
+  return ret;
+}
+
+void SetupEnv(int local_num) {
+  int systemMemory = getTotalSystemMemory();
+  // LOG(INFO) << "System Memory = " << systemMemory << " GB";
+  int systemMemoryPerWorker = std::max(systemMemory / local_num, 1);
+  // LOG(INFO) << "System Memory Per Worker = " << systemMemoryPerWorker << "
+  // GB";
+  int mnPerWorker = std::max(systemMemoryPerWorker * 7 / 12, 1);
+
+  char kvPair[32000];
+  snprintf(kvPair, sizeof(kvPair), "-Xmx%dg -Xms%dg -Xmn%dg",
+           systemMemoryPerWorker, systemMemoryPerWorker, mnPerWorker);
+
+  char* jvm_opts = getenv("JVM_OPTS");
+
+  char setStr[32010];
+  if (jvm_opts == NULL || *jvm_opts == '\0') {
+    snprintf(setStr, sizeof(setStr), "JVM_OPTS=%s", kvPair);
+    putenv(setStr);
+  } else {
+    std::string jvmOptsStr = jvm_opts;
+    size_t pos = 0;
+    std::string token;
+    std::string delimiter = " ";
+    bool flag = true;
+    while ((pos = jvmOptsStr.find(delimiter)) != std::string::npos) {
+      token = jvmOptsStr.substr(0, pos);
+      jvmOptsStr.erase(0, pos + delimiter.length());
+      if (token.length() > 4) {
+        std::string prefix = token.substr(0, 4);
+        if (prefix == "-Xmx" || prefix == "-Xms" || prefix == "-Xmn") {
+          LOG(INFO) << "token = " << token;
+          flag = false;
+          break;
+        }
+      }
+    }
+    if (flag) {
+      snprintf(setStr, sizeof(setStr), "JVM_OPTS=%s %s", jvm_opts, kvPair);
+      putenv(setStr);
+    }
+  }
 }
 
 JavaVM* CreateJavaVM() {

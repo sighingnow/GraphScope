@@ -115,7 +115,8 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   //           std::string& frag_name, std::string& app_class_name,
   //           std::string& app_context_name, std::vector<std::string>& args) {
   // Instead of calling multiple params, wo pack it into a json string
-  void Init(gs::PropertyMessageManager& messages, const std::string& params) {
+  void Init(gs::PropertyMessageManager& messages, int local_num,
+            const std::string& params) {
     if (params.empty()) {
       LOG(ERROR) << "no args received";
       return;
@@ -137,15 +138,33 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     LOG(INFO) << "parse app class name: " << app_class_name;
     std::string app_context_name = pt.get<std::string>("app_context_name");
     LOG(INFO) << "pass app context name: " << app_context_name;
-    // std::vector<std::string> args = pt.get<std::vector<std::string>>("args");
+    // JVM runtime opt should consists of java.libaray.path and java.class.path
+    // maybe this should be set by the backend not user.
+    std::string jvm_runtime_opt = pt.get<std::string>("jvm_runtime_opt");
+
     std::string args_str = pt.get<std::string>("args");
     std::vector<std::string> args;
-    boost::split(args, args_str, boost::is_any_of(":"),
-                 boost::token_compress_on);
-    LOG(INFO) << "pass args : " << args.size();
-    for (auto arg : args) {
-      LOG(INFO) << arg;
+    if (args_str.size() > 0) {
+      boost::split(args, args_str, boost::is_any_of(":"),
+                   boost::token_compress_on);
+      LOG(INFO) << "parse args size : " << args.size();
+      for (auto arg : args) {
+        LOG(INFO) << arg;
+      }
     }
+    // put the cp and library.path in env
+    if (setenv("JVM_OPTS", jvm_runtime_opt.c_str(), 1) == 0) {
+      LOG(INFO) << " successfully set jvm opts to: " << jvm_runtime_opt;
+    } else {
+      LOG(ERROR) << " failed to set jvm opts";
+    }
+    // set environment variables
+    SetupEnv(local_num);
+
+    // create jvm instance if not exists;
+    JavaVM* jvm = GetJavaVM();
+    (void) jvm;
+
     JNIEnvMark m;
     if (m.env()) {
       JNIEnv* env = m.env();
@@ -184,16 +203,16 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         }
       }
 
-      //   const char* descriptor =
-      //       "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
-      //       "Lio/v6d/modules/graph/parallel/PropertyMessageManager;"
-      //       "Lcom/alibaba/grape/stdcxx/StdVector;)V";
-      //   jmethodID InitMethodID =
-      //       env->GetMethodID(context_class, "Init", descriptor);
-      //   if (InitMethodID == NULL) {
-      //     LOG(ERROR) << "Cannot find method Init" << descriptor;
-      //     return;
-      //   }
+      const char* descriptor =
+          "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
+          "Lio/v6d/modules/graph/parallel/PropertyMessageManager;"
+          "Lcom/alibaba/grape/stdcxx/StdVector;)V";
+      jmethodID InitMethodID =
+          env->GetMethodID(context_class, "Init", descriptor);
+      if (InitMethodID == NULL) {
+        LOG(ERROR) << "Cannot find method Init" << descriptor;
+        return;
+      }
 
       _java_frag_type_name = frag_name;
       jobject fragObject =
@@ -227,14 +246,15 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         return;
       }
       // 4. Invoke java method
-      //   env->CallVoidMethod(_context_object, InitMethodID, _frag_object,
-      //                       _mm_object, argsObject);
+      env->CallVoidMethod(_context_object, InitMethodID, _frag_object,
+                          _mm_object, argsObject);
     }
   }
 
   void Output(std::ostream& os) {
     JNIEnvMark m;
     if (m.env()) {
+      LOG(INFO) << "enter javapp ctx output";
       //   JNIEnv* env = m.env();
 
       //   jclass context_class = env->FindClass(_context_class_name);

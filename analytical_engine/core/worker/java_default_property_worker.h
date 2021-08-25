@@ -81,7 +81,8 @@ class JavaDefaultPropertyWorker {
     auto& graph = context_->fragment();
     MPI_Barrier(comm_spec_.comm());
 
-    context_->Init(messages_, std::forward<Args>(args)...);
+    context_->Init(messages_, comm_spec_.local_num(),
+                   std::forward<Args>(args)...);
     if (comm_spec_.worker_id() == kCoordinatorRank) {
       VLOG(1) << "[Coordinator]: Finished Init context";
     }

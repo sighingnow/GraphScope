@@ -623,6 +623,32 @@ class DynamicVertexDataContext(collections.abc.Mapping):
     def __iter__(self):
         return iter(self._graph._graph)
 
+class JavaPIEPropertyDefaultContextDAGNode(BaseContextDAGNode):
+    """Base class of concrete context DAG node.
+
+    In GraphScope, it will return a instance of concrete class `ContextDAGNode`
+    after evaluating an app, that will be automatically executed by :method:`sess.run`
+    in eager mode and return a instance of :class:`graphscope.framework.context.Context`
+    """
+
+    def _check_selector(self, selector):
+        raise NotImplementedError()
+
+    @property
+    def context_type(self):
+        return "java_pie_property_default_context"
+
+    def to_numpy(self, selector, vertex_range=None, axis=0):
+        raise NotImplementedError()
+
+    def to_dataframe(self, selector, vertex_range=None):
+        raise NotImplementedError()
+
+    def to_vineyard_tensor(self, selector=None, vertex_range=None, axis=0):
+        raise NotImplementedError()
+
+    def to_vineyard_dataframe(self, selector=None, vertex_range=None):
+        raise NotImplementedError()
 
 def create_context_node(context_type, bound_app, graph, *args, **kwargs):
     """A context DAG node factory, create concrete context class by context type."""
@@ -636,6 +662,8 @@ def create_context_node(context_type, bound_app, graph, *args, **kwargs):
         return VertexPropertyContextDAGNode(bound_app, graph, *args, **kwargs)
     elif context_type == "labeled_vertex_property":
         return LabeledVertexPropertyContextDAGNode(bound_app, graph, *args, **kwargs)
+    elif context_type == "java_pie_property_default_context":
+        return JavaPIEPropertyDefaultContextDAGNode(bound_app, graph, *args, **kwargs)
     else:
         # dynamic_vertex_data for networkx
         return BaseContextDAGNode(bound_app, graph, *args, **kwargs)
