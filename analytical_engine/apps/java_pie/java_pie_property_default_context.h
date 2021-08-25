@@ -134,10 +134,10 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     LOG(INFO) << "received json: " << params;
     std::string frag_name = pt.get<std::string>("frag_name");
     LOG(INFO) << "parse frag name: " << frag_name;
-    std::string app_class_name = pt.get<std::string>("app_class_name");
+    std::string app_class_name = pt.get<std::string>("app_class");
     LOG(INFO) << "parse app class name: " << app_class_name;
-    std::string app_context_name = pt.get<std::string>("app_context_name");
-    LOG(INFO) << "pass app context name: " << app_context_name;
+    std::string app_context_name = pt.get<std::string>("app_context");
+    LOG(INFO) << "parse app context name: " << app_context_name;
     // JVM runtime opt should consists of java.libaray.path and java.class.path
     // maybe this should be set by the backend not user.
     std::string jvm_runtime_opt = pt.get<std::string>("jvm_runtime_opt");
@@ -164,6 +164,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     // create jvm instance if not exists;
     JavaVM* jvm = GetJavaVM();
     (void) jvm;
+    LOG(INFO) << "successfully get jvm";
 
     JNIEnvMark m;
     if (m.env()) {

@@ -200,8 +200,8 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     ]
     if app_type == "java_pie":
         #for java need to run preprocess
-        JAVA_APP_FFI_SOURCE_PATH = os.path.join(app_dir, JAVA_APP_FFI_SOURCE_PATH_BASE)
-        JAVA_APP_JOB_CONF_PATH = os.path.join(app_dir, JAVA_APP_CONF_PATH_BASE)
+        JAVA_APP_FFI_SOURCE_PATH = os.path.join(workspace, JAVA_APP_FFI_SOURCE_PATH_BASE)
+        JAVA_APP_JOB_CONF_PATH = os.path.join(workspace, JAVA_APP_CONF_PATH_BASE)
         cmake_commands += ["-DJAVA_PIE_APP=True", "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
         java_codegen_commands = [
             JAVA_APP_PREPROCESSER,

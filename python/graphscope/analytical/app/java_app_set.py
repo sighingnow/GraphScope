@@ -36,6 +36,7 @@ from graphscope.analytical.udf.utils import InMemoryZip
 from graphscope.analytical.udf.utils import CType
 from graphscope.framework.app import check_argument
 import os
+from glob import glob
 from pathlib import Path
 __all__ = ["JavaAppAssets"]
 
@@ -111,6 +112,13 @@ class JavaAppAssets(AppAssets):
     @property
     def java_jar_path(self):
         return self.java_jar_path_
+    @property
+    def frag_name(self):
+        return  "{}<{},{}>".format(
+            "vineyard::ArrowFragment",
+            "int64_t"
+            "uint64_t",
+        )
 
 
 class JavaAppDagNode(AppDAGNode):
@@ -156,16 +164,19 @@ class JavaAppDagNode(AppDAGNode):
         # set the jvm_opts as a kw
         jvm_runtime_opt_impl = ""
         udf_workspace = os.path.join(WORKSPACE, self._session.session_id)
+        # we can not determine the compiled lib path here, so we find all possible subdirectories,
+        # and add them to java.library.path
+        possible_library_directories = [s.rstrip("/") for s in glob("{}/*".format(udf_workspace))]
         user_jar = os.path.join(udf_workspace, self._app_assets.java_jar_path)
         ffi_target_output = os.path.join(udf_workspace, "gs-ffi", "CLASS_OUTPUT")
         performance_args = "-Dcom.alibaba.ffi.rvBuffer=2147483648 -XX:+StartAttachListener " \
                         + "-XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC " \
                         + "-XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
-        jvm_runtime_opt_impl = "-Djava.library.path=/usr/local/lib:/usr/lib:{} ".format(udf_workspace)\
+        jvm_runtime_opt_impl = "-Djava.library.path=/usr/local/lib:/usr/lib:{} ".format(":".join(possible_library_directories))\
                         + "-Djava.class.path={}:{}:{}:{}:{} {}"\
                          .format(ffi_target_output,  GUAVA_JAR, GRAPE_SDK_JAR, user_jar, LLVM4JNI_JAR, performance_args)
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))
-        kwargs_extend = dict(jvm_runtime_opt=jvm_runtime_opt_impl, **kwargs)
+        kwargs_extend = dict(jvm_runtime_opt=jvm_runtime_opt_impl, frag_name = self._app_assets.frag_name, **kwargs)
         logger.info("dumping to json {}".format(json.dumps(kwargs_extend)))
         return create_context_node(context_type, self, self._graph, json.dumps(kwargs_extend))
 
