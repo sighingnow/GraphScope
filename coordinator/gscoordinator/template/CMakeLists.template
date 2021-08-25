@@ -168,6 +168,7 @@ elseif (JAVA_PIE_APP)
     file(GLOB_RECURSE FILES_NEED_COMPILE "${JAVA_APP_FFI_SOURCE_PATH}/SOURCE_OUTPUT/*.cc")
     add_library(${FRAME_NAME} SHARED ${FILES_NEED_COMPILE}
                                     ${ANALYTICAL_ENGINE_FRAME_DIR}/java_pie_app_frame.cc)
+    target_include_directories(${FRAME_NAME} PRIVATE ${JAVA_APP_FFI_SOURCE_PATH}/SOURCE_OUTPUT/)
     target_compile_definitions(${FRAME_NAME} PRIVATE _VD_TYPE=$_vd_type
                     _MD_TYPE=$_md_type
                     _GRAPH_TYPE=$_graph_type
