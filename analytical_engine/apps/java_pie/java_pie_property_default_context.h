@@ -138,6 +138,9 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     LOG(INFO) << "parse app class name: " << app_class_name;
     std::string app_context_name = pt.get<std::string>("app_context");
     LOG(INFO) << "parse app context name: " << app_context_name;
+    std::string user_library_name = pt.get<std::string>("user_library_name");
+    LOG(INFO) << "user library name " << user_library_name;
+
     // JVM runtime opt should consists of java.libaray.path and java.class.path
     // maybe this should be set by the backend not user.
     std::string jvm_runtime_opt = pt.get<std::string>("jvm_runtime_opt");
@@ -169,6 +172,44 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     JNIEnvMark m;
     if (m.env()) {
       JNIEnv* env = m.env();
+      // load required jni library
+
+      jclass grape_load_library =
+          env->FindClass("com/alibaba/grape/utils/LoadLibrary");
+      if (grape_load_library == NULL) {
+        LOG(ERROR) << "Cannot find grape jni loader class";
+        return;
+      }
+
+      jclass vineyard_load_library =
+          env->FindClass("io/v6d/modules/graph/utils/LoadLibrary");
+      if (vineyard_load_library == NULL) {
+        LOG(ERROR) << "Cannot find vineyard jni loader class ";
+        return;
+      }
+
+      const char* load_library_signature = "(Ljava/lang/String;)V";
+      jmethodID grape_load_library_method = env->GetStaticMethodID(
+          grape_load_library, "invoke", load_library_signature);
+      jmethodID vineyard_load_library_method = env->GetStaticMethodID(
+          vineyard_load_library, "invoke", load_library_signature);
+
+      // call static method
+      m.env()->CallStaticVoidtMethod(
+          grape_load_library, grape_load_library_method, user_library_name);
+      m.env()->CallStaticVoidtMethod(
+          grape_load_library, vineyard_load_library_method, user_library_name);
+
+      if (env->ExceptionOccurred()) {
+        LOG(ERROR) << std::string("Exception occurred in loading user library");
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        // env->DeleteLocalRef(main_class);
+        LOG(FATAL) << "exiting since exception occurred";
+      }
+
+      LOG(INFO) << "load specified user jni library: " << user_library_name;
+
       if (!init_class_names(app_class_name, app_context_name)) {
         LOG(ERROR) << "Init app class and context class names failed:"
                    << app_class_name << "," << app_context_name;
