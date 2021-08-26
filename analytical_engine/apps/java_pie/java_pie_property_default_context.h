@@ -209,9 +209,9 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
           "Lio/v6d/modules/graph/parallel/PropertyMessageManager;"
           "Lcom/alibaba/grape/stdcxx/StdVector;)V";
       jmethodID InitMethodID =
-          env->GetMethodID(context_class, "Init", descriptor);
+          env->GetMethodID(context_class, "init", descriptor);
       if (InitMethodID == NULL) {
-        LOG(ERROR) << "Cannot find method Init" << descriptor;
+        LOG(ERROR) << "Cannot find method init" << descriptor;
         return;
       }
 
