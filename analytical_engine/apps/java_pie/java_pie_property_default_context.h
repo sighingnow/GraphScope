@@ -106,10 +106,8 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     }
   }
 
-  void GetJavaDefaultManagerFFITypeName(std::string& name) {
-    name.append("gs::PropertyMessageManager<")
-        .append(_java_frag_type_name)
-        .append(">");
+  void GetPropertyMessageManagerFFITypeName(std::string& name) {
+    name.append("gs::PropertyMessageManager");
   }
   void SetLocalNum(int local_num) { local_num_ = local_num; }
   // void Init(const FRAG_T& frag, gs::PropertyMessageManager& messages,
@@ -274,7 +272,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       // 2. Create Message manager Java object
       // TODO: create message pointer object
       std::string mm_name;
-      GetJavaDefaultManagerFFITypeName(mm_name);
+      GetPropertyMessageManagerFFITypeName(mm_name);
       jobject messagesObject = createFFIPointerObject(
           env, mm_name.c_str(), reinterpret_cast<jlong>(&messages));
       if (messagesObject == NULL) {
