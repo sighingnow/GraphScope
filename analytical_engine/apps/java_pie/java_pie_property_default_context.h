@@ -195,9 +195,9 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
           vineyard_load_library, "invoke", load_library_signature);
 
       // call static method
-      m.env()->CallStaticVoidtMethod(
+      m.env()->CallStaticVoidMethod(
           grape_load_library, grape_load_library_method, user_library_name);
-      m.env()->CallStaticVoidtMethod(
+      m.env()->CallStaticVoidMethod(
           grape_load_library, vineyard_load_library_method, user_library_name);
 
       if (env->ExceptionOccurred()) {
