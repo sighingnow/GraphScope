@@ -89,6 +89,7 @@ class JavaAppAssets(AppAssets):
         tmp_jar_file = open(jar_path, 'rb')
         bytes = tmp_jar_file.read()
         garfile.append("{}".format(jar_path.split("/")[-1]), bytes)
+        self.java_jar_path_full_ = jar_path
         self.java_jar_path_ = jar_path.split("/")[-1]
         self.java_main_class_ = java_main_class
         self.app_class_ = "grape::JavaPIEPropertyDefaultApp"
@@ -122,6 +123,9 @@ class JavaAppAssets(AppAssets):
     @property
     def java_jar_path(self):
         return self.java_jar_path_
+    @property
+    def java_jar_path_full(self):
+        return self.java_jar_path_full_
     @property
     def frag_name(self):
         return  "{}<{},{}>".format(
@@ -164,7 +168,7 @@ class JavaAppDagNode(AppDAGNode):
         "add deep copy to allow user run app for multiple times on a same javaAppAssets"
         "the ops are new created, but built library should be reused"
         # self._app_assets = copy.deepcopy(app_assets)
-        self._app_assets = JavaAppAssets(app_assets.java_jar_path, app_assets.java_main_class, app_assets.vd_type, app_assets.md_type)
+        self._app_assets = JavaAppAssets(app_assets.java_jar_path_full, app_assets.java_main_class, app_assets.vd_type, app_assets.md_type)
         self._session = graph.session
         self._app_assets.is_compatible(self._graph)
 
