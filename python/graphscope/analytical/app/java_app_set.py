@@ -20,6 +20,7 @@
 # from coordinator.gscoordinator.coordinator import DEFAULT_GS_CONFIG_FILE
 
 
+import hashlib
 import json
 import logging
 from graphscope.framework.dag_utils import bind_app
@@ -84,17 +85,19 @@ class JavaAppAssets(AppAssets):
         bytes = tmp_jar_file.read()
         garfile.append("{}".format(jar_path.split("/")[-1]), bytes)
         self.java_jar_path_ = jar_path.split("/")[-1]
+        self.java_main_class_ = java_main_class
+        self.app_class_ = "grape::JavaPIEPropertyDefaultApp"
         gs_config = {
             "app": [
                 {
                     "algo": "java_app_set",
                     "context_type": "java_pie_property_default_context",
                     "type": "java_pie",
-                    "class_name": "gs::JavaPropertyApp",
+                    "class_name": self.app_class ,
                     "compatible_graph": ["vineyard::ArrowFragment"],
                     "vd_type": vd_ctype,
                     "md_type": md_ctype,
-                    "java_main_class" : java_main_class,
+                    "java_main_class" : self.java_main_class,
                     "java_jar_path": self.java_jar_path
                 }
             ]
@@ -119,6 +122,18 @@ class JavaAppAssets(AppAssets):
             "int64_t",
             "uint64_t",
         )
+    @property
+    def java_main_class(self):
+        return self.java_main_class_
+    @property
+    def app_class(self):
+        return self.app_class_
+
+    def signature(self):
+        s = hashlib.sha256()
+        s.update(f"{self.type}.{self.app_class}.{self.frag_name}.{self.java_jar_path}.{self.java_main_class}".encode("utf-8"))
+        s.update(self.gar)
+        return s.hexdigest()
 
 
 class JavaAppDagNode(AppDAGNode):
@@ -166,17 +181,29 @@ class JavaAppDagNode(AppDAGNode):
         udf_workspace = os.path.join(WORKSPACE, self._session.session_id)
         # we can not determine the compiled lib path here, so we find all possible subdirectories,
         # and add them to java.library.path
-        possible_library_directories = [s.rstrip("/") for s in glob("{}/[!gs\-ffi]*/".format(udf_workspace))]
-        user_jar = [s.rstrip("/") for s in glob("{}/*/*.jar".format(udf_workspace))]
+        # possible_library_directories = [s.rstrip("/") for s in glob("{}/[!gs\-ffi]*/".format(udf_workspace))]
+        # user_jar = [s.rstrip("/") for s in glob("{}/*/*.jar".format(udf_workspace))]
+        user_jni_name = self._app_assets.signature()
+        user_jni_dir = os.path.join(udf_workspace, user_jni_name)
+        user_jni_name_lib = os.path.join(user_jni_dir, "lib{}.so".format(user_jni_name))
+        user_jar = os.path.join(user_jni_dir, self._app_assets.java_jar_path)
+        assert (os.path.isfile(user_jni_name_lib)), "{} not found ".format(user_jni_name_lib)
+        assert (os.path.isfile(user_jar)), "{} not found ".format(user_jar)
+
+        logger.info("user jni library found: {}".format(user_jni_name_lib))
+        logger.info("user jar found: {}".format(user_jar))
         ffi_target_output = os.path.join(udf_workspace, "gs-ffi", "CLASS_OUTPUT")
         performance_args = "-Dcom.alibaba.ffi.rvBuffer=2147483648 -XX:+StartAttachListener " \
                         + "-XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC " \
                         + "-XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
-        jvm_runtime_opt_impl = "-Djava.library.path=/usr/local/lib:/usr/lib:{} ".format(":".join(possible_library_directories))\
+        #grape jni and vineyard jni will be put in jar file, and extracte, add to path during runtime
+        jvm_runtime_opt_impl = "-Djava.library.path=/usr/local/lib:/usr/lib:{} ".format(user_jni_dir)\
                         + "-Djava.class.path={}:{}:{}:{}:{} {}"\
                          .format(ffi_target_output,  GUAVA_JAR, GRAPE_SDK_JAR, ":".join(user_jar), LLVM4JNI_JAR, performance_args)
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))
         kwargs_extend = dict(jvm_runtime_opt=jvm_runtime_opt_impl, frag_name = self._app_assets.frag_name, **kwargs)
+        # just set the jni library name (without lib prefix, and also no path)
+        kwargs_extend = dict(user_library_name = user_jni_name,  **kwargs_extend)
         logger.info("dumping to json {}".format(json.dumps(kwargs_extend)))
         return create_context_node(context_type, self, self._graph, json.dumps(kwargs_extend))
 
