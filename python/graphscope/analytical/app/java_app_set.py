@@ -199,7 +199,7 @@ class JavaAppDagNode(AppDAGNode):
         #grape jni and vineyard jni will be put in jar file, and extracte, add to path during runtime
         jvm_runtime_opt_impl = "-Djava.library.path=/usr/local/lib:/usr/lib:{} ".format(user_jni_dir)\
                         + "-Djava.class.path={}:{}:{}:{}:{} {}"\
-                         .format(ffi_target_output,  GUAVA_JAR, GRAPE_SDK_JAR, ":".join(user_jar), LLVM4JNI_JAR, performance_args)
+                         .format(ffi_target_output,  GUAVA_JAR, GRAPE_SDK_JAR, user_jar, LLVM4JNI_JAR, performance_args)
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))
         kwargs_extend = dict(jvm_runtime_opt=jvm_runtime_opt_impl, frag_name = self._app_assets.frag_name, **kwargs)
         # just set the jni library name (without lib prefix, and also no path)
