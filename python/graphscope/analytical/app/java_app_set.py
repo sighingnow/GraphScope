@@ -92,6 +92,8 @@ class JavaAppAssets(AppAssets):
         self.java_jar_path_ = jar_path.split("/")[-1]
         self.java_main_class_ = java_main_class
         self.app_class_ = "grape::JavaPIEPropertyDefaultApp"
+        self.vd_type_ = vd_type
+        self.md_type_ = md_type
         gs_config = {
             "app": [
                 {
@@ -133,6 +135,12 @@ class JavaAppAssets(AppAssets):
     @property
     def app_class(self):
         return self.app_class_
+    @property
+    def vd_type(self):
+        return self.vd_type_
+    @property
+    def md_type(self):
+        return self.md_type_
 
     #shall be the same as defined in coordinator/utils.py
     def signature(self):
@@ -154,7 +162,9 @@ class JavaAppDagNode(AppDAGNode):
         """
         self._graph = graph
         "add deep copy to allow user run app for multiple times on a same javaAppAssets"
-        self._app_assets = copy.deepcopy(app_assets)
+        "the ops are new created, but built library should be reused"
+        # self._app_assets = copy.deepcopy(app_assets)
+        self._app_assets = JavaAppAssets(app_assets.java_jar_path, app_assets.java_main_class, app_assets.vd_type, app_assets.md_type)
         self._session = graph.session
         self._app_assets.is_compatible(self._graph)
 
