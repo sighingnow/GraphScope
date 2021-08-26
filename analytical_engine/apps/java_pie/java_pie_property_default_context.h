@@ -94,16 +94,18 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         local_num_(0) {}
   const fragment_t& fragment() { return fragment_; }
 
+  // grape instance is killed by SIGINT, which cause vm_direct_exit.
+  // when we try to release memery, segmentation fault incurred
   virtual ~JavaPIEPropertyDefaultContext() {
     delete[] _app_class_name;
     delete[] _context_class_name;
-    JNIEnvMark m;
-    if (m.env()) {
-      m.env()->DeleteGlobalRef(_app_object);
-      m.env()->DeleteGlobalRef(_context_object);
-      m.env()->DeleteGlobalRef(_frag_object);
-      m.env()->DeleteGlobalRef(_mm_object);
-    }
+    // JNIEnvMark m;
+    // if (m.env()) {
+    //   m.env()->DeleteGlobalRef(_app_object);
+    //   m.env()->DeleteGlobalRef(_context_object);
+    //   m.env()->DeleteGlobalRef(_frag_object);
+    //   m.env()->DeleteGlobalRef(_mm_object);
+    // }
   }
 
   void GetPropertyMessageManagerFFITypeName(std::string& name) {
