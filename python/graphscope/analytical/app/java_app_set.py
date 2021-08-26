@@ -174,7 +174,7 @@ class JavaAppDagNode(AppDAGNode):
                         + "-XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
         jvm_runtime_opt_impl = "-Djava.library.path=/usr/local/lib:/usr/lib:{} ".format(":".join(possible_library_directories))\
                         + "-Djava.class.path={}:{}:{}:{}:{} {}"\
-                         .format(ffi_target_output,  GUAVA_JAR, GRAPE_SDK_JAR, user_jar, LLVM4JNI_JAR, performance_args)
+                         .format(ffi_target_output,  GUAVA_JAR, GRAPE_SDK_JAR, ":".join(user_jar), LLVM4JNI_JAR, performance_args)
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))
         kwargs_extend = dict(jvm_runtime_opt=jvm_runtime_opt_impl, frag_name = self._app_assets.frag_name, **kwargs)
         logger.info("dumping to json {}".format(json.dumps(kwargs_extend)))
