@@ -46,8 +46,10 @@ logger = logging.getLogger("graphscope")
 DEFAULT_GS_CONFIG_FILE = ".gs_conf.yaml"
 WORKSPACE = "/tmp/gs"
 GRAPE_M2_REPO_PATH = os.path.join(str(Path.home()), ".m2/repository/com/alibaba/grape")
+# VINEYARD_GRAPH_REPO_PATH = os.path.join(str(Path.home()), "./m2/repository/io/v6d")
 GRAPE_PROCESSOR_JAR=os.path.join(GRAPE_M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-jar-with-dependencies.jar")
 GRAPE_SDK_JAR=os.path.join(GRAPE_M2_REPO_PATH, "grape-sdk/0.1/grape-sdk-0.1-jar-with-dependencies.jar")
+VINEYARD_GRAPH_SDK_JAR = os.path.join(GRAPE_M2_REPO_PATH, "vineyard-graph/0.1/vineyard-graph-0.1.jar-with-dependencies.jar")
 FFI_M2_REPO_PATH=os.path.join(str(Path.home()), ".m2/repository/com/alibaba/ffi")
 LLVM4JNI_JAR=os.path.join(FFI_M2_REPO_PATH, "llvm4jni-runtime/0.1/llvm4jni-runtime-0.1-jar-with-dependencies.jar")
 GUAVA_JAR=os.path.join(str(Path.home()), ".m2/repository/com/google/guava/guava/30.1.1-jre/guava-30.1.1-jre.jar")
@@ -198,8 +200,8 @@ class JavaAppDagNode(AppDAGNode):
                         + "-XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
         #grape jni and vineyard jni will be put in jar file, and extracte, add to path during runtime
         jvm_runtime_opt_impl = "-Djava.library.path=/usr/local/lib:/usr/lib:{} ".format(user_jni_dir)\
-                        + "-Djava.class.path={}:{}:{}:{}:{} {}"\
-                         .format(ffi_target_output,  GUAVA_JAR, GRAPE_SDK_JAR, user_jar, LLVM4JNI_JAR, performance_args)
+                        + "-Djava.class.path={}:{}:{}:{}:{}:{} {}"\
+                         .format(ffi_target_output,  GUAVA_JAR, GRAPE_SDK_JAR, VINEYARD_GRAPH_SDK_JAR, user_jar, LLVM4JNI_JAR, performance_args)
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))
         kwargs_extend = dict(jvm_runtime_opt=jvm_runtime_opt_impl, frag_name = self._app_assets.frag_name, **kwargs)
         # just set the jni library name (without lib prefix, and also no path)
