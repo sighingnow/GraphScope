@@ -20,6 +20,7 @@
 # from coordinator.gscoordinator.coordinator import DEFAULT_GS_CONFIG_FILE
 
 
+import copy
 import hashlib
 import json
 import logging
@@ -133,6 +134,7 @@ class JavaAppAssets(AppAssets):
     def app_class(self):
         return self.app_class_
 
+    #shall be the same as defined in coordinator/utils.py
     def signature(self):
         s = hashlib.sha256()
         s.update(f"{self.type}.{self.app_class}.{self.frag_name}.{self.java_jar_path}.{self.java_main_class}".encode("utf-8"))
@@ -151,8 +153,8 @@ class JavaAppDagNode(AppDAGNode):
             app_assets: A :class:`AppAssets` instance.
         """
         self._graph = graph
-
-        self._app_assets = app_assets
+        "add deep copy to allow user run app for multiple times on a same javaAppAssets"
+        self._app_assets = copy.deepcopy(app_assets)
         self._session = graph.session
         self._app_assets.is_compatible(self._graph)
 
