@@ -194,11 +194,16 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       jmethodID vineyard_load_library_method = env->GetStaticMethodID(
           vineyard_load_library, "invoke", load_library_signature);
 
+      jstring user_library_name_jstring =
+          m.env()->NewStringUTF(user_library_name.c_str());
       // call static method
-      m.env()->CallStaticVoidMethod(
-          grape_load_library, grape_load_library_method, user_library_name);
-      m.env()->CallStaticVoidMethod(
-          grape_load_library, vineyard_load_library_method, user_library_name);
+
+      m.env()->CallStaticVoidMethod(grape_load_library,
+                                     grape_load_library_method,
+                                     user_library_name_jstring);
+      m.env()->CallStaticVoidMethod(grape_load_library,
+                                     vineyard_load_library_method,
+                                     user_library_name_jstring);
 
       if (env->ExceptionOccurred()) {
         LOG(ERROR) << std::string("Exception occurred in loading user library");
