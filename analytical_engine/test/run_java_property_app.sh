@@ -82,7 +82,7 @@ function run_vy() {
 
   echo "${cmd}"
   eval "${cmd}"
-  info "Finished running app ${executable} with vineyard."
+  echo "Finished running app ${executable} with vineyard."
 }
 
 cmd_prefix="mpirun"
@@ -107,5 +107,3 @@ echo "java libraray path "${GAE_DIR}/build:${DIR}/build:${GRAPE_LITE_JNI_SO_PATH
 export RUN_JVM_OPTS="-Djava.library.path=${GRAPE_SDK_BUILD_NATIVE}:${VINEYARD_GRAPH_BUILD_NATIVE}:/usr/local/lib -Djava.class.path=${RUN_CP}"
 np=1
 run_vy ${np} ./run_java_property_app "${socket_file}" 2 "${test_dir}"/new_property/v2_e2/twitter_e 2 "${test_dir}"/new_property/v2_e2/twitter_v 0 1 io.graphscope.example.sssp.SSSPDefault
-
-

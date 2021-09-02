@@ -95,7 +95,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   std::string basic_params = ss.str();
   LOG(INFO) << "basic_params" << basic_params;
   // 1. query
-  // Query(fragment, comm_spec, app_name, "./java_out/", basic_params);
+  Query(fragment, comm_spec, app_name, "./java_out/", basic_params);
 }
 
 int main(int argc, char** argv) {
