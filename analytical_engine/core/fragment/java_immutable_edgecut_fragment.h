@@ -27,6 +27,7 @@ limitations under the License.
 #include <string>
 #include <vector>
 
+#include "core/config.h"
 #include "core/vertex_map/java_global_vertex_map_beta.h"
 #include "flat_hash_map/flat_hash_map.hpp"
 #include "grape/config.h"

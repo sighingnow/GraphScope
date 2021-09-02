@@ -67,9 +67,10 @@ class JavaImmutableEdgecutFragmentLoader {
       for (int i = 1; i < worker_num_; ++i) {
         int dst_worker_id = (worker_id_ + i) % worker_num_;
         fid_t dst_frag_id = comm_spec_.WorkerToFrag(dst_worker_id);
-        SendVector(vid_buffers[dst_frag_id], dst_worker_id, comm_spec_.comm());
-        SendVector(vdata_buffers[dst_frag_id], dst_worker_id,
-                   comm_spec_.comm());
+        grape::SendVector(vid_buffers[dst_frag_id], dst_worker_id,
+                          comm_spec_.comm());
+        grape::SendVector(vdata_buffers[dst_frag_id], dst_worker_id,
+                          comm_spec_.comm());
       }
     });
 
@@ -88,8 +89,8 @@ class JavaImmutableEdgecutFragmentLoader {
         std::vector<OID_T> tmpVid;
         std::vector<VDATA_T> tmpVdata;
         // fid_t src_frag_id = comm_spec_.WorkerToFrag(src_worker_id);
-        RecvVector(tmpVid, src_worker_id, comm_spec_.comm());
-        RecvVector(tmpVdata, src_worker_id, comm_spec_.comm());
+        grape::RecvVector(tmpVid, src_worker_id, comm_spec_.comm());
+        grape::RecvVector(tmpVdata, src_worker_id, comm_spec_.comm());
         allVidBuffers[worker_id_].insert(allVidBuffers[worker_id_].end(),
                                          tmpVid.begin(), tmpVid.end());
         allVdataBuffers[worker_id_].insert(allVdataBuffers[worker_id_].end(),
@@ -128,12 +129,12 @@ class JavaImmutableEdgecutFragmentLoader {
         //           << vdata_buffers[j].size();
         for (int i = 1; i < worker_num_; ++i) {
           int dst_worker_id = (worker_id_ + i) % worker_num_;
-          SendVector(vid_buffers[j], dst_worker_id, comm_spec_.comm());
+          grape::SendVector(vid_buffers[j], dst_worker_id, comm_spec_.comm());
           // LOG(INFO) << "worker [" << comm_spec_.worker_id()
           //           << "] sent vid buffer frag [" << j << "], to worker ["
           //           << dst_worker_id << "], data size ["
           //           << vid_buffers[j].size() << "]";
-          SendVector(vdata_buffers[j], dst_worker_id, comm_spec_.comm());
+          grape::SendVector(vdata_buffers[j], dst_worker_id, comm_spec_.comm());
           // LOG(INFO) << "worker [" << comm_spec_.worker_id()
           //           << "]sent vdata buffer frag [" << j << "], to worker ["
           //           << dst_worker_id << "], data size ["
@@ -158,8 +159,8 @@ class JavaImmutableEdgecutFragmentLoader {
         for (int i = 1; i < worker_num_; ++i) {
           int src_worker_id = (worker_id_ + worker_num_ - i) % worker_num_;
 
-          RecvVector(tmpVid, src_worker_id, comm_spec_.comm());
-          RecvVector(tmpVdata, src_worker_id, comm_spec_.comm());
+          grape::RecvVector(tmpVid, src_worker_id, comm_spec_.comm());
+          grape::RecvVector(tmpVdata, src_worker_id, comm_spec_.comm());
           allVidBuffers[j].insert(allVidBuffers[j].end(), tmpVid.begin(),
                                   tmpVid.end());
           allVdataBuffers[j].insert(allVdataBuffers[j].end(), tmpVdata.begin(),
@@ -199,12 +200,12 @@ class JavaImmutableEdgecutFragmentLoader {
     std::thread send_thread = std::thread([&]() {
       for (int i = 1; i < worker_num_; ++i) {
         int dst_worker_id = (worker_id_ + i) % worker_num_;
-        SendVector(esrc_buffers[dst_worker_id], dst_worker_id,
-                   comm_spec_.comm());
-        SendVector(edst_buffers[dst_worker_id], dst_worker_id,
-                   comm_spec_.comm());
-        SendVector(edata_buffers[dst_worker_id], dst_worker_id,
-                   comm_spec_.comm());
+        grape::SendVector(esrc_buffers[dst_worker_id], dst_worker_id,
+                          comm_spec_.comm());
+        grape::SendVector(edst_buffers[dst_worker_id], dst_worker_id,
+                          comm_spec_.comm());
+        grape::SendVector(edata_buffers[dst_worker_id], dst_worker_id,
+                          comm_spec_.comm());
       }
     });
 
@@ -224,9 +225,9 @@ class JavaImmutableEdgecutFragmentLoader {
         std::vector<OID_T> tmpSrc;
         std::vector<OID_T> tmpDst;
         std::vector<EDATA_T> tmpEData;
-        RecvVector(tmpSrc, src_worker_id, comm_spec_.comm());
-        RecvVector(tmpDst, src_worker_id, comm_spec_.comm());
-        RecvVector(tmpEData, src_worker_id, comm_spec_.comm());
+        grape::RecvVector(tmpSrc, src_worker_id, comm_spec_.comm());
+        grape::RecvVector(tmpDst, src_worker_id, comm_spec_.comm());
+        grape::RecvVector(tmpEData, src_worker_id, comm_spec_.comm());
         all_esrc_buffers[worker_id_].insert(all_esrc_buffers[worker_id_].end(),
                                             tmpSrc.begin(), tmpSrc.end());
         all_edst_buffers[worker_id_].insert(all_edst_buffers[worker_id_].end(),
@@ -271,9 +272,9 @@ class JavaImmutableEdgecutFragmentLoader {
       for (int j = 0; j < comm_spec_.fnum(); ++j) {
         for (int i = 1; i < worker_num_; ++i) {
           int dst_worker_id = (worker_id_ + i) % worker_num_;
-          SendVector(esrc_buffers[j], dst_worker_id, comm_spec_.comm());
-          SendVector(edst_buffers[j], dst_worker_id, comm_spec_.comm());
-          SendVector(edata_buffers[j], dst_worker_id, comm_spec_.comm());
+          grape::SendVector(esrc_buffers[j], dst_worker_id, comm_spec_.comm());
+          grape::SendVector(edst_buffers[j], dst_worker_id, comm_spec_.comm());
+          grape::SendVector(edata_buffers[j], dst_worker_id, comm_spec_.comm());
         }
       }
     });
@@ -296,9 +297,9 @@ class JavaImmutableEdgecutFragmentLoader {
           std::vector<OID_T> tmpEdst;
           std::vector<EDATA_T> tmpEdata;
 
-          RecvVector(tmpEsrc, src_worker_id, comm_spec_.comm());
-          RecvVector(tmpEdst, src_worker_id, comm_spec_.comm());
-          RecvVector(tmpEdata, src_worker_id, comm_spec_.comm());
+          grape::RecvVector(tmpEsrc, src_worker_id, comm_spec_.comm());
+          grape::RecvVector(tmpEdst, src_worker_id, comm_spec_.comm());
+          grape::RecvVector(tmpEdata, src_worker_id, comm_spec_.comm());
 
           all_esrc_buffers[j].insert(all_esrc_buffers[j].end(), tmpEsrc.begin(),
                                      tmpEsrc.end());

@@ -40,20 +40,20 @@ inline int8_t log2(size_t value) {
 template <typename T>
 struct BufferUtils {
   using mutable_type = std::vector<T>;
-  using immutable_type = PodVector<T>;
+  using immutable_type = grape::PodVector<T>;
 
   static void dump_buffer(const mutable_type& buffer, const std::string& path) {
-    dump_vector<T>(buffer, path);
+    grape::dump_vector<T>(buffer, path);
   }
 
   static void send_buffer(const mutable_type& buffer, int dst_worker_id,
                           MPI_Comm comm) {
-    SendVector(buffer, dst_worker_id, comm);
+    grape::SendVector(buffer, dst_worker_id, comm);
   }
 
   static void recv_buffer(mutable_type& buffer, int src_worker_id,
                           MPI_Comm comm) {
-    RecvVector(buffer, src_worker_id, comm);
+    grape::RecvVector(buffer, src_worker_id, comm);
   }
 
   static void load_buffer(immutable_type& buffer, const std::string& path) {
@@ -251,7 +251,7 @@ class JavaIdEncoderBuilder {
   size_t size() const { return num_elements_; }
 
   void dump(const std::string& path) {
-    InArchive arc;
+    grape::InArchive arc;
     size_t mod_function_index = hash_policy_.get_mod_function_index();
     arc << static_cast<int>(max_lookups_) << num_elements_
         << num_slots_minus_one_ << mod_function_index;
@@ -267,7 +267,7 @@ class JavaIdEncoderBuilder {
   }
 
   void SendTo(int dst_worker_id, MPI_Comm comm) {
-    InArchive arc;
+    grape::InArchive arc;
     size_t mod_function_index = hash_policy_.get_mod_function_index();
     arc << static_cast<int>(max_lookups_) << num_elements_
         << num_slots_minus_one_ << mod_function_index;
@@ -290,7 +290,7 @@ class JavaIdEncoderBuilder {
   }
 
   void RecvFrom(int src_worker_id, MPI_Comm comm) {
-    OutArchive arc;
+    grape::OutArchive arc;
     RecvArchive(arc, src_worker_id, comm);
     int max_lookups_int;
     size_t mod_function_index;
@@ -313,7 +313,7 @@ class JavaIdEncoderBuilder {
   template <typename IOADAPTOR_T>
   void Serialize(std::unique_ptr<IOADAPTOR_T>& io_adaptor) {
     size_t mod_function_index = hash_policy_.get_mod_function_index();
-    InArchive arc;
+    grape::InArchive arc;
     arc << static_cast<int>(max_lookups_) << num_elements_
         << num_slots_minus_one_ << mod_function_index;
     CHECK(io_adaptor->WriteArchive(arc));
@@ -328,7 +328,7 @@ class JavaIdEncoderBuilder {
 
   template <typename IOADAPTOR_T>
   void Deserialize(std::unique_ptr<IOADAPTOR_T>& io_adaptor) {
-    OutArchive arc;
+    grape::OutArchive arc;
     size_t mod_function_index;
     CHECK(io_adaptor->ReadArchive(arc));
 
@@ -417,12 +417,12 @@ class JavaIdEncoder {
   size_t size() const { return num_elements_; }
 
   void load(const std::string& path) {
-    PodVector<char> arc_buf;
+    grape::PodVector<char> arc_buf;
     arc_buf.load(path + ".desc");
     int max_lookups_int;
     size_t mod_function_index;
 
-    OutArchive arc;
+    grape::OutArchive arc;
     arc.SetSlice(arc_buf.data(), arc_buf.size());
 
     arc >> max_lookups_int >> num_elements_ >> num_slots_minus_one_ >>
