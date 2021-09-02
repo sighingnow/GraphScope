@@ -49,8 +49,8 @@ class JavaDefaultPropertyWorker {
 
   using message_manager_t = gs::PropertyMessageManager;
 
-  static_assert(check_app_fragment_consistency<APP_T, fragment_t>(),
-                "The loaded graph is not valid for application");
+  // static_assert(check_app_fragment_consistency<APP_T, fragment_t>(),
+  //               "The loaded graph is not valid for application");
 
   JavaDefaultPropertyWorker(std::shared_ptr<APP_T> app,
                             std::shared_ptr<fragment_t> graph)

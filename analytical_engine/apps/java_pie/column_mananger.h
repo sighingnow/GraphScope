@@ -56,8 +56,8 @@ class ColumnManager {
     }
     // auto column =
     //     CreateColumn<fragment_t>(name, fragment_.InnerVertices(label), type);
-    auto column =
-        template MyCreateColumn<DATA_T>(name, fragment_.InnerVertices(label));
+    auto column = this->template MyCreateColumn<DATA_T>(
+        name, fragment_.InnerVertices(label));
     map.emplace(name, column);
     auto& vec = vertex_properties_[label];
     auto ret = static_cast<int64_t>(vec.size());
