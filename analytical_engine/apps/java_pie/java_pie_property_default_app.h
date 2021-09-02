@@ -23,7 +23,7 @@ limitations under the License.
 #include "grape/types.h"
 #include "java_pie/java_pie_property_default_context.h"
 
-namespace grape {
+namespace gs {
 
 /**
  * @brief Java default app driver
@@ -67,7 +67,7 @@ class JavaPIEPropertyDefaultApp
 
       const char* descriptor =
           "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
-          "Lio/v6d/modules/graph/app/LabeledVertexPropertyContext;"
+          "Lio/v6d/modules/graph/app/PropertyDefaultContextBase;"
           "Lio/v6d/modules/graph/parallel/PropertyMessageManager;)V";
       jmethodID PEvalMethodID =
           env->GetMethodID(app_class, "PEval", descriptor);
@@ -126,7 +126,7 @@ class JavaPIEPropertyDefaultApp
 
       const char* descriptor =
           "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
-          "Lio/v6d/modules/graph/app/LabeledVertexPropertyContext;"
+          "Lio/v6d/modules/graph/app/PropertyDefaultContextBase;"
           "Lio/v6d/modules/graph/parallel/PropertyMessageManager;)V";
       jmethodID IncEvalMethodID =
           env->GetMethodID(app_class, "IncEval", descriptor);
@@ -159,6 +159,6 @@ class JavaPIEPropertyDefaultApp
   }
 };
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_DEFAULT_APP_H_

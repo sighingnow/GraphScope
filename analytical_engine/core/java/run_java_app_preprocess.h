@@ -21,18 +21,18 @@
 #include "grape/grape.h"
 #include "grape/util.h"
 #include "java_pie/javasdk.h"
-namespace grape {
+namespace gs {
 
 void Init() {
   InitMPIComm();
-  CommSpec comm_spec;
+  grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
   if (comm_spec.worker_id() == kCoordinatorRank) {
     VLOG(1) << "Workers are initialized.";
   }
 }
 
-void SetupEnv(const CommSpec& comm_spec) {
+void SetupEnv(const grape::CommSpec& comm_spec) {
   int systemMemory = getTotalSystemMemory();
   LOG(INFO) << "System Memory = " << systemMemory << " GB";
   int systemMemoryPerWorker = std::max(systemMemory / comm_spec.local_num(), 1);
@@ -51,7 +51,7 @@ void SetupEnv(const CommSpec& comm_spec) {
     putenv(setStr);
   } else {
     std::string jvmOptsStr = jvm_opts;
-    LOG(INFO) << "jvm opts: " <<jvmOptsStr;
+    LOG(INFO) << "jvm opts: " << jvmOptsStr;
     size_t pos = 0;
     std::string token;
     std::string delimiter = " ";
@@ -111,7 +111,8 @@ void set_codegen_path(std::string code_gen_path, std::string local_file_path) {
 // args 4.. : other cmdline parameters
 void preprocess(int argc, char** argv) {
   if (argc < 4) {
-    LOG(INFO) << "at least 4 args required, jar path, main class name,conf path, output path, and others received "
+    LOG(INFO) << "at least 4 args required, jar path, main class name,conf "
+                 "path, output path, and others received "
               << argc;
     return;
   }
@@ -135,16 +136,18 @@ void preprocess(int argc, char** argv) {
 
   if (m.env()) {
     jclass system_class = getMainClass(m.env(), "java/lang/System");
-    if (system_class == NULL){
-        LOG(ERROR) << "system class no found";
+    if (system_class == NULL) {
+      LOG(ERROR) << "system class no found";
     }
-    jmethodID get_property_method = m.env()->GetStaticMethodID(system_class, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
-    if (get_property_method == NULL){
-        LOG(ERROR) << "get property no found";
+    jmethodID get_property_method = m.env()->GetStaticMethodID(
+        system_class, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
+    if (get_property_method == NULL) {
+      LOG(ERROR) << "get property no found";
     }
     std::string class_path_name = "java.class.path";
     jstring class_path_str = m.env()->NewStringUTF(class_path_name.c_str());
-    jstring jjres = (jstring) m.env()->CallStaticObjectMethod(system_class, get_property_method, class_path_str);
+    jstring jjres = (jstring) m.env()->CallStaticObjectMethod(
+        system_class, get_property_method, class_path_str);
     std::string res = jstring2string(m.env(), jjres);
     LOG(INFO) << "java.class.path: " << res;
 
@@ -152,19 +155,19 @@ void preprocess(int argc, char** argv) {
     std::string jar_path = argv[2];
     std::string conf_path = argv[3];
     std::string ffi_output_path = argv[4];
-    LOG(INFO) << "jar path" << jar_path << ", conf path " << conf_path << ", output destination:" << ffi_output_path ;
-
+    LOG(INFO) << "jar path" << jar_path << ", conf path " << conf_path
+              << ", output destination:" << ffi_output_path;
 
     std::vector<std::string> args;
-    //java main class need conf path as input 
+    // java main class need conf path as input
     args.push_back(conf_path);
     for (int i = 0; i < argc; ++i) {
-        std::string tmp = argv[i];
-        LOG(INFO) << i << " " << tmp; 
-        if (i > 4){
-            std::string v = argv[i];
-            args.push_back(v);
-        }
+      std::string tmp = argv[i];
+      LOG(INFO) << i << " " << tmp;
+      if (i > 4) {
+        std::string v = argv[i];
+        args.push_back(v);
+      }
     }
     jclass main_class = getMainClass(m.env(), main_class_str);
     if (main_class == NULL) {
@@ -205,16 +208,18 @@ void preprocess(int argc, char** argv) {
       LOG(ERROR) << "fail to find grape process class ";
       return;
     }
-    jmethodID process_method = m.env()->GetStaticMethodID(
-        grape_process_class, "scanAppAndGenerate",
-        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
+    jmethodID process_method =
+        m.env()->GetStaticMethodID(grape_process_class, "scanAppAndGenerate",
+                                   "(Ljava/lang/String;Ljava/lang/String;Ljava/"
+                                   "lang/String;)Ljava/lang/String;");
     if (process_method == NULL) {
       LOG(ERROR) << "fail to find process method";
       return;
     }
     jstring jar_path_jstring = m.env()->NewStringUTF(jar_path.c_str());
     jstring conf_path_jstring = m.env()->NewStringUTF(conf_path.c_str());
-    jstring ffi_output_path_jstring = m.env()->NewStringUTF(ffi_output_path.c_str());
+    jstring ffi_output_path_jstring =
+        m.env()->NewStringUTF(ffi_output_path.c_str());
     jstring jres = (jstring) m.env()->CallStaticObjectMethod(
         grape_process_class, process_method, jar_path_jstring,
         conf_path_jstring, ffi_output_path_jstring);
@@ -246,5 +251,5 @@ void Finalize() {
   VLOG(1) << "Workers finalized.";
 }
 
-}  // namespace grape
+}  // namespace gs
 #endif  // ANALYTICAL_ENGINE_TEST_RUN_JAVA_APP_PREPROCESS_H_

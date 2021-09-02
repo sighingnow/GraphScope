@@ -11,7 +11,7 @@
 #include "grape/io/local_io_adaptor.h"
 #include "grape/serialization/out_archive.h"
 #include "grape/worker/comm_spec.h"
-namespace grape {
+namespace gs {
 template <typename FRAG_T>
 class JavaImmutableEdgecutFragmentLoader {
   // using vertex_map_t = typename fragment_t::vertex_map_t;
@@ -367,6 +367,6 @@ class JavaImmutableEdgecutFragmentLoader {
       basic_fragment_loader_;
 };
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_LOADER_JAVA_IMMUTABLE_EDGECUT_FRAGMENT_LOADER_H_

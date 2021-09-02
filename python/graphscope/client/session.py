@@ -42,6 +42,7 @@ except ImportError:
     kube_config = None
 
 import graphscope
+from graphscope.framework.context import JavaProxyContext
 from graphscope.client.rpc import GRPCClient
 from graphscope.client.utils import CaptureKeyboardInterrupt
 from graphscope.client.utils import GSLogger
@@ -174,8 +175,13 @@ class _FetchHandler(object):
         if context_type == "dynamic_vertex_data":
             # for nx
             return DynamicVertexDataContext(context_dag_node, ret["context_key"])
-        else:
-            return Context(context_dag_node, ret["context_key"])
+        else: 
+            context_type_splited = context_type.split(":")
+            logger.info("context splited: {}".format(":".join(context_type_splited)))
+            if len(context_type_splited) == 2 and context_type_splited[0] == "java_pie_property_default_context":
+                return JavaProxyContext(context_dag_node, ret["context_key"], context_type_splited[1])
+            else :
+                return Context(context_dag_node, ret["context_key"])
 
     def _rebuild_gremlin_results(
         self, seq, op: Operation, op_result: op_def_pb2.OpResult

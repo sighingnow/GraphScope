@@ -12,15 +12,15 @@
 #include "grape/config.h"
 #include "grape/fragment/partitioner.h"
 // include id_encoder for id_encoder_impl.
+#include "core/vertex_map/java_id_encoder.h"
 #include "flat_hash_map/flat_hash_map.hpp"
 #include "grape/config.h"
 #include "grape/serialization/in_archive.h"
 #include "grape/serialization/out_archive.h"
-#include "core/vertex_map/java_id_encoder.h"
 //#include "grape/vertex_map/global_vertex_map_beta.h"
 #include "grape/vertex_map/vertex_map_base.h"
 #include "grape/worker/comm_spec.h"
-namespace grape {
+namespace gs {
 
 template <typename OID_T, typename VID_T, template <typename> class Hasher>
 class JavaGlobalVertexMapBeta;
@@ -254,6 +254,6 @@ class JavaGlobalVertexMapBeta : public VertexMapBase<OID_T, VID_T> {
   //   HashPartitioner<OID_T> partitioner_;
 };
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_VERTEX_MAP_JAVA_GLOBAL_VERTEX_MAP_BETA_H_

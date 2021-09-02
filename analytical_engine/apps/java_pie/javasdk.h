@@ -24,7 +24,7 @@ limitations under the License.
 #include <vector>
 #include "grape/grape.h"
 
-namespace grape {
+namespace gs {
 
 static JavaVM* _jvm = NULL;
 static jclass FFITypeFactoryClass = NULL;
@@ -359,6 +359,59 @@ jobject createFFIVectorObject(JNIEnv* env, const char* type_name,
   return the_object;
 }
 
-}  // namespace grape
+std::string get_jobject_class_name(JNIEnv* env, jobject object) {
+  jclass object_class = env->GetObjectClass(object);
+  if (object_class == NULL) {
+    LOG(ERROR) << "The object class is null";
+    return;
+  }
+  jmethodID obj_class_getClass_method =
+      env->GetMethodID(object_class, "getClass", "()Ljava/lang/Class;");
+  if (obj_class_getClass_method == NULL) {
+    LOG(ERROR) << "getclass method null";
+    return;
+  }
+  jobject obj_class_obj =
+      env->CallObjectMethod(object, obj_class_getClass_method);
+  if (obj_class_obj == NULL) {
+    LOG(ERROR) << "obj class obj null";
+    return;
+  }
+
+  jclass obj_class_obj_class = env->GetObjectClass(obj_class_obj);
+  if (obj_class_obj_class == NULL) {
+    LOG(ERROR) << "obj_class_obj_class null";
+    return;
+  }
+  jmethodId get_name_method =
+      env->GetMethodID(obj_class_obj_class, "getName", "()Ljava/lang/String;");
+  if (get_name_method == NULL) {
+    LOG(ERROR) << "get name method null";
+    return;
+  }
+  jstring class_name_jstr =
+      (jstring) env->CallObjectMethod(obj_class_obj, get_name_method);
+  return jstring2string(env, class_name_jstr);
+}
+
+jclass getClassByJavaPath(JNIEnv* env, const std::string& main_class_name) {
+  char* c_class_name = new char[main_class_name.length() + 1];
+  c_class_name[main_class_name.length()] = '\0';
+  strcpy(c_class_name, main_class_name.c_str());
+  char* p = c_class_name;
+  while (*p) {
+    if (*p == '.')
+      *p = '/';
+    p++;
+  }
+  jclass main_class = env->FindClass(c_class_name);
+  if (main_class == NULL) {
+    LOG(ERROR) << "fail to find main class";
+    return NULL;
+  }
+  return main_class;
+}
+
+}  // namespace gs
 
 #endif  // EXAMPLES_ANALYTICAL_APPS_JAVAAPP_JAVASDK_H_

@@ -23,7 +23,7 @@ limitations under the License.
 #include "grape/types.h"
 #include "java_pie/java_pie_default_context.h"
 
-namespace grape {
+namespace gs {
 
 /**
  * @brief Java default app driver
@@ -157,6 +157,6 @@ class JavaPIEDefaultApp
   }
 };
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_DEFAULT_APP_H_

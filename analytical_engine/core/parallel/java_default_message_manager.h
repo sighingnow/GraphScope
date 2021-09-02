@@ -37,7 +37,7 @@ limitations under the License.
 // #include "grape_gen_def.h"
 // #endif
 
-namespace grape {
+namespace gs {
 
 /**
  * @brief Default message manager.
@@ -582,7 +582,7 @@ class JavaDefaultMessageManager : public JavaMessageManagerBase<GRAPH_T> {
 
   fid_t fid_;
   fid_t fnum_;
-  CommSpec comm_spec_;
+  grape::CommSpec comm_spec_;
 
   MPI_Comm comm_;
 
@@ -596,6 +596,6 @@ class JavaDefaultMessageManager : public JavaMessageManagerBase<GRAPH_T> {
   std::shared_ptr<GRAPH_T> graph_;
 };
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_PARALLEL_JAVA_DEFAULT_MESSAGE_MANAGER_H_

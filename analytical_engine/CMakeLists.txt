@@ -198,6 +198,11 @@ if (BUILD_TESTS)
         target_link_libraries(run_app ${FOLLY_LIBRARIES} ${DOUBLE_CONVERSION_LIBRARY})
     endif ()
 
+    add_executable(run_java_property_app test/run_java_property_app.cc)
+    target_include_directories(run_java_app_preprocess PRIVATE ${LIBGRAPELITE_INCLUDE_DIRS}/grape/analytical_apps core utils apps)
+    target_link_libraries(run_java_app_preprocess ${LIBGRAPELITE_LIBRARIES} ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES}
+                                    ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${JAVA_JVM_LIBRARY} ${VINEYARD_LIBRARIES})
+
     macro(add_vineyard_app target)
         set(options)
         set(oneValueArgs)

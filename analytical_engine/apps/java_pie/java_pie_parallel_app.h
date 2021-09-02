@@ -24,7 +24,7 @@ limitations under the License.
 #include "core/app/java/java_parallel_app_base.h"
 #include "grape/types.h"
 #include "java_pie/java_pie_parallel_context.h"
-namespace grape {
+namespace gs {
 
 /**
  * @brief
@@ -160,6 +160,6 @@ class JavaPIEParallelApp
   }
 };
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PARALLEL_APP_H_

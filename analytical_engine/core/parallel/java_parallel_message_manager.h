@@ -24,7 +24,7 @@
 // #include "grape_gen_def.h"
 // #endif
 
-namespace grape {
+namespace gs {
 
 template <typename GRAPH_T>
 class JavaParallelMessageManager : JavaMessageManagerBase<GRAPH_T> {
@@ -487,7 +487,7 @@ class JavaParallelMessageManager : JavaMessageManagerBase<GRAPH_T> {
 
   fid_t fid_;
   fid_t fnum_;
-  CommSpec comm_spec_;
+  grape::CommSpec comm_spec_;
 
   MPI_Comm comm_;
   MPI_Comm comm_dup;
@@ -510,6 +510,6 @@ class JavaParallelMessageManager : JavaMessageManagerBase<GRAPH_T> {
   GRAPH_T graph_;
 };
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_PARALLEL_JAVA_PARALLEL_MESSAGE_MANAGER_H_

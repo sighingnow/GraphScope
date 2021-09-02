@@ -7,15 +7,15 @@
 #include "core/vertex_map/hash_policy.h"
 // #include "grape/id_encoder/id_encoder.h"
 //#include "vineyard/graph/utils/string_collection.h"
+#include "core/utils/immutable_vector.h"
 #include "grape/communication/sync_comm.h"
 #include "grape/serialization/in_archive.h"
 #include "grape/serialization/out_archive.h"
-#include "core/utils/immutable_vector.h"
 #ifdef GRAPE_SDK_CPP_GRAPE_GEN_DEF
 #include "grape-gen.h"
 #endif
 
-namespace grape {
+namespace gs {
 
 namespace id_encoder_impl {
 
@@ -458,6 +458,6 @@ class JavaIdEncoder {
   Hasher<OID_T> hasher_;
 };
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_VERTEX_MAP_JAVA_ID_ENCODER_H_

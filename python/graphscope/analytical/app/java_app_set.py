@@ -16,14 +16,10 @@
 # limitations under the License.
 #
 
-
-# from coordinator.gscoordinator.coordinator import DEFAULT_GS_CONFIG_FILE
-
-
-import copy
 import hashlib
 import json
 import logging
+from graphscope.framework.graph import Graph
 from graphscope.framework.dag_utils import bind_app
 from graphscope.framework.context import create_context_node
 from graphscope.framework.dag import DAGNode
@@ -82,44 +78,40 @@ class JavaAppAssets(AppAssets):
         s.close()
 
     """
-    def __init__(self, jar_path : str , java_main_class : str, vd_type, md_type):
-        vd_ctype = str(CType.from_string(vd_type)) # _t appended
-        md_ctype = str(CType.from_string(md_type))
+    def __init__(self, jar_path : str):
         garfile = InMemoryZip()
         tmp_jar_file = open(jar_path, 'rb')
         bytes = tmp_jar_file.read()
         garfile.append("{}".format(jar_path.split("/")[-1]), bytes)
         self.java_jar_path_full_ = jar_path
         self.java_jar_path_ = jar_path.split("/")[-1]
-        self.java_main_class_ = java_main_class
-        self.app_class_ = "grape::JavaPIEPropertyDefaultApp"
-        self.vd_type_ = vd_type
-        self.md_type_ = md_type
+        #TODO: remove this
+        java_main_class = "io.graphscope.example.TraverseMain"
+        self.app_class_ = "gs::JavaPIEPropertyDefaultApp"
         gs_config = {
             "app": [
                 {
-                    "algo": "java_app_set",
+                    "algo": "java_app_assets",
                     "context_type": "java_pie_property_default_context",
                     "type": "java_pie",
-                    "class_name": self.app_class ,
-                    "compatible_graph": ["vineyard::ArrowFragment"],
-                    "vd_type": vd_ctype,
-                    "md_type": md_ctype,
-                    "java_main_class" : self.java_main_class,
+                    "class_name": self.app_class,
+                    "compatible_graph": ["vineyard::ArrowFragment", "vineyard::ArrowProjectedFragment"],
+                    "java_main_class" : java_main_class,
                     "java_jar_path": self.java_jar_path
                 }
             ]
         }
         garfile.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
-        super().__init__("java_app_set","java_pie_property_default_context",garfile.read_bytes())
+        super().__init__("java_app_assets","java_pie_property_default_context",garfile.read_bytes())
     def to_gar(self, path):
         if os.path.exists(path):
             raise RuntimeError("Path exist: {}.".format(path))
         with open(path, "wb") as f:
             f.write(self.gar)
     def __call__(self, graph, *args, **kwargs):
-        app_ = graph.session._wrapper(JavaAppDagNode(graph, self))
-        return app_(*args, **kwargs)
+        # app_ = graph.session._wrapper(JavaAppDagNode(graph, self))
+        # return app_(*args, **kwargs)
+        logger.info("please call get()")
     @property
     def java_jar_path(self):
         return self.java_jar_path_
@@ -127,32 +119,32 @@ class JavaAppAssets(AppAssets):
     def java_jar_path_full(self):
         return self.java_jar_path_full_
     @property
-    def frag_name(self):
-        return  "{}<{},{}>".format(
-            "vineyard::ArrowFragment",
-            "int64_t",
-            "uint64_t",
-        )
-    @property
-    def java_main_class(self):
-        return self.java_main_class_
-    @property
     def app_class(self):
         return self.app_class_
-    @property
-    def vd_type(self):
-        return self.vd_type_
-    @property
-    def md_type(self):
-        return self.md_type_
 
     #shall be the same as defined in coordinator/utils.py
     def signature(self):
         s = hashlib.sha256()
-        s.update(f"{self.type}.{self.app_class}.{self.frag_name}.{self.java_jar_path}.{self.java_main_class}".encode("utf-8"))
+        s.update(f"{self.type}.{self.app_class}.{self.java_jar_path}".encode("utf-8"))
         s.update(self.gar)
         return s.hexdigest()
-
+    def get(self, app_class : str):
+        app_ = JavaAppInstace(self, app_class)
+        return app_
+class JavaAppInstace(object):
+    def __init__(self, java_app_assets : JavaAppAssets, app_class: str):
+        self._app_class = app_class
+        self._app_assets = java_app_assets
+    def __call__(self, graph, *args , **kwds):
+        kwds_extend = dict(app_class = self.app_class, **kwds)
+        app_ = graph.session._wrapper(JavaAppDagNode(graph, self.app_assets))
+        return app_(*args, **kwds_extend)
+    @property
+    def app_class(self):
+        return self._app_class
+    @property
+    def app_assets(self):
+        return self._app_assets
 
 class JavaAppDagNode(AppDAGNode):
     """retrict appassets to javaAppAssets"""
@@ -168,7 +160,7 @@ class JavaAppDagNode(AppDAGNode):
         "add deep copy to allow user run app for multiple times on a same javaAppAssets"
         "the ops are new created, but built library should be reused"
         # self._app_assets = copy.deepcopy(app_assets)
-        self._app_assets = JavaAppAssets(app_assets.java_jar_path_full, app_assets.java_main_class, app_assets.vd_type, app_assets.md_type)
+        self._app_assets = JavaAppAssets(app_assets.java_jar_path_full)
         self._session = graph.session
         self._app_assets.is_compatible(self._graph)
 
@@ -203,6 +195,7 @@ class JavaAppDagNode(AppDAGNode):
         # and add them to java.library.path
         # possible_library_directories = [s.rstrip("/") for s in glob("{}/[!gs\-ffi]*/".format(udf_workspace))]
         # user_jar = [s.rstrip("/") for s in glob("{}/*/*.jar".format(udf_workspace))]
+
         user_jni_name = self._app_assets.signature()
         user_jni_dir = os.path.join(udf_workspace, user_jni_name)
         user_jni_name_lib = os.path.join(user_jni_dir, "lib{}.so".format(user_jni_name))
@@ -221,9 +214,17 @@ class JavaAppDagNode(AppDAGNode):
                         + "-Djava.class.path={}:{}:{}:{}:{}:{} {}"\
                          .format(ffi_target_output,  GUAVA_JAR, GRAPE_SDK_JAR, VINEYARD_GRAPH_SDK_JAR, user_jar, LLVM4JNI_JAR, performance_args)
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))
-        kwargs_extend = dict(jvm_runtime_opt=jvm_runtime_opt_impl, frag_name = self._app_assets.frag_name, **kwargs)
-        # just set the jni library name (without lib prefix, and also no path)
-        kwargs_extend = dict(user_library_name = user_jni_name,  **kwargs_extend)
+
+        #get frag template name from graph.op.attr
+        temp_g = Graph(self._graph)
+        logger.info("Set frag name to {}".format(temp_g.template_str))
+        kwargs_extend = dict(
+            jvm_runtime_opt=jvm_runtime_opt_impl,
+            user_library_name = user_jni_name,
+            frag_name = temp_g.template_str,
+            **kwargs
+        )
+
         logger.info("dumping to json {}".format(json.dumps(kwargs_extend)))
         return create_context_node(context_type, self, self._graph, json.dumps(kwargs_extend))
 
