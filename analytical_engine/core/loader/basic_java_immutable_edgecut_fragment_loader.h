@@ -35,7 +35,7 @@ class BasicJavaImmutableEdgecutFragmentLoader {
   using vertex_map_t = typename fragment_t::vertex_map_t;
   using vertex_map_builder_t = typename fragment_t::vertex_map_builder_t;
 
-  static constexpr LoadStrategy load_strategy = LoadStrategy::kOnlyOut;
+  static constexpr grape::LoadStrategy load_strategy = LoadStrategy::kOnlyOut;
 
  public:
   explicit BasicJavaImmutableEdgecutFragmentLoader(
@@ -54,7 +54,7 @@ class BasicJavaImmutableEdgecutFragmentLoader {
                          std::string& serialize_prefix) {
     char serial_file[1024];
     snprintf(serial_file, sizeof(serial_file), "%s/%s",
-             serialize_prefix.c_str(), kSerializationVertexMapFilename);
+             serialize_prefix.c_str(), grape::kSerializationVertexMapFilename);
     VLOG(2) << " Persisting vm to " << serial_file;
     // if (comm_spec_.local_id() == 0 && !exists_file(serial_file)) {
     // if (!exists_file(serial_file)) {
@@ -107,7 +107,7 @@ class BasicJavaImmutableEdgecutFragmentLoader {
   void sortThreadRoutine(
       fid_t fid, std::vector<std::vector<OID_T>>& vertex_id,
       std::vector<std::vector<VDATA_T>>& vertex_data,
-      std::vector<internal::Vertex<VID_T, VDATA_T>>& vertices) {
+      std::vector<grape::internal::Vertex<VID_T, VDATA_T>>& vertices) {
     vertices.clear();
 
     size_t buf_num = vertex_id.size();
@@ -152,7 +152,7 @@ class BasicJavaImmutableEdgecutFragmentLoader {
   void processEdges(std::vector<std::vector<OID_T>>& edge_src,
                     std::vector<std::vector<OID_T>>& edge_dst,
                     std::vector<std::vector<EDATA_T>>& edge_data,
-                    std::vector<Edge<VID_T, EDATA_T>>& to) {
+                    std::vector<grape::Edge<VID_T, EDATA_T>>& to) {
     to.clear();
     std::vector<work_unit> work_units;
     {
@@ -184,7 +184,7 @@ class BasicJavaImmutableEdgecutFragmentLoader {
           auto& src_buf = edge_src[buf_ind];
           auto& dst_buf = edge_dst[buf_ind];
           auto& data_buf = edge_data[buf_ind];
-          Edge<VID_T, EDATA_T>* ptr = &to[buf_begin];
+          grape::Edge<VID_T, EDATA_T>* ptr = &to[buf_begin];
 
           auto src_iter = src_buf.begin();
           auto src_end = src_buf.end();
@@ -273,7 +273,7 @@ class BasicJavaImmutableEdgecutFragmentLoader {
     int worker_num = comm_spec_.worker_num();
 
     std::thread send_thread([&]() {
-      InArchive arc;
+      grape::InArchive arc;
       for (int i = 1; i < worker_num; ++i) {
         int dst_worker_id = (worker_id + i) % worker_num;
         fid_t dst_fid = comm_spec_.WorkerToFrag(dst_worker_id);
@@ -288,7 +288,7 @@ class BasicJavaImmutableEdgecutFragmentLoader {
     });
 
     std::thread recv_thread([&]() {
-      OutArchive arc;
+      grape::OutArchive arc;
       for (int i = 1; i < worker_num; ++i) {
         int src_worker_id = (worker_id + worker_num - i) % worker_num;
         fid_t src_fid = comm_spec_.WorkerToFrag(src_worker_id);
@@ -413,8 +413,8 @@ class BasicJavaImmutableEdgecutFragmentLoader {
   std::vector<std::vector<OID_T>> got_edges_dst_;
   std::vector<std::vector<EDATA_T>> got_edges_data_;
   // notice vid here
-  std::vector<Edge<VID_T, EDATA_T>> processed_edges_;
-  std::vector<internal::Vertex<VID_T, VDATA_T>> processed_vertices_;
+  std::vector<grape::Edge<VID_T, EDATA_T>> processed_edges_;
+  std::vector<grape::internal::Vertex<VID_T, VDATA_T>> processed_vertices_;
 
   // partitioner_t partitioner_;
   static constexpr int vertex_tag = 5;
