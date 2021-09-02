@@ -216,8 +216,12 @@ class TensorContextDAGNode(BaseContextDAGNode):
     def context_type(self):
         return "tensor"
 
-    def _check_selector(self, selector):
+    @staticmethod
+    def _static_check_selector(selector):
         return True
+
+    def _check_selector(self, selector):
+        return self.__class__._static_check_selector(selector)
 
 
 class VertexDataContextDAGNode(BaseContextDAGNode):
@@ -244,6 +248,10 @@ class VertexDataContextDAGNode(BaseContextDAGNode):
         return "vertex_data"
 
     def _check_selector(self, selector):
+        return self.__class__._static_check_selector(selector)
+
+    @staticmethod
+    def _static_check_selector(selector):
         """
         Raises:
             InvalidArgumentError:
@@ -301,6 +309,10 @@ class LabeledVertexDataContextDAGNode(BaseContextDAGNode):
         return "labeled_vertex_data"
 
     def _check_selector(self, selector):
+        return self.__class__._static_check_selector(selector)
+
+    @staticmethod
+    def _static_check_selector(selector):
         """
         Raises:
             InvalidArgumentError:
@@ -350,8 +362,11 @@ class VertexPropertyContextDAGNode(BaseContextDAGNode):
     @property
     def context_type(self):
         return "vertex_property"
-
     def _check_selector(self, selector):
+        return self.__class__._static_check_selector(selector)
+        
+    @staticmethod
+    def _static_check_selector(selector):
         """
         Raises:
             InvalidArgumentError:
@@ -409,8 +424,11 @@ class LabeledVertexPropertyContextDAGNode(BaseContextDAGNode):
     @property
     def context_type(self):
         return "labeled_vertex_property"
-
     def _check_selector(self, selector):
+        return self.__class__._static_check_selector(selector)
+
+    @staticmethod
+    def _static_check_selector(selector):
         if selector is None:
             raise InvalidArgumentError(
                 "Selector in labeled vertex property context cannot be None"
@@ -426,7 +444,35 @@ class LabeledVertexPropertyContextDAGNode(BaseContextDAGNode):
         if len(segments) != 2:
             raise SyntaxError("Invalid selector: {0}".format(selector))
         return True
+class JavaPIEPropertyDefaultContextDAGNode(BaseContextDAGNode):
+    """Base class of concrete context DAG node.
 
+    In GraphScope, it will return a instance of concrete class `ContextDAGNode`
+    after evaluating an app, that will be automatically executed by :method:`sess.run`
+    in eager mode and return a instance of :class:`graphscope.framework.context.Context`
+    """
+
+    def _check_selector(self, selector):
+        return self._inner_ctx_check_selector(selector)
+
+    def set_inner_ctx(self, inner_ctx_type):
+        self._inner_ctx_type = inner_ctx_type
+        if (inner_ctx_type == "tensor"):
+            self._inner_ctx_check_selector = TensorContextDAGNode._static_check_selector
+        elif inner_ctx_type == "vertex_data":
+            self._inner_ctx_check_selector = VertexDataContextDAGNode._static_check_selector
+        elif inner_ctx_type == "labeled_vertex_data":
+            self._inner_ctx_check_selector = LabeledVertexDataContextDAGNode._static_check_selector
+        elif inner_ctx_type == "vertex_property":
+            self._inner_ctx_check_selector = VertexPropertyContextDAGNode._static_check_selector
+        elif inner_ctx_type == "labeled_vertex_property":
+            self._inner_ctx_check_selector = LabeledVertexPropertyContextDAGNode._static_check_selector
+        elif (inner_ctx_type == "java_pie_property_default_context"):
+            raise Exception("can not contain self")
+
+    @property
+    def context_type(self):
+        return "java_pie_property_default_context"
 
 class Context(object):
     """Hold a handle of app querying context.
@@ -578,6 +624,23 @@ class Context(object):
         df = self.to_dataframe(selector, vertex_range)
         df.to_csv(fd, header=True, index=False)
 
+class JavaProxyContext(Context):
+    def __init__(self, context_node : JavaPIEPropertyDefaultContextDAGNode, key, inner_ctx_type):
+        self._context_node = context_node
+        self._session = context_node.session
+        self._graph = self._context_node._graph
+        self._key = key
+        # copy and set op evaluated
+        self._context_node.op = deepcopy(self._context_node.op)
+        self._context_node.evaluated = True
+        self._saved_signature = self.signature
+        self._inner_ctx_type = inner_ctx_type
+        #let java pie property ctx hold one concrete ctx obj in labeled_vertex_data_ctx,
+        # tensor_ctx and etc.
+        self._context_node.set_inner_ctx(inner_ctx_type)
+    @property
+    def inner_ctx_type(self):
+        return self._inner_ctx_type
 
 class DynamicVertexDataContext(collections.abc.Mapping):
     """Vertex data context for complicated result store.
@@ -623,32 +686,7 @@ class DynamicVertexDataContext(collections.abc.Mapping):
     def __iter__(self):
         return iter(self._graph._graph)
 
-class JavaPIEPropertyDefaultContextDAGNode(BaseContextDAGNode):
-    """Base class of concrete context DAG node.
 
-    In GraphScope, it will return a instance of concrete class `ContextDAGNode`
-    after evaluating an app, that will be automatically executed by :method:`sess.run`
-    in eager mode and return a instance of :class:`graphscope.framework.context.Context`
-    """
-
-    def _check_selector(self, selector):
-        raise NotImplementedError()
-
-    @property
-    def context_type(self):
-        return "java_pie_property_default_context"
-
-    def to_numpy(self, selector, vertex_range=None, axis=0):
-        raise NotImplementedError()
-
-    def to_dataframe(self, selector, vertex_range=None):
-        raise NotImplementedError()
-
-    def to_vineyard_tensor(self, selector=None, vertex_range=None, axis=0):
-        raise NotImplementedError()
-
-    def to_vineyard_dataframe(self, selector=None, vertex_range=None):
-        raise NotImplementedError()
 
 def create_context_node(context_type, bound_app, graph, *args, **kwargs):
     """A context DAG node factory, create concrete context class by context type."""

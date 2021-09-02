@@ -25,7 +25,7 @@ limitations under the License.
 #include "core/context/java_context_base.h"
 #include "core/parallel/java_parallel_message_manager.h"
 #include "java_pie/javasdk.h"
-namespace grape {
+namespace gs {
 
 /**
  * @brief Context for the java parallel pie app, used by java sdk.
@@ -231,6 +231,6 @@ class JavaPIEParallelContext : public JavaContextBase<FRAG_T> {
   jobject _frag_object;
   jobject _mm_object;
 };
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PARALLEL_CONTEXT_H_

@@ -23,7 +23,7 @@ limitations under the License.
 #include "grape/config.h"
 #include "grape/parallel/message_manager_base.h"
 
-namespace grape {
+namespace gs {
 
 /**
  * @brief MessageManagerBase is the base class for message managers.
@@ -175,6 +175,6 @@ class JavaMessageManagerBase {
   }
 };
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_PARALLEL_JAVA_MESSAGE_MANAGER_BASE_H_

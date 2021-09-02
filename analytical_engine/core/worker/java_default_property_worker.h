@@ -30,7 +30,7 @@ limitations under the License.
 #include "grape/util.h"
 #include "grape/worker/comm_spec.h"
 
-namespace grape {
+namespace gs {
 
 template <typename FRAG_T, typename CONTEXT_T>
 class JavaDefaultPropertyAppBase;
@@ -144,9 +144,9 @@ class JavaDefaultPropertyWorker {
   std::shared_ptr<context_t> context_;
   message_manager_t messages_;
 
-  CommSpec comm_spec_;
+  grape::CommSpec comm_spec_;
 };
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_WORKER_JAVA_DEFAULT_PROPERTY_WORKER_H_

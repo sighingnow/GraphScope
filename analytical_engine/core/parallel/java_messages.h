@@ -6,7 +6,7 @@
 #include "grape/serialization/out_archive.h"
 
 #include <string>
-namespace grape {
+namespace gs {
 class DoubleMsg {
  public:
   DoubleMsg() { data = -1.0; }
@@ -67,6 +67,6 @@ inline grape::InArchive& operator<<(grape::InArchive& in_archive,
   return in_archive;
 }
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // MESSAGES_H

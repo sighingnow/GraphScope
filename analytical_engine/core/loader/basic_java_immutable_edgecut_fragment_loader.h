@@ -19,11 +19,11 @@
 #include "grape/graph/vertex.h"
 #include "grape/utils/concurrent_queue.h"
 //#include "grape/utils/ref_string.h"
-#include "vineyard/graph/utils/string_collection.h"
 #include "grape/utils/vertex_array.h"
 #include "grape/worker/comm_spec.h"
+#include "vineyard/graph/utils/string_collection.h"
 
-namespace grape {
+namespace gs {
 
 template <typename FRAG_T>
 class BasicJavaImmutableEdgecutFragmentLoader {
@@ -38,7 +38,8 @@ class BasicJavaImmutableEdgecutFragmentLoader {
   static constexpr LoadStrategy load_strategy = LoadStrategy::kOnlyOut;
 
  public:
-  explicit BasicJavaImmutableEdgecutFragmentLoader(const CommSpec& comm_spec)
+  explicit BasicJavaImmutableEdgecutFragmentLoader(
+      const grape::CommSpec& comm_spec)
       : comm_spec_(comm_spec) {
     comm_spec_.Dup();
     vm_ptr_ = std::shared_ptr<vertex_map_t>(new vertex_map_t(comm_spec_));
@@ -394,7 +395,7 @@ class BasicJavaImmutableEdgecutFragmentLoader {
   //   }
   // }
 
-  CommSpec comm_spec_;
+  grape::CommSpec comm_spec_;
   std::shared_ptr<vertex_map_t> vm_ptr_;
   vertex_map_builder_t vm_builder_;
 
@@ -420,6 +421,6 @@ class BasicJavaImmutableEdgecutFragmentLoader {
   static constexpr int edge_tag = 6;
 };
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_LOADER_BASIC_JAVA_IMMUTABLE_EDGECUT_FRAGMENT_LOADER_H_

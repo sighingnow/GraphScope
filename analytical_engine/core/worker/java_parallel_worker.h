@@ -36,7 +36,7 @@ limitations under the License.
  * worker for apps derived from ParallelAppBase.
  *
  */
-namespace grape {
+namespace gs {
 
 template <typename FRAG_T, typename CONTEXT_T>
 class JavaParallelAppBase;
@@ -130,9 +130,9 @@ class JavaParallelWorker {
   std::shared_ptr<context_t> context_;
   message_manager_t messages_;
 
-  CommSpec comm_spec_;
+  grape::CommSpec comm_spec_;
 };
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_WORKER_JAVA_PARALLEL_WORKER_H_

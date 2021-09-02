@@ -19,7 +19,7 @@ limitations under the License.
 #include <memory>
 #include <ostream>
 
-namespace grape {
+namespace gs {
 
 /**
  * @brief ContextBase is the base class for all user-defined contexts. A
@@ -41,9 +41,9 @@ class JavaContextBase {
    *
    * @param frag
    */
-  virtual void Output(std::ostream & os) {}
+  virtual void Output(std::ostream& os) {}
 };
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_CONTEXT_BASE_H_

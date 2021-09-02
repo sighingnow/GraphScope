@@ -33,11 +33,12 @@ limitations under the License.
 #include "core/context/java_context_base.h"
 #include "core/object/i_fragment_wrapper.h"
 #include "core/parallel/property_message_manager.h"
+#include "java_pie/column_mananger.h"
 #include "java_pie/javasdk.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/fragment_traits.h"
 #define CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT "java_pie_property_default"
-namespace grape {
+namespace gs {
 
 /**
  * @brief Context for the java pie app, used by java sdk.
@@ -47,41 +48,10 @@ namespace grape {
 template <typename FRAG_T>
 class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
  public:
-  bool init_class_names(std::string& app_class, std::string& context_class) {
-    if (app_class.empty() || context_class.empty()) {
-      LOG(ERROR) << "Class names for java app and java app context are empty";
-      return false;
-    }
-    {
-      _app_class_name = new char[app_class.length() + 1];
-      strcpy(_app_class_name, app_class.c_str());
-      char* p = _app_class_name;
-      while (*p) {
-        if (*p == '.')
-          *p = '/';
-        p++;
-      }
-    }
-    {
-      _context_class_name = new char[context_class.length() + 1];
-      strcpy(_context_class_name, context_class.c_str());
-
-      char* p = _context_class_name;
-      while (*p) {
-        if (*p == '.')
-          *p = '/';
-        p++;
-      }
-    }
-    return true;
-  }
-
  public:
   using fragment_t = FRAG_T;
   using oid_t = typename FRAG_T::oid_t;
   using vid_t = typename FRAG_T::vid_t;
-  // using vdata_t = typename FRAG_T::vdata_t;
-  // using edata_t = typename FRAG_T::edata_t;
 
   JavaPIEPropertyDefaultContext(const FRAG_T& fragment)
       : _app_class_name(NULL),
@@ -91,7 +61,8 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         _frag_object(NULL),
         _mm_object(NULL),
         fragment_(fragment),
-        local_num_(0) {}
+        local_num_(1),
+        inner_ctx_wrapper(NULL) {}
   const fragment_t& fragment() { return fragment_; }
 
   // grape instance is killed by SIGINT, which cause vm_direct_exit.
@@ -99,70 +70,31 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   virtual ~JavaPIEPropertyDefaultContext() {
     delete[] _app_class_name;
     delete[] _context_class_name;
-    // JNIEnvMark m;
-    // if (m.env()) {
-    //   m.env()->DeleteGlobalRef(_app_object);
-    //   m.env()->DeleteGlobalRef(_context_object);
-    //   m.env()->DeleteGlobalRef(_frag_object);
-    //   m.env()->DeleteGlobalRef(_mm_object);
-    // }
+    JNIEnvMark m;
+    if (m.env()) {
+      m.env()->DeleteGlobalRef(_app_object);
+      m.env()->DeleteGlobalRef(_context_object);
+      m.env()->DeleteGlobalRef(_frag_object);
+      m.env()->DeleteGlobalRef(_mm_object);
+      jint res = env->DestroyJavaVM((GetJavaVM));
+      LOG(INFO) << "Kill javavm status: " << res;
+    }
   }
 
-  void GetPropertyMessageManagerFFITypeName(std::string& name) {
-    name.append("gs::PropertyMessageManager");
+  std::string GetPropertyMessageManagerFFITypeName() {
+    return _message_manager_name;
   }
   void SetLocalNum(int local_num) { local_num_ = local_num; }
-  // void Init(const FRAG_T& frag, gs::PropertyMessageManager& messages,
-  //           std::string& frag_name, std::string& app_class_name,
-  //           std::string& app_context_name, std::vector<std::string>& args) {
-  // Instead of calling multiple params, wo pack it into a json string
+
   void Init(gs::PropertyMessageManager& messages, const std::string& params) {
     if (params.empty()) {
       LOG(ERROR) << "no args received";
       return;
     }
-    boost::property_tree::ptree pt;
-    std::stringstream ss;
-    ss << params;
-    try {
-      boost::property_tree::read_json(ss, pt);
-    } catch (boost::property_tree::ptree_error& r) {
-      LOG(ERROR) << "parse json failed: " << params;
-      return;
-    }
-
-    LOG(INFO) << "received json: " << params;
-    std::string frag_name = pt.get<std::string>("frag_name");
-    LOG(INFO) << "parse frag name: " << frag_name;
-    std::string app_class_name = pt.get<std::string>("app_class");
-    LOG(INFO) << "parse app class name: " << app_class_name;
-    std::string app_context_name = pt.get<std::string>("app_context");
-    LOG(INFO) << "parse app context name: " << app_context_name;
-    std::string user_library_name = pt.get<std::string>("user_library_name");
-    LOG(INFO) << "user library name " << user_library_name;
-
-    // JVM runtime opt should consists of java.libaray.path and java.class.path
-    // maybe this should be set by the backend not user.
-    std::string jvm_runtime_opt = pt.get<std::string>("jvm_runtime_opt");
-
-    std::string args_str = pt.get<std::string>("args");
-    std::vector<std::string> args;
-    if (args_str.size() > 0) {
-      boost::split(args, args_str, boost::is_any_of(":"),
-                   boost::token_compress_on);
-      LOG(INFO) << "parse args size : " << args.size();
-      for (auto arg : args) {
-        LOG(INFO) << arg;
-      }
-    }
-    // put the cp and library.path in env
-    if (setenv("JVM_OPTS", jvm_runtime_opt.c_str(), 1) == 0) {
-      LOG(INFO) << " successfully set jvm opts to: " << jvm_runtime_opt;
-    } else {
-      LOG(ERROR) << " failed to set jvm opts";
-    }
-    // set environment variables
-    SetupEnv(local_num_);
+    std::string user_library_name;
+    std::string args_str =
+        parse_params_and_setup_jvm_env(params, user_library_name);
+    // set java environment variables
 
     // create jvm instance if not exists;
     JavaVM* jvm = GetJavaVM();
@@ -172,81 +104,84 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     JNIEnvMark m;
     if (m.env()) {
       JNIEnv* env = m.env();
-      // load required jni library
-
-      jclass grape_load_library =
-          env->FindClass("com/alibaba/grape/utils/LoadLibrary");
-      if (grape_load_library == NULL) {
-        LOG(ERROR) << "Cannot find grape jni loader class";
-        return;
-      }
-
-      jclass vineyard_load_library =
-          env->FindClass("io/v6d/modules/graph/utils/LoadLibrary");
-      if (vineyard_load_library == NULL) {
-        LOG(ERROR) << "Cannot find vineyard jni loader class ";
-        return;
-      }
-
-      const char* load_library_signature = "(Ljava/lang/String;)V";
-      jmethodID grape_load_library_method = env->GetStaticMethodID(
-          grape_load_library, "invoke", load_library_signature);
-      jmethodID vineyard_load_library_method = env->GetStaticMethodID(
-          vineyard_load_library, "invoke", load_library_signature);
-
-      jstring user_library_name_jstring =
-          m.env()->NewStringUTF(user_library_name.c_str());
-      // call static method
-      m.env()->CallStaticVoidtMethod(grape_load_library,
-                                     grape_load_library_method,
-                                     user_library_name_jstring);
-      m.env()->CallStaticVoidtMethod(grape_load_library,
-                                     vineyard_load_library_method,
-                                     user_library_name_jstring);
-
-      if (env->ExceptionOccurred()) {
-        LOG(ERROR) << std::string("Exception occurred in loading user library");
-        env->ExceptionDescribe();
-        env->ExceptionClear();
-        // env->DeleteLocalRef(main_class);
-        LOG(FATAL) << "exiting since exception occurred";
-      }
-
-      LOG(INFO) << "load specified user jni library: " << user_library_name;
-
-      if (!init_class_names(app_class_name, app_context_name)) {
-        LOG(ERROR) << "Init app class and context class names failed:"
-                   << app_class_name << "," << app_context_name;
-        return;
-      }
-
-      jclass context_class = env->FindClass(_context_class_name);
-      if (context_class == NULL) {
-        LOG(ERROR) << "Cannot find context class " << _context_class_name;
-        return;
-      }
+      // 0. load required jni library
+      load_jni_library(env, user_library_name);
+      // 1. create app object, and get context class via jni
       {
-        jobject object = createObject(env, context_class, _context_class_name);
-        if (object != NULL) {
-          _context_object = env->NewGlobalRef(object);
-        } else {
-          LOG(ERROR) << "Create context obj failed for " << _context_class_name;
+        jclass app_class = env->FindClass(_app_class_name);
+        if (app_class == NULL) {
+          LOG(ERROR) << "Cannot find class " << _app_class_name;
           return;
         }
-      }
-      jclass app_class = env->FindClass(_app_class_name);
-      if (app_class == NULL) {
-        LOG(ERROR) << "Cannot find class " << _app_class_name;
-        return;
-      }
-      {
-        jobject object = createObject(env, app_class, _app_class_name);
-        if (object != NULL) {
-          _app_object = env->NewGlobalRef(object);
+        jobject app_object = createObject(env, app_class, _app_class_name);
+        if (app_object != NULL) {
+          _app_object = env->NewGlobalRef(app_object);
         } else {
           LOG(ERROR) << "create app object failed for " << _app_class_name;
           return;
         }
+        // get app_class's class object
+        jclass app_class_class = env->GetObjectClass(app_object);
+        if (app_class_class == NULL) {
+          LOG(FATAL) << "Cannot find object class ";
+        }
+        jmethodID app_class_getClass_method = env->GetMethodID(
+            app_class_class, "getClass", "()Ljava/lang/Class;");
+        if (app_class_getClass_method == NULL) {
+          LOG(FATAL) << "no get class method ";
+        }
+        jobject app_class_obj =
+            env->CallObjectMethod(_app_object, app_class_getClass_method);
+        if (app_class_obj == NULL) {
+          LOG(FATAL) << "app class obj ";
+        }
+        // the app's corresponding ctx name
+        jstring _app_context_getter_name_jstring =
+            env->NewStringUTF(_app_context_getter_name.c_str());
+        jclass app_context_getter_class =
+            env->FindClass(_app_context_getter_name_jstring);
+        if (app_context_getter_class == NULL) {
+          LOG(ERROR) << "app get ContextClass not found";
+          return;
+        }
+        jmethodID app_context_getter_method = env->GetStaticMethodID(
+            app_context_getter_class, "getPropertyDefaultContext",
+            "(Ljava/lang/Class;)Ljava/lang/Class");
+        if (app_context_getter_method == NULL) {
+          LOG(ERROR) << "appcontextclass getter method null";
+          return;
+        }
+        // Pass app class's class object
+        jclass context_class = env->CallStaticObjectMethod(
+            app_context_getter_class, app_context_getter_method, app_class_obj);
+        if (context_class == NULL) {
+          LOG(ERROR) << "The retrived jclass is null";
+        }
+
+        jobject ctx_object =
+            createObject(env, context_class, "context class name");
+        if (ctx_object != NULL) {
+          _context_object = env->NewGlobalRef(ctx_object);
+        } else {
+          LOG(ERROR) << "Create context obj failed for context";
+          return;
+        }
+
+        _context_class_name = get_jobject_class_name(env, ctx_object);
+        LOG(INFO) << "context name " << _context_class_name;
+
+        // 5. to output the result, we need the c++ context held by java object.
+        jfieldID inner_ctx_address_field =
+            env->GetFieldID(context_class, "ffiContextAddress", "J");
+        if (inner_ctx_address_field == NULL) {
+          LOG(FATAL) << "No such field ffiContextAddress";
+        }
+        long inner_ctx_address =
+            env->GetLongField(_context_object, inner_ctx_address_field);
+        inner_ctx_wrapper =
+            reinterpret_cast<IContextWrapper*>(inner_ctx_address);
+        LOG(INFO) << "inner ctx wrapper type: "
+                  << inner_ctx_wrapper->context_type();
       }
 
       const char* descriptor =
@@ -260,7 +195,6 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         return;
       }
 
-      _java_frag_type_name = frag_name;
       jobject fragObject =
           createFFIPointerObject(env, _java_frag_type_name.c_str(),
                                  reinterpret_cast<jlong>(&fragment_));
@@ -272,11 +206,9 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       }
 
       // 2. Create Message manager Java object
-      // TODO: create message pointer object
-      std::string mm_name;
-      GetPropertyMessageManagerFFITypeName(mm_name);
       jobject messagesObject = createFFIPointerObject(
-          env, mm_name.c_str(), reinterpret_cast<jlong>(&messages));
+          env, GetPropertyMessageManagerFFITypeName().c_str(),
+          reinterpret_cast<jlong>(&messages));
       if (messagesObject == NULL) {
         LOG(ERROR) << "Cannot create message manager Java object";
         return;
@@ -285,15 +217,31 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       }
 
       // 3. Create arguments array
-      jobject argsObject = createStdVectorObject(
-          env, "std::vector<std::string>", reinterpret_cast<jlong>(&args));
-      if (argsObject == NULL) {
-        LOG(ERROR) << "Cannot create args Java object";
-        return;
+      {
+        jclass json_class = env->FindClass("com/alibaba/fastjson/JSON");
+        if (json_class == NULL) {
+          LOG(ERROR) << "fastjson class not found";
+          return;
+        }
+        jmethodID parse_method = env->GetStaticMethodID(
+            json_class, "parseObject",
+            "(Ljava/lang/String;)Lcom/alibaba/fastjson/JSONObject");
+        if (parse_method == NULL) {
+          LOG(ERROR) << "parserObjectMethod not found";
+          return;
+        }
+        LOG(INFO) << "user defined kw args: " << args_str;
+        jstring args_jstring = env->NewStringUTF(args_str.c_str());
+        jobject json_object =
+            env->CallStaticObjectMethod(json_class, parse_method, args_jstring);
+        if (json_object == NULL) {
+          LOG(ERROR) << "json object creation failed";
+          return;
+        }
       }
       // 4. Invoke java method
       env->CallVoidMethod(_context_object, InitMethodID, _frag_object,
-                          _mm_object, argsObject);
+                          _mm_object, json_object);
     }
   }
 
@@ -301,24 +249,6 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     JNIEnvMark m;
     if (m.env()) {
       LOG(INFO) << "enter javapp ctx output";
-      //   JNIEnv* env = m.env();
-
-      //   jclass context_class = env->FindClass(_context_class_name);
-      //   if (context_class == NULL) {
-      //     LOG(ERROR) << "Cannot find class " << _context_class_name;
-      //     return;
-      //   }
-
-      //   const char* descriptor =
-      //       "(Lcom/alibaba/grape/fragment/ImmutableEdgecutFragment;)V";
-      //   jmethodID OutputMethodID =
-      //       env->GetMethodID(context_class, "Output", descriptor);
-      //   if (OutputMethodID == NULL) {
-      //     LOG(ERROR) << "Cannot find method Output" << descriptor;
-      //     return;
-      //   }
-
-      //   env->CallVoidMethod(_context_object, OutputMethodID, _frag_object);
     }
   }
 
@@ -326,6 +256,126 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
 
   const char* context_class_name() const { return _context_class_name; }
 
+  const IContextWrapper* inner_context_wrapper() const {
+    return inner_ctx_wrapper;
+  }
+
+ private:
+  bool init_class_names(std::string& app_class) {
+    if (app_class.empty()) {
+      LOG(ERROR) << "Class names for java app is empty";
+      return false;
+    }
+    {
+      _app_class_name = new char[app_class.length() + 1];
+      strcpy(_app_class_name, app_class.c_str());
+      char* p = _app_class_name;
+      while (*p) {
+        if (*p == '.')
+          *p = '/';
+        p++;
+      }
+    }
+    return true;
+  }
+  void load_jni_library(JNIEnv* env, std::string& user_library_name) {
+    jclass grape_load_library =
+        env->FindClass("com/alibaba/grape/utils/LoadLibrary");
+    if (grape_load_library == NULL) {
+      LOG(ERROR) << "Cannot find grape jni loader class";
+      return;
+    }
+
+    jclass vineyard_load_library =
+        env->FindClass("io/v6d/modules/graph/utils/LoadLibrary");
+    if (vineyard_load_library == NULL) {
+      LOG(ERROR) << "Cannot find vineyard jni loader class ";
+      return;
+    }
+
+    const char* load_library_signature = "(Ljava/lang/String;)V";
+    jmethodID grape_load_library_method = env->GetStaticMethodID(
+        grape_load_library, "invoke", load_library_signature);
+    jmethodID vineyard_load_library_method = env->GetStaticMethodID(
+        vineyard_load_library, "invoke", load_library_signature);
+
+    jstring user_library_name_jstring =
+        m.env()->NewStringUTF(user_library_name.c_str());
+    // call static method
+    m.env()->CallStaticVoidtMethod(grape_load_library,
+                                   grape_load_library_method,
+                                   user_library_name_jstring);
+    m.env()->CallStaticVoidtMethod(grape_load_library,
+                                   vineyard_load_library_method,
+                                   user_library_name_jstring);
+
+    if (env->ExceptionOccurred()) {
+      LOG(ERROR) << std::string("Exception occurred in loading user library");
+      env->ExceptionDescribe();
+      env->ExceptionClear();
+      // env->DeleteLocalRef(main_class);
+      LOG(FATAL) << "exiting since exception occurred";
+    }
+
+    LOG(INFO) << "loaded specified user jni library: " << user_library_name;
+  }
+
+  std::string parse_params_and_setup_jvm_env(std::string& params,
+                                             std::string& user_library_name) {
+    boost::property_tree::ptree pt;
+    std::stringstream ss;
+    {
+      ss << params;
+      try {
+        boost::property_tree::read_json(ss, pt);
+      } catch (boost::property_tree::ptree_error& r) {
+        LOG(FATAL) << "parse json failed: " << params;
+      }
+    }
+
+    LOG(INFO) << "received json: " << params;
+    std::string frag_name = pt.get<std::string>("frag_name");
+    if (frag_name.empty()) {
+      LOG(FATAL) << "empty frag name";
+    }
+    LOG(INFO) << "parse frag name: " << frag_name;
+    _java_frag_type_name = frag_name;
+    pt.erase("frag_name");
+
+    std::string app_class_name = pt.get<std::string>("app_class");
+    if (app_class_name.empty()) {
+      LOG(FATAL) << "empty app class name";
+    }
+    LOG(INFO) << "parse app class name: " << app_class_name;
+    if (!init_app_class_name(app_class_name)) {
+      LOG(FATAL) << "Init app class name failed:" << app_class_name;
+    }
+    pt.erase("app_class");
+
+    std::string user_library_name = pt.get<std::string>("user_library_name");
+    if (user_library_name.empty()) {
+      LOG(FATAL) << "empty user library name";
+    }
+    LOG(INFO) << "user library name " << user_library_name;
+    pt.erase("user_library_name");
+
+    // JVM runtime opt should consists of java.libaray.path and
+    // java.class.path maybe this should be set by the backend not user.
+    std::string jvm_runtime_opt = pt.get<std::string>("jvm_runtime_opt");
+    // put the cp and library.path in env
+    if (setenv("JVM_OPTS", jvm_runtime_opt.c_str(), 1) == 0) {
+      LOG(INFO) << " successfully set jvm opts to: " << jvm_runtime_opt;
+    } else {
+      LOG(ERROR) << " failed to set jvm opts";
+    }
+    SetupEnv(local_num_);
+    pt.erase("jvm_runtime_opt");
+    // extract the rest params, pack them as a json object.
+    ss.str("");  // reset the stream buffer
+    boost::property_tree::json_parser::write_json(ss, pt);
+
+    return ss.str();
+  }
   char* _app_class_name;
   char* _context_class_name;
   std::string _java_frag_type_name;
@@ -334,9 +384,17 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   jobject _frag_object;
   jobject _mm_object;
   const fragment_t& fragment_;
+  IContextWrapper* inner_ctx_wrapper;
+  std::shared_ptr<ColumnManager<fragment_t>> column_manager;
   int local_num_;
+
+  static const std::string _message_manager_name = "gs::PropertyMessageManager";
+  static const std::string _app_context_getter_name =
+      "io/v6d/modules/graph/utils/AppContextGetter";
 };
 
+// This Wrapper works as a proxy, forward requests like toNdArray, to the c++
+// context held by java object.
 template <typename FRAG_T>
 class JavaPIEPropertyDefaultContextWrapper
     : public gs::IJavaPIEPropertyDefaultContextWrapper {
@@ -358,7 +416,9 @@ class JavaPIEPropertyDefaultContextWrapper
         ctx_(std::move(context)) {}
 
   std::string context_type() override {
-    return CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT;
+    auto inner_inner_context_wrapeer = ctx_->inner_context_wrapper();
+    return CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT + ":" +
+           inner_inner_context_wrapeer->context_type();
   }
 
   std::shared_ptr<gs::IFragmentWrapper> fragment_wrapper() override {
@@ -367,22 +427,42 @@ class JavaPIEPropertyDefaultContextWrapper
   gs::bl::result<std::unique_ptr<grape::InArchive>> ToNdArray(
       const grape::CommSpec& comm_spec, const gs::LabeledSelector& selector,
       const std::pair<std::string, std::string>& range) override {
-    auto arc = std::make_unique<grape::InArchive>();
-    return arc;
+    auto inner_inner_context_wrapeer = ctx_->inner_context_wrapper();
+    if (inner_inner_context_wrapeer->context_type() == "labeled_vertex_data") {
+      auto actual_ctx_wrapper =
+          std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
+              inner_inner_context_wrapeer);
+      return actual_ctx_wrapper->ToNdArray(comm_spec, selector, range);
+    }
+    return std::make_unique<grape::InArchive>();
   }
 
   gs::bl::result<std::unique_ptr<grape::InArchive>> ToDataframe(
       const grape::CommSpec& comm_spec,
       const std::vector<std::pair<std::string, gs::LabeledSelector>>& selectors,
       const std::pair<std::string, std::string>& range) override {
-    auto arc = std::make_unique<grape::InArchive>();
-    return arc;
+    auto inner_inner_context_wrapeer = ctx_->inner_context_wrapper();
+    if (inner_inner_context_wrapeer->context_type() == "labeled_vertex_data") {
+      auto actual_ctx_wrapper =
+          std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
+              inner_inner_context_wrapeer);
+      return actual_ctx_wrapper->ToDataframe(comm_spec, selectors, range);
+    }
+    return std::make_unique<grape::InArchive>();
   }
 
   gs::bl::result<vineyard::ObjectID> ToVineyardTensor(
       const grape::CommSpec& comm_spec, vineyard::Client& client,
       const gs::LabeledSelector& selector,
       const std::pair<std::string, std::string>& range) override {
+    auto inner_inner_context_wrapeer = ctx_->inner_context_wrapper();
+    if (inner_inner_context_wrapeer->context_type() == "labeled_vertex_data") {
+      auto actual_ctx_wrapper =
+          std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
+              inner_inner_context_wrapeer);
+      return actual_ctx_wrapper->ToVineyardTensor(comm_spec, client, selector,
+                                                  range);
+    }
     return vineyard::InvalidObjectID();
   }
 
@@ -390,6 +470,14 @@ class JavaPIEPropertyDefaultContextWrapper
       const grape::CommSpec& comm_spec, vineyard::Client& client,
       const std::vector<std::pair<std::string, gs::LabeledSelector>>& selectors,
       const std::pair<std::string, std::string>& range) override {
+    auto inner_inner_context_wrapeer = ctx_->inner_context_wrapper();
+    if (inner_inner_context_wrapeer->context_type() == "labeled_vertex_data") {
+      auto actual_ctx_wrapper =
+          std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
+              inner_inner_context_wrapeer);
+      return actual_ctx_wrapper->ToVineyardDataframe(comm_spec, client,
+                                                     selectors, range);
+    }
     return vineyard::InvalidObjectID();
   }
 
@@ -399,16 +487,23 @@ class JavaPIEPropertyDefaultContextWrapper
   ToArrowArrays(const grape::CommSpec& comm_spec,
                 const std::vector<std::pair<std::string, gs::LabeledSelector>>&
                     selectors) override {
-    std::map<label_id_t,
-             std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
+    auto inner_inner_context_wrapeer = ctx_->inner_context_wrapper();
+    if (inner_inner_context_wrapeer->context_type() == "labeled_vertex_data") {
+      auto actual_ctx_wrapper =
+          std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
+              inner_inner_context_wrapeer);
+      return actual_ctx_wrapper->ToArrowArrays(comm_spec, selectors);
+    }
+    return std::map<
+        label_id_t,
+        std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
         arrow_arrays;
-    return arrow_arrays;
   }
 
  private:
   std::shared_ptr<gs::IFragmentWrapper> frag_wrapper_;
   std::shared_ptr<context_t> ctx_;
 };
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_DEFAULT_CONTEXT_H_

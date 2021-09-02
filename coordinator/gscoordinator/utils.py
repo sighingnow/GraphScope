@@ -135,7 +135,9 @@ def get_app_sha256(attr):
         ).hexdigest()
     elif app_type == "java_pie":
         s = hashlib.sha256()
-        s.update(f"{app_type}.{app_class}.{graph_type}.{java_jar_path}.{java_main_class}".encode("utf-8"))
+        #CAUTION!!!!!
+        #remove graph type since java jar is not dependent on graph_type
+        s.update(f"{app_type}.{app_class}.{java_jar_path}".encode("utf-8"))
         if types_pb2.GAR in attr:
             s.update(attr[types_pb2.GAR].s)
         return s.hexdigest()
@@ -1067,8 +1069,8 @@ def _codegen_app_info(attr, meta_file: str):
                     app_type, 
                     "",#cxx header
                     app["class_name"], #cxx class name
-                    app["vd_type"],  # vd_type,
-                    app["md_type"],  # md_type
+                    None,  # vd_type,
+                    None,  # md_type
                     None,  # pregel combine
                     app["java_main_class"], # main class for preprocess
                     app["java_jar_path"],
