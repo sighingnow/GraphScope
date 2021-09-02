@@ -7,7 +7,7 @@ ENGINE_HOME="$(
 
 export VINEYARD_HOME=/usr/local/bin
 socket_file=/tmp/vineyard.sock
-test_dir=${ENGINE_HOME}/../gtest/
+test_dir=${ENGINE_HOME}/../gstest/
 
 function start_vineyard() {
   pushd "${ENGINE_HOME}/build"
@@ -86,14 +86,10 @@ function run_vy() {
 }
 
 cmd_prefix="mpirun"
-if ompi_info; then
-  echo "Using openmpi"
-  cmd_prefix="${cmd_prefix} --allow-run-as-root"
-fi
 
 pushd "${ENGINE_HOME}"/build
 
-start_vineyard
+#start_vineyard
 
 demo_jar=/home/admin/.m2/repository/com/alibaba/grape/graphscope-demo/0.1/graphscope-demo-0.1-jar-with-dependencies.jar
 GRAPE_LITE_JNI_SO_PATH=~/GAE-ODPSGraph/pie-sdk/grape-sdk/target/classes/
@@ -105,7 +101,7 @@ export RUN_CP=${RUN_CP}:~/.m2/repository/com/alibaba/ffi/llvm4jni-runtime/0.1/ll
 echo "run class path "${RUN_CP}
 echo "java libraray path "${GAE_DIR}/build:${DIR}/build:${GRAPE_LITE_JNI_SO_PATH}
 export RUN_JVM_OPTS="-Djava.library.path=${GAE_DIR}/build:${DIR}/build:${GRAPE_LITE_JNI_SO_PATH}:/usr/local/lib -Djava.class.path=${RUN_CP} -Dcom.alibaba.ffi.rvBuffer=2147483648 -XX:+StartAttachListener -XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
-
+np=1
 run_vy ${np} ./run_java_property_app "${socket_file}" 2 "${test_dir}"/new_property/v2_e2/twitter_e 2 "${test_dir}"/new_property/v2_e2/twitter_v 0 1 io.graphscope.example.sssp.SSSPDefault
 
 
