@@ -81,7 +81,7 @@ class JavaDefaultWorker {
     MPI_Barrier(comm_spec_.comm());
 
     context_->Init(messages_, std::forward<Args>(args)...);
-    if (comm_spec_.worker_id() == kCoordinatorRank) {
+    if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
       VLOG(1) << "[Coordinator]: Finished Init context";
     }
 
@@ -96,7 +96,7 @@ class JavaDefaultWorker {
 
     messages_.FinishARound();
 
-    if (comm_spec_.worker_id() == kCoordinatorRank) {
+    if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
       VLOG(1) << "[Coordinator]: Finished PEval, time " << peval_time;
     }
 
@@ -118,7 +118,7 @@ class JavaDefaultWorker {
       finish_around -= grape::GetCurrentTime();
       messages_.FinishARound();
       finish_around += grape::GetCurrentTime();
-      if (comm_spec_.worker_id() == kCoordinatorRank) {
+      if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
         VLOG(1) << "[Coordinator]: Finished IncEval - " << step;
       }
       ++step;

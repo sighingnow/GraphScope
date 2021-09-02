@@ -81,7 +81,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     }
   }
 
-  std::string GetPropertyMessageManagerFFITypeName() {
+  const char* GetPropertyMessageManagerFFITypeName() {
     return _message_manager_name;
   }
   void SetLocalNum(int local_num) { local_num_ = local_num; }
@@ -137,7 +137,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         }
         // the app's corresponding ctx name
         jstring _app_context_getter_name_jstring =
-            env->NewStringUTF(_app_context_getter_name.c_str());
+            env->NewStringUTF(_app_context_getter_name);
         jclass app_context_getter_class =
             env->FindClass(_app_context_getter_name_jstring);
         if (app_context_getter_class == NULL) {
@@ -206,9 +206,9 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       }
 
       // 2. Create Message manager Java object
-      jobject messagesObject = createFFIPointerObject(
-          env, GetPropertyMessageManagerFFITypeName().c_str(),
-          reinterpret_cast<jlong>(&messages));
+      jobject messagesObject =
+          createFFIPointerObject(env, GetPropertyMessageManagerFFITypeName(),
+                                 reinterpret_cast<jlong>(&messages));
       if (messagesObject == NULL) {
         LOG(ERROR) << "Cannot create message manager Java object";
         return;
@@ -300,14 +300,12 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         vineyard_load_library, "invoke", load_library_signature);
 
     jstring user_library_name_jstring =
-        m.env()->NewStringUTF(user_library_name.c_str());
+        env->NewStringUTF(user_library_name.c_str());
     // call static method
-    m.env()->CallStaticVoidtMethod(grape_load_library,
-                                   grape_load_library_method,
-                                   user_library_name_jstring);
-    m.env()->CallStaticVoidtMethod(grape_load_library,
-                                   vineyard_load_library_method,
-                                   user_library_name_jstring);
+    env->CallStaticVoidtMethod(grape_load_library, grape_load_library_method,
+                               user_library_name_jstring);
+    env->CallStaticVoidtMethod(grape_load_library, vineyard_load_library_method,
+                               user_library_name_jstring);
 
     if (env->ExceptionOccurred()) {
       LOG(ERROR) << std::string("Exception occurred in loading user library");
@@ -388,8 +386,9 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   std::shared_ptr<ColumnManager<fragment_t>> column_manager;
   int local_num_;
 
-  static const std::string _message_manager_name = "gs::PropertyMessageManager";
-  static const std::string _app_context_getter_name =
+  static constexpr const char* _message_manager_name =
+      "gs::PropertyMessageManager";
+  static constexpr const char* _app_context_getter_name =
       "io/v6d/modules/graph/utils/AppContextGetter";
 };
 

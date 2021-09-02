@@ -58,7 +58,7 @@ class JavaDefaultPropertyWorker {
 
   virtual ~JavaDefaultPropertyWorker() {}
 
-  void Init(const CommSpec& comm_spec,
+  void Init(const grape::CommSpec& comm_spec,
             const grape::ParallelEngineSpec& pe_spec =
                 grape::DefaultParallelEngineSpec()) {
     auto& graph = const_cast<fragment_t&>(context_->fragment());
@@ -83,7 +83,7 @@ class JavaDefaultPropertyWorker {
     context_->SetLocalNum(comm_spec_.local_num());
 
     context_->Init(messages_, std::forward<Args>(args)...);
-    if (comm_spec_.worker_id() == kCoordinatorRank) {
+    if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
       VLOG(1) << "[Coordinator]: Finished Init context";
     }
 
@@ -98,7 +98,7 @@ class JavaDefaultPropertyWorker {
 
     messages_.FinishARound();
 
-    if (comm_spec_.worker_id() == kCoordinatorRank) {
+    if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
       VLOG(1) << "[Coordinator]: Finished PEval, time " << peval_time;
     }
 
@@ -120,7 +120,7 @@ class JavaDefaultPropertyWorker {
       finish_around -= grape::GetCurrentTime();
       messages_.FinishARound();
       finish_around += grape::GetCurrentTime();
-      if (comm_spec_.worker_id() == kCoordinatorRank) {
+      if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
         VLOG(1) << "[Coordinator]: Finished IncEval - " << step;
       }
       ++step;
