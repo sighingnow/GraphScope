@@ -106,10 +106,10 @@ static inline std::string generate_vm_path(int pid, int fid) {
 
 template <typename OID_T, typename VID_T, template <typename> class Hasher>
 class JavaGlobalVertexMapBeta : public grape::VertexMapBase<OID_T, VID_T> {
-  using Base = VertexMapBase<OID_T, VID_T>;
+  using Base = grape::VertexMapBase<OID_T, VID_T>;
 
  public:
-  explicit JavaGlobalVertexMapBeta(const CommSpec& comm_spec)
+  explicit JavaGlobalVertexMapBeta(const grape::CommSpec& comm_spec)
       : Base(comm_spec) {}
 
   ~JavaGlobalVertexMapBeta() = default;
@@ -154,7 +154,7 @@ class JavaGlobalVertexMapBeta : public grape::VertexMapBase<OID_T, VID_T> {
 
   void Construct(fid_t fid,
                  JavaIdEncoderBuilder<OID_T, VID_T, Hasher>& builder) {
-    const CommSpec& comm_spec = Base::GetCommSpec();
+    const grape::CommSpec& comm_spec = Base::GetCommSpec();
 
     int pid;
     if (comm_spec.local_id() == 0) {
