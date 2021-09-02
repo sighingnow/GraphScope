@@ -74,11 +74,11 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   std::shared_ptr<FragmentType> fragment =
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(id));
   // 0. setup environment
-  SetupEnv(comm_spec.local_num());
+  gs::SetupEnv(comm_spec.local_num());
 
-  JavaVM* jvm = GetJavaVM();
+  JavaVM* jvm = gs::GetJavaVM();
   (void) jvm;
-  JNIEnvMark m;
+  gs::JNIEnvMark m;
   // 1. prepare the running params;
   boost::property_tree::ptree pt;
   pt.put("frag_name", "vineyard::ArrowFragment<int64_t,uint64_t>");

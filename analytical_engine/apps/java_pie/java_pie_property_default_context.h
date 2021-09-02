@@ -76,7 +76,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       m.env()->DeleteGlobalRef(_context_object);
       m.env()->DeleteGlobalRef(_frag_object);
       m.env()->DeleteGlobalRef(_mm_object);
-      jint res = env->DestroyJavaVM((GetJavaVM));
+      jint res = m.env()->DestroyJavaVM(GetJavaVM());
       LOG(INFO) << "Kill javavm status: " << res;
     }
   }
@@ -136,28 +136,41 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
           LOG(FATAL) << "app class obj ";
         }
         // the app's corresponding ctx name
-        jstring _app_context_getter_name_jstring =
-            env->NewStringUTF(_app_context_getter_name);
+        // jstring _app_context_getter_name_jstring =
+        //     env->NewStringUTF(_app_context_getter_name);
         jclass app_context_getter_class =
-            env->FindClass(_app_context_getter_name_jstring);
+            env->FindClass(_app_context_getter_name);
         if (app_context_getter_class == NULL) {
           LOG(ERROR) << "app get ContextClass not found";
           return;
         }
         jmethodID app_context_getter_method = env->GetStaticMethodID(
-            app_context_getter_class, "getPropertyDefaultContext",
-            "(Ljava/lang/Class;)Ljava/lang/Class");
+            app_context_getter_class, "getPropertyDefaultContextName",
+            "(Ljava/lang/Class;)Ljava/lang/String");
         if (app_context_getter_method == NULL) {
           LOG(ERROR) << "appcontextclass getter method null";
           return;
         }
         // Pass app class's class object
-        jclass context_class = env->CallStaticObjectMethod(
+        jstring context_class_jstring = (jstring) env->CallStaticObjectMethod(
             app_context_getter_class, app_context_getter_method, app_class_obj);
-        if (context_class == NULL) {
-          LOG(ERROR) << "The retrived jclass is null";
+        if (context_class_jstring == NULL) {
+          LOG(ERROR) << "The retrived class string null";
         }
 
+        // create context object through newInstance
+
+        _context_class_name = jstring2string(env, context_class_jstring);
+
+        // _context_class_name = get_jobject_class_name(env, ctx_object);
+        LOG(INFO) << "context name " << _context_class_name;
+
+        jclass context_class = env->FindClass(_context_class_name);
+        if (context_class == NULL) {
+          LOG(ERROR) << "context class not found: "
+                     << std::string(_context_class_name);
+          return;
+        }
         jobject ctx_object =
             createObject(env, context_class, "context class name");
         if (ctx_object != NULL) {
@@ -166,9 +179,6 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
           LOG(ERROR) << "Create context obj failed for context";
           return;
         }
-
-        _context_class_name = get_jobject_class_name(env, ctx_object);
-        LOG(INFO) << "context name " << _context_class_name;
 
         // 5. to output the result, we need the c++ context held by java object.
         jfieldID inner_ctx_address_field =
@@ -261,7 +271,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   }
 
  private:
-  bool init_class_names(std::string& app_class) {
+  bool init_app_class_name(std::string& app_class) {
     if (app_class.empty()) {
       LOG(ERROR) << "Class names for java app is empty";
       return false;
@@ -299,13 +309,11 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     jmethodID vineyard_load_library_method = env->GetStaticMethodID(
         vineyard_load_library, "invoke", load_library_signature);
 
-    jstring user_library_name_jstring =
-        env->NewStringUTF(user_library_name.c_str());
     // call static method
-    env->CallStaticVoidtMethod(grape_load_library, grape_load_library_method,
-                               user_library_name_jstring);
-    env->CallStaticVoidtMethod(grape_load_library, vineyard_load_library_method,
-                               user_library_name_jstring);
+    env->CallStaticVoidMethod(grape_load_library, grape_load_library_method,
+                              user_library_name.c_str());
+    env->CallStaticVoidMethod(grape_load_library, vineyard_load_library_method,
+                              user_library_name.c_str());
 
     if (env->ExceptionOccurred()) {
       LOG(ERROR) << std::string("Exception occurred in loading user library");
@@ -350,7 +358,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     }
     pt.erase("app_class");
 
-    std::string user_library_name = pt.get<std::string>("user_library_name");
+    user_library_name = pt.get<std::string>("user_library_name");
     if (user_library_name.empty()) {
       LOG(FATAL) << "empty user library name";
     }
@@ -416,8 +424,8 @@ class JavaPIEPropertyDefaultContextWrapper
 
   std::string context_type() override {
     auto inner_inner_context_wrapeer = ctx_->inner_context_wrapper();
-    return CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT + ":" +
-           inner_inner_context_wrapeer->context_type();
+    std::string ret = CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT;
+    return ret + ":" + inner_inner_context_wrapeer->context_type();
   }
 
   std::shared_ptr<gs::IFragmentWrapper> fragment_wrapper() override {
