@@ -76,7 +76,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       m.env()->DeleteGlobalRef(_context_object);
       m.env()->DeleteGlobalRef(_frag_object);
       m.env()->DeleteGlobalRef(_mm_object);
-      jint res = m.env()->DestroyJavaVM(GetJavaVM());
+      jnit res = GetJavaVM()->DestroyJavaVM();
       LOG(INFO) << "Kill javavm status: " << res;
     }
   }
@@ -160,17 +160,19 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
 
         // create context object through newInstance
 
-        _context_class_name = jstring2string(env, context_class_jstring);
+        std::string _context_class_name_str =
+            jstring2string(env, context_class_jstring);
 
         // _context_class_name = get_jobject_class_name(env, ctx_object);
-        LOG(INFO) << "context name " << _context_class_name;
-
+        LOG(INFO) << "context name " << _context_class_name_str;
+        _context_class_name = _context_class_name_str.c_str();
         jclass context_class = env->FindClass(_context_class_name);
         if (context_class == NULL) {
           LOG(ERROR) << "context class not found: "
-                     << std::string(_context_class_name);
+                     << std::string(_context_class_name_str);
           return;
         }
+
         jobject ctx_object =
             createObject(env, context_class, "context class name");
         if (ctx_object != NULL) {
