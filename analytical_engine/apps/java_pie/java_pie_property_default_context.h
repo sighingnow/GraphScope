@@ -253,10 +253,10 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
           LOG(ERROR) << "json object creation failed";
           return;
         }
+        // 4. Invoke java method
+        env->CallVoidMethod(_context_object, InitMethodID, _frag_object,
+                            _mm_object, json_object);
       }
-      // 4. Invoke java method
-      env->CallVoidMethod(_context_object, InitMethodID, _frag_object,
-                          _mm_object, json_object);
     }
   }
 
