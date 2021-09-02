@@ -85,7 +85,7 @@ class JavaParallelWorker {
 
     context_ = std::make_shared<context_t>();
     context_->Init(*graph_, messages_, std::forward<Args>(args)...);
-    if (comm_spec_.worker_id() == kCoordinatorRank) {
+    if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
       VLOG(1) << "[Coordinator]: Finished Init";
     }
 
@@ -99,7 +99,7 @@ class JavaParallelWorker {
 
     messages_.FinishARound();
 
-    if (comm_spec_.worker_id() == kCoordinatorRank) {
+    if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
       VLOG(1) << "[Coordinator]: Finished PEval";
     }
 
@@ -113,7 +113,7 @@ class JavaParallelWorker {
 
       messages_.FinishARound();
 
-      if (comm_spec_.worker_id() == kCoordinatorRank) {
+      if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
         VLOG(1) << "[Coordinator]: Finished IncEval - " << step;
       }
       ++step;

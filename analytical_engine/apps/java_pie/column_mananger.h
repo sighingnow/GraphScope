@@ -43,7 +43,7 @@ class ColumnManager {
 
   const fragment_t& fragment() { return fragment_; }
 
-  std::string get_name() { return name; }
+  std::string get_name() { return std::string(name); }
 
   template <typename DATA_T>
   int64_t add_column(label_id_t label, const std::string& name) {
@@ -56,7 +56,7 @@ class ColumnManager {
     }
     // auto column =
     //     CreateColumn<fragment_t>(name, fragment_.InnerVertices(label), type);
-    auto column = this.template MyCreateColumn<fragment_t, DATA_T>(
+    auto column = this.template MyCreateColumn<DATA_T>(
         name, fragment_.InnerVertices(label));
     map.emplace(name, column);
     auto& vec = vertex_properties_[label];
@@ -134,7 +134,7 @@ class ColumnManager {
   }
 
  private:
-  template <typename FRAG_T, typename DATA_T>
+  template <typename DATA_T>
   std::shared_ptr<IColumn> MyCreateColumn(const std::string& name,
                                           typename FRAG_T::vertex_range_t range,
                                           ContextDataType type) {
@@ -160,7 +160,7 @@ class ColumnManager {
   const fragment_t& fragment_;
   std::vector<std::vector<std::shared_ptr<IColumn>>> vertex_properties_;
   std::vector<std::map<std::string, std::shared_ptr<IColumn>>> properties_map_;
-  static const std::string name = "gs::ColumnManager";
+  static constexpr const char* name = "gs::ColumnManager";
 };
 }  // namespace gs
 
