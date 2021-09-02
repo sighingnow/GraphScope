@@ -35,7 +35,8 @@ class BasicJavaImmutableEdgecutFragmentLoader {
   using vertex_map_t = typename fragment_t::vertex_map_t;
   using vertex_map_builder_t = typename fragment_t::vertex_map_builder_t;
 
-  static constexpr grape::LoadStrategy load_strategy = LoadStrategy::kOnlyOut;
+  static constexpr grape::LoadStrategy load_strategy =
+      grape::LoadStrategy::kOnlyOut;
 
  public:
   explicit BasicJavaImmutableEdgecutFragmentLoader(
@@ -72,7 +73,7 @@ class BasicJavaImmutableEdgecutFragmentLoader {
     };
     char serial_file[1024];
     snprintf(serial_file, sizeof(serial_file), "%s/%s",
-             serialize_prefix.c_str(), kSerializationVertexMapFilename);
+             serialize_prefix.c_str(), grape::kSerializationVertexMapFilename);
     // auto io_adaptor =
     //     std::unique_ptr<IOADAPTOR_T>(new IOADAPTOR_T(serialize_prefix));
     if (exists_file(serial_file)) {
@@ -345,7 +346,7 @@ class BasicJavaImmutableEdgecutFragmentLoader {
         VID_T offsets[2];
         MPI_Recv(&offsets[0], sizeof(VID_T) * 2, MPI_CHAR, src_worker_id, 0,
                  comm_spec_.comm(), MPI_STATUS_IGNORE);
-        VertexRange<VID_T> range(offsets[0], offsets[1]);
+        grape::VertexRange<VID_T> range(offsets[0], offsets[1]);
         gid_list.clear();
         gid_list.resize(range.size());
         MPI_Recv(&gid_list[0], gid_list.size() * sizeof(VID_T), MPI_CHAR,

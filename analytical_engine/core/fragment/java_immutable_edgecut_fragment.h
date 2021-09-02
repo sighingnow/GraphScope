@@ -42,9 +42,9 @@ limitations under the License.
 #include "grape/utils/vertex_array.h"
 #include "grape/worker/comm_spec.h"
 
-namespace gs {
-class grape::CommSpec;
-class grape::OutArchive;
+namespace grape {
+class CommSpec;
+class OutArchive;
 
 /**
  * @brief A kind of edgecut fragment.
@@ -1331,6 +1331,6 @@ class JavaImmutableEdgecutFragment
   friend class BasicFragmentLoader;
 };
 
-}  // namespace gs
+}  // namespace grape
 
 #endif  // ANALYTICAL_ENGINE_CORE_FRAGMENT_JAVA_IMMUTABLE_EDGECUT_FRAGMENT_H_
