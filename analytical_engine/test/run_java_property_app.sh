@@ -96,16 +96,20 @@ pushd "${ENGINE_HOME}"/build
 start_vineyard
 
 demo_jar=/home/admin/.m2/repository/com/alibaba/grape/graphscope-demo/0.1/graphscope-demo-0.1-jar-with-dependencies.jar
-GRAPE_LITE_JNI_SO_PATH=~/GAE-ODPSGraph/pie-sdk/grape-sdk/target/classes/
+GRAPE_SDK_BUILD=/home/admin/GAE-ODPSGraph/pie-sdk/grape-sdk/target/classes/
+GRAPE_SDK_BUILD_NATIVE=${GRAPE_SDK_BUILD}/native/
+VINEYARD_GRAPH_BUILD=/home/admin/GAE-ODPSGraph/pie-sdk/vineyard-graph/target/classes/
+VINEYARD_GRAPH_BUILD_NATIVE=${VINEYARD_GRAPH_BUILD}/native/
 #export RUN_CP=${RUN_CP}:${DIR}/../../../GAE-ODPSGraph/pie-sdk/grape-sdk/target/classes
 # put sdk before demo due to the version of guava, 15.0 vs 30-jre
 export RUN_CP=${RUN_CP}:~/.m2/repository/com/google/guava/guava/30.1.1-jre/guava-30.1.1-jre.jar
+export RUN_CP=${GRAPE_SDK_BUILD}:${VINEYARD_GRAPH_BUILD}
 export RUN_CP=${RUN_CP}:${demo_jar}
 export RUN_CP=${RUN_CP}:~/.m2/repository/com/alibaba/ffi/llvm4jni-runtime/0.1/llvm4jni-runtime-0.1-jar-with-dependencies.jar
 echo "run class path "${RUN_CP}
 echo "java libraray path "${GAE_DIR}/build:${DIR}/build:${GRAPE_LITE_JNI_SO_PATH}
-export RUN_JVM_OPTS="-Djava.library.path=${GAE_DIR}/build:${DIR}/build:${GRAPE_LITE_JNI_SO_PATH}:/usr/local/lib -Djava.class.path=${RUN_CP} -Dcom.alibaba.ffi.rvBuffer=2147483648 -XX:+StartAttachListener -XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
-
+export RUN_JVM_OPTS="-Djava.library.path=${GRAPE_SDK_BUILD_NATIVE}:${VINEYARD_GRAPH_BUILD_NATIVE}:/usr/local/lib -Djava.class.path=${RUN_CP}"
+np=1
 run_vy ${np} ./run_java_property_app "${socket_file}" 2 "${test_dir}"/new_property/v2_e2/twitter_e 2 "${test_dir}"/new_property/v2_e2/twitter_v 0 1 io.graphscope.example.sssp.SSSPDefault
 
 

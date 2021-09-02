@@ -74,22 +74,22 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   std::shared_ptr<FragmentType> fragment =
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(id));
   // 0. setup environment
-  gs::SetupEnv(comm_spec.local_num());
-
-  JavaVM* jvm = gs::GetJavaVM();
-  (void) jvm;
-  gs::JNIEnvMark m;
+  // gs::SetupEnv(comm_spec.local_num());
   // 1. prepare the running params;
   boost::property_tree::ptree pt;
   pt.put("frag_name", "vineyard::ArrowFragment<int64_t,uint64_t>");
   pt.put("app_class", app_name);
   // The path to sdk jni library
   pt.put("user_library_name", "libvineyard-jni");
-  std::string run_jvm_opts = "-Djava.library.path=" + GRAPE_LITE_JNI_SO_PATH +
-                             ":" + VINEYARD_JNI_SO_PATH +
-                             ":/usr/local/lib -Djava.class.path=" + RUN_CP +
-                             "}";
-  pt.put("jvm_runtime_opt", run_jvm_opts);
+  char* jvm_opts = getenv("RUN_JVM_OPTS");
+
+  // std::string run_jvm_opts = "-Djava.library.path=" + GRAPE_LITE_JNI_SO_PATH
+  // +
+  //                            ":" + VINEYARD_JNI_SO_PATH +
+  //                            ":/usr/local/lib -Djava.class.path=" + RUN_CP +
+  //                            "}";
+  pt.put("jvm_runtime_opt", std::string(jvm_opts));
+  LOG(INFO) << "geted shell env : " << std::string(jvm_opts);
   std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);
   std::string basic_params = ss.str();
