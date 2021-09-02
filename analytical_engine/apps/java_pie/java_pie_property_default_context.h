@@ -68,8 +68,12 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   // grape instance is killed by SIGINT, which cause vm_direct_exit.
   // when we try to release memery, segmentation fault incurred
   virtual ~JavaPIEPropertyDefaultContext() {
-    delete[] _app_class_name;
-    delete inner_ctx_wrapper;
+    if (_app_class_name) {
+      delete[] _app_class_name;
+    }
+    if (inner_ctx_wrapper) {
+      delete inner_ctx_wrapper;
+    }
     // delete[] _context_class_name;
     JNIEnvMark m;
     if (m.env()) {
@@ -108,94 +112,92 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       // 0. load required jni library
       load_jni_library(env, user_library_name);
       // 1. create app object, and get context class via jni
-      {
-        jclass app_class = env->FindClass(_app_class_name);
-        if (app_class == NULL) {
-          LOG(ERROR) << "Cannot find class " << _app_class_name;
-          return;
-        }
-        jobject app_object = createObject(env, app_class, _app_class_name);
-        if (app_object != NULL) {
-          _app_object = env->NewGlobalRef(app_object);
-        } else {
-          LOG(ERROR) << "create app object failed for " << _app_class_name;
-          return;
-        }
-        // get app_class's class object
-        jclass app_class_class = env->GetObjectClass(app_object);
-        if (app_class_class == NULL) {
-          LOG(FATAL) << "Cannot find object class ";
-        }
-        jmethodID app_class_getClass_method = env->GetMethodID(
-            app_class_class, "getClass", "()Ljava/lang/Class;");
-        if (app_class_getClass_method == NULL) {
-          LOG(FATAL) << "no get class method ";
-        }
-        jobject app_class_obj =
-            env->CallObjectMethod(_app_object, app_class_getClass_method);
-        if (app_class_obj == NULL) {
-          LOG(FATAL) << "app class obj ";
-        }
-        // the app's corresponding ctx name
-        // jstring _app_context_getter_name_jstring =
-        //     env->NewStringUTF(_app_context_getter_name);
-        jclass app_context_getter_class =
-            env->FindClass(_app_context_getter_name);
-        if (app_context_getter_class == NULL) {
-          LOG(ERROR) << "app get ContextClass not found";
-          return;
-        }
-        jmethodID app_context_getter_method = env->GetStaticMethodID(
-            app_context_getter_class, "getPropertyDefaultContextName",
-            "(Ljava/lang/Class;)Ljava/lang/String");
-        if (app_context_getter_method == NULL) {
-          LOG(ERROR) << "appcontextclass getter method null";
-          return;
-        }
-        // Pass app class's class object
-        jstring context_class_jstring = (jstring) env->CallStaticObjectMethod(
-            app_context_getter_class, app_context_getter_method, app_class_obj);
-        if (context_class_jstring == NULL) {
-          LOG(ERROR) << "The retrived class string null";
-        }
 
-        // create context object through newInstance
-
-        std::string _context_class_name_str =
-            jstring2string(env, context_class_jstring);
-
-        // _context_class_name = get_jobject_class_name(env, ctx_object);
-        LOG(INFO) << "context name " << _context_class_name_str;
-        // _context_class_name = _context_class_name_str.c_str();
-        jclass context_class = env->FindClass(_context_class_name_str.c_str());
-        if (context_class == NULL) {
-          LOG(ERROR) << "context class not found: "
-                     << std::string(_context_class_name_str);
-          return;
-        }
-
-        jobject ctx_object =
-            createObject(env, context_class, "context class name");
-        if (ctx_object != NULL) {
-          _context_object = env->NewGlobalRef(ctx_object);
-        } else {
-          LOG(ERROR) << "Create context obj failed for context";
-          return;
-        }
-
-        // 5. to output the result, we need the c++ context held by java object.
-        jfieldID inner_ctx_address_field =
-            env->GetFieldID(context_class, "ffiContextAddress", "J");
-        if (inner_ctx_address_field == NULL) {
-          LOG(FATAL) << "No such field ffiContextAddress";
-        }
-        long inner_ctx_address =
-            env->GetLongField(_context_object, inner_ctx_address_field);
-        inner_ctx_wrapper =
-            reinterpret_cast<IContextWrapper*>(inner_ctx_address);
-        LOG(INFO) << "inner ctx wrapper type: "
-                  << inner_ctx_wrapper->context_type();
+      jclass app_class = env->FindClass(_app_class_name);
+      if (app_class == NULL) {
+        LOG(ERROR) << "Cannot find class " << _app_class_name;
+        return;
       }
+      jobject app_object = createObject(env, app_class, _app_class_name);
+      if (app_object != NULL) {
+        _app_object = env->NewGlobalRef(app_object);
+      } else {
+        LOG(ERROR) << "create app object failed for " << _app_class_name;
+        return;
+      }
+      // get app_class's class object
+      jclass app_class_class = env->GetObjectClass(app_object);
+      if (app_class_class == NULL) {
+        LOG(FATAL) << "Cannot find object class ";
+      }
+      jmethodID app_class_getClass_method =
+          env->GetMethodID(app_class_class, "getClass", "()Ljava/lang/Class;");
+      if (app_class_getClass_method == NULL) {
+        LOG(FATAL) << "no get class method ";
+      }
+      jobject app_class_obj =
+          env->CallObjectMethod(_app_object, app_class_getClass_method);
+      if (app_class_obj == NULL) {
+        LOG(FATAL) << "app class obj ";
+      }
+      // the app's corresponding ctx name
+      // jstring _app_context_getter_name_jstring =
+      //     env->NewStringUTF(_app_context_getter_name);
+      jclass app_context_getter_class =
+          env->FindClass(_app_context_getter_name);
+      if (app_context_getter_class == NULL) {
+        LOG(ERROR) << "app get ContextClass not found";
+        return;
+      }
+      jmethodID app_context_getter_method = env->GetStaticMethodID(
+          app_context_getter_class, "getPropertyDefaultContextName",
+          "(Ljava/lang/Class;)Ljava/lang/String");
+      if (app_context_getter_method == NULL) {
+        LOG(ERROR) << "appcontextclass getter method null";
+        return;
+      }
+      // Pass app class's class object
+      jstring context_class_jstring = (jstring) env->CallStaticObjectMethod(
+          app_context_getter_class, app_context_getter_method, app_class_obj);
+      if (context_class_jstring == NULL) {
+        LOG(ERROR) << "The retrived class string null";
+      }
+
+      // create context object through newInstance
+
+      std::string _context_class_name_str =
+          jstring2string(env, context_class_jstring);
+
+      // _context_class_name = get_jobject_class_name(env, ctx_object);
+      LOG(INFO) << "context name " << _context_class_name_str;
+      // _context_class_name = _context_class_name_str.c_str();
+      jclass context_class = env->FindClass(_context_class_name_str.c_str());
+      if (context_class == NULL) {
+        LOG(ERROR) << "context class not found: "
+                   << std::string(_context_class_name_str);
+        return;
+      }
+
+      jobject ctx_object =
+          createObject(env, context_class, "context class name");
+      if (ctx_object != NULL) {
+        _context_object = env->NewGlobalRef(ctx_object);
+      } else {
+        LOG(ERROR) << "Create context obj failed for context";
+        return;
+      }
+
+      // 5. to output the result, we need the c++ context held by java object.
+      jfieldID inner_ctx_address_field =
+          env->GetFieldID(context_class, "ffiContextAddress", "J");
+      if (inner_ctx_address_field == NULL) {
+        LOG(FATAL) << "No such field ffiContextAddress";
+      }
+      long inner_ctx_address =
+          env->GetLongField(_context_object, inner_ctx_address_field);
+      inner_ctx_wrapper = reinterpret_cast<IContextWrapper*>(inner_ctx_address);
+      LOG(INFO) << "inner ctx wrapper type: "
+                << inner_ctx_wrapper->context_type();
 
       const char* descriptor =
           "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
@@ -274,6 +276,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   }
 
  public:
+  char* _app_class_name;
   jobject _app_object;
   jobject _context_object;
   jobject _frag_object;
@@ -391,7 +394,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
 
     return ss.str();
   }
-  char* _app_class_name;
+
   // char* _context_class_name;
   std::string _java_frag_type_name;
 
