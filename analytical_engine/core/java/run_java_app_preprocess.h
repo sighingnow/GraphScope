@@ -24,10 +24,10 @@
 namespace gs {
 
 void Init() {
-  InitMPIComm();
+  grape::InitMPIComm();
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
-  if (comm_spec.worker_id() == kCoordinatorRank) {
+  if (comm_spec.worker_id() == grape::kCoordinatorRank) {
     VLOG(1) << "Workers are initialized.";
   }
 }
@@ -118,10 +118,10 @@ void preprocess(int argc, char** argv) {
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
-  double end_to_end = -GetCurrentTime();
+  double end_to_end = -grape::GetCurrentTime();
 
-  CommSpec comm_spec;
-  comm_spec.Init(MPI_COMM_WORLD);
+  grape::CommSpec comm_spec;
+  grape::comm_spec.Init(MPI_COMM_WORLD);
 
   SetupEnv(comm_spec);
 
@@ -241,13 +241,13 @@ void preprocess(int argc, char** argv) {
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
-  end_to_end += GetCurrentTime();
+  end_to_end += grape::GetCurrentTime();
   if (comm_spec.worker_id() == 0) {
     LOG(INFO) << "end to end time: " << end_to_end;
   }
 }
 void Finalize() {
-  FinalizeMPIComm();
+  grape::FinalizeMPIComm();
   VLOG(1) << "Workers finalized.";
 }
 

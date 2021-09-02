@@ -10,15 +10,15 @@ int main(int argc, char* argv[]) {
   google::InitGoogleLogging("run_pie_preprocess");
   google::InstallFailureSignalHandler();
 
-  grape::Init();
+  gs::Init();
 
-  grape::preprocess(argc, argv);
+  gs::preprocess(argc, argv);
   // step 0: call main function to write the config
   // step 1: call tianxiao's method to generate code and cpp files
   // step 2: compile above file to user.so, along  with libgrape-lite.so and
   // libgrape-lite-jin.so, we build run_pie_sdk
 
-  grape::Finalize();
+  gs::Finalize();
 
   google::ShutdownGoogleLogging();
 }

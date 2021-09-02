@@ -92,9 +92,9 @@ class JavaDefaultPropertyWorker {
     messages_.Start();
 
     messages_.StartARound();
-    double peval_time = -GetCurrentTime();
+    double peval_time = -grape::GetCurrentTime();
     app_->PEval(graph, *context_, messages_);
-    peval_time += GetCurrentTime();
+    peval_time += grape::GetCurrentTime();
 
     messages_.FinishARound();
 
@@ -103,23 +103,23 @@ class JavaDefaultPropertyWorker {
     }
 
     int step = 1;
-    double total_inc_time = -GetCurrentTime();
+    double total_inc_time = -grape::GetCurrentTime();
     double start_around = 0.0;
     double finish_around = 0.0;
     double inc_eval_time = 0.0;
     while (!messages_.ToTerminate()) {
       round++;
-      start_around -= GetCurrentTime();
+      start_around -= grape::GetCurrentTime();
       messages_.StartARound();
-      start_around += GetCurrentTime();
+      start_around += grape::GetCurrentTime();
 
-      inc_eval_time -= GetCurrentTime();
+      inc_eval_time -= grape::GetCurrentTime();
       app_->IncEval(graph, *context_, messages_);
-      inc_eval_time += GetCurrentTime();
+      inc_eval_time += grape::GetCurrentTime();
 
-      finish_around -= GetCurrentTime();
+      finish_around -= grape::GetCurrentTime();
       messages_.FinishARound();
-      finish_around += GetCurrentTime();
+      finish_around += grape::GetCurrentTime();
       if (comm_spec_.worker_id() == kCoordinatorRank) {
         VLOG(1) << "[Coordinator]: Finished IncEval - " << step;
       }
@@ -127,7 +127,7 @@ class JavaDefaultPropertyWorker {
     }
     MPI_Barrier(comm_spec_.comm());
     messages_.Finalize();
-    total_inc_time += GetCurrentTime();
+    total_inc_time += grape::GetCurrentTime();
     VLOG(1) << "[worker: " << comm_spec_.worker_id()
             << "], totoal inc time: " << total_inc_time << ", start a round"
             << start_around << ", finish around " << finish_around

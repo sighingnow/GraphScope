@@ -325,12 +325,12 @@ class JavaImmutableEdgecutFragmentLoader {
     std::shared_ptr<FRAG_T> fragment(nullptr);
     basic_fragment_loader_->ConstructFragment(fragment);
     if (serialize) {
-      double t = -GetCurrentTime();
+      double t = -grape::GetCurrentTime();
       MPI_Barrier(comm_spec_.comm());
       basic_fragment_loader_->template SerializeFragment<io_adaptor_t>(fragment,
                                                                        prefix);
       MPI_Barrier(comm_spec_.comm());
-      t += GetCurrentTime();
+      t += grape::GetCurrentTime();
       if (comm_spec_.worker_id() == 0) {
         VLOG(1) << "[Coordinator] Serialization cost" << t;
       }
