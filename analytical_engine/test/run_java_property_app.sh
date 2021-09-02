@@ -7,7 +7,7 @@ ENGINE_HOME="$(
 
 export VINEYARD_HOME=/usr/local/bin
 socket_file=/tmp/vineyard.sock
-test_dir=${ENGINE_HOME}/../gtest/
+test_dir=${ENGINE_HOME}/../gstest/
 
 function start_vineyard() {
   pushd "${ENGINE_HOME}/build"
@@ -86,14 +86,10 @@ function run_vy() {
 }
 
 cmd_prefix="mpirun"
-if ompi_info; then
-  echo "Using openmpi"
-  cmd_prefix="${cmd_prefix} --allow-run-as-root"
-fi
 
 pushd "${ENGINE_HOME}"/build
 
-start_vineyard
+#start_vineyard
 
 demo_jar=/home/admin/.m2/repository/com/alibaba/grape/graphscope-demo/0.1/graphscope-demo-0.1-jar-with-dependencies.jar
 GRAPE_SDK_BUILD=/home/admin/GAE-ODPSGraph/pie-sdk/grape-sdk/target/classes/

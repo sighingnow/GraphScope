@@ -218,7 +218,6 @@ class JavaAppDagNode(AppDAGNode):
         #get frag template name from graph.op.attr
         temp_g = Graph(self._graph)
         logger.info("Set frag name to {}".format(temp_g.template_str))
-        
         kwargs_extend = dict(
             jvm_runtime_opt=jvm_runtime_opt_impl,
             user_library_name = user_jni_name,
