@@ -18,6 +18,7 @@
 #include "grape/serialization/in_archive.h"
 #include "grape/serialization/out_archive.h"
 //#include "grape/vertex_map/global_vertex_map_beta.h"
+#include "core/config.h"
 #include "grape/vertex_map/vertex_map_base.h"
 #include "grape/worker/comm_spec.h"
 namespace gs {
@@ -49,7 +50,7 @@ class JavaNativeVertexMapBuilder {
   void Serialize(const std::string& prefix) {
     char fbuf[1024];
     snprintf(fbuf, sizeof(fbuf), "%s/%s_%d", prefix.c_str(),
-             kSerializationVertexMapFilename, fid_);
+             grape::kSerializationVertexMapFilename, fid_);
 
     auto io_adaptor =
         std::unique_ptr<IOADAPTOR_T>(new IOADAPTOR_T(std::string(fbuf)));
@@ -63,7 +64,7 @@ class JavaNativeVertexMapBuilder {
   void Deserialize(const std::string& prefix) {
     char fbuf[1024];
     snprintf(fbuf, sizeof(fbuf), "%s/%s_%d", prefix.c_str(),
-             kSerializationVertexMapFilename, fid_);
+             grape::kSerializationVertexMapFilename, fid_);
 
     auto io_adaptor =
         std::unique_ptr<IOADAPTOR_T>(new IOADAPTOR_T(std::string(fbuf)));
@@ -104,7 +105,7 @@ static inline std::string generate_vm_path(int pid, int fid) {
 }
 
 template <typename OID_T, typename VID_T, template <typename> class Hasher>
-class JavaGlobalVertexMapBeta : public VertexMapBase<OID_T, VID_T> {
+class JavaGlobalVertexMapBeta : public grape::VertexMapBase<OID_T, VID_T> {
   using Base = VertexMapBase<OID_T, VID_T>;
 
  public:
