@@ -10,6 +10,7 @@
 #include "core/loader/basic_java_immutable_edgecut_fragment_loader.h"
 #include "grape/io/local_io_adaptor.h"
 #include "grape/serialization/out_archive.h"
+#include "grape/util.h"
 #include "grape/worker/comm_spec.h"
 namespace gs {
 template <typename FRAG_T>
@@ -21,7 +22,7 @@ class JavaImmutableEdgecutFragmentLoader {
   using VDATA_T = typename FRAG_T::vdata_t;
   using EDATA_T = typename FRAG_T::edata_t;
   // using partition_t = CityHashPartitioner<OID_T>;
-  using io_adaptor_t = LocalIOAdaptor;
+  using io_adaptor_t = grape::LocalIOAdaptor;
   using vertex_map_t = typename FRAG_T::vertex_map_t;
 
   // using vertex_map_t = GlobalVertexMapBeta<OID_T, VID_T>;
