@@ -163,14 +163,14 @@ class JavaMessageManagerBase {
     int dst_worker = fid;
     InArchive arc;
     arc << msg;
-    SendArchive(arc, dst_worker, comm_);
+    grape::SendArchive(arc, dst_worker, comm_);
   }
 
   template <typename T>
   static inline void RecvFrom(fid_t fid, T& msg, const MPI_Comm& comm_) {
     int src_worker = fid;
     OutArchive arc;
-    RecvArchive(arc, src_worker, comm_);
+    grape::RecvArchive(arc, src_worker, comm_);
     arc >> msg;
   }
 };

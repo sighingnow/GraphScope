@@ -1,7 +1,7 @@
 #ifndef ANALYTICAL_ENGINE_CORE_VERTEX_MAP_HASH_POLICY_H_
 #define ANALYTICAL_ENGINE_CORE_VERTEX_MAP_HASH_POLICY_H_
 
-namespace grape {
+namespace gs {
 
 namespace id_encoder_impl {
 
@@ -1138,6 +1138,6 @@ struct prime_number_hash_policy {
 
 }  // namespace id_encoder_impl
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_VERTEX_MAP_HASH_POLICY_H_

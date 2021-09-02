@@ -111,9 +111,9 @@ class JavaImmutableEdgecutFragment
   using edata_t = EDATA_T;
 
   // using vertex_map_t = GlobalVertexMap<oid_t, vid_t>;
-  using vertex_map_t = JavaGlobalVertexMapBeta<OID_T, VID_T, std::hash>;
+  using vertex_map_t = gs::JavaGlobalVertexMapBeta<OID_T, VID_T, std::hash>;
   using vertex_map_builder_t =
-      JavaNativeVertexMapBuilder<OID_T, VID_T, std::hash>;
+      gs::JavaNativeVertexMapBuilder<OID_T, VID_T, std::hash>;
 
   using IsEdgeCut = std::true_type;
   using IsVertexCut = std::false_type;

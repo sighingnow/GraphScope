@@ -256,7 +256,7 @@ class JavaIdEncoderBuilder {
     arc << static_cast<int>(max_lookups_) << num_elements_
         << num_slots_minus_one_ << mod_function_index;
     std::vector<char> arc_buf(arc.GetBuffer(), arc.GetBuffer() + arc.GetSize());
-    dump_vector<char>(arc_buf, path + ".desc");
+    grape::dump_vector<char>(arc_buf, path + ".desc");
 
     CHECK_EQ(keys_.size(), num_elements_);
 
@@ -271,7 +271,7 @@ class JavaIdEncoderBuilder {
     size_t mod_function_index = hash_policy_.get_mod_function_index();
     arc << static_cast<int>(max_lookups_) << num_elements_
         << num_slots_minus_one_ << mod_function_index;
-    SendArchive(arc, dst_worker_id, comm);
+    grape::SendArchive(arc, dst_worker_id, comm);
 
     id_encoder_impl::BufferUtils<OID_T>::send_buffer(keys_, dst_worker_id,
                                                      comm);
@@ -291,7 +291,7 @@ class JavaIdEncoderBuilder {
 
   void RecvFrom(int src_worker_id, MPI_Comm comm) {
     grape::OutArchive arc;
-    RecvArchive(arc, src_worker_id, comm);
+    grape::RecvArchive(arc, src_worker_id, comm);
     int max_lookups_int;
     size_t mod_function_index;
     arc >> max_lookups_int >> num_elements_ >> num_slots_minus_one_ >>
