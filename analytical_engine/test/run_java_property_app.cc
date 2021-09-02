@@ -54,7 +54,7 @@ void Query(std::shared_ptr<FragmentType> fragment,
   auto spec = grape::DefaultParallelEngineSpec();
   worker->Init(comm_spec, spec);
 
-  worker->Query(params);
+  worker->Query(basic_params);
 
   std::ofstream ostream;
   std::string output_path =
@@ -89,7 +89,8 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
                              ":" + VINEYARD_JNI_SO_PATH +
                              ":/usr/local/lib -Djava.class.path=" + RUN_CP +
                              "}";
-  pt.put("jvm_runtime_opt", run_jvm_opts) std::stringstream ss;
+  pt.put("jvm_runtime_opt", run_jvm_opts);
+  std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);
   std::string basic_params = ss.str();
   LOG(INFO) << "basic_params" << basic_params;
@@ -134,7 +135,7 @@ int main(int argc, char** argv) {
   // if (argc > index) {
   //   path_pattern = argv[index++];
   // }
-  LOG(INFO) << "app name " << app_name << " " << path_patter;
+  LOG(INFO) << "app name " << app_name;
 
   grape::InitMPIComm();
   {

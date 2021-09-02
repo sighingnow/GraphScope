@@ -136,7 +136,7 @@ class ColumnManager {
  private:
   template <typename DATA_T>
   std::shared_ptr<IColumn> MyCreateColumn(
-      const std::string& name, typename FRAG_T::vertex_range_t range, ) {
+      const std::string& name, typename FRAG_T::vertex_range_t range) {
     return std::make_shared<Column<FRAG_T, DATA_T>>(name, range);
     // if (type == ContextDataType::kInt32) {
     //   return std::make_shared<Column<FRAG_T, int32_t>>(name, range);

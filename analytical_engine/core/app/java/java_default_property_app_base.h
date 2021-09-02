@@ -22,15 +22,16 @@ limitations under the License.
 #include "core/parallel/property_message_manager.h"
 #include "core/worker/java_default_property_worker.h"
 #include "grape/types.h"
-namespace grape {
+namespace gs {
 
 template <typename FRAG_T, typename CONTEXT_T>
 class JavaDefaultPropertyAppBase {
  public:
   static constexpr bool need_split_edges = true;
-  static constexpr LoadStrategy load_strategy = LoadStrategy::kBothOutIn;
-  static constexpr MessageStrategy message_strategy =
-      MessageStrategy::kAlongOutgoingEdgeToOuterVertex;
+  static constexpr grape::LoadStrategy load_strategy =
+      grape::LoadStrategy::kBothOutIn;
+  static constexpr grape::MessageStrategy message_strategy =
+      grape::MessageStrategy::kAlongOutgoingEdgeToOuterVertex;
 
   using message_manager_t = gs::PropertyMessageManager;
 
@@ -70,13 +71,13 @@ class JavaDefaultPropertyAppBase {
   using fragment_t = FRAG_T;                                           \
   using context_t = CONTEXT_T;                                         \
   using message_manager_t = gs::PropertyMessageManager;                \
-  using worker_t = JavaDefaultPropertyWorker<APP_T>;            \
+  using worker_t = gs::JavaDefaultPropertyWorker<APP_T>;               \
   virtual ~APP_T() {}                                                  \
   static std::shared_ptr<worker_t> CreateWorker(                       \
       std::shared_ptr<APP_T> app, std::shared_ptr<FRAG_T> frag) {      \
     return std::shared_ptr<worker_t>(new worker_t(app, frag));         \
   }
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_APP_JAVA_JAVA_DEFAULT_PROPERTY_APP_BASE_H_
