@@ -363,31 +363,31 @@ std::string get_jobject_class_name(JNIEnv* env, jobject object) {
   jclass object_class = env->GetObjectClass(object);
   if (object_class == NULL) {
     LOG(ERROR) << "The object class is null";
-    return;
+    return NULL;
   }
   jmethodID obj_class_getClass_method =
       env->GetMethodID(object_class, "getClass", "()Ljava/lang/Class;");
   if (obj_class_getClass_method == NULL) {
     LOG(ERROR) << "getclass method null";
-    return;
+    return NULL;
   }
   jobject obj_class_obj =
       env->CallObjectMethod(object, obj_class_getClass_method);
   if (obj_class_obj == NULL) {
     LOG(ERROR) << "obj class obj null";
-    return;
+    return NULL;
   }
 
   jclass obj_class_obj_class = env->GetObjectClass(obj_class_obj);
   if (obj_class_obj_class == NULL) {
     LOG(ERROR) << "obj_class_obj_class null";
-    return;
+    return NULL;
   }
-  jmethodId get_name_method =
+  jmethodID get_name_method =
       env->GetMethodID(obj_class_obj_class, "getName", "()Ljava/lang/String;");
   if (get_name_method == NULL) {
     LOG(ERROR) << "get name method null";
-    return;
+    return NULL;
   }
   jstring class_name_jstr =
       (jstring) env->CallObjectMethod(obj_class_obj, get_name_method);
