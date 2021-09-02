@@ -55,28 +55,29 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
 
   JavaPIEPropertyDefaultContext(const FRAG_T& fragment)
       : _app_class_name(NULL),
-        _context_class_name(NULL),
+        // _context_class_name(NULL),
         _app_object(NULL),
         _context_object(NULL),
         _frag_object(NULL),
         _mm_object(NULL),
         fragment_(fragment),
-        local_num_(1),
-        inner_ctx_wrapper(NULL) {}
+        inner_ctx_wrapper(NULL),
+        local_num_(1) {}
   const fragment_t& fragment() { return fragment_; }
 
   // grape instance is killed by SIGINT, which cause vm_direct_exit.
   // when we try to release memery, segmentation fault incurred
   virtual ~JavaPIEPropertyDefaultContext() {
     delete[] _app_class_name;
-    delete[] _context_class_name;
+    delete inner_ctx_wrapper;
+    // delete[] _context_class_name;
     JNIEnvMark m;
     if (m.env()) {
       m.env()->DeleteGlobalRef(_app_object);
       m.env()->DeleteGlobalRef(_context_object);
       m.env()->DeleteGlobalRef(_frag_object);
       m.env()->DeleteGlobalRef(_mm_object);
-      jnit res = GetJavaVM()->DestroyJavaVM();
+      jint res = GetJavaVM()->DestroyJavaVM();
       LOG(INFO) << "Kill javavm status: " << res;
     }
   }
@@ -165,8 +166,8 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
 
         // _context_class_name = get_jobject_class_name(env, ctx_object);
         LOG(INFO) << "context name " << _context_class_name_str;
-        _context_class_name = _context_class_name_str.c_str();
-        jclass context_class = env->FindClass(_context_class_name);
+        // _context_class_name = _context_class_name_str.c_str();
+        jclass context_class = env->FindClass(_context_class_name_str.c_str());
         if (context_class == NULL) {
           LOG(ERROR) << "context class not found: "
                      << std::string(_context_class_name_str);
@@ -266,11 +267,17 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
 
   const char* app_class_name() const { return _app_class_name; }
 
-  const char* context_class_name() const { return _context_class_name; }
+  // const char* context_class_name() const { return _context_class_name; }
 
   const IContextWrapper* inner_context_wrapper() const {
     return inner_ctx_wrapper;
   }
+
+ public:
+  jobject _app_object;
+  jobject _context_object;
+  jobject _frag_object;
+  jobject _mm_object;
 
  private:
   bool init_app_class_name(std::string& app_class) {
@@ -328,7 +335,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     LOG(INFO) << "loaded specified user jni library: " << user_library_name;
   }
 
-  std::string parse_params_and_setup_jvm_env(std::string& params,
+  std::string parse_params_and_setup_jvm_env(const std::string& params,
                                              std::string& user_library_name) {
     boost::property_tree::ptree pt;
     std::stringstream ss;
@@ -385,12 +392,9 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     return ss.str();
   }
   char* _app_class_name;
-  char* _context_class_name;
+  // char* _context_class_name;
   std::string _java_frag_type_name;
-  jobject _app_object;
-  jobject _context_object;
-  jobject _frag_object;
-  jobject _mm_object;
+
   const fragment_t& fragment_;
   IContextWrapper* inner_ctx_wrapper;
   std::shared_ptr<ColumnManager<fragment_t>> column_manager;
@@ -433,6 +437,7 @@ class JavaPIEPropertyDefaultContextWrapper
   std::shared_ptr<gs::IFragmentWrapper> fragment_wrapper() override {
     return frag_wrapper_;
   }
+  // Considering labeledSelector vs selector
   gs::bl::result<std::unique_ptr<grape::InArchive>> ToNdArray(
       const grape::CommSpec& comm_spec, const gs::LabeledSelector& selector,
       const std::pair<std::string, std::string>& range) override {
@@ -503,10 +508,10 @@ class JavaPIEPropertyDefaultContextWrapper
               inner_inner_context_wrapeer);
       return actual_ctx_wrapper->ToArrowArrays(comm_spec, selectors);
     }
-    return std::map<
-        label_id_t,
-        std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
+    std::map<label_id_t,
+             std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
         arrow_arrays;
+    return arrow_arrays;
   }
 
  private:

@@ -54,8 +54,8 @@ class JavaParallelWorker {
 
   using message_manager_t = JavaParallelMessageManager<fragment_t>;
 
-  static_assert(check_app_fragment_consistency<APP_T, fragment_t>(),
-                "The loaded graph is not valid for application");
+  // static_assert(check_app_fragment_consistency<APP_T, fragment_t>(),
+  //               "The loaded graph is not valid for application");
 
   JavaParallelWorker(std::shared_ptr<APP_T> app,
                      std::shared_ptr<fragment_t> graph)
