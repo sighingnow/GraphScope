@@ -121,7 +121,7 @@ void preprocess(int argc, char** argv) {
   double end_to_end = -grape::GetCurrentTime();
 
   grape::CommSpec comm_spec;
-  grape::comm_spec.Init(MPI_COMM_WORLD);
+  comm_spec.Init(MPI_COMM_WORLD);
 
   SetupEnv(comm_spec);
 
