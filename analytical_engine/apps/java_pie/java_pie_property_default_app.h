@@ -67,7 +67,7 @@ class JavaPIEPropertyDefaultApp
 
       const char* descriptor =
           "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
-          "Lio/v6d/modules/graph/app/PropertyDefaultContextBase;"
+          "Lio/v6d/modules/graph/context/PropertyDefaultContextBase;"
           "Lio/v6d/modules/graph/parallel/PropertyMessageManager;)V";
       jmethodID PEvalMethodID =
           env->GetMethodID(app_class, "PEval", descriptor);
@@ -126,7 +126,7 @@ class JavaPIEPropertyDefaultApp
 
       const char* descriptor =
           "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
-          "Lio/v6d/modules/graph/app/PropertyDefaultContextBase;"
+          "Lio/v6d/modules/graph/context/PropertyDefaultContextBase;"
           "Lio/v6d/modules/graph/parallel/PropertyMessageManager;)V";
       jmethodID IncEvalMethodID =
           env->GetMethodID(app_class, "IncEval", descriptor);
