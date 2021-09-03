@@ -206,7 +206,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       const char* descriptor =
           "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
           "Lio/v6d/modules/graph/parallel/PropertyMessageManager;"
-          "Lcom/alibaba/grape/stdcxx/StdVector;)V";
+          "Lcom/alibaba/fastjson/JSONObject;)V";
       jmethodID InitMethodID =
           env->GetMethodID(context_class, "init", descriptor);
       if (InitMethodID == NULL) {
