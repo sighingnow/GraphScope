@@ -21,11 +21,15 @@
 #include "boost/leaf/all.hpp"
 
 #include "grape/config.h"
+#include "grape/utils/vertex_array.h"
 
 namespace gs {
 using fid_t = grape::fid_t;
 
 namespace bl = boost::leaf;
+
+template <DATA_T>
+using VertexArray = grape::VertexArray<DATA_T, VID_T>;
 }  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_CONFIG_H_
