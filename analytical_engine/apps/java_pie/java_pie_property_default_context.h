@@ -30,6 +30,7 @@ limitations under the License.
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "core/config.h"
+#include "core/context/vertex_data_context.h"
 #include "core/context/java_context_base.h"
 #include "core/object/i_fragment_wrapper.h"
 #include "core/parallel/property_message_manager.h"
@@ -132,7 +133,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       }
 
       std::string _context_class_name_str =
-          get_ctx_class_name_from_app_object();
+          get_ctx_class_name_from_app_object(env);
       LOG(INFO) << "context name " << _context_class_name_str;
       // _context_class_name = _context_class_name_str.c_str();
       // The retrived context class str is dash-sperated, convert to /-seperated
@@ -473,10 +474,10 @@ class JavaPIEPropertyDefaultContextWrapper
           get_vertex_data_context_data_type(ctx_->_context_object);
       if (data_type == "double") {
         auto inner_ctx_impl =
-            dynamic_cast<LabeledVertexDataContext<FRAG_T, double>*>(
+            dynamic_cast<gs::LabeledVertexDataContext<FRAG_T, double>*>(
                 ctx_->inner_context());
         _inner_context_wrapper =
-            std::make_shared<gs::VertexDataContextWrapper<FRAG_T, double>>(
+            std::make_shared<gs::LabeledVertexDataContextWrapper<FRAG_T, double>>(
                 ctx_name, frag_wrapper, inner_ctx_impl);
         LOG(INFO) << "construct inner ctx wrapper: "
                   << _inner_context_wrapper->context_type() << "," << ctx_name;
@@ -575,7 +576,7 @@ class JavaPIEPropertyDefaultContextWrapper
     JNIEnvMark m;
     if (m.env()) {
       jclass context_utils_class =
-          env->FindClass("io/v6d/modules/graph/utils/ContextUtils");
+          m.env()->FindClass("io/v6d/modules/graph/utils/ContextUtils");
       if (context_utils_class == NULL) {
         LOG(FATAL) << "context utils clss not found";
       }
@@ -601,7 +602,7 @@ class JavaPIEPropertyDefaultContextWrapper
     JNIEnvMark m;
     if (m.env()) {
       jclass app_context_getter_class =
-          env->FindClass(_app_context_getter_name);
+          m.env()->FindClass(_app_context_getter_name);
       if (app_context_getter_class == NULL) {
         LOG(FATAL) << "app get ContextClass not found";
       }
