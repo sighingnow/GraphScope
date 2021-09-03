@@ -75,15 +75,18 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       delete inner_ctx_wrapper;
     }
     // delete[] _context_class_name;
-    JNIEnvMark m;
-    if (m.env()) {
-      m.env()->DeleteGlobalRef(_app_object);
-      m.env()->DeleteGlobalRef(_context_object);
-      m.env()->DeleteGlobalRef(_frag_object);
-      m.env()->DeleteGlobalRef(_mm_object);
-      jint res = GetJavaVM()->DestroyJavaVM();
-      LOG(INFO) << "Kill javavm status: " << res;
+    {
+      JNIEnvMark m;
+      if (m.env()) {
+        m.env()->DeleteGlobalRef(_app_object);
+        m.env()->DeleteGlobalRef(_context_object);
+        m.env()->DeleteGlobalRef(_frag_object);
+        m.env()->DeleteGlobalRef(_mm_object);
+      }
     }
+
+    jint res = GetJavaVM()->DestroyJavaVM();
+    LOG(INFO) << "Kill javavm status: " << res;
   }
 
   const char* GetPropertyMessageManagerFFITypeName() {
@@ -257,18 +260,23 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
           LOG(ERROR) << "json object creation failed";
           return;
         }
-        LOG(INFO) << "invokd ctx init method success";
+
         // 4. Invoke java method
         env->CallVoidMethod(_context_object, InitMethodID, _frag_object,
                             _mm_object, json_object);
+        LOG(INFO) << "invokd ctx init method success";
         // 5. to output the result, we need the c++ context held by java object.
         jfieldID inner_ctx_address_field =
             env->GetFieldID(context_class, "ffiContextAddress", "J");
         if (inner_ctx_address_field == NULL) {
           LOG(FATAL) << "No such field ffiContextAddress";
         }
+        LOG(INFO) << "get field success";
+
         long inner_ctx_address =
             env->GetLongField(_context_object, inner_ctx_address_field);
+
+        LOG(INFO) << "innertex ctx address" << inner_ctx_address;
         inner_ctx_wrapper =
             reinterpret_cast<IContextWrapper*>(inner_ctx_address);
         LOG(INFO) << "inner ctx wrapper type: "
