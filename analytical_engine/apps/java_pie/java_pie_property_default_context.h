@@ -33,6 +33,8 @@ limitations under the License.
 #include "core/context/java_context_base.h"
 #include "core/object/i_fragment_wrapper.h"
 #include "core/parallel/property_message_manager.h"
+#include "frame/ctx_wrapper_builder.h"
+#include "grape/app/context_base.h"
 #include "java_pie/column_mananger.h"
 #include "java_pie/javasdk.h"
 #include "vineyard/client/client.h"
@@ -40,6 +42,10 @@ limitations under the License.
 #define CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT "java_pie_property_default"
 namespace gs {
 
+static constexpr const char* _message_manager_name =
+    "gs::PropertyMessageManager";
+static constexpr const char* _app_context_getter_name =
+    "io/v6d/modules/graph/utils/AppContextGetter";
 /**
  * @brief Context for the java pie app, used by java sdk.
  *
@@ -61,7 +67,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         _frag_object(NULL),
         _mm_object(NULL),
         fragment_(fragment),
-        inner_ctx_wrapper(NULL),
+        inner_ctx_(NULL),
         local_num_(1) {}
   const fragment_t& fragment() { return fragment_; }
 
@@ -71,8 +77,8 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     if (_app_class_name) {
       delete[] _app_class_name;
     }
-    if (inner_ctx_wrapper) {
-      delete inner_ctx_wrapper;
+    if (inner_ctx_) {
+      delete inner_ctx_;
     }
     // delete[] _context_class_name;
     {
@@ -85,13 +91,10 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       }
     }
 
-//    jint res = GetJavaVM()->DestroyJavaVM();
-//    LOG(INFO) << "Kill javavm status: " << res;
+    jint res = GetJavaVM()->DestroyJavaVM();
+    LOG(INFO) << "Kill javavm status: " << res;
   }
 
-  const char* GetPropertyMessageManagerFFITypeName() {
-    return _message_manager_name;
-  }
   void SetLocalNum(int local_num) { local_num_ = local_num; }
 
   void Init(gs::PropertyMessageManager& messages, const std::string& params) {
@@ -128,50 +131,9 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         LOG(ERROR) << "create app object failed for " << _app_class_name;
         return;
       }
-      // get app_class's class object
-      jclass app_class_class = env->GetObjectClass(app_object);
-      if (app_class_class == NULL) {
-        LOG(FATAL) << "Cannot find object class ";
-      }
-      jmethodID app_class_getClass_method =
-          env->GetMethodID(app_class_class, "getClass", "()Ljava/lang/Class;");
-      if (app_class_getClass_method == NULL) {
-        LOG(FATAL) << "no get class method ";
-      }
-      jobject app_class_obj =
-          env->CallObjectMethod(_app_object, app_class_getClass_method);
-      if (app_class_obj == NULL) {
-        LOG(FATAL) << "app class obj ";
-      }
-      // the app's corresponding ctx name
-      // jstring _app_context_getter_name_jstring =
-      //     env->NewStringUTF(_app_context_getter_name);
-      jclass app_context_getter_class =
-          env->FindClass(_app_context_getter_name);
-      if (app_context_getter_class == NULL) {
-        LOG(ERROR) << "app get ContextClass not found";
-        return;
-      }
-      jmethodID app_context_getter_method = env->GetStaticMethodID(
-          app_context_getter_class, "getPropertyDefaultContextName",
-          "(Ljava/lang/Class;)Ljava/lang/String;");
-      if (app_context_getter_method == NULL) {
-        LOG(ERROR) << "appcontextclass getter method null";
-        return;
-      }
-      // Pass app class's class object
-      jstring context_class_jstring = (jstring) env->CallStaticObjectMethod(
-          app_context_getter_class, app_context_getter_method, app_class_obj);
-      if (context_class_jstring == NULL) {
-        LOG(ERROR) << "The retrived class string null";
-      }
-
-      // create context object through newInstance
 
       std::string _context_class_name_str =
-          jstring2string(env, context_class_jstring);
-
-      // _context_class_name = get_jobject_class_name(env, ctx_object);
+          get_ctx_class_name_from_app_object();
       LOG(INFO) << "context name " << _context_class_name_str;
       // _context_class_name = _context_class_name_str.c_str();
       // The retrived context class str is dash-sperated, convert to /-seperated
@@ -265,11 +227,11 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         env->CallVoidMethod(_context_object, InitMethodID, _frag_object,
                             _mm_object, json_object);
         if (env->ExceptionOccurred()) {
-            LOG(ERROR) << std::string("Exception occurred in calling ctx init");
-            env->ExceptionDescribe();
-            env->ExceptionClear();
-            // env->DeleteLocalRef(main_class);
-            LOG(FATAL) << "exiting since exception occurred";
+          LOG(ERROR) << std::string("Exception occurred in calling ctx init");
+          env->ExceptionDescribe();
+          env->ExceptionClear();
+          // env->DeleteLocalRef(main_class);
+          LOG(FATAL) << "exiting since exception occurred";
         }
         LOG(INFO) << "invokd ctx init method success";
         // 5. to output the result, we need the c++ context held by java object.
@@ -284,10 +246,8 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
             env->GetLongField(_context_object, inner_ctx_address_field);
 
         LOG(INFO) << "innertex ctx address" << inner_ctx_address;
-//        inner_ctx_wrapper =
-//            reinterpret_cast<IContextWrapper*>(inner_ctx_address);
-//        LOG(INFO) << "inner ctx wrapper type: "
-//                  << inner_ctx_wrapper->context_type();
+        inner_ctx_ = reinterpret_cast<grape::ContextBase*>(inner_ctx_address);
+        LOG(INFO) << "successfully obtained inner ctx";
       }
     }
   }
@@ -303,9 +263,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
 
   // const char* context_class_name() const { return _context_class_name; }
 
-  const IContextWrapper* inner_context_wrapper() const {
-    return inner_ctx_wrapper;
-  }
+  const grape::ContextBase* inner_context() const { return inner_ctx_; }
 
  public:
   char* _app_class_name;
@@ -429,18 +387,54 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     return ss.str();
   }
 
+  const char* GetPropertyMessageManagerFFITypeName() {
+    return _message_manager_name;
+  }
+
+  std::string get_ctx_class_name_from_app_object(JNIEnv* env) {
+    // get app_class's class object
+    jclass app_class_class = env->GetObjectClass(_app_object);
+    if (app_class_class == NULL) {
+      LOG(FATAL) << "Cannot find object class ";
+    }
+    jmethodID app_class_getClass_method =
+        env->GetMethodID(app_class_class, "getClass", "()Ljava/lang/Class;");
+    if (app_class_getClass_method == NULL) {
+      LOG(FATAL) << "no get class method ";
+    }
+    jobject app_class_obj =
+        env->CallObjectMethod(_app_object, app_class_getClass_method);
+    if (app_class_obj == NULL) {
+      LOG(FATAL) << "app class obj ";
+    }
+    // the app's corresponding ctx name
+    // jstring _app_context_getter_name_jstring =
+    //     env->NewStringUTF(_app_context_getter_name);
+    jclass app_context_getter_class = env->FindClass(_app_context_getter_name);
+    if (app_context_getter_class == NULL) {
+      LOG(ERROR) << "app get ContextClass not found";
+      return;
+    }
+    jmethodID app_context_getter_method = env->GetStaticMethodID(
+        app_context_getter_class, "getPropertyDefaultContextName",
+        "(Ljava/lang/Class;)Ljava/lang/String;");
+    if (app_context_getter_method == NULL) {
+      LOG(ERROR) << "appcontextclass getter method null";
+      return;
+    }
+    // Pass app class's class object
+    jstring context_class_jstring = (jstring) env->CallStaticObjectMethod(
+        app_context_getter_class, app_context_getter_method, app_class_obj);
+    if (context_class_jstring == NULL) {
+      LOG(ERROR) << "The retrived class string null";
+    }
+    return jstring2string(env, context_class_jstring);
+  }
   // char* _context_class_name;
   std::string _java_frag_type_name;
-
+  grape::ContextBase* inner_ctx_;
   const fragment_t& fragment_;
-  IContextWrapper* inner_ctx_wrapper;
-  std::shared_ptr<ColumnManager<fragment_t>> column_manager;
   int local_num_;
-
-  static constexpr const char* _message_manager_name =
-      "gs::PropertyMessageManager";
-  static constexpr const char* _app_context_getter_name =
-      "io/v6d/modules/graph/utils/AppContextGetter";
 };
 
 // This Wrapper works as a proxy, forward requests like toNdArray, to the c++
@@ -463,12 +457,41 @@ class JavaPIEPropertyDefaultContextWrapper
       std::shared_ptr<context_t> context)
       : gs::IJavaPIEPropertyDefaultContextWrapper(id),
         frag_wrapper_(std::move(frag_wrapper)),
-        ctx_(std::move(context)) {}
+        ctx_(std::move(context)) {
+    // Here we need to construct the ctx_wrapper from the ctx it self.
+    // 0. first reinterpret as context
+    // 0.1 get the type of java ctx through java function
+    std::string java_ctx_type_name =
+        get_java_ctx_type_name(ctx_->_context_object);
+    LOG(INFO) << "java ctx type name" << java_ctx_type_name;
+    std::string ctx_name = "JavaPIEContext:" + java_ctx_type_name + "@" +
+                           std::string(inner_ctx_address);
+    if (java_ctx_type_name == "LabeledVertexDataContext") {
+      // Get the DATA_T;
+      std::string data_type =
+          get_vertex_data_context_data_type(ctx->_context_object);
+      if (data_type == "double") {
+        auto inner_ctx_impl =
+            dynamic_cast<LabeledVertexDataContext<FRAG_T, double>*>(
+                ctx_->inner_context());
+        _inner_context_wrapper =
+            CtxWrapperBuilder<LabeledVertexDataContext<FRAG_T, double>>::build(
+                ctx_name, frag_wrapper, inner_ctx_impl);
+        LOG(INFO) << "construct inner ctx wrapper: "
+                  << _inner_context_wrapper->context_type() << "," << ctx_name;
+      } else {
+        LOG(FATAL) << "unregonizable data type";
+      }
+    } else {
+      LOG(FATAL) << "unsupported context type";
+    }
+  }
 
   std::string context_type() override {
-    auto inner_inner_context_wrapeer = ctx_->inner_context_wrapper();
-    std::string ret = CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT;
-    return ret + ":" + inner_inner_context_wrapeer->context_type();
+    // auto _inner_context_wrapper = ctx_->inner_context_wrapper();
+    // std::string ret = CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT;
+    // return ret + ":" + _inner_context_wrapper->context_type();
+    return CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT;
   }
 
   std::shared_ptr<gs::IFragmentWrapper> fragment_wrapper() override {
@@ -478,11 +501,10 @@ class JavaPIEPropertyDefaultContextWrapper
   gs::bl::result<std::unique_ptr<grape::InArchive>> ToNdArray(
       const grape::CommSpec& comm_spec, const gs::LabeledSelector& selector,
       const std::pair<std::string, std::string>& range) override {
-    auto inner_inner_context_wrapeer = ctx_->inner_context_wrapper();
-    if (inner_inner_context_wrapeer->context_type() == "labeled_vertex_data") {
+    if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
-              inner_inner_context_wrapeer);
+              _inner_context_wrapper);
       return actual_ctx_wrapper->ToNdArray(comm_spec, selector, range);
     }
     return std::make_unique<grape::InArchive>();
@@ -492,11 +514,10 @@ class JavaPIEPropertyDefaultContextWrapper
       const grape::CommSpec& comm_spec,
       const std::vector<std::pair<std::string, gs::LabeledSelector>>& selectors,
       const std::pair<std::string, std::string>& range) override {
-    auto inner_inner_context_wrapeer = ctx_->inner_context_wrapper();
-    if (inner_inner_context_wrapeer->context_type() == "labeled_vertex_data") {
+    if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
-              inner_inner_context_wrapeer);
+              _inner_context_wrapper);
       return actual_ctx_wrapper->ToDataframe(comm_spec, selectors, range);
     }
     return std::make_unique<grape::InArchive>();
@@ -506,11 +527,10 @@ class JavaPIEPropertyDefaultContextWrapper
       const grape::CommSpec& comm_spec, vineyard::Client& client,
       const gs::LabeledSelector& selector,
       const std::pair<std::string, std::string>& range) override {
-    auto inner_inner_context_wrapeer = ctx_->inner_context_wrapper();
-    if (inner_inner_context_wrapeer->context_type() == "labeled_vertex_data") {
+    if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
-              inner_inner_context_wrapeer);
+              _inner_context_wrapper);
       return actual_ctx_wrapper->ToVineyardTensor(comm_spec, client, selector,
                                                   range);
     }
@@ -521,11 +541,10 @@ class JavaPIEPropertyDefaultContextWrapper
       const grape::CommSpec& comm_spec, vineyard::Client& client,
       const std::vector<std::pair<std::string, gs::LabeledSelector>>& selectors,
       const std::pair<std::string, std::string>& range) override {
-    auto inner_inner_context_wrapeer = ctx_->inner_context_wrapper();
-    if (inner_inner_context_wrapeer->context_type() == "labeled_vertex_data") {
+    if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
-              inner_inner_context_wrapeer);
+              _inner_context_wrapper);
       return actual_ctx_wrapper->ToVineyardDataframe(comm_spec, client,
                                                      selectors, range);
     }
@@ -538,11 +557,10 @@ class JavaPIEPropertyDefaultContextWrapper
   ToArrowArrays(const grape::CommSpec& comm_spec,
                 const std::vector<std::pair<std::string, gs::LabeledSelector>>&
                     selectors) override {
-    auto inner_inner_context_wrapeer = ctx_->inner_context_wrapper();
-    if (inner_inner_context_wrapeer->context_type() == "labeled_vertex_data") {
+    if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
-              inner_inner_context_wrapeer);
+              _inner_context_wrapper);
       return actual_ctx_wrapper->ToArrowArrays(comm_spec, selectors);
     }
     std::map<label_id_t,
@@ -552,8 +570,50 @@ class JavaPIEPropertyDefaultContextWrapper
   }
 
  private:
+  std::string get_java_ctx_type_name(JNIEnv* env, const jobject& ctx_object) {
+    jclass context_utils_class =
+        env->FindClass("io/v6d/modules/graph/utils/ContextUtils");
+    if (context_utils_class == NULL) {
+      LOG(FATAL) << "context utils clss not found";
+    }
+    jmethodID ctx_base_class_name_get_method = env->GetStaticMethodID(
+        context_utils_class, "getCtxObjBaseClzName",
+        "(Lio/v6d/modules/graph/context/PropertyDefaultContextBase;)"
+        "Ljava/lang/String;");
+    if (ctx_base_class_name_get_method == NULL) {
+      LOG(FATAL) << "getCtxObjBaseClzName method null";
+    }
+    jstring ctx_base_clz_name = (jstring) env->CallStaticObjectMethod(
+        context_utils_class, ctx_base_class_name_get_method, ctx_object);
+    if (ctx_base_clz_name == NULL) {
+      LOG(FATAL) << "The retrived class string null";
+    }
+    return jstring2string(env, ctx_base_clz_name);
+  }
+
+  std::string get_vertex_data_context_data_type(JNIEnv* env,
+                                                const jobject& ctx_object) {
+    jclass app_context_getter_class = env->FindClass(_app_context_getter_name);
+    if (app_context_getter_class == NULL) {
+      LOG(FATAL) << "app get ContextClass not found";
+    }
+    jmethodID getter_method = env->GetStaticMethodID(
+        app_context_getter_class, "getVertexDataContextDataType",
+        "(Ljava/lang/Class;)Ljava/lang/String;");
+    if (getter_method == NULL) {
+      LOG(FATAL) << "getVertexDataContextDataType method null";
+    }
+    // Pass app class's class object
+    jstring context_class_jstring = (jstring) env->CallStaticObjectMethod(
+        app_context_getter_class, getter_method, ctx_object);
+    if (context_class_jstring == NULL) {
+      LOG(FATAL) << "The retrived class string null";
+    }
+    return jstring2string(env, context_class_jstring);
+  }
   std::shared_ptr<gs::IFragmentWrapper> frag_wrapper_;
   std::shared_ptr<context_t> ctx_;
+  std::shared_ptr<IContextWrapper> _inner_context_wrapper;
 };
 }  // namespace gs
 
