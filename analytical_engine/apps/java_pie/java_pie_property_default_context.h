@@ -203,18 +203,6 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         return;
       }
 
-      // 5. to output the result, we need the c++ context held by java object.
-      jfieldID inner_ctx_address_field =
-          env->GetFieldID(context_class, "ffiContextAddress", "J");
-      if (inner_ctx_address_field == NULL) {
-        LOG(FATAL) << "No such field ffiContextAddress";
-      }
-      long inner_ctx_address =
-          env->GetLongField(_context_object, inner_ctx_address_field);
-      inner_ctx_wrapper = reinterpret_cast<IContextWrapper*>(inner_ctx_address);
-      LOG(INFO) << "inner ctx wrapper type: "
-                << inner_ctx_wrapper->context_type();
-
       const char* descriptor =
           "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
           "Lio/v6d/modules/graph/parallel/PropertyMessageManager;"
@@ -256,7 +244,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         }
         jmethodID parse_method = env->GetStaticMethodID(
             json_class, "parseObject",
-            "(Ljava/lang/String;)Lcom/alibaba/fastjson/JSONObject");
+            "(Ljava/lang/String;)Lcom/alibaba/fastjson/JSONObject;");
         if (parse_method == NULL) {
           LOG(ERROR) << "parserObjectMethod not found";
           return;
@@ -269,9 +257,22 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
           LOG(ERROR) << "json object creation failed";
           return;
         }
+        LOG(INFO) << "invokd ctx init method success";
         // 4. Invoke java method
         env->CallVoidMethod(_context_object, InitMethodID, _frag_object,
                             _mm_object, json_object);
+        // 5. to output the result, we need the c++ context held by java object.
+        jfieldID inner_ctx_address_field =
+            env->GetFieldID(context_class, "ffiContextAddress", "J");
+        if (inner_ctx_address_field == NULL) {
+          LOG(FATAL) << "No such field ffiContextAddress";
+        }
+        long inner_ctx_address =
+            env->GetLongField(_context_object, inner_ctx_address_field);
+        inner_ctx_wrapper =
+            reinterpret_cast<IContextWrapper*>(inner_ctx_address);
+        LOG(INFO) << "inner ctx wrapper type: "
+                  << inner_ctx_wrapper->context_type();
       }
     }
   }
@@ -341,7 +342,8 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     // call static method
     env->CallStaticVoidMethod(grape_load_library, grape_load_library_method,
                               user_library_jstring);
-    env->CallStaticVoidMethod(vineyard_load_library, vineyard_load_library_method,
+    env->CallStaticVoidMethod(vineyard_load_library,
+                              vineyard_load_library_method,
                               user_library_jstring);
 
     if (env->ExceptionOccurred()) {
