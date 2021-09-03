@@ -151,7 +151,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       }
       jmethodID app_context_getter_method = env->GetStaticMethodID(
           app_context_getter_class, "getPropertyDefaultContextName",
-          "(Ljava/lang/Class;)Ljava/lang/String");
+          "(Ljava/lang/Class;)Ljava/lang/String;");
       if (app_context_getter_method == NULL) {
         LOG(ERROR) << "appcontextclass getter method null";
         return;
@@ -316,6 +316,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     }
 
     const char* load_library_signature = "(Ljava/lang/String;)V";
+    jstring user_library_jstring = env->NewStringUTF(user_library_name.c_str());
     jmethodID grape_load_library_method = env->GetStaticMethodID(
         grape_load_library, "invoke", load_library_signature);
     jmethodID vineyard_load_library_method = env->GetStaticMethodID(
@@ -323,9 +324,9 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
 
     // call static method
     env->CallStaticVoidMethod(grape_load_library, grape_load_library_method,
-                              user_library_name.c_str());
-    env->CallStaticVoidMethod(grape_load_library, vineyard_load_library_method,
-                              user_library_name.c_str());
+                              user_library_jstring);
+    env->CallStaticVoidMethod(vineyard_load_library, vineyard_load_library_method,
+                              user_library_jstring);
 
     if (env->ExceptionOccurred()) {
       LOG(ERROR) << std::string("Exception occurred in loading user library");
