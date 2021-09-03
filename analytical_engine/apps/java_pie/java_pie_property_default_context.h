@@ -171,15 +171,31 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       // _context_class_name = get_jobject_class_name(env, ctx_object);
       LOG(INFO) << "context name " << _context_class_name_str;
       // _context_class_name = _context_class_name_str.c_str();
-      jclass context_class = env->FindClass(_context_class_name_str.c_str());
+      // The retrived context class str is dash-sperated, convert to /-seperated
+      char* _context_class_name_c_str;
+      {
+        _context_class_name_c_str =
+            new char[_context_class_name_str.length() + 1];
+        strcpy(_context_class_name_c_str, _context_class_name_str.c_str());
+        char* p = _context_class_name_c_str;
+        while (*p) {
+          if (*p == '.')
+            *p = '/';
+          p++;
+        }
+      }
+      if (!_context_class_name_c_str) {
+        LOG(FATAL) << "get null string after convertion";
+      }
+
+      jclass context_class = env->FindClass(_context_class_name_c_str);
       if (context_class == NULL) {
-        LOG(ERROR) << "context class not found: "
-                   << std::string(_context_class_name_str);
+        LOG(ERROR) << "context class not found: " << _context_class_name_str;
         return;
       }
 
       jobject ctx_object =
-          createObject(env, context_class, "context class name");
+          createObject(env, context_class, _context_class_name_c_str);
       if (ctx_object != NULL) {
         _context_object = env->NewGlobalRef(ctx_object);
       } else {
