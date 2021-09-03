@@ -153,9 +153,9 @@ class LabeledVertexDataContext : public grape::ContextBase {
 
   const fragment_t& fragment() { return fragment_; }
 
-  const data_t& GetValue(vertex_t v) const {
-    label_id_t i = fragment_->vertex_label(v);
-    int64_t offset = fragment_->vertex_offset(v);
+  const data_t& GetValue(vertex_t& v) const {
+    label_id_t i = fragment_.vertex_label(v);
+    int64_t offset = fragment_.vertex_offset(v);
     return data_[i][offset];
   }
 
