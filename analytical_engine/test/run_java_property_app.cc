@@ -77,7 +77,8 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   // gs::SetupEnv(comm_spec.local_num());
   // 1. prepare the running params;
   boost::property_tree::ptree pt;
-  pt.put("frag_name", "vineyard::ArrowFragment<int64_t,uint64_t>");
+  pt.put("src", "6");
+  pt.put("frag_name", "vineyard::ArrowFragmentDefault<int64_t>");
   pt.put("app_class", app_name);
   // The path to sdk jni library
   pt.put("user_library_name", "vineyard-jni");
