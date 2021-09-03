@@ -158,13 +158,12 @@ struct CtxWrapperBuilder<CTX_T, typename std::enable_if<is_base_of_template<
 template <typename CTX_T>
 struct CtxWrapperBuilder<
     CTX_T, typename std::enable_if<is_base_of_template<
-               CTX_T, grape::JavaPIEPropertyDefaultContext>::value>::type> {
+               CTX_T, JavaPIEPropertyDefaultContext>::value>::type> {
   static std::shared_ptr<gs::IContextWrapper> build(
       const std::string& id, std::shared_ptr<IFragmentWrapper> frag_wrapper,
       std::shared_ptr<CTX_T> ctx) {
-    return std::make_shared<
-        grape::JavaPIEPropertyDefaultContextWrapper<_GRAPH_TYPE>>(id, frag_wrapper,
-                                                               ctx);
+    return std::make_shared<JavaPIEPropertyDefaultContextWrapper<_GRAPH_TYPE>>(
+        id, frag_wrapper, ctx);
   }
 };
 }  // namespace gs

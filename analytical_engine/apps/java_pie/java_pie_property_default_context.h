@@ -33,7 +33,6 @@ limitations under the License.
 #include "core/context/java_context_base.h"
 #include "core/object/i_fragment_wrapper.h"
 #include "core/parallel/property_message_manager.h"
-#include "frame/ctx_wrapper_builder.h"
 #include "grape/app/context_base.h"
 #include "java_pie/column_mananger.h"
 #include "java_pie/javasdk.h"
@@ -66,8 +65,8 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         _context_object(NULL),
         _frag_object(NULL),
         _mm_object(NULL),
-        fragment_(fragment),
         inner_ctx_(NULL),
+        fragment_(fragment),
         local_num_(1) {}
   const fragment_t& fragment() { return fragment_; }
 
@@ -412,21 +411,22 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     //     env->NewStringUTF(_app_context_getter_name);
     jclass app_context_getter_class = env->FindClass(_app_context_getter_name);
     if (app_context_getter_class == NULL) {
-      LOG(ERROR) << "app get ContextClass not found";
-      return;
+      LOG(FATAL) << "app get ContextClass not found";
+      return NULL;
     }
     jmethodID app_context_getter_method = env->GetStaticMethodID(
         app_context_getter_class, "getPropertyDefaultContextName",
         "(Ljava/lang/Class;)Ljava/lang/String;");
     if (app_context_getter_method == NULL) {
-      LOG(ERROR) << "appcontextclass getter method null";
-      return;
+      LOG(FATAL) << "appcontextclass getter method null";
+      return NULL;
     }
     // Pass app class's class object
     jstring context_class_jstring = (jstring) env->CallStaticObjectMethod(
         app_context_getter_class, app_context_getter_method, app_class_obj);
     if (context_class_jstring == NULL) {
-      LOG(ERROR) << "The retrived class string null";
+      LOG(FATAL) << "The retrived class string null";
+      return NULL;
     }
     return jstring2string(env, context_class_jstring);
   }
@@ -465,17 +465,18 @@ class JavaPIEPropertyDefaultContextWrapper
         get_java_ctx_type_name(ctx_->_context_object);
     LOG(INFO) << "java ctx type name" << java_ctx_type_name;
     std::string ctx_name = "JavaPIEContext:" + java_ctx_type_name + "@" +
-                           std::string(inner_ctx_address);
+                           std::string(&(ctx_->inner_context()));
+    LOG(INFO) << "ctx name " << ctx_name;
     if (java_ctx_type_name == "LabeledVertexDataContext") {
       // Get the DATA_T;
       std::string data_type =
-          get_vertex_data_context_data_type(ctx->_context_object);
+          get_vertex_data_context_data_type(ctx_->_context_object);
       if (data_type == "double") {
         auto inner_ctx_impl =
             dynamic_cast<LabeledVertexDataContext<FRAG_T, double>*>(
                 ctx_->inner_context());
         _inner_context_wrapper =
-            CtxWrapperBuilder<LabeledVertexDataContext<FRAG_T, double>>::build(
+            std::make_shared<gs::VertexDataContextWrapper<FRAG_T, double>>(
                 ctx_name, frag_wrapper, inner_ctx_impl);
         LOG(INFO) << "construct inner ctx wrapper: "
                   << _inner_context_wrapper->context_type() << "," << ctx_name;
@@ -570,46 +571,56 @@ class JavaPIEPropertyDefaultContextWrapper
   }
 
  private:
-  std::string get_java_ctx_type_name(JNIEnv* env, const jobject& ctx_object) {
-    jclass context_utils_class =
-        env->FindClass("io/v6d/modules/graph/utils/ContextUtils");
-    if (context_utils_class == NULL) {
-      LOG(FATAL) << "context utils clss not found";
+  std::string get_java_ctx_type_name(const jobject& ctx_object) {
+    JNIEnvMark m;
+    if (m.env()) {
+      jclass context_utils_class =
+          env->FindClass("io/v6d/modules/graph/utils/ContextUtils");
+      if (context_utils_class == NULL) {
+        LOG(FATAL) << "context utils clss not found";
+      }
+      jmethodID ctx_base_class_name_get_method = m.env()->GetStaticMethodID(
+          context_utils_class, "getCtxObjBaseClzName",
+          "(Lio/v6d/modules/graph/context/PropertyDefaultContextBase;)"
+          "Ljava/lang/String;");
+      if (ctx_base_class_name_get_method == NULL) {
+        LOG(FATAL) << "getCtxObjBaseClzName method null";
+      }
+      jstring ctx_base_clz_name = (jstring) m.env()->CallStaticObjectMethod(
+          context_utils_class, ctx_base_class_name_get_method, ctx_object);
+      if (ctx_base_clz_name == NULL) {
+        LOG(FATAL) << "The retrived class string null";
+      }
+      return jstring2string(m.env(), ctx_base_clz_name);
     }
-    jmethodID ctx_base_class_name_get_method = env->GetStaticMethodID(
-        context_utils_class, "getCtxObjBaseClzName",
-        "(Lio/v6d/modules/graph/context/PropertyDefaultContextBase;)"
-        "Ljava/lang/String;");
-    if (ctx_base_class_name_get_method == NULL) {
-      LOG(FATAL) << "getCtxObjBaseClzName method null";
-    }
-    jstring ctx_base_clz_name = (jstring) env->CallStaticObjectMethod(
-        context_utils_class, ctx_base_class_name_get_method, ctx_object);
-    if (ctx_base_clz_name == NULL) {
-      LOG(FATAL) << "The retrived class string null";
-    }
-    return jstring2string(env, ctx_base_clz_name);
+    LOG(FATAL) << "java env not available";
+    return NULL;
   }
 
-  std::string get_vertex_data_context_data_type(JNIEnv* env,
-                                                const jobject& ctx_object) {
-    jclass app_context_getter_class = env->FindClass(_app_context_getter_name);
-    if (app_context_getter_class == NULL) {
-      LOG(FATAL) << "app get ContextClass not found";
+  std::string get_vertex_data_context_data_type(const jobject& ctx_object) {
+    JNIEnvMark m;
+    if (m.env()) {
+      jclass app_context_getter_class =
+          env->FindClass(_app_context_getter_name);
+      if (app_context_getter_class == NULL) {
+        LOG(FATAL) << "app get ContextClass not found";
+      }
+      jmethodID getter_method = m.env()->GetStaticMethodID(
+          app_context_getter_class, "getVertexDataContextDataType",
+          "(Ljava/lang/Class;)Ljava/lang/String;");
+      if (getter_method == NULL) {
+        LOG(FATAL) << "getVertexDataContextDataType method null";
+      }
+      // Pass app class's class object
+      jstring context_class_jstring = (jstring) m.env()->CallStaticObjectMethod(
+          app_context_getter_class, getter_method, ctx_object);
+      if (context_class_jstring == NULL) {
+        LOG(FATAL) << "The retrived class string null";
+      }
+      return jstring2string(m.env(), context_class_jstring);
     }
-    jmethodID getter_method = env->GetStaticMethodID(
-        app_context_getter_class, "getVertexDataContextDataType",
-        "(Ljava/lang/Class;)Ljava/lang/String;");
-    if (getter_method == NULL) {
-      LOG(FATAL) << "getVertexDataContextDataType method null";
-    }
-    // Pass app class's class object
-    jstring context_class_jstring = (jstring) env->CallStaticObjectMethod(
-        app_context_getter_class, getter_method, ctx_object);
-    if (context_class_jstring == NULL) {
-      LOG(FATAL) << "The retrived class string null";
-    }
-    return jstring2string(env, context_class_jstring);
+    LOG(FATAL) << "java env not available";
+    return NULL;
   }
   std::shared_ptr<gs::IFragmentWrapper> frag_wrapper_;
   std::shared_ptr<context_t> ctx_;
