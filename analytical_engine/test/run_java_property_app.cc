@@ -80,7 +80,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   pt.put("frag_name", "vineyard::ArrowFragment<int64_t,uint64_t>");
   pt.put("app_class", app_name);
   // The path to sdk jni library
-  pt.put("user_library_name", "libvineyard-jni");
+  pt.put("user_library_name", "vineyard-jni");
   char* jvm_opts = getenv("RUN_JVM_OPTS");
 
   // std::string run_jvm_opts = "-Djava.library.path=" + GRAPE_LITE_JNI_SO_PATH

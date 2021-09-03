@@ -93,9 +93,10 @@ pushd "${ENGINE_HOME}"/build
 
 demo_jar=/home/admin/.m2/repository/com/alibaba/grape/graphscope-demo/0.1/graphscope-demo-0.1-jar-with-dependencies.jar
 GRAPE_SDK_BUILD=/home/admin/GAE-ODPSGraph/pie-sdk/grape-sdk/target/classes/
-GRAPE_SDK_BUILD_NATIVE=${GRAPE_SDK_BUILD}/natives/linux_64/
-VINEYARD_GRAPH_BUILD=/home/admin/GAE-ODPSGraph/pie-sdk/vineyard-graph/target/classes
-VINEYARD_GRAPH_BUILD_NATIVE=${VINEYARD_GRAPH_BUILD}/natives/linux_64/
+GRAPE_SDK_BUILD_NATIVE=${GRAPE_SDK_BUILD}/natives/linux_64
+VINEYARD_GRAPH_BUILD=/home/admin/GAE-ODPSGraph/pie-sdk/vineyard-graph/target/classes/
+VINEYARD_GRAPH_BUILD_NATIVE=${VINEYARD_GRAPH_BUILD}/natives/linux_64
+
 #export RUN_CP=${RUN_CP}:${DIR}/../../../GAE-ODPSGraph/pie-sdk/grape-sdk/target/classes
 # put sdk before demo due to the version of guava, 15.0 vs 30-jre
 export RUN_CP=${RUN_CP}:~/.m2/repository/com/google/guava/guava/30.1.1-jre/guava-30.1.1-jre.jar
