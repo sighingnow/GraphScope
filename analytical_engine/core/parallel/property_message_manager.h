@@ -146,9 +146,17 @@ class PropertyMessageManager : public grape::DefaultMessageManager {
   }
   // for java
   template <typename GRAPH_T, typename VERTEX_T, typename MESSAGE_T>
-  inline bool GetMessage(const GRAPH_T& frag, typename VERTEX_T& v,
-                         MESSAGE_T& msg) {
+  inline bool JavaGetMessage(const GRAPH_T& frag, typename VERTEX_T& v,
+                             MESSAGE_T& msg) {
     return GetMessage<GRAPH_T, MESSAGE_T>(frag, v, msg);
+  }
+
+  // for java
+  template <typename GRAPH_T, typename VERTEX_T, typename MESSAGE_T>
+  inline void JavaSyncStateOnOuterVertex(const GRAPH_T& frag,
+                                         const typename VERTEX_T& v,
+                                         const MESSAGE_T& msg) {
+    SyncStateOnOuterVertex<GRAPH_T, MESSAGE_T>(frag, v, msg);
   }
 };
 
