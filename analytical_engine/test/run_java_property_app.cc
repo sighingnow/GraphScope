@@ -24,6 +24,7 @@
 #include "core/fragment/arrow_projected_fragment.h"
 #include "core/loader/arrow_fragment_loader.h"
 #include "core/loader/java_immutable_edgecut_fragment_loader.h"
+#include "core/object/fragment_wrapper.h"
 #include "glog/logging.h"
 #include "grape/grape.h"
 #include "grape/types.h"
@@ -69,10 +70,10 @@ void Query(std::shared_ptr<FragmentType> fragment,
       worker->GetContext();
   worker->Finalize();
 
-  rpc::graph::GraphDefPb graph_def;
+  gs::rpc::graph::GraphDefPb graph_def;
   graph_def.set_graph_type(gs::rpc::graph::ARROW_PROPERTY);
 
-  auto frag_wrapper = std::make_shared<FragmentWrapper<FragmentType>>(
+  auto frag_wrapper = std::make_shared<gs::FragmentWrapper<FragmentType>>(
       "graph_123", graph_def, fragment);
 
   gs::JavaPIEPropertyDefaultContextWrapper<FragmentType> ctx_wrapper(
@@ -89,27 +90,32 @@ void Query(std::shared_ptr<FragmentType> fragment,
     int64_t ndim, length1, length2;
     int data_type;
     oarc >> ndim;
+    LOG(INFO) << "ndim: " << ndim;
     CHECK_EQ(ndim, 1);
     oarc >> length1;
     oarc >> data_type;
-    CHECK_EQ(data_type, 2);
+    LOG(INFO) << "length1: " << length1 << ",data type: " << data_type;
+    CHECK_EQ(data_type, 7);
     oarc >> length2;
+    LOG(INFO) << "length2: " << length2;
     CHECK_EQ(length1, length2);
 
     std::ofstream assembled_ostream;
     std::string assembled_output_path = out_prefix + "/assembled_ndarray.dat";
     assembled_ostream.open(assembled_output_path);
-
+    LOG(INFO) << "osream " << assembled_output_path;
     for (int64_t i = 0; i < length1; ++i) {
       double v;
       oarc >> v;
       assembled_ostream << v << std::endl;
     }
 
+    LOG(INFO) << "output complete: " << oarc.Empty();
     CHECK(oarc.Empty());
 
     assembled_ostream.close();
   }
+  LOG(INFO) << "finish query";
 }
 
 // Running test doesn't require codegen.
@@ -143,7 +149,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   std::string basic_params = ss.str();
   LOG(INFO) << "basic_params" << basic_params;
   // 1. query
-  Query(fragment, comm_spec, app_name, "./java_out/", basic_params);
+  Query(fragment, comm_spec, app_name, "/tmp", basic_params);
 }
 
 int main(int argc, char** argv) {

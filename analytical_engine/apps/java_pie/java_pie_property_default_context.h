@@ -66,9 +66,10 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         _context_object(NULL),
         _frag_object(NULL),
         _mm_object(NULL),
-        inner_ctx_(NULL),
+//        inner_ctx_(NULL),
         fragment_(fragment),
-        local_num_(1) {}
+        local_num_(1),
+        inner_ctx_addr_(0) {}
   const fragment_t& fragment() { return fragment_; }
 
   // grape instance is killed by SIGINT, which cause vm_direct_exit.
@@ -77,17 +78,23 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     if (_app_class_name) {
       delete[] _app_class_name;
     }
-    if (inner_ctx_) {
-      delete inner_ctx_;
-    }
+//    if (inner_ctx_) {
+//      LOG(INFO) << "releasing inner ctx";
+//      delete inner_ctx_;
+//    }
     // delete[] _context_class_name;
     {
       JNIEnvMark m;
       if (m.env()) {
+        LOG(INFO) << "before delete app obj";
         m.env()->DeleteGlobalRef(_app_object);
+        LOG(INFO) << "before delete ctx obj";
         m.env()->DeleteGlobalRef(_context_object);
+        LOG(INFO) << "before delete frag obj";
         m.env()->DeleteGlobalRef(_frag_object);
+        LOG(INFO) << "before delete mm obj";
         m.env()->DeleteGlobalRef(_mm_object);
+        LOG(INFO) << "after delete mm obj";
       }
     }
 
@@ -242,11 +249,11 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         }
         LOG(INFO) << "get field success";
 
-        long inner_ctx_address =
+        inner_ctx_addr_ =
             env->GetLongField(_context_object, inner_ctx_address_field);
 
-        LOG(INFO) << "innertex ctx address" << inner_ctx_address;
-        inner_ctx_ = reinterpret_cast<grape::ContextBase*>(inner_ctx_address);
+        LOG(INFO) << "innertex ctx address" << inner_ctx_addr_;
+ //       inner_ctx_ = reinterpret_cast<grape::ContextBase*>(inner_ctx_addr_);
         LOG(INFO) << "successfully obtained inner ctx";
       }
     }
@@ -263,7 +270,9 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
 
   // const char* context_class_name() const { return _context_class_name; }
 
-  const grape::ContextBase* inner_context() const { return inner_ctx_; }
+//  grape::ContextBase* inner_context() const { return inner_ctx_; }
+  
+  uint64_t inner_context_addr() {return inner_ctx_addr_;}
 
  public:
   char* _app_class_name;
@@ -433,9 +442,10 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   }
   // char* _context_class_name;
   std::string _java_frag_type_name;
-  grape::ContextBase* inner_ctx_;
+ // grape::ContextBase* inner_ctx_;
   const fragment_t& fragment_;
   int local_num_;
+  uint64_t inner_ctx_addr_;
 };
 
 // This Wrapper works as a proxy, forward requests like toNdArray, to the c++
@@ -466,7 +476,7 @@ class JavaPIEPropertyDefaultContextWrapper
         get_java_ctx_type_name(ctx_->_context_object);
     LOG(INFO) << "java ctx type name" << java_ctx_type_name;
     std::string ctx_name = "JavaPIEContext:" + java_ctx_type_name + "@" +
-                           std::string(&(ctx_->inner_context()));
+                           std::to_string(ctx_->inner_context_addr());
     LOG(INFO) << "ctx name " << ctx_name;
     if (java_ctx_type_name == "LabeledVertexDataContext") {
       // Get the DATA_T;
@@ -474,11 +484,12 @@ class JavaPIEPropertyDefaultContextWrapper
           get_vertex_data_context_data_type(ctx_->_context_object);
       if (data_type == "double") {
         auto inner_ctx_impl =
-            dynamic_cast<gs::LabeledVertexDataContext<FRAG_T, double>*>(
-                ctx_->inner_context());
+            reinterpret_cast<gs::LabeledVertexDataContext<FRAG_T, double>*>(
+                ctx_->inner_context_addr());
+        std::shared_ptr<gs::LabeledVertexDataContext<FRAG_T, double>> inner_ctx_impl_shared(inner_ctx_impl);
         _inner_context_wrapper =
             std::make_shared<gs::LabeledVertexDataContextWrapper<FRAG_T, double>>(
-                ctx_name, frag_wrapper, inner_ctx_impl);
+                ctx_name, frag_wrapper, inner_ctx_impl_shared);
         LOG(INFO) << "construct inner ctx wrapper: "
                   << _inner_context_wrapper->context_type() << "," << ctx_name;
       } else {
@@ -608,7 +619,7 @@ class JavaPIEPropertyDefaultContextWrapper
       }
       jmethodID getter_method = m.env()->GetStaticMethodID(
           app_context_getter_class, "getVertexDataContextDataType",
-          "(Ljava/lang/Class;)Ljava/lang/String;");
+          "(Lio/v6d/modules/graph/context/LabeledVertexDataContext;)Ljava/lang/String;");
       if (getter_method == NULL) {
         LOG(FATAL) << "getVertexDataContextDataType method null";
       }
