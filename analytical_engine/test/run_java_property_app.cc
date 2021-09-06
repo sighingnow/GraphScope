@@ -30,6 +30,7 @@
 #include "grape/util.h"
 #include "java_pie/java_pie_property_default_app.h"
 #include "java_pie/javasdk.h"
+#include "proto/graph_def.pb.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/arrow_fragment.h"
 
@@ -64,7 +65,51 @@ void Query(std::shared_ptr<FragmentType> fragment,
   worker->Output(ostream);
   ostream.close();
 
+  std::shared_ptr<gs::JavaPIEPropertyDefaultContext<FragmentType>> ctx =
+      worker->GetContext();
   worker->Finalize();
+
+  rpc::graph::GraphDefPb graph_def;
+  graph_def.set_graph_type(gs::rpc::graph::ARROW_PROPERTY);
+
+  auto frag_wrapper = std::make_shared<FragmentWrapper<FragmentType>>(
+      "graph_123", graph_def, fragment);
+
+  gs::JavaPIEPropertyDefaultContextWrapper<FragmentType> ctx_wrapper(
+      "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
+  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
+  auto range = std::make_pair("", "");
+  std::unique_ptr<grape::InArchive> arc =
+      std::move(ctx_wrapper.ToNdArray(comm_spec, selector, range).value());
+
+  if (comm_spec.worker_id() == 0) {
+    grape::OutArchive oarc;
+    oarc = std::move(*arc);
+
+    int64_t ndim, length1, length2;
+    int data_type;
+    oarc >> ndim;
+    CHECK_EQ(ndim, 1);
+    oarc >> length1;
+    oarc >> data_type;
+    CHECK_EQ(data_type, 2);
+    oarc >> length2;
+    CHECK_EQ(length1, length2);
+
+    std::ofstream assembled_ostream;
+    std::string assembled_output_path = out_prefix + "/assembled_ndarray.dat";
+    assembled_ostream.open(assembled_output_path);
+
+    for (int64_t i = 0; i < length1; ++i) {
+      double v;
+      oarc >> v;
+      assembled_ostream << v << std::endl;
+    }
+
+    CHECK(oarc.Empty());
+
+    assembled_ostream.close();
+  }
 }
 
 // Running test doesn't require codegen.
@@ -84,10 +129,12 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   pt.put("user_library_name", "vineyard-jni");
   char* jvm_opts = getenv("RUN_JVM_OPTS");
 
-  // std::string run_jvm_opts = "-Djava.library.path=" + GRAPE_LITE_JNI_SO_PATH
+  // std::string run_jvm_opts = "-Djava.library.path=" +
+  // GRAPE_LITE_JNI_SO_PATH
   // +
   //                            ":" + VINEYARD_JNI_SO_PATH +
-  //                            ":/usr/local/lib -Djava.class.path=" + RUN_CP +
+  //                            ":/usr/local/lib -Djava.class.path=" + RUN_CP
+  //                            +
   //                            "}";
   pt.put("jvm_runtime_opt", std::string(jvm_opts));
   LOG(INFO) << "geted shell env : " << std::string(jvm_opts);
@@ -102,7 +149,8 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
 int main(int argc, char** argv) {
   if (argc < 9) {
     printf(
-        "usage: ./run_java_property_app <ipc_socket> <e_label_num> <efiles...> "
+        "usage: ./run_java_property_app <ipc_socket> <e_label_num> "
+        "<efiles...> "
         "<v_label_num> <vfiles...> <run_projected>"
         "[directed] [app_name]\n");
     return 1;

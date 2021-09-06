@@ -441,7 +441,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
 // context held by java object.
 template <typename FRAG_T>
 class JavaPIEPropertyDefaultContextWrapper
-    : public gs::IJavaPIEPropertyDefaultContextWrapper {
+    : public IJavaPIEPropertyDefaultContextWrapper {
   using fragment_t = FRAG_T;
   using label_id_t = typename fragment_t::label_id_t;
   using prop_id_t = typename fragment_t::prop_id_t;
@@ -453,9 +453,9 @@ class JavaPIEPropertyDefaultContextWrapper
 
  public:
   JavaPIEPropertyDefaultContextWrapper(
-      const std::string& id, std::shared_ptr<gs::IFragmentWrapper> frag_wrapper,
+      const std::string& id, std::shared_ptr<IFragmentWrapper> frag_wrapper,
       std::shared_ptr<context_t> context)
-      : gs::IJavaPIEPropertyDefaultContextWrapper(id),
+      : IJavaPIEPropertyDefaultContextWrapper(id),
         frag_wrapper_(std::move(frag_wrapper)),
         ctx_(std::move(context)) {
     // Here we need to construct the ctx_wrapper from the ctx it self.
@@ -495,12 +495,12 @@ class JavaPIEPropertyDefaultContextWrapper
     return CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT;
   }
 
-  std::shared_ptr<gs::IFragmentWrapper> fragment_wrapper() override {
+  std::shared_ptr<IFragmentWrapper> fragment_wrapper() override {
     return frag_wrapper_;
   }
   // Considering labeledSelector vs selector
-  gs::bl::result<std::unique_ptr<grape::InArchive>> ToNdArray(
-      const grape::CommSpec& comm_spec, const gs::LabeledSelector& selector,
+  bl::result<std::unique_ptr<grape::InArchive>> ToNdArray(
+      const grape::CommSpec& comm_spec, const LabeledSelector& selector,
       const std::pair<std::string, std::string>& range) override {
     if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
@@ -511,9 +511,9 @@ class JavaPIEPropertyDefaultContextWrapper
     return std::make_unique<grape::InArchive>();
   }
 
-  gs::bl::result<std::unique_ptr<grape::InArchive>> ToDataframe(
+  bl::result<std::unique_ptr<grape::InArchive>> ToDataframe(
       const grape::CommSpec& comm_spec,
-      const std::vector<std::pair<std::string, gs::LabeledSelector>>& selectors,
+      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
       const std::pair<std::string, std::string>& range) override {
     if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
@@ -524,9 +524,9 @@ class JavaPIEPropertyDefaultContextWrapper
     return std::make_unique<grape::InArchive>();
   }
 
-  gs::bl::result<vineyard::ObjectID> ToVineyardTensor(
+  bl::result<vineyard::ObjectID> ToVineyardTensor(
       const grape::CommSpec& comm_spec, vineyard::Client& client,
-      const gs::LabeledSelector& selector,
+      const LabeledSelector& selector,
       const std::pair<std::string, std::string>& range) override {
     if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
@@ -538,9 +538,9 @@ class JavaPIEPropertyDefaultContextWrapper
     return vineyard::InvalidObjectID();
   }
 
-  gs::bl::result<vineyard::ObjectID> ToVineyardDataframe(
+  bl::result<vineyard::ObjectID> ToVineyardDataframe(
       const grape::CommSpec& comm_spec, vineyard::Client& client,
-      const std::vector<std::pair<std::string, gs::LabeledSelector>>& selectors,
+      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
       const std::pair<std::string, std::string>& range) override {
     if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
@@ -552,11 +552,11 @@ class JavaPIEPropertyDefaultContextWrapper
     return vineyard::InvalidObjectID();
   }
 
-  gs::bl::result<std::map<
+  bl::result<std::map<
       label_id_t,
       std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>>
   ToArrowArrays(const grape::CommSpec& comm_spec,
-                const std::vector<std::pair<std::string, gs::LabeledSelector>>&
+                const std::vector<std::pair<std::string, LabeledSelector>>&
                     selectors) override {
     if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
@@ -622,7 +622,7 @@ class JavaPIEPropertyDefaultContextWrapper
     LOG(FATAL) << "java env not available";
     return NULL;
   }
-  std::shared_ptr<gs::IFragmentWrapper> frag_wrapper_;
+  std::shared_ptr<IFragmentWrapper> frag_wrapper_;
   std::shared_ptr<context_t> ctx_;
   std::shared_ptr<IContextWrapper> _inner_context_wrapper;
 };
