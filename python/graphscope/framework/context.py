@@ -20,6 +20,7 @@ import collections
 import hashlib
 import json
 from copy import deepcopy
+import logging
 from typing import Mapping
 
 from graphscope.client.session import get_session_by_id
@@ -30,6 +31,8 @@ from graphscope.framework.dag_utils import run_app
 from graphscope.framework.errors import InvalidArgumentError
 from graphscope.framework.errors import check_argument
 
+
+logger = logging.getLogger("graphscope")
 
 class ResultDAGNode(DAGNode):
     """A class represents a result node in a DAG.
@@ -457,6 +460,7 @@ class JavaPIEPropertyDefaultContextDAGNode(BaseContextDAGNode):
 
     def set_inner_ctx(self, inner_ctx_type):
         self._inner_ctx_type = inner_ctx_type
+        logger.info("set inner ctx type to: {}".format(self._inner_ctx_type))
         if (inner_ctx_type == "tensor"):
             self._inner_ctx_check_selector = TensorContextDAGNode._static_check_selector
         elif inner_ctx_type == "vertex_data":
@@ -473,6 +477,10 @@ class JavaPIEPropertyDefaultContextDAGNode(BaseContextDAGNode):
     @property
     def context_type(self):
         return "java_pie_property_default_context"
+
+    @property
+    def inner_ctx_type(self):
+        return self._inner_ctx_type
 
 class Context(object):
     """Hold a handle of app querying context.
@@ -625,22 +633,15 @@ class Context(object):
         df.to_csv(fd, header=True, index=False)
 
 class JavaProxyContext(Context):
+    #def __init__(self, context_node : JavaPIEPropertyDefaultContextDAGNode, key, inner_ctx_type):
     def __init__(self, context_node : JavaPIEPropertyDefaultContextDAGNode, key, inner_ctx_type):
-        self._context_node = context_node
-        self._session = context_node.session
-        self._graph = self._context_node._graph
-        self._key = key
-        # copy and set op evaluated
-        self._context_node.op = deepcopy(self._context_node.op)
-        self._context_node.evaluated = True
-        self._saved_signature = self.signature
-        self._inner_ctx_type = inner_ctx_type
+        super().__init__(context_node, key) 
         #let java pie property ctx hold one concrete ctx obj in labeled_vertex_data_ctx,
         # tensor_ctx and etc.
         self._context_node.set_inner_ctx(inner_ctx_type)
-    @property
-    def inner_ctx_type(self):
-        return self._inner_ctx_type
+    # @property
+    # def inner_ctx_type(self):
+    #     return self._inner_ctx_type
 
 class DynamicVertexDataContext(collections.abc.Mapping):
     """Vertex data context for complicated result store.
