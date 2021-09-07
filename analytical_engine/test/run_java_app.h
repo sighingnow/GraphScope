@@ -20,13 +20,13 @@
 
 #include "alibaba-ffi.h"
 #include "core/fragment/java_immutable_edgecut_fragment.h"
+#include "core/java/javasdk.h"
 #include "core/loader/java_immutable_edgecut_fragment_loader.h"
 #include "grape/grape.h"
 #include "grape/types.h"
 #include "grape/util.h"
 #include "java_pie/java_pie_default_app.h"
 #include "java_pie/java_pie_parallel_app.h"
-#include "java_pie/javasdk.h"
 // #define USE_X
 namespace grape {
 

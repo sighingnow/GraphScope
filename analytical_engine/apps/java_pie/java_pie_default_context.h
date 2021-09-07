@@ -23,8 +23,8 @@ limitations under the License.
 #include <limits>
 #include <vector>
 #include "core/context/java_context_base.h"
+#include "core/java/javasdk.h"
 #include "core/parallel/java_default_message_manager.h"
-#include "java_pie/javasdk.h"
 namespace gs {
 
 /**

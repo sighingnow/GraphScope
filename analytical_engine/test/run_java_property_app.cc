@@ -22,6 +22,7 @@
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "core/fragment/arrow_projected_fragment.h"
+#include "core/java/javasdk.h"
 #include "core/loader/arrow_fragment_loader.h"
 #include "core/loader/java_immutable_edgecut_fragment_loader.h"
 #include "core/object/fragment_wrapper.h"
@@ -30,7 +31,6 @@
 #include "grape/types.h"
 #include "grape/util.h"
 #include "java_pie/java_pie_property_default_app.h"
-#include "java_pie/javasdk.h"
 #include "proto/graph_def.pb.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/arrow_fragment.h"
@@ -82,7 +82,7 @@ void Query(std::shared_ptr<FragmentType> fragment,
   std::string selector_string = "r:label0.property0";
   auto range = std::make_pair("", "");
   std::unique_ptr<grape::InArchive> arc =
-      std::move(ctx_wrapper.ToNdArray(comm_spec, selector, range).value());
+      std::move(ctx_wrapper.ToNdArray(comm_spec, selector_string, range).value());
 
   if (comm_spec.worker_id() == 0) {
     grape::OutArchive oarc;
