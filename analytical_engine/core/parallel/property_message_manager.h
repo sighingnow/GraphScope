@@ -52,20 +52,20 @@ class PropertyMessageManager : public grape::DefaultMessageManager {
     }
   }
 
-  // for java
-  template <typename GRAPH_T, typename VERTEX_T, typename LABEL_ID_T,
-            typename MESSAGE_T>
-  inline void SendMsgThroughIEdges(const GRAPH_T& frag, const VERTEX_T& v,
-                                   const LABEL_ID_T e_label,
-                                   const MESSAGE_T& msg) {
-    grape::DestList dsts = frag.IEDests(v, e_label);
-    auto* ptr = dsts.begin;
-    typename GRAPH_T::vid_t gid = frag.GetInnerVertexGid(v);
-    while (ptr != dsts.end) {
-      auto fid = *(ptr++);
-      to_send_[fid] << gid << msg;
-    }
-  }
+  // // for java
+  // template <typename GRAPH_T, typename VERTEX_T, typename LABEL_ID_T,
+  //           typename MESSAGE_T>
+  // inline void SendMsgThroughIEdges(const GRAPH_T& frag, const VERTEX_T& v,
+  //                                  const LABEL_ID_T e_label,
+  //                                  const MESSAGE_T& msg) {
+  //   grape::DestList dsts = frag.IEDests(v, e_label);
+  //   auto* ptr = dsts.begin;
+  //   typename GRAPH_T::vid_t gid = frag.GetInnerVertexGid(v);
+  //   while (ptr != dsts.end) {
+  //     auto fid = *(ptr++);
+  //     to_send_[fid] << gid << msg;
+  //   }
+  // }
 
   /**
    * @brief Communication via a crossing edge a->b. It sends message
@@ -91,20 +91,20 @@ class PropertyMessageManager : public grape::DefaultMessageManager {
     }
   }
 
-  // for java
-  template <typename GRAPH_T, typename VERTEX_T, typename LABEL_ID_T,
-            typename MESSAGE_T>
-  inline void SendMsgThroughOEdges(const GRAPH_T& frag, const VERTEX_T& v,
-                                   const LABEL_ID_T e_label,
-                                   const MESSAGE_T& msg) {
-    auto dsts = frag.OEDests(v, e_label);
-    auto* ptr = dsts.begin;
-    typename GRAPH_T::vid_t gid = frag.GetInnerVertexGid(v);
-    while (ptr != dsts.end) {
-      auto fid = *(ptr++);
-      to_send_[fid] << gid << msg;
-    }
-  }
+  // // for java
+  // template <typename GRAPH_T, typename VERTEX_T, typename LABEL_ID_T,
+  //           typename MESSAGE_T>
+  // inline void SendMsgThroughOEdges(const GRAPH_T& frag, const VERTEX_T& v,
+  //                                  const LABEL_ID_T e_label,
+  //                                  const MESSAGE_T& msg) {
+  //   auto dsts = frag.OEDests(v, e_label);
+  //   auto* ptr = dsts.begin;
+  //   typename GRAPH_T::vid_t gid = frag.GetInnerVertexGid(v);
+  //   while (ptr != dsts.end) {
+  //     auto fid = *(ptr++);
+  //     to_send_[fid] << gid << msg;
+  //   }
+  // }
 
   /**
    * @brief Communication via crossing edges a->b and a<-c. It sends message
@@ -130,35 +130,35 @@ class PropertyMessageManager : public grape::DefaultMessageManager {
     }
   }
 
+  // // for java
+  // template <typename GRAPH_T, typename VERTEX_T, typename LABEL_ID_T,
+  //           typename MESSAGE_T>
+  // inline void SendMsgThroughEdges(const GRAPH_T& frag, const VERTEX_T& v,
+  //                                 const LABEL_ID_T e_label,
+  //                                 const MESSAGE_T& msg) {
+  //   auto dsts = frag.IOEDests(v, e_label);
+  //   auto* ptr = dsts.begin;
+  //   typename GRAPH_T::vid_t gid = frag.GetInnerVertexGid(v);
+  //   while (ptr != dsts.end) {
+  //     auto fid = *(ptr++);
+  //     to_send_[fid] << gid << msg;
+  //   }
+  // }
   // for java
-  template <typename GRAPH_T, typename VERTEX_T, typename LABEL_ID_T,
-            typename MESSAGE_T>
-  inline void SendMsgThroughEdges(const GRAPH_T& frag, const VERTEX_T& v,
-                                  const LABEL_ID_T e_label,
-                                  const MESSAGE_T& msg) {
-    auto dsts = frag.IOEDests(v, e_label);
-    auto* ptr = dsts.begin;
-    typename GRAPH_T::vid_t gid = frag.GetInnerVertexGid(v);
-    while (ptr != dsts.end) {
-      auto fid = *(ptr++);
-      to_send_[fid] << gid << msg;
-    }
-  }
-  // for java
-  template <typename GRAPH_T, typename VERTEX_T, typename MESSAGE_T>
+  // template <typename GRAPH_T, typename VERTEX_T, typename MESSAGE_T>
 
-  inline bool JavaGetMessage(const GRAPH_T& frag, VERTEX_T& v,
-                             MESSAGE_T& msg) {
-    return GetMessage<GRAPH_T, MESSAGE_T>(frag, v, msg);
-  }
+  // inline bool JavaGetMessage(const GRAPH_T& frag, VERTEX_T& v,
+  //                            MESSAGE_T& msg) {
+  //   return GetMessage<GRAPH_T, MESSAGE_T>(frag, v, msg);
+  // }
 
-  // for java
-  template <typename GRAPH_T, typename VERTEX_T, typename MESSAGE_T>
-  inline void JavaSyncStateOnOuterVertex(const GRAPH_T& frag,
-                                         const VERTEX_T& v,
-                                         const MESSAGE_T& msg) {
-    SyncStateOnOuterVertex<GRAPH_T, MESSAGE_T>(frag, v, msg);
-  }
+  // // for java
+  // template <typename GRAPH_T, typename VERTEX_T, typename MESSAGE_T>
+  // inline void JavaSyncStateOnOuterVertex(const GRAPH_T& frag,
+  //                                        const VERTEX_T& v,
+  //                                        const MESSAGE_T& msg) {
+  //   SyncStateOnOuterVertex<GRAPH_T, MESSAGE_T>(frag, v, msg);
+  // }
 };
 
 }  // namespace gs
