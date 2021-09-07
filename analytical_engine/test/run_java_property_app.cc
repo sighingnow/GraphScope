@@ -78,7 +78,8 @@ void Query(std::shared_ptr<FragmentType> fragment,
 
   gs::JavaPIEPropertyDefaultContextWrapper<FragmentType> ctx_wrapper(
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
-  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
+//  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
+  std::string selector_string = "r:label0.property0";
   auto range = std::make_pair("", "");
   std::unique_ptr<grape::InArchive> arc =
       std::move(ctx_wrapper.ToNdArray(comm_spec, selector, range).value());

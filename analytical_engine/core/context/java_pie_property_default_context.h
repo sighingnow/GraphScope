@@ -35,7 +35,6 @@ limitations under the License.
 #include "core/object/i_fragment_wrapper.h"
 #include "core/parallel/property_message_manager.h"
 #include "grape/app/context_base.h"
-#include "java_pie/column_mananger.h"
 #include "java_pie/javasdk.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/fragment_traits.h"
@@ -504,10 +503,10 @@ class JavaPIEPropertyDefaultContextWrapper
 
   std::string context_type() override {
     // auto _inner_context_wrapper = ctx_->inner_context_wrapper();
-    // std::string ret = CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT;
-    // return ret + ":" + _inner_context_wrapper->context_type();
-    return CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT + ":" +
-           _inner_context_wrapper->context_type();
+    std::string ret = CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT;
+    return ret + ":" + _inner_context_wrapper->context_type();
+//    return CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT + ":" +
+//           _inner_context_wrapper->context_type();
   }
 
   std::shared_ptr<IFragmentWrapper> fragment_wrapper() override {
@@ -521,7 +520,7 @@ class JavaPIEPropertyDefaultContextWrapper
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
               _inner_context_wrapper);
-      auto selector = LabeledSelector::parse(selector_string);
+      BOOST_LEAF_AUTO(selector, LabeledSelector::parse(selector_string));
       return actual_ctx_wrapper->ToNdArray(comm_spec, selector, range);
     }
     return std::make_unique<grape::InArchive>();
