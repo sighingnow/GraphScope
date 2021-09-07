@@ -42,7 +42,7 @@ except ImportError:
     kube_config = None
 
 import graphscope
-from graphscope.framework.context import JavaProxyContext
+
 from graphscope.client.rpc import GRPCClient
 from graphscope.client.utils import CaptureKeyboardInterrupt
 from graphscope.client.utils import GSLogger
@@ -167,6 +167,7 @@ class _FetchHandler(object):
     def _rebuild_context(self, seq, op: Operation, op_result: op_def_pb2.OpResult):
         from graphscope.framework.context import Context
         from graphscope.framework.context import DynamicVertexDataContext
+        from graphscope.framework.context import JavaProxyContext
 
         # get context dag node as base
         context_dag_node = self._fetches[seq]
