@@ -200,6 +200,9 @@ void preprocess(int argc, char** argv) {
 
     LOG(INFO) << "Exiting app main function";
     // Call grapeAnnotationProcessor here
+    // Currently we geneerate graphScope sample and grape sample
+    // from the sampe entrence, so for gs, the main class is never used
+    // in codegen.
     std::string grape_process_class_name =
         "com/alibaba/grape/annotation/GrapeAppScanner";
     jclass grape_process_class =
@@ -211,7 +214,7 @@ void preprocess(int argc, char** argv) {
     jmethodID process_method =
         m.env()->GetStaticMethodID(grape_process_class, "scanAppAndGenerate",
                                    "(Ljava/lang/String;Ljava/lang/String;Ljava/"
-                                   "lang/String;)Ljava/lang/String;");
+                                   "lang/String;Z)Ljava/lang/String;");
     if (process_method == NULL) {
       LOG(ERROR) << "fail to find process method";
       return;
@@ -222,7 +225,7 @@ void preprocess(int argc, char** argv) {
         m.env()->NewStringUTF(ffi_output_path.c_str());
     jstring jres = (jstring) m.env()->CallStaticObjectMethod(
         grape_process_class, process_method, jar_path_jstring,
-        conf_path_jstring, ffi_output_path_jstring);
+        conf_path_jstring, ffi_output_path_jstring, true);
     if (m.env()->ExceptionOccurred()) {
       LOG(ERROR) << "Exception occurred in grape process method";
       m.env()->ExceptionDescribe();
