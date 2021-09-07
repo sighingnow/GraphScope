@@ -18,9 +18,9 @@
 #include <utility>
 #include <vector>
 
+#include "core/java/javasdk.h"
 #include "grape/grape.h"
 #include "grape/util.h"
-#include "java_pie/javasdk.h"
 namespace gs {
 
 void Init() {
