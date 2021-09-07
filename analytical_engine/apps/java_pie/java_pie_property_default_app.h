@@ -19,9 +19,9 @@ limitations under the License.
 #include <utility>
 
 #include "core/app/java/java_default_property_app_base.h"
+#include "core/context/java_pie_property_default_context.h"
 #include "grape/grape.h"
 #include "grape/types.h"
-#include "java_pie/java_pie_property_default_context.h"
 
 namespace gs {
 

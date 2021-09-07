@@ -26,8 +26,8 @@
 #endif
 #include "glog/logging.h"
 
-#include "apps/java_pie/java_pie_property_default_context.h"
 #include "core/config.h"
+#include "core/context/java_pie_property_default_context.h"
 #include "core/error.h"
 #include "proto/data_types.pb.h"
 #include "proto/query_args.pb.h"

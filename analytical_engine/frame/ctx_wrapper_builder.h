@@ -23,8 +23,8 @@
 #include "grape/app/vertex_data_context.h"
 #include "grape/app/void_context.h"
 
-#include "apps/java_pie/java_pie_property_default_context.h"
 #include "core/context/i_context.h"
+#include "core/context/java_pie_property_default_context.h"
 #include "core/context/labeled_vertex_property_context.h"
 #include "core/context/tensor_context.h"
 #include "core/context/vertex_data_context.h"

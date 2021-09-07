@@ -33,8 +33,8 @@
 #include "core/context/selector.h"
 #include "core/error.h"
 #include "core/object/gs_object.h"
-#include "core/server/rpc_utils.h"
 #include "core/object/i_fragment_wrapper.h"
+#include "core/server/rpc_utils.h"
 
 namespace gs {
 class IFragmentWrapper;
@@ -214,8 +214,7 @@ class ILabeledVertexPropertyContextWrapper : public IContextWrapper {
 };
 
 /**
- * @brief A base class for LabeledVertexPropertyContext. Compared with
- * ILabeledVertexDataContextWrapper, columns can be added at runtime.
+ * @brief A base class for JavaPropertyContext. It holds an inner ctxWrapper
  */
 class IJavaPIEPropertyDefaultContextWrapper : public IContextWrapper {
   using label_id_t = vineyard::property_graph_types::LABEL_ID_TYPE;
@@ -225,7 +224,7 @@ class IJavaPIEPropertyDefaultContextWrapper : public IContextWrapper {
       : IContextWrapper(id) {}
 
   virtual bl::result<std::unique_ptr<grape::InArchive>> ToNdArray(
-      const grape::CommSpec& comm_spec, const LabeledSelector& selector,
+      const grape::CommSpec& comm_spec, const std::string& selector_string,
       const std::pair<std::string, std::string>& range) = 0;
 
   virtual bl::result<std::unique_ptr<grape::InArchive>> ToDataframe(
