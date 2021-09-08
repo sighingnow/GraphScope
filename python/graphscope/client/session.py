@@ -179,7 +179,8 @@ class _FetchHandler(object):
         else: 
             context_type_splited = context_type.split(":")
             logger.info("context splited: {}".format(":".join(context_type_splited)))
-            if len(context_type_splited) == 2 and context_type_splited[0] == "java_pie_property_default_context":
+            if len(context_type_splited) == 2 and context_type_splited[0] == "java_pie_property_default":
+                logger.info("creat java context : {}, key: {}".format(context_type_splited[1], ret["context_key"]))
                 return JavaProxyContext(context_dag_node, ret["context_key"], context_type_splited[1])
             else :
                 return Context(context_dag_node, ret["context_key"])
