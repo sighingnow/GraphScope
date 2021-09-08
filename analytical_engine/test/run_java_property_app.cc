@@ -98,7 +98,7 @@ void output_data_frame(const grape::CommSpec& comm_spec,
     std::string col_name1, col_name2;
     oarc >> col_name1;
     oarc >> col_type1;
-    CHECK_EQ(col_type1, 3);
+    CHECK_EQ(col_type1, 4);  // int64_t
 
     std::ofstream assembled_col1_ostream;
     std::string assembled_col1_output_path =
@@ -113,7 +113,7 @@ void output_data_frame(const grape::CommSpec& comm_spec,
 
     oarc >> col_name2;
     oarc >> col_type2;
-    CHECK_EQ(col_type2, 2);
+    CHECK_EQ(col_type2, 7);  // double
 
     std::ofstream assembled_col2_ostream;
     std::string assembled_col2_output_path =
