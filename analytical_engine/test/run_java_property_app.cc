@@ -33,8 +33,16 @@
 #include "grape/util.h"
 #include "java_pie/java_pie_property_default_app.h"
 #include "proto/graph_def.pb.h"
+#include "sssp/sssp.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/arrow_fragment.h"
+#include "vineyard/graph/utils/grape_utils.h"
+
+#include "core/error.h"
+#include "core/fragment/arrow_projected_fragment.h"
+#include "core/loader/arrow_fragment_loader.h"
+#include "core/object/fragment_wrapper.h"
+#include "core/utils/transform_utils.h"
 
 using FragmentType =
     vineyard::ArrowFragment<vineyard::property_graph_types::OID_TYPE,
@@ -74,7 +82,101 @@ void output_nd_array(const grape::CommSpec& comm_spec,
   }
 }
 
-void Query(std::shared_ptr<FragmentType> fragment,
+void output_data_frame(const grape::CommSpec& comm_spec,
+                       std::unique_ptr<grape::InArchive> arc,
+                       const std::string& output_prefix) {
+  if (comm_spec.worker_id() == 0) {
+    grape::OutArchive oarc;
+    oarc = std::move(*arc);
+
+    int64_t ndim, length;
+    int col_type1, col_type2;
+    oarc >> ndim;
+    CHECK_EQ(ndim, 2);
+    oarc >> length;
+
+    std::string col_name1, col_name2;
+    oarc >> col_name1;
+    oarc >> col_type1;
+    CHECK_EQ(col_type1, 3);
+
+    std::ofstream assembled_col1_ostream;
+    std::string assembled_col1_output_path =
+        output_prefix + "_assembled_dataframe_col_1_" + col_name1 + ".dat";
+    assembled_col1_ostream.open(assembled_col1_output_path);
+    for (int64_t i = 0; i < length; ++i) {
+      int64_t id;
+      oarc >> id;
+      assembled_col1_ostream << id << std::endl;
+    }
+    assembled_col1_ostream.close();
+
+    oarc >> col_name2;
+    oarc >> col_type2;
+    CHECK_EQ(col_type2, 2);
+
+    std::ofstream assembled_col2_ostream;
+    std::string assembled_col2_output_path =
+        output_prefix + "_assembled_dataframe_col_2_" + col_name2 + ".dat";
+    assembled_col2_ostream.open(assembled_col2_output_path);
+    for (int64_t i = 0; i < length; ++i) {
+      double data;
+      oarc >> data;
+      assembled_col2_ostream << data << std::endl;
+    }
+    assembled_col2_ostream.close();
+
+    CHECK(oarc.Empty());
+  }
+}
+
+void output_vineyard_tensor(vineyard::Client& client,
+                            vineyard::ObjectID tensor_object,
+                            const grape::CommSpec& comm_spec,
+                            const std::string& prefix) {
+  auto stored_tensor = std::dynamic_pointer_cast<vineyard::GlobalTensor>(
+      client.GetObject(tensor_object));
+  auto const& shape = stored_tensor->shape();
+  auto const& partition_shape = stored_tensor->partition_shape();
+  auto const& local_chunks = stored_tensor->LocalPartitions(client);
+  CHECK_EQ(shape.size(), 1);
+  CHECK_EQ(partition_shape.size(), 1);
+  CHECK_EQ(local_chunks.size(), static_cast<size_t>(comm_spec.local_num()));
+  if (comm_spec.worker_id() == 0) {
+    LOG(INFO) << "tensor shape: " << shape[0] << ", " << partition_shape[0];
+  }
+
+  if (comm_spec.local_id() == 0) {
+    for (auto obj : local_chunks) {
+      auto single_tensor = std::dynamic_pointer_cast<vineyard::ITensor>(obj);
+      if (single_tensor->value_type() != vineyard::AnyType::Double) {
+        LOG(FATAL) << "type not correct...";
+      }
+      CHECK_EQ(single_tensor->shape().size(), 1);
+      CHECK_EQ(single_tensor->partition_index().size(), 1);
+      int64_t length = single_tensor->shape()[0];
+      LOG(INFO) << "[worker-" << comm_spec.worker_id() << "]: tensor chunk-"
+                << single_tensor->partition_index()[0] << ": " << length;
+      auto casted_tensor =
+          std::dynamic_pointer_cast<vineyard::Tensor<double>>(single_tensor);
+      std::string output_path =
+          prefix + "_v6d_single_tensor_" +
+          std::to_string(single_tensor->partition_index()[0]) + ".dat";
+      std::ofstream fout;
+      fout.open(output_path);
+
+      auto data = casted_tensor->data();
+      for (int64_t i = 0; i < length; ++i) {
+        fout << data[i] << std::endl;
+        fout.flush();
+      }
+
+      fout.close();
+    }
+  }
+}
+
+void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
            const grape::CommSpec& comm_spec, const std::string& app_name,
            const std::string& out_prefix, const std::string& basic_params) {
   using AppType = gs::JavaPIEPropertyDefaultApp<FragmentType>;
@@ -104,16 +206,48 @@ void Query(std::shared_ptr<FragmentType> fragment,
   gs::JavaPIEPropertyDefaultContextWrapper<FragmentType> ctx_wrapper(
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
   //  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
-  std::string selector_string = "r:label0.property0";
-  auto range = std::make_pair("", "");
-  std::unique_ptr<grape::InArchive> arc = std::move(
-      ctx_wrapper.ToNdArray(comm_spec, selector_string, range).value());
-  std::string java_out_prefix = out_prefix + "/java_assembled_ndarray.dat";
-  output_nd_array(comm_spec, std::move(arc), java_out_prefix);
-  LOG(INFO) << "finish query";
+
+  /// 0. test ndarray
+  {
+    std::string selector_string = "r:label0";
+    auto range = std::make_pair("", "");
+    std::unique_ptr<grape::InArchive> arc = std::move(
+        ctx_wrapper.ToNdArray(comm_spec, selector_string, range).value());
+    std::string java_out_prefix = out_prefix + "/java_assembled_ndarray.dat";
+    output_nd_array(comm_spec, std::move(arc), java_out_prefix);
+  }
+  LOG(INFO) << "java finish test ndarray";
+
+  // 1. Test data frame
+  {
+    std::string s_selectors;
+    {
+      std::vector<std::pair<std::string, std::string>> selector_list;
+      selector_list.emplace_back("id", "v:label0.id");
+      selector_list.emplace_back("result", "r:label0");
+      s_selectors = gs::generate_selectors(selector_list);
+    }
+    // auto selectors = gs::Selector::ParseSelectors(s_selectors).value();
+    std::unique_ptr<grape::InArchive> arc = std::move(
+        ctx_wrapper.ToDataframe(comm_spec, s_selectors, range).value());
+    std::string java_data_frame_out_prefix = out_prefix + "/java";
+    output_data_frame(comm_spec, std::move(arc), java_data_frame_out_prefix);
+  }
+
+  LOG(INFO) << "java finish test dataframe";
+  // 2. test vineyard tensor
+  {
+    auto tmp = ctx_wrapper.ToVineyardTensor(comm_spec, client, selector, range);
+    CHECK(tmp);
+    vineyard::ObjectID ndarray_object = tmp.value();
+    std::java_v6d_tensor_prefix = out_prefix + "/java";
+    output_vineyard_tensor(client, ndarray_object, comm_spec,
+                           java_v6d_tensor_prefix);
+  }
+  LOG(INFO) << "java finish test vineyard tensor";
 }
 
-void RunSSSP(std::shared_ptr<FragmentType> fragment,
+void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
              const grape::CommSpec& comm_spec, const std::string& out_prefix) {
   using AppType = gs::SSSPProperty<FragmentType>;
   auto app = std::make_shared<AppType>();
@@ -130,8 +264,7 @@ void RunSSSP(std::shared_ptr<FragmentType> fragment,
   ostream.open(output_path);
   worker->Output(ostream);
   ostream.close();
-  auto  ctx =
-      worker->GetContext();
+  auto ctx = worker->GetContext();
 
   worker->Finalize();
   gs::rpc::graph::GraphDefPb graph_def;
@@ -141,13 +274,42 @@ void RunSSSP(std::shared_ptr<FragmentType> fragment,
       "graph_456", graph_def, fragment);
   gs::LabeledVertexDataContextWrapper<FragmentType, double> ctx_wrapper(
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
-  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
-//  std::string selector_string = "r:label0.property0";
+  auto selector = gs::LabeledSelector::parse("r:label0").value();
   auto range = std::make_pair("", "");
-  std::unique_ptr<grape::InArchive> arc = std::move(
-      ctx_wrapper.ToNdArray(comm_spec, selector, range).value());
-  std::string cpp_out_prefix = out_prefix + "/cpp_assembled_ndarray.dat";
-  output_nd_array(comm_spec, std::move(arc), cpp_out_prefix);
+  {
+    std::unique_ptr<grape::InArchive> arc =
+        std::move(ctx_wrapper.ToNdArray(comm_spec, selector, range).value());
+    std::string cpp_out_prefix = out_prefix + "/java_assembled_ndarray.dat";
+    output_nd_array(comm_spec, std::move(arc), cpp_out_prefix);
+  }
+  LOG(INFO) << "cpp finish test ndarray";
+  // 1. test data frame
+  {
+    std::string s_selectors;
+    {
+      std::vector<std::pair<std::string, std::string>> selector_list;
+      selector_list.emplace_back("id", "v:label0.id");
+      selector_list.emplace_back("result", "r:label0");
+      s_selectors = gs::generate_selectors(selector_list);
+    }
+    auto selectors = gs::Selector::ParseSelectors(s_selectors).value();
+    std::unique_ptr<grape::InArchive> arc =
+        std::move(ctx_wrapper.ToDataframe(comm_spec, selectors, range).value());
+    std::string cpp_data_frame_out_prefix = out_prefix + "/cpp";
+    output_data_frame(comm_spec, std::move(arc), cpp_data_frame_out_prefix);
+  }
+  LOG(INFO) << "cpp finish test dataframe";
+
+  // 2. test vineyard tensor
+  {
+    auto tmp = ctx_wrapper.ToVineyardTensor(comm_spec, client, selector, range);
+    CHECK(tmp);
+    vineyard::ObjectID ndarray_object = tmp.value();
+    std::cpp_v6d_tensor_prefix = out_prefix + "/cpp";
+    output_vineyard_tensor(client, ndarray_object, comm_spec,
+                           cpp_v6d_tensor_prefix);
+  }
+  LOG(INFO) << "cpp finish test vineyard tensor";
 }
 
 // Running test doesn't require codegen.
@@ -174,10 +336,10 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   std::string basic_params = ss.str();
   LOG(INFO) << "basic_params" << basic_params;
   // 1. run java query
-  Query(fragment, comm_spec, app_name, "/tmp", basic_params);
+  Query(client, fragment, comm_spec, app_name, "/tmp", basic_params);
 
   // 2.run c++ query
-  RunSSSP(fragment, comm_spec, "/tmp");
+  RunSSSP(client, fragment, comm_spec, "/tmp");
 }
 
 int main(int argc, char** argv) {
