@@ -149,12 +149,12 @@ class JavaAppInstace(object):
 
 class JavaAppDagNode(AppDAGNode):
     """retrict appassets to javaAppAssets"""
-    def __init__(self, graph, app_assets: JavaAppAssets):
+    def __init__(self, graph : Graph, app_assets: JavaAppAssets):
         """Create an application using given :code:`gar` file, or given application
             class name.
 
         Args:
-            graph (:class:`GraphDAGNode`): A :class:`GraphDAGNode` instance.
+            graph (:class:`Graph`): A :class:`Graph` instance.
             app_assets: A :class:`AppAssets` instance.
         """
         self._graph = graph
@@ -169,6 +169,11 @@ class JavaAppDagNode(AppDAGNode):
         # add op to dag
         self._session.dag.add_op(self._app_assets.op)
         self._session.dag.add_op(self._op)
+
+        """Convert ArrowFragment<O,V> to ArrowFragmentDefault<O>"""
+    def _convert_arrow_frag_for_java(self, cpp_frag_str: str):
+        res = cpp_frag_str.split(",")[0] + ">"
+        return res.replace("<", "Default<", 1)
 
     def __call__(self, *args, **kwargs):
         """When called, check arguments based on app type, Then do build and query.
@@ -217,16 +222,19 @@ class JavaAppDagNode(AppDAGNode):
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))
 
         #get frag template name from graph.op.attr
-        temp_g = Graph(self._graph)
-        logger.info("Set frag name to {}".format(temp_g.template_str))
+        # temp_g = Graph(self._graph)
+        frag_name_for_java = self._convert_arrow_frag_for_java(self._graph.template_str)
+        logger.info("Set frag name to {}, {}".format(self._graph.template_str, frag_name_for_java))
         kwargs_extend = dict(
             jvm_runtime_opt=jvm_runtime_opt_impl,
             user_library_name = user_jni_name,
-            frag_name = temp_g.template_str,
+            frag_name = frag_name_for_java,
             **kwargs
         )
 
         logger.info("dumping to json {}".format(json.dumps(kwargs_extend)))
         return create_context_node(context_type, self, self._graph, json.dumps(kwargs_extend))
+
+
 
 
