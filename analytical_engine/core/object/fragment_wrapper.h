@@ -381,7 +381,7 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
       if (outer_and_inner.size() != 2) {
         RETURN_GS_ERROR(
             vineyard::ErrorCode::kIllegalStateError,
-            "Unsupported java context type: " + std::string(ctx_type));
+            "Unsupported java context type: " + std::string(context_type));
       }
       auto vp_ctx_wrapper =
           std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(

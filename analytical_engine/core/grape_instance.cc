@@ -449,7 +449,7 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
         std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(
             base_ctx_wrapper);
     // delay the selector parsing to inner ctxWrapper;
-    return wrapper->ToDataframe(comm_spec_, s_selector, range);
+    return wrapper->ToDataframe(comm_spec_, s_selectors, range);
   }
   RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
                   "Unsupported context type: " + std::string(ctx_type));
@@ -601,7 +601,7 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
           vineyard::ErrorCode::kIllegalStateError,
           "Unsupported java context type: " + std::string(ctx_type));
     }
-    auto wrapper =
+    auto vd_ctx_wrapper=
         std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(
             base_ctx_wrapper);
     // delay the selector parsing to inner ctxWrapper;

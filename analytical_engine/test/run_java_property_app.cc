@@ -109,7 +109,7 @@ void Query(std::shared_ptr<FragmentType> fragment,
   std::unique_ptr<grape::InArchive> arc = std::move(
       ctx_wrapper.ToNdArray(comm_spec, selector_string, range).value());
   std::string java_out_prefix = out_prefix + "/java_assembled_ndarray.dat";
-  output_nd_array(comm_spec, arc, java_out_prefix);
+  output_nd_array(comm_spec, std::move(arc), java_out_prefix);
   LOG(INFO) << "finish query";
 }
 
@@ -130,23 +130,24 @@ void RunSSSP(std::shared_ptr<FragmentType> fragment,
   ostream.open(output_path);
   worker->Output(ostream);
   ostream.close();
+  auto  ctx =
+      worker->GetContext();
 
   worker->Finalize();
-
   gs::rpc::graph::GraphDefPb graph_def;
   graph_def.set_graph_type(gs::rpc::graph::ARROW_PROPERTY);
 
   auto frag_wrapper = std::make_shared<gs::FragmentWrapper<FragmentType>>(
       "graph_456", graph_def, fragment);
-  gs::LabeledVertexDataContextWrapper<FragmentType> ctx_wrapper(
+  gs::LabeledVertexDataContextWrapper<FragmentType, double> ctx_wrapper(
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
-  //  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
-  std::string selector_string = "r:label0.property0";
+  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
+//  std::string selector_string = "r:label0.property0";
   auto range = std::make_pair("", "");
   std::unique_ptr<grape::InArchive> arc = std::move(
-      ctx_wrapper.ToNdArray(comm_spec, selector_string, range).value());
+      ctx_wrapper.ToNdArray(comm_spec, selector, range).value());
   std::string cpp_out_prefix = out_prefix + "/cpp_assembled_ndarray.dat";
-  output_nd_array(comm_spec, arc, cpp_out_prefix);
+  output_nd_array(comm_spec, std::move(arc), cpp_out_prefix);
 }
 
 // Running test doesn't require codegen.
