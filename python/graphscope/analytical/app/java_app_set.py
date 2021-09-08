@@ -46,9 +46,9 @@ GRAPE_M2_REPO_PATH = os.path.join(str(Path.home()), ".m2/repository/com/alibaba/
 # VINEYARD_GRAPH_REPO_PATH = os.path.join(str(Path.home()), "./m2/repository/io/v6d")
 # GRAPE_PROCESSOR_JAR=os.path.join(GRAPE_M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-jar-with-dependencies.jar")
 GRAPE_SDK_BUILD=os.path.join(str(Path.home()), "GAE-ODPSGraph/pie-sdk/grape-sdk/target/classes/")
-GRAPE_SDK_JAR=os.path.join(GRAPE_M2_REPO_PATH, "grape-sdk/0.1/grape-sdk-0.1-jar-with-dependencies.jar")
+# GRAPE_SDK_JAR=os.path.join(GRAPE_M2_REPO_PATH, "grape-sdk/0.1/grape-sdk-0.1-jar-with-dependencies.jar")
 GRAPE_JNI_LIB_PATH=os.path.join("/home/admin/GAE-ODPSGraph/pie-sdk/grape-sdk/target/native/")
-VINEYARD_GRAPH_SDK_JAR = os.path.join(GRAPE_M2_REPO_PATH, "vineyard-graph/0.1/vineyard-graph-0.1.jar-with-dependencies.jar")
+# VINEYARD_GRAPH_SDK_JAR = os.path.join(GRAPE_M2_REPO_PATH, "vineyard-graph/0.1/vineyard-graph-0.1.jar-with-dependencies.jar")
 VINEYARD_JNI_LIB_PATH=os.path.join("/home/admin/GAE-ODPSGraph/pie-sdk/vineyard-graph/target/native/")
 VINEYARD_GRAPH_SDK_BUILD=os.path.join("/home/admin/GAE-ODPSGraph/pie-sdk/vineyard-graph/target/classes/")
 FFI_M2_REPO_PATH=os.path.join(str(Path.home()), ".m2/repository/com/alibaba/ffi")
@@ -220,7 +220,7 @@ class JavaAppDagNode(AppDAGNode):
         #grape jni and vineyard jni will be put in jar file, and extracte, add to path during runtime
         jvm_runtime_opt_impl = "-Djava.library.path=/usr/local/lib:/usr/lib:{}:{}:{} ".format(user_jni_dir, GRAPE_JNI_LIB_PATH, VINEYARD_JNI_LIB_PATH)\
                         + "-Djava.class.path={}:{}:{}:{}:{}:{} {}"\
-                         .format(ffi_target_output,  GUAVA_JAR, user_jar, GRAPE_SDK_JAR, VINEYARD_GRAPH_SDK_JAR, LLVM4JNI_JAR, performance_args)
+                         .format(ffi_target_output,  GUAVA_JAR, GRAPE_SDK_BUILD, VINEYARD_GRAPH_SDK_BUILD,user_jar, LLVM4JNI_JAR, performance_args)
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))
 
         #get frag template name from graph.op.attr
