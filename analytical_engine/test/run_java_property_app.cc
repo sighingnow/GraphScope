@@ -206,11 +206,17 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
   gs::JavaPIEPropertyDefaultContextWrapper<FragmentType> ctx_wrapper(
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
   //  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
-
+  auto range = std::make_pair("", "");
+  std::string selector_string = "r:label0";
+  std::string s_selectors;
+  {
+    std::vector<std::pair<std::string, std::string>> selector_list;
+    selector_list.emplace_back("id", "v:label0.id");
+    selector_list.emplace_back("result", "r:label0");
+    s_selectors = gs::generate_selectors(selector_list);
+  }
   /// 0. test ndarray
   {
-    std::string selector_string = "r:label0";
-    auto range = std::make_pair("", "");
     std::unique_ptr<grape::InArchive> arc = std::move(
         ctx_wrapper.ToNdArray(comm_spec, selector_string, range).value());
     std::string java_out_prefix = out_prefix + "/java_assembled_ndarray.dat";
@@ -220,13 +226,6 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
 
   // 1. Test data frame
   {
-    std::string s_selectors;
-    {
-      std::vector<std::pair<std::string, std::string>> selector_list;
-      selector_list.emplace_back("id", "v:label0.id");
-      selector_list.emplace_back("result", "r:label0");
-      s_selectors = gs::generate_selectors(selector_list);
-    }
     // auto selectors = gs::Selector::ParseSelectors(s_selectors).value();
     std::unique_ptr<grape::InArchive> arc = std::move(
         ctx_wrapper.ToDataframe(comm_spec, s_selectors, range).value());
@@ -237,10 +236,11 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
   LOG(INFO) << "java finish test dataframe";
   // 2. test vineyard tensor
   {
-    auto tmp = ctx_wrapper.ToVineyardTensor(comm_spec, client, selector, range);
+    auto tmp =
+        ctx_wrapper.ToVineyardTensor(comm_spec, client, selector_string, range);
     CHECK(tmp);
     vineyard::ObjectID ndarray_object = tmp.value();
-    std::java_v6d_tensor_prefix = out_prefix + "/java";
+    std::string java_v6d_tensor_prefix = out_prefix + "/java";
     output_vineyard_tensor(client, ndarray_object, comm_spec,
                            java_v6d_tensor_prefix);
   }
@@ -275,7 +275,15 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
   gs::LabeledVertexDataContextWrapper<FragmentType, double> ctx_wrapper(
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
   auto selector = gs::LabeledSelector::parse("r:label0").value();
+  std::string s_selectors;
+  {
+    std::vector<std::pair<std::string, std::string>> selector_list;
+    selector_list.emplace_back("id", "v:label0.id");
+    selector_list.emplace_back("result", "r:label0");
+    s_selectors = gs::generate_selectors(selector_list);
+  }
   auto range = std::make_pair("", "");
+  // 1. test cpp ndarray
   {
     std::unique_ptr<grape::InArchive> arc =
         std::move(ctx_wrapper.ToNdArray(comm_spec, selector, range).value());
@@ -285,14 +293,7 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
   LOG(INFO) << "cpp finish test ndarray";
   // 1. test data frame
   {
-    std::string s_selectors;
-    {
-      std::vector<std::pair<std::string, std::string>> selector_list;
-      selector_list.emplace_back("id", "v:label0.id");
-      selector_list.emplace_back("result", "r:label0");
-      s_selectors = gs::generate_selectors(selector_list);
-    }
-    auto selectors = gs::Selector::ParseSelectors(s_selectors).value();
+    auto selectors = gs::LabeledSelector::ParseSelectors(s_selectors).value();
     std::unique_ptr<grape::InArchive> arc =
         std::move(ctx_wrapper.ToDataframe(comm_spec, selectors, range).value());
     std::string cpp_data_frame_out_prefix = out_prefix + "/cpp";
@@ -305,7 +306,7 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     auto tmp = ctx_wrapper.ToVineyardTensor(comm_spec, client, selector, range);
     CHECK(tmp);
     vineyard::ObjectID ndarray_object = tmp.value();
-    std::cpp_v6d_tensor_prefix = out_prefix + "/cpp";
+    std::string cpp_v6d_tensor_prefix = out_prefix + "/cpp";
     output_vineyard_tensor(client, ndarray_object, comm_spec,
                            cpp_v6d_tensor_prefix);
   }
