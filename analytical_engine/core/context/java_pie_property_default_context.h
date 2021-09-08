@@ -82,20 +82,20 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
     //      delete inner_ctx_;
     //    }
     // delete[] _context_class_name;
-    {
-      JNIEnvMark m;
-      if (m.env()) {
-        LOG(INFO) << "before delete app obj";
-        m.env()->DeleteGlobalRef(_app_object);
-        LOG(INFO) << "before delete ctx obj";
-        m.env()->DeleteGlobalRef(_context_object);
-        LOG(INFO) << "before delete frag obj";
-        m.env()->DeleteGlobalRef(_frag_object);
-        LOG(INFO) << "before delete mm obj";
-        m.env()->DeleteGlobalRef(_mm_object);
-        LOG(INFO) << "after delete mm obj";
-      }
-    }
+    // {
+    //   JNIEnvMark m;
+    //   if (m.env()) {
+    //     LOG(INFO) << "before delete app obj";
+    //     m.env()->DeleteGlobalRef(_app_object);
+    //     LOG(INFO) << "before delete ctx obj";
+    //     m.env()->DeleteGlobalRef(_context_object);
+    //     LOG(INFO) << "before delete frag obj";
+    //     m.env()->DeleteGlobalRef(_frag_object);
+    //     LOG(INFO) << "before delete mm obj";
+    //     m.env()->DeleteGlobalRef(_mm_object);
+    //     LOG(INFO) << "after delete mm obj";
+    //   }
+    // }
 
     jint res = GetJavaVM()->DestroyJavaVM();
     LOG(INFO) << "Kill javavm status: " << res;

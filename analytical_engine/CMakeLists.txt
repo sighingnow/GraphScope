@@ -174,6 +174,7 @@ target_link_libraries(grape_engine PRIVATE gs_proto
         ${VINEYARD_LIBRARIES}
         ${JAVA_JVM_LIBRARY}
         ${JNI_LIBRARIES}
+        $ENV{JAVA_HOME}/jre/lib/amd64/libjsig.so
         )
 add_executable(run_java_app_preprocess ./core/java/run_java_app_preprocess.cc)
 target_include_directories(run_java_app_preprocess PRIVATE ${LIBGRAPELITE_INCLUDE_DIRS}/grape/analytical_apps core utils apps)
