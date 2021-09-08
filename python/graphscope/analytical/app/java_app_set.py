@@ -218,7 +218,8 @@ class JavaAppDagNode(AppDAGNode):
                         + "-XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC " \
                         + "-XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
         #grape jni and vineyard jni will be put in jar file, and extracte, add to path during runtime
-        jvm_runtime_opt_impl = "-Djava.library.path=/usr/local/lib:/usr/lib:{}:{}:{} ".format(user_jni_dir, GRAPE_JNI_LIB_PATH, VINEYARD_JNI_LIB_PATH)\
+        jvm_runtime_opt_impl = "-Xrs " \
+                        + "-Djava.library.path=/usr/local/lib:/usr/lib:{}:{}:{} ".format(user_jni_dir, GRAPE_JNI_LIB_PATH, VINEYARD_JNI_LIB_PATH)\
                         + "-Djava.class.path={}:{}:{}:{}:{}:{} {}"\
                          .format(ffi_target_output,  GUAVA_JAR, GRAPE_SDK_BUILD, VINEYARD_GRAPH_SDK_BUILD,user_jar, LLVM4JNI_JAR, performance_args)
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))

@@ -228,26 +228,24 @@ class IJavaPIEPropertyDefaultContextWrapper : public IContextWrapper {
       const std::pair<std::string, std::string>& range) = 0;
 
   virtual bl::result<std::unique_ptr<grape::InArchive>> ToDataframe(
-      const grape::CommSpec& comm_spec,
-      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
+      const grape::CommSpec& comm_spec, const std::string& selector_string,
       const std::pair<std::string, std::string>& range) = 0;
 
   virtual bl::result<vineyard::ObjectID> ToVineyardTensor(
       const grape::CommSpec& comm_spec, vineyard::Client& client,
-      const LabeledSelector& selector,
+      const std::string& selector_string,
       const std::pair<std::string, std::string>& range) = 0;
 
   virtual bl::result<vineyard::ObjectID> ToVineyardDataframe(
       const grape::CommSpec& comm_spec, vineyard::Client& client,
-      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
+      const std::string& selector_string,
       const std::pair<std::string, std::string>& range) = 0;
 
   virtual bl::result<std::map<
       label_id_t,
       std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>>
   ToArrowArrays(const grape::CommSpec& comm_spec,
-                const std::vector<std::pair<std::string, LabeledSelector>>&
-                    selectors) = 0;
+                const std::string& selector_string) = 0;
 };
 
 /**

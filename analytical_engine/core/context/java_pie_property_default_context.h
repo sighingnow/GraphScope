@@ -505,8 +505,8 @@ class JavaPIEPropertyDefaultContextWrapper
     // auto _inner_context_wrapper = ctx_->inner_context_wrapper();
     std::string ret = CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT;
     return ret + ":" + _inner_context_wrapper->context_type();
-//    return CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT + ":" +
-//           _inner_context_wrapper->context_type();
+    //    return CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT + ":" +
+    //           _inner_context_wrapper->context_type();
   }
 
   std::shared_ptr<IFragmentWrapper> fragment_wrapper() override {
@@ -527,13 +527,14 @@ class JavaPIEPropertyDefaultContextWrapper
   }
 
   bl::result<std::unique_ptr<grape::InArchive>> ToDataframe(
-      const grape::CommSpec& comm_spec,
-      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
+      const grape::CommSpec& comm_spec, const std::string& selector_string,
       const std::pair<std::string, std::string>& range) override {
     if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
               _inner_context_wrapper);
+      BOOST_LEAF_AUTO(selectors,
+                      LabeledSelector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToDataframe(comm_spec, selectors, range);
     }
     return std::make_unique<grape::InArchive>();
@@ -541,12 +542,13 @@ class JavaPIEPropertyDefaultContextWrapper
 
   bl::result<vineyard::ObjectID> ToVineyardTensor(
       const grape::CommSpec& comm_spec, vineyard::Client& client,
-      const LabeledSelector& selector,
+      const std::string& selector_string,
       const std::pair<std::string, std::string>& range) override {
     if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
               _inner_context_wrapper);
+      BOOST_LEAF_AUTO(selector, LabeledSelector::parse(selector_string));
       return actual_ctx_wrapper->ToVineyardTensor(comm_spec, client, selector,
                                                   range);
     }
@@ -555,12 +557,14 @@ class JavaPIEPropertyDefaultContextWrapper
 
   bl::result<vineyard::ObjectID> ToVineyardDataframe(
       const grape::CommSpec& comm_spec, vineyard::Client& client,
-      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
+      const std::string& selector_string,
       const std::pair<std::string, std::string>& range) override {
     if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
               _inner_context_wrapper);
+      BOOST_LEAF_AUTO(selectors,
+                      LabeledSelector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToVineyardDataframe(comm_spec, client,
                                                      selectors, range);
     }
@@ -571,12 +575,13 @@ class JavaPIEPropertyDefaultContextWrapper
       label_id_t,
       std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>>
   ToArrowArrays(const grape::CommSpec& comm_spec,
-                const std::vector<std::pair<std::string, LabeledSelector>>&
-                    selectors) override {
+                const std::string& selector_string) override {
     if (_inner_context_wrapper->context_type() == "labeled_vertex_data") {
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<ILabeledVertexDataContextWrapper>(
               _inner_context_wrapper);
+      BOOST_LEAF_AUTO(selectors,
+                      LabeledSelector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToArrowArrays(comm_spec, selectors);
     }
     std::map<label_id_t,

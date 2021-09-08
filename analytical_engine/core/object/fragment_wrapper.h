@@ -21,11 +21,14 @@
 #include <utility>
 #include <vector>
 
+#include "boost/algorithm/string.hpp"
+#include "boost/algorithm/string/split.hpp"
 #include "grape/util.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/graph_schema.h"
 #include "vineyard/graph/utils/grape_utils.h"
 
+#include "core/context/java_pie_property_default_context.h"
 #include "core/context/labeled_vertex_property_context.h"
 #include "core/context/vertex_data_context.h"
 #include "core/context/vertex_property_context.h"
@@ -297,7 +300,9 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
     if (context_type != CONTEXT_TYPE_VERTEX_DATA &&
         context_type != CONTEXT_TYPE_LABELED_VERTEX_DATA &&
         context_type != CONTEXT_TYPE_VERTEX_PROPERTY &&
-        context_type != CONTEXT_TYPE_LABELED_VERTEX_PROPERTY) {
+        context_type != CONTEXT_TYPE_LABELED_VERTEX_PROPERTY &&
+        (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) ==
+         std::string::npos)) {
       RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
                       "Illegal context type: " + context_type);
     }
@@ -368,6 +373,24 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
       BOOST_LEAF_AUTO(selectors, LabeledSelector::ParseSelectors(s_selectors));
       BOOST_LEAF_ASSIGN(columns,
                         vp_ctx_wrapper->ToArrowArrays(comm_spec, selectors));
+
+    } else if (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
+               std::string::npos) {
+      std::vector<std::string> outer_and_inner;
+      boost::split(outer_and_inner, context_type, boost::is_any_of(":"));
+      if (outer_and_inner.size() != 2) {
+        RETURN_GS_ERROR(
+            vineyard::ErrorCode::kIllegalStateError,
+            "Unsupported java context type: " + std::string(ctx_type));
+      }
+      auto vp_ctx_wrapper =
+          std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(
+              ctx_wrapper);
+
+      // BOOST_LEAF_AUTO(selectors,
+      // LabeledSelector::ParseSelectors(s_selectors));
+      BOOST_LEAF_ASSIGN(columns,
+                        vp_ctx_wrapper->ToArrowArrays(comm_spec, s_selectors));
     }
     vineyard::ObjectMeta ctx_meta, cur_meta;
     VINEYARD_CHECK_OK(client->GetMetaData(vm_id_from_ctx, ctx_meta));
