@@ -525,15 +525,17 @@ class JavaPIEPropertyDefaultContextWrapper
       _inner_context_wrapper = std::make_shared<inner_ctx_wrapper_type>(
           ctx_name, frag_wrapper, inner_ctx_impl_shared);
 
-    } else if (java_ctx_type_name == "VertexPropertyContext") {
-      using inner_ctx_type = VertexPropertyContext<FRAG_T>;
-      using inner_ctx_wrapper_type = VertexPropertyContextWrapper<FRAG_T>;
-      auto inner_ctx_impl =
-          reinterpret_cast<inner_ctx_type*>(ctx_->inner_context_addr());
-      std::shared_ptr<inner_ctx_type> inner_ctx_impl_shared(inner_ctx_impl);
-      _inner_context_wrapper = std::make_shared<inner_ctx_wrapper_type>(
-          ctx_name, frag_wrapper, inner_ctx_impl_shared);
-    } else {
+    }
+    // else if (java_ctx_type_name == "VertexPropertyContext") {
+    //   using inner_ctx_type = VertexPropertyContext<FRAG_T>;
+    //   using inner_ctx_wrapper_type = VertexPropertyContextWrapper<FRAG_T>;
+    //   auto inner_ctx_impl =
+    //       reinterpret_cast<inner_ctx_type*>(ctx_->inner_context_addr());
+    //   std::shared_ptr<inner_ctx_type> inner_ctx_impl_shared(inner_ctx_impl);
+    //   _inner_context_wrapper = std::make_shared<inner_ctx_wrapper_type>(
+    //       ctx_name, frag_wrapper, inner_ctx_impl_shared);
+    // }
+    else {
       LOG(FATAL) << "unsupported context type";
     }
     LOG(INFO) << "Construct inner ctx wrapper: "
@@ -567,14 +569,15 @@ class JavaPIEPropertyDefaultContextWrapper
               _inner_context_wrapper);
       BOOST_LEAF_AUTO(selector, LabeledSelector::parse(selector_string));
       return actual_ctx_wrapper->ToNdArray(comm_spec, selector, range);
-    } else if (_inner_context_wrapper->context_type() ==
-               CONTEXT_TYPE_VERTEX_PROPERTY) {
-      auto actual_ctx_wrapper =
-          std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
-              _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selector, Selector::parse(selector_string));
-      return actual_ctx_wrapper->ToNdArray(comm_spec, selector, range);
     }
+    // else if (_inner_context_wrapper->context_type() ==
+    //            CONTEXT_TYPE_VERTEX_PROPERTY) {
+    //   auto actual_ctx_wrapper =
+    //       std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
+    //           _inner_context_wrapper);
+    //   BOOST_LEAF_AUTO(selector, Selector::parse(selector_string));
+    //   return actual_ctx_wrapper->ToNdArray(comm_spec, selector, range);
+    // }
     return std::make_unique<grape::InArchive>();
   }
 
@@ -597,14 +600,15 @@ class JavaPIEPropertyDefaultContextWrapper
       BOOST_LEAF_AUTO(selectors,
                       LabeledSelector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToDataframe(comm_spec, selectors, range);
-    } else if (_inner_context_wrapper->context_type() ==
-               CONTEXT_TYPE_VERTEX_PROPERTY) {
-      auto actual_ctx_wrapper =
-          std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
-              _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
-      return actual_ctx_wrapper->ToDataframe(comm_spec, selectors, range);
     }
+    // else if (_inner_context_wrapper->context_type() ==
+    //            CONTEXT_TYPE_VERTEX_PROPERTY) {
+    //   auto actual_ctx_wrapper =
+    //       std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
+    //           _inner_context_wrapper);
+    //   BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
+    //   return actual_ctx_wrapper->ToDataframe(comm_spec, selectors, range);
+    // }
     return std::make_unique<grape::InArchive>();
   }
 
@@ -628,15 +632,17 @@ class JavaPIEPropertyDefaultContextWrapper
       BOOST_LEAF_AUTO(selectors, LabeledSelector::parse(selector_string));
       return actual_ctx_wrapper->ToVineyardTensor(comm_spec, client, selector,
                                                   range);
-    } else if (_inner_context_wrapper->context_type() ==
-               CONTEXT_TYPE_VERTEX_PROPERTY) {
-      auto actual_ctx_wrapper =
-          std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
-              _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selectors, Selector::parse(selector_string));
-      return actual_ctx_wrapper->ToVineyardTensor(comm_spec, client, selector,
-                                                  range);
     }
+    // else if (_inner_context_wrapper->context_type() ==
+    //            CONTEXT_TYPE_VERTEX_PROPERTY) {
+    //   auto actual_ctx_wrapper =
+    //       std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
+    //           _inner_context_wrapper);
+    //   BOOST_LEAF_AUTO(selectors, Selector::parse(selector_string));
+    //   return actual_ctx_wrapper->ToVineyardTensor(comm_spec, client,
+    //   selector,
+    //                                               range);
+    // }
     return vineyard::InvalidObjectID();
   }
 
@@ -662,15 +668,16 @@ class JavaPIEPropertyDefaultContextWrapper
                       LabeledSelector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToVineyardDataframe(comm_spec, client,
                                                      selectors, range);
-    } else if (_inner_context_wrapper->context_type() ==
-               CONTEXT_TYPE_VERTEX_PROPERTY) {
-      auto actual_ctx_wrapper =
-          std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
-              _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
-      return actual_ctx_wrapper->ToVineyardDataframe(comm_spec, client,
-                                                     selectors, range);
     }
+    // else if (_inner_context_wrapper->context_type() ==
+    //            CONTEXT_TYPE_VERTEX_PROPERTY) {
+    //   auto actual_ctx_wrapper =
+    //       std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
+    //           _inner_context_wrapper);
+    //   BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
+    //   return actual_ctx_wrapper->ToVineyardDataframe(comm_spec, client,
+    //                                                  selectors, range);
+    // }
     return vineyard::InvalidObjectID();
   }
 
@@ -695,14 +702,15 @@ class JavaPIEPropertyDefaultContextWrapper
       BOOST_LEAF_AUTO(selectors,
                       LabeledSelector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToArrowArrays(comm_spec, selectors);
-    } else if (_inner_context_wrapper->context_type() ==
-               CONTEXT_TYPE_VERTEX_PROPERTY) {
-      auto actual_ctx_wrapper =
-          std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
-              _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
-      return actual_ctx_wrapper->ToArrowArrays(comm_spec, selectors);
     }
+    // else if (_inner_context_wrapper->context_type() ==
+    //            CONTEXT_TYPE_VERTEX_PROPERTY) {
+    //   auto actual_ctx_wrapper =
+    //       std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
+    //           _inner_context_wrapper);
+    //   BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
+    //   return actual_ctx_wrapper->ToArrowArrays(comm_spec, selectors);
+    // }
     std::map<label_id_t,
              std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
         arrow_arrays;
