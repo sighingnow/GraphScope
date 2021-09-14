@@ -625,7 +625,7 @@ class JavaPIEPropertyDefaultContextWrapper
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<ILabeledVertexPropertyContextWrapper>(
               _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selectors, LabeledSelector::parse(selector_string));
+      BOOST_LEAF_AUTO(selector, LabeledSelector::parse(selector_string));
       return actual_ctx_wrapper->ToVineyardTensor(comm_spec, client, selector,
                                                   range);
     } else if (_inner_context_wrapper->context_type() ==
@@ -633,7 +633,7 @@ class JavaPIEPropertyDefaultContextWrapper
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
               _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selectors, Selector::parse(selector_string));
+      BOOST_LEAF_AUTO(selector, Selector::parse(selector_string));
       return actual_ctx_wrapper->ToVineyardTensor(comm_spec, client, selector,
                                                   range);
     }
