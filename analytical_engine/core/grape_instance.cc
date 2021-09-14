@@ -601,7 +601,7 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
           vineyard::ErrorCode::kIllegalStateError,
           "Unsupported java context type: " + std::string(ctx_type));
     }
-    auto vd_ctx_wrapper=
+    auto vd_ctx_wrapper =
         std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(
             base_ctx_wrapper);
     // delay the selector parsing to inner ctxWrapper;

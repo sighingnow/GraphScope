@@ -94,6 +94,14 @@ class Column : public IColumn {
  private:
   vertex_array_t data_;
 };
+template <typename FRAG_T>
+using DoubleColumn = Column<FRAG_T, double>;
+
+template <typename FRAG_T>
+using LongColumn = Column<FRAG_T, uint64_t>;
+
+template <typename FRAG_T>
+using IntColumn = Column<FRAG_T, uint32_t>;
 
 /**
  * @brief Create a IColumn object based on given data type.
