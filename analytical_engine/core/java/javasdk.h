@@ -412,6 +412,18 @@ jclass getClassByJavaPath(JNIEnv* env, const std::string& main_class_name) {
   return main_class;
 }
 
+char* java_class_name_dash_to_slash(std::string& str) {
+  char* c_str = new char[str.length() + 1];
+  strcpy(c_str, str.c_str());
+  char* p = c_str;
+  while (*p) {
+    if (*p == '.')
+      *p = '/';
+    p++;
+  }
+  return c_str;
+}
+
 }  // namespace gs
 
 #endif  // EXAMPLES_ANALYTICAL_APPS_JAVAAPP_JAVASDK_H_

@@ -104,103 +104,57 @@ class JavaContextBase : public grape::ContextBase {
       CHECK_NOTNULL(app_class);
 
       jobject app_object = createObject(env, app_class, _app_class_name);
-      if (app_object != NULL) {
-        _app_object = env->NewGlobalRef(app_object);
-      } else {
-        LOG(ERROR) << "create app object failed for " << _app_class_name;
-        return;
-      }
+      CHECK_NOTNULL(app_object);
+      _app_object = env->NewGlobalRef(app_object);
 
       std::string _context_class_name_str =
           get_ctx_class_name_from_app_object(env);
       LOG(INFO) << "context name " << _context_class_name_str;
       // _context_class_name = _context_class_name_str.c_str();
       // The retrived context class str is dash-sperated, convert to /-seperated
-      char* _context_class_name_c_str;
-      {
-        _context_class_name_c_str =
-            new char[_context_class_name_str.length() + 1];
-        strcpy(_context_class_name_c_str, _context_class_name_str.c_str());
-        char* p = _context_class_name_c_str;
-        while (*p) {
-          if (*p == '.')
-            *p = '/';
-          p++;
-        }
-      }
-      if (!_context_class_name_c_str) {
-        LOG(FATAL) << "get null string after convertion";
-      }
+      char* _context_class_name_c_str =
+          java_class_name_dash_to_slash(_context_class_name_str);
+      CHECK_NOTNULL(_context_class_name_c_str);
 
       jclass context_class = env->FindClass(_context_class_name_c_str);
-      if (context_class == NULL) {
-        LOG(ERROR) << "context class not found: " << _context_class_name_str;
-        return;
-      }
+      CHECK_NOTNULL(context_class);
 
       jobject ctx_object =
           createObject(env, context_class, _context_class_name_c_str);
-      if (ctx_object != NULL) {
-        _context_object = env->NewGlobalRef(ctx_object);
-      } else {
-        LOG(ERROR) << "Create context obj failed for context";
-        return;
-      }
+      CHECK_NOTNULL(ctx_object);
+      _context_object = env->NewGlobalRef(ctx_object);
 
-      const char* descriptor =
-          "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
-          "Lio/v6d/modules/graph/parallel/PropertyMessageManager;"
-          "Lcom/alibaba/fastjson/JSONObject;)V";
+      const char* descriptor = eval_descriptor();
+
       jmethodID InitMethodID =
           env->GetMethodID(context_class, "init", descriptor);
-      if (InitMethodID == NULL) {
-        LOG(ERROR) << "Cannot find method init" << descriptor;
-        return;
-      }
+      CHECK_NOTNULL(InitMethodID);
 
       jobject fragObject =
           createFFIPointerObject(env, _java_frag_type_name.c_str(),
                                  reinterpret_cast<jlong>(&fragment_));
-      if (fragObject == NULL) {
-        LOG(ERROR) << "Cannot create fragment Java object";
-        return;
-      } else {
-        _frag_object = env->NewGlobalRef(fragObject);
-      }
+      CHECK_NOTNULL(fragObject);
+      _frag_object = env->NewGlobalRef(fragObject);
 
       // 2. Create Message manager Java object
-      jobject messagesObject =
-          createFFIPointerObject(env, GetMessageManagerName(),
-                                 reinterpret_cast<jlong>(&messages));
-      if (messagesObject == NULL) {
-        LOG(ERROR) << "Cannot create message manager Java object";
-        return;
-      } else {
-        _mm_object = env->NewGlobalRef(messagesObject);
-      }
+      jobject messagesObject = createFFIPointerObject(
+          env, GetMessageManagerName(), reinterpret_cast<jlong>(&messages));
+      CHECK_NOTNULL(messagesObject);
+      _mm_object = env->NewGlobalRef(messagesObject);
 
       // 3. Create arguments array
       {
         jclass json_class = env->FindClass("com/alibaba/fastjson/JSON");
-        if (json_class == NULL) {
-          LOG(ERROR) << "fastjson class not found";
-          return;
-        }
+        CHECK_NOTNULL(json_class);
         jmethodID parse_method = env->GetStaticMethodID(
             json_class, "parseObject",
             "(Ljava/lang/String;)Lcom/alibaba/fastjson/JSONObject;");
-        if (parse_method == NULL) {
-          LOG(ERROR) << "parserObjectMethod not found";
-          return;
-        }
+        CHECK_NOTNULL(parse_method);
         LOG(INFO) << "user defined kw args: " << args_str;
         jstring args_jstring = env->NewStringUTF(args_str.c_str());
         jobject json_object =
             env->CallStaticObjectMethod(json_class, parse_method, args_jstring);
-        if (json_object == NULL) {
-          LOG(ERROR) << "json object creation failed";
-          return;
-        }
+        CHECK_NOTNULL(json_object);
 
         // 4. Invoke java method
         env->CallVoidMethod(_context_object, InitMethodID, _frag_object,
@@ -216,17 +170,11 @@ class JavaContextBase : public grape::ContextBase {
         // 5. to output the result, we need the c++ context held by java object.
         jfieldID inner_ctx_address_field =
             env->GetFieldID(context_class, "ffiContextAddress", "J");
-        if (inner_ctx_address_field == NULL) {
-          LOG(FATAL) << "No such field ffiContextAddress";
-        }
-        LOG(INFO) << "get field success";
+        CHECK_NOTNULL(inner_ctx_address_field);
 
         inner_ctx_addr_ =
             env->GetLongField(_context_object, inner_ctx_address_field);
-
-        LOG(INFO) << "innertex ctx address" << inner_ctx_addr_;
-        //       inner_ctx_ =
-        //       reinterpret_cast<grape::ContextBase*>(inner_ctx_addr_);
+        CHECK_NE(inner_ctx_addr_, 0);
         LOG(INFO) << "successfully obtained inner ctx";
       }
     }
@@ -241,10 +189,6 @@ class JavaContextBase : public grape::ContextBase {
 
   const char* app_class_name() const { return _app_class_name; }
 
-  // const char* context_class_name() const { return _context_class_name; }
-
-  //  grape::ContextBase* inner_context() const { return inner_ctx_; }
-
   uint64_t inner_context_addr() { return inner_ctx_addr_; }
 
  public:
@@ -254,38 +198,27 @@ class JavaContextBase : public grape::ContextBase {
   jobject _frag_object;
   jobject _mm_object;
 
+ protected:
+  virtual const char* GetMessageManagerName() = 0;
+  virtual const char* eval_descriptor() = 0;
+
  private:
   bool init_app_class_name(std::string& app_class) {
     if (app_class.empty()) {
       LOG(ERROR) << "Class names for java app is empty";
       return false;
     }
-    {
-      _app_class_name = new char[app_class.length() + 1];
-      strcpy(_app_class_name, app_class.c_str());
-      char* p = _app_class_name;
-      while (*p) {
-        if (*p == '.')
-          *p = '/';
-        p++;
-      }
-    }
+    _app_class_name = java_class_name_dash_to_slash(app_class);
     return true;
   }
   void load_jni_library(JNIEnv* env, std::string& user_library_name) {
     jclass grape_load_library =
         env->FindClass("com/alibaba/grape/utils/LoadLibrary");
-    if (grape_load_library == NULL) {
-      LOG(ERROR) << "Cannot find grape jni loader class";
-      return;
-    }
+    CHECK_NOTNULL(grape_load_library);
 
     jclass vineyard_load_library =
         env->FindClass("io/v6d/modules/graph/utils/LoadLibrary");
-    if (vineyard_load_library == NULL) {
-      LOG(ERROR) << "Cannot find vineyard jni loader class ";
-      return;
-    }
+    CHECK_NOTNULL(vineyard_load_library);
 
     const char* load_library_signature = "(Ljava/lang/String;)V";
     jstring user_library_jstring = env->NewStringUTF(user_library_name.c_str());
@@ -327,27 +260,19 @@ class JavaContextBase : public grape::ContextBase {
 
     LOG(INFO) << "received json: " << params;
     std::string frag_name = pt.get<std::string>("frag_name");
-    if (frag_name.empty()) {
-      LOG(FATAL) << "empty frag name";
-    }
+    CHECK(!frag_name.empty());
     LOG(INFO) << "parse frag name: " << frag_name;
     _java_frag_type_name = frag_name;
     pt.erase("frag_name");
 
     std::string app_class_name = pt.get<std::string>("app_class");
-    if (app_class_name.empty()) {
-      LOG(FATAL) << "empty app class name";
-    }
+    CHECK(!app_class_name.empty());
     LOG(INFO) << "parse app class name: " << app_class_name;
-    if (!init_app_class_name(app_class_name)) {
-      LOG(FATAL) << "Init app class name failed:" << app_class_name;
-    }
+    CHECK(init_app_class_name(app_class_name));
     pt.erase("app_class");
 
     user_library_name = pt.get<std::string>("user_library_name");
-    if (user_library_name.empty()) {
-      LOG(FATAL) << "empty user library name";
-    }
+    CHECK(!user_library_name.emtpy())
     LOG(INFO) << "user library name " << user_library_name;
     pt.erase("user_library_name");
 
@@ -365,50 +290,31 @@ class JavaContextBase : public grape::ContextBase {
     // extract the rest params, pack them as a json object.
     ss.str("");  // reset the stream buffer
     boost::property_tree::json_parser::write_json(ss, pt);
-
     return ss.str();
   }
-
-  virtual const char* GetMessageManagerName() = 0;
 
   std::string get_ctx_class_name_from_app_object(JNIEnv* env) {
     // get app_class's class object
     jclass app_class_class = env->GetObjectClass(_app_object);
-    if (app_class_class == NULL) {
-      LOG(FATAL) << "Cannot find object class ";
-    }
+    CHECK_NOTNULL(app_class_class);
     jmethodID app_class_getClass_method =
         env->GetMethodID(app_class_class, "getClass", "()Ljava/lang/Class;");
-    if (app_class_getClass_method == NULL) {
-      LOG(FATAL) << "no get class method ";
-    }
+    CHECK_NOTNULL(app_class_getClass_method);
     jobject app_class_obj =
         env->CallObjectMethod(_app_object, app_class_getClass_method);
-    if (app_class_obj == NULL) {
-      LOG(FATAL) << "app class obj ";
-    }
-    // the app's corresponding ctx name
-    // jstring _app_context_getter_name_jstring =
-    //     env->NewStringUTF(_app_context_getter_name);
+    CHECK_NOTNULL(app_class_obj);
+
     jclass app_context_getter_class = env->FindClass(_app_context_getter_name);
-    if (app_context_getter_class == NULL) {
-      LOG(FATAL) << "app get ContextClass not found";
-      return NULL;
-    }
+    CHECK_NOTNULL(app_context_getter_class);
+
     jmethodID app_context_getter_method = env->GetStaticMethodID(
         app_context_getter_class, "getPropertyDefaultContextName",
         "(Ljava/lang/Class;)Ljava/lang/String;");
-    if (app_context_getter_method == NULL) {
-      LOG(FATAL) << "appcontextclass getter method null";
-      return NULL;
-    }
+    CHECK_NOTNULL(app_context_getter_method);
     // Pass app class's class object
     jstring context_class_jstring = (jstring) env->CallStaticObjectMethod(
         app_context_getter_class, app_context_getter_method, app_class_obj);
-    if (context_class_jstring == NULL) {
-      LOG(FATAL) << "The retrived class string null";
-      return NULL;
-    }
+    CHECK_NOTNULL(context_class_jstring);
     return jstring2string(env, context_class_jstring);
   }
   // char* _context_class_name;

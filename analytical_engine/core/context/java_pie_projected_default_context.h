@@ -52,8 +52,18 @@ static constexpr const char* _message_manager_name =
  */
 template <typename FRAG_T>
 class JavaPIEProjectedDefaultContext : public JavaContextBase<FRAG_T> {
-  JavaPIEProjectedDefaultContext(const FRAG_T& fragment) : JavaContextBase(fragment){}
+ public:
+  JavaPIEProjectedDefaultContext(const FRAG_T& fragment)
+      : JavaContextBase(fragment) {}
+  virtual ~JavaPIEProjectedDefaultContext() {}
+
+ protected:
   const char* GetMessageManagerName() override { return _message_manager_name; }
+  const char* eval_descriptor() override {
+    return "(Lio/v6d/modules/graph/fragment/ArrowProjectedFragment;"
+           "Lcom/alibaba/grape/parallel/DefaultMessageManager;"
+           "Lcom/alibaba/fastjson/JSONObject;)V";
+  }
 };
 
 }  // namespace gs

@@ -53,9 +53,18 @@ static constexpr const char* _message_manager_name =
  */
 template <typename FRAG_T>
 class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
-  JavaPIEPropertyDefaultContext(const FRAG_T& fragment) : JavaContextBase(fragment){}
-  virtual ~JavaPIEPropertyDefaultContext(){}
+ public:
+  JavaPIEPropertyDefaultContext(const FRAG_T& fragment)
+      : JavaContextBase(fragment) {}
+  virtual ~JavaPIEPropertyDefaultContext() {}
+
+ protected:
   const char* GetMessageManagerName() override { return _message_manager_name; }
+  const char* eval_descriptor() override {
+    return "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
+           "Lio/v6d/modules/graph/parallel/PropertyMessageManager;"
+           "Lcom/alibaba/fastjson/JSONObject;)V";
+  }
 };
 
 // This Wrapper works as a proxy, forward requests like toNdArray, to the c++
