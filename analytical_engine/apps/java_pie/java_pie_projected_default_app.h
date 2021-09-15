@@ -13,13 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PROPERTY_DEFAULT_APP_H_
-#define ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PROPERTY_DEFAULT_APP_H_
+#ifndef ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_APP_H_
+#define ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_APP_H_
 
 #include <utility>
 
-#include "core/app/java/java_default_property_app_base.h"
-#include "core/context/java_pie_property_default_context.h"
+#include "core/app/java/java_default_app_base.h"
+#include "core/context/java_pie_projected_default_context.h"
 #include "grape/grape.h"
 #include "grape/types.h"
 
@@ -31,14 +31,13 @@ namespace gs {
  * @tparam FRAG_T
  */
 template <typename FRAG_T>
-class JavaPIEPropertyDefaultApp
-    : public JavaDefaultPropertyAppBase<FRAG_T,
-                                        JavaPIEPropertyDefaultContext<FRAG_T>> {
+class JavaPIEProjectedDefaultApp
+    : public JavaDefaultAppBase<FRAG_T,
+                                JavaPIEProjectedDefaultContext<FRAG_T>> {
  public:
   // specialize the templated worker.
-  INSTALL_JAVA_DEFAULT_PROPERTY_WORKER(JavaPIEPropertyDefaultApp<FRAG_T>,
-                                       JavaPIEPropertyDefaultContext<FRAG_T>,
-                                       FRAG_T)
+  INSTALL_JAVA_DEFAULT_WORKER(JavaPIEProjectedDefaultApp<FRAG_T>,
+                              JavaPIEProjectedDefaultContext<FRAG_T>, FRAG_T)
   using vertex_t = typename fragment_t::vertex_t;
   using vid_t = typename fragment_t::vid_t;
   using oid_t = typename fragment_t::oid_t;
@@ -66,9 +65,9 @@ class JavaPIEPropertyDefaultApp
       }
 
       const char* descriptor =
-          "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
-          "Lio/v6d/modules/graph/context/PropertyDefaultContextBase;"
-          "Lio/v6d/modules/graph/parallel/PropertyMessageManager;)V";
+          "(Lio/v6d/modules/graph/fragment/ArrowProjectedFragment;"
+          "Lio/v6d/modules/graph/context/ProjectedDefaultContextBase;"
+          "Lcom/alibaba/grape/parallel/DefaultMessageManager;)V";
       jmethodID PEvalMethodID =
           env->GetMethodID(app_class, "PEval", descriptor);
       if (PEvalMethodID == NULL) {
@@ -125,9 +124,9 @@ class JavaPIEPropertyDefaultApp
       }
 
       const char* descriptor =
-          "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
-          "Lio/v6d/modules/graph/context/PropertyDefaultContextBase;"
-          "Lio/v6d/modules/graph/parallel/PropertyMessageManager;)V";
+          "(Lio/v6d/modules/graph/fragment/ArrowProjectedFragment;"
+          "Lio/v6d/modules/graph/context/ProjectedDefaultContextBase;"
+          "Lcom/alibaba/grape/parallel/DefaultMessageManager;)V";
       jmethodID IncEvalMethodID =
           env->GetMethodID(app_class, "IncEval", descriptor);
       if (IncEvalMethodID == NULL) {
@@ -161,4 +160,4 @@ class JavaPIEPropertyDefaultApp
 
 }  // namespace gs
 
-#endif  // ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PROPERTY_DEFAULT_APP_H_
+#endif  // ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_APP_H_

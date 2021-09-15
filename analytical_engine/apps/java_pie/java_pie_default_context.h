@@ -22,9 +22,9 @@ limitations under the License.
 #include <iomanip>
 #include <limits>
 #include <vector>
-#include "core/context/java_context_base.h"
 #include "core/java/javasdk.h"
 #include "core/parallel/default_java_message_manager.h"
+#include "grape/app/context_base.h"
 namespace gs {
 
 /**
@@ -33,7 +33,7 @@ namespace gs {
  * @tparam FRAG_T
  */
 template <typename FRAG_T>
-class JavaPIEDefaultContext : public JavaContextBase<FRAG_T> {
+class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {
  public:
   bool init_class_names(std::string& app_class, std::string& context_class) {
     if (app_class.empty() || context_class.empty()) {
