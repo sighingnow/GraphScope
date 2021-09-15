@@ -25,7 +25,6 @@ class LongMsg {
   ~LongMsg() {}
   inline void setData(uint64_t value) { data = value; }
   inline uint64_t getData() { return data; }
-
   uint64_t data;
 };
 
@@ -35,8 +34,7 @@ class StringMsg {
   StringMsg(std::string& in_data) { data = in_data; }
   ~StringMsg() {}
   inline void setData(std::string value) { data = value; }
-  inline std::string getData() { return data; }
-
+  inline std::string& getData() { return data; }
   std::string data;
 };
 inline grape::OutArchive& operator>>(grape::OutArchive& out_archive,
@@ -88,6 +86,10 @@ inline bool operator==(const DoubleMsg& lhs, const DoubleMsg& rhs) {
 inline bool operator!=(const DoubleMsg& lhs, const DoubleMsg& rhs) {
   return !(lhs == rhs);
 }
+inline DoubleMsg& operator+=(const DoubleMsg& lhs, const DoubleMsg& rhs) {
+  lhs.data += rhs.data;
+  return lhs;
+}
 
 inline bool operator<(const LongMsg& lhs, const LongMsg& rhs) {
   return lhs.data < rhs.data;
@@ -106,6 +108,10 @@ inline bool operator==(const LongMsg& lhs, const LongMsg& rhs) {
 }
 inline bool operator!=(const LongMsg& lhs, const LongMsg& rhs) {
   return !(lhs == rhs);
+}
+inline LongMsg& operator+=(const LongMsg& lhs, const LongMsg& rhs) {
+  lhs.data += rhs.data;
+  return lhs;
 }
 
 class MessageInBuffer {
@@ -138,7 +144,7 @@ class MessageInBuffer {
   }
 
  private:
-  OutArchive arc_;
+  grape::OutArchive arc_;
 };
 
 }  // namespace gs
