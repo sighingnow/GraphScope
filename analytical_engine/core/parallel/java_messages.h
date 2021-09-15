@@ -86,7 +86,7 @@ inline bool operator==(const DoubleMsg& lhs, const DoubleMsg& rhs) {
 inline bool operator!=(const DoubleMsg& lhs, const DoubleMsg& rhs) {
   return !(lhs == rhs);
 }
-inline DoubleMsg& operator+=(const DoubleMsg& lhs, const DoubleMsg& rhs) {
+inline DoubleMsg& operator+=(DoubleMsg& lhs, const DoubleMsg& rhs) {
   lhs.data += rhs.data;
   return lhs;
 }
@@ -109,7 +109,7 @@ inline bool operator==(const LongMsg& lhs, const LongMsg& rhs) {
 inline bool operator!=(const LongMsg& lhs, const LongMsg& rhs) {
   return !(lhs == rhs);
 }
-inline LongMsg& operator+=(const LongMsg& lhs, const LongMsg& rhs) {
+inline LongMsg& operator+=(LongMsg& lhs, const LongMsg& rhs) {
   lhs.data += rhs.data;
   return lhs;
 }
