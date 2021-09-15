@@ -19,11 +19,11 @@ limitations under the License.
 #include <memory>
 
 // #include "grape/parallel/java_parallel_message_manager.h"
-#include "core/parallel/java_parallel_message_manager.h"
+#include "core/parallel/parallel_java_message_manager.h"
 #include "core/worker/java_parallel_worker.h"
 #include "grape/types.h"
 
-namespace grape {
+namespace gs {
 
 /**
  * @brief ParallelAppBase is a base class for parallel apps. Users can process
@@ -38,12 +38,13 @@ namespace grape {
 template <typename FRAG_T, typename CONTEXT_T>
 class JavaParallelAppBase {
  public:
-  static constexpr LoadStrategy load_strategy = LoadStrategy::kBothOutIn;
-  static constexpr MessageStrategy message_strategy =
-      MessageStrategy::kAlongOutgoingEdgeToOuterVertex;
+  static constexpr grape::LoadStrategy load_strategy =
+      grape::LoadStrategy::kBothOutIn;
+  static constexpr grape::MessageStrategy message_strategy =
+      grape::MessageStrategy::kAlongOutgoingEdgeToOuterVertex;
   static constexpr bool need_split_edges = true;
 
-  using message_manager_t = JavaParallelMessageManager<FRAG_T>;
+  using message_manager_t = ParallelJavaMessageManager;
 
   JavaParallelAppBase() = default;
   virtual ~JavaParallelAppBase() = default;
@@ -80,14 +81,14 @@ class JavaParallelAppBase {
  public:                                                          \
   using fragment_t = FRAG_T;                                      \
   using context_t = CONTEXT_T;                                    \
-  using message_manager_t = JavaParallelMessageManager<FRAG_T>;   \
-  using worker_t = JavaParallelWorker<APP_T>;                     \
+  using message_manager_t = gs::ParallelJavaMessageManager;       \
+  using worker_t = gs::JavaParallelWorker<APP_T>;                 \
   virtual ~APP_T() {}                                             \
   static std::shared_ptr<worker_t> CreateWorker(                  \
       std::shared_ptr<APP_T> app, std::shared_ptr<FRAG_T> frag) { \
     return std::shared_ptr<worker_t>(new worker_t(app, frag));    \
   }
 
-}  // namespace grape
+}  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_APP_JAVA_JAVA_PARALLEL_APP_BASE_H_

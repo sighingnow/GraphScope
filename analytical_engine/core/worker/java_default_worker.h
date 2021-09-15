@@ -21,7 +21,7 @@ limitations under the License.
 #include <type_traits>
 #include <utility>
 
-#include "core/parallel/java_default_message_manager.h"
+#include "core/parallel/default_java_message_manager.h"
 #include "grape/communication/communicator.h"
 #include "grape/config.h"
 // #include "grape/parallel/parallel_engine.h"
@@ -46,7 +46,7 @@ class JavaDefaultWorker {
   using fragment_t = typename APP_T::fragment_t;
   using context_t = typename APP_T::context_t;
 
-  using message_manager_t = JavaDefaultMessageManager<fragment_t>;
+  using message_manager_t = DefaultJavaMessageManager;
 
   // static_assert(check_app_fragment_consistency<APP_T, fragment_t>(),
   //               "The loaded graph is not valid for application");
@@ -67,7 +67,7 @@ class JavaDefaultWorker {
     comm_spec_ = comm_spec;
     MPI_Barrier(comm_spec_.comm());
     // TODO: remove graph parameter
-    messages_.Init(comm_spec_.comm(), std::make_shared<fragment_t>(graph));
+    messages_.Init(comm_spec_.comm());
 
     InitParallelEngine(app_, pe_spec);
     grape::InitCommunicator(app_, comm_spec_.comm());

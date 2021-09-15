@@ -89,13 +89,7 @@ class JavaPIEParallelContext : public JavaContextBase<FRAG_T> {
     }
   }
 
-  void GetJavaParallelManagerFFITypeName(std::string& name) {
-    name.append("grape::JavaParallelMessageManager<")
-        .append(_java_frag_type_name)
-        .append(">");
-  }
-
-  void Init(const FRAG_T& frag, JavaParallelMessageManager<FRAG_T>& messages,
+  void Init(const FRAG_T& frag, ParallelJavaMessageManager& messages,
             std::string& frag_name, std::string& app_class_name,
             std::string& app_context_name, std::vector<std::string>& args) {
     JNIEnvMark m;
@@ -162,10 +156,9 @@ class JavaPIEParallelContext : public JavaContextBase<FRAG_T> {
 
       // 2. Create Message manager Java object
       // TODO: create message pointer object
-      std::string mm_name;
-      GetJavaParallelManagerFFITypeName(mm_name);
-      jobject messagesObject = createFFIPointerObject(
-          env, mm_name.c_str(), reinterpret_cast<jlong>(&messages));
+      jobject messagesObject =
+          createFFIPointerObject(env, parallel_java_message_mananger_name,
+                                 reinterpret_cast<jlong>(&messages));
       if (messagesObject == NULL) {
         LOG(ERROR) << "Cannot create message manager Java object" << mm_name;
         return;
@@ -223,6 +216,8 @@ class JavaPIEParallelContext : public JavaContextBase<FRAG_T> {
 
   const char* context_class_name() const { return _context_class_name; }
 
+  const char* parallel_java_message_mananger_name =
+      "gs::ParallelJavaMessageManager";
   char* _app_class_name;
   char* _context_class_name;
   std::string _java_frag_type_name;

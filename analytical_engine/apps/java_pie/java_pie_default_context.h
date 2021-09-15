@@ -24,7 +24,7 @@ limitations under the License.
 #include <vector>
 #include "core/context/java_context_base.h"
 #include "core/java/javasdk.h"
-#include "core/parallel/java_default_message_manager.h"
+#include "core/parallel/default_java_message_manager.h"
 namespace gs {
 
 /**
@@ -90,13 +90,7 @@ class JavaPIEDefaultContext : public JavaContextBase<FRAG_T> {
     }
   }
 
-  void GetJavaDefaultManagerFFITypeName(std::string& name) {
-    name.append("grape::JavaDefaultMessageManager<")
-        .append(_java_frag_type_name)
-        .append(">");
-  }
-
-  void Init(const FRAG_T& frag, JavaDefaultMessageManager<FRAG_T>& messages,
+  void Init(const FRAG_T& frag, DefaultJavaMessageManager& messages,
             std::string& frag_name, std::string& app_class_name,
             std::string& app_context_name, std::vector<std::string>& args) {
     JNIEnvMark m;
@@ -160,10 +154,9 @@ class JavaPIEDefaultContext : public JavaContextBase<FRAG_T> {
 
       // 2. Create Message manager Java object
       // TODO: create message pointer object
-      std::string mm_name;
-      GetJavaDefaultManagerFFITypeName(mm_name);
-      jobject messagesObject = createFFIPointerObject(
-          env, mm_name.c_str(), reinterpret_cast<jlong>(&messages));
+      jobject messagesObject =
+          createFFIPointerObject(env, default_java_message_mananger_name,
+                                 reinterpret_cast<jlong>(&messages));
       if (messagesObject == NULL) {
         LOG(ERROR) << "Cannot create message manager Java object";
         return;
@@ -214,6 +207,8 @@ class JavaPIEDefaultContext : public JavaContextBase<FRAG_T> {
 
   char* _app_class_name;
   char* _context_class_name;
+  static const char* default_java_message_mananger_name =
+      "gs::DefaultJavaMessageManager";
   std::string _java_frag_type_name;
   jobject _app_object;
   jobject _context_object;

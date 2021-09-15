@@ -23,7 +23,7 @@ limitations under the License.
 #include <type_traits>
 #include <utility>
 
-#include "core/parallel/java_parallel_message_manager.h"
+#include "core/parallel/parallel_java_message_manager.h"
 #include "grape/communication/communicator.h"
 #include "grape/config.h"
 #include "grape/parallel/parallel_engine.h"
@@ -52,7 +52,7 @@ class JavaParallelWorker {
   using fragment_t = typename APP_T::fragment_t;
   using context_t = typename APP_T::context_t;
 
-  using message_manager_t = JavaParallelMessageManager<fragment_t>;
+  using message_manager_t = ParallelJavaMessageManager<fragment_t>;
 
   // static_assert(check_app_fragment_consistency<APP_T, fragment_t>(),
   //               "The loaded graph is not valid for application");
@@ -71,7 +71,7 @@ class JavaParallelWorker {
 
     comm_spec_ = comm_spec;
 
-    messages_.Init(comm_spec_.comm(), graph_);
+    messages_.Init(comm_spec_.comm());
 
     InitParallelEngine(app_, pe_spec);
     InitCommunicator(app_, comm_spec_.comm());
