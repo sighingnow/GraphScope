@@ -10,6 +10,7 @@ namespace gs {
 class DoubleMsg {
  public:
   DoubleMsg() { data = -1.0; }
+  DoubleMsg(double in_data) : data(in_data) {}
   ~DoubleMsg() {}
   inline void setData(double value) { data = value; }
   inline double getData() { return data; }
@@ -20,6 +21,7 @@ class DoubleMsg {
 class LongMsg {
  public:
   LongMsg() { data = -1; }
+  LongMsg(uint64_t in_data) : data(in_data) {}
   ~LongMsg() {}
   inline void setData(uint64_t value) { data = value; }
   inline uint64_t getData() { return data; }
@@ -30,6 +32,7 @@ class LongMsg {
 class StringMsg {
  public:
   StringMsg() { data = nullptr; }
+  StringMsg(std::string& in_data) { data = in_data; }
   ~StringMsg() {}
   inline void setData(std::string value) { data = value; }
   inline std::string getData() { return data; }
@@ -66,6 +69,39 @@ inline grape::InArchive& operator<<(grape::InArchive& in_archive,
   in_archive << msg.data;
   return in_archive;
 }
+
+class MessageInBuffer {
+ public:
+  MessageInBuffer() {}
+
+  explicit MessageInBuffer(OutArchive&& arc) : arc_(std::move(arc)) {}
+
+  void Init(OutArchive&& arc) { arc_ = std::move(arc); }
+
+  template <typename MESSAGE_T>
+  inline bool GetMessage(MESSAGE_T& msg) {
+    if (arc_.Empty()) {
+      return false;
+    }
+    arc_ >> msg;
+    return true;
+  }
+
+  template <typename GRAPH_T, typename MESSAGE_T>
+  inline bool GetMessage(const GRAPH_T& frag, typename GRAPH_T::vertex_t& v,
+                         MESSAGE_T& msg) {
+    if (arc_.Empty()) {
+      return false;
+    }
+    typename GRAPH_T::vid_t gid;
+    arc_ >> gid >> msg;
+    frag.Gid2Vertex(gid, v);
+    return true;
+  }
+
+ private:
+  OutArchive arc_;
+};
 
 }  // namespace gs
 
