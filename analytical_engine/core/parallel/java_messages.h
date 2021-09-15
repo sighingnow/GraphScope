@@ -69,6 +69,44 @@ inline grape::InArchive& operator<<(grape::InArchive& in_archive,
   in_archive << msg.data;
   return in_archive;
 }
+// specify overloaded <, > operators
+inline bool operator<(const DoubleMsg& lhs, const DoubleMsg& rhs) {
+  return lhs.data < rhs.data;
+}
+inline bool operator>(const DoubleMsg& lhs, const DoubleMsg& rhs) {
+  return rhs < lhs;
+}
+inline bool operator<=(const DoubleMsg& lhs, const DoubleMsg& rhs) {
+  return !(lhs > rhs);
+}
+inline bool operator>=(const DoubleMsg& lhs, const DoubleMsg& rhs) {
+  return !(lhs < rhs);
+}
+inline bool operator==(const DoubleMsg& lhs, const DoubleMsg& rhs) {
+  return lhs.data == rhs.data;
+}
+inline bool operator!=(const DoubleMsg& lhs, const DoubleMsg& rhs) {
+  return !(lhs == rhs);
+}
+
+inline bool operator<(const LongMsg& lhs, const LongMsg& rhs) {
+  return lhs.data < rhs.data;
+}
+inline bool operator>(const LongMsg& lhs, const LongMsg& rhs) {
+  return rhs < lhs;
+}
+inline bool operator<=(const LongMsg& lhs, const LongMsg& rhs) {
+  return !(lhs > rhs);
+}
+inline bool operator>=(const LongMsg& lhs, const LongMsg& rhs) {
+  return !(lhs < rhs);
+}
+inline bool operator==(const LongMsg& lhs, const LongMsg& rhs) {
+  return lhs.data == rhs.data;
+}
+inline bool operator!=(const LongMsg& lhs, const LongMsg& rhs) {
+  return !(lhs == rhs);
+}
 
 class MessageInBuffer {
  public:
