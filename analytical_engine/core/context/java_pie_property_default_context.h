@@ -53,6 +53,8 @@ static constexpr const char* _message_manager_name =
  */
 template <typename FRAG_T>
 class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
+  JavaPIEPropertyDefaultContext(const FRAG_T& fragment) : JavaContextBase(fragment){}
+  virtual ~JavaPIEPropertyDefaultContext(){}
   const char* GetMessageManagerName() override { return _message_manager_name; }
 };
 

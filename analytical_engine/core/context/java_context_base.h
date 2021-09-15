@@ -67,7 +67,7 @@ class JavaContextBase : public grape::ContextBase {
         local_num_(1),
         inner_ctx_addr_(0) {}
 
-  virtual ~JavaPIEPropertyDefaultContext() {
+  virtual ~JavaContextBase() {
     if (_app_class_name) {
       delete[] _app_class_name;
     }
@@ -101,7 +101,7 @@ class JavaContextBase : public grape::ContextBase {
       // 1. create app object, and get context class via jni
 
       jclass app_class = env->FindClass(_app_class_name);
-      CHECK_NOTNULL(app_class) << "Cannot find class " << _app_class_name;
+      CHECK_NOTNULL(app_class);
 
       jobject app_object = createObject(env, app_class, _app_class_name);
       if (app_object != NULL) {
@@ -170,7 +170,7 @@ class JavaContextBase : public grape::ContextBase {
 
       // 2. Create Message manager Java object
       jobject messagesObject =
-          createFFIPointerObject(env, GetPropertyMessageManagerFFITypeName(),
+          createFFIPointerObject(env, GetMessageManagerName(),
                                  reinterpret_cast<jlong>(&messages));
       if (messagesObject == NULL) {
         LOG(ERROR) << "Cannot create message manager Java object";
