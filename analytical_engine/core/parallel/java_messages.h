@@ -74,9 +74,9 @@ class MessageInBuffer {
  public:
   MessageInBuffer() {}
 
-  explicit MessageInBuffer(OutArchive&& arc) : arc_(std::move(arc)) {}
+  explicit MessageInBuffer(grape::OutArchive&& arc) : arc_(std::move(arc)) {}
 
-  void Init(OutArchive&& arc) { arc_ = std::move(arc); }
+  void Init(grape::OutArchive&& arc) { arc_ = std::move(arc); }
 
   template <typename MESSAGE_T>
   inline bool GetMessage(MESSAGE_T& msg) {
