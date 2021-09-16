@@ -54,7 +54,7 @@ template <typename FRAG_T>
 class JavaPIEProjectedDefaultContext : public JavaContextBase<FRAG_T> {
  public:
   JavaPIEProjectedDefaultContext(const FRAG_T& fragment)
-      : JavaContextBase(fragment) {}
+      : JavaContextBase<FRAG_T>(fragment) {}
   virtual ~JavaPIEProjectedDefaultContext() {}
 
  protected:
