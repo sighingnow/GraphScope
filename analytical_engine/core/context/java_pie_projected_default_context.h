@@ -66,7 +66,7 @@ class JavaPIEProjectedDefaultContext : public JavaContextBase<FRAG_T> {
         createFFIPointerObject(env, _java_projected_message_manager_name,
                                reinterpret_cast<jlong>(&messages));
     CHECK_NOTNULL(messagesObject);
-    init(messagesObject, params);
+    JavaContextBase<FRAG_T>::init(messagesObject, params);
   }
 
  protected:
