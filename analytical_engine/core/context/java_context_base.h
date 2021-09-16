@@ -98,7 +98,7 @@ class JavaContextBase : public grape::ContextBase {
 
  protected:
   virtual const char* eval_descriptor() = 0;
-  void init(jobect& messagesObject, const std::string& params) {
+  void init(jobject& messagesObject, const std::string& params) {
     if (params.empty()) {
       LOG(ERROR) << "no args received";
       return;

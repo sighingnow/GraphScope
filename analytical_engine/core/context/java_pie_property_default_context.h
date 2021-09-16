@@ -65,7 +65,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
         createFFIPointerObject(env, _java_property_message_manager_name,
                                reinterpret_cast<jlong>(&messages));
     CHECK_NOTNULL(messagesObject);
-    init(messagesObject, params);
+    JavaContextBase<FRAG_T>::init(messagesObject, params);
   }
 
  protected:
