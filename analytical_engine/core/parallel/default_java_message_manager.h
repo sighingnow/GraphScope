@@ -31,6 +31,7 @@ limitations under the License.
 namespace gs {
 class DefaultJavaMessageManager : public grape::DefaultMessageManager,
                                   public grape::Communicator {
+ public:
   DefaultJavaMessageManager() {}
   ~DefaultJavaMessageManager() {}
 
