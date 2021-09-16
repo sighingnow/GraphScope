@@ -378,8 +378,7 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
 // Running test doesn't require codegen.
 void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
          vineyard::ObjectID id, bool run_projected, bool run_property,
-         const std::string& app_name, std::string& selector_string,
-         std::string& selectors_string) {
+         const std::string& app_name) {
   std::shared_ptr<FragmentType> fragment =
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(id));
   // 0. setup environment
@@ -405,7 +404,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
     std::string selectors_string;
     if (run_property == 0) {
       // labeled_vetex_data
-      selector_string = gs::LabeledSelector::parse("r:label0").value();
+      selector_string = "r:label0";
       {
         std::vector<std::pair<std::string, std::string>> selector_list;
         selector_list.emplace_back("id", "v:label0.id");
@@ -414,7 +413,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
       }
     } else {
       // labeled_vertex_property
-      selector_string = gs::LabeledSelector::parse("r:label0.dist_0").value();
+      selector_string = "r:label0.dist_0";
       {
         std::vector<std::pair<std::string, std::string>> selector_list;
         selector_list.emplace_back("id", "v:label0.id");
@@ -440,7 +439,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
       std::string selectors_string;
       if (run_property == 0) {
         // labeled_vetex_data
-        selector_string = gs::LabeledSelector::parse("r").value();
+        selector_string = "r";
         {
           std::vector<std::pair<std::string, std::string>> selector_list;
           selector_list.emplace_back("id", "v.id");
@@ -449,7 +448,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
         }
       } else {
         // labeled_vertex_property
-        selector_string = gs::LabeledSelector::parse("r.dist_0").value();
+        selector_string = "r.dist_0";
         {
           std::vector<std::pair<std::string, std::string>> selector_list;
           selector_list.emplace_back("id", "v.id");
@@ -457,7 +456,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
           selectors_string = gs::generate_selectors(selector_list);
         }
       }
-      QueryProjected(client, projected_fragment, comm_spec, app_name, , "/tmp",
+      QueryProjected(client, projected_fragment, comm_spec, app_name, "/tmp",
                      basic_params, selector_string, selectors_string);
     }
   }
