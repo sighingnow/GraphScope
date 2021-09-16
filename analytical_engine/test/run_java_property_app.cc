@@ -31,6 +31,7 @@
 #include "grape/grape.h"
 #include "grape/types.h"
 #include "grape/util.h"
+#include "java_pie/java_pie_projected_default_app.h"
 #include "java_pie/java_pie_property_default_app.h"
 #include "proto/graph_def.pb.h"
 #include "sssp/sssp.h"
@@ -47,6 +48,8 @@
 using FragmentType =
     vineyard::ArrowFragment<vineyard::property_graph_types::OID_TYPE,
                             vineyard::property_graph_types::VID_TYPE>;
+using ProjectedFragmentType =
+    gs::ArrowProjectedFragment<int64_t, uint64_t, double, int64_t>;
 void output_nd_array(const grape::CommSpec& comm_spec,
                      std::unique_ptr<grape::InArchive> arc,
                      const std::string& output_path) {
@@ -178,7 +181,9 @@ void output_vineyard_tensor(vineyard::Client& client,
 
 void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
            const grape::CommSpec& comm_spec, const std::string& app_name,
-           const std::string& out_prefix, const std::string& basic_params) {
+           const std::string& out_prefix, const std::string& basic_params,
+           const std::string& selector_string,
+           const std::string& selectors_string) {
   using AppType = gs::JavaPIEPropertyDefaultApp<FragmentType>;
   auto app = std::make_shared<AppType>();
   auto worker = AppType::CreateWorker(app, fragment);
@@ -207,14 +212,6 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
   //  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
   auto range = std::make_pair("", "");
-  std::string selector_string = "r:label0";
-  std::string s_selectors;
-  {
-    std::vector<std::pair<std::string, std::string>> selector_list;
-    selector_list.emplace_back("id", "v:label0.id");
-    selector_list.emplace_back("result", "r:label0");
-    s_selectors = gs::generate_selectors(selector_list);
-  }
   /// 0. test ndarray
   {
     std::unique_ptr<grape::InArchive> arc = std::move(
@@ -222,18 +219,18 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     std::string java_out_prefix = out_prefix + "/java_assembled_ndarray.dat";
     output_nd_array(comm_spec, std::move(arc), java_out_prefix);
   }
-  LOG(INFO) << "java finish test ndarray";
+  LOG(INFO) << "[0] java finish test ndarray";
 
   // 1. Test data frame
   {
     // auto selectors = gs::Selector::ParseSelectors(s_selectors).value();
     std::unique_ptr<grape::InArchive> arc = std::move(
-        ctx_wrapper.ToDataframe(comm_spec, s_selectors, range).value());
+        ctx_wrapper.ToDataframe(comm_spec, selectors_string, range).value());
     std::string java_data_frame_out_prefix = out_prefix + "/java";
     output_data_frame(comm_spec, std::move(arc), java_data_frame_out_prefix);
   }
 
-  LOG(INFO) << "java finish test dataframe";
+  LOG(INFO) << "[1] java finish test dataframe";
   // 2. test vineyard tensor
   {
     auto tmp =
@@ -244,11 +241,81 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     output_vineyard_tensor(client, ndarray_object, comm_spec,
                            java_v6d_tensor_prefix);
   }
-  LOG(INFO) << "java finish test vineyard tensor";
+  LOG(INFO) << "[2] java finish test vineyard tensor";
+}
+
+void QueryProjected(vineyard::Client& client,
+                    std::shared_ptr<ProjectedFragmentType> fragment,
+                    const grape::CommSpec& comm_spec,
+                    const std::string& app_name, const std::string& out_prefix,
+                    const std::string& basic_params,
+                    const std::string& selector_string,
+                    const std::string& selectors_string) {
+  using AppType = gs::JavaPIEProjectedDefaultApp<ProjectedFragmentType>;
+  auto app = std::make_shared<AppType>();
+  auto worker = AppType::CreateWorker(app, fragment);
+  auto spec = grape::DefaultParallelEngineSpec();
+  worker->Init(comm_spec, spec);
+  worker->Query(basic_params);
+  std::ofstream ostream;
+  std::string output_path =
+      grape::GetResultFilename(out_prefix, fragment->fid());
+
+  ostream.open(output_path);
+  worker->Output(ostream);
+  ostream.close();
+
+  std::shared_ptr<gs::JavaPIEProjectedDefaultContext<ProjectedFragmentType>>
+      ctx = worker->GetContext();
+  worker->Finalize();
+
+  gs::rpc::graph::GraphDefPb graph_def;
+  graph_def.set_graph_type(gs::rpc::graph::ARROW_PROJECTED);
+
+  auto frag_wrapper = std::make_shared<gs::FragmentWrapper<FragmentType>>(
+      "graph_123", graph_def, fragment);
+
+  gs::JavaPIEProjectedDefaultContextWrapper<ProjectedFragmentType> ctx_wrapper(
+      "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
+  //  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
+  auto range = std::make_pair("", "");
+  /// 0. test ndarray
+  {
+    std::unique_ptr<grape::InArchive> arc = std::move(
+        ctx_wrapper.ToNdArray(comm_spec, selector_string, range).value());
+    std::string java_out_prefix =
+        out_prefix + "/java_projected_assembled_ndarray.dat";
+    output_nd_array(comm_spec, std::move(arc), java_out_prefix);
+  }
+  LOG(INFO) << "[0] java projected finish test ndarray";
+
+  // 1. Test data frame
+  {
+    // auto selectors = gs::Selector::ParseSelectors(s_selectors).value();
+    std::unique_ptr<grape::InArchive> arc = std::move(
+        ctx_wrapper.ToDataframe(comm_spec, selectors_string, range).value());
+    std::string java_data_frame_out_prefix = out_prefix + "/java_projected";
+    output_data_frame(comm_spec, std::move(arc), java_data_frame_out_prefix);
+  }
+
+  LOG(INFO) << "[1] java projected finish test dataframe";
+  // 2. test vineyard tensor
+  {
+    auto tmp =
+        ctx_wrapper.ToVineyardTensor(comm_spec, client, selector_string, range);
+    CHECK(tmp);
+    vineyard::ObjectID ndarray_object = tmp.value();
+    std::string java_v6d_tensor_prefix = out_prefix + "/java_projected";
+    output_vineyard_tensor(client, ndarray_object, comm_spec,
+                           java_v6d_tensor_prefix);
+  }
+  LOG(INFO) << "[2] java projected finish test vineyard tensor";
 }
 
 void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
-             const grape::CommSpec& comm_spec, const std::string& out_prefix) {
+             const grape::CommSpec& comm_spec, const std::string& out_prefix,
+             const std::string& selector_string,
+             const std::string& selectors_string) {
   using AppType = gs::SSSPProperty<FragmentType>;
   auto app = std::make_shared<AppType>();
   auto worker = AppType::CreateWorker(app, fragment);
@@ -274,49 +341,44 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
       "graph_456", graph_def, fragment);
   gs::LabeledVertexDataContextWrapper<FragmentType, double> ctx_wrapper(
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
-  auto selector = gs::LabeledSelector::parse("r:label0").value();
-  std::string s_selectors;
-  {
-    std::vector<std::pair<std::string, std::string>> selector_list;
-    selector_list.emplace_back("id", "v:label0.id");
-    selector_list.emplace_back("result", "r:label0");
-    s_selectors = gs::generate_selectors(selector_list);
-  }
+
   auto range = std::make_pair("", "");
   // 1. test cpp ndarray
   {
-    std::unique_ptr<grape::InArchive> arc =
-        std::move(ctx_wrapper.ToNdArray(comm_spec, selector, range).value());
+    std::unique_ptr<grape::InArchive> arc = std::move(
+        ctx_wrapper.ToNdArray(comm_spec, selector_string, range).value());
     std::string cpp_out_prefix = out_prefix + "/java_assembled_ndarray.dat";
     output_nd_array(comm_spec, std::move(arc), cpp_out_prefix);
   }
-  LOG(INFO) << "cpp finish test ndarray";
+  LOG(INFO) << "[0] cpp finish test ndarray";
   // 1. test data frame
   {
-    auto selectors = gs::LabeledSelector::ParseSelectors(s_selectors).value();
+    auto selectors =
+        gs::LabeledSelector::ParseSelectors(selectors_string).value();
     std::unique_ptr<grape::InArchive> arc =
         std::move(ctx_wrapper.ToDataframe(comm_spec, selectors, range).value());
     std::string cpp_data_frame_out_prefix = out_prefix + "/cpp";
     output_data_frame(comm_spec, std::move(arc), cpp_data_frame_out_prefix);
   }
-  LOG(INFO) << "cpp finish test dataframe";
+  LOG(INFO) << "[1] cpp finish test dataframe";
 
   // 2. test vineyard tensor
   {
-    auto tmp = ctx_wrapper.ToVineyardTensor(comm_spec, client, selector, range);
+    auto tmp =
+        ctx_wrapper.ToVineyardTensor(comm_spec, client, selector_string, range);
     CHECK(tmp);
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string cpp_v6d_tensor_prefix = out_prefix + "/cpp";
     output_vineyard_tensor(client, ndarray_object, comm_spec,
                            cpp_v6d_tensor_prefix);
   }
-  LOG(INFO) << "cpp finish test vineyard tensor";
+  LOG(INFO) << "[2] cpp finish test vineyard tensor";
 }
 
 // Running test doesn't require codegen.
 void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
-         vineyard::ObjectID id, bool run_projected,
-         const std::string& app_name) {
+         vineyard::ObjectID id, bool run_projected, const std::string& app_name,
+         std::string& selector_string, std::string& selectors_string) {
   std::shared_ptr<FragmentType> fragment =
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(id));
   // 0. setup environment
@@ -337,18 +399,30 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   std::string basic_params = ss.str();
   LOG(INFO) << "basic_params" << basic_params;
   // 1. run java query
-  Query(client, fragment, comm_spec, app_name, "/tmp", basic_params);
+  Query(client, fragment, comm_spec, app_name, "/tmp", basic_params,
+        selector_string, selectors_string);
 
   // 2.run c++ query
-  RunSSSP(client, fragment, comm_spec, "/tmp");
+  RunSSSP(client, fragment, comm_spec, "/tmp", selector_string,
+          selectors_string);
+  // 3. run projected
+  if (run_projected) {
+    LOG(INFO) << "running projected";
+    std::shared_ptr<ProjectedFragmentType> projected_fragment =
+        ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
+    QueryProjected(client, projected_fragment, comm_spec, app_name, , "/tmp",
+                   basic_params, selector_string, selectors_string);
+  }
 }
 
+// Run projected or not: by passing value
+// Run property or not:
 int main(int argc, char** argv) {
-  if (argc < 9) {
+  if (argc < 10) {
     printf(
         "usage: ./run_java_property_app <ipc_socket> <e_label_num> "
         "<efiles...> "
-        "<v_label_num> <vfiles...> <run_projected>"
+        "<v_label_num> <vfiles...> <run_projected> <run_property>"
         "[directed] [app_name]\n");
     return 1;
   }
@@ -368,6 +442,7 @@ int main(int argc, char** argv) {
   }
 
   int run_projected = atoi(argv[index++]);
+  int run_property = atoi(argv[index++]);
 
   int directed = 1;
   std::string app_name = "";
@@ -412,8 +487,27 @@ int main(int argc, char** argv) {
               << "] loaded graph to vineyard ...";
 
     MPI_Barrier(comm_spec.comm());
-
-    Run(client, comm_spec, fragment_id, run_projected, app_name);
+    std::string selector_string;
+    std::string selectors_string;
+    if (run_property == 1) {
+      selector_string = gs::LabeledSelector::parse("r:label0").value();
+      {
+        std::vector<std::pair<std::string, std::string>> selector_list;
+        selector_list.emplace_back("id", "v:label0.id");
+        selector_list.emplace_back("result", "r:label0");
+        selectors_string = gs::generate_selectors(selector_list);
+      }
+    } else {
+      selector_string = gs::LabeledSelector::parse("r:label0.dist_0").value();
+      {
+        std::vector<std::pair<std::string, std::string>> selector_list;
+        selector_list.emplace_back("id", "v:label0.id");
+        selector_list.emplace_back("result", "r:label0.dist_0");
+        selectors_string = gs::generate_selectors(selector_list);
+      }
+    }
+    Run(client, comm_spec, fragment_id, run_projected, app_name,
+        selector_string, selectors_string);
     MPI_Barrier(comm_spec.comm());
   }
 

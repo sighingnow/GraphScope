@@ -22,6 +22,10 @@ if (ENABLE_PREGEL_COMBINE)
     add_definitions(-D_ENABLE_COMBINE)
 endif ()
 
+if (JAVA_PROPERTY)
+    add_definitions(-D_JAVA_PROPERTY)
+endif()
+
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O0 -g")
@@ -169,9 +173,7 @@ elseif (JAVA_PIE_APP)
     add_library(${FRAME_NAME} SHARED ${FILES_NEED_COMPILE}
                                     ${ANALYTICAL_ENGINE_FRAME_DIR}/java_pie_app_frame.cc)
     target_include_directories(${FRAME_NAME} PRIVATE ${JAVA_APP_FFI_SOURCE_PATH}/SOURCE_OUTPUT/)
-    target_compile_definitions(${FRAME_NAME} PRIVATE _VD_TYPE=$_vd_type
-                    _MD_TYPE=$_md_type
-                    _GRAPH_TYPE=$_graph_type
+    target_compile_definitions(${FRAME_NAME} PRIVATE _GRAPH_TYPE=$_graph_type
                     _GRAPH_HEADER=$_graph_header)
     target_link_libraries(${FRAME_NAME} ${MPI_CXX_LIBRARIES}
                     ${PYTHON_LIBRARIES}
