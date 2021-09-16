@@ -47,9 +47,9 @@ class TypedArray {
     if (array == nullptr) {
       buffer_ = NULL;
     } else {
-      buffer_ =
-          std::dynamic_pointer_cast<typename vineyard::ConvertToArrowType<T>::ArrayType>(array)
-              ->raw_values();
+      buffer_ = std::dynamic_pointer_cast<
+                    typename vineyard::ConvertToArrowType<T>::ArrayType>(array)
+                    ->raw_values();
     }
   }
 
@@ -57,9 +57,9 @@ class TypedArray {
     if (array == nullptr) {
       buffer_ = NULL;
     } else {
-      buffer_ =
-          std::dynamic_pointer_cast<typename vineyard::ConvertToArrowType<T>::ArrayType>(array)
-              ->raw_values();
+      buffer_ = std::dynamic_pointer_cast<
+                    typename vineyard::ConvertToArrowType<T>::ArrayType>(array)
+                    ->raw_values();
     }
   }
 
@@ -129,15 +129,23 @@ class Nbr {
 
   Nbr(const Nbr& rhs) : nbr_(rhs.nbr_), edata_array_(rhs.edata_array_) {}
 
-  grape::Vertex<vid_t> neighbor() const { return grape::Vertex<vid_t>(nbr_->vid); }
+  grape::Vertex<vid_t> neighbor() const {
+    return grape::Vertex<vid_t>(nbr_->vid);
+  }
 
-  grape::Vertex<vid_t> get_neighbor() const { return grape::Vertex<vid_t>(nbr_->vid); }
+  grape::Vertex<vid_t> get_neighbor() const {
+    return grape::Vertex<vid_t>(nbr_->vid);
+  }
 
   eid_t edge_id() const { return nbr_->eid; }
 
-  typename TypedArray<EDATA_T>::value_type data() const { return edata_array_[nbr_->eid]; }
+  typename TypedArray<EDATA_T>::value_type data() const {
+    return edata_array_[nbr_->eid];
+  }
 
-  typename TypedArray<EDATA_T>::value_type get_data() const { return edata_array_[nbr_->eid]; }
+  typename TypedArray<EDATA_T>::value_type get_data() const {
+    return edata_array_[nbr_->eid];
+  }
 
   inline const Nbr& operator++() const {
     ++nbr_;
@@ -192,9 +200,13 @@ class Nbr<VID_T, EID_T, grape::EmptyType> {
 
   Nbr(const Nbr& rhs) : nbr_(rhs.nbr_) {}
 
-  grape::Vertex<vid_t> neighbor() const { return grape::Vertex<vid_t>(nbr_->vid); }
+  grape::Vertex<vid_t> neighbor() const {
+    return grape::Vertex<vid_t>(nbr_->vid);
+  }
 
-  grape::Vertex<vid_t> get_neighbor() const { return grape::Vertex<vid_t>(nbr_->vid); }
+  grape::Vertex<vid_t> get_neighbor() const {
+    return grape::Vertex<vid_t>(nbr_->vid);
+  }
 
   eid_t edge_id() const { return nbr_->eid; }
 
@@ -238,7 +250,8 @@ class Nbr<VID_T, EID_T, grape::EmptyType> {
 };
 
 template <typename VID_T, typename EDATA_T>
-using NbrDefault = Nbr<VID_T, vineyard::property_graph_types::EID_TYPE, EDATA_T>;
+using NbrDefault =
+    Nbr<VID_T, vineyard::property_graph_types::EID_TYPE, EDATA_T>;
 
 /**
  * @brief This is the internal representation of neighbors for a vertex.
@@ -256,14 +269,17 @@ class AdjList {
  public:
   AdjList() : begin_(NULL), end_(NULL) {}
 
-  AdjList(const nbr_unit_t* begin, const nbr_unit_t* end, TypedArray<EDATA_T> edata_array)
+  AdjList(const nbr_unit_t* begin, const nbr_unit_t* end,
+          TypedArray<EDATA_T> edata_array)
       : begin_(begin), end_(end), edata_array_(edata_array) {}
 
   Nbr<VID_T, EID_T, EDATA_T> begin() const {
     return Nbr<VID_T, EID_T, EDATA_T>(begin_, edata_array_);
   }
 
-  Nbr<VID_T, EID_T, EDATA_T> end() const { return Nbr<VID_T, EID_T, EDATA_T>(end_, edata_array_); }
+  Nbr<VID_T, EID_T, EDATA_T> end() const {
+    return Nbr<VID_T, EID_T, EDATA_T>(end_, edata_array_);
+  }
 
   size_t Size() const { return end_ - begin_; }
 
@@ -286,7 +302,8 @@ class AdjList<VID_T, EID_T, grape::EmptyType> {
  public:
   AdjList() : begin_(NULL), end_(NULL) {}
 
-  AdjList(const nbr_unit_t* begin, const nbr_unit_t* end, TypedArray<grape::EmptyType>)
+  AdjList(const nbr_unit_t* begin, const nbr_unit_t* end,
+          TypedArray<grape::EmptyType>)
       : begin_(begin), end_(end) {}
 
   Nbr<VID_T, EID_T, grape::EmptyType> begin() const {
@@ -309,7 +326,8 @@ class AdjList<VID_T, EID_T, grape::EmptyType> {
 };
 
 template <typename VID_T, typename EDATA_T>
-using AdjListDefault = AdjList<VID_T, vineyard::property_graph_types::EID_TYPE, EDATA_T>;
+using AdjListDefault =
+    AdjList<VID_T, vineyard::property_graph_types::EID_TYPE, EDATA_T>;
 
 }  // namespace arrow_projected_fragment_impl
 
@@ -325,7 +343,8 @@ using AdjListDefault = AdjList<VID_T, vineyard::property_graph_types::EID_TYPE, 
 template <typename OID_T, typename VID_T, typename VDATA_T, typename EDATA_T>
 class ArrowProjectedFragment
     : public ArrowProjectedFragmentBase,
-      public vineyard::BareRegistered<ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T>> {
+      public vineyard::BareRegistered<
+          ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T>> {
  public:
   using oid_t = OID_T;
   using vid_t = VID_T;
@@ -335,8 +354,10 @@ class ArrowProjectedFragment
   using vertex_t = grape::Vertex<vid_t>;
   using nbr_t = arrow_projected_fragment_impl::Nbr<vid_t, eid_t, EDATA_T>;
   using nbr_unit_t = vineyard::property_graph_utils::NbrUnit<vid_t, eid_t>;
-  using adj_list_t = arrow_projected_fragment_impl::AdjList<vid_t, eid_t, EDATA_T>;
-  using const_adj_list_t = arrow_projected_fragment_impl::AdjList<vid_t, eid_t, EDATA_T>;
+  using adj_list_t =
+      arrow_projected_fragment_impl::AdjList<vid_t, eid_t, EDATA_T>;
+  using const_adj_list_t =
+      arrow_projected_fragment_impl::AdjList<vid_t, eid_t, EDATA_T>;
   using vertex_map_t = ArrowProjectedVertexMap<internal_oid_t, vid_t>;
   using label_id_t = vineyard::property_graph_types::LABEL_ID_TYPE;
   using prop_id_t = vineyard::property_graph_types::PROP_ID_TYPE;
@@ -350,26 +371,30 @@ class ArrowProjectedFragment
   template <typename DATA_T>
   using vertex_array_t = grape::VertexArray<DATA_T, vid_t>;
 
-  static constexpr grape::LoadStrategy load_strategy = grape::LoadStrategy::kBothOutIn;
+  static constexpr grape::LoadStrategy load_strategy =
+      grape::LoadStrategy::kBothOutIn;
 
   static std::shared_ptr<vineyard::Object> Create() __attribute__((used)) {
     return std::static_pointer_cast<vineyard::Object>(
-        std::make_shared<ArrowProjectedFragment<oid_t, vid_t, vdata_t, edata_t>>());
+        std::make_shared<
+            ArrowProjectedFragment<oid_t, vid_t, vdata_t, edata_t>>());
   }
 
   ~ArrowProjectedFragment() {}
 
-  static std::shared_ptr<ArrowProjectedFragment<oid_t, vid_t, vdata_t, edata_t>> Project(
-      std::shared_ptr<vineyard::ArrowFragment<oid_t, vid_t>> fragment,
-      const std::string& v_label_str, const std::string& v_prop_str, const std::string& e_label_str,
-      const std::string& e_prop_str) {
+  static std::shared_ptr<ArrowProjectedFragment<oid_t, vid_t, vdata_t, edata_t>>
+  Project(std::shared_ptr<vineyard::ArrowFragment<oid_t, vid_t>> fragment,
+          const std::string& v_label_str, const std::string& v_prop_str,
+          const std::string& e_label_str, const std::string& e_prop_str) {
     label_id_t v_label = boost::lexical_cast<label_id_t>(v_label_str);
     label_id_t e_label = boost::lexical_cast<label_id_t>(e_label_str);
     prop_id_t v_prop = boost::lexical_cast<label_id_t>(v_prop_str);
     prop_id_t e_prop = boost::lexical_cast<label_id_t>(e_prop_str);
 
-    vineyard::Client& client = *dynamic_cast<vineyard::Client*>(fragment->meta().GetClient());
-    std::shared_ptr<vertex_map_t> vm = vertex_map_t::Project(fragment->vm_ptr_, v_label);
+    vineyard::Client& client =
+        *dynamic_cast<vineyard::Client*>(fragment->meta().GetClient());
+    std::shared_ptr<vertex_map_t> vm =
+        vertex_map_t::Project(fragment->vm_ptr_, v_label);
     vineyard::ObjectMeta meta;
     if (v_prop == -1) {
       if (!std::is_same<vdata_t, grape::EmptyType>::value) {
@@ -400,7 +425,8 @@ class ArrowProjectedFragment
       }
     }
 
-    meta.SetTypeName(type_name<ArrowProjectedFragment<oid_t, vid_t, vdata_t, edata_t>>());
+    meta.SetTypeName(
+        type_name<ArrowProjectedFragment<oid_t, vid_t, vdata_t, edata_t>>());
 
     meta.AddKeyValue("projected_v_label", v_label);
     meta.AddKeyValue("projected_v_property", v_prop);
@@ -410,39 +436,51 @@ class ArrowProjectedFragment
     meta.AddMember("arrow_fragment", fragment->meta());
     meta.AddMember("arrow_projected_vertex_map", vm->meta());
 
-    std::shared_ptr<vineyard::NumericArray<int64_t>> ie_offsets_begin, ie_offsets_end;
+    std::shared_ptr<vineyard::NumericArray<int64_t>> ie_offsets_begin,
+        ie_offsets_end;
 
     size_t nbytes = 0;
     if (fragment->directed()) {
-      std::shared_ptr<arrow::Int64Array> ie_offsets_begin_arrow, ie_offsets_end_arrow;
-      selectEdgeByNeighborLabel(fragment, v_label, fragment->ie_lists_[v_label][e_label],
+      std::shared_ptr<arrow::Int64Array> ie_offsets_begin_arrow,
+          ie_offsets_end_arrow;
+      selectEdgeByNeighborLabel(fragment, v_label,
+                                fragment->ie_lists_[v_label][e_label],
                                 fragment->ie_offsets_lists_[v_label][e_label],
                                 ie_offsets_begin_arrow, ie_offsets_end_arrow);
-      vineyard::NumericArrayBuilder<int64_t> ie_offsets_begin_builder(client,
-                                                                      ie_offsets_begin_arrow);
-      ie_offsets_begin = std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
-          ie_offsets_begin_builder.Seal(client));
-      vineyard::NumericArrayBuilder<int64_t> ie_offsets_end_builder(client, ie_offsets_end_arrow);
-      ie_offsets_end = std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
-          ie_offsets_end_builder.Seal(client));
+      vineyard::NumericArrayBuilder<int64_t> ie_offsets_begin_builder(
+          client, ie_offsets_begin_arrow);
+      ie_offsets_begin =
+          std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
+              ie_offsets_begin_builder.Seal(client));
+      vineyard::NumericArrayBuilder<int64_t> ie_offsets_end_builder(
+          client, ie_offsets_end_arrow);
+      ie_offsets_end =
+          std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
+              ie_offsets_end_builder.Seal(client));
 
       nbytes += ie_offsets_begin->nbytes();
       nbytes += ie_offsets_end->nbytes();
     }
 
-    std::shared_ptr<vineyard::NumericArray<int64_t>> oe_offsets_begin, oe_offsets_end;
+    std::shared_ptr<vineyard::NumericArray<int64_t>> oe_offsets_begin,
+        oe_offsets_end;
     {
-      std::shared_ptr<arrow::Int64Array> oe_offsets_begin_arrow, oe_offsets_end_arrow;
-      selectEdgeByNeighborLabel(fragment, v_label, fragment->oe_lists_[v_label][e_label],
+      std::shared_ptr<arrow::Int64Array> oe_offsets_begin_arrow,
+          oe_offsets_end_arrow;
+      selectEdgeByNeighborLabel(fragment, v_label,
+                                fragment->oe_lists_[v_label][e_label],
                                 fragment->oe_offsets_lists_[v_label][e_label],
                                 oe_offsets_begin_arrow, oe_offsets_end_arrow);
-      vineyard::NumericArrayBuilder<int64_t> oe_offsets_begin_builder(client,
-                                                                      oe_offsets_begin_arrow);
-      oe_offsets_begin = std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
-          oe_offsets_begin_builder.Seal(client));
-      vineyard::NumericArrayBuilder<int64_t> oe_offsets_end_builder(client, oe_offsets_end_arrow);
-      oe_offsets_end = std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
-          oe_offsets_end_builder.Seal(client));
+      vineyard::NumericArrayBuilder<int64_t> oe_offsets_begin_builder(
+          client, oe_offsets_begin_arrow);
+      oe_offsets_begin =
+          std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
+              oe_offsets_begin_builder.Seal(client));
+      vineyard::NumericArrayBuilder<int64_t> oe_offsets_end_builder(
+          client, oe_offsets_end_arrow);
+      oe_offsets_end =
+          std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
+              oe_offsets_end_builder.Seal(client));
       nbytes += oe_offsets_begin->nbytes();
       nbytes += oe_offsets_end->nbytes();
     }
@@ -459,7 +497,8 @@ class ArrowProjectedFragment
     vineyard::ObjectID id;
     VINEYARD_CHECK_OK(client.CreateMetaData(meta, id));
 
-    return std::dynamic_pointer_cast<ArrowProjectedFragment<oid_t, vid_t, vdata_t, edata_t>>(
+    return std::dynamic_pointer_cast<
+        ArrowProjectedFragment<oid_t, vid_t, vdata_t, edata_t>>(
         client.GetObject(id));
   }
 
@@ -514,10 +553,11 @@ class ArrowProjectedFragment
     if (fragment_->vertex_tables_[vertex_label_]->num_rows() == 0) {
       vertex_data_array_ = nullptr;
     } else {
-      vertex_data_array_ =
-          (vertex_prop_ == -1)
-              ? nullptr
-              : (fragment_->vertex_tables_[vertex_label_]->column(vertex_prop_)->chunk(0));
+      vertex_data_array_ = (vertex_prop_ == -1)
+                               ? nullptr
+                               : (fragment_->vertex_tables_[vertex_label_]
+                                      ->column(vertex_prop_)
+                                      ->chunk(0));
     }
     ovgid_list_ = fragment_->ovgid_lists_[vertex_label_];
     ovg2l_map_ = fragment_->ovg2l_maps_[vertex_label_];
@@ -527,7 +567,9 @@ class ArrowProjectedFragment
     } else {
       edge_data_array_ = (edge_prop_ == -1)
                              ? nullptr
-                             : (fragment_->edge_tables_[edge_label_]->column(edge_prop_)->chunk(0));
+                             : (fragment_->edge_tables_[edge_label_]
+                                    ->column(edge_prop_)
+                                    ->chunk(0));
     }
 
     if (directed_) {
@@ -546,9 +588,11 @@ class ArrowProjectedFragment
   void PrepareToRunApp(grape::MessageStrategy strategy, bool need_split_edges) {
     if (strategy == grape::MessageStrategy::kAlongEdgeToOuterVertex) {
       initDestFidList(true, true, iodst_, iodoffset_);
-    } else if (strategy == grape::MessageStrategy::kAlongIncomingEdgeToOuterVertex) {
+    } else if (strategy ==
+               grape::MessageStrategy::kAlongIncomingEdgeToOuterVertex) {
       initDestFidList(true, false, idst_, idoffset_);
-    } else if (strategy == grape::MessageStrategy::kAlongOutgoingEdgeToOuterVertex) {
+    } else if (strategy ==
+               grape::MessageStrategy::kAlongOutgoingEdgeToOuterVertex) {
       initDestFidList(false, true, odst_, odoffset_);
     }
 
@@ -588,7 +632,8 @@ class ArrowProjectedFragment
   inline vertex_range_t OuterVertices() const { return outer_vertices_; }
 
   inline vertex_range_t OuterVertices(fid_t fid) const {
-    return vertex_range_t(outer_vertex_offsets_[fid], outer_vertex_offsets_[fid + 1]);
+    return vertex_range_t(outer_vertex_offsets_[fid],
+                          outer_vertex_offsets_[fid + 1]);
   }
 
   inline const std::vector<vertex_t>& MirrorVertices(fid_t fid) const {
@@ -613,9 +658,9 @@ class ArrowProjectedFragment
     return IsInnerVertex(v) ? fid_ : vid_parser_.GetFid(GetOuterVertexGid(v));
   }
 
-  inline typename arrow_projected_fragment_impl::TypedArray<VDATA_T>::value_type GetData(
-      const vertex_t& v) const {
-    return [vid_parser_.GetOffset(v.GetValue())];
+  inline typename arrow_projected_fragment_impl::TypedArray<VDATA_T>::value_type
+  GetData(const vertex_t& v) const {
+    return vertex_data_array_accessor_[vid_parser_.GetOffset(v.GetValue())];
   }
 
   inline bool Gid2Vertex(const vid_t& gid, vertex_t& v) const {
@@ -633,17 +678,22 @@ class ArrowProjectedFragment
 
   inline vid_t GetVerticesNum() const { return tvnum_; }
 
-  inline size_t GetEdgeNum() const { return static_cast<size_t>(edge_data_array_->length()); }
+  inline size_t GetEdgeNum() const {
+    return static_cast<size_t>(edge_data_array_->length());
+  }
 
-  inline size_t GetTotalVerticesNum() const { return vm_ptr_->GetTotalVerticesNum(); }
+  inline size_t GetTotalVerticesNum() const {
+    return vm_ptr_->GetTotalVerticesNum();
+  }
 
   inline bool IsInnerVertex(const vertex_t& v) const {
     return (vid_parser_.GetOffset(v.GetValue()) < static_cast<int64_t>(ivnum_));
   }
 
   inline bool IsOuterVertex(const vertex_t& v) const {
-    return (vid_parser_.GetOffset(v.GetValue()) < static_cast<int64_t>(tvnum_) &&
-            vid_parser_.GetOffset(v.GetValue()) >= static_cast<int64_t>(ivnum_));
+    return (
+        vid_parser_.GetOffset(v.GetValue()) < static_cast<int64_t>(tvnum_) &&
+        vid_parser_.GetOffset(v.GetValue()) >= static_cast<int64_t>(ivnum_));
   }
 
   inline bool GetInnerVertex(const oid_t& oid, vertex_t& v) const {
@@ -668,9 +718,10 @@ class ArrowProjectedFragment
 
   inline oid_t GetInnerVertexId(const vertex_t& v) const {
     internal_oid_t internal_oid;
-    CHECK(vm_ptr_->GetOid(vid_parser_.GenerateId(fid_, vid_parser_.GetLabelId(v.GetValue()),
-                                                 vid_parser_.GetOffset(v.GetValue())),
-                          internal_oid));
+    CHECK(vm_ptr_->GetOid(
+        vid_parser_.GenerateId(fid_, vid_parser_.GetLabelId(v.GetValue()),
+                               vid_parser_.GetOffset(v.GetValue())),
+        internal_oid));
     return oid_t(internal_oid);
   }
 
@@ -723,28 +774,32 @@ class ArrowProjectedFragment
   inline adj_list_t GetIncomingAdjList(const vertex_t& v) const {
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
     return adj_list_t(&ie_ptr_[ie_offsets_begin_ptr_[offset]],
-                      &ie_ptr_[ie_offsets_end_ptr_[offset]], edge_data_array_accessor_);
+                      &ie_ptr_[ie_offsets_end_ptr_[offset]],
+                      edge_data_array_accessor_);
   }
 
   inline adj_list_t GetOutgoingAdjList(const vertex_t& v) const {
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
     return adj_list_t(&oe_ptr_[oe_offsets_begin_ptr_[offset]],
-                      &oe_ptr_[oe_offsets_end_ptr_[offset]], edge_data_array_accessor_);
+                      &oe_ptr_[oe_offsets_end_ptr_[offset]],
+                      edge_data_array_accessor_);
   }
 
   inline adj_list_t GetIncomingInnerVertexAdjList(const vertex_t& v) const {
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
     return adj_list_t(&ie_ptr_[ie_offsets_begin_ptr_[offset]],
-                      &ie_ptr_[offset < static_cast<int64_t>(ivnum_) ? ie_spliters_ptr_[0][offset]
-                                                                     : ie_offsets_end_ptr_[offset]],
+                      &ie_ptr_[offset < static_cast<int64_t>(ivnum_)
+                                   ? ie_spliters_ptr_[0][offset]
+                                   : ie_offsets_end_ptr_[offset]],
                       edge_data_array_accessor_);
   }
 
   inline adj_list_t GetOutgoingInnerVertexAdjList(const vertex_t& v) const {
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
     return adj_list_t(&oe_ptr_[oe_offsets_begin_ptr_[offset]],
-                      &oe_ptr_[offset < static_cast<int64_t>(ivnum_) ? oe_spliters_ptr_[0][offset]
-                                                                     : oe_offsets_end_ptr_[offset]],
+                      &oe_ptr_[offset < static_cast<int64_t>(ivnum_)
+                                   ? oe_spliters_ptr_[0][offset]
+                                   : oe_offsets_end_ptr_[offset]],
                       edge_data_array_accessor_);
   }
 
@@ -752,7 +807,8 @@ class ArrowProjectedFragment
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
     return offset < static_cast<int64_t>(ivnum_)
                ? adj_list_t(&ie_ptr_[ie_spliters_ptr_[0][offset]],
-                            &ie_ptr_[ie_offsets_end_ptr_[offset]], edge_data_array_accessor_)
+                            &ie_ptr_[ie_offsets_end_ptr_[offset]],
+                            edge_data_array_accessor_)
                : adj_list_t();
   }
 
@@ -760,7 +816,8 @@ class ArrowProjectedFragment
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
     return offset < static_cast<int64_t>(ivnum_)
                ? adj_list_t(&oe_ptr_[oe_spliters_ptr_[0][offset]],
-                            &oe_ptr_[oe_offsets_end_ptr_[offset]], edge_data_array_accessor_)
+                            &oe_ptr_[oe_offsets_end_ptr_[offset]],
+                            edge_data_array_accessor_)
                : adj_list_t();
   }
 
@@ -782,9 +839,13 @@ class ArrowProjectedFragment
                : (dst_fid == fid_ ? GetOutgoingAdjList(v) : adj_list_t());
   }
 
-  inline int GetLocalOutDegree(const vertex_t& v) const { return GetOutgoingAdjList(v).Size(); }
+  inline int GetLocalOutDegree(const vertex_t& v) const {
+    return GetOutgoingAdjList(v).Size();
+  }
 
-  inline int GetLocalInDegree(const vertex_t& v) const { return GetIncomingAdjList(v).Size(); }
+  inline int GetLocalInDegree(const vertex_t& v) const {
+    return GetIncomingAdjList(v).Size();
+  }
 
   inline grape::DestList IEDests(const vertex_t& v) const {
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
@@ -807,16 +868,19 @@ class ArrowProjectedFragment
  private:
   inline static std::pair<int64_t, int64_t> getRangeOfLabel(
       std::shared_ptr<property_graph_t> fragment, label_id_t v_label,
-      std::shared_ptr<arrow::FixedSizeBinaryArray> nbr_list, int64_t begin, int64_t end) {
+      std::shared_ptr<arrow::FixedSizeBinaryArray> nbr_list, int64_t begin,
+      int64_t end) {
     int64_t i, j;
     for (i = begin; i != end; ++i) {
-      const nbr_unit_t* ptr = reinterpret_cast<const nbr_unit_t*>(nbr_list->GetValue(i));
+      const nbr_unit_t* ptr =
+          reinterpret_cast<const nbr_unit_t*>(nbr_list->GetValue(i));
       if (fragment->vid_parser_.GetLabelId(ptr->vid) == v_label) {
         break;
       }
     }
     for (j = i; j != end; ++j) {
-      const nbr_unit_t* ptr = reinterpret_cast<const nbr_unit_t*>(nbr_list->GetValue(j));
+      const nbr_unit_t* ptr =
+          reinterpret_cast<const nbr_unit_t*>(nbr_list->GetValue(j));
       if (fragment->vid_parser_.GetLabelId(ptr->vid) != v_label) {
         break;
       }
@@ -827,14 +891,15 @@ class ArrowProjectedFragment
   static bl::result<void> selectEdgeByNeighborLabel(
       std::shared_ptr<property_graph_t> fragment, label_id_t v_label,
       std::shared_ptr<arrow::FixedSizeBinaryArray> nbr_list,
-      std::shared_ptr<arrow::Int64Array> offsets, std::shared_ptr<arrow::Int64Array>& begins,
+      std::shared_ptr<arrow::Int64Array> offsets,
+      std::shared_ptr<arrow::Int64Array>& begins,
       std::shared_ptr<arrow::Int64Array>& ends) {
     arrow::Int64Builder begins_builder, ends_builder;
     vid_t tvnum = fragment->tvnums_[v_label];
 
     for (vid_t i = 0; i != tvnum; ++i) {
-      auto ret =
-          getRangeOfLabel(fragment, v_label, nbr_list, offsets->Value(i), offsets->Value(i + 1));
+      auto ret = getRangeOfLabel(fragment, v_label, nbr_list, offsets->Value(i),
+                                 offsets->Value(i + 1));
       ARROW_OK_OR_RAISE(begins_builder.Append(ret.first));
       ARROW_OK_OR_RAISE(ends_builder.Append(ret.second));
     }
@@ -843,7 +908,8 @@ class ArrowProjectedFragment
     return {};
   }
 
-  void initDestFidList(bool in_edge, bool out_edge, std::vector<fid_t>& fid_list,
+  void initDestFidList(bool in_edge, bool out_edge,
+                       std::vector<fid_t>& fid_list,
                        std::vector<fid_t*>& fid_list_offset) {
     if (!fid_list_offset.empty()) {
       return;
@@ -907,7 +973,8 @@ class ArrowProjectedFragment
       int64_t begin = offsets_begin->Value(i);
       int64_t end = offsets_end->Value(i);
       for (int64_t j = begin; j != end; ++j) {
-        const nbr_unit_t* nbr_ptr = reinterpret_cast<const nbr_unit_t*>(edge_list->GetValue(j));
+        const nbr_unit_t* nbr_ptr =
+            reinterpret_cast<const nbr_unit_t*>(edge_list->GetValue(j));
         vertex_t u(nbr_ptr->vid);
         fid_t u_fid = GetFragId(u);
         ++frag_count[u_fid];
@@ -1014,7 +1081,8 @@ class ArrowProjectedFragment
   const int64_t* oe_offsets_end_ptr_;
 
   std::shared_ptr<arrow::Array> vertex_data_array_;
-  arrow_projected_fragment_impl::TypedArray<VDATA_T> vertex_data_array_accessor_;
+  arrow_projected_fragment_impl::TypedArray<VDATA_T>
+      vertex_data_array_accessor_;
 
   std::shared_ptr<vid_array_t> ovgid_list_;
   const vid_t* ovgid_list_ptr_;

@@ -43,7 +43,7 @@ limitations under the License.
 #define CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT "java_pie_projected_default"
 namespace gs {
 
-static constexpr const char* _message_manager_name =
+static constexpr const char* _java_projected_message_manager_name =
     "gs::DefaultJavaMessageManager";
 /**
  * @brief Context for the java pie app, used by java sdk.
@@ -58,7 +58,9 @@ class JavaPIEProjectedDefaultContext : public JavaContextBase<FRAG_T> {
   virtual ~JavaPIEProjectedDefaultContext() {}
 
  protected:
-  const char* GetMessageManagerName() override { return _message_manager_name; }
+  const char* GetMessageManagerName() override {
+    return _java_projected_message_manager_name;
+  }
   const char* eval_descriptor() override {
     return "(Lio/v6d/modules/graph/fragment/ArrowProjectedFragment;"
            "Lcom/alibaba/grape/parallel/DefaultMessageManager;"
@@ -79,7 +81,7 @@ class JavaPIEProjectedDefaultContextWrapper
   JavaPIEProjectedDefaultContextWrapper(
       const std::string& id, std::shared_ptr<IFragmentWrapper> frag_wrapper,
       std::shared_ptr<context_t> context)
-      : IJavaPIEPropertyDefaultContextWrapper(id),
+      : IJavaPIEProjectedDefaultContextWrapper(id),
         frag_wrapper_(std::move(frag_wrapper)),
         ctx_(std::move(context)) {
     std::string java_ctx_type_name =
@@ -93,7 +95,7 @@ class JavaPIEProjectedDefaultContextWrapper
       std::string data_type =
           get_vertex_data_context_data_type(ctx_->_context_object);
       if (data_type == "double") {
-        using inner_ctx_type = VertexDataContext<FRAG_T, double>;
+        using inner_ctx_type = grape::VertexDataContext<FRAG_T, double>;
         using inner_ctx_wrapper_type = VertexDataContextWrapper<FRAG_T, double>;
         auto inner_ctx_impl =
             reinterpret_cast<inner_ctx_type*>(ctx_->inner_context_addr());
@@ -101,7 +103,7 @@ class JavaPIEProjectedDefaultContextWrapper
         _inner_context_wrapper = std::make_shared<inner_ctx_wrapper_type>(
             ctx_name, frag_wrapper, inner_ctx_impl_shared);
       } else if (data_type == "uint32_t") {
-        using inner_ctx_type = VertexDataContext<FRAG_T, uint32_t>;
+        using inner_ctx_type = grape::VertexDataContext<FRAG_T, uint32_t>;
         using inner_ctx_wrapper_type =
             VertexDataContextWrapper<FRAG_T, uint32_t>;
         auto inner_ctx_impl =
@@ -110,7 +112,7 @@ class JavaPIEProjectedDefaultContextWrapper
         _inner_context_wrapper = std::make_shared<inner_ctx_wrapper_type>(
             ctx_name, frag_wrapper, inner_ctx_impl_shared);
       } else if (data_type == "uint64_t") {
-        using inner_ctx_type = VertexDataContext<FRAG_T, uint64_t>;
+        using inner_ctx_type = grape::VertexDataContext<FRAG_T, uint64_t>;
         using inner_ctx_wrapper_type =
             VertexDataContextWrapper<FRAG_T, uint64_t>;
         auto inner_ctx_impl =
@@ -153,14 +155,14 @@ class JavaPIEProjectedDefaultContextWrapper
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<IVertexDataContextWrapper>(
               _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selector, LabeledSelector::parse(selector_string));
+      BOOST_LEAF_AUTO(selector, Selector::parse(selector_string));
       return actual_ctx_wrapper->ToNdArray(comm_spec, selector, range);
     } else if (_inner_context_wrapper->context_type() ==
                CONTEXT_TYPE_VERTEX_PROPERTY) {
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
               _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selector, LabeledSelector::parse(selector_string));
+      BOOST_LEAF_AUTO(selector, Selector::parse(selector_string));
       return actual_ctx_wrapper->ToNdArray(comm_spec, selector, range);
     }
     return std::make_unique<grape::InArchive>();
@@ -173,16 +175,14 @@ class JavaPIEProjectedDefaultContextWrapper
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<IVertexDataContextWrapper>(
               _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selectors,
-                      LabeledSelector::ParseSelectors(selector_string));
+      BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToDataframe(comm_spec, selectors, range);
     } else if (_inner_context_wrapper->context_type() ==
                CONTEXT_TYPE_VERTEX_PROPERTY) {
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
               _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selectors,
-                      LabeledSelector::ParseSelectors(selector_string));
+      BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToDataframe(comm_spec, selectors, range);
     }
     return std::make_unique<grape::InArchive>();
@@ -196,7 +196,7 @@ class JavaPIEProjectedDefaultContextWrapper
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<IVertexDataContextWrapper>(
               _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selector, LabeledSelector::parse(selector_string));
+      BOOST_LEAF_AUTO(selector, Selector::parse(selector_string));
       return actual_ctx_wrapper->ToVineyardTensor(comm_spec, client, selector,
                                                   range);
     } else if (_inner_context_wrapper->context_type() ==
@@ -204,7 +204,7 @@ class JavaPIEProjectedDefaultContextWrapper
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
               _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selector, LabeledSelector::parse(selector_string));
+      BOOST_LEAF_AUTO(selector, Selector::parse(selector_string));
       return actual_ctx_wrapper->ToVineyardTensor(comm_spec, client, selector,
                                                   range);
     }
@@ -219,8 +219,7 @@ class JavaPIEProjectedDefaultContextWrapper
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<IVertexDataContextWrapper>(
               _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selectors,
-                      LabeledSelector::ParseSelectors(selector_string));
+      BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToVineyardDataframe(comm_spec, client,
                                                      selectors, range);
     } else if (_inner_context_wrapper->context_type() ==
@@ -228,8 +227,7 @@ class JavaPIEProjectedDefaultContextWrapper
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
               _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selectors,
-                      LabeledSelector::ParseSelectors(selector_string));
+      BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToVineyardDataframe(comm_spec, client,
                                                      selectors, range);
     }
@@ -245,16 +243,14 @@ class JavaPIEProjectedDefaultContextWrapper
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<IVertexDataContextWrapper>(
               _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selectors,
-                      LabeledSelector::ParseSelectors(selector_string));
+      BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToArrowArrays(comm_spec, selectors);
     } else if (_inner_context_wrapper->context_type() ==
                CONTEXT_TYPE_VERTEX_PROPERTY) {
       auto actual_ctx_wrapper =
           std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
               _inner_context_wrapper);
-      BOOST_LEAF_AUTO(selectors,
-                      LabeledSelector::ParseSelectors(selector_string));
+      BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToArrowArrays(comm_spec, selectors);
     }
     std::map<label_id_t,

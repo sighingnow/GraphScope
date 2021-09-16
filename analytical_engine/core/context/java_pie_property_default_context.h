@@ -43,7 +43,7 @@ limitations under the License.
 #define CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT "java_pie_property_default"
 namespace gs {
 
-static constexpr const char* _message_manager_name =
+static constexpr const char* _java_property_message_manager_name =
     "gs::PropertyMessageManager";
 
 /**
@@ -59,7 +59,9 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   virtual ~JavaPIEPropertyDefaultContext() {}
 
  protected:
-  const char* GetMessageManagerName() override { return _message_manager_name; }
+  const char* GetMessageManagerName() override {
+    return _java_property_message_manager_name;
+  }
   const char* eval_descriptor() override {
     return "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
            "Lio/v6d/modules/graph/parallel/PropertyMessageManager;"
