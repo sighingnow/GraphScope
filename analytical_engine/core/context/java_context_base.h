@@ -272,7 +272,7 @@ class JavaContextBase : public grape::ContextBase {
     pt.erase("app_class");
 
     user_library_name = pt.get<std::string>("user_library_name");
-    CHECK(!user_library_name.emtpy());
+    CHECK(!user_library_name.empty());
     LOG(INFO) << "user library name " << user_library_name;
     pt.erase("user_library_name");
 

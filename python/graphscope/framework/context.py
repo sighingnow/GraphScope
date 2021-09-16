@@ -461,22 +461,51 @@ class JavaPIEPropertyDefaultContextDAGNode(BaseContextDAGNode):
     def set_inner_ctx(self, inner_ctx_type):
         self._inner_ctx_type = inner_ctx_type
         logger.info("set inner ctx type to: {}".format(self._inner_ctx_type))
-        if (inner_ctx_type == "tensor"):
+        if (inner_ctx_type == "tensor"): #TBD
             self._inner_ctx_check_selector = TensorContextDAGNode._static_check_selector
-        elif inner_ctx_type == "vertex_data":
-            self._inner_ctx_check_selector = VertexDataContextDAGNode._static_check_selector
         elif inner_ctx_type == "labeled_vertex_data":
             self._inner_ctx_check_selector = LabeledVertexDataContextDAGNode._static_check_selector
-        elif inner_ctx_type == "vertex_property":
-            self._inner_ctx_check_selector = VertexPropertyContextDAGNode._static_check_selector
         elif inner_ctx_type == "labeled_vertex_property":
             self._inner_ctx_check_selector = LabeledVertexPropertyContextDAGNode._static_check_selector
         elif (inner_ctx_type == "java_pie_property_default_context"):
             raise Exception("can not contain self")
+        else :
+            raise RuntimeError("Unsupported inner ctx type : {}".format(inner_ctx_type))
 
     @property
     def context_type(self):
         return "java_pie_property_default_context"
+
+    @property
+    def inner_ctx_type(self):
+        return self._inner_ctx_type
+
+class JavaPIEProjectedDefaultContextDAGNode(BaseContextDAGNode):
+    """Base class of concrete context DAG node.
+
+    In GraphScope, it will return a instance of concrete class `ContextDAGNode`
+    after evaluating an app, that will be automatically executed by :method:`sess.run`
+    in eager mode and return a instance of :class:`graphscope.framework.context.Context`
+    """
+
+    def _check_selector(self, selector):
+        return self._inner_ctx_check_selector(selector)
+
+    def set_inner_ctx(self, inner_ctx_type):
+        self._inner_ctx_type = inner_ctx_type
+        logger.info("set inner ctx type to: {}".format(self._inner_ctx_type))
+        if (inner_ctx_type == "tensor"):
+            self._inner_ctx_check_selector = TensorContextDAGNode._static_check_selector
+        elif inner_ctx_type == "vertex_data":
+            self._inner_ctx_check_selector = VertexDataContextDAGNode._static_check_selector
+        elif inner_ctx_type == "vertex_property":
+            self._inner_ctx_check_selector = VertexPropertyContextDAGNode._static_check_selector
+        elif (inner_ctx_type == "java_pie_projected_default_context"):
+            raise Exception("can not contain self")
+
+    @property
+    def context_type(self):
+        return "java_pie_projected_default_context"
 
     @property
     def inner_ctx_type(self):
@@ -633,15 +662,13 @@ class Context(object):
         df.to_csv(fd, header=True, index=False)
 
 class JavaProxyContext(Context):
-    #def __init__(self, context_node : JavaPIEPropertyDefaultContextDAGNode, key, inner_ctx_type):
-    def __init__(self, context_node : JavaPIEPropertyDefaultContextDAGNode, key, inner_ctx_type):
-        super().__init__(context_node, key) 
-        #let java pie property ctx hold one concrete ctx obj in labeled_vertex_data_ctx,
-        # tensor_ctx and etc.
-        self._context_node.set_inner_ctx(inner_ctx_type)
-    # @property
-    # def inner_ctx_type(self):
-    #     return self._inner_ctx_type
+    def __init__(self, context_node : BaseContextDAGNode, key, inner_ctx_type):
+        super().__init__(context_node, key)
+        if (isinstance(context_node, JavaPIEProjectedDefaultContextDAGNode) or isinstance(context_node, JavaPIEPropertyDefaultContextDAGNode)):
+            self._context_node.set_inner_ctx(inner_ctx_type)
+        else:
+            raise RuntimeError("java Proxy context can not accept {}".format(context_node.context_type))
+
 
 class DynamicVertexDataContext(collections.abc.Mapping):
     """Vertex data context for complicated result store.
@@ -703,6 +730,8 @@ def create_context_node(context_type, bound_app, graph, *args, **kwargs):
         return LabeledVertexPropertyContextDAGNode(bound_app, graph, *args, **kwargs)
     elif context_type == "java_pie_property_default_context":
         return JavaPIEPropertyDefaultContextDAGNode(bound_app, graph, *args, **kwargs)
+    elif context_type == "java_pie_projected_default_context":
+        return JavaPIEProjectedDefaultContextDAGNode(bound_app, graph, *args, **kwargs)
     else:
         # dynamic_vertex_data for networkx
         return BaseContextDAGNode(bound_app, graph, *args, **kwargs)

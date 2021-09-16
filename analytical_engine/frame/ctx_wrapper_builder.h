@@ -24,6 +24,7 @@
 #include "grape/app/void_context.h"
 
 #include "core/context/i_context.h"
+#include "core/context/java_pie_projected_default_context.h"
 #include "core/context/java_pie_property_default_context.h"
 #include "core/context/labeled_vertex_property_context.h"
 #include "core/context/tensor_context.h"
@@ -163,6 +164,22 @@ struct CtxWrapperBuilder<
       const std::string& id, std::shared_ptr<IFragmentWrapper> frag_wrapper,
       std::shared_ptr<CTX_T> ctx) {
     return std::make_shared<JavaPIEPropertyDefaultContextWrapper<_GRAPH_TYPE>>(
+        id, frag_wrapper, ctx);
+  }
+};
+
+/**
+ * @brief A specialized CtxWrapperBuilder for JavaProjectedPIEctx
+ * @tparam CTX_T
+ */
+template <typename CTX_T>
+struct CtxWrapperBuilder<
+    CTX_T, typename std::enable_if<is_base_of_template<
+               CTX_T, JavaPIEProjectedDefaultContext>::value>::type> {
+  static std::shared_ptr<gs::IContextWrapper> build(
+      const std::string& id, std::shared_ptr<IFragmentWrapper> frag_wrapper,
+      std::shared_ptr<CTX_T> ctx) {
+    return std::make_shared<JavaPIEProjectedDefaultContextWrapper<_GRAPH_TYPE>>(
         id, frag_wrapper, ctx);
   }
 };

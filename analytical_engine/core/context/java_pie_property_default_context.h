@@ -94,14 +94,14 @@ class JavaPIEPropertyDefaultContextWrapper
     std::string java_ctx_type_name =
         get_java_ctx_type_name(ctx_->_context_object);
     LOG(INFO) << "java ctx type name" << java_ctx_type_name;
-    std::string ctx_name = "JavaPIEContext:" + java_ctx_type_name + "@" +
-                           std::to_string(ctx_->inner_context_addr());
+    std::string ctx_name = "JavaPIEPropertyContext:" + java_ctx_type_name +
+                           "@" + std::to_string(ctx_->inner_context_addr());
     LOG(INFO) << "ctx name " << ctx_name;
     // java ctx type name protocol are defined in java, not the same as cpp
     if (java_ctx_type_name == "LabeledVertexDataContext") {
       // Get the DATA_T;
       std::string data_type =
-          get_vertex_data_context_data_type(ctx_->_context_object);
+          get_labeled_vertex_data_context_data_type(ctx_->_context_object);
       if (data_type == "double") {
         using inner_ctx_type = LabeledVertexDataContext<FRAG_T, double>;
         using inner_ctx_wrapper_type =
@@ -286,15 +286,6 @@ class JavaPIEPropertyDefaultContextWrapper
       return actual_ctx_wrapper->ToVineyardDataframe(comm_spec, client,
                                                      selectors, range);
     }
-    // else if (_inner_context_wrapper->context_type() ==
-    //            CONTEXT_TYPE_VERTEX_PROPERTY) {
-    //   auto actual_ctx_wrapper =
-    //       std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
-    //           _inner_context_wrapper);
-    //   BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
-    //   return actual_ctx_wrapper->ToVineyardDataframe(comm_spec, client,
-    //                                                  selectors, range);
-    // }
     return vineyard::InvalidObjectID();
   }
 
@@ -361,27 +352,22 @@ class JavaPIEPropertyDefaultContextWrapper
     return NULL;
   }
 
-  std::string get_vertex_data_context_data_type(const jobject& ctx_object) {
+  std::string get_labeled_vertex_data_context_data_type(
+      const jobject& ctx_object) {
     JNIEnvMark m;
     if (m.env()) {
       jclass app_context_getter_class =
           m.env()->FindClass(_app_context_getter_name);
-      if (app_context_getter_class == NULL) {
-        LOG(FATAL) << "app get ContextClass not found";
-      }
+      CHECK_NOTNULL(app_context_getter_class);
       jmethodID getter_method = m.env()->GetStaticMethodID(
-          app_context_getter_class, "getVertexDataContextDataType",
+          app_context_getter_class, "getLabeledVertexDataContextDataType",
           "(Lio/v6d/modules/graph/context/LabeledVertexDataContext;)"
           "Ljava/lang/String;");
-      if (getter_method == NULL) {
-        LOG(FATAL) << "getVertexDataContextDataType method null";
-      }
+      CHECK_NOTNULL(getter_method);
       // Pass app class's class object
       jstring context_class_jstring = (jstring) m.env()->CallStaticObjectMethod(
           app_context_getter_class, getter_method, ctx_object);
-      if (context_class_jstring == NULL) {
-        LOG(FATAL) << "The retrived class string null";
-      }
+      CHECK_NOTNULL(context_class_jstring);
       return jstring2string(m.env(), context_class_jstring);
     }
     LOG(FATAL) << "java env not available";

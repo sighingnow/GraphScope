@@ -40,14 +40,21 @@
 #error "Missing macro _GRAPH_TYPE or _GRAPH_HEADER"
 #endif
 
+#include "apps/java_pie/java_pie_projected_default_app.h"
 #include "apps/java_pie/java_pie_property_default_app.h"
 
+// Define app_type and app_header in cmake cmd
 // #if defined(_APP_TYPE) && defined(_APP_HEADER)
 // #include QUOTE(_APP_HEADER)
 // #else
 // #error "Missing macro _APP_TYPE or _APP_HEADER"
 // #endif
+// #define _APP_TYPE gs::JavaPIEPropertyDefaultApp<_GRAPH_TYPE>
+#ifdef _JAVA_PROPERTY
 #define _APP_TYPE gs::JavaPIEPropertyDefaultApp<_GRAPH_TYPE>
+#else
+#define _APP_TYPE gs::JavaPIEProjectedDefaultApp<_GRAPH_TYPE>
+#endif
 
 typedef struct worker_handler {
   std::shared_ptr<typename _APP_TYPE::worker_t> worker;

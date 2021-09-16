@@ -126,6 +126,7 @@ def get_app_sha256(attr):
         pregel_combine,
         java_main_class,
         java_jar_path,
+        java_app_class,
     ) = _codegen_app_info(attr, DEFAULT_GS_CONFIG_FILE)
     graph_header, graph_type = _codegen_graph_info(attr)
     logger.info("Codegened graph type: %s, Graph header: %s", graph_type, graph_header)
@@ -137,7 +138,7 @@ def get_app_sha256(attr):
         s = hashlib.sha256()
         #CAUTION!!!!!
         #remove graph type since java jar is not dependent on graph_type
-        s.update(f"{app_type}.{app_class}.{java_jar_path}".encode("utf-8"))
+        s.update(f"{app_type}.{java_jar_path}.{app_class}.{java_app_class}".encode("utf-8"))
         if types_pb2.GAR in attr:
             s.update(attr[types_pb2.GAR].s)
         return s.hexdigest()
@@ -181,9 +182,10 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         pregel_combine,
         java_main_class,
         java_jar_path,
+        java_app_class,
     ) = _codegen_app_info(attr, DEFAULT_GS_CONFIG_FILE)
     logger.info(
-        "Codegened application type: %s, app header: %s, app_class: %s, vd_type: %s, md_type: %s, pregel_combine: %s, java_main_class: %s, java_jar_path: %s",
+        "Codegened application type: %s, app header: %s, app_class: %s, vd_type: %s, md_type: %s, pregel_combine: %s, java_main_class: %s, java_jar_path: %s, java_app_class: %s",
         app_type,
         app_header,
         app_class,
@@ -192,6 +194,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         str(pregel_combine),
         str(java_main_class),
         str(java_jar_path),
+        str(java_app_class),
     )
 
     graph_header, graph_type = _codegen_graph_info(attr)
@@ -211,6 +214,8 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         JAVA_APP_FFI_SOURCE_PATH = os.path.join(workspace, JAVA_APP_FFI_SOURCE_PATH_BASE)
         JAVA_APP_JOB_CONF_PATH = os.path.join(workspace, JAVA_APP_CONF_PATH_BASE)
         cmake_commands += ["-DJAVA_PIE_APP=True", "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
+        if java_app_class == "gs::JavaPIEPropertyDefaultApp":
+            cmake_commands += ["-DJAVA_PROPERTY=True"]
         java_codegen_commands = [
             JAVA_APP_PREPROCESSER,
             java_main_class,
@@ -256,8 +261,6 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
             cc_file = os.path.join(app_dir, module_name + ".cc")
             subprocess.check_call(["cython", "-3", "--cplus", "-o", cc_file, pyx_file])
         app_header = "{}.h".format(module_name)
-
-
 
     # replace and generate cmakelist
     cmakelists_file_tmp = os.path.join(TEMPLATE_DIR, "CMakeLists.template")
@@ -1051,6 +1054,7 @@ def _codegen_app_info(attr, meta_file: str):
                     None,
                     None,
                     None,
+                    None,
                 )
             if app_type in ("cython_pregel", "cython_pie"):
                 # cython app doesn't have c-header file
@@ -1061,6 +1065,7 @@ def _codegen_app_info(attr, meta_file: str):
                     app["vd_type"],
                     app["md_type"],
                     app["pregel_combine"],
+                    None,
                     None,
                     None,
                 )
@@ -1074,6 +1079,7 @@ def _codegen_app_info(attr, meta_file: str):
                     None,  # pregel combine
                     app["java_main_class"], # main class for preprocess
                     app["java_jar_path"],
+                    app["java_app_class"], # the running java app class
                 )
 
     raise KeyError("Algorithm does not exist in the gar resource.")
