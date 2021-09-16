@@ -343,10 +343,11 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
 
   auto range = std::make_pair("", "");
+  auto selector = gs::LabeledSelector::parse(selector_string).value();
   // 1. test cpp ndarray
   {
-    std::unique_ptr<grape::InArchive> arc = std::move(
-        ctx_wrapper.ToNdArray(comm_spec, selector_string, range).value());
+    std::unique_ptr<grape::InArchive> arc =
+        std::move(ctx_wrapper.ToNdArray(comm_spec, selector, range).value());
     std::string cpp_out_prefix = out_prefix + "/java_assembled_ndarray.dat";
     output_nd_array(comm_spec, std::move(arc), cpp_out_prefix);
   }
@@ -364,8 +365,7 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
 
   // 2. test vineyard tensor
   {
-    auto tmp =
-        ctx_wrapper.ToVineyardTensor(comm_spec, client, selector_string, range);
+    auto tmp = ctx_wrapper.ToVineyardTensor(comm_spec, client, selector, range);
     CHECK(tmp);
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string cpp_v6d_tensor_prefix = out_prefix + "/cpp";
@@ -377,8 +377,9 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
 
 // Running test doesn't require codegen.
 void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
-         vineyard::ObjectID id, bool run_projected, const std::string& app_name,
-         std::string& selector_string, std::string& selectors_string) {
+         vineyard::ObjectID id, bool run_projected, bool run_property,
+         const std::string& app_name, std::string& selector_string,
+         std::string& selectors_string) {
   std::shared_ptr<FragmentType> fragment =
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(id));
   // 0. setup environment
@@ -398,20 +399,67 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   boost::property_tree::json_parser::write_json(ss, pt);
   std::string basic_params = ss.str();
   LOG(INFO) << "basic_params" << basic_params;
-  // 1. run java query
-  Query(client, fragment, comm_spec, app_name, "/tmp", basic_params,
-        selector_string, selectors_string);
 
-  // 2.run c++ query
-  RunSSSP(client, fragment, comm_spec, "/tmp", selector_string,
-          selectors_string);
+  {
+    std::string selector_string;
+    std::string selectors_string;
+    if (run_property == 0) {
+      // labeled_vetex_data
+      selector_string = gs::LabeledSelector::parse("r:label0").value();
+      {
+        std::vector<std::pair<std::string, std::string>> selector_list;
+        selector_list.emplace_back("id", "v:label0.id");
+        selector_list.emplace_back("result", "r:label0");
+        selectors_string = gs::generate_selectors(selector_list);
+      }
+    } else {
+      // labeled_vertex_property
+      selector_string = gs::LabeledSelector::parse("r:label0.dist_0").value();
+      {
+        std::vector<std::pair<std::string, std::string>> selector_list;
+        selector_list.emplace_back("id", "v:label0.id");
+        selector_list.emplace_back("result", "r:label0.dist_0");
+        selectors_string = gs::generate_selectors(selector_list);
+      }
+    }
+    // 1. run java query
+    Query(client, fragment, comm_spec, app_name, "/tmp", basic_params,
+          selector_string, selectors_string);
+    // 2.run c++ query
+    RunSSSP(client, fragment, comm_spec, "/tmp", selector_string,
+            selectors_string);
+  }
+
   // 3. run projected
   if (run_projected) {
     LOG(INFO) << "running projected";
     std::shared_ptr<ProjectedFragmentType> projected_fragment =
         ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
-    QueryProjected(client, projected_fragment, comm_spec, app_name, , "/tmp",
-                   basic_params, selector_string, selectors_string);
+    {
+      std::string selector_string;
+      std::string selectors_string;
+      if (run_property == 0) {
+        // labeled_vetex_data
+        selector_string = gs::LabeledSelector::parse("r").value();
+        {
+          std::vector<std::pair<std::string, std::string>> selector_list;
+          selector_list.emplace_back("id", "v.id");
+          selector_list.emplace_back("result", "r");
+          selectors_string = gs::generate_selectors(selector_list);
+        }
+      } else {
+        // labeled_vertex_property
+        selector_string = gs::LabeledSelector::parse("r.dist_0").value();
+        {
+          std::vector<std::pair<std::string, std::string>> selector_list;
+          selector_list.emplace_back("id", "v.id");
+          selector_list.emplace_back("result", "r.dist_0");
+          selectors_string = gs::generate_selectors(selector_list);
+        }
+      }
+      QueryProjected(client, projected_fragment, comm_spec, app_name, , "/tmp",
+                     basic_params, selector_string, selectors_string);
+    }
   }
 }
 
@@ -487,27 +535,8 @@ int main(int argc, char** argv) {
               << "] loaded graph to vineyard ...";
 
     MPI_Barrier(comm_spec.comm());
-    std::string selector_string;
-    std::string selectors_string;
-    if (run_property == 1) {
-      selector_string = gs::LabeledSelector::parse("r:label0").value();
-      {
-        std::vector<std::pair<std::string, std::string>> selector_list;
-        selector_list.emplace_back("id", "v:label0.id");
-        selector_list.emplace_back("result", "r:label0");
-        selectors_string = gs::generate_selectors(selector_list);
-      }
-    } else {
-      selector_string = gs::LabeledSelector::parse("r:label0.dist_0").value();
-      {
-        std::vector<std::pair<std::string, std::string>> selector_list;
-        selector_list.emplace_back("id", "v:label0.id");
-        selector_list.emplace_back("result", "r:label0.dist_0");
-        selectors_string = gs::generate_selectors(selector_list);
-      }
-    }
-    Run(client, comm_spec, fragment_id, run_projected, app_name,
-        selector_string, selectors_string);
+
+    Run(client, comm_spec, fragment_id, run_projected, run_property, app_name);
     MPI_Barrier(comm_spec.comm());
   }
 
