@@ -244,9 +244,7 @@ class JavaPIEProjectedDefaultContextWrapper
     return vineyard::InvalidObjectID();
   }
 
-  bl::result<std::map<
-      label_id_t,
-      std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>>
+  bl::result<std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
   ToArrowArrays(const grape::CommSpec& comm_spec,
                 const std::string& selector_string) override {
     if (_inner_context_wrapper->context_type() == CONTEXT_TYPE_VERTEX_DATA) {
