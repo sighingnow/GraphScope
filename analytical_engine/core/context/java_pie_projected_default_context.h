@@ -36,6 +36,7 @@ limitations under the License.
 #include "core/context/vertex_property_context.h"
 #include "core/java/javasdk.h"
 #include "core/object/i_fragment_wrapper.h"
+#include "core/parallel/default_java_message_manager.h"
 #include "core/parallel/property_message_manager.h"
 #include "grape/app/context_base.h"
 #include "vineyard/client/client.h"
@@ -57,10 +58,15 @@ class JavaPIEProjectedDefaultContext : public JavaContextBase<FRAG_T> {
       : JavaContextBase<FRAG_T>(fragment) {}
   virtual ~JavaPIEProjectedDefaultContext() {}
 
- protected:
-  const char* GetMessageManagerName() override {
-    return _java_projected_message_manager_name;
+  void Init(DefaultJavaMessageManager& messages, const std::string& params) {
+    jobject messagesObject =
+        createFFIPointerObject(env, _java_projected_message_manager_name,
+                               reinterpret_cast<jlong>(&messages));
+    CHECK_NOTNULL(messagesObject);
+    init(messagesObject, params);
   }
+
+ protected:
   const char* eval_descriptor() override {
     return "(Lio/v6d/modules/graph/fragment/ArrowProjectedFragment;"
            "Lcom/alibaba/grape/parallel/DefaultMessageManager;"
