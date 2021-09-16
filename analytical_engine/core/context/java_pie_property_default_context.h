@@ -57,11 +57,15 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
   JavaPIEPropertyDefaultContext(const FRAG_T& fragment)
       : JavaContextBase<FRAG_T>(fragment) {}
   virtual ~JavaPIEPropertyDefaultContext() {}
+  void Init(PropertyMessageManager& messages, const std::string& params) {
+    jobject messagesObject =
+        createFFIPointerObject(env, _java_property_message_manager_name,
+                               reinterpret_cast<jlong>(&messages));
+    CHECK_NOTNULL(messagesObject);
+    init(messagesObject, params);
+  }
 
  protected:
-  const char* GetMessageManagerName() override {
-    return _java_property_message_manager_name;
-  }
   const char* eval_descriptor() override {
     return "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
            "Lio/v6d/modules/graph/parallel/PropertyMessageManager;"

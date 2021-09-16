@@ -78,7 +78,27 @@ class JavaContextBase : public grape::ContextBase {
 
   void SetLocalNum(int local_num) { local_num_ = local_num; }
 
-  void Init(PropertyMessageManager& messages, const std::string& params) {
+  void Output(std::ostream& os) {
+    JNIEnvMark m;
+    if (m.env()) {
+      LOG(INFO) << "enter javapp ctx output";
+    }
+  }
+
+  const char* app_class_name() const { return _app_class_name; }
+
+  uint64_t inner_context_addr() { return inner_ctx_addr_; }
+
+ public:
+  char* _app_class_name;
+  jobject _app_object;
+  jobject _context_object;
+  jobject _frag_object;
+  jobject _mm_object;
+
+ protected:
+  virtual const char* eval_descriptor() = 0;
+  void init(jobect& messagesObject, const std::string& params) {
     if (params.empty()) {
       LOG(ERROR) << "no args received";
       return;
@@ -137,9 +157,6 @@ class JavaContextBase : public grape::ContextBase {
       _frag_object = env->NewGlobalRef(fragObject);
 
       // 2. Create Message manager Java object
-      jobject messagesObject = createFFIPointerObject(
-          env, GetMessageManagerName(), reinterpret_cast<jlong>(&messages));
-      CHECK_NOTNULL(messagesObject);
       _mm_object = env->NewGlobalRef(messagesObject);
 
       // 3. Create arguments array
@@ -179,28 +196,6 @@ class JavaContextBase : public grape::ContextBase {
       }
     }
   }
-
-  void Output(std::ostream& os) {
-    JNIEnvMark m;
-    if (m.env()) {
-      LOG(INFO) << "enter javapp ctx output";
-    }
-  }
-
-  const char* app_class_name() const { return _app_class_name; }
-
-  uint64_t inner_context_addr() { return inner_ctx_addr_; }
-
- public:
-  char* _app_class_name;
-  jobject _app_object;
-  jobject _context_object;
-  jobject _frag_object;
-  jobject _mm_object;
-
- protected:
-  virtual const char* GetMessageManagerName() = 0;
-  virtual const char* eval_descriptor() = 0;
 
  private:
   bool init_app_class_name(std::string& app_class) {
