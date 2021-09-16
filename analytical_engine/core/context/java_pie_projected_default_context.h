@@ -261,8 +261,7 @@ class JavaPIEProjectedDefaultContextWrapper
       BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToArrowArrays(comm_spec, selectors);
     }
-    std::map<label_id_t,
-             std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
+    std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>
         arrow_arrays;
     return arrow_arrays;
   }

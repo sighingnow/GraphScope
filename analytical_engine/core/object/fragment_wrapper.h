@@ -304,7 +304,7 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
         context_type != CONTEXT_TYPE_LABELED_VERTEX_PROPERTY &&
         (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) ==
          std::string::npos) &&
-        (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROPROJECTED_DEFAULT) ==
+        (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) ==
          std::string::npos)) {
       RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
                       "Illegal context type: " + context_type);
@@ -406,11 +406,16 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
       auto vp_ctx_wrapper =
           std::dynamic_pointer_cast<IJavaPIEProjectedDefaultContextWrapper>(
               ctx_wrapper);
-
+      auto& proj_meta =
+          std::static_pointer_cast<const ArrowProjectedFragmentBase>(
+              frag_wrapper->fragment())
+              ->meta();
+      auto v_label_id = proj_meta.GetKeyValue<label_id_t>("projected_v_label");
       // BOOST_LEAF_AUTO(selectors,
       // LabeledSelector::ParseSelectors(s_selectors));
-      BOOST_LEAF_ASSIGN(columns,
+      BOOST_LEAF_AUTO(arrow_arrays,
                         vp_ctx_wrapper->ToArrowArrays(comm_spec, s_selectors));
+      columns[v_label_id] = arrow_arrays;
     }
     vineyard::ObjectMeta ctx_meta, cur_meta;
     VINEYARD_CHECK_OK(client->GetMetaData(vm_id_from_ctx, ctx_meta));

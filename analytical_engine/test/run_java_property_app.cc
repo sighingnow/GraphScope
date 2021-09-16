@@ -422,6 +422,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
         selectors_string = gs::generate_selectors(selector_list);
       }
     }
+    LOG(INFO) << "selector string: " << selector_string << ", selectors string " << selectors_string;
     // 1. run java query
     Query(client, fragment, comm_spec, app_name, "/tmp", basic_params,
           selector_string, selectors_string);
