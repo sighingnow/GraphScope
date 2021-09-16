@@ -272,8 +272,9 @@ void QueryProjected(vineyard::Client& client,
   gs::rpc::graph::GraphDefPb graph_def;
   graph_def.set_graph_type(gs::rpc::graph::ARROW_PROJECTED);
 
-  auto frag_wrapper = std::make_shared<gs::FragmentWrapper<FragmentType>>(
-      "graph_123", graph_def, fragment);
+  auto frag_wrapper =
+      std::make_shared<gs::FragmentWrapper<ProjectedFragmentType>>(
+          "graph_123", graph_def, fragment);
 
   gs::JavaPIEProjectedDefaultContextWrapper<ProjectedFragmentType> ctx_wrapper(
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
