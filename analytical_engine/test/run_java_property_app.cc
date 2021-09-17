@@ -87,7 +87,8 @@ void output_nd_array(const grape::CommSpec& comm_spec,
 
 void output_data_frame(const grape::CommSpec& comm_spec,
                        std::unique_ptr<grape::InArchive> arc,
-                       const std::string& output_prefix) {
+                       const std::string& output_prefix,
+                       int expected_data_type) {
   if (comm_spec.worker_id() == 0) {
     grape::OutArchive oarc;
     oarc = std::move(*arc);
@@ -116,7 +117,7 @@ void output_data_frame(const grape::CommSpec& comm_spec,
 
     oarc >> col_name2;
     oarc >> col_type2;
-    CHECK_EQ(col_type2, 7);  // double
+    CHECK_EQ(col_type2, expected_data_type);  // double
 
     std::ofstream assembled_col2_ostream;
     std::string assembled_col2_output_path =
@@ -228,7 +229,7 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     std::unique_ptr<grape::InArchive> arc = std::move(
         ctx_wrapper.ToDataframe(comm_spec, selectors_string, range).value());
     std::string java_data_frame_out_prefix = out_prefix + "/java";
-    output_data_frame(comm_spec, std::move(arc), java_data_frame_out_prefix);
+    output_data_frame(comm_spec, std::move(arc), java_data_frame_out_prefix, 7);
   }
 
   LOG(INFO) << "[1] java finish test dataframe";
@@ -298,7 +299,7 @@ void QueryProjected(vineyard::Client& client,
     std::unique_ptr<grape::InArchive> arc = std::move(
         ctx_wrapper.ToDataframe(comm_spec, selectors_string, range).value());
     std::string java_data_frame_out_prefix = out_prefix + "/java_projected";
-    output_data_frame(comm_spec, std::move(arc), java_data_frame_out_prefix);
+    output_data_frame(comm_spec, std::move(arc), java_data_frame_out_prefix, 5);
   }
 
   LOG(INFO) << "[1] java projected finish test dataframe";
@@ -362,7 +363,7 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     std::unique_ptr<grape::InArchive> arc =
         std::move(ctx_wrapper.ToDataframe(comm_spec, selectors, range).value());
     std::string cpp_data_frame_out_prefix = out_prefix + "/cpp";
-    output_data_frame(comm_spec, std::move(arc), cpp_data_frame_out_prefix);
+    output_data_frame(comm_spec, std::move(arc), cpp_data_frame_out_prefix, 7);
   }
   LOG(INFO) << "[1] cpp finish test dataframe";
 
@@ -373,7 +374,7 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string cpp_v6d_tensor_prefix = out_prefix + "/cpp";
     output_vineyard_tensor(client, ndarray_object, comm_spec,
-                           cpp_v6d_tensor_prefix);
+                           cpp_v6d_tensor_prefix, 7);
   }
   LOG(INFO) << "[2] cpp finish test vineyard tensor";
 }
