@@ -352,7 +352,7 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     std::unique_ptr<grape::InArchive> arc =
         std::move(ctx_wrapper.ToNdArray(comm_spec, selector, range).value());
     std::string cpp_out_prefix = out_prefix + "/java_assembled_ndarray.dat";
-    output_nd_array(comm_spec, std::move(arc), cpp_out_prefix);
+    output_nd_array(comm_spec, std::move(arc), cpp_out_prefix, 7);
   }
   LOG(INFO) << "[0] cpp finish test ndarray";
   // 1. test data frame
