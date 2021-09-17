@@ -387,7 +387,6 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   // 1. prepare the running params;
   boost::property_tree::ptree pt;
   pt.put("src", "4");
-  pt.put("frag_name", "vineyard::ArrowFragmentDefault<int64_t>");
   pt.put("app_class", app_name);
   // The path to sdk jni library
   pt.put("user_library_name", "vineyard-jni");
@@ -395,12 +394,14 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
 
   pt.put("jvm_runtime_opt", std::string(jvm_opts));
   LOG(INFO) << "geted shell env : " << std::string(jvm_opts);
-  std::stringstream ss;
-  boost::property_tree::json_parser::write_json(ss, pt);
-  std::string basic_params = ss.str();
-  LOG(INFO) << "basic_params" << basic_params;
 
   if (!run_projected) {
+    pt.put("frag_name", "vineyard::ArrowFragmentDefault<int64_t>");
+    std::stringstream ss;
+    boost::property_tree::json_parser::write_json(ss, pt);
+    std::string basic_params = ss.str();
+    LOG(INFO) << "basic_params" << basic_params;
+
     std::string selector_string;
     std::string selectors_string;
     if (run_property == 0) {
@@ -434,6 +435,12 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
 
   // 3. run projected
   if (run_projected) {
+    pt.put("frag_name",
+           "gs::ArrowProjectedFragment<int64_t,uint64_t,double,int64_t>");
+    std::stringstream ss;
+    boost::property_tree::json_parser::write_json(ss, pt);
+    std::string basic_params = ss.str();
+    LOG(INFO) << "basic_params" << basic_params;
     LOG(INFO) << "running projected";
     std::shared_ptr<ProjectedFragmentType> projected_fragment =
         ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
