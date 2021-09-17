@@ -400,7 +400,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   std::string basic_params = ss.str();
   LOG(INFO) << "basic_params" << basic_params;
 
-  {
+  if (!run_projected) {
     std::string selector_string;
     std::string selectors_string;
     if (run_property == 0) {
@@ -422,7 +422,8 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
         selectors_string = gs::generate_selectors(selector_list);
       }
     }
-    LOG(INFO) << "selector string: " << selector_string << ", selectors string " << selectors_string;
+    LOG(INFO) << "selector string: " << selector_string << ", selectors string "
+              << selectors_string;
     // 1. run java query
     Query(client, fragment, comm_spec, app_name, "/tmp", basic_params,
           selector_string, selectors_string);
