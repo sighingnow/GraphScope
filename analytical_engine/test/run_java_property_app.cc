@@ -52,7 +52,7 @@ using ProjectedFragmentType =
     gs::ArrowProjectedFragment<int64_t, uint64_t, double, int64_t>;
 void output_nd_array(const grape::CommSpec& comm_spec,
                      std::unique_ptr<grape::InArchive> arc,
-                     const std::string& output_path) {
+                     const std::string& output_path, int data_type_expected) {
   if (comm_spec.worker_id() == 0) {
     grape::OutArchive oarc;
     oarc = std::move(*arc);
@@ -65,7 +65,7 @@ void output_nd_array(const grape::CommSpec& comm_spec,
     oarc >> length1;
     oarc >> data_type;
     LOG(INFO) << "length1: " << length1 << ",data type: " << data_type;
-    CHECK_EQ(data_type, 7);
+    CHECK_EQ(data_type, data_type_expected);
     oarc >> length2;
     LOG(INFO) << "length2: " << length2;
     CHECK_EQ(length1, length2);
@@ -217,7 +217,8 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     std::unique_ptr<grape::InArchive> arc = std::move(
         ctx_wrapper.ToNdArray(comm_spec, selector_string, range).value());
     std::string java_out_prefix = out_prefix + "/java_assembled_ndarray.dat";
-    output_nd_array(comm_spec, std::move(arc), java_out_prefix);
+    output_nd_array(comm_spec, std::move(arc), java_out_prefix,
+                    7);  // 7 for double
   }
   LOG(INFO) << "[0] java finish test ndarray";
 
@@ -286,7 +287,8 @@ void QueryProjected(vineyard::Client& client,
         ctx_wrapper.ToNdArray(comm_spec, selector_string, range).value());
     std::string java_out_prefix =
         out_prefix + "/java_projected_assembled_ndarray.dat";
-    output_nd_array(comm_spec, std::move(arc), java_out_prefix);
+    output_nd_array(comm_spec, std::move(arc), java_out_prefix,
+                    5);  // 5 for int64_t
   }
   LOG(INFO) << "[0] java projected finish test ndarray";
 
