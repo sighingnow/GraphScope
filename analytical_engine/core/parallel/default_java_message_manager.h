@@ -23,6 +23,7 @@ limitations under the License.
 #include "jni.h"
 
 #include "grape/communication/communicator.h"
+#include "grape/graph/adj_list.h"
 #include "grape/parallel/default_message_manager.h"
 #include "grape/serialization/in_archive.h"
 #include "grape/serialization/out_archive.h"
