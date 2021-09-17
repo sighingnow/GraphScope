@@ -99,13 +99,16 @@ class JavaContextBase : public grape::ContextBase {
  protected:
   virtual const char* eval_descriptor() = 0;
   void init(jobject& messagesObject, const std::string& params) {
+    LOG(INFO) << "enter init";
     if (params.empty()) {
       LOG(ERROR) << "no args received";
       return;
     }
     std::string user_library_name;
+    LOG(INFO) << "before parse args";
     std::string args_str =
         parse_params_and_setup_jvm_env(params, user_library_name);
+    LOG(INFO) << "afeter parse args";
     // set java environment variables
 
     // create jvm instance if not exists;

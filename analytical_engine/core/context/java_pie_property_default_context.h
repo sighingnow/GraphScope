@@ -43,8 +43,6 @@ limitations under the License.
 #define CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT "java_pie_property_default"
 namespace gs {
 
-static constexpr const char* _java_property_message_manager_name =
-    "gs::PropertyMessageManager";
 
 /**
  * @brief Context for the java pie app, used by java sdk.
@@ -58,11 +56,14 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       : JavaContextBase<FRAG_T>(fragment) {}
   virtual ~JavaPIEPropertyDefaultContext() {}
   void Init(PropertyMessageManager& messages, const std::string& params) {
+    LOG(INFO) << "enter ctx init";
     JNIEnvMark m;
     JNIEnv* env = m.env();
+    LOG(INFO) << "before check";
     CHECK_NOTNULL(env);
+    LOG(INFO) << "before creat object";
     jobject messagesObject =
-        createFFIPointerObject(env, _java_property_message_manager_name,
+        createFFIPointerObject(env, "gs::PropertyMessageManager",
                                reinterpret_cast<jlong>(&messages));
     CHECK_NOTNULL(messagesObject);
     JavaContextBase<FRAG_T>::init(messagesObject, params);

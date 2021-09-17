@@ -265,8 +265,10 @@ jobject createStdVectorObject(JNIEnv* env, const char* type_name,
 jobject createFFIPointerObject(JNIEnv* env, const char* type_name,
                                jlong pointer) {
   // must be properly encoded
+  std::string tmp = type_name;
+  LOG(INFO) << tmp;
   jstring jstring_name = env->NewStringUTF(type_name);
-
+  LOG(INFO) << "after jstring";
   jclass the_class = (jclass) env->CallStaticObjectMethod(
       FFITypeFactoryClass, FFITypeFactory_getTypeMethodID, jstring_name);
   if (env->ExceptionOccurred()) {
