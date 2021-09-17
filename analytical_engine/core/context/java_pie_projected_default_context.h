@@ -66,7 +66,7 @@ class JavaPIEProjectedDefaultContext : public JavaContextBase<FRAG_T> {
 
  protected:
   const char* eval_descriptor() override {
-    return "(Lio/v6d/modules/graph/fragment/ArrowProjectedFragment;"
+    return "(Lcom/alibaba/grape/fragment/ArrowProjectedFragment;"
            "Lcom/alibaba/grape/parallel/DefaultMessageManager;"
            "Lcom/alibaba/fastjson/JSONObject;)V";
   }

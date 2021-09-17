@@ -65,7 +65,7 @@ class JavaPIEProjectedDefaultApp
       }
 
       const char* descriptor =
-          "(Lio/v6d/modules/graph/fragment/ArrowProjectedFragment;"
+          "(com/alibaba/grape/fragment/ArrowProjectedFragment;"
           "Lio/v6d/modules/graph/context/ProjectedDefaultContextBase;"
           "Lcom/alibaba/grape/parallel/DefaultMessageManager;)V";
       jmethodID PEvalMethodID =
@@ -124,7 +124,7 @@ class JavaPIEProjectedDefaultApp
       }
 
       const char* descriptor =
-          "(Lio/v6d/modules/graph/fragment/ArrowProjectedFragment;"
+          "(Lcom/alibaba/grape/fragment/ArrowProjectedFragment;"
           "Lio/v6d/modules/graph/context/ProjectedDefaultContextBase;"
           "Lcom/alibaba/grape/parallel/DefaultMessageManager;)V";
       jmethodID IncEvalMethodID =
