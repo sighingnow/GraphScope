@@ -98,7 +98,8 @@ class JavaContextBase : public grape::ContextBase {
 
  protected:
   virtual const char* eval_descriptor() = 0;
-  void init(jobject& messagesObject, const std::string& params) {
+  void init(jlong messages_addr, const char* java_message_manager_name,
+            const std::string& params) {
     if (params.empty()) {
       LOG(ERROR) << "no args received";
       return;
@@ -157,6 +158,9 @@ class JavaContextBase : public grape::ContextBase {
       _frag_object = env->NewGlobalRef(fragObject);
 
       // 2. Create Message manager Java object
+      jobject messagesObject =
+          createFFIPointerObject(env, java_message_manager_name, messages_addr);
+      CHECK_NOTNULL(messagesObject);
       _mm_object = env->NewGlobalRef(messagesObject);
 
       // 3. Create arguments array

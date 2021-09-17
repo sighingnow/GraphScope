@@ -277,22 +277,13 @@ jobject createFFIPointerObject(JNIEnv* env, const char* type_name,
     // env->DeleteLocalRef(main_class);
     return NULL;
   }
-  if (the_class == NULL) {
-    LOG(ERROR) << "Cannot find Class for " << type_name;
-    return NULL;
-  }
+  CHECK_NOTNULL(the_class);
 
   jmethodID the_ctor = env->GetMethodID(the_class, "<init>", "(J)V");
-  if (the_ctor == NULL) {
-    LOG(ERROR) << "Cannot find <init>(J)V constructor in " << type_name;
-    return NULL;
-  }
+  CHECK_NOTNULL(the_ctor);
 
   jobject the_object = env->NewObject(the_class, the_ctor, pointer);
-  if (the_object == NULL) {
-    LOG(ERROR) << "Cannot call <init>(J)V constructor in " << type_name;
-    return NULL;
-  }
+  CHECK_NOTNULL(the_object);
   // LOG(INFO) << "successfully created ffipointer object" << type_name;
   return the_object;
 }

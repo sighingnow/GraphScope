@@ -60,14 +60,8 @@ class JavaPIEProjectedDefaultContext : public JavaContextBase<FRAG_T> {
   virtual ~JavaPIEProjectedDefaultContext() {}
 
   void Init(DefaultJavaMessageManager& messages, const std::string& params) {
-    JNIEnvMark m;
-    JNIEnv* env = m.env();
-    CHECK_NOTNULL(env);
-    jobject messagesObject =
-        createFFIPointerObject(env, _java_projected_message_manager_name,
-                               reinterpret_cast<jlong>(&messages));
-    CHECK_NOTNULL(messagesObject);
-    JavaContextBase<FRAG_T>::init(messagesObject, params);
+    JavaContextBase<FRAG_T>::init(reinterpret_cast<jlong>(messages),
+                                  _java_projected_message_manager_name, params);
   }
 
  protected:
