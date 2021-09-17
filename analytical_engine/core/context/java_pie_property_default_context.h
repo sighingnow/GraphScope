@@ -334,21 +334,15 @@ class JavaPIEPropertyDefaultContextWrapper
     if (m.env()) {
       jclass context_utils_class =
           m.env()->FindClass("io/v6d/modules/graph/utils/ContextUtils");
-      if (context_utils_class == NULL) {
-        LOG(FATAL) << "context utils clss not found";
-      }
+      CHECK_NOTNULL(context_utils_class);
       jmethodID ctx_base_class_name_get_method = m.env()->GetStaticMethodID(
-          context_utils_class, "getCtxObjBaseClzName",
+          context_utils_class, "getPropertyCtxObjBaseClzName",
           "(Lio/v6d/modules/graph/context/PropertyDefaultContextBase;)"
           "Ljava/lang/String;");
-      if (ctx_base_class_name_get_method == NULL) {
-        LOG(FATAL) << "getCtxObjBaseClzName method null";
-      }
+      CHECK_NOTNULL(ctx_base_class_name_get_method);
       jstring ctx_base_clz_name = (jstring) m.env()->CallStaticObjectMethod(
           context_utils_class, ctx_base_class_name_get_method, ctx_object);
-      if (ctx_base_clz_name == NULL) {
-        LOG(FATAL) << "The retrived class string null";
-      }
+      CHECK_NOTNULL(ctx_base_clz_name);
       return jstring2string(m.env(), ctx_base_clz_name);
     }
     LOG(FATAL) << "java env not available";

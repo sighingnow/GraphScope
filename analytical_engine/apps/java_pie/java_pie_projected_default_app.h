@@ -65,7 +65,7 @@ class JavaPIEProjectedDefaultApp
       }
 
       const char* descriptor =
-          "(com/alibaba/grape/fragment/ArrowProjectedFragment;"
+          "(Lcom/alibaba/grape/fragment/ArrowProjectedFragment;"
           "Lio/v6d/modules/graph/context/ProjectedDefaultContextBase;"
           "Lcom/alibaba/grape/parallel/DefaultMessageManager;)V";
       jmethodID PEvalMethodID =
