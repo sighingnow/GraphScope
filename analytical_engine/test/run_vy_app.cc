@@ -493,6 +493,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
         vertex.SetValue(cnt);
         LOG(INFO) << "vertex: " << vertex.GetValue() << " "
                   << projected_fragment->GetData(vertex);
+        cnt += 1;
       }
       RunProjectedWCC(projected_fragment, comm_spec, "./output_projected_wcc/");
       RunProjectedSSSP(projected_fragment, comm_spec,
