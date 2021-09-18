@@ -777,6 +777,10 @@ class ArrowProjectedFragment
                       &ie_ptr_[ie_offsets_end_ptr_[offset]],
                       edge_data_array_accessor_);
   }
+  inline arrow_projected_fragment_impl::TypedArray<EDATA_T>&
+  getEdataArrayAccessor() {
+    return edge_data_array_accessor_;
+  }
 
   inline adj_list_t GetOutgoingAdjList(const vertex_t& v) const {
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
