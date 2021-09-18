@@ -294,7 +294,7 @@ void QueryProjected(vineyard::Client& client,
     std::string java_out_prefix =
         out_prefix + "/java_projected_assembled_ndarray.dat";
     output_nd_array(comm_spec, std::move(arc), java_out_prefix,
-                    5);  // 5 for int64_t
+                    4);  // 4 for int64_t
   }
   LOG(INFO) << "[0] java projected finish test ndarray";
 
@@ -304,7 +304,7 @@ void QueryProjected(vineyard::Client& client,
     std::unique_ptr<grape::InArchive> arc = std::move(
         ctx_wrapper.ToDataframe(comm_spec, selectors_string, range).value());
     std::string java_data_frame_out_prefix = out_prefix + "/java_projected";
-    output_data_frame(comm_spec, std::move(arc), java_data_frame_out_prefix, 5);
+    output_data_frame(comm_spec, std::move(arc), java_data_frame_out_prefix, 4);
   }
 
   LOG(INFO) << "[1] java projected finish test dataframe";
