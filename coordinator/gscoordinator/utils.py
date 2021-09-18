@@ -214,8 +214,12 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         JAVA_APP_FFI_SOURCE_PATH = os.path.join(workspace, JAVA_APP_FFI_SOURCE_PATH_BASE)
         JAVA_APP_JOB_CONF_PATH = os.path.join(workspace, JAVA_APP_CONF_PATH_BASE)
         cmake_commands += ["-DJAVA_PIE_APP=True", "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
-        if java_app_class == "gs::JavaPIEPropertyDefaultApp":
+        if app_class == "gs::JavaPIEPropertyDefaultApp":
             cmake_commands += ["-DJAVA_PROPERTY=True"]
+        elif app_class == "gs::JavaPIEProjectedDefaultApp":
+            cmake_commands += ["-DJAVA_PROPERTY=False"]
+        else :
+            raise Exception("Unsupported type {}".format(app_class))
         java_codegen_commands = [
             JAVA_APP_PREPROCESSER,
             java_main_class,
