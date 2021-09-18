@@ -27,6 +27,7 @@
 #include "glog/logging.h"
 
 #include "core/config.h"
+#include "core/context/java_pie_projected_default_context.h"
 #include "core/context/java_pie_property_default_context.h"
 #include "core/error.h"
 #include "proto/data_types.pb.h"

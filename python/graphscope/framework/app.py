@@ -134,6 +134,7 @@ class AppAssets(DAGNode):
         "dynamic_vertex_data",
         "labeled_vertex_property",
         "java_pie_property_default_context",
+        "java_pie_projected_default_context",
     ]
 
     def __init__(self, algo, context=None, gar=None):
