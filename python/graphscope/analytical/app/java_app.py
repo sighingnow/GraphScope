@@ -61,7 +61,7 @@ class JavaApp(AppAssets):
         gs_config = {
             "app": [
                 {
-                    "algo": "java_app_assets",
+                    "algo": "java_app",
                     "type": "java_pie",
                     "java_main_class" : java_main_class,
                     "java_jar_path": self.jar_path,
@@ -74,16 +74,16 @@ class JavaApp(AppAssets):
             self._cpp_driver_class =  "gs::JavaPIEPropertyDefaultApp"
             gs_config["app"][0]["class_name"] =self.cpp_driver_class
             gs_config["app"][0]["compatible_graph"] = ["vineyard::ArrowFragment"]
-            gs_config["app"][0]["compatible_graph"]["context_type"] = "java_pie_property_default_context"
+            gs_config["app"][0]["context_type"] = "java_pie_property_default_context"
             gar.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
-            super().__init__("java_app_assets","java_pie_property_default_context",gar.read_bytes())
+            super().__init__("java","java_pie_property_default_context",gar.read_bytes())
         elif java_app_type == "projected":
             self._cpp_driver_class = "gs::JavaPIEProjectedDefaultApp"
             gs_config["app"][0]["class_name"] = self.cpp_driver_class
             gs_config["app"][0]["compatible_graph"] = ["vineyard::ArrowProjectedFragment"]
-            gs_config["app"][0]["compatible_graph"]["context_type"] = "java_pie_projected_default_context"
+            gs_config["app"][0]["context_type"] = "java_pie_projected_default_context"
             gar.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
-            super().__init__("java_app_assets","java_pie_projected_default_context",gar.read_bytes())
+            super().__init__("java","java_pie_projected_default_context",gar.read_bytes())
         else:
             raise RuntimeError("Unexpected app type: {}".format(java_app_type))
             
