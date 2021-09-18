@@ -394,6 +394,19 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
          const std::string& app_name) {
   std::shared_ptr<FragmentType> fragment =
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(id));
+
+  // test fragment data;
+  auto edge_data_column = fragment->edge_data_column(0, 0);
+  using vertex_t = FragmentType::vertex_t;
+  vertex_t vertex;
+  vertex.SetValue(4);
+  auto es = fragment->GetOutgoingAdjList(vertex, 0);
+  for (auto e : es) {
+    auto u = e.neighbor();
+    auto u_dist = static_cast<double>(e.template get_data<int64_t>(0));
+    LOG(INFO) << vertex.GetValue() << "" << u.GetValue() << " " << u_dist;
+  }
+
   // 0. setup environment
   // gs::SetupEnv(comm_spec.local_num());
   // 1. prepare the running params;
