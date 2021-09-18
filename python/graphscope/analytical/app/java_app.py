@@ -81,7 +81,7 @@ class JavaApp(AppAssets):
         elif java_app_type == "projected":
             self._cpp_driver_class = "gs::JavaPIEProjectedDefaultApp"
             gs_config["app"][0]["class_name"] = self.cpp_driver_class
-            gs_config["app"][0]["compatible_graph"] = ["vineyard::ArrowProjectedFragment"]
+            gs_config["app"][0]["compatible_graph"] = ["gs::ArrowProjectedFragment"]
             gs_config["app"][0]["context_type"] = "java_pie_projected_default_context"
             gar.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
             super().__init__("java_app","java_pie_projected_default_context",gar.read_bytes())
