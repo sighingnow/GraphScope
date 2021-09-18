@@ -167,7 +167,7 @@ class JavaAppDagNode(AppDAGNode):
 
         logger.info("user jni library found: {}".format(user_jni_name_lib))
         logger.info("user jar found: {}".format(user_jar))
-        ffi_target_output = os.path.join(udf_workspace, "gs-ffi", "CLASS_OUTPUT")
+        ffi_target_output = os.path.join(udf_workspace, "gs-ffi-", user_jni_name, "CLASS_OUTPUT")
         performance_args = "-Dcom.alibaba.ffi.rvBuffer=2147483648 -XX:+StartAttachListener " \
                         + "-XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC " \
                         + "-XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
