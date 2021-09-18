@@ -160,7 +160,7 @@ class JavaAppDagNode(AppDAGNode):
         user_jni_name = self._app_assets.signature()
         user_jni_dir = os.path.join(udf_workspace, user_jni_name)
         user_jni_name_lib = os.path.join(user_jni_dir, "lib{}.so".format(user_jni_name))
-        user_jar = os.path.join(user_jni_dir, self._app_assets.java_jar_path)
+        user_jar = os.path.join(user_jni_dir, self._app_assets.jar_path)
         assert (os.path.isfile(user_jni_name_lib)), "{} not found ".format(user_jni_name_lib)
         assert (os.path.isfile(user_jar)), "{} not found ".format(user_jar)
 
