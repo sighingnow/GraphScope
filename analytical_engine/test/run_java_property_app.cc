@@ -161,15 +161,15 @@ void output_vineyard_tensor(vineyard::Client& client,
         LOG(FATAL) << "type not correct...";
       }
       CHECK_EQ(single_tensor->shape().size(), 1);
-      CHECK_EQ(single_tensor->partition_index().size(), 1);
+      // CHECK_EQ(single_tensor->partition_index().size(), 1);
       int64_t length = single_tensor->shape()[0];
-      LOG(INFO) << "[worker-" << comm_spec.worker_id() << "]: tensor chunk-"
-                << single_tensor->partition_index()[0] << ": " << length;
+      // LOG(INFO) << "[worker-" << comm_spec.worker_id() << "]: tensor chunk-"
+      //          << single_tensor->partition_index()[0] << ": " << length;
       auto casted_tensor =
           std::dynamic_pointer_cast<vineyard::Tensor<DATA_T>>(single_tensor);
       std::string output_path =
-          prefix + "_v6d_single_tensor_" +
-          std::to_string(single_tensor->partition_index()[0]) + ".dat";
+          prefix + "_v6d_single_tensor_" + comm_spec.worker_id() +
+          ".dat";  // std::to_string(single_tensor->partition_index()[0])
       std::ofstream fout;
       fout.open(output_path);
 
