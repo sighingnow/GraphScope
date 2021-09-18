@@ -404,7 +404,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   for (auto e : es) {
     auto u = e.neighbor();
     auto u_dist = static_cast<double>(e.template get_data<int64_t>(0));
-    LOG(INFO) << vertex.GetValue() << "" << u.GetValue() << " " << u_dist;
+    LOG(INFO) << vertex.GetValue() << " " << u.GetValue() << " " << u_dist;
   }
 
   // 0. setup environment
@@ -470,8 +470,10 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
     std::string basic_params = ss.str();
     LOG(INFO) << "basic_params" << basic_params;
     LOG(INFO) << "running projected";
+    LOG(INFO) << "vertex properties num: " << fragment->vertex_property_num(0);
+    LOG(INFO) << "edge properties num: " << fragment->edge_property_num(0);
     std::shared_ptr<ProjectedFragmentType> projected_fragment =
-        ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
+        ProjectedFragmentType::Project(fragment, "0", "0", "0", "2");
     // test get data
     using vertex_t = ProjectedFragmentType::vertex_t;
     vertex_t vertex;
@@ -482,6 +484,14 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
       auto v = e.neighbor();
       int64_t edata = static_cast<int64_t>(e.get_data());
       LOG(INFO) << v.GetValue() << "edata: " << edata;
+    }
+    int cnt = 0;
+    // vdata print
+    while (cnt < 5) {
+      vertex.SetValue(cnt);
+      LOG(INFO) << "vertex: " << vertex.GetValue()
+                << ",data: " << projected_fragment->GetData(vertex);
+      cnt += 1;
     }
     {
       std::string selector_string;
