@@ -168,7 +168,8 @@ void output_vineyard_tensor(vineyard::Client& client,
       auto casted_tensor =
           std::dynamic_pointer_cast<vineyard::Tensor<DATA_T>>(single_tensor);
       std::string output_path =
-          prefix + "_v6d_single_tensor_" + std::to_string(comm_spec.worker_id()) +
+          prefix + "_v6d_single_tensor_" +
+          std::to_string(comm_spec.worker_id()) +
           ".dat";  // std::to_string(single_tensor->partition_index()[0])
       std::ofstream fout;
       fout.open(output_path);
@@ -315,7 +316,7 @@ void QueryProjected(vineyard::Client& client,
     CHECK(tmp);
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string java_v6d_tensor_prefix = out_prefix + "/java_projected";
-    vineyard::AnyType expected_data_type = vineyard::AnyType::UInt64;  // 4
+    vineyard::AnyType expected_data_type = vineyard::AnyType::Int64;  // 4
     output_vineyard_tensor<uint64_t>(client, ndarray_object, comm_spec,
                                      java_v6d_tensor_prefix,
                                      expected_data_type);
