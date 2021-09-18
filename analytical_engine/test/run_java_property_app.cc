@@ -396,7 +396,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(id));
 
   // test fragment data;
-  auto edge_data_column = fragment->edge_data_column(0, 0);
+  auto edge_data_column = fragment->edge_data_column<int64_t>(0, 0);
   using vertex_t = FragmentType::vertex_t;
   vertex_t vertex;
   vertex.SetValue(4);
