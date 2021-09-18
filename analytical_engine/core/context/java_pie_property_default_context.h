@@ -45,7 +45,6 @@ namespace gs {
 
 static constexpr const char* _java_property_message_manager_name =
     "gs::PropertyMessageManager";
-
 /**
  * @brief Context for the java pie app, used by java sdk.
  *
@@ -58,7 +57,7 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
       : JavaContextBase<FRAG_T>(fragment) {}
   virtual ~JavaPIEPropertyDefaultContext() {}
   void Init(PropertyMessageManager& messages, const std::string& params) {
-    JavaContextBase<FRAG_T>::init(reinterpret_cast<jlong>(messages),
+    JavaContextBase<FRAG_T>::init(reinterpret_cast<jlong>(&messages),
                                   _java_property_message_manager_name, params);
   }
 

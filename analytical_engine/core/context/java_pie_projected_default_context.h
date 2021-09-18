@@ -60,7 +60,7 @@ class JavaPIEProjectedDefaultContext : public JavaContextBase<FRAG_T> {
   virtual ~JavaPIEProjectedDefaultContext() {}
 
   void Init(DefaultJavaMessageManager& messages, const std::string& params) {
-    JavaContextBase<FRAG_T>::init(reinterpret_cast<jlong>(messages),
+    JavaContextBase<FRAG_T>::init(reinterpret_cast<jlong>(&messages),
                                   _java_projected_message_manager_name, params);
   }
 

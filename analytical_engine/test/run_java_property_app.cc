@@ -118,7 +118,7 @@ void output_data_frame(const grape::CommSpec& comm_spec,
 
     oarc >> col_name2;
     oarc >> col_type2;
-    CHECK_EQ(col_type2, expected_data_type);  // double
+    CHECK_EQ(col_type2, expected_data_type);
 
     std::ofstream assembled_col2_ostream;
     std::string assembled_col2_output_path =
@@ -155,6 +155,8 @@ void output_vineyard_tensor(vineyard::Client& client,
   if (comm_spec.local_id() == 0) {
     for (auto obj : local_chunks) {
       auto single_tensor = std::dynamic_pointer_cast<vineyard::ITensor>(obj);
+      LOG(INFO) << "actual type "
+                << vineyard::GetAnyTypeName(single_tensor->value_type());
       if (single_tensor->value_type() != expected_type) {
         LOG(FATAL) << "type not correct...";
       }
@@ -357,7 +359,7 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     std::unique_ptr<grape::InArchive> arc =
         std::move(ctx_wrapper.ToNdArray(comm_spec, selector, range).value());
     std::string cpp_out_prefix = out_prefix + "/java_assembled_ndarray.dat";
-    output_nd_array(comm_spec, std::move(arc), cpp_out_prefix);
+    output_nd_array(comm_spec, std::move(arc), cpp_out_prefix, 7);
   }
   LOG(INFO) << "[0] cpp finish test ndarray";
   // 1. test data frame

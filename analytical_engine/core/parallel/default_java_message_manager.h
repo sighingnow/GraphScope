@@ -43,7 +43,7 @@ class DefaultJavaMessageManager : public grape::DefaultMessageManager,
    */
   void Init(MPI_Comm comm) override {
     grape::DefaultMessageManager::Init(comm);
-    grape::Communicator::InitCommunicator(comm);
+    InitCommunicator(comm);
   }
 };
 }  // namespace gs
