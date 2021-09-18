@@ -85,6 +85,39 @@ function run_vy() {
   echo "Finished running app ${executable} with vineyard."
 }
 
+function run_vy_2() {
+  num_procs=$1
+  shift
+  executable=$1
+  shift
+  socket_file=$1
+  shift
+  label_num=$1
+  shift
+  e_prefix=$1
+  shift
+  v_prefix=$1
+  shift
+
+  cmd="${cmd_prefix} -n ${num_procs} --host localhost:${num_procs} ${executable} ${socket_file}"
+
+  cmd="${cmd} ${label_num}"
+  for ((i = 0; i < label_num; i++)); do
+    cmd="${cmd} '${e_prefix}_${i}#src_label=v${i}&dst_label=v${i}&label=e${i}'"
+  done
+
+  cmd="${cmd} ${label_num}"
+  for ((i = 0; i < label_num; i++)); do
+    cmd="${cmd} '${v_prefix}_${i}#label=v${i}'"
+  done
+
+  cmd="${cmd} $*"
+
+  echo "${cmd}"
+  eval "${cmd}"
+
+  echo "Finished running app ${executable} with vineyard."
+}
 cmd_prefix="mpirun"
 
 pushd "${ENGINE_HOME}"/build
@@ -112,4 +145,14 @@ run_projected=1
 run_property=1
 directed=1
 #GLOG_v=1 run_vy ${np} ./run_java_vertex_property_ctx "${socket_file}" 2 "${test_dir}"/new_property/v2_e2/twitter_e 2 "${test_dir}"/new_property/v2_e2/twitter_v 0 1 io.graphscope.example.sssp.PropertySSSP
-GLOG_v=1 run_vy ${np} ./run_java_property_app "${socket_file}" 2 "${test_dir}"/new_property/v2_e2/twitter_e 2 "${test_dir}"/new_property/v2_e2/twitter_v ${run_projected} ${run_property} ${directed} io.graphscope.example.sssp.SSSPDefault
+if [ "$run_projected"x = "0"x ]
+then
+    echo "run arrow fragment"
+    GLOG_v=1 run_vy ${np} ./run_java_property_app "${socket_file}" 2 "${test_dir}"/new_property/v2_e2/twitter_e 2 "${test_dir}"/new_property/v2_e2/twitter_v ${run_projected} ${run_property} ${directed} io.graphscope.example.sssp.SSSPDefault
+elif [ "$run_projected"x = "1"x ]
+then 
+    echo "run projected fragment"
+    GLOG_v=1 run_vy_2 ${np} ./run_java_property_app "${socket_file}" 4 "${test_dir}"/projected_property/twitter_property_e "${test_dir}"/projected_property/twitter_property_v ${run_projected} ${run_property} ${directed} io.graphscope.example.projected.SSSPProjected
+fi
+
+

@@ -27,6 +27,7 @@ limitations under the License.
 #include <vector>
 #include "jni.h"
 
+#include "core/config.h"
 #include "core/parallel/message_in_buffer.h"
 #include "grape/communication/communicator.h"
 #include "grape/communication/sync_comm.h"
@@ -71,7 +72,7 @@ class ParallelJavaMessageManager : public grape::MessageManagerBase,
 
     sent_size_ = 0;
 
-    grape::Communicator::InitCommunicator(comm);
+    InitCommunicator(comm);
   }
 
   /**
@@ -88,7 +89,7 @@ class ParallelJavaMessageManager : public grape::MessageManagerBase,
       auto& rq = recv_queues_[round_ % 2];
       if (!to_self_.empty()) {
         for (auto& iarc : to_self_) {
-          OutArchive oarc(std::move(iarc));
+          grape::OutArchive oarc(std::move(iarc));
           rq.Put(std::move(oarc));
         }
         to_self_.clear();
@@ -122,7 +123,7 @@ class ParallelJavaMessageManager : public grape::MessageManagerBase,
     MPI_Allreduce(&flag[0], &ret[0], 2, MPI_INT, MPI_SUM, comm_);
     if (ret[1] > 0) {
       terminate_info_.success = false;
-      AllToAll(terminate_info_.info, comm_);
+      grape::AllToAll(terminate_info_.info, comm_);
       return true;
     }
     return (ret[0] == 0);
@@ -156,7 +157,7 @@ class ParallelJavaMessageManager : public grape::MessageManagerBase,
   /**
    * @brief Inherit
    */
-  const TerminateInfo& GetTerminateInfo() const override {
+  const grape::TerminateInfo& GetTerminateInfo() const override {
     return terminate_info_;
   }
 
@@ -182,12 +183,12 @@ class ParallelJavaMessageManager : public grape::MessageManagerBase,
     }
   }
 
-  std::vector<ThreadLocalMessageBuffer<ParallelMessageManager>>& Channels() {
+  std::vector<grape::ThreadLocalMessageBuffer<ParallelJavaMessageManager>>& Channels() {
     return channels_;
   }
 
   inline bool GetMessageInBuffer(MessageInBuffer& buf) {
-    OutArchive arc;
+    grape::OutArchive arc;
     auto& que = recv_queues_[round_ % 2];
     if (que.Get(arc)) {
       buf.Init(std::move(arc));
@@ -203,8 +204,8 @@ class ParallelJavaMessageManager : public grape::MessageManagerBase,
    * @param fid Destination fragment id.
    * @param arc Message buffer.
    */
-  inline void SendRawMsgByFid(fid_t fid, InArchive&& arc) {
-    std::pair<fid_t, InArchive> item;
+  inline void SendRawMsgByFid(fid_t fid, grape::InArchive&& arc) {
+    std::pair<fid_t, grape::InArchive> item;
     item.first = fid;
     item.second = std::move(arc);
     sending_queue_.Put(std::move(item));
@@ -311,7 +312,7 @@ class ParallelJavaMessageManager : public grape::MessageManagerBase,
             typename GRAPH_T::vertex_t vertex(0);
             MESSAGE_T msg;
             auto& que = recv_queues_[round_ % 2];
-            OutArchive arc;
+            grape::OutArchive arc;
             while (que.Get(arc)) {
               while (!arc.Empty()) {
                 arc >> id >> msg;
@@ -348,7 +349,7 @@ class ParallelJavaMessageManager : public grape::MessageManagerBase,
           [&](int tid) {
             MESSAGE_T msg;
             auto& que = recv_queues_[round_ % 2];
-            OutArchive arc;
+            grape::OutArchive arc;
             while (que.Get(arc)) {
               while (!arc.Empty()) {
                 arc >> msg;
@@ -374,7 +375,7 @@ class ParallelJavaMessageManager : public grape::MessageManagerBase,
     send_thread_ = std::thread(
         [this](int msg_round) {
           std::vector<MPI_Request> reqs;
-          std::pair<fid_t, InArchive> item;
+          std::pair<fid_t, grape::InArchive> item;
           while (sending_queue_.Get(item)) {
             if (item.second.GetSize() == 0) {
               continue;
@@ -422,7 +423,7 @@ class ParallelJavaMessageManager : public grape::MessageManagerBase,
                  MPI_STATUS_IGNORE);
         recv_queues_[tag % 2].DecProducerNum();
       } else {
-        OutArchive arc(count);
+        grape::OutArchive arc(count);
         MPI_Recv(arc.GetBuffer(), count, MPI_CHAR, status.MPI_SOURCE, tag,
                  comm_, MPI_STATUS_IGNORE);
         recv_queues_[tag % 2].Put(std::move(arc));
@@ -451,7 +452,7 @@ class ParallelJavaMessageManager : public grape::MessageManagerBase,
                    MPI_STATUS_IGNORE);
           recv_queues_[tag % 2].DecProducerNum();
         } else {
-          OutArchive arc(count);
+          grape::OutArchive arc(count);
           MPI_Recv(arc.GetBuffer(), count, MPI_CHAR, status.MPI_SOURCE, tag,
                    comm_, MPI_STATUS_IGNORE);
           recv_queues_[tag % 2].Put(std::move(arc));
@@ -509,7 +510,7 @@ class ParallelJavaMessageManager : public grape::MessageManagerBase,
   void resetRecvQueue() {
     auto& curr_recv_queue = recv_queues_[round_ % 2];
     if (round_) {
-      OutArchive arc;
+      grape::OutArchive arc;
       while (curr_recv_queue.Get(arc)) {}
     }
     curr_recv_queue.SetProducerNum(fnum_);
@@ -519,27 +520,27 @@ class ParallelJavaMessageManager : public grape::MessageManagerBase,
 
   fid_t fid_;
   fid_t fnum_;
-  CommSpec comm_spec_;
+  grape::CommSpec comm_spec_;
 
   MPI_Comm comm_;
 
-  std::vector<InArchive> to_self_;
-  std::vector<InArchive> to_others_;
+  std::vector<grape::InArchive> to_self_;
+  std::vector<grape::InArchive> to_others_;
 
-  std::vector<ThreadLocalMessageBuffer<ParallelMessageManager>> channels_;
+  std::vector<grape::ThreadLocalMessageBuffer<ParallelJavaMessageManager>> channels_;
   int round_;
 
-  BlockingQueue<std::pair<fid_t, InArchive>> sending_queue_;
+  grape::BlockingQueue<std::pair<fid_t, grape::InArchive>> sending_queue_;
   std::thread send_thread_;
 
-  std::array<BlockingQueue<OutArchive>, 2> recv_queues_;
+  std::array<grape::BlockingQueue<grape::OutArchive>, 2> recv_queues_;
   std::thread recv_thread_;
 
   bool force_continue_;
   size_t sent_size_;
 
   bool force_terminate_;
-  TerminateInfo terminate_info_;
+  grape::TerminateInfo terminate_info_;
 };
 }  // namespace gs
 

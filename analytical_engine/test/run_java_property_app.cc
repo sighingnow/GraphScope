@@ -374,7 +374,7 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string cpp_v6d_tensor_prefix = out_prefix + "/cpp";
     output_vineyard_tensor(client, ndarray_object, comm_spec,
-                           cpp_v6d_tensor_prefix, 7);
+                           cpp_v6d_tensor_prefix);
   }
   LOG(INFO) << "[2] cpp finish test vineyard tensor";
 }
