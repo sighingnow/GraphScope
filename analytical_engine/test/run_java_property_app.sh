@@ -142,17 +142,18 @@ export RUN_JVM_OPTS="-Djava.library.path=${GRAPE_SDK_BUILD_NATIVE}:${VINEYARD_GR
 #-verbose:class 
 np=1
 run_projected=1
-run_property=1
+run_property=0
 directed=1
 #GLOG_v=1 run_vy ${np} ./run_java_vertex_property_ctx "${socket_file}" 2 "${test_dir}"/new_property/v2_e2/twitter_e 2 "${test_dir}"/new_property/v2_e2/twitter_v 0 1 io.graphscope.example.sssp.PropertySSSP
 if [ "$run_projected"x = "0"x ]
 then
     echo "run arrow fragment"
-    GLOG_v=1 run_vy ${np} ./run_java_property_app "${socket_file}" 2 "${test_dir}"/new_property/v2_e2/twitter_e 2 "${test_dir}"/new_property/v2_e2/twitter_v ${run_projected} ${run_property} ${directed} io.graphscope.example.sssp.SSSPDefault
+    GLOG_v=1 run_vy ${np} ./run_java_property_app "${socket_file}" 2 "${test_dir}"/new_property/v2_e2/twitter_e 2 "${test_dir}"/new_property/v2_e2/twitter_v ${run_projected} ${run_property} ${directed} io.graphscope.example.sssp.PropertySSSP
 elif [ "$run_projected"x = "1"x ]
 then 
     echo "run projected fragment"
-    GLOG_v=1 run_vy_2 ${np} ./run_java_property_app "${socket_file}" 4 "${test_dir}"/projected_property/twitter_property_e "${test_dir}"/projected_property/twitter_property_v ${run_projected} ${run_property} ${directed} io.graphscope.example.projected.SSSPProjected
+    #GLOG_v=1 run_vy_2 ${np} ./run_java_property_app "${socket_file}" 4 "${test_dir}"/projected_property/twitter_property_e "${test_dir}"/projected_property/twitter_property_v ${run_projected} ${run_property} ${directed} io.graphscope.example.projected.SSSPProjected
+    GLOG_v=1 run_vy_2 ${np} ./run_vy_app "${socket_file}" 4 "${test_dir}"/projected_property/twitter_property_e "${test_dir}"/projected_property/twitter_property_v  1
 fi
 
 

@@ -461,8 +461,8 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
     LOG(INFO) << "source vertex" << vertex.GetValue();
     auto adjlist = projected_fragment->GetOutgoingAdjList(vertex);
     for (auto e : adjlist) {
-      v = e.neighbor();
-      double edata = static_cast<double>(e.get_data());
+      auto v = e.neighbor();
+      int64_t edata = static_cast<int64_t>(e.get_data());
       LOG(INFO) << v.GetValue() << "edata: " << edata;
     }
     {
