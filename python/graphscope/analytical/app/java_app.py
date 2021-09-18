@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 
+from coordinator.gscoordinator.utils import get_lib_path
 import hashlib
 import json
 import logging
@@ -160,7 +161,11 @@ class JavaAppDagNode(AppDAGNode):
 
         user_jni_name = self._app_assets.signature()
         user_jni_dir = os.path.join(udf_workspace, user_jni_name)
-        user_jni_name_lib = os.path.join(user_jni_dir, "lib{}.so".format(user_jni_name))
+        # Here we provide the full path to lib for server, because jvm is created for once,
+        # when used at second time(app), we need to load jni library, but it will not be in 
+        # the library.path. But loading with absolute path is possible.
+        
+        user_jni_name_lib = os.path.join(user_jni_dir, get_lib_path(user_jni_name))
         user_jar = os.path.join(user_jni_dir, self._app_assets.jar_path)
         assert (os.path.isfile(user_jni_name_lib)), "{} not found ".format(user_jni_name_lib)
         assert (os.path.isfile(user_jar)), "{} not found ".format(user_jar)
@@ -186,10 +191,19 @@ class JavaAppDagNode(AppDAGNode):
             frag_name_for_java = self._graph.template_str
         kwargs_extend = dict(
             jvm_runtime_opt=jvm_runtime_opt_impl,
-            user_library_name = user_jni_name,
+            user_library_name = user_jni_name_lib,
             frag_name = frag_name_for_java,
             **kwargs
         )
 
         logger.info("dumping to json {}".format(json.dumps(kwargs_extend)))
         return create_context_node(context_type, self, self._graph, json.dumps(kwargs_extend))
+    def get_lib_path(app_dir, app_name):
+        lib_path = ""
+        if sys.platform == "linux" or sys.platform == "linux2":
+            lib_path = os.path.join(app_dir, "lib%s.so" % app_name)
+        elif sys.platform == "darwin":
+            lib_path = os.path.join(app_dir, "lib%s.dylib" % app_name)
+        else:
+            raise RuntimeError("Unsupported platform.")
+        return lib_path
