@@ -495,6 +495,12 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
                   << projected_fragment->GetData(vertex);
         cnt += 1;
       }
+
+      // edata array
+      auto edata_array = projected_fragment->getEdataArrayAccessor();
+      for (uint64_t eid = 0; eid < 10; ++eid) {
+        LOG(INFO) << "eid: " << eid << " data:" << edata_array[eid];
+      }
       RunProjectedWCC(projected_fragment, comm_spec, "./output_projected_wcc/");
       RunProjectedSSSP(projected_fragment, comm_spec,
                        "./output_projected_sssp/");
