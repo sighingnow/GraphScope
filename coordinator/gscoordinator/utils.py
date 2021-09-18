@@ -228,7 +228,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
             JAVA_APP_FFI_SOURCE_PATH,
         ]
         java_env=os.environ.copy()
-        PRE_CP = "./{}:{}:{}".format(java_jar_path,  GRAPE_SDK_JAR, GRAPE_PROCESSOR_JAR)
+        PRE_CP = "{}:{}:{}".format(java_jar_path,  GRAPE_SDK_JAR, GRAPE_PROCESSOR_JAR)
         java_env["JVM_OPTS"] = "-Djava.class.path={}".format(PRE_CP)
         logger.info("%s, %s", " ".join(java_codegen_commands) , str(java_env["JVM_OPTS"]))
         java_codegen_process = subprocess.Popen(

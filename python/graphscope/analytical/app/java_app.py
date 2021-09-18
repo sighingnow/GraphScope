@@ -16,7 +16,6 @@
 # limitations under the License.
 #
 
-from coordinator.gscoordinator.utils import get_lib_path
 import hashlib
 import json
 import logging
@@ -37,7 +36,8 @@ from graphscope.framework.app import check_argument
 import os
 from glob import glob
 from pathlib import Path
-__all__ = ["JavaAppAssets"]
+import sys
+__all__ = ["JavaApp"]
 
 logger = logging.getLogger("graphscope")
 
@@ -77,17 +77,16 @@ class JavaApp(AppAssets):
             gs_config["app"][0]["compatible_graph"] = ["vineyard::ArrowFragment"]
             gs_config["app"][0]["context_type"] = "java_pie_property_default_context"
             gar.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
-            super().__init__("java","java_pie_property_default_context",gar.read_bytes())
+            super().__init__("java_app","java_pie_property_default_context",gar.read_bytes())
         elif java_app_type == "projected":
             self._cpp_driver_class = "gs::JavaPIEProjectedDefaultApp"
             gs_config["app"][0]["class_name"] = self.cpp_driver_class
             gs_config["app"][0]["compatible_graph"] = ["gs::ArrowProjectedFragment"]
             gs_config["app"][0]["context_type"] = "java_pie_projected_default_context"
             gar.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
-            super().__init__("java","java_pie_projected_default_context",gar.read_bytes())
+            super().__init__("java_app","java_pie_projected_default_context",gar.read_bytes())
         else:
             raise RuntimeError("Unexpected app type: {}".format(java_app_type))
-            
     @property
     def java_app_class(self):
         return self._java_app_class
@@ -164,8 +163,7 @@ class JavaAppDagNode(AppDAGNode):
         # Here we provide the full path to lib for server, because jvm is created for once,
         # when used at second time(app), we need to load jni library, but it will not be in 
         # the library.path. But loading with absolute path is possible.
-        
-        user_jni_name_lib = os.path.join(user_jni_dir, get_lib_path(user_jni_name))
+        user_jni_name_lib = os.path.join(user_jni_dir, self.get_lib_path(user_jni_name))
         user_jar = os.path.join(user_jni_dir, self._app_assets.jar_path)
         assert (os.path.isfile(user_jni_name_lib)), "{} not found ".format(user_jni_name_lib)
         assert (os.path.isfile(user_jar)), "{} not found ".format(user_jar)
@@ -198,12 +196,12 @@ class JavaAppDagNode(AppDAGNode):
 
         logger.info("dumping to json {}".format(json.dumps(kwargs_extend)))
         return create_context_node(context_type, self, self._graph, json.dumps(kwargs_extend))
-    def get_lib_path(app_dir, app_name):
+    def get_lib_path(self, app_name):
         lib_path = ""
         if sys.platform == "linux" or sys.platform == "linux2":
-            lib_path = os.path.join(app_dir, "lib%s.so" % app_name)
+            lib_path = "lib%s.so" % app_name
         elif sys.platform == "darwin":
-            lib_path = os.path.join(app_dir, "lib%s.dylib" % app_name)
+            lib_path = "lib%s.dylib" % app_name
         else:
             raise RuntimeError("Unsupported platform.")
         return lib_path
