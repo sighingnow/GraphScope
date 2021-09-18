@@ -317,9 +317,8 @@ void QueryProjected(vineyard::Client& client,
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string java_v6d_tensor_prefix = out_prefix + "/java_projected";
     vineyard::AnyType expected_data_type = vineyard::AnyType::Int64;  // 4
-    output_vineyard_tensor<uint64_t>(client, ndarray_object, comm_spec,
-                                     java_v6d_tensor_prefix,
-                                     expected_data_type);
+    output_vineyard_tensor<int64_t>(client, ndarray_object, comm_spec,
+                                    java_v6d_tensor_prefix, expected_data_type);
   }
   LOG(INFO) << "[2] java projected finish test vineyard tensor";
 }
