@@ -35,6 +35,7 @@
 #include "java_pie/java_pie_property_default_app.h"
 #include "proto/graph_def.pb.h"
 #include "sssp/sssp.h"
+#include "vineyard/basic/ds/types.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/arrow_fragment.h"
 #include "vineyard/graph/utils/grape_utils.h"
@@ -137,7 +138,8 @@ void output_data_frame(const grape::CommSpec& comm_spec,
 void output_vineyard_tensor(vineyard::Client& client,
                             vineyard::ObjectID tensor_object,
                             const grape::CommSpec& comm_spec,
-                            const std::string& prefix) {
+                            const std::string& prefix,
+                            vineyard::AnyType& expected_type) {
   auto stored_tensor = std::dynamic_pointer_cast<vineyard::GlobalTensor>(
       client.GetObject(tensor_object));
   auto const& shape = stored_tensor->shape();
@@ -153,7 +155,7 @@ void output_vineyard_tensor(vineyard::Client& client,
   if (comm_spec.local_id() == 0) {
     for (auto obj : local_chunks) {
       auto single_tensor = std::dynamic_pointer_cast<vineyard::ITensor>(obj);
-      if (single_tensor->value_type() != vineyard::AnyType::Double) {
+      if (single_tensor->value_type() != expected_type) {
         LOG(FATAL) << "type not correct...";
       }
       CHECK_EQ(single_tensor->shape().size(), 1);
@@ -240,8 +242,9 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     CHECK(tmp);
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string java_v6d_tensor_prefix = out_prefix + "/java";
+    vineyard::AnyType expected_data_type = vineyard::AnyType::Double;
     output_vineyard_tensor(client, ndarray_object, comm_spec,
-                           java_v6d_tensor_prefix);
+                           java_v6d_tensor_prefix, expected_data_type);
   }
   LOG(INFO) << "[2] java finish test vineyard tensor";
 }
@@ -310,8 +313,9 @@ void QueryProjected(vineyard::Client& client,
     CHECK(tmp);
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string java_v6d_tensor_prefix = out_prefix + "/java_projected";
+    vineyard::AnyType expected_data_type = vineyard::AnyType::Int64;  // 3
     output_vineyard_tensor(client, ndarray_object, comm_spec,
-                           java_v6d_tensor_prefix);
+                           java_v6d_tensor_prefix, expected_data_type);
   }
   LOG(INFO) << "[2] java projected finish test vineyard tensor";
 }
@@ -373,8 +377,9 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     CHECK(tmp);
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string cpp_v6d_tensor_prefix = out_prefix + "/cpp";
+    vineyard::AnyType expected_data_type = vineyard::AnyType::Double;  // 3
     output_vineyard_tensor(client, ndarray_object, comm_spec,
-                           cpp_v6d_tensor_prefix, 7);
+                           cpp_v6d_tensor_prefix, expected_data_type);
   }
   LOG(INFO) << "[2] cpp finish test vineyard tensor";
 }
