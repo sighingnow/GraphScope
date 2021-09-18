@@ -213,6 +213,7 @@ class JavaContextBase : public grape::ContextBase {
     _app_class_name = java_class_name_dash_to_slash(app_class);
     return true;
   }
+  // Loading jni library with absolute path
   void load_jni_library(JNIEnv* env, std::string& user_library_name) {
     jclass grape_load_library =
         env->FindClass("com/alibaba/grape/utils/LoadLibrary");
@@ -247,6 +248,7 @@ class JavaContextBase : public grape::ContextBase {
     LOG(INFO) << "loaded specified user jni library: " << user_library_name;
   }
 
+  // user library name should be absolute
   std::string parse_params_and_setup_jvm_env(const std::string& params,
                                              std::string& user_library_name) {
     boost::property_tree::ptree pt;
