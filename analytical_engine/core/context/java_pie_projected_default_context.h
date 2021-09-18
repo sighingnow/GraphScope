@@ -115,10 +115,28 @@ class JavaPIEProjectedDefaultContextWrapper
         std::shared_ptr<inner_ctx_type> inner_ctx_impl_shared(inner_ctx_impl);
         _inner_context_wrapper = std::make_shared<inner_ctx_wrapper_type>(
             ctx_name, frag_wrapper, inner_ctx_impl_shared);
+      } else if (data_type == "int32_t") {
+        using inner_ctx_type = grape::VertexDataContext<FRAG_T, int32_t>;
+        using inner_ctx_wrapper_type =
+            VertexDataContextWrapper<FRAG_T, int32_t>;
+        auto inner_ctx_impl =
+            reinterpret_cast<inner_ctx_type*>(ctx_->inner_context_addr());
+        std::shared_ptr<inner_ctx_type> inner_ctx_impl_shared(inner_ctx_impl);
+        _inner_context_wrapper = std::make_shared<inner_ctx_wrapper_type>(
+            ctx_name, frag_wrapper, inner_ctx_impl_shared);
       } else if (data_type == "uint64_t") {
         using inner_ctx_type = grape::VertexDataContext<FRAG_T, uint64_t>;
         using inner_ctx_wrapper_type =
             VertexDataContextWrapper<FRAG_T, uint64_t>;
+        auto inner_ctx_impl =
+            reinterpret_cast<inner_ctx_type*>(ctx_->inner_context_addr());
+        std::shared_ptr<inner_ctx_type> inner_ctx_impl_shared(inner_ctx_impl);
+        _inner_context_wrapper = std::make_shared<inner_ctx_wrapper_type>(
+            ctx_name, frag_wrapper, inner_ctx_impl_shared);
+      } else if (data_type == "int64_t") {
+        using inner_ctx_type = grape::VertexDataContext<FRAG_T, int64_t>;
+        using inner_ctx_wrapper_type =
+            VertexDataContextWrapper<FRAG_T, int64_t>;
         auto inner_ctx_impl =
             reinterpret_cast<inner_ctx_type*>(ctx_->inner_context_addr());
         std::shared_ptr<inner_ctx_type> inner_ctx_impl_shared(inner_ctx_impl);
