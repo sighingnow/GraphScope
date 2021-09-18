@@ -71,7 +71,7 @@ ANALYTICAL_BUILD_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "build")
 ANALYTICAL_ENGINE_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "build", "grape_engine")
 JAVA_APP_PREPROCESSER = os.path.join(ANALYTICAL_ENGINE_HOME, "build", "run_java_app_preprocess")
 JAVA_APP_CONF_PATH_BASE = "java_pie.conf"
-JAVA_APP_FFI_SOURCE_PATH_BASE = "gs-ffi"
+JAVA_APP_FFI_SOURCE_PATH_BASE = "gs-ffi-"
 M2_REPO_PATH = os.path.join(str(Path.home()), ".m2/repository/com/alibaba/grape")
 #GRAPE_DEMO_JAR=os.path.join(M2_REPO_PATH, "grape-demo/0.1/grape-demo-0.1-jar-with-dependencies.jar")
 GRAPE_PROCESSOR_JAR=os.path.join(M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-jar-with-dependencies.jar")
@@ -211,7 +211,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     ]
     if app_type == "java_pie":
         #for java need to run preprocess
-        JAVA_APP_FFI_SOURCE_PATH = os.path.join(workspace, JAVA_APP_FFI_SOURCE_PATH_BASE)
+        JAVA_APP_FFI_SOURCE_PATH = os.path.join(workspace, JAVA_APP_FFI_SOURCE_PATH_BASE, library_name)
         JAVA_APP_JOB_CONF_PATH = os.path.join(workspace, JAVA_APP_CONF_PATH_BASE)
         cmake_commands += ["-DJAVA_PIE_APP=True", "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
         if app_class == "gs::JavaPIEPropertyDefaultApp":
