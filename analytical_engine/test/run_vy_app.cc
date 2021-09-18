@@ -487,6 +487,13 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
         double edata = static_cast<double>(e.get_data());
         LOG(INFO) << v.GetValue() << "edata: " << edata;
       }
+      int cnt = 0;
+
+      while (cnt < 5) {
+        vertex.SetValue(cnt);
+        LOG(INFO) << "vertex: " << vertex.GetValue() << " "
+                  << projected_fragment->GetData(vertex);
+      }
       RunProjectedWCC(projected_fragment, comm_spec, "./output_projected_wcc/");
       RunProjectedSSSP(projected_fragment, comm_spec,
                        "./output_projected_sssp/");
