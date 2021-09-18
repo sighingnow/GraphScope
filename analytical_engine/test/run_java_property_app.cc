@@ -134,7 +134,7 @@ void output_data_frame(const grape::CommSpec& comm_spec,
     CHECK(oarc.Empty());
   }
 }
-
+template<typename DATA_T>
 void output_vineyard_tensor(vineyard::Client& client,
                             vineyard::ObjectID tensor_object,
                             const grape::CommSpec& comm_spec,
@@ -166,7 +166,7 @@ void output_vineyard_tensor(vineyard::Client& client,
       LOG(INFO) << "[worker-" << comm_spec.worker_id() << "]: tensor chunk-"
                 << single_tensor->partition_index()[0] << ": " << length;
       auto casted_tensor =
-          std::dynamic_pointer_cast<vineyard::Tensor<double>>(single_tensor);
+          std::dynamic_pointer_cast<vineyard::Tensor<DATA_T>>(single_tensor);
       std::string output_path =
           prefix + "_v6d_single_tensor_" +
           std::to_string(single_tensor->partition_index()[0]) + ".dat";
@@ -245,7 +245,7 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string java_v6d_tensor_prefix = out_prefix + "/java";
     vineyard::AnyType expected_data_type = vineyard::AnyType::Double;
-    output_vineyard_tensor(client, ndarray_object, comm_spec,
+    output_vineyard_tensor<double>(client, ndarray_object, comm_spec,
                            java_v6d_tensor_prefix, expected_data_type);
   }
   LOG(INFO) << "[2] java finish test vineyard tensor";
@@ -315,8 +315,8 @@ void QueryProjected(vineyard::Client& client,
     CHECK(tmp);
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string java_v6d_tensor_prefix = out_prefix + "/java_projected";
-    vineyard::AnyType expected_data_type = vineyard::AnyType::Int64;  // 3
-    output_vineyard_tensor(client, ndarray_object, comm_spec,
+    vineyard::AnyType expected_data_type = vineyard::AnyType::UInt64;  // 4
+    output_vineyard_tensor<uint64_t>(client, ndarray_object, comm_spec,
                            java_v6d_tensor_prefix, expected_data_type);
   }
   LOG(INFO) << "[2] java projected finish test vineyard tensor";
@@ -380,7 +380,7 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string cpp_v6d_tensor_prefix = out_prefix + "/cpp";
     vineyard::AnyType expected_data_type = vineyard::AnyType::Double;  // 3
-    output_vineyard_tensor(client, ndarray_object, comm_spec,
+    output_vineyard_tensor<double>(client, ndarray_object, comm_spec,
                            cpp_v6d_tensor_prefix, expected_data_type);
   }
   LOG(INFO) << "[2] cpp finish test vineyard tensor";
