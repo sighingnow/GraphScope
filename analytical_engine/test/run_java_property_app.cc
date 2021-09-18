@@ -134,7 +134,7 @@ void output_data_frame(const grape::CommSpec& comm_spec,
     CHECK(oarc.Empty());
   }
 }
-template<typename DATA_T>
+template <typename DATA_T>
 void output_vineyard_tensor(vineyard::Client& client,
                             vineyard::ObjectID tensor_object,
                             const grape::CommSpec& comm_spec,
@@ -246,7 +246,7 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     std::string java_v6d_tensor_prefix = out_prefix + "/java";
     vineyard::AnyType expected_data_type = vineyard::AnyType::Double;
     output_vineyard_tensor<double>(client, ndarray_object, comm_spec,
-                           java_v6d_tensor_prefix, expected_data_type);
+                                   java_v6d_tensor_prefix, expected_data_type);
   }
   LOG(INFO) << "[2] java finish test vineyard tensor";
 }
@@ -317,7 +317,8 @@ void QueryProjected(vineyard::Client& client,
     std::string java_v6d_tensor_prefix = out_prefix + "/java_projected";
     vineyard::AnyType expected_data_type = vineyard::AnyType::UInt64;  // 4
     output_vineyard_tensor<uint64_t>(client, ndarray_object, comm_spec,
-                           java_v6d_tensor_prefix, expected_data_type);
+                                     java_v6d_tensor_prefix,
+                                     expected_data_type);
   }
   LOG(INFO) << "[2] java projected finish test vineyard tensor";
 }
@@ -381,7 +382,7 @@ void RunSSSP(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
     std::string cpp_v6d_tensor_prefix = out_prefix + "/cpp";
     vineyard::AnyType expected_data_type = vineyard::AnyType::Double;  // 3
     output_vineyard_tensor<double>(client, ndarray_object, comm_spec,
-                           cpp_v6d_tensor_prefix, expected_data_type);
+                                   cpp_v6d_tensor_prefix, expected_data_type);
   }
   LOG(INFO) << "[2] cpp finish test vineyard tensor";
 }
@@ -399,7 +400,10 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   pt.put("src", "4");
   pt.put("app_class", app_name);
   // The path to sdk jni library
-  pt.put("user_library_name", "vineyard-jni");
+  // In production this should be replaced with user'jni lib.
+  pt.put("user_library_name",
+         "/home/admin/GAE-ODPSGraph/pie-sdk/vineyard-graph/target/classes/"
+         "natives/linux_64/libvineyard-jni.so");
   char* jvm_opts = getenv("RUN_JVM_OPTS");
 
   pt.put("jvm_runtime_opt", std::string(jvm_opts));
