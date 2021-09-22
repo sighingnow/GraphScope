@@ -33,6 +33,8 @@ from graphscope.framework.app import project_to_simple
 from graphscope.analytical.udf.utils import InMemoryZip
 from graphscope.analytical.udf.utils import CType
 from graphscope.framework.app import check_argument
+from graphscope.framework.errors import InvalidArgumentError
+from graphscope.proto import graph_def_pb2
 import os
 from glob import glob
 from pathlib import Path
@@ -112,6 +114,10 @@ class JavaApp(AppAssets):
         return s.hexdigest()
     def __call__(self, graph : Graph, *args, **kwargs):
         kwargs_extend = dict(app_class = self.java_app_class, **kwargs)
+        if not hasattr(graph, "graph_type"):
+            raise InvalidArgumentError("Missing graph_type attribute in graph object.")
+        if graph.graph_type == graph_def_pb2.ARROW_PROPERTY:
+            graph = graph._project_to_simple()
         app_ = graph.session._wrapper(JavaAppDagNode(graph, self))
         return app_(*args, **kwargs_extend)
 class JavaAppDagNode(AppDAGNode):
