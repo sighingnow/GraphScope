@@ -475,32 +475,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
     } else {
       std::shared_ptr<ProjectedFragmentType> projected_fragment =
           ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
-      projected_fragment->Construct(projected_fragment->meta());
 
-      using vertex_t = ProjectedFragmentType::vertex_t;
-      vertex_t vertex;
-      projected_fragment->GetInnerVertex(4, vertex);
-      LOG(INFO) << "source vertex" << vertex.GetValue();
-      auto adjlist = projected_fragment->GetOutgoingAdjList(vertex);
-      for (auto e : adjlist) {
-        vertex_t v = e.neighbor();
-        double edata = static_cast<double>(e.get_data());
-        LOG(INFO) << v.GetValue() << "edata: " << edata;
-      }
-      int cnt = 0;
-
-      while (cnt < 5) {
-        vertex.SetValue(cnt);
-        LOG(INFO) << "vertex: " << vertex.GetValue() << " "
-                  << projected_fragment->GetData(vertex);
-        cnt += 1;
-      }
-
-      // edata array
-      auto edata_array = projected_fragment->getEdataArrayAccessor();
-      for (uint64_t eid = 0; eid < 10; ++eid) {
-        LOG(INFO) << "eid: " << eid << " data:" << edata_array[eid];
-      }
       RunProjectedWCC(projected_fragment, comm_spec, "./output_projected_wcc/");
       RunProjectedSSSP(projected_fragment, comm_spec,
                        "./output_projected_sssp/");
