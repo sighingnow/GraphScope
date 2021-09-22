@@ -110,7 +110,7 @@ void set_codegen_path(std::string code_gen_path, std::string local_file_path) {
 // args 4: output path
 // args 4.. : other cmdline parameters
 void preprocess(int argc, char** argv) {
-  if (argc < 4) {
+  if (argc < 5) {
     LOG(INFO) << "at least 4 args required, jar path, main class name,conf "
                  "path, output path, and others received "
               << argc;
@@ -155,6 +155,7 @@ void preprocess(int argc, char** argv) {
     std::string jar_path = argv[2];
     std::string conf_path = argv[3];
     std::string ffi_output_path = argv[4];
+    std::string graphTemplateStr = argv[5];
     LOG(INFO) << "jar path" << jar_path << ", conf path " << conf_path
               << ", output destination:" << ffi_output_path;
 
@@ -164,7 +165,7 @@ void preprocess(int argc, char** argv) {
     for (int i = 0; i < argc; ++i) {
       std::string tmp = argv[i];
       LOG(INFO) << i << " " << tmp;
-      if (i > 4) {
+      if (i > 5) {
         std::string v = argv[i];
         args.push_back(v);
       }
@@ -211,10 +212,10 @@ void preprocess(int argc, char** argv) {
       LOG(ERROR) << "fail to find grape process class ";
       return;
     }
-    jmethodID process_method =
-        m.env()->GetStaticMethodID(grape_process_class, "scanAppAndGenerate",
-                                   "(Ljava/lang/String;Ljava/lang/String;Ljava/"
-                                   "lang/String;Z)Ljava/lang/String;");
+    jmethodID process_method = m.env()->GetStaticMethodID(
+        grape_process_class, "scanAppAndGenerate",
+        "(Ljava/lang/String;Ljava/lang/String;Ljava/"
+        "lang/String;Z;Ljava/lang/String;)Ljava/lang/String;");
     if (process_method == NULL) {
       LOG(ERROR) << "fail to find process method";
       return;
@@ -223,9 +224,12 @@ void preprocess(int argc, char** argv) {
     jstring conf_path_jstring = m.env()->NewStringUTF(conf_path.c_str());
     jstring ffi_output_path_jstring =
         m.env()->NewStringUTF(ffi_output_path.c_str());
+    jstring graphTemplate_jstring =
+        m.env()->NewStringUTF(graphTemplateStr.c_str());
     jstring jres = (jstring) m.env()->CallStaticObjectMethod(
         grape_process_class, process_method, jar_path_jstring,
-        conf_path_jstring, ffi_output_path_jstring, true);
+        conf_path_jstring, ffi_output_path_jstring, true,
+        graphTemplate_jstring);
     if (m.env()->ExceptionOccurred()) {
       LOG(ERROR) << "Exception occurred in grape process method";
       m.env()->ExceptionDescribe();

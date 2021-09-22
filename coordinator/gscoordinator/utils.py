@@ -224,8 +224,9 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
             JAVA_APP_PREPROCESSER,
             java_main_class,
             java_jar_path,
-            JAVA_APP_JOB_CONF_PATH, 
+            JAVA_APP_JOB_CONF_PATH,
             JAVA_APP_FFI_SOURCE_PATH,
+            graph_type,
         ]
         java_env=os.environ.copy()
         PRE_CP = "{}:{}:{}".format(java_jar_path,  GRAPE_SDK_JAR, GRAPE_PROCESSOR_JAR)
