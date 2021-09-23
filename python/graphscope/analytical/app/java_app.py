@@ -23,13 +23,9 @@ from graphscope.framework.graph import Graph
 from graphscope.framework.dag_utils import bind_app
 from graphscope.framework.context import create_context_node
 from graphscope.framework.dag import DAGNode
-from graphscope.framework.graph_schema import Property
 from graphscope.framework.app import AppDAGNode
-from graphscope.framework.app import load_app
 import yaml
 from graphscope.framework.app import AppAssets
-from graphscope.framework.app import not_compatible_for
-from graphscope.framework.app import project_to_simple
 from graphscope.analytical.udf.utils import InMemoryZip
 from graphscope.analytical.udf.utils import CType
 from graphscope.framework.app import check_argument
@@ -59,14 +55,11 @@ class JavaApp(AppAssets):
         self._full_jar_path = full_jar_path
         self._java_app_type = java_app_type
         gar = self._pack_jar(self._full_jar_path)
-        #TODO: remove this
-        java_main_class = "io.graphscope.example.TraverseMain"
         gs_config = {
             "app": [
                 {
                     "algo": "java_app",
                     "type": "java_pie",
-                    "java_main_class" : java_main_class,
                     "java_jar_path": self.jar_path,
                     "java_app_class": self.java_app_class
                 }

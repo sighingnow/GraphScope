@@ -70,7 +70,6 @@ ANALYTICAL_ENGINE_HOME = os.path.join(GRAPHSCOPE_HOME, "analytical_engine")
 ANALYTICAL_BUILD_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "build")
 ANALYTICAL_ENGINE_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "build", "grape_engine")
 JAVA_APP_PREPROCESSER = os.path.join(ANALYTICAL_ENGINE_HOME, "build", "run_java_app_preprocess")
-JAVA_APP_CONF_PATH_BASE = "java_pie.conf"
 JAVA_APP_FFI_SOURCE_PATH_BASE = "gs-ffi"
 M2_REPO_PATH = os.path.join(str(Path.home()), ".m2/repository/com/alibaba/grape")
 #GRAPE_DEMO_JAR=os.path.join(M2_REPO_PATH, "grape-demo/0.1/grape-demo-0.1-jar-with-dependencies.jar")
@@ -124,7 +123,6 @@ def get_app_sha256(attr):
         vd_type,
         md_type,
         pregel_combine,
-        java_main_class,
         java_jar_path,
         java_app_class,
     ) = _codegen_app_info(attr, DEFAULT_GS_CONFIG_FILE)
@@ -180,19 +178,17 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         vd_type,
         md_type,
         pregel_combine,
-        java_main_class,
         java_jar_path,
         java_app_class,
     ) = _codegen_app_info(attr, DEFAULT_GS_CONFIG_FILE)
     logger.info(
-        "Codegened application type: %s, app header: %s, app_class: %s, vd_type: %s, md_type: %s, pregel_combine: %s, java_main_class: %s, java_jar_path: %s, java_app_class: %s",
+        "Codegened application type: %s, app header: %s, app_class: %s, vd_type: %s, md_type: %s, pregel_combine: %s, java_jar_path: %s, java_app_class: %s",
         app_type,
         app_header,
         app_class,
         str(vd_type),
         str(md_type),
         str(pregel_combine),
-        str(java_main_class),
         str(java_jar_path),
         str(java_app_class),
     )
@@ -212,7 +208,6 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     if app_type == "java_pie":
         #for java need to run preprocess
         JAVA_APP_FFI_SOURCE_PATH = os.path.join(workspace, "{}-{}".format(JAVA_APP_FFI_SOURCE_PATH_BASE, library_name))
-        JAVA_APP_JOB_CONF_PATH = os.path.join(workspace, JAVA_APP_CONF_PATH_BASE)
         cmake_commands += ["-DJAVA_PIE_APP=True", "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
         if app_class == "gs::JavaPIEPropertyDefaultApp":
             cmake_commands += ["-DJAVA_PROPERTY=True"]
@@ -222,9 +217,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
             raise Exception("Unsupported type {}".format(app_class))
         java_codegen_commands = [
             JAVA_APP_PREPROCESSER,
-            java_main_class,
             java_jar_path,
-            JAVA_APP_JOB_CONF_PATH,
             JAVA_APP_FFI_SOURCE_PATH,
             graph_type,
         ]
@@ -244,7 +237,6 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         setattr(java_codegen_process, "stderr_watcher", java_codegen_stderr_watcher)
         java_codegen_process.wait()
         logger.info("java codegen complete, output to {}".format(JAVA_APP_FFI_SOURCE_PATH))
-        #TODO: current we don't send java_app.conf, pending this to the future
     elif app_type != "cpp_pie":
         if app_type == "cython_pregel":
             pxd_name = "pregel"
@@ -1059,7 +1051,6 @@ def _codegen_app_info(attr, meta_file: str):
                     None,
                     None,
                     None,
-                    None,
                 )
             if app_type in ("cython_pregel", "cython_pie"):
                 # cython app doesn't have c-header file
@@ -1072,7 +1063,6 @@ def _codegen_app_info(attr, meta_file: str):
                     app["pregel_combine"],
                     None,
                     None,
-                    None,
                 )
             if app_type == "java_pie":
                 return (
@@ -1082,7 +1072,6 @@ def _codegen_app_info(attr, meta_file: str):
                     None,  # vd_type,
                     None,  # md_type
                     None,  # pregel combine
-                    app["java_main_class"], # main class for preprocess
                     app["java_jar_path"],
                     app["java_app_class"], # the running java app class
                 )
