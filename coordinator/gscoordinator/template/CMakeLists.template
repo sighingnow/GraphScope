@@ -183,7 +183,9 @@ elseif (JAVA_PIE_APP)
                     ${ARROW_SHARED_LIB}
                     ${PROTO}
                     ${JAVA_JVM_LIBRARY}
-                    ${JNI_LIBRARIES})
+                    ${JNI_LIBRARIES}
+                    ${CMAKE_DL_LIBS}
+                    ${CMAKE_JNI_LINKER_FLAGS})
     set_target_properties(${FRAME_NAME} PROPERTIES COMPILE_FLAGS "-fPIC")
 elseif (PROPERTY_GRAPH_FRAME)
     add_library(${FRAME_NAME} SHARED ${ANALYTICAL_ENGINE_FRAME_DIR}/property_graph_frame.cc)
