@@ -217,7 +217,19 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     if app_type == "java_pie":
         #for java need to run preprocess
         JAVA_APP_FFI_SOURCE_PATH = os.path.join(workspace, "{}-{}".format(JAVA_APP_FFI_SOURCE_PATH_BASE, library_name))
-        cmake_commands += ["-DJAVA_PIE_APP=True", "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
+        LLVM11_HOME = os.environ.get("LLVM11_HOME")
+        if LLVM11_HOME is None:
+            raise Exception("LLVM11_HOME should be set")
+        LLVM_LLD = os.path.join(LLVM11_HOME, "/bin/ld.lld")
+        if not os.path.isfile(LLVM_LLD):
+            raise Exception("ld.lld not found")
+
+        cmake_commands += ["-DCMAKE_CXX_COMPILER=\"{}/bin/clang++\"".format(LLVM11_HOME) , 
+                            "-DLLVM_DIR={}/lib/cmake/llvm".format(LLVM11_HOME), 
+                            "-DCMAKE_CXX_FLAGS=\"-flto -fforce-emit-vtables\"",
+                            "-DCMAKE_JNI_LINKER_FLAGS=\"-fuse-ld={} -Xlinker -mllvm=-lto-embed-bitcode\"".format(LLVM_LLD),
+                            "-DJAVA_PIE_APP=True",
+                            "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
         if app_class == "gs::JavaPIEPropertyDefaultApp":
             cmake_commands += ["-DJAVA_PROPERTY=True"]
         elif app_class == "gs::JavaPIEProjectedDefaultApp":
