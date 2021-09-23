@@ -74,11 +74,22 @@ void output_nd_array(const grape::CommSpec& comm_spec,
     std::ofstream assembled_ostream;
     assembled_ostream.open(output_path);
     LOG(INFO) << "osream " << output_path;
-    for (int64_t i = 0; i < length1; ++i) {
-      double v;
-      oarc >> v;
-      assembled_ostream << v << std::endl;
+    if (data_type_expected == 7) {
+      for (int64_t i = 0; i < length1; ++i) {
+        double v;
+        oarc >> v;
+        assembled_ostream << v << std::endl;
+      }
+    } else if (data_type_expected == 4) {
+      for (int64_t i = 0; i < length1; ++i) {
+        int64_t v;
+        oarc >> v;
+        assembled_ostream << v << std::endl;
+      }
+    } else {
+      LOG(FATAL) << "Unregonizable data type " << data_type_expected;
     }
+
     LOG(INFO) << "output complete: " << oarc.Empty() << output_path;
     CHECK(oarc.Empty());
 
@@ -109,6 +120,7 @@ void output_data_frame(const grape::CommSpec& comm_spec,
     std::string assembled_col1_output_path =
         output_prefix + "_assembled_dataframe_col_1_" + col_name1 + ".dat";
     assembled_col1_ostream.open(assembled_col1_output_path);
+
     for (int64_t i = 0; i < length; ++i) {
       int64_t id;
       oarc >> id;
@@ -124,10 +136,20 @@ void output_data_frame(const grape::CommSpec& comm_spec,
     std::string assembled_col2_output_path =
         output_prefix + "_assembled_dataframe_col_2_" + col_name2 + ".dat";
     assembled_col2_ostream.open(assembled_col2_output_path);
-    for (int64_t i = 0; i < length; ++i) {
-      double data;
-      oarc >> data;
-      assembled_col2_ostream << data << std::endl;
+    if (expected_data_type== 7) {
+      for (int64_t i = 0; i < length; ++i) {
+        double data;
+        oarc >> data;
+        assembled_col2_ostream << data << std::endl;
+      }
+    } else if (expected_data_type== 4) {
+      for (int64_t i = 0; i < length; ++i) {
+        int64_t data;
+        oarc >> data;
+        assembled_col2_ostream << data << std::endl;
+      }
+    } else {
+      LOG(FATAL) << "Unregonizable data type " << expected_data_type;
     }
     assembled_col2_ostream.close();
 
@@ -395,16 +417,16 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(id));
 
   // test fragment data;
-  auto edge_data_column = fragment->edge_data_column<int64_t>(0, 0);
-  using vertex_t = FragmentType::vertex_t;
-  vertex_t vertex;
-  vertex.SetValue(4);
-  auto es = fragment->GetOutgoingAdjList(vertex, 0);
-  for (auto e : es) {
-    auto u = e.neighbor();
-    auto u_dist = static_cast<double>(e.template get_data<int64_t>(0));
-    LOG(INFO) << vertex.GetValue() << " " << u.GetValue() << " " << u_dist;
-  }
+  // auto edge_data_column = fragment->edge_data_column(0, 0);
+  // using vertex_t = FragmentType::vertex_t;
+  // vertex_t vertex;
+  // vertex.SetValue(4);
+  // auto es = fragment->GetOutgoingAdjList(vertex, 0);
+  // for (auto e : es) {
+  //   auto u = e.neighbor();
+  //   auto u_dist = static_cast<double>(e.template get_data<int64_t>(0));
+  //   LOG(INFO) << vertex.GetValue() << " " << u.GetValue() << " " << u_dist;
+  // }
 
   // 0. setup environment
   // gs::SetupEnv(comm_spec.local_num());
