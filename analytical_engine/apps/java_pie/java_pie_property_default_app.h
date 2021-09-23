@@ -33,8 +33,8 @@ namespace gs {
  */
 template <typename FRAG_T>
 class JavaPIEPropertyDefaultApp
-    : public PropertyAppBase<FRAG_T, JavaPIEPropertyDefaultContext<FRAG_T>>
-    : public grape::Communicator {
+    : public PropertyAppBase<FRAG_T, JavaPIEPropertyDefaultContext<FRAG_T>>,
+      public grape::Communicator {
  public:
   // specialize the templated worker.
   INSTALL_DEFAULT_PROPERTY_WORKER(JavaPIEPropertyDefaultApp<FRAG_T>,

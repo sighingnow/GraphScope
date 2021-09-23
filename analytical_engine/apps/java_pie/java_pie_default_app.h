@@ -32,8 +32,8 @@ namespace gs {
  * @tparam FRAG_T
  */
 template <typename FRAG_T>
-class JavaPIEDefaultApp : public AppBase<FRAG_T, JavaPIEDefaultContext<FRAG_T>>
-    : public grape::Communicator {
+class JavaPIEDefaultApp : public AppBase<FRAG_T, JavaPIEDefaultContext<FRAG_T>>,
+                          public grape::Communicator {
  public:
   // specialize the templated worker.
   INSTALL_DEFAULT_WORKER(JavaPIEDefaultApp<FRAG_T>,

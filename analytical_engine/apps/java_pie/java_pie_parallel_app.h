@@ -36,8 +36,8 @@ namespace gs {
  */
 template <typename FRAG_T>
 class JavaPIEParallelApp
-    : public grape::ParallelAppBase<FRAG_T, JavaPIEParallelContext<FRAG_T>>
-    : public grape::Communicator {
+    : public grape::ParallelAppBase<FRAG_T, JavaPIEParallelContext<FRAG_T>>,
+      public grape::Communicator {
  public:
   // specialize the templated worker.
   INSTALL_PARALLEL_WORKER(JavaPIEParallelApp<FRAG_T>,
