@@ -25,7 +25,6 @@
 #include "core/fragment/arrow_projected_fragment.h"
 #include "core/java/javasdk.h"
 #include "core/loader/arrow_fragment_loader.h"
-#include "core/loader/java_immutable_edgecut_fragment_loader.h"
 #include "core/object/fragment_wrapper.h"
 #include "glog/logging.h"
 #include "grape/grape.h"
