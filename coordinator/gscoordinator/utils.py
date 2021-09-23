@@ -256,6 +256,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         if sdk_optimized == False:
             #run optimization for sdk code
             run_llvm_grape_sdk_commands = [
+                "bash",
                 llvm4jni_run_bash,
                 "-output",
                 LLVM4JNI_SDK_OUTPUT,
@@ -264,7 +265,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
                 "-lib",
                 get_lib_path(GRAPE_SDK_BUILD, GRAPE_JNI_LIB_NAME)
             ]
-            logger.info("grape sdk gen: ".join(run_llvm_grape_sdk_commands))
+            logger.info("grape sdk gen: ", " ".join(run_llvm_grape_sdk_commands))
             grape_sdk_optimize_process = subprocess.Popen(
                 run_llvm_grape_sdk_commands,
                 env=optimize_env,
@@ -278,6 +279,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
             grape_sdk_optimize_process.wait()
             # for vineyard sdk
             run_llvm_v6d_sdk_commands = [ 
+                "bash",
                 llvm4jni_run_bash,
                 "-output",
                 LLVM4JNI_SDK_OUTPUT,
@@ -286,7 +288,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
                 "-lib",
                 get_lib_path(VINEYARD_GRAPH_SDK_BUILD, V6D_JNI_LIB_NAME)
             ]
-            logger.info("vineyard graph sdk gen: ".join(run_llvm_v6d_sdk_commands))
+            logger.info("vineyard graph sdk gen:", " ".join(run_llvm_v6d_sdk_commands))
             run_llvm_v6d_sdk_commands = subprocess.Popen(
                 run_llvm_grape_sdk_commands,
                 env=optimize_env,
@@ -375,6 +377,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     # After built user library, we do optimization 
     LLVM4JNI_USER_OUTPUT = os.path.join(workspace, "{}-{}".format(LLVM4JNI_USER_BASE, library_name))
     run_llvm_user_commands = [
+        "bash",
         llvm4jni_run_bash,
         "-output",
         LLVM4JNI_USER_OUTPUT,
@@ -383,7 +386,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         "-lib",
         lib_path
     ]
-    logger.info("user sdk gen: ".join(run_llvm_user_commands))
+    logger.info("user sdk gen:", " ".join(run_llvm_user_commands))
     grape_sdk_optimize_process = subprocess.Popen(
         run_llvm_user_commands,
         env=optimize_env,
