@@ -44,12 +44,11 @@ limitations under the License.
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/fragment_traits.h"
 namespace gs {
-static constexpr const char* _app_context_getter_name =
+static constexpr const char* APP_CONTEXT_GETTER_CLASS =
     "io/v6d/modules/graph/utils/AppContextGetter";
 /**
- * @brief ContextBase is the base class for all user-defined contexts. A
- * context manages data through the whole computation. The data won't be cleared
- * during supersteps.
+ * @brief JavaContextBase is the base class for JavaPropertyContext and
+ * JavaProjectedContext.
  *
  */
 template <typename FRAG_T>
@@ -58,82 +57,71 @@ class JavaContextBase : public grape::ContextBase {
   using fragment_t = FRAG_T;
 
   JavaContextBase(const FRAG_T& fragment)
-      : _app_class_name(NULL),
-        _app_object(NULL),
-        _context_object(NULL),
-        _frag_object(NULL),
-        _mm_object(NULL),
+      : app_class_name_(NULL),
+        inner_ctx_addr_(0),
         fragment_(fragment),
-        inner_ctx_addr_(0) {}
+        app_object_(NULL),
+        context_object_(NULL),
+        fragment_object_(NULL),
+        mm_object_(NULL) {}
 
   virtual ~JavaContextBase() {
-    if (_app_class_name) {
-      delete[] _app_class_name;
+    if (app_class_name_) {
+      delete[] app_class_name_;
     }
     jint res = GetJavaVM()->DestroyJavaVM();
     LOG(INFO) << "Kill javavm status: " << res;
   }
-  const fragment_t& fragment() { return fragment_; }
-
-  // void SetLocalNum(int local_num) { local_num_ = local_num; }
+  const fragment_t& fragment() const { return fragment_; }
 
   void Output(std::ostream& os) {
-    JNIEnvMark m;
-    if (m.env()) {
-      LOG(INFO) << "enter javapp ctx output";
-    }
+    LOG(INFO)
+        << "Java app context will output with other methods: ToNdArray, etc. "
   }
 
-  const char* app_class_name() const { return _app_class_name; }
+  const char* app_class_name() const { return app_class_name_; }
 
   uint64_t inner_context_addr() { return inner_ctx_addr_; }
 
- public:
-  char* _app_class_name;
-  jobject _app_object;
-  jobject _context_object;
-  jobject _frag_object;
-  jobject _mm_object;
+  const std::string& graph_type_str() const { return graph_type_str_; }
+
+  const jobject& app_object() const { return app_object_; }
+  const jobject& context_object() const { return context_object_; }
+  const jobject& fragment_object() const { return fragment_object_; }
+  const jobject& message_manager_object() const { return mm_object_; }
 
  protected:
   virtual const char* eval_descriptor() = 0;
   void init(jlong messages_addr, const char* java_message_manager_name,
             const std::string& params) {
-    LOG(INFO) << "enter init";
     if (params.empty()) {
-      LOG(ERROR) << "no args received";
+      LOG(FATAL) << "no args received";
       return;
     }
     std::string user_library_name;
-    LOG(INFO) << "before parse args";
     std::string args_str =
         parse_params_and_setup_jvm_env(params, user_library_name);
-    LOG(INFO) << "afeter parse args";
-    // set java environment variables
 
     // create jvm instance if not exists;
     JavaVM* jvm = GetJavaVM();
     (void) jvm;
-    LOG(INFO) << "successfully get jvm";
+    LOG(INFO) << "Successfully get jvm";
 
     JNIEnvMark m;
     if (m.env()) {
       JNIEnv* env = m.env();
-      // 0. load required jni library
       load_jni_library(env, user_library_name);
-      // 1. create app object, and get context class via jni
 
-      jclass app_class = env->FindClass(_app_class_name);
+      jclass app_class = env->FindClass(app_class_name_);
       CHECK_NOTNULL(app_class);
 
-      jobject app_object = createObject(env, app_class, _app_class_name);
+      jobject app_object = createObject(env, app_class, app_class_name_);
       CHECK_NOTNULL(app_object);
-      _app_object = env->NewGlobalRef(app_object);
+      app_object_ = env->NewGlobalRef(app_object);
 
       std::string _context_class_name_str =
           get_ctx_class_name_from_app_object(env);
-      LOG(INFO) << "context name " << _context_class_name_str;
-      // _context_class_name = _context_class_name_str.c_str();
+      LOG(INFO) << "Java Context name: " << _context_class_name_str;
       // The retrived context class str is dash-sperated, convert to /-seperated
       char* _context_class_name_c_str =
           java_class_name_dash_to_slash(_context_class_name_str);
@@ -145,25 +133,22 @@ class JavaContextBase : public grape::ContextBase {
       jobject ctx_object =
           createObject(env, context_class, _context_class_name_c_str);
       CHECK_NOTNULL(ctx_object);
-      _context_object = env->NewGlobalRef(ctx_object);
-
-      const char* descriptor = eval_descriptor();
+      context_object_ = env->NewGlobalRef(ctx_object);
 
       jmethodID InitMethodID =
-          env->GetMethodID(context_class, "init", descriptor);
+          env->GetMethodID(context_class, "init", eval_descriptor());
       CHECK_NOTNULL(InitMethodID);
 
-      jobject fragObject =
-          createFFIPointerObject(env, _java_frag_type_name.c_str(),
-                                 reinterpret_cast<jlong>(&fragment_));
+      jobject fragObject = createFFIPointerObject(
+          env, graph_type_str_.c_str(), reinterpret_cast<jlong>(&fragment_));
       CHECK_NOTNULL(fragObject);
-      _frag_object = env->NewGlobalRef(fragObject);
+      fragment_object_ = env->NewGlobalRef(fragObject);
 
       // 2. Create Message manager Java object
       jobject messagesObject =
           createFFIPointerObject(env, java_message_manager_name, messages_addr);
       CHECK_NOTNULL(messagesObject);
-      _mm_object = env->NewGlobalRef(messagesObject);
+      mm_object_ = env->NewGlobalRef(messagesObject);
 
       // 3. Create arguments array
       {
@@ -173,15 +158,15 @@ class JavaContextBase : public grape::ContextBase {
             json_class, "parseObject",
             "(Ljava/lang/String;)Lcom/alibaba/fastjson/JSONObject;");
         CHECK_NOTNULL(parse_method);
-        LOG(INFO) << "user defined kw args: " << args_str;
+        LOG(INFO) << "User defined kw args: " << args_str;
         jstring args_jstring = env->NewStringUTF(args_str.c_str());
         jobject json_object =
             env->CallStaticObjectMethod(json_class, parse_method, args_jstring);
         CHECK_NOTNULL(json_object);
 
         // 4. Invoke java method
-        env->CallVoidMethod(_context_object, InitMethodID, _frag_object,
-                            _mm_object, json_object);
+        env->CallVoidMethod(context_object_, InitMethodID, fragment_object_,
+                            mm_object_, json_object);
         if (env->ExceptionOccurred()) {
           LOG(ERROR) << std::string("Exception occurred in calling ctx init");
           env->ExceptionDescribe();
@@ -196,9 +181,9 @@ class JavaContextBase : public grape::ContextBase {
         CHECK_NOTNULL(inner_ctx_address_field);
 
         inner_ctx_addr_ =
-            env->GetLongField(_context_object, inner_ctx_address_field);
+            env->GetLongField(context_object_, inner_ctx_address_field);
         CHECK_NE(inner_ctx_addr_, 0);
-        LOG(INFO) << "successfully obtained inner ctx";
+        LOG(INFO) << "Successfully obtained inner ctx address";
       }
     }
   }
@@ -206,10 +191,10 @@ class JavaContextBase : public grape::ContextBase {
  private:
   bool init_app_class_name(std::string& app_class) {
     if (app_class.empty()) {
-      LOG(ERROR) << "Class names for java app is empty";
+      LOG(FATAL) << "Class names for java app is empty";
       return false;
     }
-    _app_class_name = java_class_name_dash_to_slash(app_class);
+    app_class_name_ = java_class_name_dash_to_slash(app_class);
     return true;
   }
   // Loading jni library with absolute path
@@ -218,22 +203,13 @@ class JavaContextBase : public grape::ContextBase {
         env->FindClass("com/alibaba/grape/utils/LoadLibrary");
     CHECK_NOTNULL(grape_load_library);
 
-    jclass vineyard_load_library =
-        env->FindClass("io/v6d/modules/graph/utils/LoadLibrary");
-    CHECK_NOTNULL(vineyard_load_library);
-
     const char* load_library_signature = "(Ljava/lang/String;)V";
     jstring user_library_jstring = env->NewStringUTF(user_library_name.c_str());
     jmethodID grape_load_library_method = env->GetStaticMethodID(
         grape_load_library, "invoke", load_library_signature);
-    jmethodID vineyard_load_library_method = env->GetStaticMethodID(
-        vineyard_load_library, "invoke", load_library_signature);
 
     // call static method
     env->CallStaticVoidMethod(grape_load_library, grape_load_library_method,
-                              user_library_jstring);
-    env->CallStaticVoidMethod(vineyard_load_library,
-                              vineyard_load_library_method,
                               user_library_jstring);
 
     if (env->ExceptionOccurred()) {
@@ -241,10 +217,9 @@ class JavaContextBase : public grape::ContextBase {
       env->ExceptionDescribe();
       env->ExceptionClear();
       // env->DeleteLocalRef(main_class);
-      LOG(FATAL) << "exiting since exception occurred";
+      LOG(FATAL) << "Exiting since exception occurred";
     }
-
-    LOG(INFO) << "loaded specified user jni library: " << user_library_name;
+    LOG(INFO) << "Loaded specified user jni library: " << user_library_name;
   }
 
   // user library name should be absolute
@@ -265,7 +240,7 @@ class JavaContextBase : public grape::ContextBase {
     std::string frag_name = pt.get<std::string>("frag_name");
     CHECK(!frag_name.empty());
     LOG(INFO) << "parse frag name: " << frag_name;
-    _java_frag_type_name = frag_name;
+    graph_type_str_ = frag_name;
     pt.erase("frag_name");
 
     std::string app_class_name = pt.get<std::string>("app_class");
@@ -283,6 +258,8 @@ class JavaContextBase : public grape::ContextBase {
     CHECK(num_hosts > 0);
     int num_worker = std::stoi(pt.get<std::string>("num_worker"));
     CHECK(num_worker > 0);
+    pt.erase("num_hosts");
+    pt.erase("num_worker");
 
     int local_num_ = (num_worker + num_hosts - 1) / num_hosts;
     LOG(INFO) << "num hosts: " << num_hosts << ", num worker: " << num_worker
@@ -299,24 +276,24 @@ class JavaContextBase : public grape::ContextBase {
     }
     SetupEnv(local_num_);
     pt.erase("jvm_runtime_opt");
-    // extract the rest params, pack them as a json object.
     ss.str("");  // reset the stream buffer
     boost::property_tree::json_parser::write_json(ss, pt);
     return ss.str();
   }
 
+  // get the java context name with is bounded to app_object_.
   std::string get_ctx_class_name_from_app_object(JNIEnv* env) {
     // get app_class's class object
-    jclass app_class_class = env->GetObjectClass(_app_object);
+    jclass app_class_class = env->GetObjectClass(app_object_);
     CHECK_NOTNULL(app_class_class);
     jmethodID app_class_getClass_method =
         env->GetMethodID(app_class_class, "getClass", "()Ljava/lang/Class;");
     CHECK_NOTNULL(app_class_getClass_method);
     jobject app_class_obj =
-        env->CallObjectMethod(_app_object, app_class_getClass_method);
+        env->CallObjectMethod(app_object_, app_class_getClass_method);
     CHECK_NOTNULL(app_class_obj);
 
-    jclass app_context_getter_class = env->FindClass(_app_context_getter_name);
+    jclass app_context_getter_class = env->FindClass(APP_CONTEXT_GETTER_CLASS);
     CHECK_NOTNULL(app_context_getter_class);
 
     jmethodID app_context_getter_method = env->GetStaticMethodID(
@@ -329,12 +306,15 @@ class JavaContextBase : public grape::ContextBase {
     CHECK_NOTNULL(context_class_jstring);
     return jstring2string(env, context_class_jstring);
   }
-  // char* _context_class_name;
-  std::string _java_frag_type_name;
-  // grape::ContextBase* inner_ctx_;
+  std::string graph_type_str_;
+  char* app_class_name_;
+  uint64_t _inner_ctx_addr_;
   const fragment_t& fragment_;
-  // int local_num_;
-  uint64_t inner_ctx_addr_;
+
+  jobject app_object_;
+  jobject context_object_;
+  jobject fragment_object_;
+  jobject mm_object_;
 };
 
 }  // namespace gs

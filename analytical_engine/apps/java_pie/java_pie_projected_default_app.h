@@ -27,7 +27,8 @@ limitations under the License.
 namespace gs {
 
 /**
- * @brief Java default app driver
+ * @brief Java app driver for ProjectedDefaultJavaApp, which utilizes
+ * ArrowProjectedFragment and DefaultMessageManager.
  *
  * @tparam FRAG_T
  */
@@ -44,11 +45,6 @@ class JavaPIEProjectedDefaultApp
   static constexpr grape::MessageStrategy message_strategy =
       grape::MessageStrategy::kAlongOutgoingEdgeToOuterVertex;
   static constexpr bool need_split_edges = true;
-  using vertex_t = typename fragment_t::vertex_t;
-  using vid_t = typename fragment_t::vid_t;
-  using oid_t = typename fragment_t::oid_t;
-  // using vdata_t = typename fragment_t::vdata_t;
-  // using edata_t = typename fragment_t::edata_t;
 
  public:
   void PEval(const fragment_t& frag, context_t& ctx,
@@ -57,51 +53,26 @@ class JavaPIEProjectedDefaultApp
     if (m.env()) {
       JNIEnv* env = m.env();
 
-      jobject app_object = ctx._app_object;
+      jobject app_object = ctx.app_object();
       init_java_communicator(env, app_object, reinterpret_cast<jlong>(this));
 
-      if (app_object == NULL) {
-        LOG(ERROR) << "AppObject is null";
-        return;
-      }
-
       jclass app_class = env->GetObjectClass(app_object);
-      if (app_class == NULL) {
-        LOG(ERROR) << "Cannot get app class " << ctx._app_class_name;
-        return;
-      }
+      CHECK_NOTNULL(app_class);
 
       const char* descriptor =
           "(Lcom/alibaba/grape/fragment/ArrowProjectedFragment;"
           "Lio/v6d/modules/graph/context/ProjectedDefaultContextBase;"
           "Lcom/alibaba/grape/parallel/DefaultMessageManager;)V";
-      jmethodID PEvalMethodID =
+      jmethodID pEval_methodID =
           env->GetMethodID(app_class, "PEval", descriptor);
-      if (PEvalMethodID == NULL) {
-        LOG(ERROR) << "Cannot find method PEval" << descriptor;
-        return;
-      }
+      CHECK_NOTNULL(pEval_methodID);
 
-      jobject fragObject = ctx._frag_object;
-      if (fragObject == NULL) {
-        LOG(ERROR) << "context's frag object is null";
-        return;
-      }
+      jobject frag_object = ctx.fragment_object();
+      jobject context_object = ctx.context_object();
+      jobject mm_object = ctx.message_manager_object();
 
-      jobject contextObject = ctx._context_object;
-      if (contextObject == NULL) {
-        LOG(ERROR) << "Cannot get context object";
-        return;
-      }
-
-      jobject mmObject = ctx._mm_object;
-      if (mmObject == NULL) {
-        LOG(ERROR) << "Cannot create message manager Java object";
-        return;
-      }
-
-      env->CallVoidMethod(app_object, PEvalMethodID, fragObject, contextObject,
-                          mmObject);
+      env->CallVoidMethod(app_object, pEval_methodID, frag_object,
+                          context_object, mm_object);
     }
   }
 
@@ -117,50 +88,25 @@ class JavaPIEProjectedDefaultApp
     if (m.env()) {
       JNIEnv* env = m.env();
 
-      jobject app_object = ctx._app_object;
-
-      if (app_object == NULL) {
-        LOG(ERROR) << "AppObject is null";
-        return;
-      }
+      jobject app_object = ctx.app_object();
 
       jclass app_class = env->GetObjectClass(app_object);
-      if (app_class == NULL) {
-        LOG(ERROR) << "Cannot get app class " << ctx._app_class_name;
-        return;
-      }
+      CHECK_NOTNULL(app_class);
 
       const char* descriptor =
           "(Lcom/alibaba/grape/fragment/ArrowProjectedFragment;"
           "Lio/v6d/modules/graph/context/ProjectedDefaultContextBase;"
           "Lcom/alibaba/grape/parallel/DefaultMessageManager;)V";
-      jmethodID IncEvalMethodID =
+      jmethodID incEval_methodID =
           env->GetMethodID(app_class, "IncEval", descriptor);
-      if (IncEvalMethodID == NULL) {
-        LOG(ERROR) << "Cannot find method IncEval" << descriptor;
-        return;
-      }
+      CHECK_NOTNULL(incEval_methodID);
 
-      jobject fragObject = ctx._frag_object;
-      if (fragObject == NULL) {
-        LOG(ERROR) << "Cannot create fragment Java object";
-        return;
-      }
+      jobject frag_object = ctx.fragment_object();
+      jobject context_object = ctx.context_object();
+      jobject mm_object = ctx.message_manager_object();
 
-      jobject contextObject = ctx._context_object;
-      if (contextObject == NULL) {
-        LOG(ERROR) << "Cannot get context object";
-        return;
-      }
-
-      jobject mmObject = ctx._mm_object;
-      if (mmObject == NULL) {
-        LOG(ERROR) << "Cannot create message manager Java object";
-        return;
-      }
-
-      env->CallVoidMethod(app_object, IncEvalMethodID, fragObject,
-                          contextObject, mmObject);
+      env->CallVoidMethod(app_object, incEval_methodID, frag_object,
+                          context_object, mm_object);
     }
   }
 };

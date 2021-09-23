@@ -303,7 +303,7 @@ class JavaPIEProjectedDefaultContextWrapper
     JNIEnvMark m;
     if (m.env()) {
       jclass app_context_getter_class =
-          m.env()->FindClass(_app_context_getter_name);
+          m.env()->FindClass(APP_CONTEXT_GETTER_CLASS);
       CHECK_NOTNULL(app_context_getter_class);
       jmethodID getter_method = m.env()->GetStaticMethodID(
           app_context_getter_class, "getVertexDataContextDataType",
