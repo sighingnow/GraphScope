@@ -41,5 +41,4 @@ from graphscope.analytical.app.sssp import property_sssp
 from graphscope.analytical.app.sssp import sssp
 from graphscope.analytical.app.triangles import triangles
 from graphscope.analytical.app.wcc import wcc
-from graphscope.analytical.app.java_app_set import JavaAppAssets
 from graphscope.analytical.app.java_app import JavaApp
