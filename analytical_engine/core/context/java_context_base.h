@@ -76,7 +76,7 @@ class JavaContextBase : public grape::ContextBase {
 
   void Output(std::ostream& os) {
     LOG(INFO)
-        << "Java app context will output with other methods: ToNdArray, etc. "
+        << "Java app context will output with other methods: ToNdArray, etc. ";
   }
 
   const char* app_class_name() const { return app_class_name_; }
@@ -308,7 +308,7 @@ class JavaContextBase : public grape::ContextBase {
   }
   std::string graph_type_str_;
   char* app_class_name_;
-  uint64_t _inner_ctx_addr_;
+  uint64_t inner_ctx_addr_;
   const fragment_t& fragment_;
 
   jobject app_object_;

@@ -54,7 +54,6 @@ class JavaPIEPropertyDefaultApp
       JNIEnv* env = m.env();
 
       jobject app_object = ctx.app_object();
-
       init_java_communicator(env, app_object, reinterpret_cast<jlong>(this));
 
       jclass app_class = env->GetObjectClass(app_object);
@@ -71,10 +70,6 @@ class JavaPIEPropertyDefaultApp
       jobject frag_object = ctx.fragment_object();
       jobject context_object = ctx.context_object();
       jobject mm_object = ctx.message_manager_object();
-      if (mmObject == NULL) {
-        LOG(ERROR) << "Cannot create message manager Java object";
-        return;
-      }
 
       env->CallVoidMethod(app_object, pEval_methodID, frag_object,
                           context_object, mm_object);

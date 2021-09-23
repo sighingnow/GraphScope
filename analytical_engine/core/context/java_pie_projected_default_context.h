@@ -89,7 +89,7 @@ class JavaPIEProjectedDefaultContextWrapper
         frag_wrapper_(std::move(frag_wrapper)),
         ctx_(std::move(context)) {
     std::string java_ctx_type_name =
-        get_java_ctx_type_name(ctx_->_context_object);
+        get_java_ctx_type_name(ctx_->context_object());
     std::string ctx_name = "JavaPIEProjectedContext:" + java_ctx_type_name +
                            "@" + std::to_string(ctx_->inner_context_addr());
     LOG(INFO) << "ctx name " << ctx_name;
@@ -97,7 +97,7 @@ class JavaPIEProjectedDefaultContextWrapper
     if (java_ctx_type_name == "VertexDataContext") {
       // Get the DATA_T;
       std::string data_type =
-          get_vertex_data_context_data_type(ctx_->_context_object);
+          get_vertex_data_context_data_type(ctx_->context_object());
       if (data_type == "double") {
         using inner_ctx_type = grape::VertexDataContext<FRAG_T, double>;
         using inner_ctx_wrapper_type = VertexDataContextWrapper<FRAG_T, double>;
