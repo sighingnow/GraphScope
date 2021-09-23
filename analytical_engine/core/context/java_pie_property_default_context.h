@@ -94,7 +94,7 @@ class JavaPIEPropertyDefaultContextWrapper
     // 0. first reinterpret as context
     // 0.1 get the type of java ctx through java function
     std::string java_ctx_type_name =
-        get_java_ctx_type_name(ctx_->_context_object);
+        get_java_ctx_type_name(ctx_->context_object());
     LOG(INFO) << "java ctx type name" << java_ctx_type_name;
     std::string ctx_name = "JavaPIEPropertyContext:" + java_ctx_type_name +
                            "@" + std::to_string(ctx_->inner_context_addr());
@@ -103,7 +103,7 @@ class JavaPIEPropertyDefaultContextWrapper
     if (java_ctx_type_name == "LabeledVertexDataContext") {
       // Get the DATA_T;
       std::string data_type =
-          get_labeled_vertex_data_context_data_type(ctx_->_context_object);
+          get_labeled_vertex_data_context_data_type(ctx_->context_object());
       if (data_type == "double") {
         using inner_ctx_type = LabeledVertexDataContext<FRAG_T, double>;
         using inner_ctx_wrapper_type =
