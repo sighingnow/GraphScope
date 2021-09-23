@@ -250,8 +250,9 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         global sdk_optimized
         LLVM4JNI_SDK_OUTPUT = os.path.join(workspace, LLVM4JNI_SDK_OUT_BASE)
         optimize_env=os.environ.copy()
-        optimize_env["VM_OPTS"] = "{} -Dllvm4jni.supportLocalConstant=true -Dllvm4jni.supportIndirectCall=false".format(optimize_env["VM_OPTS"])
+        optimize_env["VM_OPTS"] = "-Dllvm4jni.supportLocalConstant=true -Dllvm4jni.supportIndirectCall=false"
         llvm4jni_run_bash = os.path.join(os.environ['LLVM4JNI_HOME'], "run.sh")
+        logger.info("bash script: {}".format(llvm4jni_run_bash))
         if sdk_optimized == False:
             #run optimization for sdk code
             run_llvm_grape_sdk_commands = [
@@ -288,7 +289,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
             logger.info("vineyard graph sdk gen: ".join(run_llvm_v6d_sdk_commands))
             run_llvm_v6d_sdk_commands = subprocess.Popen(
                 run_llvm_grape_sdk_commands,
-                optimize_env,
+                env=optimize_env,
                 universal_newlines=True,
                 encoding="utf-8",
                 stdout=subprocess.PIPE,
