@@ -54,7 +54,7 @@ bool InitWellKnownClasses(JNIEnv* env) {
   FFITypeFactory_getTypeMethodID_plus = env->GetStaticMethodID(
       FFITypeFactoryClass, "getType",
       "(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Class;");
-  CommunicatorClass = (jclass) env->newGlobalRef(CommunicatorClass);
+  CommunicatorClass = (jclass) env->NewGlobalRef(CommunicatorClass);
 
   if ((FFITypeFactory_getTypeMethodID == NULL) ||
       (FFITypeFactory_getTypeMethodID_plus == NULL)) {
@@ -428,20 +428,21 @@ char* java_class_name_dash_to_slash(std::string& str) {
 void init_java_communicator(JNIEnv* env, const jobject& java_app,
                             jlong app_address) {
   CHECK_NOTNULL(env);
-  CHECK_NOTNULL(app_address);
+  CHECK(app_address != 0);
   if (env->IsInstanceOf(java_app, CommunicatorClass)) {
     jmethodID initCommunicatorMethod =
         env->GetMethodID(CommunicatorClass, "initCommunicator", "(Z;)V");
     CHECK_NOTNULL(initCommunicatorMethod);
     env->CallVoidMethod(java_app, initCommunicatorMethod, app_address);
-    if (m.env()->ExceptionOccurred()) {
+    if (env->ExceptionOccurred()) {
       LOG(ERROR) << "Exception occurred in init communicator";
-      m.env()->ExceptionDescribe();
-      m.env()->ExceptionClear();
+      env->ExceptionDescribe();
+      env->ExceptionClear();
       // env->DeleteLocalRef(main_class);
-      LOG(FATAL) << "exits."
+      LOG(FATAL) << "exits.";
     }
-    LOG(INFO) << "Successfully init communicator." return;
+    LOG(INFO) << "Successfully init communicator.";
+    return;
   }
   LOG(INFO) << "No initing since not a sub class from Communicator.";
 }

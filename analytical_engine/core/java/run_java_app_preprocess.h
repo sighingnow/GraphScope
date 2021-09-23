@@ -215,7 +215,7 @@ void preprocess(int argc, char** argv) {
     jmethodID process_method = m.env()->GetStaticMethodID(
         grape_process_class, "scanAppAndGenerate",
         "(Ljava/lang/String;Ljava/lang/String;Ljava/"
-        "lang/String;Z;Ljava/lang/String;)Ljava/lang/String;");
+        "lang/String;ZLjava/lang/String;)Ljava/lang/String;");
     if (process_method == NULL) {
       LOG(ERROR) << "fail to find process method";
       return;

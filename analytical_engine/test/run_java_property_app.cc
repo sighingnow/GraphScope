@@ -79,7 +79,7 @@ void output_nd_array(const grape::CommSpec& comm_spec,
         oarc >> v;
         assembled_ostream << v << std::endl;
       }
-    } else if (data_type == 4) {
+    } else if (data_type_expected == 4) {
       for (int64_t i = 0; i < length1; ++i) {
         int64_t v;
         oarc >> v;
@@ -135,20 +135,20 @@ void output_data_frame(const grape::CommSpec& comm_spec,
     std::string assembled_col2_output_path =
         output_prefix + "_assembled_dataframe_col_2_" + col_name2 + ".dat";
     assembled_col2_ostream.open(assembled_col2_output_path);
-    if (data_type_expected == 7) {
+    if (expected_data_type== 7) {
       for (int64_t i = 0; i < length; ++i) {
         double data;
         oarc >> data;
         assembled_col2_ostream << data << std::endl;
       }
-    } else if (data_type == 4) {
+    } else if (expected_data_type== 4) {
       for (int64_t i = 0; i < length; ++i) {
         int64_t data;
         oarc >> data;
         assembled_col2_ostream << data << std::endl;
       }
     } else {
-      LOG(FATAL) << "Unregonizable data type " << data_type_expected;
+      LOG(FATAL) << "Unregonizable data type " << expected_data_type;
     }
     assembled_col2_ostream.close();
 
@@ -438,6 +438,8 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   pt.put("user_library_name",
          "/home/admin/GAE-ODPSGraph/pie-sdk/vineyard-graph/target/classes/"
          "natives/linux_64/libvineyard-jni.so");
+  pt.put("num_hosts","1");
+  pt.put("num_worker","1");
   char* jvm_opts = getenv("RUN_JVM_OPTS");
 
   pt.put("jvm_runtime_opt", std::string(jvm_opts));
