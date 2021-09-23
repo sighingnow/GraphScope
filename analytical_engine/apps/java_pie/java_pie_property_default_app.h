@@ -20,6 +20,7 @@ limitations under the License.
 
 #include "core/app/property_app_base.h"
 #include "core/context/java_pie_property_default_context.h"
+#include "grape/communication/communicator.h"
 #include "grape/grape.h"
 #include "grape/types.h"
 
@@ -32,7 +33,8 @@ namespace gs {
  */
 template <typename FRAG_T>
 class JavaPIEPropertyDefaultApp
-    : public PropertyAppBase<FRAG_T, JavaPIEPropertyDefaultContext<FRAG_T>> {
+    : public PropertyAppBase<FRAG_T, JavaPIEPropertyDefaultContext<FRAG_T>>
+    : public grape::Communicator {
  public:
   // specialize the templated worker.
   INSTALL_DEFAULT_PROPERTY_WORKER(JavaPIEPropertyDefaultApp<FRAG_T>,
@@ -56,7 +58,7 @@ class JavaPIEPropertyDefaultApp
       JNIEnv* env = m.env();
 
       jobject app_object = ctx._app_object;
-
+      init_java_communicator(env, app_object, reinterpret_cast<jlong>(this));
       if (app_object == NULL) {
         LOG(ERROR) << "AppObject is null";
         return;

@@ -19,6 +19,7 @@ limitations under the License.
 #include <utility>
 
 #include "core/app/app_base.h"
+#include "grape/communication/communicator.h"
 #include "grape/grape.h"
 #include "grape/types.h"
 #include "java_pie/java_pie_default_context.h"
@@ -31,8 +32,8 @@ namespace gs {
  * @tparam FRAG_T
  */
 template <typename FRAG_T>
-class JavaPIEDefaultApp
-    : public AppBase<FRAG_T, JavaPIEDefaultContext<FRAG_T>> {
+class JavaPIEDefaultApp : public AppBase<FRAG_T, JavaPIEDefaultContext<FRAG_T>>
+    : public grape::Communicator {
  public:
   // specialize the templated worker.
   INSTALL_DEFAULT_WORKER(JavaPIEDefaultApp<FRAG_T>,
@@ -56,6 +57,7 @@ class JavaPIEDefaultApp
       JNIEnv* env = m.env();
 
       jobject app_object = ctx._app_object;
+      init_java_communicator(env, app_object, reinterpret_cast<jlong>(this));
 
       if (app_object == NULL) {
         LOG(ERROR) << "AppObject is null";
