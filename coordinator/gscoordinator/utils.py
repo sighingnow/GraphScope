@@ -252,7 +252,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         optimize_env=os.environ.copy()
         optimize_env["VM_OPTS"] = "-Dllvm4jni.supportLocalConstant=true -Dllvm4jni.supportIndirectCall=false"
         llvm4jni_run_bash = os.path.join(os.environ['LLVM4JNI_HOME'], "run.sh")
-        logger.info("bash script: {}".format(llvm4jni_run_bash))
+        logger.info("bash script: {}, vm_opts: {}".format(llvm4jni_run_bash, optimize_env["VM_OPTS"]))
         if sdk_optimized == False:
             #run optimization for sdk code
             run_llvm_grape_sdk_commands = [
@@ -263,7 +263,9 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
                 "-cp",
                 GRAPE_SDK_JAR_WITHOUT_DEP,
                 "-lib",
-                get_lib_path(GRAPE_SDK_BUILD, GRAPE_JNI_LIB_NAME)
+                get_lib_path(GRAPE_SDK_BUILD, GRAPE_JNI_LIB_NAME),
+                "-v",
+                "ERROR"
             ]
             logger.info(" ".join(run_llvm_grape_sdk_commands))
             grape_sdk_optimize_process = subprocess.Popen(
@@ -286,10 +288,12 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
                 "-cp",
                 VINEYARD_SDK_JAR_WITHOUT_DEP,
                 "-lib",
-                get_lib_path(VINEYARD_GRAPH_SDK_BUILD, V6D_JNI_LIB_NAME)
+                get_lib_path(VINEYARD_GRAPH_SDK_BUILD, V6D_JNI_LIB_NAME),
+                "-v",
+                "ERROR"
             ]
             logger.info(" ".join(run_llvm_v6d_sdk_commands))
-            run_llvm_v6d_sdk_commands = subprocess.Popen(
+            run_llvm_v6d_sdk_process = subprocess.Popen(
                 run_llvm_grape_sdk_commands,
                 env=optimize_env,
                 universal_newlines=True,
@@ -297,9 +301,9 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            run_llvm_v6d_sdk_commands_watcher = PipeWatcher(run_llvm_v6d_sdk_commands.stderr, sys.stdout)
-            setattr(run_llvm_v6d_sdk_commands, "stderr_watcher", run_llvm_v6d_sdk_commands_watcher)
-            run_llvm_v6d_sdk_commands.wait()
+            run_llvm_v6d_sdk_process_watcher = PipeWatcher(run_llvm_v6d_sdk_process.stderr, sys.stdout)
+            setattr(run_llvm_v6d_sdk_process, "stderr_watcher", run_llvm_v6d_sdk_process_watcher)
+            run_llvm_v6d_sdk_process.wait()
 
             logger.info("sdk optimization complete, output to {}".format(LLVM4JNI_SDK_OUTPUT))
             sdk_optimized = True
@@ -384,7 +388,9 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         "-cp",
         java_jar_path,
         "-lib",
-        lib_path
+        lib_path,
+        "-v",
+        "ERROR"
     ]
     logger.info(" ".join(run_llvm_user_commands))
     grape_sdk_optimize_process = subprocess.Popen(
@@ -395,9 +401,9 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    run_llvm_user_commands_watcher = PipeWatcher(run_llvm_user_commands.stderr, sys.stdout)
-    setattr(run_llvm_user_commands, "stderr_watcher", run_llvm_user_commands_watcher)
-    run_llvm_user_commands.wait()
+    grape_sdk_optimize_process_watcher = PipeWatcher(grape_sdk_optimize_process.stderr, sys.stdout)
+    setattr(grape_sdk_optimize_process, "stderr_watcher", grape_sdk_optimize_process_watcher)
+    grape_sdk_optimize_process.wait()
     logger.info("user optimization complete, output to {}".format(LLVM4JNI_USER_OUTPUT))
     
     return lib_path, java_jar_path, JAVA_APP_FFI_SOURCE_PATH, app_type
