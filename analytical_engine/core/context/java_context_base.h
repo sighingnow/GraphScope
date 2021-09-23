@@ -284,7 +284,7 @@ class JavaContextBase : public grape::ContextBase {
     int num_worker = std::stoi(pt.get<std::string>("num_worker"));
     CHECK(num_worker > 0);
 
-    int local_num_ = splited.size();
+    int local_num_ = (num_worker + num_hosts - 1) / num_hosts;
     LOG(INFO) << "num hosts: " << num_hosts << ", num worker: " << num_worker
               << ",local worker: " << num_worker / num_hosts;
 
