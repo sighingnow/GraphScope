@@ -193,12 +193,19 @@ class JavaAppDagNode(AppDAGNode):
             logger.info("Set frag name to {}, {}".format(self._graph.template_str, frag_name_for_java))
         else :
             frag_name_for_java = self._graph.template_str
+        # get number of worker on each host, so we can determine the java memory settings.
+        sess_info_ = self._session.info
+        num_hosts_ = len(sess_info_["engine_hosts"].split(","))
+        num_worker_ = int(sess_info_["num_workers"])
         kwargs_extend = dict(
             jvm_runtime_opt=jvm_runtime_opt_impl,
             user_library_name = user_jni_name_lib,
             frag_name = frag_name_for_java,
+            num_hosts= num_hosts_,
+            num_worker = num_worker_,
             **kwargs
         )
+
 
         logger.info("dumping to json {}".format(json.dumps(kwargs_extend)))
         return create_context_node(context_type, self, self._graph, json.dumps(kwargs_extend))

@@ -23,8 +23,8 @@ limitations under the License.
 #include <vector>
 
 #include "core/java/javasdk.h"
-#include "core/parallel/java_parallel_message_manager.h"
 #include "grape/app/context_base.h"
+#include "grape/parallel/parallel_message_manager.h"
 namespace gs {
 
 /**
@@ -62,6 +62,7 @@ class JavaPIEParallelContext : public grape::ContextBase<FRAG_T> {
     }
     return true;
   }
+  const fragment_t& fragment() { return fragment_; }
 
  public:
   using oid_t = typename FRAG_T::oid_t;
@@ -69,8 +70,9 @@ class JavaPIEParallelContext : public grape::ContextBase<FRAG_T> {
   using vdata_t = typename FRAG_T::vdata_t;
   using edata_t = typename FRAG_T::edata_t;
 
-  JavaPIEParallelContext()
-      : _app_class_name(NULL),
+  JavaPIEParallelContext(const FRAG_T& fragment)
+      : fragment_(fragment),
+        _app_class_name(NULL),
         _context_class_name(NULL),
         _app_object(NULL),
         _context_object(NULL),
@@ -89,9 +91,9 @@ class JavaPIEParallelContext : public grape::ContextBase<FRAG_T> {
     }
   }
 
-  void Init(const FRAG_T& frag, ParallelJavaMessageManager& messages,
-            std::string& frag_name, std::string& app_class_name,
-            std::string& app_context_name, std::vector<std::string>& args) {
+  void Init(grape::ParallelMessageManager& messages, std::string& frag_name,
+            std::string& app_class_name, std::string& app_context_name,
+            std::vector<std::string>& args) {
     JNIEnvMark m;
     if (m.env()) {
       JNIEnv* env = m.env();
@@ -217,7 +219,8 @@ class JavaPIEParallelContext : public grape::ContextBase<FRAG_T> {
   const char* context_class_name() const { return _context_class_name; }
 
   const char* parallel_java_message_mananger_name =
-      "gs::ParallelJavaMessageManager";
+      "grape::ParallelMessageManager";
+
   char* _app_class_name;
   char* _context_class_name;
   std::string _java_frag_type_name;
@@ -225,6 +228,9 @@ class JavaPIEParallelContext : public grape::ContextBase<FRAG_T> {
   jobject _context_object;
   jobject _frag_object;
   jobject _mm_object;
+
+ private:
+  const fragment_t& fragment_;
 };
 }  // namespace gs
 

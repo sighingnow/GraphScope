@@ -37,16 +37,16 @@ limitations under the License.
 #include "core/context/vertex_property_context.h"
 #include "core/java/javasdk.h"
 #include "core/object/i_fragment_wrapper.h"
-#include "core/parallel/default_java_message_manager.h"
 #include "core/parallel/property_message_manager.h"
 #include "grape/app/context_base.h"
+#include "grape/parallel/default_message_manager.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/fragment_traits.h"
 #define CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT "java_pie_projected_default"
 namespace gs {
 
 static constexpr const char* _java_projected_message_manager_name =
-    "gs::DefaultJavaMessageManager";
+    "grape::DefaultMessageManager";
 /**
  * @brief Context for the java pie app, used by java sdk.
  *
@@ -59,7 +59,7 @@ class JavaPIEProjectedDefaultContext : public JavaContextBase<FRAG_T> {
       : JavaContextBase<FRAG_T>(fragment) {}
   virtual ~JavaPIEProjectedDefaultContext() {}
 
-  void Init(DefaultJavaMessageManager& messages, const std::string& params) {
+  void Init(grape::DefaultMessageManager& messages, const std::string& params) {
     JavaContextBase<FRAG_T>::init(reinterpret_cast<jlong>(&messages),
                                   _java_projected_message_manager_name, params);
   }

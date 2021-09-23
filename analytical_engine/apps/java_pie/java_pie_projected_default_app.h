@@ -18,7 +18,7 @@ limitations under the License.
 
 #include <utility>
 
-#include "core/app/java/java_default_app_base.h"
+#include "core/app/app_base.h"
 #include "core/context/java_pie_projected_default_context.h"
 #include "grape/grape.h"
 #include "grape/types.h"
@@ -32,12 +32,16 @@ namespace gs {
  */
 template <typename FRAG_T>
 class JavaPIEProjectedDefaultApp
-    : public JavaDefaultAppBase<FRAG_T,
-                                JavaPIEProjectedDefaultContext<FRAG_T>> {
+    : public AppBase<FRAG_T, JavaPIEProjectedDefaultContext<FRAG_T>> {
  public:
   // specialize the templated worker.
-  INSTALL_JAVA_DEFAULT_WORKER(JavaPIEProjectedDefaultApp<FRAG_T>,
-                              JavaPIEProjectedDefaultContext<FRAG_T>, FRAG_T)
+  INSTALL_DEFAULT_WORKER(JavaPIEProjectedDefaultApp<FRAG_T>,
+                         JavaPIEProjectedDefaultContext<FRAG_T>, FRAG_T)
+  static constexpr grape::LoadStrategy load_strategy =
+      grape::LoadStrategy::kBothOutIn;
+  static constexpr grape::MessageStrategy message_strategy =
+      grape::MessageStrategy::kAlongOutgoingEdgeToOuterVertex;
+  static constexpr bool need_split_edges = true;
   using vertex_t = typename fragment_t::vertex_t;
   using vid_t = typename fragment_t::vid_t;
   using oid_t = typename fragment_t::oid_t;
