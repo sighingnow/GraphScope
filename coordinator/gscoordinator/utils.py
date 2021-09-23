@@ -65,6 +65,12 @@ except ModuleNotFoundError:
 GRAPHSCOPE_HOME = os.path.join(COORDINATOR_HOME, "..")
 
 WORKSPACE = "/tmp/gs"
+LLVM4JNI_SDK_OUT_BASE = "sdk-llvm4jni-output"
+LLVM4JNI_USER_BASE = "user-llvm4jni-output"
+GRAPE_JNI_LIB_NAME = "grape-lite-jni"
+V6D_JNI_LIB_NAME = "vineyard-jni"
+GRAPE_SDK_BUILD=os.path.join(str(Path.home()), "GAE-ODPSGraph/pie-sdk/grape-sdk/target/native/")
+VINEYARD_GRAPH_SDK_BUILD=os.path.join(str(Path.home()), "GAE-ODPSGraph/pie-sdk/vineyard-graph/target/native/")
 DEFAULT_GS_CONFIG_FILE = ".gs_conf.yaml"
 ANALYTICAL_ENGINE_HOME = os.path.join(GRAPHSCOPE_HOME, "analytical_engine")
 ANALYTICAL_BUILD_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "build")
@@ -75,6 +81,8 @@ M2_REPO_PATH = os.path.join(str(Path.home()), ".m2/repository/com/alibaba/grape"
 #GRAPE_DEMO_JAR=os.path.join(M2_REPO_PATH, "grape-demo/0.1/grape-demo-0.1-jar-with-dependencies.jar")
 GRAPE_PROCESSOR_JAR=os.path.join(M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-jar-with-dependencies.jar")
 GRAPE_SDK_JAR=os.path.join(M2_REPO_PATH, "grape-sdk/0.1/grape-sdk-0.1-jar-with-dependencies.jar")
+GRAPE_SDK_JAR_WITHOUT_DEP=os.path.join(M2_REPO_PATH,"grape-sdk/0.1/grape-sdk-0.1.jar")
+VINEYARD_SDK_JAR_WITHOUT_DEP=os.path.join(M2_REPO_PATH,"vineyard-graph/0.1/vineyard-graph-0.1.jar")
 VINEYARD_GRAPH_JAR=os.path.join(M2_REPO_PATH, "")
 if not os.path.isfile(ANALYTICAL_ENGINE_PATH):
     ANALYTICAL_ENGINE_HOME = "/usr/local/bin"
@@ -84,6 +92,7 @@ TEMPLATE_DIR = os.path.join(COORDINATOR_HOME, "gscoordinator", "template")
 BUILTIN_APP_RESOURCE_PATH = os.path.join(
     COORDINATOR_HOME, "gscoordinator", "builtin/app/builtin_app.gar"
 )
+sdk_optimized=False
 
 
 def is_port_in_use(host, port):
@@ -237,6 +246,62 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         setattr(java_codegen_process, "stderr_watcher", java_codegen_stderr_watcher)
         java_codegen_process.wait()
         logger.info("java codegen complete, output to {}".format(JAVA_APP_FFI_SOURCE_PATH))
+        # Then do the optimization.
+        global sdk_optimized
+        LLVM4JNI_SDK_OUTPUT = os.path.join(workspace, LLVM4JNI_SDK_OUT_BASE)
+        optimize_env=os.environ.copy()
+        optimize_env["VM_OPTS"] = "{} -Dllvm4jni.supportLocalConstant=true -Dllvm4jni.supportIndirectCall=false".format(optimize_env["VM_OPTS"])
+        llvm4jni_run_bash = os.path.join(os.environ['LLVM4JNI_HOME'], "run.sh")
+        if sdk_optimized == False:
+            #run optimization for sdk code
+            run_llvm_grape_sdk_commands = [
+                llvm4jni_run_bash,
+                "-output",
+                LLVM4JNI_SDK_OUTPUT,
+                "-cp",
+                GRAPE_SDK_JAR_WITHOUT_DEP,
+                "-lib",
+                get_lib_path(GRAPE_SDK_BUILD, GRAPE_JNI_LIB_NAME)
+            ]
+            logger.info("grape sdk gen: ".join(run_llvm_grape_sdk_commands))
+            grape_sdk_optimize_process = subprocess.Popen(
+                run_llvm_grape_sdk_commands,
+                env=optimize_env,
+                universal_newlines=True,
+                encoding="utf-8",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            sdk_optimize_process_watcher = PipeWatcher(grape_sdk_optimize_process.stderr, sys.stdout)
+            setattr(grape_sdk_optimize_process, "stderr_watcher", sdk_optimize_process_watcher)
+            grape_sdk_optimize_process.wait()
+            # for vineyard sdk
+            run_llvm_v6d_sdk_commands = [ 
+                llvm4jni_run_bash,
+                "-output",
+                LLVM4JNI_SDK_OUTPUT,
+                "-cp",
+                VINEYARD_SDK_JAR_WITHOUT_DEP,
+                "-lib",
+                get_lib_path(VINEYARD_GRAPH_SDK_BUILD, V6D_JNI_LIB_NAME)
+            ]
+            logger.info("vineyard graph sdk gen: ".join(run_llvm_v6d_sdk_commands))
+            run_llvm_v6d_sdk_commands = subprocess.Popen(
+                run_llvm_grape_sdk_commands,
+                optimize_env,
+                universal_newlines=True,
+                encoding="utf-8",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            run_llvm_v6d_sdk_commands_watcher = PipeWatcher(run_llvm_v6d_sdk_commands.stderr, sys.stdout)
+            setattr(run_llvm_v6d_sdk_commands, "stderr_watcher", run_llvm_v6d_sdk_commands_watcher)
+            run_llvm_v6d_sdk_commands.wait()
+
+            logger.info("sdk optimization complete, output to {}".format(LLVM4JNI_SDK_OUTPUT))
+            sdk_optimized = True
+        else:
+            logger.info("skipped sdk gen since it has been generated to {}".format(LLVM4JNI_SDK_OUTPUT))
     elif app_type != "cpp_pie":
         if app_type == "cython_pregel":
             pxd_name = "pregel"
@@ -305,6 +370,32 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     make_process.wait()
     lib_path = get_lib_path(app_dir, library_name)
     assert os.path.isfile(lib_path), "Error occurs when building the frame library."
+
+    # After built user library, we do optimization 
+    LLVM4JNI_USER_OUTPUT = os.path.join(workspace, "{}-{}".format(LLVM4JNI_USER_BASE, library_name))
+    run_llvm_user_commands = [
+        llvm4jni_run_bash,
+        "-output",
+        LLVM4JNI_USER_OUTPUT,
+        "-cp",
+        java_jar_path,
+        "-lib",
+        lib_path
+    ]
+    logger.info("user sdk gen: ".join(run_llvm_user_commands))
+    grape_sdk_optimize_process = subprocess.Popen(
+        run_llvm_user_commands,
+        env=optimize_env,
+        universal_newlines=True,
+        encoding="utf-8",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    run_llvm_user_commands_watcher = PipeWatcher(run_llvm_user_commands.stderr, sys.stdout)
+    setattr(run_llvm_user_commands, "stderr_watcher", run_llvm_user_commands_watcher)
+    run_llvm_user_commands.wait()
+    logger.info("user optimization complete, output to {}".format(LLVM4JNI_USER_OUTPUT))
+    
     return lib_path, java_jar_path, JAVA_APP_FFI_SOURCE_PATH, app_type
 
 

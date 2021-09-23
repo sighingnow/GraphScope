@@ -40,7 +40,10 @@ __all__ = ["JavaApp"]
 logger = logging.getLogger("graphscope")
 
 DEFAULT_GS_CONFIG_FILE = ".gs_conf.yaml"
+LLVM4JNI_SDK_BASE = "sdk-llvm4jni-output"
+LLVM4JNI_USER_BASE = "user-llvm4jni-output"
 WORKSPACE = "/tmp/gs"
+#TODO make this not fixed
 GRAPE_SDK_BUILD=os.path.join(str(Path.home()), "GAE-ODPSGraph/pie-sdk/grape-sdk/target/classes/")
 VINEYARD_GRAPH_SDK_BUILD=os.path.join("/home/admin/GAE-ODPSGraph/pie-sdk/vineyard-graph/target/classes/")
 GRAPE_JNI_LIB_PATH=os.path.join("/home/admin/GAE-ODPSGraph/pie-sdk/grape-sdk/target/native/")
@@ -152,10 +155,6 @@ class JavaAppDagNode(AppDAGNode):
         # set the jvm_opts as a kw
         jvm_runtime_opt_impl = ""
         udf_workspace = os.path.join(WORKSPACE, self._session.session_id)
-        # we can not determine the compiled lib path here, so we find all possible subdirectories,
-        # and add them to java.library.path
-        # possible_library_directories = [s.rstrip("/") for s in glob("{}/[!gs\-ffi]*/".format(udf_workspace))]
-        # user_jar = [s.rstrip("/") for s in glob("{}/*/*.jar".format(udf_workspace))]
 
         user_jni_name = self._app_assets.signature()
         user_jni_dir = os.path.join(udf_workspace, user_jni_name)
@@ -167,6 +166,9 @@ class JavaAppDagNode(AppDAGNode):
         assert (os.path.isfile(user_jni_name_lib)), "{} not found ".format(user_jni_name_lib)
         assert (os.path.isfile(user_jar)), "{} not found ".format(user_jar)
 
+        LLVM4JNI_USER = os.path.join(udf_workspace, "{}-{}".format(LLVM4JNI_USER_BASE, user_jni_name))
+        LLVM4JNI_SDK = os.path.join(udf_workspace, LLVM4JNI_SDK_BASE)
+
         logger.info("user jni library found: {}".format(user_jni_name_lib))
         logger.info("user jar found: {}".format(user_jar))
         ffi_target_output = os.path.join(udf_workspace, "gs-ffi-{}".format(user_jni_name), "CLASS_OUTPUT")
@@ -176,8 +178,9 @@ class JavaAppDagNode(AppDAGNode):
         #grape jni and vineyard jni will be put in jar file, and extracte, add to path during runtime
         jvm_runtime_opt_impl = "-Xrs " \
                         + "-Djava.library.path=/usr/local/lib:/usr/lib:{}:{}:{} ".format(user_jni_dir, GRAPE_JNI_LIB_PATH, VINEYARD_JNI_LIB_PATH)\
-                        + "-Djava.class.path={}:{}:{}:{}:{} {}"\
-                         .format(ffi_target_output, GRAPE_SDK_BUILD, VINEYARD_GRAPH_SDK_BUILD, user_jar, LLVM4JNI_JAR, performance_args)
+                        + "-Djava.class.path={}:{}:{}:{}:{}:{}:{} {}"\
+                         .format(ffi_target_output,LLVM4JNI_SDK, LLVM4JNI_USER, GRAPE_SDK_BUILD, VINEYARD_GRAPH_SDK_BUILD, user_jar, LLVM4JNI_JAR, performance_args)
+        # TODO: remove GRAPE_SDK_BUILD and VINEYARD_SDK_BUILD when jar build problem is solved.
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_runtime_opt_impl))
 
         frag_name_for_java = ""
