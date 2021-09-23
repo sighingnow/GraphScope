@@ -18,12 +18,12 @@ limitations under the License.
 
 #include <grape/grape.h>
 #include <jni.h>
+#include "grape/grape.h"
 
 #include <iomanip>
 #include <limits>
 #include <vector>
 #include "core/java/javasdk.h"
-#include "core/parallel/default_java_message_manager.h"
 #include "grape/app/context_base.h"
 namespace gs {
 
@@ -63,6 +63,7 @@ class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {
     }
     return true;
   }
+  const fragment_t& fragment() { return fragment_; }
 
  public:
   using oid_t = typename FRAG_T::oid_t;
@@ -70,8 +71,9 @@ class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {
   using vdata_t = typename FRAG_T::vdata_t;
   using edata_t = typename FRAG_T::edata_t;
 
-  JavaPIEDefaultContext()
-      : _app_class_name(NULL),
+  JavaPIEDefaultContext(const FRAG_T& fragment)
+      : fragment_(fragment),
+        _app_class_name(NULL),
         _context_class_name(NULL),
         _app_object(NULL),
         _context_object(NULL),
@@ -90,9 +92,9 @@ class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {
     }
   }
 
-  void Init(const FRAG_T& frag, DefaultJavaMessageManager& messages,
-            std::string& frag_name, std::string& app_class_name,
-            std::string& app_context_name, std::vector<std::string>& args) {
+  void Init(grape::DefaultMessageManager& messages, std::string& frag_name,
+            std::string& app_class_name, std::string& app_context_name,
+            std::vector<std::string>& args) {
     JNIEnvMark m;
     if (m.env()) {
       JNIEnv* env = m.env();
@@ -208,12 +210,15 @@ class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {
   char* _app_class_name;
   char* _context_class_name;
   static const char* default_java_message_mananger_name =
-      "gs::DefaultJavaMessageManager";
+      "grape::DefaultMessageManager";
   std::string _java_frag_type_name;
   jobject _app_object;
   jobject _context_object;
   jobject _frag_object;
   jobject _mm_object;
+
+ private:
+  const fragment_t& fragment_;
 };
 }  // namespace gs
 

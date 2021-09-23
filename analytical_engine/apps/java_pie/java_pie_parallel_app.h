@@ -35,11 +35,16 @@ namespace gs {
  */
 template <typename FRAG_T>
 class JavaPIEParallelApp
-    : public JavaParallelAppBase<FRAG_T, JavaPIEParallelContext<FRAG_T>> {
+    : public grape::ParallelAppBase<FRAG_T, JavaPIEParallelContext<FRAG_T>> {
  public:
   // specialize the templated worker.
-  INSTALL_JAVA_PARALLEL_WORKER(JavaPIEParallelApp<FRAG_T>,
-                               JavaPIEParallelContext<FRAG_T>, FRAG_T)
+  INSTALL_PARALLEL_WORKER(JavaPIEParallelApp<FRAG_T>,
+                          JavaPIEParallelContext<FRAG_T>, FRAG_T)
+  static constexpr grape::LoadStrategy load_strategy =
+      grape::LoadStrategy::kBothOutIn;
+  static constexpr grape::MessageStrategy message_strategy =
+      grape::MessageStrategy::kAlongOutgoingEdgeToOuterVertex;
+  static constexpr bool need_split_edges = true;
   using vertex_t = typename fragment_t::vertex_t;
   using vid_t = typename fragment_t::vid_t;
   using oid_t = typename fragment_t::oid_t;

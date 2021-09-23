@@ -64,7 +64,6 @@ class JavaContextBase : public grape::ContextBase {
         _frag_object(NULL),
         _mm_object(NULL),
         fragment_(fragment),
-        local_num_(1),
         inner_ctx_addr_(0) {}
 
   virtual ~JavaContextBase() {
@@ -76,7 +75,7 @@ class JavaContextBase : public grape::ContextBase {
   }
   const fragment_t& fragment() { return fragment_; }
 
-  void SetLocalNum(int local_num) { local_num_ = local_num; }
+  // void SetLocalNum(int local_num) { local_num_ = local_num; }
 
   void Output(std::ostream& os) {
     JNIEnvMark m;
@@ -280,6 +279,15 @@ class JavaContextBase : public grape::ContextBase {
     LOG(INFO) << "user library name " << user_library_name;
     pt.erase("user_library_name");
 
+    int num_hosts = std::stoi(pt.get<std::string>("num_hosts"));
+    CHECK(num_hosts > 0);
+    int num_worker = std::stoi(pt.get<std::string>("num_worker"));
+    CHECK(num_worker > 0);
+
+    int local_num_ = splited.size();
+    LOG(INFO) << "num hosts: " << num_hosts << ", num worker: " << num_worker
+              << ",local worker: " << num_worker / num_hosts;
+
     // JVM runtime opt should consists of java.libaray.path and
     // java.class.path maybe this should be set by the backend not user.
     std::string jvm_runtime_opt = pt.get<std::string>("jvm_runtime_opt");
@@ -325,7 +333,7 @@ class JavaContextBase : public grape::ContextBase {
   std::string _java_frag_type_name;
   // grape::ContextBase* inner_ctx_;
   const fragment_t& fragment_;
-  int local_num_;
+  // int local_num_;
   uint64_t inner_ctx_addr_;
 };
 
