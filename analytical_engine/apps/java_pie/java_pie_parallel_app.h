@@ -22,6 +22,7 @@ limitations under the License.
 #include <utility>
 
 #include "core/app/java/java_parallel_app_base.h"
+#include "grape/communication/communicator.h"
 #include "grape/types.h"
 #include "java_pie/java_pie_parallel_context.h"
 namespace gs {
@@ -35,7 +36,8 @@ namespace gs {
  */
 template <typename FRAG_T>
 class JavaPIEParallelApp
-    : public grape::ParallelAppBase<FRAG_T, JavaPIEParallelContext<FRAG_T>> {
+    : public grape::ParallelAppBase<FRAG_T, JavaPIEParallelContext<FRAG_T>>
+    : public grape::Communicator {
  public:
   // specialize the templated worker.
   INSTALL_PARALLEL_WORKER(JavaPIEParallelApp<FRAG_T>,
@@ -59,7 +61,7 @@ class JavaPIEParallelApp
       JNIEnv* env = m.env();
 
       jobject app_object = ctx._app_object;
-
+      init_java_communicator(env, app_object, reinterpret_cast<jlong>(this));
       if (app_object == NULL) {
         LOG(ERROR) << "AppObject is null";
         return;

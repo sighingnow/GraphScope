@@ -28,6 +28,7 @@ namespace gs {
 
 static JavaVM* _jvm = NULL;
 static jclass FFITypeFactoryClass = NULL;
+static jclass CommunicatorClass = NULL;
 static jmethodID FFITypeFactory_getTypeMethodID = NULL;
 static jmethodID FFITypeFactory_getTypeMethodID_plus = NULL;
 static jclass FFIVectorClass = NULL;
@@ -38,9 +39,11 @@ bool InitWellKnownClasses(JNIEnv* env) {
   FFITypeFactoryClass = env->FindClass("com/alibaba/ffi/FFITypeFactory");
   FFIVectorClass = env->FindClass("com/alibaba/ffi/FFIVector");
   StdVectorClass = env->FindClass("com/alibaba/grape/stdcxx/StdVector");
+  CommunicatorClass =
+      env->FindClass("com/alibaba/grape/communication/Communicator");
 
   if ((FFITypeFactoryClass == NULL) || (FFIVectorClass == NULL) ||
-      (StdVectorClass == NULL)) {
+      (StdVectorClass == NULL) || (CommunicatorClass == NULL)) {
     return false;
   }
 
@@ -51,12 +54,16 @@ bool InitWellKnownClasses(JNIEnv* env) {
   FFITypeFactory_getTypeMethodID_plus = env->GetStaticMethodID(
       FFITypeFactoryClass, "getType",
       "(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Class;");
+  CommunicatorClass = (jclass) env->newGlobalRef(CommunicatorClass);
 
   if ((FFITypeFactory_getTypeMethodID == NULL) ||
       (FFITypeFactory_getTypeMethodID_plus == NULL)) {
     LOG(ERROR) << "get gettype method failed";
     return false;
   }
+  CHECK_NOTNULL(CommunicatorClass);
+
+  //
 
   return true;
 }
@@ -415,6 +422,28 @@ char* java_class_name_dash_to_slash(std::string& str) {
     p++;
   }
   return c_str;
+}
+// judge whether java app class instance of Communicator, if yes, we call
+// the init communicator method.
+void init_java_communicator(JNIEnv* env, const jobject& java_app,
+                            jlong app_address) {
+  CHECK_NOTNULL(env);
+  CHECK_NOTNULL(app_address);
+  if (env->IsInstanceOf(java_app, CommunicatorClass)) {
+    jmethodID initCommunicatorMethod =
+        env->GetMethodID(CommunicatorClass, "initCommunicator", "(Z;)V");
+    CHECK_NOTNULL(initCommunicatorMethod);
+    env->CallVoidMethod(java_app, initCommunicatorMethod, app_address);
+    if (m.env()->ExceptionOccurred()) {
+      LOG(ERROR) << "Exception occurred in init communicator";
+      m.env()->ExceptionDescribe();
+      m.env()->ExceptionClear();
+      // env->DeleteLocalRef(main_class);
+      LOG(FATAL) << "exits."
+    }
+    LOG(INFO) << "Successfully init communicator." return;
+  }
+  LOG(INFO) << "No initing since not a sub class from Communicator.";
 }
 
 }  // namespace gs
