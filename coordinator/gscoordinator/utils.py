@@ -386,7 +386,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         "-output",
         LLVM4JNI_USER_OUTPUT,
         "-cp",
-        java_jar_path,
+        os.path.join(JAVA_APP_FFI_SOURCE_PATH, "CLASS_OUTPUT"),
         "-lib",
         lib_path,
         "-v",
