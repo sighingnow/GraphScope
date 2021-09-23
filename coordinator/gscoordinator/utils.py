@@ -265,7 +265,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
                 "-lib",
                 get_lib_path(GRAPE_SDK_BUILD, GRAPE_JNI_LIB_NAME)
             ]
-            logger.info("grape sdk gen: ", " ".join(run_llvm_grape_sdk_commands))
+            logger.info(" ".join(run_llvm_grape_sdk_commands))
             grape_sdk_optimize_process = subprocess.Popen(
                 run_llvm_grape_sdk_commands,
                 env=optimize_env,
@@ -288,7 +288,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
                 "-lib",
                 get_lib_path(VINEYARD_GRAPH_SDK_BUILD, V6D_JNI_LIB_NAME)
             ]
-            logger.info("vineyard graph sdk gen:", " ".join(run_llvm_v6d_sdk_commands))
+            logger.info(" ".join(run_llvm_v6d_sdk_commands))
             run_llvm_v6d_sdk_commands = subprocess.Popen(
                 run_llvm_grape_sdk_commands,
                 env=optimize_env,
@@ -386,7 +386,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         "-lib",
         lib_path
     ]
-    logger.info("user sdk gen:", " ".join(run_llvm_user_commands))
+    logger.info(" ".join(run_llvm_user_commands))
     grape_sdk_optimize_process = subprocess.Popen(
         run_llvm_user_commands,
         env=optimize_env,
