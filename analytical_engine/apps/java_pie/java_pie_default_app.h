@@ -27,9 +27,10 @@ limitations under the License.
 namespace gs {
 
 /**
- * @brief Java default app driver
+ * @brief This is a driver app for java app. The driven java app should be
+ * inherited from com.alibaba.grape.app.DefaultAppBase.
  *
- * @tparam FRAG_T
+ * @tparam FRAG_T Should be grape::ImmutableEdgecutFragment<...>
  */
 template <typename FRAG_T>
 class JavaPIEDefaultApp : public AppBase<FRAG_T, JavaPIEDefaultContext<FRAG_T>>,
@@ -74,7 +75,7 @@ class JavaPIEDefaultApp : public AppBase<FRAG_T, JavaPIEDefaultContext<FRAG_T>>,
   }
 
   /**
-   * @brief Incremental evaluation for Java default app
+   * @brief Incremental evaluation.
    *
    * @param frag
    * @param ctx

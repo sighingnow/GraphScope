@@ -28,11 +28,10 @@ limitations under the License.
 namespace gs {
 
 /**
- * @brief
- * we don't inherit parallel engine, since our multi-thread design is
- * implemented in java, we only need the message-parallel from cpp.
+ * @brief This is a driver app for Java app. The driven java app should be
+ * inherited from com.alibaba.grape.app.ParallelAppBase.
  *
- * @tparam FRAG_T
+ * @tparam FRAG_T Should be grape::ImmutableEdgecutFragment<...>
  */
 template <typename FRAG_T>
 class JavaPIEParallelApp
@@ -81,7 +80,7 @@ class JavaPIEParallelApp
   }
 
   /**
-   * @brief Incremental evaluation for SSSP.
+   * @brief Incremental evaluation.
    *
    * @param frag
    * @param ctx

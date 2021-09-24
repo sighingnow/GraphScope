@@ -28,6 +28,7 @@ using fid_t = grape::fid_t;
 
 namespace bl = boost::leaf;
 
+// Type alias for ease of use in Java.
 template <typename DATA_T>
 using VertexArrayDefault = grape::VertexArray<DATA_T, uint64_t>;
 }  // namespace gs

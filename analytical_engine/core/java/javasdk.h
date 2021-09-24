@@ -62,9 +62,6 @@ bool InitWellKnownClasses(JNIEnv* env) {
     return false;
   }
   CHECK_NOTNULL(CommunicatorClass);
-
-  //
-
   return true;
 }
 
@@ -81,10 +78,7 @@ inline uint64_t getTotalSystemMemory() {
 
 void SetupEnv(int local_num) {
   int systemMemory = getTotalSystemMemory();
-  // LOG(INFO) << "System Memory = " << systemMemory << " GB";
   int systemMemoryPerWorker = std::max(systemMemory / local_num, 1);
-  // LOG(INFO) << "System Memory Per Worker = " << systemMemoryPerWorker << "
-  // GB";
   int mnPerWorker = std::max(systemMemoryPerWorker * 7 / 12, 1);
 
   char kvPair[32000];
@@ -254,37 +248,32 @@ jobject createStdVectorObject(JNIEnv* env, const char* type_name,
     LOG(ERROR) << std::string("Exception occurred in get stdVector class");
     env->ExceptionDescribe();
     env->ExceptionClear();
-    // env->DeleteLocalRef(main_class);
     return NULL;
   }
   if (the_class == NULL) {
-    LOG(ERROR) << "Cannot find Class for " << type_name;
+    LOG(FATAL) << "Cannot find Class for " << type_name;
     return NULL;
   }
 
   jmethodID the_ctor = env->GetMethodID(the_class, "<init>", "(J)V");
   if (the_ctor == NULL) {
-    LOG(ERROR) << "Cannot find <init>(J)V constructor in " << type_name;
+    LOG(FATAL) << "Cannot find <init>(J)V constructor in " << type_name;
     return NULL;
   }
 
   jobject the_object = env->NewObject(the_class, the_ctor, pointer);
   if (the_object == NULL) {
-    LOG(ERROR) << "Cannot call <init>(J)V constructor in " << type_name;
+    LOG(FATAL) << "Cannot call <init>(J)V constructor in " << type_name;
     return NULL;
   }
 
-  // LOG(INFO) << "successfully created StdVector [ " << type_name << " ]"
-  //           << the_object;
   return the_object;
 }
 jobject createFFIPointerObject(JNIEnv* env, const char* type_name,
                                jlong pointer) {
   // must be properly encoded
   std::string tmp = type_name;
-  LOG(INFO) << tmp;
   jstring jstring_name = env->NewStringUTF(type_name);
-  LOG(INFO) << "after jstring";
   jclass the_class = (jclass) env->CallStaticObjectMethod(
       FFITypeFactoryClass, FFITypeFactory_getTypeMethodID, jstring_name);
   if (env->ExceptionOccurred()) {
@@ -292,17 +281,24 @@ jobject createFFIPointerObject(JNIEnv* env, const char* type_name,
                << type_name;
     env->ExceptionDescribe();
     env->ExceptionClear();
-    // env->DeleteLocalRef(main_class);
     return NULL;
   }
-  CHECK_NOTNULL(the_class);
+  if (the_class == NULL) {
+    LOG(FATAL) << "Cannot find Class for " << type_name;
+    return NULL;
+  }
 
   jmethodID the_ctor = env->GetMethodID(the_class, "<init>", "(J)V");
-  CHECK_NOTNULL(the_ctor);
+  if (the_ctor == NULL) {
+    LOG(FATAL) << "Cannot find <init>(J)V constructor in " << type_name;
+    return NULL;
+  }
 
   jobject the_object = env->NewObject(the_class, the_ctor, pointer);
-  CHECK_NOTNULL(the_object);
-  // LOG(INFO) << "successfully created ffipointer object" << type_name;
+  if (the_object == NULL) {
+    LOG(FATAL) << "Cannot call <init>(J)V constructor in " << type_name;
+    return NULL;
+  }
   return the_object;
 }
 std::string jstring2string(JNIEnv* env, jstring jStr) {
@@ -342,60 +338,53 @@ jobject createFFIVectorObject(JNIEnv* env, const char* type_name,
     return NULL;
   }
   if (the_class == NULL) {
-    LOG(ERROR) << "Cannot find Class for " << type_name;
+    LOG(FATAL) << "Cannot find Class for " << type_name;
     return NULL;
   }
-  // jclass clsClazz = env->GetObjectClass(the_class);
-  // jmethodID mid_getName =
-  //     env->GetMethodID(clsClazz, "getName", "()Ljava/lang/String;");
-  // jstring name = (jstring) env->CallObjectMethod(the_class, mid_getName);
-  // LOG(INFO) << "found class" << jstring2string(env, name);
 
   jmethodID the_ctor = env->GetMethodID(the_class, "<init>", "(J)V");
   if (the_ctor == NULL) {
-    LOG(ERROR) << "Cannot find <init>(J)V constructor in " << type_name;
+    LOG(FATAL) << "Cannot find <init>(J)V constructor in " << type_name;
     return NULL;
   }
 
   jobject the_object = env->NewObject(the_class, the_ctor, pointer);
   if (the_object == NULL) {
-    LOG(ERROR) << "Cannot call <init>(J)V constructor in " << type_name;
+    LOG(FATAL) << "Cannot call <init>(J)V constructor in " << type_name;
     return NULL;
   }
 
-  // LOG(INFO) << "successfully created ffivector [ " << type_name << " ]"
-  //           << the_object;
   return the_object;
 }
 
 std::string get_jobject_class_name(JNIEnv* env, jobject object) {
   jclass object_class = env->GetObjectClass(object);
   if (object_class == NULL) {
-    LOG(ERROR) << "The object class is null";
+    LOG(FATAL) << "The object class is null";
     return NULL;
   }
   jmethodID obj_class_getClass_method =
       env->GetMethodID(object_class, "getClass", "()Ljava/lang/Class;");
   if (obj_class_getClass_method == NULL) {
-    LOG(ERROR) << "getclass method null";
+    LOG(FATAL) << "getclass method null";
     return NULL;
   }
   jobject obj_class_obj =
       env->CallObjectMethod(object, obj_class_getClass_method);
   if (obj_class_obj == NULL) {
-    LOG(ERROR) << "obj class obj null";
+    LOG(FATAL) << "obj class obj null";
     return NULL;
   }
 
   jclass obj_class_obj_class = env->GetObjectClass(obj_class_obj);
   if (obj_class_obj_class == NULL) {
-    LOG(ERROR) << "obj_class_obj_class null";
+    LOG(FATAL) << "obj_class_obj_class null";
     return NULL;
   }
   jmethodID get_name_method =
       env->GetMethodID(obj_class_obj_class, "getName", "()Ljava/lang/String;");
   if (get_name_method == NULL) {
-    LOG(ERROR) << "get name method null";
+    LOG(FATAL) << "get name method null";
     return NULL;
   }
   jstring class_name_jstr =
@@ -448,7 +437,7 @@ void init_java_communicator(JNIEnv* env, const jobject& java_app,
       env->ExceptionDescribe();
       env->ExceptionClear();
       // env->DeleteLocalRef(main_class);
-      LOG(FATAL) << "exits.";
+      LOG(FATAL) << "Exiting...";
     }
     LOG(INFO) << "Successfully init communicator.";
     return;

@@ -364,7 +364,7 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToNumpy(
     if (outer_and_inner.size() != 2) {
       RETURN_GS_ERROR(
           vineyard::ErrorCode::kIllegalStateError,
-          "Unsupported java context type: " + std::string(ctx_type));
+          "Unsupported java property context type: " + std::string(ctx_type));
     }
     auto wrapper =
         std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(
@@ -377,7 +377,7 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToNumpy(
     if (outer_and_inner.size() != 2) {
       RETURN_GS_ERROR(
           vineyard::ErrorCode::kIllegalStateError,
-          "Unsupported java context type: " + std::string(ctx_type));
+          "Unsupported java projected context type: " + std::string(ctx_type));
     }
     auto wrapper =
         std::dynamic_pointer_cast<IJavaPIEProjectedDefaultContextWrapper>(
@@ -456,7 +456,7 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
     if (outer_and_inner.size() != 2) {
       RETURN_GS_ERROR(
           vineyard::ErrorCode::kIllegalStateError,
-          "Unsupported java context type: " + std::string(ctx_type));
+          "Unsupported java property context type: " + std::string(ctx_type));
     }
     auto wrapper =
         std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(
@@ -470,7 +470,7 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
     if (outer_and_inner.size() != 2) {
       RETURN_GS_ERROR(
           vineyard::ErrorCode::kIllegalStateError,
-          "Unsupported java context type: " + std::string(ctx_type));
+          "Unsupported java projected context type: " + std::string(ctx_type));
     }
     auto wrapper =
         std::dynamic_pointer_cast<IJavaPIEProjectedDefaultContextWrapper>(
@@ -543,14 +543,12 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
     if (outer_and_inner.size() != 2) {
       RETURN_GS_ERROR(
           vineyard::ErrorCode::kIllegalStateError,
-          "Unsupported java context type: " + std::string(ctx_type));
+          "Unsupported java property context type: " + std::string(ctx_type));
     }
     auto wrapper =
         std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(
             base_ctx_wrapper);
-    // delay the selector parsing to inner ctxWrapper;
     BOOST_LEAF_AUTO(s_selector, params.Get<std::string>(rpc::SELECTOR));
-    // BOOST_LEAF_AUTO(selector, LabeledSelector::parse(s_selector));
     BOOST_LEAF_ASSIGN(
         id, wrapper->ToVineyardTensor(comm_spec_, *client_, s_selector, range));
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
@@ -560,14 +558,12 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
     if (outer_and_inner.size() != 2) {
       RETURN_GS_ERROR(
           vineyard::ErrorCode::kIllegalStateError,
-          "Unsupported java context type: " + std::string(ctx_type));
+          "Unsupported java projected context type: " + std::string(ctx_type));
     }
     auto wrapper =
         std::dynamic_pointer_cast<IJavaPIEProjectedDefaultContextWrapper>(
             base_ctx_wrapper);
-    // delay the selector parsing to inner ctxWrapper;
     BOOST_LEAF_AUTO(s_selector, params.Get<std::string>(rpc::SELECTOR));
-    // BOOST_LEAF_AUTO(selector, LabeledSelector::parse(s_selector));
     BOOST_LEAF_ASSIGN(
         id, wrapper->ToVineyardTensor(comm_spec_, *client_, s_selector, range));
   } else {
@@ -643,7 +639,7 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
     if (outer_and_inner.size() != 2) {
       RETURN_GS_ERROR(
           vineyard::ErrorCode::kIllegalStateError,
-          "Unsupported java context type: " + std::string(ctx_type));
+          "Unsupported java property context type: " + std::string(ctx_type));
     }
     auto vd_ctx_wrapper =
         std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(
@@ -658,7 +654,7 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
     if (outer_and_inner.size() != 2) {
       RETURN_GS_ERROR(
           vineyard::ErrorCode::kIllegalStateError,
-          "Unsupported java context type: " + std::string(ctx_type));
+          "Unsupported java projected context type: " + std::string(ctx_type));
     }
     auto vd_ctx_wrapper =
         std::dynamic_pointer_cast<IJavaPIEProjectedDefaultContextWrapper>(

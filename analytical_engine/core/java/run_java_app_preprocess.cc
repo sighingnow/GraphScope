@@ -13,10 +13,6 @@ int main(int argc, char* argv[]) {
   gs::Init();
 
   gs::preprocess(argc, argv);
-  // step 0: call main function to write the config
-  // step 1: call tianxiao's method to generate code and cpp files
-  // step 2: compile above file to user.so, along  with libgrape-lite.so and
-  // libgrape-lite-jin.so, we build run_pie_sdk
 
   gs::Finalize();
 

@@ -7,6 +7,10 @@
 
 #include <string>
 namespace gs {
+/**
+ * @brief Since Java can not pass Double, Long as reference, we need a wrapper
+ * for primitives.
+ */
 class DoubleMsg {
  public:
   DoubleMsg() { data = -1.0; }
@@ -28,15 +32,6 @@ class LongMsg {
   uint64_t data;
 };
 
-class StringMsg {
- public:
-  StringMsg() { data = nullptr; }
-  StringMsg(std::string& in_data) { data = in_data; }
-  ~StringMsg() {}
-  inline void setData(std::string value) { data = value; }
-  inline std::string& getData() { return data; }
-  std::string data;
-};
 inline grape::OutArchive& operator>>(grape::OutArchive& out_archive,
                                      DoubleMsg& msg) {
   out_archive >> msg.data;
@@ -54,16 +49,6 @@ inline grape::OutArchive& operator>>(grape::OutArchive& out_archive,
 }
 inline grape::InArchive& operator<<(grape::InArchive& in_archive,
                                     const LongMsg& msg) {
-  in_archive << msg.data;
-  return in_archive;
-}
-inline grape::OutArchive& operator>>(grape::OutArchive& out_archive,
-                                     StringMsg& msg) {
-  out_archive >> msg.data;
-  return out_archive;
-}
-inline grape::InArchive& operator<<(grape::InArchive& in_archive,
-                                    const StringMsg& msg) {
   in_archive << msg.data;
   return in_archive;
 }

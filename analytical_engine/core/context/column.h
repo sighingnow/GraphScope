@@ -94,6 +94,8 @@ class Column : public IColumn {
  private:
   vertex_array_t data_;
 };
+
+// Type alias for ease of use in Java.
 template <typename FRAG_T>
 using DoubleColumn = Column<FRAG_T, double>;
 

@@ -27,10 +27,10 @@ limitations under the License.
 namespace gs {
 
 /**
- * @brief Java app driver for ProjectedDefaultJavaApp, which utilizes
- * ArrowProjectedFragment and DefaultMessageManager.
+ * @brief This is a driver app for Java app. The driven java app should be
+ * inherited from ProjectedDefaultAppBase.
  *
- * @tparam FRAG_T
+ * @tparam FRAG_T Should be gs::ArrowProjectedFragment<...>
  */
 template <typename FRAG_T>
 class JavaPIEProjectedDefaultApp
@@ -77,7 +77,7 @@ class JavaPIEProjectedDefaultApp
   }
 
   /**
-   * @brief Incremental evaluation for Java default app
+   * @brief Incremental evaluation.
    *
    * @param frag
    * @param ctx

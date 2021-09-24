@@ -99,8 +99,7 @@ void preprocess(int argc, char** argv) {
 
     // Call grapeAnnotationProcessor here
     // Currently we geneerate graphScope sample and grape sample
-    // from the sampe entrence, so for gs, the main class is never used
-    // in codegen.
+    // from the sampe entrence, so for gs.
     const char* grape_processor_class_name =
         "com/alibaba/grape/annotation/GrapeAppScanner";
     jclass grape_processor_class =
@@ -130,10 +129,10 @@ void preprocess(int argc, char** argv) {
     LOG(INFO) << "generated file wrote to :" << file_gen_path;
     // set the value of code gen path to env for later compilation.
     set_codegen_path(file_gen_path, "codegen_path");
-    LOG(INFO) << "Exiting grape processor";
+    LOG(INFO) << "Exiting from Java preprocessor";
 
   } else {
-    LOG(ERROR) << " java env not available";
+    LOG(FATAL) << " java env not available";
   }
 
   MPI_Barrier(MPI_COMM_WORLD);

@@ -249,6 +249,7 @@ class Nbr<VID_T, EID_T, grape::EmptyType> {
   const mutable nbr_unit_t* nbr_;
 };
 
+// Type alias for ease of use in Java.
 template <typename VID_T, typename EDATA_T>
 using NbrDefault =
     Nbr<VID_T, vineyard::property_graph_types::EID_TYPE, EDATA_T>;
@@ -325,6 +326,7 @@ class AdjList<VID_T, EID_T, grape::EmptyType> {
   const nbr_unit_t* end_;
 };
 
+// Type alias for ease of use in Java.
 template <typename VID_T, typename EDATA_T>
 using AdjListDefault =
     AdjList<VID_T, vineyard::property_graph_types::EID_TYPE, EDATA_T>;
@@ -741,6 +743,8 @@ class ArrowProjectedFragment
   inline bool Oid2Gid(const oid_t& oid, vid_t& gid) const {
     return vm_ptr_->GetGid(internal_oid_t(oid), gid);
   }
+  // For Java use, can not use Oid2Gid(const oid_t & oid, vid_t & gid) since
+  // Java can not pass vid_t by reference.
   inline vid_t Oid2Gid(const oid_t& oid) const {
     vid_t gid;
     vm_ptr_->GetGid(internal_oid_t(oid), gid);
@@ -776,10 +780,6 @@ class ArrowProjectedFragment
     return adj_list_t(&ie_ptr_[ie_offsets_begin_ptr_[offset]],
                       &ie_ptr_[ie_offsets_end_ptr_[offset]],
                       edge_data_array_accessor_);
-  }
-  inline arrow_projected_fragment_impl::TypedArray<EDATA_T>&
-  getEdataArrayAccessor() {
-    return edge_data_array_accessor_;
   }
 
   inline adj_list_t GetOutgoingAdjList(const vertex_t& v) const {

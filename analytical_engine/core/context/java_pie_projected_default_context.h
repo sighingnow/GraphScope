@@ -26,19 +26,19 @@ limitations under the License.
 //#include "core/context/i_context.h"
 #include <grape/grape.h>
 #include <jni.h>
-#include "boost/algorithm/string/classification.hpp"  // Include boost::for is_any_of
-#include "boost/algorithm/string/split.hpp"  // Include for boost::split
-#include "boost/property_tree/exceptions.hpp"
+// #include "boost/algorithm/string/classification.hpp"  // Include boost::for
+// is_any_of #include "boost/algorithm/string/split.hpp"  // Include for
+// boost::split #include "boost/property_tree/exceptions.hpp"
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "core/config.h"
 #include "core/context/java_context_base.h"
-#include "core/context/vertex_data_context.h"
-#include "core/context/vertex_property_context.h"
+// #include "core/context/vertex_data_context.h"
+// #include "core/context/vertex_property_context.h"
 #include "core/java/javasdk.h"
 #include "core/object/i_fragment_wrapper.h"
-#include "core/parallel/property_message_manager.h"
-#include "grape/app/context_base.h"
+// #include "core/parallel/property_message_manager.h"
+// #include "grape/app/context_base.h"
 #include "grape/parallel/default_message_manager.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/fragment_traits.h"

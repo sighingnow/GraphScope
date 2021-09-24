@@ -27,10 +27,10 @@ limitations under the License.
 namespace gs {
 
 /**
- * @brief Java app driver for PropertyDefaultJavaApp, which utilizes
- * ArrowFragment and PropertyMessageManager.
+ * @brief This is a driver app for Java app. The driven java app should be
+ * inherited from PropertyDefaultAppBase.
  *
- * @tparam FRAG_T
+ * @tparam FRAG_T Should be vineyard::ArrowFragment<...>
  */
 template <typename FRAG_T>
 class JavaPIEPropertyDefaultApp
@@ -77,7 +77,7 @@ class JavaPIEPropertyDefaultApp
   }
 
   /**
-   * @brief Incremental evaluation for Java default app
+   * @brief Incremental evaluation.
    *
    * @param frag
    * @param ctx

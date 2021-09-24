@@ -28,9 +28,10 @@ limitations under the License.
 namespace gs {
 
 /**
- * @brief Context for the java pie app, used by java sdk.
+ * @brief Driver context for Java context, work along with @see
+ * gs::JavaPIEDefaultApp.
  *
- * @tparam FRAG_T
+ * @tparam FRAG_T Should be grape::ImmutableEdgecutFragment<...>
  */
 template <typename FRAG_T>
 class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {

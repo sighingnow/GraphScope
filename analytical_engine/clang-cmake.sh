@@ -1,5 +1,6 @@
 #! /bin/bash
 
+#Building Analytical engine with llvm.
 echo $PWD
 
 export LLVM11_HOME=${LLVM11_HOME:-/usr/lib/llvm-11}

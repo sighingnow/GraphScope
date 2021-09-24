@@ -28,9 +28,10 @@ limitations under the License.
 namespace gs {
 
 /**
- * @brief Context for the java parallel pie app.
+ * @brief Driver context for Java parallel context, work along with @see
+ * gs::JavaPIEParallelApp.
  *
- * @tparam FRAG_T
+ * @tparam FRAG_T Should be grape::ImmutableEdgecutFragment<...>
  */
 template <typename FRAG_T>
 class JavaPIEParallelContext : public grape::ContextBase<FRAG_T> {

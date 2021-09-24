@@ -214,7 +214,8 @@ class ILabeledVertexPropertyContextWrapper : public IContextWrapper {
 };
 
 /**
- * @brief A base class for JavaPropertyContext. It holds an inner ctxWrapper
+ * @brief A base class for JavaPropertyDefaultContext. It holds an inner
+ * ctxWrapper, and redirect function calls to the inner ctxWrapper.
  */
 class IJavaPIEPropertyDefaultContextWrapper : public IContextWrapper {
   using label_id_t = vineyard::property_graph_types::LABEL_ID_TYPE;
@@ -249,7 +250,8 @@ class IJavaPIEPropertyDefaultContextWrapper : public IContextWrapper {
 };
 
 /**
- * @brief A base class for JavaPropertyContext. It holds an inner ctxWrapper
+ * @brief A base class for JavaProjectedDefaultContext. It holds an inner
+ * ctxWrapper,and redirect function calls to the inner ctxWrapper.
  */
 class IJavaPIEProjectedDefaultContextWrapper : public IContextWrapper {
   using label_id_t = vineyard::property_graph_types::LABEL_ID_TYPE;
