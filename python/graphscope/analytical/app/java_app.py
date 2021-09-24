@@ -76,6 +76,7 @@ class JavaApp(AppAssets):
         #For two different java type, we use two different driver class
         if self._java_app_type == "property":
             self._cpp_driver_class =  "gs::JavaPIEPropertyDefaultApp"
+            gs_config["app"][0]["driver_header"] = "apps/java_pie/java_pie_property_default_app.h"
             gs_config["app"][0]["class_name"] =self.cpp_driver_class
             gs_config["app"][0]["compatible_graph"] = ["vineyard::ArrowFragment"]
             gs_config["app"][0]["context_type"] = "java_pie_property_default_context"
@@ -83,6 +84,7 @@ class JavaApp(AppAssets):
             super().__init__("java_app","java_pie_property_default_context",gar.read_bytes())
         elif self._java_app_type == "projected":
             self._cpp_driver_class = "gs::JavaPIEProjectedDefaultApp"
+            gs_config["app"][0]["driver_header"] = "apps/java_pie/java_pie_projected_default_app.h"
             gs_config["app"][0]["class_name"] = self.cpp_driver_class
             gs_config["app"][0]["compatible_graph"] = ["gs::ArrowProjectedFragment"]
             gs_config["app"][0]["context_type"] = "java_pie_projected_default_context"

@@ -230,12 +230,12 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
                             "-DCMAKE_JNI_LINKER_FLAGS=-fuse-ld={} -Xlinker -mllvm=-lto-embed-bitcode".format(LLVM_LLD),
                             "-DJAVA_PIE_APP=True",
                             "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
-        if app_class == "gs::JavaPIEPropertyDefaultApp":
-            cmake_commands += ["-DJAVA_PROPERTY=True"]
-        elif app_class == "gs::JavaPIEProjectedDefaultApp":
-            cmake_commands += ["-DJAVA_PROPERTY=False"]
-        else :
-            raise Exception("Unsupported type {}".format(app_class))
+        # if app_class == "gs::JavaPIEPropertyDefaultApp":
+        #     cmake_commands += ["-DJAVA_PROPERTY=True"]
+        # elif app_class == "gs::JavaPIEProjectedDefaultApp":
+        #     cmake_commands += ["-DJAVA_PROPERTY=False"]
+        # else :
+        #     raise Exception("Unsupported type {}".format(app_class))
         cmake_commands += ["."]
         logger.info(" ".join(cmake_commands))
         java_codegen_commands = [
@@ -1182,7 +1182,7 @@ def _codegen_app_info(attr, meta_file: str):
             if app_type == "java_pie":
                 return (
                     app_type, 
-                    "",#cxx header
+                    app["driver_header"],#cxx header
                     app["class_name"], #cxx class name
                     None,  # vd_type,
                     None,  # md_type
