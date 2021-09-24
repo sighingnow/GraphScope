@@ -15,23 +15,34 @@
 #ifndef ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H
 #define ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H
 
-#include "grape/utils/vertex_array.h"
+#include "core/context/column.h"
 #include "core/fragment/arrow_projected_fragment.h"
+#include "grape/utils/vertex_array.h"
 
 namespace gs {
+
+namespace arrow_projected_fragment_impl {
 // Type alias for ease of use in Java.
 template <typename DATA_T>
 using VertexArrayDefault = grape::VertexArray<DATA_T, uint64_t>;
 
-// Type alias for ease of use in Java.
 template <typename VID_T, typename EDATA_T>
 using NbrDefault =
     Nbr<VID_T, vineyard::property_graph_types::EID_TYPE, EDATA_T>;
 
-// Type alias for ease of use in Java.
 template <typename VID_T, typename EDATA_T>
 using AdjListDefault =
     AdjList<VID_T, vineyard::property_graph_types::EID_TYPE, EDATA_T>;
+}  // namespace arrow_projected_fragment_impl
+
+template <typename FRAG_T>
+using DoubleColumn = Column<FRAG_T, double>;
+
+template <typename FRAG_T>
+using LongColumn = Column<FRAG_T, uint64_t>;
+
+template <typename FRAG_T>
+using IntColumn = Column<FRAG_T, uint32_t>;
 }  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H

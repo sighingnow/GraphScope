@@ -26,7 +26,6 @@ namespace gs {
 using fid_t = grape::fid_t;
 
 namespace bl = boost::leaf;
-
 }  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_CONFIG_H_
