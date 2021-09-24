@@ -14,6 +14,9 @@ WITH_LEARNING_ENGINE        ?= OFF
 # testing build option
 BUILD_TEST                  ?= OFF
 
+# build with clang compiler 
+WITH_LLVM					?= OFF
+
 .PHONY: all
 all: graphscope
 
@@ -60,7 +63,7 @@ coordinator: client
 gae:
 	mkdir -p $(WORKING_DIR)/analytical_engine/build
 	cd $(WORKING_DIR)/analytical_engine/build && \
-	cmake -DCMAKE_INSTALL_PREFIX=$(INSTALL_PREFIX) -DNETWORKX=$(NETWORKX) -DBUILD_TESTS=${BUILD_TEST} .. && \
+	cmake -DCMAKE_INSTALL_PREFIX=$(INSTALL_PREFIX) -DNETWORKX=$(NETWORKX) -DBUILD_TESTS=${BUILD_TEST} -DWITH_LLVM=${WITH_LLVM}.. && \
 	make -j$(NUM_PROC) && \
 	sudo make install
 

@@ -19,6 +19,20 @@ project(analytical_engine LANGUAGES C CXX VERSION ${GRAPHSCOPE_ANALYTICAL_VERSIO
 
 option(NETWORKX "networkx on?" ON)
 option(BUILD_TESTS "Build unit test" ON)
+option(WITH_LLVM "Build with clang" ON)
+
+if (WITH_LLVM)
+    if (defined $ENV{LLVM11_HOME})
+        message(STATUS "Using LLVM11 in ${LLVM11_HOME}")
+    else()
+        message(FATAL_ERROR "Please set env var LLVM11_HOME before using clang to compile")
+    endif()
+    set(CMAKE_C_COMPILER $ENV{LLVM11_HOME}/bin/clang)
+    set(CMAKE_CXX_COMPILER $ENV{LLVM11_HOME}/bin/clang++)
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fforce-emit-vtables")
+    set(CMAKE_JNI_LINKER_FLAGS "${CMAKE_JNI_LINKER_FLAGS} -fuse-ld=${LLVM11_HOME}/bin/ld.lld -Xlinker -mllvm=-lto-embed-bitcode")
+endif()
 
 if (NETWORKX)
     add_definitions(-DNETWORKX)
