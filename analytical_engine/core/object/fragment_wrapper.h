@@ -396,8 +396,7 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
                         vp_ctx_wrapper->ToArrowArrays(comm_spec, s_selectors));
 #else
       RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
-                      "GS is not compiled with ENABLE_JAVA_SDK on: " +
-                          std::string(ctx_type));
+                      "GS is compiled with option ENABLE_JAVA_SDK off");
 #endif
     } else if (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
                std::string::npos) {
@@ -422,8 +421,7 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
       columns[v_label_id] = arrow_arrays;
 #else
       RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
-                      "GS is not compiled with ENABLE_JAVA_SDK on: " +
-                          std::string(ctx_type));
+                      "GS is compiled with option ENABLE_JAVA_SDK off");
 #endif
     }
     vineyard::ObjectMeta ctx_meta, cur_meta;

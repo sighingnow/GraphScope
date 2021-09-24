@@ -372,9 +372,8 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToNumpy(
             base_ctx_wrapper);
     return wrapper->ToNdArray(comm_spec_, s_selector, range);
 #else
-    RETURN_GS_ERROR(
-        vineyard::ErrorCode::kIllegalStateError,
-        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+    RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
+                    "GS is compiled with option ENABLE_JAVA_SDK off");
 #endif
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
              std::string::npos) {
@@ -391,9 +390,8 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToNumpy(
             base_ctx_wrapper);
     return wrapper->ToNdArray(comm_spec_, s_selector, range);
 #else
-    RETURN_GS_ERROR(
-        vineyard::ErrorCode::kIllegalStateError,
-        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+    RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
+                    "GS is compiled with option ENABLE_JAVA_SDK off");
 #endif
   }
   RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
@@ -477,9 +475,8 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
     // delay the selector parsing to inner ctxWrapper;
     return wrapper->ToDataframe(comm_spec_, s_selectors, range);
 #else
-    RETURN_GS_ERROR(
-        vineyard::ErrorCode::kIllegalStateError,
-        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+    RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
+                    "GS is compiled with option ENABLE_JAVA_SDK off");
 #endif
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
              std::string::npos) {
@@ -497,9 +494,8 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
     // delay the selector parsing to inner ctxWrapper;
     return wrapper->ToDataframe(comm_spec_, s_selectors, range);
 #else
-    RETURN_GS_ERROR(
-        vineyard::ErrorCode::kIllegalStateError,
-        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+    RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
+                    "GS is compiled with option ENABLE_JAVA_SDK off");
 #endif
   }
   RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
@@ -577,9 +573,8 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
     BOOST_LEAF_ASSIGN(
         id, wrapper->ToVineyardTensor(comm_spec_, *client_, s_selector, range));
 #else
-    RETURN_GS_ERROR(
-        vineyard::ErrorCode::kIllegalStateError,
-        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+    RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
+                    "GS is compiled with option ENABLE_JAVA_SDK off");
 #endif
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
              std::string::npos) {
@@ -598,9 +593,8 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
     BOOST_LEAF_ASSIGN(
         id, wrapper->ToVineyardTensor(comm_spec_, *client_, s_selector, range));
 #else
-    RETURN_GS_ERROR(
-        vineyard::ErrorCode::kIllegalStateError,
-        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+    RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
+                    "GS is compiled with option ENABLE_JAVA_SDK off");
 #endif
   } else {
     CHECK(false);
@@ -685,9 +679,8 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
     BOOST_LEAF_ASSIGN(id, vd_ctx_wrapper->ToVineyardDataframe(
                               comm_spec_, *client_, s_selectors, range));
 #else
-    RETURN_GS_ERROR(
-        vineyard::ErrorCode::kIllegalStateError,
-        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+    RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
+                    "GS is compiled with option ENABLE_JAVA_SDK off");
 #endif
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
              std::string::npos) {
@@ -706,9 +699,8 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
     BOOST_LEAF_ASSIGN(id, vd_ctx_wrapper->ToVineyardDataframe(
                               comm_spec_, *client_, s_selectors, range));
 #else
-    RETURN_GS_ERROR(
-        vineyard::ErrorCode::kIllegalStateError,
-        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+    RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
+                    "GS is compiled with option ENABLE_JAVA_SDK off");
 #endif
   } else {
     CHECK(false);
