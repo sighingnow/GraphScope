@@ -213,6 +213,7 @@ class ILabeledVertexPropertyContextWrapper : public IContextWrapper {
                     selectors) = 0;
 };
 
+#ifdef ENABLE_JAVA_SDK
 /**
  * @brief A base class for JavaPropertyDefaultContext. It holds an inner
  * ctxWrapper, and redirect function calls to the inner ctxWrapper.
@@ -283,6 +284,7 @@ class IJavaPIEProjectedDefaultContextWrapper : public IContextWrapper {
   ToArrowArrays(const grape::CommSpec& comm_spec,
                 const std::string& selector_string) = 0;
 };
+#endif
 
 /**
  * @brief An abstract ContextWrapper for the data not assigned to vertex/edges.

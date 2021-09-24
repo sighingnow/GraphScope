@@ -228,6 +228,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
                             "-DLLVM_DIR={}/lib/cmake/llvm".format(LLVM11_HOME),
                             "-DCMAKE_CXX_FLAGS=-flto -fforce-emit-vtables",
                             "-DCMAKE_JNI_LINKER_FLAGS=-fuse-ld={} -Xlinker -mllvm=-lto-embed-bitcode".format(LLVM_LLD),
+                            "-DENABLE_JAVA_SDK",
                             "-DJAVA_PIE_APP=True",
                             "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
         # if app_class == "gs::JavaPIEPropertyDefaultApp":

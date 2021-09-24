@@ -16,8 +16,9 @@ limitations under the License.
 #ifndef ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PARALLEL_CONTEXT_H_
 #define ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PARALLEL_CONTEXT_H_
 
-#include <grape/grape.h>
+#ifdef ENABLE_JAVA_SDK
 
+#include <grape/grape.h>
 #include <iomanip>
 #include <limits>
 #include <vector>
@@ -163,5 +164,5 @@ class JavaPIEParallelContext : public grape::ContextBase<FRAG_T> {
   const fragment_t& fragment_;
 };
 }  // namespace gs
-
+#endif
 #endif  // ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PARALLEL_CONTEXT_H_

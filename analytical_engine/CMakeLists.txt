@@ -29,6 +29,8 @@ if (ENABLE_JAVA_SDK)
     endif()
     set(CMAKE_C_COMPILER $ENV{LLVM11_HOME}/bin/clang)
     set(CMAKE_CXX_COMPILER $ENV{LLVM11_HOME}/bin/clang++)
+    message(STATUS "Using c compiler: ${CMAKE_C_COMPILER}")
+    message(STATUS "Using cxx compiler: ${CMAKE_C_COMPILER}")
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fforce-emit-vtables")
     set(CMAKE_JNI_LINKER_FLAGS "${CMAKE_JNI_LINKER_FLAGS} -fuse-ld=${LLVM11_HOME}/bin/ld.lld -Xlinker -mllvm=-lto-embed-bitcode")

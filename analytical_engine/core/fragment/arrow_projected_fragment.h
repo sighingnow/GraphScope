@@ -733,6 +733,7 @@ class ArrowProjectedFragment
   inline bool Oid2Gid(const oid_t& oid, vid_t& gid) const {
     return vm_ptr_->GetGid(internal_oid_t(oid), gid);
   }
+#ifdef ENABLE_JAVA_SDK
   // For Java use, can not use Oid2Gid(const oid_t & oid, vid_t & gid) since
   // Java can not pass vid_t by reference.
   inline vid_t Oid2Gid(const oid_t& oid) const {
@@ -742,6 +743,7 @@ class ArrowProjectedFragment
     }
     return std::numeric_limits<vid_t>::max();
   }
+#endif
 
   inline bool InnerVertexGid2Vertex(const vid_t& gid, vertex_t& v) const {
     v.SetValue(vid_parser_.GetLid(gid));

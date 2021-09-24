@@ -88,10 +88,12 @@ else()
     include("${ANALYTICAL_ENGINE_HOME}/cmake/FindLibUnwind.cmake")
 endif()
 
-# find jni---------------------------------------------------------------------
-find_package(JNI REQUIRED)
-include_directories(SYSTEM ${JAVA_INCLUDE_PATH})
-include_directories(SYSTEM ${JAVA_INCLUDE_PATH2})
+if(ENABLE_JAVA_SDK)
+    # find jni---------------------------------------------------------------------
+    find_package(JNI REQUIRED)
+    include_directories(SYSTEM ${JAVA_INCLUDE_PATH})
+    include_directories(SYSTEM ${JAVA_INCLUDE_PATH2})
+endif()
 
 if(LIBUNWIND_FOUND)
     add_definitions(-DWITH_LIBUNWIND)
@@ -174,7 +176,6 @@ elseif (JAVA_PIE_APP)
                                                     _APP_TYPE=$_app_type 
                                                     _APP_HEADER=$_app_header)
     target_link_libraries(${FRAME_NAME} ${MPI_CXX_LIBRARIES}
-                    ${PYTHON_LIBRARIES}
                     ${VINEYARD_LIBRARIES}
                     ${LIBGRAPELITE_LIBRARIES}
                     ${GLOG_LIBRARIES}

@@ -16,8 +16,9 @@ limitations under the License.
 #ifndef EXAMPLES_ANALYTICAL_APPS_JAVAAPP_JAVASDK_H_
 #define EXAMPLES_ANALYTICAL_APPS_JAVAAPP_JAVASDK_H_
 
+#ifdef ENABLE_JAVA_SDK
 #include <jni.h>
-#include <stdlib.h> /* getenv */
+#include <stdlib.h>
 #include <unistd.h>
 #include <queue>
 #include <utility>
@@ -446,5 +447,5 @@ void init_java_communicator(JNIEnv* env, const jobject& java_app,
 }
 
 }  // namespace gs
-
+#endif
 #endif  // EXAMPLES_ANALYTICAL_APPS_JAVAAPP_JAVASDK_H_

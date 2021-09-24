@@ -21,8 +21,10 @@
 #include <utility>
 #include <vector>
 
+#ifdef ENABLE_JAVA_SDK
 #include "boost/algorithm/string.hpp"
 #include "boost/algorithm/string/split.hpp"
+#endif
 #include "grape/util.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/graph_schema.h"
@@ -379,6 +381,7 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
 
     } else if (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
                std::string::npos) {
+#ifdef ENABLE_JAVA_SDK
       std::vector<std::string> outer_and_inner;
       boost::split(outer_and_inner, context_type, boost::is_any_of(":"));
       if (outer_and_inner.size() != 2) {
@@ -391,8 +394,14 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
               ctx_wrapper);
       BOOST_LEAF_ASSIGN(columns,
                         vp_ctx_wrapper->ToArrowArrays(comm_spec, s_selectors));
+#else
+      RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
+                      "GS is not compiled with ENABLE_JAVA_SDK on: " +
+                          std::string(ctx_type));
+#endif
     } else if (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
                std::string::npos) {
+#ifdef ENABLE_JAVA_SDK
       std::vector<std::string> outer_and_inner;
       boost::split(outer_and_inner, context_type, boost::is_any_of(":"));
       if (outer_and_inner.size() != 2) {
@@ -411,6 +420,11 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
       BOOST_LEAF_AUTO(arrow_arrays,
                       vp_ctx_wrapper->ToArrowArrays(comm_spec, s_selectors));
       columns[v_label_id] = arrow_arrays;
+#else
+      RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
+                      "GS is not compiled with ENABLE_JAVA_SDK on: " +
+                          std::string(ctx_type));
+#endif
     }
     vineyard::ObjectMeta ctx_meta, cur_meta;
     VINEYARD_CHECK_OK(client->GetMetaData(vm_id_from_ctx, ctx_meta));

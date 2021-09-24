@@ -15,7 +15,7 @@ limitations under the License.
 
 #ifndef ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_DEFAULT_APP_H_
 #define ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_DEFAULT_APP_H_
-
+#ifdef ENABLE_JAVA_SDK
 #include <utility>
 
 #include "core/app/app_base.h"
@@ -109,5 +109,5 @@ class JavaPIEDefaultApp : public AppBase<FRAG_T, JavaPIEDefaultContext<FRAG_T>>,
   }
 };
 }  // namespace gs
-
+#endif
 #endif  // ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_DEFAULT_APP_H_

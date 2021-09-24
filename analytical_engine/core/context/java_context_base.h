@@ -16,6 +16,7 @@ limitations under the License.
 #ifndef ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_CONTEXT_BASE_H_
 #define ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_CONTEXT_BASE_H_
 
+#ifdef ENABLE_JAVA_SDK
 #include <jni.h>
 #include <iomanip>
 #include <limits>
@@ -25,11 +26,6 @@ limitations under the License.
 #include <vector>
 
 #include <grape/grape.h>
-#include "grape/app/context_base.h"
-//#include "core/context/i_context.h"
-// #include "boost/algorithm/string/classification.hpp"  // Include boost::for
-// is_any_of #include "boost/algorithm/string/split.hpp"  // Include for
-// boost::split #include "boost/property_tree/exceptions.hpp"
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "core/config.h"
@@ -38,8 +34,7 @@ limitations under the License.
 #include "core/context/vertex_property_context.h"
 #include "core/java/javasdk.h"
 #include "core/object/i_fragment_wrapper.h"
-// #include "core/parallel/property_message_manager.h"
-// #include "grape/app/context_base.h"
+#include "grape/app/context_base.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/fragment_traits.h"
 namespace gs {
@@ -317,5 +312,5 @@ class JavaContextBase : public grape::ContextBase {
 };
 
 }  // namespace gs
-
+#endif
 #endif  // ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_CONTEXT_BASE_H_

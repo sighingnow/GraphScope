@@ -15,9 +15,10 @@ limitations under the License.
 
 #ifndef ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROPERTY_DEFAULT_CONTEXT_H_
 #define ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROPERTY_DEFAULT_CONTEXT_H_
+#define CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT "java_pie_property_default"
 
+#ifdef ENABLE_JAVA_SDK
 #include <grape/grape.h>
-#include <jni.h>
 
 #include <iomanip>
 #include <limits>
@@ -32,7 +33,7 @@ limitations under the License.
 #include "core/parallel/property_message_manager.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/fragment_traits.h"
-#define CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT "java_pie_property_default"
+
 namespace gs {
 
 static constexpr const char* _java_property_message_manager_name =
@@ -136,17 +137,7 @@ class JavaPIEPropertyDefaultContextWrapper
       _inner_context_wrapper = std::make_shared<inner_ctx_wrapper_type>(
           ctx_name, frag_wrapper, inner_ctx_impl_shared);
 
-    }
-    // else if (java_ctx_type_name == "VertexPropertyContext") {
-    //   using inner_ctx_type = VertexPropertyContext<FRAG_T>;
-    //   using inner_ctx_wrapper_type = VertexPropertyContextWrapper<FRAG_T>;
-    //   auto inner_ctx_impl =
-    //       reinterpret_cast<inner_ctx_type*>(ctx_->inner_context_addr());
-    //   std::shared_ptr<inner_ctx_type> inner_ctx_impl_shared(inner_ctx_impl);
-    //   _inner_context_wrapper = std::make_shared<inner_ctx_wrapper_type>(
-    //       ctx_name, frag_wrapper, inner_ctx_impl_shared);
-    // }
-    else {
+    } else {
       LOG(FATAL) << "unsupported context type";
     }
     LOG(INFO) << "Construct inner ctx wrapper: "
@@ -204,14 +195,6 @@ class JavaPIEPropertyDefaultContextWrapper
                       LabeledSelector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToDataframe(comm_spec, selectors, range);
     }
-    // else if (_inner_context_wrapper->context_type() ==
-    //            CONTEXT_TYPE_VERTEX_PROPERTY) {
-    //   auto actual_ctx_wrapper =
-    //       std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
-    //           _inner_context_wrapper);
-    //   BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
-    //   return actual_ctx_wrapper->ToDataframe(comm_spec, selectors, range);
-    // }
     return std::make_unique<grape::InArchive>();
   }
 
@@ -340,5 +323,5 @@ class JavaPIEPropertyDefaultContextWrapper
   std::shared_ptr<IContextWrapper> _inner_context_wrapper;
 };
 }  // namespace gs
-
+#endif
 #endif  // ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROPERTY_DEFAULT_CONTEXT_H_

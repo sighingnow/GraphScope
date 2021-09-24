@@ -359,6 +359,7 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToNumpy(
     return wrapper->ToNdArray(comm_spec_, selector, range);
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
              std::string::npos) {
+#ifdef ENABLE_JAVA_SDK
     std::vector<std::string> outer_and_inner;
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
@@ -370,8 +371,14 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToNumpy(
         std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(
             base_ctx_wrapper);
     return wrapper->ToNdArray(comm_spec_, s_selector, range);
+#else
+    RETURN_GS_ERROR(
+        vineyard::ErrorCode::kIllegalStateError,
+        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+#endif
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
              std::string::npos) {
+#ifdef ENABLE_JAVA_SDK
     std::vector<std::string> outer_and_inner;
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
@@ -383,6 +390,11 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToNumpy(
         std::dynamic_pointer_cast<IJavaPIEProjectedDefaultContextWrapper>(
             base_ctx_wrapper);
     return wrapper->ToNdArray(comm_spec_, s_selector, range);
+#else
+    RETURN_GS_ERROR(
+        vineyard::ErrorCode::kIllegalStateError,
+        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+#endif
   }
   RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
                   "Unsupported context type: " + std::string(ctx_type));
@@ -451,6 +463,7 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
     return wrapper->ToDataframe(comm_spec_, selectors, range);
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
              std::string::npos) {
+#ifdef ENABLE_JAVA_SDK
     std::vector<std::string> outer_and_inner;
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
@@ -463,8 +476,14 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
             base_ctx_wrapper);
     // delay the selector parsing to inner ctxWrapper;
     return wrapper->ToDataframe(comm_spec_, s_selectors, range);
+#else
+    RETURN_GS_ERROR(
+        vineyard::ErrorCode::kIllegalStateError,
+        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+#endif
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
              std::string::npos) {
+#ifdef ENABLE_JAVA_SDK
     std::vector<std::string> outer_and_inner;
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
@@ -477,6 +496,11 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
             base_ctx_wrapper);
     // delay the selector parsing to inner ctxWrapper;
     return wrapper->ToDataframe(comm_spec_, s_selectors, range);
+#else
+    RETURN_GS_ERROR(
+        vineyard::ErrorCode::kIllegalStateError,
+        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+#endif
   }
   RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
                   "Unsupported context type: " + std::string(ctx_type));
@@ -538,6 +562,7 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
         id, wrapper->ToVineyardTensor(comm_spec_, *client_, selector, range));
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
              std::string::npos) {
+#ifdef ENABLE_JAVA_SDK
     std::vector<std::string> outer_and_inner;
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
@@ -551,8 +576,14 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
     BOOST_LEAF_AUTO(s_selector, params.Get<std::string>(rpc::SELECTOR));
     BOOST_LEAF_ASSIGN(
         id, wrapper->ToVineyardTensor(comm_spec_, *client_, s_selector, range));
+#else
+    RETURN_GS_ERROR(
+        vineyard::ErrorCode::kIllegalStateError,
+        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+#endif
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
              std::string::npos) {
+#ifdef ENABLE_JAVA_SDK
     std::vector<std::string> outer_and_inner;
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
@@ -566,6 +597,11 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
     BOOST_LEAF_AUTO(s_selector, params.Get<std::string>(rpc::SELECTOR));
     BOOST_LEAF_ASSIGN(
         id, wrapper->ToVineyardTensor(comm_spec_, *client_, s_selector, range));
+#else
+    RETURN_GS_ERROR(
+        vineyard::ErrorCode::kIllegalStateError,
+        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+#endif
   } else {
     CHECK(false);
   }
@@ -634,6 +670,7 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
                               comm_spec_, *client_, selectors, range));
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
              std::string::npos) {
+#ifdef ENABLE_JAVA_SDK
     std::vector<std::string> outer_and_inner;
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
@@ -647,8 +684,14 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
     BOOST_LEAF_AUTO(s_selectors, params.Get<std::string>(rpc::SELECTOR));
     BOOST_LEAF_ASSIGN(id, vd_ctx_wrapper->ToVineyardDataframe(
                               comm_spec_, *client_, s_selectors, range));
+#else
+    RETURN_GS_ERROR(
+        vineyard::ErrorCode::kIllegalStateError,
+        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+#endif
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
              std::string::npos) {
+#ifdef ENABLE_JAVA_SDK
     std::vector<std::string> outer_and_inner;
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
@@ -662,6 +705,11 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
     BOOST_LEAF_AUTO(s_selectors, params.Get<std::string>(rpc::SELECTOR));
     BOOST_LEAF_ASSIGN(id, vd_ctx_wrapper->ToVineyardDataframe(
                               comm_spec_, *client_, s_selectors, range));
+#else
+    RETURN_GS_ERROR(
+        vineyard::ErrorCode::kIllegalStateError,
+        "GS is not compiled with ENABLE_JAVA_SDK on: " + std::string(ctx_type));
+#endif
   } else {
     CHECK(false);
   }

@@ -1,7 +1,7 @@
 
 #ifndef ANALYTICAL_ENGINE_CORE_PARALLEL_MESSAGES_H_
 #define ANALYTICAL_ENGINE_CORE_PARALLEL_MESSAGES_H_
-
+#ifdef ENABLE_JAVA_SDK
 #include "grape/serialization/in_archive.h"
 #include "grape/serialization/out_archive.h"
 
@@ -100,5 +100,5 @@ inline LongMsg& operator+=(LongMsg& lhs, const LongMsg& rhs) {
 }
 
 }  // namespace gs
-
+#endif
 #endif  // MESSAGES_H

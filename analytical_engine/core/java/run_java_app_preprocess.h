@@ -1,6 +1,7 @@
 #ifndef ANALYTICAL_ENGINE_CORE_JAVA_RUN_JAVA_APP_PREPROCESS_H_
 #define ANALYTICAL_ENGINE_CORE_JAVA_RUN_JAVA_APP_PREPROCESS_H_
 
+#ifdef ENABLE_JAVA_SDK
 #include <gflags/gflags.h>
 #include <gflags/gflags_declare.h>
 #include <glog/logging.h>
@@ -147,4 +148,5 @@ void Finalize() {
 }
 
 }  // namespace gs
+#endif
 #endif  // ANALYTICAL_ENGINE_CORE_JAVA_RUN_JAVA_APP_PREPROCESS_H_

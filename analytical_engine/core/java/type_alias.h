@@ -14,6 +14,7 @@
  */
 #ifndef ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H
 #define ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H
+#ifdef ENABLE_JAVA_SDK
 
 #include "core/context/column.h"
 #include "core/fragment/arrow_projected_fragment.h"
@@ -45,5 +46,5 @@ using LongColumn = Column<FRAG_T, uint64_t>;
 template <typename FRAG_T>
 using IntColumn = Column<FRAG_T, uint32_t>;
 }  // namespace gs
-
+#endif
 #endif  // ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H

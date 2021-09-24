@@ -15,9 +15,11 @@ limitations under the License.
 
 #ifndef ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_APP_H_
 #define ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_APP_H_
+#ifdef ENABLE_JAVA_SDK
 
 #include <utility>
 
+#include <grape/grape.h>
 #include "core/app/app_base.h"
 #include "core/context/java_pie_projected_default_context.h"
 #include "grape/communication/communicator.h"
@@ -112,5 +114,5 @@ class JavaPIEProjectedDefaultApp
 };
 
 }  // namespace gs
-
+#endif
 #endif  // ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_APP_H_

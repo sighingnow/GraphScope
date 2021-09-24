@@ -152,6 +152,7 @@ struct CtxWrapperBuilder<CTX_T, typename std::enable_if<is_base_of_template<
   }
 };
 
+#ifdef ENABLE_JAVA_SDK
 /**
  * @brief A specialized CtxWrapperBuilder for JavaPropertyPIEctx
  * @tparam CTX_T
@@ -183,5 +184,6 @@ struct CtxWrapperBuilder<
         id, frag_wrapper, ctx);
   }
 };
+#endif
 }  // namespace gs
 #endif  // ANALYTICAL_ENGINE_FRAME_CTX_WRAPPER_BUILDER_H_

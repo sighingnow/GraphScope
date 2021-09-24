@@ -15,7 +15,8 @@ limitations under the License.
 
 #ifndef ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_CONTEXT_H_
 #define ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_CONTEXT_H_
-
+#define CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT "java_pie_projected_default"
+#ifdef ENABLE_JAVA_SDK
 #include <grape/grape.h>
 #include <jni.h>
 
@@ -34,7 +35,7 @@ limitations under the License.
 #include "grape/parallel/default_message_manager.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/fragment_traits.h"
-#define CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT "java_pie_projected_default"
+
 namespace gs {
 
 static constexpr const char* _java_projected_message_manager_name =
@@ -317,5 +318,5 @@ class JavaPIEProjectedDefaultContextWrapper
 };
 
 }  // namespace gs
-
+#endif
 #endif  // ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_CONTEXT_H_
