@@ -22,7 +22,6 @@ option(BUILD_TESTS "Build unit test" ON)
 option(ENABLE_JAVA_SDK "Build with support for java sdk" OFF)
 
 if (ENABLE_JAVA_SDK)
-    add_definitions(-DENABLE_JAVA_SDK)
     if (DEFINED ENV{LLVM11_HOME})
         message(STATUS "Using LLVM11 in $ENV{LLVM11_HOME}")
     else()
@@ -188,6 +187,7 @@ target_link_libraries(gs_proto ${Protobuf_LIBRARIES} ${GRPC_LIBRARY}
 add_executable(grape_engine ${CORE_GS_FILES} ${CORE_RPC_SRC_FILES})
 target_include_directories(grape_engine PRIVATE proto utils)
 if (ENABLE_JAVA_SDK)
+    target_compile_definitions(grape_engine PUBLIC ENABLE_JAVA_SDK)
     target_link_libraries(grape_engine PRIVATE gs_proto
             ${LIBGRAPELITE_LIBRARIES}
             ${GFLAGS_LIBRARIES}
@@ -209,6 +209,7 @@ target_link_libraries(grape_engine PRIVATE gs_proto
 
 if (ENABLE_JAVA_SDK)
     add_executable(run_java_app_preprocess core/java/run_java_app_preprocess.cc)
+    target_compile_definitions(run_java_app_preprocess PUBLIC ENABLE_JAVA_SDK)
     target_include_directories(run_java_app_preprocess PRIVATE core utils apps)
     target_link_libraries(run_java_app_preprocess ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES}
                                         ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${JAVA_JVM_LIBRARY})
@@ -237,7 +238,7 @@ if (BUILD_TESTS)
     if (ENABLE_JAVA_SDK)
         add_executable(run_java_property_app test/run_java_property_app.cc)
         target_include_directories(run_java_property_app PRIVATE core utils apps)
-        #JAVA_JVM_LIBRARY has to be placed at last pos.
+        target_compile_definitions(run_java_property_app PUBLIC ENABLE_JAVA_SDK)
         target_link_libraries(run_java_property_app gs_proto ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES} ${Boost_LIBRARIES}
                                         ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${VINEYARD_LIBRARIES})
     
