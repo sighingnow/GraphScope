@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-from coordinator.gscoordinator.io_utils import PipeWatcher
+# from coordinator.gscoordinator.io_utils import PipeWatcher
 import hashlib
 import json
 import logging
@@ -136,6 +136,7 @@ class JavaApp(AppAssets):
             stderr=subprocess.PIPE,
         )
         for line in parse_user_app_process.stdout:
+            logger.info(line)
             if line.find("PropertyDefaultApp"):
                 _java_app_type = "property"
             if line.find("ProjectedDefaultApp"):
@@ -146,8 +147,8 @@ class JavaApp(AppAssets):
                 _frag_type_str = line.split(":")[1]
         logger.info("java app type: {}, frag type str: {}]".format(_java_app_type, _frag_type_str))
 
-        java_codegen_stderr_watcher = PipeWatcher(parse_user_app_process.stderr, sys.stdout)
-        setattr(parse_user_app_process, "stderr_watcher", java_codegen_stderr_watcher)
+        #java_codegen_stderr_watcher = PipeWatcher(parse_user_app_process.stderr, sys.stdout)
+        #setattr(parse_user_app_process, "stderr_watcher", java_codegen_stderr_watcher)
         parse_user_app_process.wait()
         return _java_app_type,_frag_type_str
     def __call__(self, graph : Graph, *args, **kwargs):
