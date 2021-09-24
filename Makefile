@@ -14,8 +14,10 @@ WITH_LEARNING_ENGINE        ?= OFF
 # testing build option
 BUILD_TEST                  ?= OFF
 
-# build with clang compiler 
-WITH_LLVM					?= OFF
+# enable this option will
+# 	1. use clang to build the gae library and executables.
+#	2. adding specific CXX flags for the build.
+ENABLE_JAVA_SDK				?= OFF
 
 .PHONY: all
 all: graphscope
@@ -63,7 +65,7 @@ coordinator: client
 gae:
 	mkdir -p $(WORKING_DIR)/analytical_engine/build
 	cd $(WORKING_DIR)/analytical_engine/build && \
-	cmake -DCMAKE_INSTALL_PREFIX=$(INSTALL_PREFIX) -DNETWORKX=$(NETWORKX) -DBUILD_TESTS=${BUILD_TEST} -DWITH_LLVM=${WITH_LLVM} .. && \
+	cmake -DCMAKE_INSTALL_PREFIX=$(INSTALL_PREFIX) -DNETWORKX=$(NETWORKX) -DBUILD_TESTS=${BUILD_TEST} -DENABLE_JAVA_SDK=${ENABLE_JAVA_SDK} .. && \
 	make -j$(NUM_PROC) && \
 	sudo make install
 

@@ -19,9 +19,9 @@ project(analytical_engine LANGUAGES C CXX VERSION ${GRAPHSCOPE_ANALYTICAL_VERSIO
 
 option(NETWORKX "networkx on?" ON)
 option(BUILD_TESTS "Build unit test" ON)
-option(WITH_LLVM "Build with clang" ON)
+option(ENABLE_JAVA_SDK "Build with support for java sdk" OFF)
 
-if (WITH_LLVM)
+if (ENABLE_JAVA_SDK)
     if (DEFINED ENV{LLVM11_HOME})
         message(STATUS "Using LLVM11 in $ENV{LLVM11_HOME}")
     else()
@@ -139,10 +139,14 @@ add_compile_options(-DENABLE_SELECTOR)
 
 find_package(Protobuf REQUIRED)
 include_directories(${Protobuf_INCLUDE_DIRS})
+
+if (ENABLE_JAVA_SDK)
 # find jni---------------------------------------------------------------------
-find_package(JNI REQUIRED)
-include_directories(SYSTEM ${JAVA_INCLUDE_PATH})
-include_directories(SYSTEM ${JAVA_INCLUDE_PATH2})
+    find_package(JNI REQUIRED)
+    include_directories(SYSTEM ${JAVA_INCLUDE_PATH})
+    include_directories(SYSTEM ${JAVA_INCLUDE_PATH2})
+endif()
+
 
 
 include("cmake/FindGRPC.cmake")
@@ -180,20 +184,32 @@ target_link_libraries(gs_proto ${Protobuf_LIBRARIES} ${GRPC_LIBRARY}
 
 add_executable(grape_engine ${CORE_GS_FILES} ${CORE_RPC_SRC_FILES})
 target_include_directories(grape_engine PRIVATE proto utils)
+if (ENABLE_JAVA_SDK)
+    target_link_libraries(grape_engine PRIVATE gs_proto
+            ${LIBGRAPELITE_LIBRARIES}
+            ${GFLAGS_LIBRARIES}
+            ${CMAKE_DL_LIBS}
+            ${Boost_LIBRARIES}
+            ${VINEYARD_LIBRARIES}
+            ${JAVA_JVM_LIBRARY}
+            ${JNI_LIBRARIES}
+            $ENV{JAVA_HOME}/jre/lib/amd64/libjsig.so
+            )
+endif()
 target_link_libraries(grape_engine PRIVATE gs_proto
         ${LIBGRAPELITE_LIBRARIES}
         ${GFLAGS_LIBRARIES}
         ${CMAKE_DL_LIBS}
         ${Boost_LIBRARIES}
         ${VINEYARD_LIBRARIES}
-        ${JAVA_JVM_LIBRARY}
-        ${JNI_LIBRARIES}
-        $ENV{JAVA_HOME}/jre/lib/amd64/libjsig.so
         )
-add_executable(run_java_app_preprocess ./core/java/run_java_app_preprocess.cc)
-target_include_directories(run_java_app_preprocess PRIVATE ${LIBGRAPELITE_INCLUDE_DIRS}/grape/analytical_apps core utils apps)
-target_link_libraries(run_java_app_preprocess ${LIBGRAPELITE_LIBRARIES} ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES}
-                                    ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${JAVA_JVM_LIBRARY})
+
+if (ENABLE_JAVA_SDK)
+    add_executable(run_java_app_preprocess ./core/java/run_java_app_preprocess.cc)
+    target_include_directories(run_java_app_preprocess PRIVATE ${LIBGRAPELITE_INCLUDE_DIRS}/grape/analytical_apps core utils apps)
+    target_link_libraries(run_java_app_preprocess ${LIBGRAPELITE_LIBRARIES} ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES}
+                                        ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${JAVA_JVM_LIBRARY})
+endif()
 
 
 if (${LIBUNWIND_FOUND})
@@ -215,11 +231,13 @@ if (BUILD_TESTS)
         target_link_libraries(run_app ${FOLLY_LIBRARIES} ${DOUBLE_CONVERSION_LIBRARY})
     endif ()
 
-    add_executable(run_java_property_app test/run_java_property_app.cc)
-    target_include_directories(run_java_property_app PRIVATE ${LIBGRAPELITE_INCLUDE_DIRS}/grape/analytical_apps core utils apps)
-    target_link_libraries(run_java_property_app ${LIBGRAPELITE_LIBRARIES} ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES}
-                                    ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${JAVA_JVM_LIBRARY} ${VINEYARD_LIBRARIES} gs_proto)
-
+    if (ENABLE_JAVA_SDK)
+        add_executable(run_java_property_app test/run_java_property_app.cc)
+        target_include_directories(run_java_property_app PRIVATE ${LIBGRAPELITE_INCLUDE_DIRS}/grape/analytical_apps core utils apps)
+        target_link_libraries(run_java_property_app ${LIBGRAPELITE_LIBRARIES} ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES}
+                                        ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${JAVA_JVM_LIBRARY} ${VINEYARD_LIBRARIES} gs_proto)
+    endif()
+    
     macro(add_vineyard_app target)
         set(options)
         set(oneValueArgs)
@@ -341,7 +359,9 @@ endmacro()
 
 install_gsa_binary(grape_engine)
 install_gsa_binary(gs_proto)
-install_gsa_binary(run_java_app_preprocess)
+if (ENABLE_JAVA_SDK)
+    install_gsa_binary(run_java_app_preprocess)
+endif()
 
 install_gsa_headers("${PROJECT_SOURCE_DIR}/apps")
 install_gsa_headers("${PROJECT_SOURCE_DIR}/benchmarks")
