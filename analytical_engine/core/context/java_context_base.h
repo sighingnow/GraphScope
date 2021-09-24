@@ -69,7 +69,7 @@ class JavaContextBase : public grape::ContextBase {
     if (app_class_name_) {
       delete[] app_class_name_;
     }
-    jint res = GetJavaVM()->DestroyJavaVM();
+    jint res = GetJavaVM(false)->DestroyJavaVM();
     LOG(INFO) << "Kill javavm status: " << res;
   }
   const fragment_t& fragment() const { return fragment_; }
@@ -102,8 +102,8 @@ class JavaContextBase : public grape::ContextBase {
     std::string args_str =
         parse_params_and_setup_jvm_env(params, user_library_name);
 
-    // create jvm instance if not exists;
-    JavaVM* jvm = GetJavaVM();
+    // always create new java vm
+    JavaVM* jvm = GetJavaVM(true);
     (void) jvm;
     LOG(INFO) << "Successfully get jvm";
 

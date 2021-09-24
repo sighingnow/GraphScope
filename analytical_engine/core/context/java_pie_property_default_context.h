@@ -189,14 +189,6 @@ class JavaPIEPropertyDefaultContextWrapper
       BOOST_LEAF_AUTO(selector, LabeledSelector::parse(selector_string));
       return actual_ctx_wrapper->ToNdArray(comm_spec, selector, range);
     }
-    // else if (_inner_context_wrapper->context_type() ==
-    //            CONTEXT_TYPE_VERTEX_PROPERTY) {
-    //   auto actual_ctx_wrapper =
-    //       std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
-    //           _inner_context_wrapper);
-    //   BOOST_LEAF_AUTO(selector, Selector::parse(selector_string));
-    //   return actual_ctx_wrapper->ToNdArray(comm_spec, selector, range);
-    // }
     return std::make_unique<grape::InArchive>();
   }
 
@@ -252,16 +244,6 @@ class JavaPIEPropertyDefaultContextWrapper
       return actual_ctx_wrapper->ToVineyardTensor(comm_spec, client, selector,
                                                   range);
     }
-    // else if (_inner_context_wrapper->context_type() ==
-    //            CONTEXT_TYPE_VERTEX_PROPERTY) {
-    //   auto actual_ctx_wrapper =
-    //       std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
-    //           _inner_context_wrapper);
-    //   BOOST_LEAF_AUTO(selectors, Selector::parse(selector_string));
-    //   return actual_ctx_wrapper->ToVineyardTensor(comm_spec, client,
-    //   selector,
-    //                                               range);
-    // }
     return vineyard::InvalidObjectID();
   }
 
@@ -313,14 +295,6 @@ class JavaPIEPropertyDefaultContextWrapper
                       LabeledSelector::ParseSelectors(selector_string));
       return actual_ctx_wrapper->ToArrowArrays(comm_spec, selectors);
     }
-    // else if (_inner_context_wrapper->context_type() ==
-    //            CONTEXT_TYPE_VERTEX_PROPERTY) {
-    //   auto actual_ctx_wrapper =
-    //       std::dynamic_pointer_cast<IVertexPropertyContextWrapper>(
-    //           _inner_context_wrapper);
-    //   BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selector_string));
-    //   return actual_ctx_wrapper->ToArrowArrays(comm_spec, selectors);
-    // }
     std::map<label_id_t,
              std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
         arrow_arrays;

@@ -69,7 +69,7 @@ void preprocess(int argc, char** argv) {
 
   SetupEnv(comm_spec.local_num());
 
-  JavaVM* jvm = GetJavaVM();
+  JavaVM* jvm = GetJavaVM(false);
   (void) jvm;
 
   JNIEnvMark m;
