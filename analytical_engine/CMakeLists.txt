@@ -239,7 +239,7 @@ if (BUILD_TESTS)
         target_include_directories(run_java_property_app PRIVATE core utils apps)
         #JAVA_JVM_LIBRARY has to be placed at last pos.
         target_link_libraries(run_java_property_app gs_proto ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES} ${Boost_LIBRARIES}
-                                        ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${VINEYARD_LIBRARIES}  ${JAVA_JVM_LIBRARY})
+                                        ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${VINEYARD_LIBRARIES})
     
     endif()
     
