@@ -290,9 +290,9 @@ class JavaContextBase : public grape::ContextBase {
     jclass app_context_getter_class = env->FindClass(APP_CONTEXT_GETTER_CLASS);
     CHECK_NOTNULL(app_context_getter_class);
 
-    jmethodID app_context_getter_method = env->GetStaticMethodID(
-        app_context_getter_class, "getPropertyDefaultContextName",
-        "(Ljava/lang/Class;)Ljava/lang/String;");
+    jmethodID app_context_getter_method =
+        env->GetStaticMethodID(app_context_getter_class, "getContextName",
+                               "(Ljava/lang/Class;)Ljava/lang/String;");
     CHECK_NOTNULL(app_context_getter_method);
     // Pass app class's class object
     jstring context_class_jstring = (jstring) env->CallStaticObjectMethod(
