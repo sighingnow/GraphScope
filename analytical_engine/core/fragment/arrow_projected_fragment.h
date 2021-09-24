@@ -249,11 +249,6 @@ class Nbr<VID_T, EID_T, grape::EmptyType> {
   const mutable nbr_unit_t* nbr_;
 };
 
-// Type alias for ease of use in Java.
-template <typename VID_T, typename EDATA_T>
-using NbrDefault =
-    Nbr<VID_T, vineyard::property_graph_types::EID_TYPE, EDATA_T>;
-
 /**
  * @brief This is the internal representation of neighbors for a vertex.
  *
@@ -325,11 +320,6 @@ class AdjList<VID_T, EID_T, grape::EmptyType> {
   const nbr_unit_t* begin_;
   const nbr_unit_t* end_;
 };
-
-// Type alias for ease of use in Java.
-template <typename VID_T, typename EDATA_T>
-using AdjListDefault =
-    AdjList<VID_T, vineyard::property_graph_types::EID_TYPE, EDATA_T>;
 
 }  // namespace arrow_projected_fragment_impl
 

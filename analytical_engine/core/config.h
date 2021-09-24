@@ -21,16 +21,12 @@
 #include "boost/leaf/all.hpp"
 
 #include "grape/config.h"
-#include "grape/utils/vertex_array.h"
 
 namespace gs {
 using fid_t = grape::fid_t;
 
 namespace bl = boost::leaf;
 
-// Type alias for ease of use in Java.
-template <typename DATA_T>
-using VertexArrayDefault = grape::VertexArray<DATA_T, uint64_t>;
 }  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_CONFIG_H_
