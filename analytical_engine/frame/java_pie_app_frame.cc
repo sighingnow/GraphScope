@@ -27,12 +27,12 @@
 #define QUOTE(X) DO_QUOTE(X)
 
 /**
- * app_frame.cc is designed to serve for building apps as a library. The library
- * provides CreateWorker, Query, and DeleteWorker functions to be invoked by the
- * grape instance. The library will be loaded when a CREATE_APP request arrived
- * on the analytical engine. Then multiple query requests can be emitted based
- * on worker instance. Finally, a UNLOAD_APP request should be submitted to
- * release the resources.
+ * java_pie_app_frame.cc is designed to serve for building java app driver as a
+ * library. The library provides CreateWorker, Query, and DeleteWorker functions
+ * to be invoked by the grape instance. The library will be loaded when a
+ * CREATE_APP request arrived on the analytical engine. Then multiple query
+ * requests can be emitted based on worker instance. Finally, a UNLOAD_APP
+ * request should be submitted to release the resources.
  */
 #if defined(_GRAPH_TYPE) && defined(_GRAPH_HEADER)
 #include QUOTE(_GRAPH_HEADER)
@@ -43,13 +43,6 @@
 #include "apps/java_pie/java_pie_projected_default_app.h"
 #include "apps/java_pie/java_pie_property_default_app.h"
 
-// Define app_type and app_header in cmake cmd
-// #if defined(_APP_TYPE) && defined(_APP_HEADER)
-// #include QUOTE(_APP_HEADER)
-// #else
-// #error "Missing macro _APP_TYPE or _APP_HEADER"
-// #endif
-// #define _APP_TYPE gs::JavaPIEPropertyDefaultApp<_GRAPH_TYPE>
 #ifdef _JAVA_PROPERTY
 #define _APP_TYPE gs::JavaPIEPropertyDefaultApp<_GRAPH_TYPE>
 #else

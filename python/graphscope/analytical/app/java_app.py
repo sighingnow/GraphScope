@@ -16,9 +16,11 @@
 # limitations under the License.
 #
 
+from coordinator.gscoordinator.io_utils import PipeWatcher
 import hashlib
 import json
 import logging
+import subprocess
 from graphscope.framework.graph import Graph
 from graphscope.framework.dag_utils import bind_app
 from graphscope.framework.context import create_context_node
@@ -53,10 +55,10 @@ LLVM4JNI_JAR=os.path.join(FFI_M2_REPO_PATH, "llvm4jni-runtime/0.1/llvm4jni-runti
 # GUAVA_JAR=os.path.join(str(Path.home()), ".m2/repository/com/google/guava/guava/30.1.1-jre/guava-30.1.1-jre.jar")
 
 class JavaApp(AppAssets):
-    def __init__(self, full_jar_path : str, java_app_class: str, java_app_type : str):
+    def __init__(self, full_jar_path : str, java_app_class: str):
         self._java_app_class = java_app_class
         self._full_jar_path = full_jar_path
-        self._java_app_type = java_app_type
+        
         gar = self._pack_jar(self._full_jar_path)
         gs_config = {
             "app": [
@@ -68,15 +70,18 @@ class JavaApp(AppAssets):
                 }
             ]
         }
+        #extract java app type with help of java class.
+        
+        self._java_app_type, self._frag_param_str = self._parse_user_app(java_app_class, full_jar_path)
         #For two different java type, we use two different driver class
-        if java_app_type == "property":
+        if self._java_app_type == "property":
             self._cpp_driver_class =  "gs::JavaPIEPropertyDefaultApp"
             gs_config["app"][0]["class_name"] =self.cpp_driver_class
             gs_config["app"][0]["compatible_graph"] = ["vineyard::ArrowFragment"]
             gs_config["app"][0]["context_type"] = "java_pie_property_default_context"
             gar.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
             super().__init__("java_app","java_pie_property_default_context",gar.read_bytes())
-        elif java_app_type == "projected":
+        elif self._java_app_type == "projected":
             self._cpp_driver_class = "gs::JavaPIEProjectedDefaultApp"
             gs_config["app"][0]["class_name"] = self.cpp_driver_class
             gs_config["app"][0]["compatible_graph"] = ["gs::ArrowProjectedFragment"]
@@ -108,10 +113,47 @@ class JavaApp(AppAssets):
         s.update(f"{self.type}.{self.jar_path}.{self.cpp_driver_class}.{self.java_app_class}".encode("utf-8"))
         s.update(self.gar)
         return s.hexdigest()
+    def _parse_user_app(java_app_class: str, java_jar_full_path : str):
+        _java_app_type = ""
+        _frag_type_str = ""
+        parse_user_app_cmd = [
+            "java",
+            "-cp",
+            "{}".format(java_jar_full_path),
+            "io.v6d.modules.graph.utils.AppBaseParser",
+            java_app_class,
+        ]
+        java_env=os.environ.copy()
+        logger.info(" ".join(parse_user_app_cmd))
+        parse_user_app_process = subprocess.Popen(
+            parse_user_app_cmd,
+            env=java_env,
+            universal_newlines=True,
+            encoding="utf-8",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        for line in parse_user_app_process.stdout:
+            if line.find("PropertyDefaultApp"):
+                _java_app_type = "property"
+            if line.find("ProjectedDefaultApp"):
+                _java_app_type = "projected"
+            if line.find("Error"):
+                raise Exception("Error occured in verifying user app")
+            if line.find("TypeParams"):
+                _frag_type_str = line.split(":")[1]
+        logger.info("java app type: {}, frag type str: {}]".format(_java_app_type, _frag_type_str))
+
+        java_codegen_stderr_watcher = PipeWatcher(parse_user_app_process.stderr, sys.stdout)
+        setattr(parse_user_app_process, "stderr_watcher", java_codegen_stderr_watcher)
+        parse_user_app_process.wait()
+        return _java_app_type,_frag_type_str
     def __call__(self, graph : Graph, *args, **kwargs):
         kwargs_extend = dict(app_class = self.java_app_class, **kwargs)
         if not hasattr(graph, "graph_type"):
             raise InvalidArgumentError("Missing graph_type attribute in graph object.")
+        # Check the consistency between Java app and applied graph
+
         if self.java_app_type == "projected" and graph.graph_type == graph_def_pb2.ARROW_PROPERTY:
             graph = graph._project_to_simple()
         app_ = graph.session._wrapper(JavaAppDagNode(graph, self))
@@ -188,7 +230,7 @@ class JavaAppDagNode(AppDAGNode):
             frag_name_for_java = self._convert_arrow_frag_for_java(self._graph.template_str)
             logger.info("Set frag name to {}, {}".format(self._graph.template_str, frag_name_for_java))
         else :
-            frag_name_for_java = self._graph.template_str
+            frag_name_for_java = self._graph.template_str        
         # get number of worker on each host, so we can determine the java memory settings.
         sess_info_ = self._session.info
         num_hosts_ = len(sess_info_["engine_hosts"].split(","))

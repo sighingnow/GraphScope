@@ -52,21 +52,6 @@ class PropertyMessageManager : public grape::DefaultMessageManager {
     }
   }
 
-  // // for java
-  // template <typename GRAPH_T, typename VERTEX_T, typename LABEL_ID_T,
-  //           typename MESSAGE_T>
-  // inline void SendMsgThroughIEdges(const GRAPH_T& frag, const VERTEX_T& v,
-  //                                  const LABEL_ID_T e_label,
-  //                                  const MESSAGE_T& msg) {
-  //   grape::DestList dsts = frag.IEDests(v, e_label);
-  //   auto* ptr = dsts.begin;
-  //   typename GRAPH_T::vid_t gid = frag.GetInnerVertexGid(v);
-  //   while (ptr != dsts.end) {
-  //     auto fid = *(ptr++);
-  //     to_send_[fid] << gid << msg;
-  //   }
-  // }
-
   /**
    * @brief Communication via a crossing edge a->b. It sends message
    * from a to b.
