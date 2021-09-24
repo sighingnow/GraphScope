@@ -15,10 +15,9 @@ export JVM_OPTS="-Djava.class.path=${PRE_CP}" # -XX:+TraceClassLoading"
 
 task_main_class=io.graphscope.example.TraverseMain
 GLOG_v=10 /usr/local/bin/run_java_app_preprocess \
-                        ${task_main_class} \
                         ${graphscope_demo_jar} \
-                        /tmp/java_pie.conf \
-                        /tmp/gs-test/ffi2 \
-                        "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>"
+                        /tmp/gs-test/ffi3 \
+                        "vineyard::ArrowFragment<int64_t,uint64_t>"
+                        #"gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>"
                         #/tmp/gs/session_qfdwswvb/0ee942126811bb9d7236a4f0d8148a833748bf6a7ffd7d4c3bff99a5c9d69e4f/gs-ffi1934764597241356523
 

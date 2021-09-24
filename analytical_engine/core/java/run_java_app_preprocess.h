@@ -107,7 +107,7 @@ void preprocess(int argc, char** argv) {
         m.env()->FindClass(grape_processor_class_name);
     CHECK_NOTNULL(grape_processor_class);
     jmethodID process_method =
-        m.env()->GetStaticMethodID(grape_process_class, "scanAppAndGenerate",
+        m.env()->GetStaticMethodID(grape_processor_class, "scanAppAndGenerate",
                                    "(Ljava/lang/String;Ljava/lang/String;Ljava/"
                                    "lang/String;Z)Ljava/lang/String;");
     CHECK_NOTNULL(process_method);
@@ -117,7 +117,7 @@ void preprocess(int argc, char** argv) {
     jstring graphTemplate_jstring =
         m.env()->NewStringUTF(graphTemplateStr.c_str());
     jstring jres = (jstring) m.env()->CallStaticObjectMethod(
-        grape_process_class, process_method, jar_path_jstring,
+        grape_processor_class, process_method, jar_path_jstring,
         ffi_output_path_jstring, graphTemplate_jstring, true);
     if (m.env()->ExceptionOccurred()) {
       LOG(ERROR) << "Exception occurred in grape process method";

@@ -224,10 +224,10 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         if not os.path.isfile(LLVM_LLD):
             raise Exception("ld.lld not found")
 
-        cmake_commands += ["-DCMAKE_CXX_COMPILER=\"{}/bin/clang++\"".format(LLVM11_HOME) , 
-                            "-DLLVM_DIR={}/lib/cmake/llvm".format(LLVM11_HOME), 
-                            "-DCMAKE_CXX_FLAGS=\"-flto -fforce-emit-vtables\"",
-                            "-DCMAKE_JNI_LINKER_FLAGS=\"-fuse-ld={} -Xlinker -mllvm=-lto-embed-bitcode\"".format(LLVM_LLD),
+        cmake_commands = ["cmake","-DNETWORKX=" + engine_config["networkx"], "-DCMAKE_CXX_COMPILER={}/bin/clang++".format(LLVM11_HOME),
+                            "-DLLVM_DIR={}/lib/cmake/llvm".format(LLVM11_HOME),
+                            "-DCMAKE_CXX_FLAGS=-flto -fforce-emit-vtables",
+                            "-DCMAKE_JNI_LINKER_FLAGS=-fuse-ld={} -Xlinker -mllvm=-lto-embed-bitcode".format(LLVM_LLD),
                             "-DJAVA_PIE_APP=True",
                             "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
         if app_class == "gs::JavaPIEPropertyDefaultApp":
@@ -236,6 +236,8 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
             cmake_commands += ["-DJAVA_PROPERTY=False"]
         else :
             raise Exception("Unsupported type {}".format(app_class))
+        cmake_commands += ["."]
+        logger.info(" ".join(cmake_commands))
         java_codegen_commands = [
             JAVA_APP_PREPROCESSER,
             java_jar_path,
