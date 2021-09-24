@@ -1,4 +1,4 @@
-#include "run_java_app_preprocess.h"
+#include "core/java/run_java_app_preprocess.h"
 
 #include <gflags/gflags.h>
 #include <gflags/gflags_declare.h>

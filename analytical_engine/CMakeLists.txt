@@ -15,7 +15,6 @@ endif ()
 if (POLICY CMP0048)
     cmake_policy(SET CMP0048 NEW)
 endif ()
-project(analytical_engine LANGUAGES C CXX VERSION ${GRAPHSCOPE_ANALYTICAL_VERSION})
 
 option(NETWORKX "networkx on?" ON)
 option(BUILD_TESTS "Build unit test" ON)
@@ -35,6 +34,8 @@ if (ENABLE_JAVA_SDK)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fforce-emit-vtables")
     set(CMAKE_JNI_LINKER_FLAGS "${CMAKE_JNI_LINKER_FLAGS} -fuse-ld=${LLVM11_HOME}/bin/ld.lld -Xlinker -mllvm=-lto-embed-bitcode")
 endif()
+
+project(analytical_engine LANGUAGES C CXX VERSION ${GRAPHSCOPE_ANALYTICAL_VERSION})
 
 if (NETWORKX)
     add_definitions(-DNETWORKX)
