@@ -33,7 +33,6 @@
 #include "java_pie/java_pie_projected_default_app.h"
 #include "java_pie/java_pie_property_default_app.h"
 #include "proto/graph_def.pb.h"
-#include "sssp/sssp.h"
 #include "vineyard/basic/ds/types.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/arrow_fragment.h"
