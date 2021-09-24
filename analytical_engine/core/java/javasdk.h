@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef EXAMPLES_ANALYTICAL_APPS_JAVAAPP_JAVASDK_H_
-#define EXAMPLES_ANALYTICAL_APPS_JAVAAPP_JAVASDK_H_
+#ifndef ANALYTICAL_ENGINE_CORE_JAVA_JAVASDK_H_
+#define ANALYTICAL_ENGINE_CORE_JAVA_JAVASDK_H_
 
 #ifdef ENABLE_JAVA_SDK
 #include <jni.h>
@@ -448,4 +448,4 @@ void init_java_communicator(JNIEnv* env, const jobject& java_app,
 
 }  // namespace gs
 #endif
-#endif  // EXAMPLES_ANALYTICAL_APPS_JAVAAPP_JAVASDK_H_
+#endif  // ANALYTICAL_ENGINE_CORE_JAVA_JAVASDK_H_
