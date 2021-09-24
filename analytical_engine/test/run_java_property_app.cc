@@ -135,13 +135,13 @@ void output_data_frame(const grape::CommSpec& comm_spec,
     std::string assembled_col2_output_path =
         output_prefix + "_assembled_dataframe_col_2_" + col_name2 + ".dat";
     assembled_col2_ostream.open(assembled_col2_output_path);
-    if (expected_data_type== 7) {
+    if (expected_data_type == 7) {
       for (int64_t i = 0; i < length; ++i) {
         double data;
         oarc >> data;
         assembled_col2_ostream << data << std::endl;
       }
-    } else if (expected_data_type== 4) {
+    } else if (expected_data_type == 4) {
       for (int64_t i = 0; i < length; ++i) {
         int64_t data;
         oarc >> data;
@@ -182,10 +182,7 @@ void output_vineyard_tensor(vineyard::Client& client,
         LOG(FATAL) << "type not correct...";
       }
       CHECK_EQ(single_tensor->shape().size(), 1);
-      // CHECK_EQ(single_tensor->partition_index().size(), 1);
       int64_t length = single_tensor->shape()[0];
-      // LOG(INFO) << "[worker-" << comm_spec.worker_id() << "]: tensor chunk-"
-      //          << single_tensor->partition_index()[0] << ": " << length;
       auto casted_tensor =
           std::dynamic_pointer_cast<vineyard::Tensor<DATA_T>>(single_tensor);
       std::string output_path =
@@ -237,7 +234,6 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
 
   gs::JavaPIEPropertyDefaultContextWrapper<FragmentType> ctx_wrapper(
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
-  //  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
   auto range = std::make_pair("", "");
   /// 0. test ndarray
   {
@@ -415,21 +411,6 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   std::shared_ptr<FragmentType> fragment =
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(id));
 
-  // test fragment data;
-  // auto edge_data_column = fragment->edge_data_column(0, 0);
-  // using vertex_t = FragmentType::vertex_t;
-  // vertex_t vertex;
-  // vertex.SetValue(4);
-  // auto es = fragment->GetOutgoingAdjList(vertex, 0);
-  // for (auto e : es) {
-  //   auto u = e.neighbor();
-  //   auto u_dist = static_cast<double>(e.template get_data<int64_t>(0));
-  //   LOG(INFO) << vertex.GetValue() << " " << u.GetValue() << " " << u_dist;
-  // }
-
-  // 0. setup environment
-  // gs::SetupEnv(comm_spec.local_num());
-  // 1. prepare the running params;
   boost::property_tree::ptree pt;
   pt.put("src", "4");
   pt.put("app_class", app_name);
@@ -438,8 +419,8 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   pt.put("user_library_name",
          "/home/admin/GAE-ODPSGraph/pie-sdk/vineyard-graph/target/classes/"
          "natives/linux_64/libvineyard-jni.so");
-  pt.put("num_hosts","1");
-  pt.put("num_worker","1");
+  pt.put("num_hosts", "1");
+  pt.put("num_worker", "1");
   char* jvm_opts = getenv("RUN_JVM_OPTS");
 
   pt.put("jvm_runtime_opt", std::string(jvm_opts));
@@ -574,7 +555,6 @@ int main(int argc, char** argv) {
 
   int directed = 1;
   std::string app_name = "";
-  // std::string path_pattern = "";
   if (argc > index) {
     directed = atoi(argv[index++]);
   }

@@ -14,24 +14,59 @@ option(ENABLE_PREGEL_COMBINE "Whether enable combinator in pregel app." False)
 
 option(NETWORKX "networkx on?" ON)
 
+option(ENABLE_JAVA_SDK "Build with support for java sdk" OFF)
+
+if (ENABLE_JAVA_SDK)
+    add_definitions(-DENABLE_JAVA_SDK)
+    if (DEFINED ENV{LLVM11_HOME})
+        message(STATUS "Using LLVM11 in $ENV{LLVM11_HOME}")
+    else()
+        message(FATAL_ERROR "Please set env var LLVM11_HOME before using clang to compile")
+    endif()
+    set(CMAKE_C_COMPILER $ENV{LLVM11_HOME}/bin/clang)
+    set(CMAKE_CXX_COMPILER $ENV{LLVM11_HOME}/bin/clang++)
+    message(STATUS "Using c compiler: ${CMAKE_C_COMPILER}")
+    message(STATUS "Using cxx compiler: ${CMAKE_CXX_COMPILER}")
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fforce-emit-vtables")
+    set(CMAKE_JNI_LINKER_FLAGS "${CMAKE_JNI_LINKER_FLAGS} -fuse-ld=${LLVM11_HOME}/bin/ld.lld -Xlinker -mllvm=-lto-embed-bitcode")
+endif()
+
 if (NETWORKX)
     add_definitions(-DNETWORKX)
 endif ()
+
 
 if (ENABLE_PREGEL_COMBINE)
     add_definitions(-D_ENABLE_COMBINE)
 endif ()
 
+include(CheckCXXCompilerFlag)
+include_directories(${CMAKE_SOURCE_DIR})
+
+# Set flags
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O0 -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 if (APPLE)
     set(CMAKE_MACOSX_RPATH ON)
 else ()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -Wl,-rpath,$ORIGIN")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,$ORIGIN")
 endif ()
-
-include_directories(${CMAKE_SOURCE_DIR})
+check_cxx_compiler_flag(-Wno-class-memaccess W_NO_CLASS_MEMACCESS)
+check_cxx_compiler_flag(-Wno-redundant-move W_NO_REDUNDANT_MOVE)
+if(W_NO_CLASS_MEMACCESS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-class-memaccess")
+endif()
+if(W_NO_REDUNDANT_MOVE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-redundant-move")
+endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
+if (NOT APPLE)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fprofile-arcs -ftest-coverage")
+endif ()
 
 # eliminate a lot of warnings for newer version of boost library.
 add_compile_options(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)

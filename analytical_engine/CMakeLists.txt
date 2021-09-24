@@ -22,6 +22,7 @@ option(BUILD_TESTS "Build unit test" ON)
 option(ENABLE_JAVA_SDK "Build with support for java sdk" OFF)
 
 if (ENABLE_JAVA_SDK)
+    add_definitions(-DENABLE_JAVA_SDK)
     if (DEFINED ENV{LLVM11_HOME})
         message(STATUS "Using LLVM11 in $ENV{LLVM11_HOME}")
     else()
@@ -30,7 +31,7 @@ if (ENABLE_JAVA_SDK)
     set(CMAKE_C_COMPILER $ENV{LLVM11_HOME}/bin/clang)
     set(CMAKE_CXX_COMPILER $ENV{LLVM11_HOME}/bin/clang++)
     message(STATUS "Using c compiler: ${CMAKE_C_COMPILER}")
-    message(STATUS "Using cxx compiler: ${CMAKE_C_COMPILER}")
+    message(STATUS "Using cxx compiler: ${CMAKE_CXX_COMPILER}")
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fforce-emit-vtables")
     set(CMAKE_JNI_LINKER_FLAGS "${CMAKE_JNI_LINKER_FLAGS} -fuse-ld=${LLVM11_HOME}/bin/ld.lld -Xlinker -mllvm=-lto-embed-bitcode")
@@ -207,9 +208,9 @@ target_link_libraries(grape_engine PRIVATE gs_proto
         )
 
 if (ENABLE_JAVA_SDK)
-    add_executable(run_java_app_preprocess ./core/java/run_java_app_preprocess.cc)
-    target_include_directories(run_java_app_preprocess PRIVATE ${LIBGRAPELITE_INCLUDE_DIRS}/grape/analytical_apps core utils apps)
-    target_link_libraries(run_java_app_preprocess ${LIBGRAPELITE_LIBRARIES} ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES}
+    add_executable(run_java_app_preprocess core/java/run_java_app_preprocess.cc)
+    target_include_directories(run_java_app_preprocess PRIVATE core utils apps)
+    target_link_libraries(run_java_app_preprocess ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES}
                                         ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${JAVA_JVM_LIBRARY})
 endif()
 
