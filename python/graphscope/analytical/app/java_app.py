@@ -71,8 +71,8 @@ class JavaApp(AppAssets):
             ]
         }
         #extract java app type with help of java class.
-        
         self._java_app_type, self._frag_param_str = self._parse_user_app(java_app_class, full_jar_path)
+        
         #For two different java type, we use two different driver class
         if self._java_app_type == "property":
             self._cpp_driver_class =  "gs::JavaPIEPropertyDefaultApp"
@@ -104,20 +104,44 @@ class JavaApp(AppAssets):
     @property
     def java_app_type(self):
         return self._java_app_type
+    @property
+    def frag_param_str(self):
+        return self._frag_param_str
     def _pack_jar(self, full_jar_path):
         garfile = InMemoryZip()
         tmp_jar_file = open(full_jar_path, 'rb')
         bytes = tmp_jar_file.read()
         garfile.append("{}".format(full_jar_path.split("/")[-1]), bytes)
         return garfile
+    def _judge_graph_app_consistency(self, graph_template_str : str, java_app_type : str, frag_param_str: str):
+        splited = graph_template_str.split("<")
+        java_app_type_params = frag_param_str.split(",")
+        if len(splited != 2):
+            raise Exception("Unrecoginizable graph template str: {}".format(graph_template_str))
+        if (splited[0] == "vineyard::ArrowFragment"):
+            if (java_app_type != "property"):
+                return False
+        if (splited[1] == "gs::ArrowProjectedFragment"):
+            if (java_app_type != "projected"):
+                return False
+        graph_actual_type_params = splited[1][:-1].split(",")
+        if (len(graph_actual_type_params) != len(java_app_type_params)):
+            raise Exception("Although graph type same, the type params can not match")
+        for graph_actucal_type_param, java_app_type_param in zip(graph_actual_type_params, java_app_type_params):
+            if (not self._type_param_consistent(graph_actucal_type_param, java_app_type_param)):
+                return False
+        return True
+    # Override is_compatible to make sure type params of graph consists with java app.
+    def is_compatible(self, graph):
+        return self._judge_graph_app_consistency(graph.template_str, self.java_app_type, self.frag_param_str)
     def signature(self):
         s = hashlib.sha256()
         s.update(f"{self.type}.{self.jar_path}.{self.cpp_driver_class}.{self.java_app_class}".encode("utf-8"))
         s.update(self.gar)
         return s.hexdigest()
-    def _parse_user_app(java_app_class: str, java_jar_full_path : str):
+    def _parse_user_app(self, java_app_class: str, java_jar_full_path : str):
         _java_app_type = ""
-        _frag_type_str = ""
+        _frag_param_str = ""
         parse_user_app_cmd = [
             "java",
             "-cp",
@@ -144,13 +168,13 @@ class JavaApp(AppAssets):
             if line.find("Error"):
                 raise Exception("Error occured in verifying user app")
             if line.find("TypeParams"):
-                _frag_type_str = line.split(":")[1]
-        logger.info("java app type: {}, frag type str: {}]".format(_java_app_type, _frag_type_str))
+                _frag_param_str = line.split(":")[1].strip()
+        logger.info("java app type: {}, frag type str: {}]".format(_java_app_type, _frag_param_str))
 
         #java_codegen_stderr_watcher = PipeWatcher(parse_user_app_process.stderr, sys.stdout)
         #setattr(parse_user_app_process, "stderr_watcher", java_codegen_stderr_watcher)
         parse_user_app_process.wait()
-        return _java_app_type,_frag_type_str
+        return _java_app_type,_frag_param_str
     def __call__(self, graph : Graph, *args, **kwargs):
         kwargs_extend = dict(app_class = self.java_app_class, **kwargs)
         if not hasattr(graph, "graph_type"):

@@ -210,7 +210,6 @@ class JavaContextBase : public grape::ContextBase {
       LOG(ERROR) << std::string("Exception occurred in loading user library");
       env->ExceptionDescribe();
       env->ExceptionClear();
-      // env->DeleteLocalRef(main_class);
       LOG(FATAL) << "Exiting since exception occurred";
     }
     LOG(INFO) << "Loaded specified user jni library: " << user_library_name;

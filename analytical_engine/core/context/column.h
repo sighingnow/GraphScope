@@ -87,7 +87,7 @@ class Column : public IColumn {
 
   const DATA_T& at(vertex_t v) const { return data_[v]; }
 
-  void set(vertex_t v, DATA_T value) { data_[v] = value; }
+  void set(vertex_t v, const DATA_T& value) { data_[v] = value; }
 
   vertex_array_t& data() { return data_; }
 

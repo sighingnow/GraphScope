@@ -17,7 +17,6 @@ option(NETWORKX "networkx on?" ON)
 option(ENABLE_JAVA_SDK "Build with support for java sdk" OFF)
 
 if (ENABLE_JAVA_SDK)
-    add_definitions(-DENABLE_JAVA_SDK)
     if (DEFINED ENV{LLVM11_HOME})
         message(STATUS "Using LLVM11 in $ENV{LLVM11_HOME}")
     else()
@@ -206,7 +205,8 @@ elseif (JAVA_PIE_APP)
     add_library(${FRAME_NAME} SHARED ${FILES_NEED_COMPILE}
                                     ${ANALYTICAL_ENGINE_FRAME_DIR}/app_frame.cc)
     target_include_directories(${FRAME_NAME} PRIVATE ${JAVA_APP_FFI_SOURCE_PATH}/SOURCE_OUTPUT/)
-    target_compile_definitions(${FRAME_NAME} PRIVATE _GRAPH_TYPE=$_graph_type
+    target_compile_definitions(${FRAME_NAME} PRIVATE ENABLE_JAVA_SDK
+                                                    _GRAPH_TYPE=$_graph_type
                                                     _GRAPH_HEADER=$_graph_header
                                                     _APP_TYPE=$_app_type 
                                                     _APP_HEADER=$_app_header)

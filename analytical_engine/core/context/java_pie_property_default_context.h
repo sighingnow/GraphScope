@@ -83,9 +83,10 @@ class JavaPIEPropertyDefaultContextWrapper
       : IJavaPIEPropertyDefaultContextWrapper(id),
         frag_wrapper_(std::move(frag_wrapper)),
         ctx_(std::move(context)) {
-    // Here we need to construct the ctx_wrapper from the ctx it self.
-    // 0. first reinterpret as context
-    // 0.1 get the type of java ctx through java function
+    // Here we need to construct the inner_ctx_wrapper from the inner_ctx
+    // itself. 0. Get the type of java ctx through java function.
+    // 1. Then using the java ctx type, reinterpret as address as the actucal
+    // inner context
     std::string java_ctx_type_name =
         get_java_ctx_type_name(ctx_->context_object());
     LOG(INFO) << "java ctx type name" << java_ctx_type_name;
@@ -145,7 +146,6 @@ class JavaPIEPropertyDefaultContextWrapper
   }
 
   std::string context_type() override {
-    // auto _inner_context_wrapper = ctx_->inner_context_wrapper();
     std::string ret = CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT;
     return ret + ":" + _inner_context_wrapper->context_type();
   }
