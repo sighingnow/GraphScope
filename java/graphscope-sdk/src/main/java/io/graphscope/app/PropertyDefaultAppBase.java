@@ -1,8 +1,8 @@
-package io.v6d.modules.graph.app;
+package io.graphscope.app;
 
-import io.v6d.modules.graph.context.PropertyDefaultContextBase;
-import io.v6d.modules.graph.fragment.ArrowFragment;
-import io.v6d.modules.graph.parallel.PropertyMessageManager;
+import io.graphscope.context.PropertyDefaultContextBase;
+import io.graphscope.fragment.ArrowFragment;
+import io.graphscope.parallel.PropertyMessageManager;
 
 @SuppressWarnings("rawtypes")
 public interface PropertyDefaultAppBase<OID_T,

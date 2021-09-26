@@ -2,9 +2,9 @@ package io.graphscope.example;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.grape.ds.EmptyType;
-import io.v6d.modules.graph.context.LabeledVertexDataContext;
-import io.v6d.modules.graph.fragment.ArrowFragment;
-import io.v6d.modules.graph.parallel.PropertyMessageManager;
+import io.graphscope.context.LabeledVertexDataContext;
+import io.graphscope.fragment.ArrowFragment;
+import io.graphscope.parallel.PropertyMessageManager;
 
 public class TraverseDefaultContextBase extends LabeledVertexDataContext<Long, EmptyType> {
     public int step;

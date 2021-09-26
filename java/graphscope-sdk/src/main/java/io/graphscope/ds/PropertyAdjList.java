@@ -1,16 +1,15 @@
-package io.v6d.modules.graph.ds;
+package io.graphscope.ds;
 
 import com.alibaba.ffi.*;
+import io.graphscope.utils.CPP_CLASS;
+import io.graphscope.utils.CPP_HEADER;
+import io.graphscope.utils.CPP_JNI_LIBRARY;
 
 import java.util.Iterator;
 
-import static io.v6d.modules.graph.utils.CPP_CLASS.PROPERTY_ADJ_LIST;
-import static io.v6d.modules.graph.utils.CPP_HEADER.PROPERTY_GRAPH_UTILS_H;
-import static io.v6d.modules.graph.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
-
-@FFIGen(library = VINEYARD_JNI_LIBRARY)
-@CXXHead(PROPERTY_GRAPH_UTILS_H)
-@FFITypeAlias(PROPERTY_ADJ_LIST)
+@FFIGen(library = CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY)
+@CXXHead(CPP_HEADER.PROPERTY_GRAPH_UTILS_H)
+@FFITypeAlias(CPP_CLASS.PROPERTY_ADJ_LIST)
 @CXXTemplate(cxx = {"uint64_t"}, java = {"java.lang.Long"})
 public interface PropertyAdjList<VID_T>
         extends FFIPointer, CXXPointer {

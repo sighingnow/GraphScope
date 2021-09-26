@@ -1,4 +1,4 @@
-package io.v6d.modules.graph.context;
+package io.graphscope.context;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.grape.fragment.ArrowProjectedFragment;

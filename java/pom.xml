@@ -35,7 +35,7 @@
         <module>grape-demo</module>
         <module>grape-processor</module>
         <module>grape-sdk</module>
-        <module>vineyard-graph</module>
+        <module>graphscope-sdk</module>
         <module>graphscope-demo</module>
     </modules>
 

@@ -1,8 +1,8 @@
-package io.v6d.modules.graph.app;
+package io.graphscope.app;
 
 import com.alibaba.grape.fragment.ArrowProjectedFragment;
 import com.alibaba.grape.parallel.DefaultMessageManager;
-import io.v6d.modules.graph.context.ProjectedDefaultContextBase;
+import io.graphscope.context.ProjectedDefaultContextBase;
 
 public interface ProjectedDefaultAppBase<OID_T, VID_T, VDATA_T, EDATA_T,
         C extends ProjectedDefaultContextBase<ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T>>> {

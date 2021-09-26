@@ -4,12 +4,12 @@ import com.alibaba.grape.ds.Vertex;
 import com.alibaba.grape.ds.VertexRange;
 import com.alibaba.grape.parallel.message.DoubleMsg;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;
-import io.v6d.modules.graph.app.PropertyDefaultAppBase;
-import io.v6d.modules.graph.context.PropertyDefaultContextBase;
-import io.v6d.modules.graph.ds.PropertyAdjList;
-import io.v6d.modules.graph.ds.PropertyNbr;
-import io.v6d.modules.graph.fragment.ArrowFragment;
-import io.v6d.modules.graph.parallel.PropertyMessageManager;
+import io.graphscope.app.PropertyDefaultAppBase;
+import io.graphscope.context.PropertyDefaultContextBase;
+import io.graphscope.ds.PropertyAdjList;
+import io.graphscope.ds.PropertyNbr;
+import io.graphscope.fragment.ArrowFragment;
+import io.graphscope.parallel.PropertyMessageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

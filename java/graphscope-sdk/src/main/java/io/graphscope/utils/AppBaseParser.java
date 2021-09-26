@@ -1,7 +1,7 @@
-package io.v6d.modules.graph.utils;
+package io.graphscope.utils;
 
-import io.v6d.modules.graph.app.ProjectedDefaultAppBase;
-import io.v6d.modules.graph.app.PropertyDefaultAppBase;
+import io.graphscope.app.ProjectedDefaultAppBase;
+import io.graphscope.app.PropertyDefaultAppBase;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;

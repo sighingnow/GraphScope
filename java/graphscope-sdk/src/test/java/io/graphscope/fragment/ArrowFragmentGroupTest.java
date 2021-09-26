@@ -1,8 +1,8 @@
-package io.v6d.modules.graph.fragment;
+package io.graphscope.fragment;
 
 import com.alibaba.ffi.FFITypeFactory;
 import com.alibaba.grape.stdcxx.StdUnorderedMap;
-import io.v6d.modules.graph.utils.VineyardHelper;
+import io.graphscope.utils.VineyardHelper;
 import org.junit.Assert;
 import org.junit.Test;
 import org.scijava.nativelib.NativeLoader;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
-import static io.v6d.modules.graph.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
+import static io.graphscope.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
 
 public class ArrowFragmentGroupTest {
     static {

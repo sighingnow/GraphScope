@@ -1,19 +1,18 @@
-package io.v6d.modules.graph.context;
+package io.graphscope.context;
 
 import com.alibaba.ffi.FFIByteString;
 import com.alibaba.ffi.FFITypeFactory;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;
-import io.v6d.modules.graph.column.DoubleColumn;
-import io.v6d.modules.graph.column.IntColumn;
-import io.v6d.modules.graph.column.LongColumn;
-import io.v6d.modules.graph.context.ffi.FFILabeledVertexPropertyContext;
-import io.v6d.modules.graph.fragment.ArrowFragment;
+import io.graphscope.column.DoubleColumn;
+import io.graphscope.column.IntColumn;
+import io.graphscope.column.LongColumn;
+import io.graphscope.context.ffi.FFILabeledVertexPropertyContext;
+import io.graphscope.utils.CPP_CLASS;
+import io.graphscope.fragment.ArrowFragment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-
-import static io.v6d.modules.graph.utils.CPP_CLASS.LABELED_VERTEX_PROPERTY_CONTEXT;
 
 public abstract class LabeledVertexPropertyContext<OID_T> implements PropertyDefaultContextBase<OID_T> {
     private long ffiContextAddress;
@@ -28,7 +27,7 @@ public abstract class LabeledVertexPropertyContext<OID_T> implements PropertyDef
      */
     protected void createFFIContext(ArrowFragment<OID_T> fragment) {
         String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment.getClass());
-        String contextName = FFITypeFactoryhelper.makeParameterize(LABELED_VERTEX_PROPERTY_CONTEXT, fragmentTemplateStr);
+        String contextName = FFITypeFactoryhelper.makeParameterize(CPP_CLASS.LABELED_VERTEX_PROPERTY_CONTEXT, fragmentTemplateStr);
         System.out.println("context name: " + contextName);
         factory = FFITypeFactory.getFactory(FFILabeledVertexPropertyContext.class, contextName);
         ffiLabeledVertexPropertyContext = factory.create(fragment);

@@ -1,4 +1,4 @@
-package io.v6d.modules.graph.column;
+package io.graphscope.column;
 
 
 import com.alibaba.ffi.*;
@@ -8,11 +8,11 @@ import com.alibaba.grape.ds.Vertex;
 import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.*;
 import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.ARROW_PROJECTED_FRAGMENT_H;
 import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.GRAPE_TYPES_H;
-import static io.v6d.modules.graph.utils.CPP_CLASS.ARROW_FRAGMENT;
-import static io.v6d.modules.graph.utils.CPP_CLASS.DOUBLE_COLUMN;
-import static io.v6d.modules.graph.utils.CPP_HEADER.ARROW_FRAGMENT_H;
-import static io.v6d.modules.graph.utils.CPP_HEADER.CORE_JAVA_TYPE_ALIAS_H;
-import static io.v6d.modules.graph.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
+import static io.graphscope.utils.CPP_CLASS.ARROW_FRAGMENT;
+import static io.graphscope.utils.CPP_CLASS.DOUBLE_COLUMN;
+import static io.graphscope.utils.CPP_HEADER.ARROW_FRAGMENT_H;
+import static io.graphscope.utils.CPP_HEADER.CORE_JAVA_TYPE_ALIAS_H;
+import static io.graphscope.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
 
 @FFIGen(library = VINEYARD_JNI_LIBRARY)
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
@@ -21,7 +21,7 @@ import static io.v6d.modules.graph.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
 @CXXHead(ARROW_FRAGMENT_H)
 @CXXHead(ARROW_PROJECTED_FRAGMENT_H)
 @FFITypeAlias(DOUBLE_COLUMN)
-@CXXTemplate(cxx = {ARROW_FRAGMENT + "<int64_t>"}, java = {"io.v6d.modules.graph.fragment.ArrowFragment<java.lang.Long>"})
+@CXXTemplate(cxx = {ARROW_FRAGMENT + "<int64_t>"}, java = {"io.graphscope.fragment.ArrowFragment<java.lang.Long>"})
 @CXXTemplate(cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,grape::EmptyType,int64_t>"},
         java = {"com.alibaba.grape.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,com.alibaba.grape.ds.EmptyType,java.lang.Long>"})
 public interface DoubleColumn<FRAG_T> extends IColumn {

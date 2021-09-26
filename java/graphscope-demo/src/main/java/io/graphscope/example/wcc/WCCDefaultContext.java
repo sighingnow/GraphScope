@@ -6,9 +6,9 @@ import com.alibaba.grape.ds.VertexRange;
 import com.alibaba.grape.ds.VertexSet;
 import com.alibaba.grape.stdcxx.StdVector;
 import io.graphscope.example.sssp.SSSPDefaultContext;
-import io.v6d.modules.graph.context.LabeledVertexDataContext;
-import io.v6d.modules.graph.fragment.ArrowFragment;
-import io.v6d.modules.graph.parallel.PropertyMessageManager;
+import io.graphscope.context.LabeledVertexDataContext;
+import io.graphscope.fragment.ArrowFragment;
+import io.graphscope.parallel.PropertyMessageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

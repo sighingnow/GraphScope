@@ -1,24 +1,23 @@
-package io.v6d.modules.graph.context.ffi;
+package io.graphscope.context.ffi;
 
 import com.alibaba.ffi.*;
-import io.v6d.modules.graph.column.DoubleColumn;
-import io.v6d.modules.graph.column.IntColumn;
-import io.v6d.modules.graph.column.LongColumn;
-import io.v6d.modules.graph.context.ContextDataType;
-import io.v6d.modules.graph.ds.stdcxx.StdSharedPtr;
+import io.graphscope.column.DoubleColumn;
+import io.graphscope.column.IntColumn;
+import io.graphscope.column.LongColumn;
+import io.graphscope.utils.CPP_HEADER;
+import io.graphscope.context.ContextDataType;
+import io.graphscope.ds.stdcxx.StdSharedPtr;
 
 import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.ARROW_PROJECTED_FRAGMENT;
 import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.ARROW_PROJECTED_FRAGMENT_H;
 import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.GRAPE_TYPES_H;
-import static io.v6d.modules.graph.utils.CPP_CLASS.VERTEX_PROPERTY_CONTEXT;
-import static io.v6d.modules.graph.utils.CPP_HEADER.CORE_JAVA_TYPE_ALIAS_H;
-import static io.v6d.modules.graph.utils.CPP_HEADER.VERTEX_PROPERTY_CONTEXT_H;
-import static io.v6d.modules.graph.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
+import static io.graphscope.utils.CPP_CLASS.VERTEX_PROPERTY_CONTEXT;
+import static io.graphscope.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
 
 @FFIGen(library = VINEYARD_JNI_LIBRARY)
 @CXXHead(system = "cstdint")
-@CXXHead(CORE_JAVA_TYPE_ALIAS_H)
-@CXXHead(VERTEX_PROPERTY_CONTEXT_H)
+@CXXHead(CPP_HEADER.CORE_JAVA_TYPE_ALIAS_H)
+@CXXHead(CPP_HEADER.VERTEX_PROPERTY_CONTEXT_H)
 @CXXHead(ARROW_PROJECTED_FRAGMENT_H)
 @CXXHead(GRAPE_TYPES_H)
 @FFITypeAlias(VERTEX_PROPERTY_CONTEXT)

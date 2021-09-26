@@ -1,24 +1,25 @@
-package io.v6d.modules.graph.context.ffi;
+package io.graphscope.context.ffi;
 
 import com.alibaba.ffi.*;
-import io.v6d.modules.graph.column.DoubleColumn;
-import io.v6d.modules.graph.column.IntColumn;
-import io.v6d.modules.graph.column.LongColumn;
-import io.v6d.modules.graph.context.ContextDataType;
-import io.v6d.modules.graph.ds.stdcxx.StdSharedPtr;
+import io.graphscope.column.DoubleColumn;
+import io.graphscope.column.IntColumn;
+import io.graphscope.column.LongColumn;
+import io.graphscope.fragment.ArrowFragment;
+import io.graphscope.utils.CPP_HEADER;
+import io.graphscope.utils.CPP_JNI_LIBRARY;
+import io.graphscope.context.ContextDataType;
+import io.graphscope.ds.stdcxx.StdSharedPtr;
 
-import static io.v6d.modules.graph.utils.CPP_CLASS.ARROW_FRAGMENT;
-import static io.v6d.modules.graph.utils.CPP_CLASS.LABELED_VERTEX_PROPERTY_CONTEXT;
-import static io.v6d.modules.graph.utils.CPP_HEADER.*;
-import static io.v6d.modules.graph.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
+import static io.graphscope.utils.CPP_CLASS.ARROW_FRAGMENT;
+import static io.graphscope.utils.CPP_CLASS.LABELED_VERTEX_PROPERTY_CONTEXT;
 
-@FFIGen(library = VINEYARD_JNI_LIBRARY)
-@CXXHead(CORE_JAVA_TYPE_ALIAS_H)
-@CXXHead(LABELED_VERTEX_PROPERTY_CONTEXT_H)
-@CXXHead(ARROW_FRAGMENT_H)
+@FFIGen(library = CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY)
+@CXXHead(CPP_HEADER.CORE_JAVA_TYPE_ALIAS_H)
+@CXXHead(CPP_HEADER.LABELED_VERTEX_PROPERTY_CONTEXT_H)
+@CXXHead(CPP_HEADER.ARROW_FRAGMENT_H)
 @FFITypeAlias(LABELED_VERTEX_PROPERTY_CONTEXT)
 @CXXTemplate(cxx = {ARROW_FRAGMENT + "<int64_t>"},
-        java = {"io.v6d.modules.graph.fragment.ArrowFragment<java.lang.Long>"})
+        java = {"io.graphscope.fragment.ArrowFragment<java.lang.Long>"})
 public interface FFILabeledVertexPropertyContext<FRAG_T> extends FFIPointer {
     @FFINameAlias("add_column")
     long addColumn(int labelId, @CXXReference FFIByteString name, @CXXValue ContextDataType contextDataType);

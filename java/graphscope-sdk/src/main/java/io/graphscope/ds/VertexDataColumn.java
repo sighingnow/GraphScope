@@ -1,16 +1,16 @@
-package io.v6d.modules.graph.ds;
+package io.graphscope.ds;
 
 import com.alibaba.ffi.*;
 import com.alibaba.grape.ds.Vertex;
+import io.graphscope.utils.CPP_CLASS;
+import io.graphscope.utils.CPP_HEADER;
+import io.graphscope.utils.CPP_JNI_LIBRARY;
 
 import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GRAPE_VERTEX;
-import static io.v6d.modules.graph.utils.CPP_CLASS.VERTEX_DATA_COLUMN;
-import static io.v6d.modules.graph.utils.CPP_HEADER.PROPERTY_GRAPH_UTILS_H;
-import static io.v6d.modules.graph.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
 
-@FFIGen(library = VINEYARD_JNI_LIBRARY)
-@CXXHead(PROPERTY_GRAPH_UTILS_H)
-@FFITypeAlias(VERTEX_DATA_COLUMN)
+@FFIGen(library = CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY)
+@CXXHead(CPP_HEADER.PROPERTY_GRAPH_UTILS_H)
+@FFITypeAlias(CPP_CLASS.VERTEX_DATA_COLUMN)
 @CXXTemplate(cxx = {"uint64_t"},
         java = {"Long"})
 @CXXTemplate(cxx = {"double"},

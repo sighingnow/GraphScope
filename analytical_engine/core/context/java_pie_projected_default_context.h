@@ -276,11 +276,11 @@ class JavaPIEProjectedDefaultContextWrapper
     JNIEnvMark m;
     if (m.env()) {
       jclass context_utils_class =
-          m.env()->FindClass("io/v6d/modules/graph/utils/ContextUtils");
+          m.env()->FindClass("io/graphscope/utils/ContextUtils");
       CHECK_NOTNULL(context_utils_class);
       jmethodID ctx_base_class_name_get_method = m.env()->GetStaticMethodID(
           context_utils_class, "getProjectedCtxObjBaseClzName",
-          "(Lio/v6d/modules/graph/context/ProjectedDefaultContextBase;)"
+          "(Lio/graphscope/context/ProjectedDefaultContextBase;)"
           "Ljava/lang/String;");
       CHECK_NOTNULL(ctx_base_class_name_get_method);
       jstring ctx_base_clz_name = (jstring) m.env()->CallStaticObjectMethod(
@@ -300,7 +300,7 @@ class JavaPIEProjectedDefaultContextWrapper
       CHECK_NOTNULL(app_context_getter_class);
       jmethodID getter_method = m.env()->GetStaticMethodID(
           app_context_getter_class, "getVertexDataContextDataType",
-          "(Lio/v6d/modules/graph/context/VertexDataContext;)"
+          "(Lio/graphscope/context/VertexDataContext;)"
           "Ljava/lang/String;");
       CHECK_NOTNULL(getter_method);
       // Pass app class's class object

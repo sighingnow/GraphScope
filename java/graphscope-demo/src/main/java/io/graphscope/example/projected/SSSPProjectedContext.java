@@ -6,7 +6,7 @@ import com.alibaba.grape.ds.VertexRange;
 import com.alibaba.grape.ds.VertexSet;
 import com.alibaba.grape.fragment.ArrowProjectedFragment;
 import com.alibaba.grape.parallel.DefaultMessageManager;
-import io.v6d.modules.graph.context.VertexDataContext;
+import io.graphscope.context.VertexDataContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

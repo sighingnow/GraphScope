@@ -1,12 +1,12 @@
-package io.v6d.modules.graph.utils;
+package io.graphscope.utils;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.grape.fragment.ArrowProjectedFragment;
 import com.alibaba.grape.parallel.DefaultMessageManager;
-import io.v6d.modules.graph.context.LabeledVertexDataContext;
-import io.v6d.modules.graph.context.VertexDataContext;
-import io.v6d.modules.graph.fragment.ArrowFragment;
-import io.v6d.modules.graph.parallel.PropertyMessageManager;
+import io.graphscope.context.LabeledVertexDataContext;
+import io.graphscope.context.VertexDataContext;
+import io.graphscope.fragment.ArrowFragment;
+import io.graphscope.parallel.PropertyMessageManager;
 import org.junit.Assert;
 import org.junit.Test;
 
