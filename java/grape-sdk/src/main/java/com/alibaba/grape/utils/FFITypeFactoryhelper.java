@@ -1,0 +1,274 @@
+package com.alibaba.grape.utils;
+
+import com.alibaba.ffi.FFIForeignType;
+import com.alibaba.ffi.FFIPointerImpl;
+import com.alibaba.ffi.FFITypeFactory;
+import com.alibaba.ffi.FFIVector;
+import com.alibaba.ffi.impl.CXXStdVector;
+import com.alibaba.grape.ds.*;
+import com.alibaba.grape.parallel.MessageInBuffer;
+import com.alibaba.grape.parallel.message.DoubleMsg;
+import com.alibaba.grape.parallel.message.LongMsg;
+import com.alibaba.grape.stdcxx.StdString;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+
+import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GRAPE_MESSAGE_IN_BUFFER;
+import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GS_VERTEX_ARRAY;
+
+public class FFITypeFactoryhelper {
+    private static Logger logger = LoggerFactory.getLogger(FFITypeFactoryhelper.class.getName());
+    private static volatile StdString.Factory stdStrFactory;
+    private static volatile Vertex.Factory vertexFactory;
+    private static volatile MessageInBuffer.Factory javaMsgInBufFactory;
+    private static volatile EmptyType.Factory emptyTypeFactory;
+    private static volatile VertexRange.Factory vertexRangeLongFactory;
+    private static volatile DenseVertexSet.Factory denseVertexSetFactory;
+
+    private static volatile HashMap<String, VertexArray.Factory> vertexArrayFactoryMap = new HashMap<>();
+    private static volatile HashMap<String, GSVertexArray.Factory> gsVertexArrayFactoryMap = new HashMap<>();
+    private static volatile HashMap<String, FFIVector.Factory> ffiVectorFactoryMap = new HashMap<>();
+
+    public static String javaType2CppType(Class<?> clz) {
+        if (clz.getName() == Long.class.getName()) {
+            //signed returned
+            return "int64_t";
+        } else if (clz.getName() == Integer.class.getName()) {
+            return "uint32_t";
+        } else if (clz.getName() == Double.class.getName()) {
+            return "double";
+        } else {
+            System.err.println("Must be one of long, double, integer");
+            return "null";
+        }
+    }
+
+    public static StdString.Factory getStdStringFactory() {
+        if (stdStrFactory == null) {
+            synchronized (StdString.class) {
+                if (stdStrFactory == null) {
+                    stdStrFactory = StdString.factory;
+                }
+            }
+        }
+        return stdStrFactory;
+    }
+
+    public static Vertex.Factory getVertexLongFactory() {
+        if (vertexFactory == null) {
+            synchronized (Vertex.Factory.class) {
+                if (vertexFactory == null) {
+                    vertexFactory = FFITypeFactory.getFactory("grape::Vertex<uint64_t>");
+                }
+            }
+        }
+        return vertexFactory;
+    }
+
+    public static VertexRange.Factory getVertexRangeLongFactory() {
+        if (vertexRangeLongFactory == null) {
+            synchronized (VertexRange.Factory.class) {
+                if (vertexRangeLongFactory == null) {
+                    vertexRangeLongFactory = FFITypeFactory.getFactory("grape::VertexRange<uint64_t>");
+                }
+            }
+        }
+        return vertexRangeLongFactory;
+    }
+
+    public static VertexArray.Factory getVertexArrayFactory(String foreignTypeName) {
+        if (!vertexArrayFactoryMap.containsKey(foreignTypeName)) {
+            synchronized (vertexArrayFactoryMap) {
+                if (!vertexArrayFactoryMap.containsKey(foreignTypeName)) {
+                    vertexArrayFactoryMap.put(foreignTypeName, FFITypeFactory.getFactory(VertexArray.class, foreignTypeName));
+                }
+            }
+        }
+        return vertexArrayFactoryMap.get(foreignTypeName);
+    }
+
+    public static GSVertexArray.Factory getGSVertexArrayFactory(String foreignTypeName) {
+        if (!gsVertexArrayFactoryMap.containsKey(foreignTypeName)) {
+            synchronized (gsVertexArrayFactoryMap) {
+                if (!gsVertexArrayFactoryMap.containsKey(foreignTypeName)) {
+                    gsVertexArrayFactoryMap.put(foreignTypeName, FFITypeFactory.getFactory(GSVertexArray.class, foreignTypeName));
+                }
+            }
+        }
+        return gsVertexArrayFactoryMap.get(foreignTypeName);
+    }
+
+    public static DenseVertexSet.Factory getDenseVertexSetFactory() {
+        if (denseVertexSetFactory == null) {
+            synchronized (DenseVertexSet.Factory.class) {
+                if (denseVertexSetFactory == null) {
+                    denseVertexSetFactory = FFITypeFactory.getFactory(DenseVertexSet.class, "grape::DenseVertexSet<uint64_t>");
+                }
+            }
+        }
+        return denseVertexSetFactory;
+    }
+
+    /**
+     * get the ffiVectorFactor which can produce std::vector,
+     * here foreignType can be netsted
+     *
+     * @param foreignTypeName
+     * @return
+     */
+    public static FFIVector.Factory getFFIVectorFactory(String foreignTypeName) {
+        if (!ffiVectorFactoryMap.containsKey(foreignTypeName)) {
+            synchronized (ffiVectorFactoryMap) {
+                if (!ffiVectorFactoryMap.containsKey(foreignTypeName)) {
+                    ffiVectorFactoryMap.put(foreignTypeName, FFITypeFactory.getFactory(CXXStdVector.class, foreignTypeName));
+                }
+            }
+        }
+        return ffiVectorFactoryMap.get(foreignTypeName);
+    }
+
+    public static Vertex<Long> newVertexLong() {
+        return getVertexLongFactory().create();
+    }
+
+    public static VertexRange<Long> newVertexRangeLong() {
+        return getVertexRangeLongFactory().create();
+    }
+
+    public static <T> VertexArray<T, Long> newVertexArray(Class<T> clz) {
+        //NOTE: in this way the returned FFIType name is jni type like jint, jdouble
+        String tmp = "grape::VertexArray<" +
+                FFITypeFactory.getFFITypeName(clz, true) +
+                ",uint64_t>";
+        return getVertexArrayFactory(tmp).create();
+    }
+
+    public static <T> GSVertexArray<T> newGSVertexArray(Class<T> clz) {
+        String tmp = GS_VERTEX_ARRAY + "<" +
+                javaType2CppType(clz) +
+                ">";
+        return getGSVertexArrayFactory(tmp).create();
+    }
+
+    /**
+     * In case user want to create a nested std::vector instance.
+     * the foreign name translation relies on ffi method.
+     *
+     * @param clz
+     * @param types
+     * @param <T>
+     * @return
+     */
+    public static <T> FFIVector newComplicateFFIVector(Class<T> clz, Class<?>... types) {
+        String[] foriegnNames = new String[types.length];
+        for (int i = 0; i < types.length; ++i) {
+            foriegnNames[i] = FFITypeFactory.getFFITypeName(types[i], true);
+        }
+        String nestedForeignName = makeParameterize(FFITypeFactory.getFFITypeName(clz, true), foriegnNames);
+        return getFFIVectorFactory(nestedForeignName).create();
+    }
+
+    public static DenseVertexSet<Long> newDenseVertexSet() {
+        return getDenseVertexSetFactory().create();
+    }
+
+    public static EmptyType.Factory getEmptyTypeFactory() {
+        if (emptyTypeFactory == null) {
+            synchronized (EmptyType.Factory.class) {
+                if (emptyTypeFactory == null) {
+                    emptyTypeFactory = FFITypeFactory.getFactory("grape::EmptyType");
+                }
+            }
+        }
+        return emptyTypeFactory;
+    }
+
+    public static EmptyType createEmptyType() {
+        return getEmptyTypeFactory().create();
+    }
+
+    public static MessageInBuffer.Factory newMessageInBuffer() {
+        if (javaMsgInBufFactory == null) {
+            synchronized (MessageInBuffer.Factory.class) {
+                if (javaMsgInBufFactory == null) {
+                    javaMsgInBufFactory = (MessageInBuffer.Factory) FFITypeFactory.getFactory(
+                            GRAPE_MESSAGE_IN_BUFFER);
+                }
+            }
+        }
+        return javaMsgInBufFactory;
+    }
+
+
+    public static String makeParameterize(String base, String... fields) {
+        if (fields.length == 0) {
+            return base;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(base);
+        sb.append("<");
+        sb.append(String.join(",", fields));
+        sb.append(">");
+        return sb.toString();
+    }
+
+    public static String[] getTypeParams(Class<?> clz, int expectedNum) {
+//        TypeVariable[] typeVariables = (TypeVariable[]) clz.getTypeParameters();
+        Type clzz = (Type) clz;
+        System.out.println(clzz.getTypeName());
+        if (clzz instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) clzz;
+            Type[] types = parameterizedType.getActualTypeArguments();
+            if (types.length != expectedNum) {
+                logger.error("Expected param number not consistent with actual:" + types.length + " , " + expectedNum);
+            }
+            String[] res = new String[expectedNum];
+            for (int i = 0; i < expectedNum; ++i) {
+                res[i] = types[i].getTypeName();
+            }
+            return res;
+        }
+        logger.error("Not a parameterized type");
+        return null;
+
+    }
+
+    public static LongMsg newLongMsg() {
+        return LongMsg.factory.create();
+    }
+
+    public static LongMsg newLongMsg(long value) {
+        return LongMsg.factory.create(value);
+    }
+
+    public static DoubleMsg newDoubleMsg() {
+        return DoubleMsg.factory.create();
+    }
+
+    public static DoubleMsg newDoubleMsg(double value) {
+        return DoubleMsg.factory.create(value);
+    }
+
+    /**
+     * For Any ffi-gened class, we can get the typealias via annotation
+     *
+     * @param clz
+     * @return
+     */
+    public static String getForeignName(Class<?> clz) {
+        if (clz.getGenericSuperclass().equals(FFIPointerImpl.class)) {
+            FFIForeignType ffiForeignType = clz.getAnnotation(FFIForeignType.class);
+            if (ffiForeignType == null) {
+                logger.error("No FFIForeign type annotation found");
+                return null;
+            }
+            return ffiForeignType.value();
+        }
+        logger.error("Not a subclass for FFIPointerImpl class");
+        return null;
+    }
+}

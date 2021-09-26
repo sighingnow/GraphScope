@@ -1,0 +1,61 @@
+package com.alibaba.grape.sample.bfs;
+
+import com.alibaba.ffi.FFIByteString;
+import com.alibaba.grape.app.ParallelContextBase;
+import com.alibaba.grape.ds.Vertex;
+import com.alibaba.grape.ds.VertexRange;
+import com.alibaba.grape.ds.VertexSet;
+import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
+import com.alibaba.grape.parallel.ParallelMessageManager;
+import com.alibaba.grape.stdcxx.StdVector;
+import com.alibaba.grape.utils.IntArrayWrapper;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+class BFSParallelContext implements ParallelContextBase<Long, Long, Long, Double> {
+    public long sourceOid;
+    public IntArrayWrapper partialResults;
+    //    public BooleanArrayWrapper currendInnerUpdated;
+    public VertexSet currentInnerUpdated, nextInnerUpdated;
+    public int currentDepth;
+    public int threadNum;
+    public ExecutorService executor;
+
+    @Override
+    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelMessageManager messageManager, StdVector<FFIByteString> args) {
+        sourceOid = Long.valueOf(args.get(0).toString());
+        threadNum = Integer.valueOf(args.get(1).toString());
+        partialResults = new IntArrayWrapper(frag.getVerticesNum().intValue(), Integer.MAX_VALUE);
+        currentInnerUpdated = new VertexSet(frag.innerVertices());
+        nextInnerUpdated = new VertexSet(frag.innerVertices());
+        currentDepth = 0;
+        executor = Executors.newFixedThreadPool(threadNum);
+    }
+
+    @Override
+    public void Output(ImmutableEdgecutFragment<Long, Long, Long, Double> frag) {
+        String prefix = "/tmp/bfs_parallel_output";
+        System.out.println("depth " + currentDepth);
+        String filePath = prefix + "_frag_" + frag.fid();
+        try {
+            FileWriter fileWritter = new FileWriter(filePath);
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWritter);
+            VertexRange<Long> innerNodes = frag.innerVertices();
+
+            Vertex<Long> cur = innerNodes.begin();
+            for (long index = 0; index < frag.getInnerVerticesNum(); ++index) {
+                cur.SetValue(index);
+                Long oid = frag.getId(cur);
+                bufferedWriter.write(oid + "\t" + partialResults.get(index) + "\n");
+            }
+            bufferedWriter.close();
+            System.out.println("writing output to " + filePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
