@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(VINEYARD-JNI)
+project(GRAPHSCOPE-JNI)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g -std=gnu++14 -Wall")
 
@@ -20,18 +20,18 @@ find_package(graphscope-analytical)
 include_directories(SYSTEM ${GRAPHSCOPE_ANALYTICAL_INCLUDE_DIRS})
 
 
-add_library(vineyard-jni SHARED ${SOURCES})
-target_compile_definitions(vineyard-jni PUBLIC PUBLIC ENABLE_JAVA_SDK)
-target_link_libraries(vineyard-jni ${CMAKE_JNI_LINKER_FLAGS} ${VINEYARD_LIBRARIES} ${GRAPHSCOPE_ANALYTICAL_INCLUDE_DIRS})
-set_target_properties(vineyard-jni PROPERTIES LINKER_LANGUAGE CXX)
-target_compile_features(vineyard-jni PRIVATE cxx_std_14)
+add_library(graphscope-jni SHARED ${SOURCES})
+target_compile_definitions(graphscope-jni PUBLIC PUBLIC ENABLE_JAVA_SDK)
+target_link_libraries(graphscope-jni ${CMAKE_JNI_LINKER_FLAGS} ${VINEYARD_LIBRARIES} ${GRAPHSCOPE_ANALYTICAL_INCLUDE_DIRS})
+set_target_properties(graphscope-jni PROPERTIES LINKER_LANGUAGE CXX)
+target_compile_features(graphscope-jni PRIVATE cxx_std_14)
 
 
-add_custom_command(TARGET vineyard-jni POST_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/target/classes/natives/linux_64/")
-add_custom_command(TARGET vineyard-jni
+add_custom_command(TARGET graphscope-jni POST_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/target/classes/natives/linux_64/")
+add_custom_command(TARGET graphscope-jni
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vineyard-jni> "${CMAKE_CURRENT_SOURCE_DIR}/target/classes/natives/linux_64/")
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:graphscope-jni> "${CMAKE_CURRENT_SOURCE_DIR}/target/classes/natives/linux_64/")
 
-install(TARGETS vineyard-jni
+install(TARGETS graphscope-jni
         EXPORT VineyardJNITargets
         LIBRARY DESTINATION lib)

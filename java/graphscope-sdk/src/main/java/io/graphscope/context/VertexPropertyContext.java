@@ -1,19 +1,18 @@
-package io.v6d.modules.graph.context;
+package io.graphscope.context;
 
 import com.alibaba.ffi.FFIByteString;
 import com.alibaba.ffi.FFITypeFactory;
 import com.alibaba.grape.fragment.ArrowProjectedFragment;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;
-import io.v6d.modules.graph.column.DoubleColumn;
-import io.v6d.modules.graph.column.IntColumn;
-import io.v6d.modules.graph.column.LongColumn;
-import io.v6d.modules.graph.context.ffi.FFIVertexPropertyContext;
+import io.graphscope.column.DoubleColumn;
+import io.graphscope.column.IntColumn;
+import io.graphscope.column.LongColumn;
+import io.graphscope.context.ffi.FFIVertexPropertyContext;
+import io.graphscope.utils.CPP_CLASS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-
-import static io.v6d.modules.graph.utils.CPP_CLASS.VERTEX_PROPERTY_CONTEXT;
 
 /**
  * VertexPropertyContext only compatible with simple graph, i.e. ArrowProjectedFragment
@@ -34,7 +33,7 @@ public abstract class VertexPropertyContext<FRAG_T extends ArrowProjectedFragmen
     protected void createFFIContext(FRAG_T fragment) {
         String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment.getClass());
         System.out.println("fragment str: " + fragmentTemplateStr);
-        String contextName = FFITypeFactoryhelper.makeParameterize(VERTEX_PROPERTY_CONTEXT, fragmentTemplateStr);
+        String contextName = FFITypeFactoryhelper.makeParameterize(CPP_CLASS.VERTEX_PROPERTY_CONTEXT, fragmentTemplateStr);
         System.out.println("context name: " + contextName);
         factory = FFITypeFactory.getFactory(FFIVertexPropertyContext.class, contextName);
         ffiVertexPropertyContext = factory.create(fragment);

@@ -51,7 +51,8 @@ if "GRAPHSCOPE_HOME" not in os.environ:
     logger.error("Can't found GRAPHSCOPE_HOME in environment.")
 else:
     GRAPHSCOPE_HOME = os.environ["GRAPHSCOPE_HOME"]
-GRAPHSCOPE_HOME_LIB=os.path.join(GRAPHSCOPE_HOME,  "lib")
+GRAPE_JNI_LIB=os.path.join(GRAPHSCOPE_HOME,  "java/grape-sdk/target/native")
+GRAPHSCOPE_JNI_LIB = os.path.join(GRAPHSCOPE_HOME,  "java/graphscope-sdk/target/native")
 
 
 def _parse_user_app(java_app_class: str, java_jar_full_path : str):
@@ -61,7 +62,7 @@ def _parse_user_app(java_app_class: str, java_jar_full_path : str):
         "java",
         "-cp",
         "{}".format(java_jar_full_path),
-        "io.v6d.modules.graph.utils.AppBaseParser",
+        "io.graphscope.utils.AppBaseParser",
         java_app_class,
     ]
     java_env=os.environ.copy()
@@ -121,7 +122,7 @@ def _construct_jvm_options_from_params(app_lib_dir, jar_unpacked_path, llvm4jni_
     else:
         logger.info("No jvm config found, we still proceed...")
     
-    library_path = "-Djava.library.path={}:{}".format(app_lib_dir, GRAPHSCOPE_HOME_LIB)
+    library_path = "-Djava.library.path={}:{}:{}".format(app_lib_dir, GRAPE_JNI_LIB, GRAPHSCOPE_JNI_LIB)
     class_path = "-Djava.class.path={}:{}:{}".format(llvm4jni_output_dir, java_codegen_cp, jar_unpacked_path)
     return " ".join([performance_args, library_path, class_path, "-Xrs"])
 

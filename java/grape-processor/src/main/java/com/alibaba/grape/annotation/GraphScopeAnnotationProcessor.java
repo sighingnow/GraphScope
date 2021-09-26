@@ -8,14 +8,14 @@ import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
 import com.alibaba.grape.parallel.DefaultMessageManager;
 import com.alibaba.grape.utils.CPP_CLASSES_STRINGS;
 import com.squareup.javapoet.*;
-import io.v6d.modules.graph.column.DoubleColumn;
-import io.v6d.modules.graph.column.IntColumn;
-import io.v6d.modules.graph.column.LongColumn;
-import io.v6d.modules.graph.context.ffi.FFIVertexDataContext;
-import io.v6d.modules.graph.context.ffi.FFIVertexPropertyContext;
-import io.v6d.modules.graph.ds.stdcxx.StdSharedPtr;
-import io.v6d.modules.graph.fragment.ArrowFragment;
-import io.v6d.modules.graph.parallel.PropertyMessageManager;
+import io.graphscope.column.DoubleColumn;
+import io.graphscope.column.IntColumn;
+import io.graphscope.column.LongColumn;
+import io.graphscope.context.ffi.FFIVertexDataContext;
+import io.graphscope.context.ffi.FFIVertexPropertyContext;
+import io.graphscope.ds.stdcxx.StdSharedPtr;
+import io.graphscope.fragment.ArrowFragment;
+import io.graphscope.parallel.PropertyMessageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +36,7 @@ import java.io.Writer;
 import java.util.*;
 
 import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.ARROW_PROJECTED_FRAGMENT;
-import static io.v6d.modules.graph.utils.CPP_CLASS.*;
+import static io.graphscope.utils.CPP_CLASS.*;
 
 @SupportedAnnotationTypes({"com.alibaba.ffi.FFIMirror", "com.alibaba.ffi.FFIMirrorDefinition",
         "com.alibaba.grape.annotation.GraphType"})

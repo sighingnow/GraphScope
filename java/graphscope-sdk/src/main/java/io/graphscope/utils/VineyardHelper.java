@@ -1,4 +1,4 @@
-package io.v6d.modules.graph.utils;
+package io.graphscope.utils;
 
 public class VineyardHelper {
     private static native long objectID2Address(long objectID);

@@ -1,6 +1,6 @@
-package io.v6d.modules.graph.utils;
+package io.graphscope.utils;
 
-import static io.v6d.modules.graph.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
+import static io.graphscope.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
 
 public class LoadLibrary {
     static {

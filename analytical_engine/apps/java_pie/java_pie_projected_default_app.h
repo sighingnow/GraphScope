@@ -63,7 +63,7 @@ class JavaPIEProjectedDefaultApp
 
       const char* descriptor =
           "(Lcom/alibaba/grape/fragment/ArrowProjectedFragment;"
-          "Lio/v6d/modules/graph/context/ProjectedDefaultContextBase;"
+          "Lio/graphscope/context/ProjectedDefaultContextBase;"
           "Lcom/alibaba/grape/parallel/DefaultMessageManager;)V";
       jmethodID pEval_methodID =
           env->GetMethodID(app_class, "PEval", descriptor);
@@ -97,7 +97,7 @@ class JavaPIEProjectedDefaultApp
 
       const char* descriptor =
           "(Lcom/alibaba/grape/fragment/ArrowProjectedFragment;"
-          "Lio/v6d/modules/graph/context/ProjectedDefaultContextBase;"
+          "Lio/graphscope/context/ProjectedDefaultContextBase;"
           "Lcom/alibaba/grape/parallel/DefaultMessageManager;)V";
       jmethodID incEval_methodID =
           env->GetMethodID(app_class, "IncEval", descriptor);

@@ -1,4 +1,4 @@
-package io.v6d.modules.graph.utils;
+package io.graphscope.utils;
 
 public class CPP_HEADER {
     public static final String ARROW_FRAGMENT_H = "vineyard/graph/fragment/arrow_fragment.h";

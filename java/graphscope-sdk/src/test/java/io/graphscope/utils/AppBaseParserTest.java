@@ -1,4 +1,4 @@
-package io.v6d.modules.graph.utils;
+package io.graphscope.utils;
 
 import org.junit.Test;
 

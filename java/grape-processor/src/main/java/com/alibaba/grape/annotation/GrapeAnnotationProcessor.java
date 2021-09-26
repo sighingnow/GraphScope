@@ -10,8 +10,8 @@ import com.alibaba.grape.parallel.MessageInBuffer;
 import com.alibaba.grape.parallel.ParallelMessageManager;
 import com.alibaba.grape.utils.CPP_CLASSES_STRINGS;
 import com.squareup.javapoet.*;
-import io.v6d.modules.graph.ds.*;
-import io.v6d.modules.graph.fragment.ArrowFragment;
+import io.graphscope.ds.*;
+import io.graphscope.fragment.ArrowFragment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +31,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.*;
 
-import static io.v6d.modules.graph.utils.CPP_CLASS.ARROW_FRAGMENT;
+import static io.graphscope.utils.CPP_CLASS.ARROW_FRAGMENT;
 
 @SupportedAnnotationTypes({"com.alibaba.ffi.FFIMirror", "com.alibaba.ffi.FFIMirrorDefinition",
         "com.alibaba.grape.annotation.GraphType"})

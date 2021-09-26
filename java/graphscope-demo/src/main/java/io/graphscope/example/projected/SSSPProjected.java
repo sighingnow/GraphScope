@@ -8,8 +8,8 @@ import com.alibaba.grape.fragment.ArrowProjectedFragment;
 import com.alibaba.grape.parallel.DefaultMessageManager;
 import com.alibaba.grape.parallel.message.LongMsg;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;
-import io.v6d.modules.graph.app.ProjectedDefaultAppBase;
-import io.v6d.modules.graph.context.ProjectedDefaultContextBase;
+import io.graphscope.app.ProjectedDefaultAppBase;
+import io.graphscope.context.ProjectedDefaultContextBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

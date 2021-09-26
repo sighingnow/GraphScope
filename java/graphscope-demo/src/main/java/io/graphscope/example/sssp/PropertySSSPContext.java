@@ -5,10 +5,10 @@ import com.alibaba.grape.ds.GSVertexArray;
 import com.alibaba.grape.ds.VertexRange;
 import com.alibaba.grape.ds.VertexSet;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;
-import io.v6d.modules.graph.context.ContextDataType;
-import io.v6d.modules.graph.context.LabeledVertexPropertyContext;
-import io.v6d.modules.graph.fragment.ArrowFragment;
-import io.v6d.modules.graph.parallel.PropertyMessageManager;
+import io.graphscope.context.ContextDataType;
+import io.graphscope.context.LabeledVertexPropertyContext;
+import io.graphscope.fragment.ArrowFragment;
+import io.graphscope.parallel.PropertyMessageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,11 +1,11 @@
-package io.v6d.modules.graph.utils;
+package io.graphscope.utils;
 
-import io.v6d.modules.graph.app.ProjectedDefaultAppBase;
-import io.v6d.modules.graph.app.PropertyDefaultAppBase;
-import io.v6d.modules.graph.context.LabeledVertexDataContext;
-import io.v6d.modules.graph.context.ProjectedDefaultContextBase;
-import io.v6d.modules.graph.context.PropertyDefaultContextBase;
-import io.v6d.modules.graph.context.VertexDataContext;
+import io.graphscope.app.ProjectedDefaultAppBase;
+import io.graphscope.app.PropertyDefaultAppBase;
+import io.graphscope.context.PropertyDefaultContextBase;
+import io.graphscope.context.LabeledVertexDataContext;
+import io.graphscope.context.ProjectedDefaultContextBase;
+import io.graphscope.context.VertexDataContext;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

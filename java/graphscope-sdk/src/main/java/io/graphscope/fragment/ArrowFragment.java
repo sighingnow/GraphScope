@@ -1,24 +1,24 @@
-package io.v6d.modules.graph.fragment;
+package io.graphscope.fragment;
 
 import com.alibaba.ffi.*;
 import com.alibaba.grape.ds.DestList;
 import com.alibaba.grape.ds.Vertex;
 import com.alibaba.grape.ds.VertexRange;
-import io.v6d.modules.graph.ds.EdgeDataColumn;
-import io.v6d.modules.graph.ds.PropertyAdjList;
-import io.v6d.modules.graph.ds.PropertyRawAdjList;
-import io.v6d.modules.graph.ds.VertexDataColumn;
+import io.graphscope.ds.PropertyAdjList;
+import io.graphscope.ds.PropertyRawAdjList;
+import io.graphscope.ds.VertexDataColumn;
+import io.graphscope.utils.CPP_CLASS;
+import io.graphscope.utils.CPP_HEADER;
+import io.graphscope.utils.CPP_JNI_LIBRARY;
+import io.graphscope.ds.EdgeDataColumn;
 
 import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GRAPE_VERTEX;
 import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GRAPE_VERTEX_RANGE;
-import static io.v6d.modules.graph.utils.CPP_CLASS.*;
-import static io.v6d.modules.graph.utils.CPP_HEADER.ARROW_FRAGMENT_H;
-import static io.v6d.modules.graph.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
 
-@FFIGen(library = VINEYARD_JNI_LIBRARY)
-@CXXHead(ARROW_FRAGMENT_H)
+@FFIGen(library = CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY)
+@CXXHead(CPP_HEADER.ARROW_FRAGMENT_H)
 @CXXHead(system = "stdint.h")
-@FFITypeAlias(ARROW_FRAGMENT)
+@FFITypeAlias(CPP_CLASS.ARROW_FRAGMENT)
 @CXXTemplate(cxx = {"int64_t"},
         java = {"java.lang.Long"})
 /**
@@ -133,17 +133,17 @@ public interface ArrowFragment<OID_T> extends FFIPointer {
      */
 
     @FFINameAlias("GetOutgoingAdjList")
-    @CXXValue @FFITypeAlias(PROPERTY_ADJ_LIST + "<uint64_t>") PropertyAdjList<Long> getOutgoingAdjList(@FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
+    @CXXValue @FFITypeAlias(CPP_CLASS.PROPERTY_ADJ_LIST + "<uint64_t>") PropertyAdjList<Long> getOutgoingAdjList(@FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
 
 
     @FFINameAlias("GetIncomingAdjList")
-    @CXXValue @FFITypeAlias(PROPERTY_ADJ_LIST + "<uint64_t>") PropertyAdjList<Long> getIncomingAdjList(@FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
+    @CXXValue @FFITypeAlias(CPP_CLASS.PROPERTY_ADJ_LIST + "<uint64_t>") PropertyAdjList<Long> getIncomingAdjList(@FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
 
     @FFINameAlias("GetOutgoingRawAdjList")
-    @CXXValue @FFITypeAlias(PROPERTY_RAW_ADJ_LIST + "<uint64_t>") PropertyRawAdjList<Long> getOutgoingRawAdjList(@FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
+    @CXXValue @FFITypeAlias(CPP_CLASS.PROPERTY_RAW_ADJ_LIST + "<uint64_t>") PropertyRawAdjList<Long> getOutgoingRawAdjList(@FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
 
     @FFINameAlias("GetIncomingRawAdjList")
-    @CXXValue @FFITypeAlias(PROPERTY_RAW_ADJ_LIST + "<uint64_t>") PropertyRawAdjList<Long> getIncomingRawAdjList(@FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
+    @CXXValue @FFITypeAlias(CPP_CLASS.PROPERTY_RAW_ADJ_LIST + "<uint64_t>") PropertyRawAdjList<Long> getIncomingRawAdjList(@FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
 
 //    @FFINameAlias("edge_data_column<uint64_t>")
 //    @CXXValue EdgeDataColumnLong<PropertyNbrUnit<Long>> edgeDataColumnLong(int edgeLabelId, int propertyId);

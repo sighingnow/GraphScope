@@ -1,4 +1,4 @@
-package io.v6d.modules.graph.column;
+package io.graphscope.column;
 
 public class ColumnTest {
 }

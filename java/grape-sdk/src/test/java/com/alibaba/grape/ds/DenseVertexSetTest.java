@@ -25,7 +25,7 @@ public class DenseVertexSetTest {
         vertices.SetRange(0L, 100L);
         denseVertexSet.Init(vertices);
 
-        denseVertexSet.Init(vertices, 2);
+        denseVertexSet.Init(vertices);
         Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
         vertex.SetValue(1L);
         Assert.assertFalse(denseVertexSet.Exist(vertex));

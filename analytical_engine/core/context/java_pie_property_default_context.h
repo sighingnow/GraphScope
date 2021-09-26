@@ -56,8 +56,8 @@ class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
 
  protected:
   const char* eval_descriptor() override {
-    return "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
-           "Lio/v6d/modules/graph/parallel/PropertyMessageManager;"
+    return "(Lio/graphscope/fragment/ArrowFragment;"
+           "Lio/graphscope/parallel/PropertyMessageManager;"
            "Lcom/alibaba/fastjson/JSONObject;)V";
   }
 };
@@ -281,11 +281,11 @@ class JavaPIEPropertyDefaultContextWrapper
     JNIEnvMark m;
     if (m.env()) {
       jclass context_utils_class =
-          m.env()->FindClass("io/v6d/modules/graph/utils/ContextUtils");
+          m.env()->FindClass("io/graphscope/utils/ContextUtils");
       CHECK_NOTNULL(context_utils_class);
       jmethodID ctx_base_class_name_get_method = m.env()->GetStaticMethodID(
           context_utils_class, "getPropertyCtxObjBaseClzName",
-          "(Lio/v6d/modules/graph/context/PropertyDefaultContextBase;)"
+          "(Lio/graphscope/context/PropertyDefaultContextBase;)"
           "Ljava/lang/String;");
       CHECK_NOTNULL(ctx_base_class_name_get_method);
       jstring ctx_base_clz_name = (jstring) m.env()->CallStaticObjectMethod(
@@ -306,7 +306,7 @@ class JavaPIEPropertyDefaultContextWrapper
       CHECK_NOTNULL(app_context_getter_class);
       jmethodID getter_method = m.env()->GetStaticMethodID(
           app_context_getter_class, "getLabeledVertexDataContextDataType",
-          "(Lio/v6d/modules/graph/context/LabeledVertexDataContext;)"
+          "(Lio/graphscope/context/LabeledVertexDataContext;)"
           "Ljava/lang/String;");
       CHECK_NOTNULL(getter_method);
       // Pass app class's class object

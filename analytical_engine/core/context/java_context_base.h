@@ -39,7 +39,7 @@ limitations under the License.
 #include "vineyard/graph/fragment/fragment_traits.h"
 namespace gs {
 static constexpr const char* APP_CONTEXT_GETTER_CLASS =
-    "io/v6d/modules/graph/utils/AppContextGetter";
+    "io/graphscope/utils/AppContextGetter";
 /**
  * @brief JavaContextBase is the base class for JavaPropertyContext and
  * JavaProjectedContext.

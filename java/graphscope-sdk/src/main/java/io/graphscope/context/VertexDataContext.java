@@ -1,14 +1,13 @@
-package io.v6d.modules.graph.context;
+package io.graphscope.context;
 
 import com.alibaba.ffi.FFITypeFactory;
 import com.alibaba.grape.ds.GSVertexArray;
 import com.alibaba.grape.fragment.ArrowProjectedFragment;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;
-import io.v6d.modules.graph.context.ffi.FFIVertexDataContext;
+import io.graphscope.context.ffi.FFIVertexDataContext;
+import io.graphscope.utils.CPP_CLASS;
 
 import java.util.Objects;
-
-import static io.v6d.modules.graph.utils.CPP_CLASS.VERTEX_DATA_CONTEXT;
 
 public abstract class VertexDataContext<FRAG_T extends ArrowProjectedFragment, DATA_T> implements ProjectedDefaultContextBase<FRAG_T> {
     private long ffiContextAddress;
@@ -25,7 +24,7 @@ public abstract class VertexDataContext<FRAG_T extends ArrowProjectedFragment, D
 //        String fragmentTemplateStr = FFITypeFactory.getFFITypeName(fragment.getClass(), true);
         String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment.getClass());
         System.out.println("fragment: " + fragmentTemplateStr);
-        String contextName = FFITypeFactoryhelper.makeParameterize(VERTEX_DATA_CONTEXT,
+        String contextName = FFITypeFactoryhelper.makeParameterize(CPP_CLASS.VERTEX_DATA_CONTEXT,
                 fragmentTemplateStr,
                 FFITypeFactoryhelper.javaType2CppType(dataClass));
         System.out.println("context name: " + contextName);

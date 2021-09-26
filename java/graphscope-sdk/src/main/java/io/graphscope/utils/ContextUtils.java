@@ -1,6 +1,6 @@
-package io.v6d.modules.graph.utils;
+package io.graphscope.utils;
 
-import io.v6d.modules.graph.context.*;
+import io.graphscope.context.*;
 
 public class ContextUtils {
     public static String getPropertyCtxObjBaseClzName(PropertyDefaultContextBase ctxObj) {

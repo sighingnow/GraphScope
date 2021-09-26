@@ -62,9 +62,9 @@ class JavaPIEPropertyDefaultApp
       CHECK_NOTNULL(app_class);
 
       const char* descriptor =
-          "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
-          "Lio/v6d/modules/graph/context/PropertyDefaultContextBase;"
-          "Lio/v6d/modules/graph/parallel/PropertyMessageManager;)V";
+          "(Lio/graphscope/fragment/ArrowFragment;"
+          "Lio/graphscope/context/PropertyDefaultContextBase;"
+          "Lio/graphscope/parallel/PropertyMessageManager;)V";
       jmethodID pEval_methodID =
           env->GetMethodID(app_class, "PEval", descriptor);
       CHECK_NOTNULL(pEval_methodID);
@@ -96,9 +96,9 @@ class JavaPIEPropertyDefaultApp
       CHECK_NOTNULL(app_class);
 
       const char* descriptor =
-          "(Lio/v6d/modules/graph/fragment/ArrowFragment;"
-          "Lio/v6d/modules/graph/context/PropertyDefaultContextBase;"
-          "Lio/v6d/modules/graph/parallel/PropertyMessageManager;)V";
+          "(Lio/graphscope/fragment/ArrowFragment;"
+          "Lio/graphscope/context/PropertyDefaultContextBase;"
+          "Lio/graphscope/parallel/PropertyMessageManager;)V";
       jmethodID incEval_methodID =
           env->GetMethodID(app_class, "IncEval", descriptor);
       CHECK_NOTNULL(incEval_methodID);

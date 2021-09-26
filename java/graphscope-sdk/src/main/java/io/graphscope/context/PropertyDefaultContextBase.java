@@ -1,9 +1,9 @@
-package io.v6d.modules.graph.context;
+package io.graphscope.context;
 
 
 import com.alibaba.fastjson.JSONObject;
-import io.v6d.modules.graph.fragment.ArrowFragment;
-import io.v6d.modules.graph.parallel.PropertyMessageManager;
+import io.graphscope.fragment.ArrowFragment;
+import io.graphscope.parallel.PropertyMessageManager;
 
 /**
  * Different from DefaultContext, this context doesn't require user to define output method.
