@@ -15,6 +15,7 @@ endif ()
 if (POLICY CMP0048)
     cmake_policy(SET CMP0048 NEW)
 endif ()
+project(analytical_engine LANGUAGES C CXX VERSION ${GRAPHSCOPE_ANALYTICAL_VERSION})
 
 option(NETWORKX "networkx on?" ON)
 option(BUILD_TESTS "Build unit test" ON)
@@ -34,8 +35,6 @@ if (ENABLE_JAVA_SDK)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fforce-emit-vtables")
     set(CMAKE_JNI_LINKER_FLAGS "${CMAKE_JNI_LINKER_FLAGS} -fuse-ld=${LLVM11_HOME}/bin/ld.lld -Xlinker -mllvm=-lto-embed-bitcode")
 endif()
-
-project(analytical_engine LANGUAGES C CXX VERSION ${GRAPHSCOPE_ANALYTICAL_VERSION})
 
 if (NETWORKX)
     add_definitions(-DNETWORKX)
@@ -208,15 +207,6 @@ target_link_libraries(grape_engine PRIVATE gs_proto
         ${VINEYARD_LIBRARIES}
         )
 
-if (ENABLE_JAVA_SDK)
-    add_executable(run_java_app_preprocess core/java/run_java_app_preprocess.cc)
-    target_compile_definitions(run_java_app_preprocess PUBLIC ENABLE_JAVA_SDK)
-    target_include_directories(run_java_app_preprocess PRIVATE core utils apps)
-    target_link_libraries(run_java_app_preprocess ${GFLAGS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${JNI_LIBRARIES}
-                                        ${CMAKE_DL_LIBS} ${GLOG_LIBRARIES} ${JAVA_JVM_LIBRARY})
-endif()
-
-
 if (${LIBUNWIND_FOUND})
     target_link_libraries(grape_engine PRIVATE ${LIBUNWIND_LIBRARIES})
 endif ()
@@ -365,9 +355,6 @@ endmacro()
 
 install_gsa_binary(grape_engine)
 install_gsa_binary(gs_proto)
-if (ENABLE_JAVA_SDK)
-    install_gsa_binary(run_java_app_preprocess)
-endif()
 
 install_gsa_headers("${PROJECT_SOURCE_DIR}/apps")
 install_gsa_headers("${PROJECT_SOURCE_DIR}/benchmarks")
