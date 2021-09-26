@@ -64,30 +64,23 @@ except ModuleNotFoundError:
 
 GRAPHSCOPE_HOME = os.path.join(COORDINATOR_HOME, "..")
 
+
+if "LLVM4JNI_HOME"  not in os.environ:
+    raise RuntimeError("Expect LLVM4JNI_HOME set")
+LLVM4JNI_HOME = os.environ["LLVM4JNI_HOME"]
 WORKSPACE = "/tmp/gs"
-LLVM4JNI_SDK_OUT_BASE = "sdk-llvm4jni-output"
-LLVM4JNI_USER_BASE = "user-llvm4jni-output"
-GRAPE_JNI_LIB_NAME = "grape-lite-jni"
-V6D_JNI_LIB_NAME = "vineyard-jni"
-GRAPE_SDK_BUILD=os.path.join(str(Path.home()), "GAE-ODPSGraph/pie-sdk/grape-sdk/target/native/")
-VINEYARD_GRAPH_SDK_BUILD=os.path.join(str(Path.home()), "GAE-ODPSGraph/pie-sdk/vineyard-graph/target/native/")
+RUN_LLVM4JNI_SH = os.path.join(LLVM4JNI_HOME, "run.sh")
+LLVM4JNI_USER_OUT_DIR_BASE = "user-llvm4jni-output"
+PROCESSOR_MAIN_CLASS = "com.alibaba.grape.annotation.Main"
 DEFAULT_GS_CONFIG_FILE = ".gs_conf.yaml"
 ANALYTICAL_ENGINE_HOME = os.path.join(GRAPHSCOPE_HOME, "analytical_engine")
-ANALYTICAL_BUILD_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "build")
 ANALYTICAL_ENGINE_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "build", "grape_engine")
-JAVA_APP_PREPROCESSER = os.path.join(ANALYTICAL_ENGINE_HOME, "build", "run_java_app_preprocess")
-JAVA_APP_FFI_SOURCE_PATH_BASE = "gs-ffi"
+JAVA_CODEGNE_OUTPUT_PREFIX = "gs-ffi"
 M2_REPO_PATH = os.path.join(str(Path.home()), ".m2/repository/com/alibaba/grape")
-#GRAPE_DEMO_JAR=os.path.join(M2_REPO_PATH, "grape-demo/0.1/grape-demo-0.1-jar-with-dependencies.jar")
 GRAPE_PROCESSOR_JAR=os.path.join(M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-jar-with-dependencies.jar")
-GRAPE_SDK_JAR=os.path.join(M2_REPO_PATH, "grape-sdk/0.1/grape-sdk-0.1-jar-with-dependencies.jar")
-GRAPE_SDK_JAR_WITHOUT_DEP=os.path.join(M2_REPO_PATH,"grape-sdk/0.1/grape-sdk-0.1.jar")
-VINEYARD_SDK_JAR_WITHOUT_DEP=os.path.join(M2_REPO_PATH,"vineyard-graph/0.1/vineyard-graph-0.1.jar")
-VINEYARD_GRAPH_JAR=os.path.join(M2_REPO_PATH, "")
 if not os.path.isfile(ANALYTICAL_ENGINE_PATH):
     ANALYTICAL_ENGINE_HOME = "/usr/local/bin"
     ANALYTICAL_ENGINE_PATH = "/usr/local/bin/grape_engine"
-    JAVA_APP_PREPROCESSER = "/usr/local/bin/run_java_app_preprocess"
 TEMPLATE_DIR = os.path.join(COORDINATOR_HOME, "gscoordinator", "template")
 BUILTIN_APP_RESOURCE_PATH = os.path.join(
     COORDINATOR_HOME, "gscoordinator", "builtin/app/builtin_app.gar"
@@ -208,122 +201,37 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     os.chdir(app_dir)
 
     module_name = ""
-    JAVA_APP_FFI_SOURCE_PATH = ""
+    # Output directory for java codegen
+    java_codegen_out_dir = ""
     cmake_commands = [
         "cmake",
         ".",
         "-DNETWORKX=" + engine_config["networkx"],
     ]
     if app_type == "java_pie":
+        if not s.path.isfile(GRAPE_PROCESSOR_JAR):
+            raise RuntimeError("Grape processor need to be installed")
         #for java need to run preprocess
-        JAVA_APP_FFI_SOURCE_PATH = os.path.join(workspace, "{}-{}".format(JAVA_APP_FFI_SOURCE_PATH_BASE, library_name))
+        java_codegen_out_dir = os.path.join(workspace, "{}-{}".format(JAVA_CODEGNE_OUTPUT_PREFIX, library_name))
         LLVM11_HOME = os.environ.get("LLVM11_HOME")
         if LLVM11_HOME is None:
-            raise Exception("LLVM11_HOME should be set")
+            raise RuntimeError("LLVM11_HOME should be set")
         LLVM_LLD = os.path.join(LLVM11_HOME, "/bin/ld.lld")
         if not os.path.isfile(LLVM_LLD):
-            raise Exception("ld.lld not found")
+            raise RuntimeError("ld.lld not found")
 
-        cmake_commands = ["cmake","-DNETWORKX=" + engine_config["networkx"], "-DCMAKE_CXX_COMPILER={}/bin/clang++".format(LLVM11_HOME),
+        cmake_commands += ["-DCMAKE_CXX_COMPILER={}/bin/clang++".format(LLVM11_HOME),
                             "-DLLVM_DIR={}/lib/cmake/llvm".format(LLVM11_HOME),
                             "-DCMAKE_CXX_FLAGS=-flto -fforce-emit-vtables",
                             "-DCMAKE_JNI_LINKER_FLAGS=-fuse-ld={} -Xlinker -mllvm=-lto-embed-bitcode".format(LLVM_LLD),
                             "-DENABLE_JAVA_SDK",
                             "-DJAVA_PIE_APP=True",
-                            "-DJAVA_APP_FFI_SOURCE_PATH={}".format(JAVA_APP_FFI_SOURCE_PATH)]
-        # if app_class == "gs::JavaPIEPropertyDefaultApp":
-        #     cmake_commands += ["-DJAVA_PROPERTY=True"]
-        # elif app_class == "gs::JavaPIEProjectedDefaultApp":
-        #     cmake_commands += ["-DJAVA_PROPERTY=False"]
-        # else :
-        #     raise Exception("Unsupported type {}".format(app_class))
+                            "-DPRE_CP={}:{}".format(GRAPE_PROCESSOR_JAR, java_jar_path),
+                            "-DPROCESSOR_MAIN_CLASS={}".format(PROCESSOR_MAIN_CLASS),
+                            "-DJAR_PATH={}".format(java_jar_path),
+                            "-DOUTPUT_DIR={}".format(java_codegen_out_dir)]
         cmake_commands += ["."]
         logger.info(" ".join(cmake_commands))
-        java_codegen_commands = [
-            JAVA_APP_PREPROCESSER,
-            java_jar_path,
-            JAVA_APP_FFI_SOURCE_PATH,
-            graph_type,
-        ]
-        java_env=os.environ.copy()
-        PRE_CP = "{}:{}:{}".format(java_jar_path,  GRAPE_SDK_JAR, GRAPE_PROCESSOR_JAR)
-        java_env["JVM_OPTS"] = "-Djava.class.path={}".format(PRE_CP)
-        logger.info("%s, %s", " ".join(java_codegen_commands) , str(java_env["JVM_OPTS"]))
-        java_codegen_process = subprocess.Popen(
-            java_codegen_commands,
-            env=java_env,
-            universal_newlines=True,
-            encoding="utf-8",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        java_codegen_stderr_watcher = PipeWatcher(java_codegen_process.stderr, sys.stdout)
-        setattr(java_codegen_process, "stderr_watcher", java_codegen_stderr_watcher)
-        java_codegen_process.wait()
-        logger.info("java codegen complete, output to {}".format(JAVA_APP_FFI_SOURCE_PATH))
-        # Then do the optimization.
-        global sdk_optimized
-        LLVM4JNI_SDK_OUTPUT = os.path.join(workspace, LLVM4JNI_SDK_OUT_BASE)
-        optimize_env=os.environ.copy()
-        optimize_env["VM_OPTS"] = "-Dllvm4jni.supportLocalConstant=true -Dllvm4jni.supportIndirectCall=false"
-        llvm4jni_run_bash = os.path.join(os.environ['LLVM4JNI_HOME'], "run.sh")
-        logger.info("bash script: {}, vm_opts: {}".format(llvm4jni_run_bash, optimize_env["VM_OPTS"]))
-        if sdk_optimized == False:
-            #run optimization for sdk code
-            run_llvm_grape_sdk_commands = [
-                "bash",
-                llvm4jni_run_bash,
-                "-output",
-                LLVM4JNI_SDK_OUTPUT,
-                "-cp",
-                GRAPE_SDK_JAR_WITHOUT_DEP,
-                "-lib",
-                get_lib_path(GRAPE_SDK_BUILD, GRAPE_JNI_LIB_NAME),
-                "-v",
-                "ERROR"
-            ]
-            logger.info(" ".join(run_llvm_grape_sdk_commands))
-            grape_sdk_optimize_process = subprocess.Popen(
-                run_llvm_grape_sdk_commands,
-                env=optimize_env,
-                universal_newlines=True,
-                encoding="utf-8",
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            sdk_optimize_process_watcher = PipeWatcher(grape_sdk_optimize_process.stderr, sys.stdout)
-            setattr(grape_sdk_optimize_process, "stderr_watcher", sdk_optimize_process_watcher)
-            grape_sdk_optimize_process.wait()
-            # for vineyard sdk
-            run_llvm_v6d_sdk_commands = [ 
-                "bash",
-                llvm4jni_run_bash,
-                "-output",
-                LLVM4JNI_SDK_OUTPUT,
-                "-cp",
-                VINEYARD_SDK_JAR_WITHOUT_DEP,
-                "-lib",
-                get_lib_path(VINEYARD_GRAPH_SDK_BUILD, V6D_JNI_LIB_NAME),
-                "-v",
-                "ERROR"
-            ]
-            logger.info(" ".join(run_llvm_v6d_sdk_commands))
-            run_llvm_v6d_sdk_process = subprocess.Popen(
-                run_llvm_grape_sdk_commands,
-                env=optimize_env,
-                universal_newlines=True,
-                encoding="utf-8",
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            run_llvm_v6d_sdk_process_watcher = PipeWatcher(run_llvm_v6d_sdk_process.stderr, sys.stdout)
-            setattr(run_llvm_v6d_sdk_process, "stderr_watcher", run_llvm_v6d_sdk_process_watcher)
-            run_llvm_v6d_sdk_process.wait()
-
-            logger.info("sdk optimization complete, output to {}".format(LLVM4JNI_SDK_OUTPUT))
-            sdk_optimized = True
-        else:
-            logger.info("skipped sdk gen since it has been generated to {}".format(LLVM4JNI_SDK_OUTPUT))
     elif app_type != "cpp_pie":
         if app_type == "cython_pregel":
             pxd_name = "pregel"
@@ -394,19 +302,23 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     assert os.path.isfile(lib_path), "Error occurs when building the frame library."
 
     # After built user library, we do optimization 
-    LLVM4JNI_USER_OUTPUT = os.path.join(workspace, "{}-{}".format(LLVM4JNI_USER_BASE, library_name))
+    if not os.path.isfile(RUN_LLVM4JNI_SH):
+        raise RuntimeError("Run llvm4jni failed because file not found {}".format(RUN_LLVM4JNI_SH))
+    llvm4jni_user_out_dir = os.path.join(workspace, "{}-{}".format(LLVM4JNI_USER_OUT_DIR_BASE, library_name))
     run_llvm_user_commands = [
         "bash",
-        llvm4jni_run_bash,
+        RUN_LLVM4JNI_SH,
         "-output",
-        LLVM4JNI_USER_OUTPUT,
+        llvm4jni_user_out_dir,
         "-cp",
-        os.path.join(JAVA_APP_FFI_SOURCE_PATH, "CLASS_OUTPUT"),
+        os.path.join(java_codegen_out_dir, "CLASS_OUTPUT"),
         "-lib",
         lib_path,
         "-v",
         "ERROR"
     ]
+    optimize_env=os.environ.copy()
+    optimize_env["VM_OPTS"] = "-Dllvm4jni.supportLocalConstant=true -Dllvm4jni.supportIndirectCall=false"
     logger.info(" ".join(run_llvm_user_commands))
     grape_sdk_optimize_process = subprocess.Popen(
         run_llvm_user_commands,
@@ -419,9 +331,9 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     grape_sdk_optimize_process_watcher = PipeWatcher(grape_sdk_optimize_process.stderr, sys.stdout)
     setattr(grape_sdk_optimize_process, "stderr_watcher", grape_sdk_optimize_process_watcher)
     grape_sdk_optimize_process.wait()
-    logger.info("user optimization complete, output to {}".format(LLVM4JNI_USER_OUTPUT))
+    logger.info("User optimization complete, output to {}".format(llvm4jni_user_out_dir))
     
-    return lib_path, java_jar_path, JAVA_APP_FFI_SOURCE_PATH, app_type
+    return lib_path, java_jar_path, java_codegen_out_dir, app_type
 
 
 def compile_graph_frame(workspace: str, library_name, attr: dict, engine_config: dict):
