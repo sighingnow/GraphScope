@@ -99,7 +99,14 @@ def _type_param_consistent(graph_actucal_type_param, java_app_type_param):
             return True
         return False
     if (java_app_type_param == "java.lang.Double"):
-        if (graph_actucal_type_param in {""})
+        if (graph_actucal_type_param in {"double"}):
+            return True
+        return False
+    if (java_app_type_param == "java.lang.Integer"):
+        if (graph_actucal_type_param in {"int32_t", "uint32_t"}):
+            return True
+        return False
+    return False
 
 def _get_lib_path(app_name):
     lib_path = ""
