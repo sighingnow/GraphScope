@@ -150,7 +150,7 @@ then
     echo "run arrow fragment"
     GLOG_v=1 run_vy ${np} ./run_java_property_app "${socket_file}" 2 "${test_dir}"/new_property/v2_e2/twitter_e 2 "${test_dir}"/new_property/v2_e2/twitter_v ${run_projected} ${run_property} ${directed} io.graphscope.example.sssp.PropertySSSP
 elif [ "$run_projected"x = "1"x ]
-then 
+then
     echo "run projected fragment"
     GLOG_v=1 run_vy_2 ${np} ./run_java_property_app "${socket_file}" 4 "${test_dir}"/projected_property/twitter_property_e "${test_dir}"/projected_property/twitter_property_v ${run_projected} ${run_property} ${directed} io.graphscope.example.projected.SSSPProjected
 #    GLOG_v=1 run_vy_2 ${np} ./run_vy_app "${socket_file}" 4 "${test_dir}"/projected_property/twitter_property_e "${test_dir}"/projected_property/twitter_property_v  1

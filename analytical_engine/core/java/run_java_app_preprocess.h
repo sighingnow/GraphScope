@@ -125,15 +125,15 @@ void preprocess(int argc, char** argv) {
       m.env()->ExceptionClear();
       // env->DeleteLocalRef(main_class);
     }
-    LOG(INFO) << "after call static object method";
+    LOG(INFO) << "After call static object method";
     std::string file_gen_path = jstring2string(m.env(), jres);
-    LOG(INFO) << "generated file wrote to :" << file_gen_path;
+    LOG(INFO) << "Generated file wrote to :" << file_gen_path;
     // set the value of code gen path to env for later compilation.
     set_codegen_path(file_gen_path, "codegen_path");
     LOG(INFO) << "Exiting from Java preprocessor";
 
   } else {
-    LOG(FATAL) << " java env not available";
+    LOG(FATAL) << "Java env not available";
   }
 
   MPI_Barrier(MPI_COMM_WORLD);

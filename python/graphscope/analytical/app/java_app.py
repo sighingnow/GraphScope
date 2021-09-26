@@ -45,7 +45,7 @@ DEFAULT_GS_CONFIG_FILE = ".gs_conf.yaml"
 LLVM4JNI_SDK_BASE = "sdk-llvm4jni-output"
 LLVM4JNI_USER_BASE = "user-llvm4jni-output"
 WORKSPACE = "/tmp/gs"
-#TODO make this not fixed
+#TODO make this not fixed, 
 GRAPE_SDK_BUILD=os.path.join(str(Path.home()), "GAE-ODPSGraph/pie-sdk/grape-sdk/target/classes/")
 VINEYARD_GRAPH_SDK_BUILD=os.path.join("/home/admin/GAE-ODPSGraph/pie-sdk/vineyard-graph/target/classes/")
 GRAPE_JNI_LIB_PATH=os.path.join("/home/admin/GAE-ODPSGraph/pie-sdk/grape-sdk/target/native/")
@@ -91,7 +91,7 @@ class JavaApp(AppAssets):
             gar.append(DEFAULT_GS_CONFIG_FILE, yaml.dump(gs_config))
             super().__init__("java_app","java_pie_projected_default_context",gar.read_bytes())
         else:
-            raise RuntimeError("Unexpected app type: {}".format(java_app_type))
+            raise RuntimeError("Unexpected app type: {}".format(self._java_app_type))
     @property
     def java_app_class(self):
         return self._java_app_class
@@ -241,6 +241,7 @@ class JavaAppDagNode(AppDAGNode):
         logger.info("user jni library found: {}".format(user_jni_name_lib))
         logger.info("user jar found: {}".format(user_jar))
         ffi_target_output = os.path.join(udf_workspace, "gs-ffi-{}".format(user_jni_name), "CLASS_OUTPUT")
+        #TODO: Params as file, configuration 哪些需要配置，哪些不需要
         performance_args = "-Dcom.alibaba.ffi.rvBuffer=2147483648 -XX:+StartAttachListener " \
                         + "-XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC " \
                         + "-XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
