@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <groupId>com.alibaba.grape</groupId>
+    <artifactId>grape-sdk-parent</artifactId>
+    <packaging>pom</packaging>
+    <version>0.1</version>
+    <modelVersion>4.0.0</modelVersion>
+    <name>grape-sdk-parent</name>
+
+    <properties>
+        <junit.version>4.12</junit.version>
+        <ffi.ffi.version>0.1</ffi.ffi.version>
+        <ffi.annotation-processor.version>0.1</ffi.annotation-processor.version>
+        <javapoet.version>1.13.0</javapoet.version>
+        <slf4j-api.version>1.7.25</slf4j-api.version>
+        <logback-classic.version>1.2.3</logback-classic.version>
+        <fastjson.version>1.2.76</fastjson.version>
+        <odps.sdk.version>0.36.4</odps.sdk.version>
+        <cupid.sdk.version>3.3.11</cupid.sdk.version>
+        <cupid.table.version>1.1.3-SNAPSHOT</cupid.table.version>
+        <maven-surefire-plugin.version>3.0.0-M4</maven-surefire-plugin.version>
+        <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
+        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+        <maven-failsafe-plugin.version>3.0.0-M5</maven-failsafe-plugin.version>
+        <compile-testing.version>0.19</compile-testing.version>
+        <native-lib-loader.version>2.3.5</native-lib-loader.version>
+        <!--        <maven-assemly-plugin.version>3.3.0</maven-assemly-plugin.version>-->
+        <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
+    </properties>
+
+    <modules>
+        <module>grape-demo</module>
+        <module>grape-processor</module>
+        <module>grape-sdk</module>
+        <module>vineyard-graph</module>
+        <module>graphscope-demo</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.ffi</groupId>
+                <artifactId>ffi</artifactId>
+                <version>${ffi.ffi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.ffi</groupId>
+                <artifactId>annotation-processor</artifactId>
+                <version>${ffi.annotation-processor.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup</groupId>
+                <artifactId>javapoet</artifactId>
+                <version>${javapoet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback-classic.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>fastjson</artifactId>
+                <version>${fastjson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun.odps</groupId>
+                <artifactId>odps-sdk-commons</artifactId>
+                <version>${odps.sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun.odps</groupId>
+                <artifactId>odps-sdk-mapred</artifactId>
+                <version>${odps.sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun.odps</groupId>
+                <artifactId>cupid-table-api</artifactId>
+                <version>${cupid.table.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun.odps</groupId>
+                <artifactId>odps-sdk-core</artifactId>
+                <version>${odps.sdk.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun.odps</groupId>
+                <artifactId>cupid-sdk</artifactId>
+                <version>${cupid.sdk.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun.odps.cupid</groupId>
+                <artifactId>table-api-tunnel-impl</artifactId>
+                <version>${cupid.table.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.google.testing.compile</groupId>
+                <artifactId>compile-testing</artifactId>
+                <version>${compile-testing.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>30.1.1-jre</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scijava</groupId>
+                <artifactId>native-lib-loader</artifactId>
+                <version>${native-lib-loader.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven-failsafe-plugin.version}</version>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <!--            <plugin>-->
+            <!--                <groupId>org.apache.maven.plugins</groupId>-->
+            <!--                <artifactId>maven-assembly-plugin</artifactId>-->
+            <!--                <version>${maven-assemly-plugin.version}</version>-->
+            <!--                <configuration>-->
+            <!--                    <archive>-->
+            <!--                        <manifest>-->
+            <!--                            <mainClass>...</mainClass>-->
+            <!--                        </manifest>-->
+            <!--                    </archive>-->
+            <!--                    <descriptorRefs>-->
+            <!--                        <descriptorRef>jar-with-dependencies</descriptorRef>-->
+            <!--                    </descriptorRefs>-->
+            <!--                </configuration>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <id>make-assembly</id> &lt;!&ndash; this is used for inheritance merges &ndash;&gt;-->
+            <!--                        <phase>package</phase> &lt;!&ndash; bind to the packaging phase &ndash;&gt;-->
+            <!--                        <goals>-->
+            <!--                            <goal>single</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
+        </plugins>
+
+    </build>
+
+
+</project>

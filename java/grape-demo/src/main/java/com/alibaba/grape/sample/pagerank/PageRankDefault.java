@@ -1,0 +1,132 @@
+package com.alibaba.grape.sample.pagerank;
+
+import com.alibaba.grape.app.DefaultAppBase;
+import com.alibaba.grape.app.DefaultContextBase;
+import com.alibaba.grape.app.lineparser.RecordLineParser;
+import com.alibaba.grape.communication.Communicator;
+import com.alibaba.grape.ds.AdjList;
+import com.alibaba.grape.ds.Nbr;
+import com.alibaba.grape.ds.Vertex;
+import com.alibaba.grape.ds.VertexRange;
+import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
+import com.alibaba.grape.graph.context.MutationContext;
+import com.alibaba.grape.parallel.DefaultMessageManager;
+import com.alibaba.grape.parallel.message.DoubleMsg;
+import com.alibaba.grape.utils.DoubleArrayWrapper;
+import com.alibaba.grape.utils.FFITypeFactoryhelper;
+import com.aliyun.odps.io.WritableRecord;
+
+import java.io.IOException;
+
+public class PageRankDefault extends Communicator implements DefaultAppBase<Long, Long, Long, Double, PageRankDefaultContext> {
+    public static class PageRankLoader implements RecordLineParser<Long, Long, Double> {
+        @Override
+        public void load(Long index, WritableRecord record, MutationContext<Long, Long, Double> ctx)
+                throws IOException {
+            Long fromOid = Long.valueOf(record.get("a").toString());
+            Long toOid = Long.valueOf(record.get("a").toString());
+
+            ctx.addVertexSimple(fromOid, 0L);
+            ctx.addVertexSimple(toOid, 0L);
+            Double doubleValue = Double.valueOf(record.get("e").toString());
+            // Long edata = new Long((int) doubleValue);
+            // System.out.println(", loading field [e]:" + edata);
+
+            ctx.addEdgeRequest(fromOid, toOid, doubleValue);
+        }
+    }
+
+    @Override
+    public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase ctx,
+                      DefaultMessageManager messageManager) {
+        PageRankDefaultContext context = (PageRankDefaultContext) ctx;
+
+        VertexRange<Long> innerVertices = frag.innerVertices();
+        int totalVertexNum = (int) frag.getTotalVerticesNum();
+        context.superStep = 0;
+        double base = 1.0 / totalVertexNum;
+        double local_dangling_sum = 0.0;
+
+        for (Vertex<Long> vertex : frag.innerVertices().locals()) {
+            AdjList<Long, Double> nbrs = frag.getOutgoingAdjList(vertex);
+            context.degree.set(vertex.GetValue(), (int) nbrs.size());
+            DoubleMsg msg = DoubleMsg.factory.create();
+            if (nbrs.size() > 0) {
+                context.pagerank.set(vertex.GetValue(), base / context.degree.get(vertex.GetValue()));
+                msg.setData(context.pagerank.get(vertex.GetValue()));
+                messageManager.sendMsgThroughOEdges(frag, vertex, msg);
+            } else {
+                context.pagerank.set(vertex.GetValue(), base);
+                local_dangling_sum += base;
+            }
+        }
+        DoubleMsg msgDanglingSum = FFITypeFactoryhelper.newDoubleMsg(0.0);
+        DoubleMsg localSumMsg = FFITypeFactoryhelper.newDoubleMsg(local_dangling_sum);
+        sum(localSumMsg, msgDanglingSum);
+        context.danglingSum = msgDanglingSum.getData();
+
+        messageManager.ForceContinue();
+    }
+
+    @Override
+    public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase ctx,
+                        DefaultMessageManager messageManager) {
+        PageRankDefaultContext context = (PageRankDefaultContext) ctx;
+        int innerVertexNum = frag.getInnerVerticesNum().intValue();
+
+        context.superStep = context.superStep + 1;
+        if (context.superStep > context.maxIteration) {
+            for (int i = 0; i < innerVertexNum; ++i) {
+                if (context.degree.get(i) != 0) {
+                    context.pagerank.set(i, context.degree.get(i) * context.pagerank.get(i));
+                }
+            }
+            return;
+        }
+        int graphVertexNum = frag.getVerticesNum().intValue();
+        int totalVertexNum = (int) frag.getTotalVerticesNum();
+        double base = (1.0 - context.alpha) / totalVertexNum
+                + context.alpha * context.danglingSum / totalVertexNum;
+
+        double local_dangling_sum = 0.0;
+
+        DoubleArrayWrapper nextResult = new DoubleArrayWrapper(innerVertexNum, 0.0);
+        //System.out.println("dangling sum: " + context.danglingSum);
+        // msgs are all out vertex in this frag, and has incoming edges to the vertex in this frag
+        {
+            Vertex<Long> vertex = frag.innerVertices().begin();
+            DoubleMsg msg = DoubleMsg.factory.create();
+            while (messageManager.getMessage(frag, vertex, msg)) {
+                context.pagerank.set(vertex.GetValue(), msg.getData());
+            }
+        }
+
+        for (Vertex<Long> vertex : frag.innerVertices().locals()) {
+            if (context.degree.get(vertex.GetValue()) == 0) {
+                nextResult.set(vertex, base);
+                local_dangling_sum += base;
+            } else {
+                double cur = 0.0;
+                AdjList<Long, Double> nbrs = frag.getIncomingAdjList(vertex);
+                for (Nbr<Long, Double> nbr : nbrs) {
+                    cur += context.pagerank.get(nbr.neighbor());
+                }
+                cur = (context.alpha * cur + base) / context.degree.get(vertex.GetValue());
+                nextResult.set(vertex.GetValue(), cur);
+            }
+        }
+        DoubleMsg msg = DoubleMsg.factory.create();
+        for (Vertex<Long> vertex : frag.innerVertices().locals()) {
+            context.pagerank.set(vertex.GetValue(), nextResult.get(vertex.GetValue()));
+            msg.setData(context.pagerank.get(vertex.GetValue()));
+            messageManager.sendMsgThroughOEdges(frag, vertex, msg);
+        }
+
+        DoubleMsg msgDanglingSum = FFITypeFactoryhelper.newDoubleMsg(0.0);
+        DoubleMsg localSumMsg = FFITypeFactoryhelper.newDoubleMsg(local_dangling_sum);
+        sum(localSumMsg, msgDanglingSum);
+        context.danglingSum = msgDanglingSum.getData();
+
+        messageManager.ForceContinue();
+    }
+}

@@ -1,0 +1,55 @@
+package com.alibaba.grape.sample.bfs;
+
+import com.alibaba.ffi.FFIByteString;
+import com.alibaba.grape.app.DefaultContextBase;
+import com.alibaba.grape.ds.Vertex;
+import com.alibaba.grape.ds.VertexRange;
+import com.alibaba.grape.ds.VertexSet;
+import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
+import com.alibaba.grape.parallel.DefaultMessageManager;
+import com.alibaba.grape.stdcxx.StdVector;
+import com.alibaba.grape.utils.IntArrayWrapper;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class BFSDefaultContext implements DefaultContextBase<Long, Long, Long, Double> {
+    public long sourceOid;
+    public IntArrayWrapper partialResults;
+    //    public BooleanArrayWrapper currendInnerUpdated;
+    public VertexSet currentInnerUpdated, nextInnerUpdated;
+    public int currentDepth;
+
+    @Override
+    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultMessageManager messageManager, StdVector<FFIByteString> args) {
+        sourceOid = Long.valueOf(args.get(0).toString());
+        partialResults = new IntArrayWrapper(frag.getVerticesNum().intValue(), Integer.MAX_VALUE);
+        currentInnerUpdated = new VertexSet(frag.innerVertices());
+        nextInnerUpdated = new VertexSet(frag.innerVertices());
+        currentDepth = 0;
+    }
+
+    @Override
+    public void Output(ImmutableEdgecutFragment<Long, Long, Long, Double> frag) {
+        String prefix = "/tmp/bfs_default_output";
+        System.out.println("depth " + currentDepth);
+        String filePath = prefix + "_frag_" + frag.fid();
+        try {
+            FileWriter fileWritter = new FileWriter(filePath);
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWritter);
+            VertexRange<Long> innerNodes = frag.innerVertices();
+
+            Vertex<Long> cur = innerNodes.begin();
+            for (long index = 0; index < frag.getInnerVerticesNum(); ++index) {
+                cur.SetValue(index);
+                Long oid = frag.getId(cur);
+                bufferedWriter.write(oid + " " + partialResults.get(index) + "\n");
+            }
+            bufferedWriter.close();
+            System.out.println("writing output to " + filePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
