@@ -65,28 +65,32 @@ def _parse_user_app(java_app_class: str, java_jar_full_path : str):
         "io.graphscope.utils.AppBaseParser",
         java_app_class,
     ]
-    java_env=os.environ.copy()
     logger.info(" ".join(parse_user_app_cmd))
     parse_user_app_process = subprocess.Popen(
         parse_user_app_cmd,
-        env=java_env,
+        env=os.environ.copy(),
         universal_newlines=True,
         encoding="utf-8",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    for line in parse_user_app_process.stderr:
+    out,err = parse_user_app_process.communicate()
+    for line in err:
         logger.error(line)
-    for line in parse_user_app_process.stdout:
+    for line in out.split("\n"):
         logger.info(line)
         if line.find("PropertyDefaultApp"):
             _java_app_type = "property"
+            continue 
         if line.find("ProjectedDefaultApp"):
             _java_app_type = "projected"
+            continue 
         if line.find("Error"):
             raise Exception("Error occured in verifying user app")
+            continue 
         if line.find("TypeParams"):
             _frag_param_str = line.split(":")[1].strip()
+            continue 
     logger.info("Java app type: {}, frag type str: {}]".format(_java_app_type, _frag_param_str))
 
     #java_codegen_stderr_watcher = PipeWatcher(parse_user_app_process.stderr, sys.stdout)
