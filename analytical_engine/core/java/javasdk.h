@@ -78,7 +78,7 @@ inline uint64_t getTotalSystemMemory() {
 }
 
 void SetupEnv(int local_num) {
-  int systemMemory = getTotalSystemMemory();
+  int systemMemory = getTotalSystemMemory() / 50;
   int systemMemoryPerWorker = std::max(systemMemory / local_num, 1);
   int mnPerWorker = std::max(systemMemoryPerWorker * 7 / 12, 1);
 
@@ -203,13 +203,16 @@ struct JNIEnvMark {
   JNIEnv* _env;
 
   JNIEnvMark() : _env(NULL) {
-    if (!GetJavaVM(false))
+    if (GetJavaVM(false) == NULL) {
+      LOG(FATAL) << "Get java VM failed.";
       return;
+    }
     int status = GetJavaVM(false)->AttachCurrentThread(
         reinterpret_cast<void**>(&_env), nullptr);
     if (status != JNI_OK) {
       LOG(ERROR) << "Error attach current thread: " << status;
     }
+    LOG(INFO) << "Successfully attached to current thread: " << status;
   }
 
   ~JNIEnvMark() {
