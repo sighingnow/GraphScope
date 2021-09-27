@@ -294,7 +294,7 @@ class JavaAppDagNode(AppDAGNode):
         #Java codegen directory can be empty.
         java_codegen_cp = os.path.join(udf_workspace, "{}-{}".format(JAVA_CODEGNE_OUTPUT_PREFIX, app_lib_name), "CLASS_OUTPUT")
 
-        jvm_options = _construct_jvm_options_from_params(app_lib_name, app_lib_dir, jar_unpacked_path, llvm4jni_output_dir, java_codegen_cp)
+        jvm_options = _construct_jvm_options_from_params(app_lib_dir, jar_unpacked_path, llvm4jni_output_dir, java_codegen_cp)
 
         logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_options))
 

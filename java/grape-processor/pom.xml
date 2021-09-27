@@ -35,12 +35,14 @@
             <groupId>com.alibaba.grape</groupId>
             <artifactId>grape-sdk</artifactId>
             <version>0.1</version>
+            <classifier>shaded</classifier>
         </dependency>
         <dependency>
             <groupId>com.alibaba.grape</groupId>
             <artifactId>graphscope-sdk</artifactId>
             <version>0.1</version>
             <scope>compile</scope>
+            <classifier>shaded</classifier>
         </dependency>
     </dependencies>
 
@@ -57,12 +59,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven-shade-plugin.version}</version>
                 <executions>
                     <execution>
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
