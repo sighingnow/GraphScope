@@ -99,6 +99,7 @@ class JavaContextBase : public grape::ContextBase {
     // always create new java vm
     JavaVM* jvm = GetJavaVM(true);
     (void) jvm;
+    CHECK_NOTNULL(jvm);
     LOG(INFO) << "Successfully get jvm";
 
     JNIEnvMark m;
