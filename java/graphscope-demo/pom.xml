@@ -92,6 +92,12 @@
                                     <resource>ffi.properties</resource>
                                 </transformer>
                             </transformers>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.alibaba.grape:grape-sdk</include>
+                                    <include>com.alibaba.grape:graphscope-sdk</include>
+                                </includes>
+                            </artifactSet>
                         </configuration>
                     </execution>
                 </executions>
