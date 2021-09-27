@@ -63,7 +63,7 @@ class JavaContextBase : public grape::ContextBase {
     if (app_class_name_) {
       delete[] app_class_name_;
     }
-    jint res = GetJavaVM(false)->DestroyJavaVM();
+    jint res = GetJavaVM()->DestroyJavaVM();
     LOG(INFO) << "Kill javavm status: " << res;
   }
   const fragment_t& fragment() const { return fragment_; }
@@ -97,7 +97,7 @@ class JavaContextBase : public grape::ContextBase {
         parse_params_and_setup_jvm_env(params, user_library_name);
 
     // always create new java vm
-    JavaVM* jvm = GetJavaVM(true);
+    JavaVM* jvm = GetJavaVM();
     (void) jvm;
     LOG(INFO) << "Successfully get jvm";
 
@@ -194,15 +194,17 @@ class JavaContextBase : public grape::ContextBase {
   }
   // Loading jni library with absolute path
   void load_jni_library(JNIEnv* env, std::string& user_library_name) {
-    const char * propertyName = "java.class.path";
-    jclass systemClass = env->FindClass( "java/lang/System" );
-    jmethodID getPropertyMethod = env->GetStaticMethodID( systemClass, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;" );
-    jstring propertyNameString = env->NewStringUTF( propertyName );
-    jstring propertyString = (jstring) env->CallStaticObjectMethod( systemClass, getPropertyMethod, propertyNameString );
-    if ( propertyString == 0 ) {
-        LOG(FATAL) << "empty property string for java.class.path";
+    const char* propertyName = "java.class.path";
+    jclass systemClass = env->FindClass("java/lang/System");
+    jmethodID getPropertyMethod = env->GetStaticMethodID(
+        systemClass, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
+    jstring propertyNameString = env->NewStringUTF(propertyName);
+    jstring propertyString = (jstring) env->CallStaticObjectMethod(
+        systemClass, getPropertyMethod, propertyNameString);
+    if (propertyString == 0) {
+      LOG(FATAL) << "empty property string for java.class.path";
     }
-    LOG(INFO) <<"java.class.path: "<<jstring2string(env, propertyString); 
+    LOG(INFO) << "java.class.path: " << jstring2string(env, propertyString);
     jclass grape_load_library =
         env->FindClass("com/alibaba/grape/utils/LoadLibrary");
     CHECK_NOTNULL(grape_load_library);
@@ -287,14 +289,14 @@ class JavaContextBase : public grape::ContextBase {
   // get the java context name with is bounded to app_object_.
   std::string get_ctx_class_name_from_app_object(JNIEnv* env) {
     // get app_class's class object
-    //jclass app_class_class = env->GetObjectClass(app_object_);
-    //CHECK_NOTNULL(app_class_class);
-    //jmethodID app_class_getClass_method =
+    // jclass app_class_class = env->GetObjectClass(app_object_);
+    // CHECK_NOTNULL(app_class_class);
+    // jmethodID app_class_getClass_method =
     //    env->GetMethodID(app_class_class, "getClass", "()Ljava/lang/Class;");
-    //CHECK_NOTNULL(app_class_getClass_method);
-    //jobject app_class_obj =
+    // CHECK_NOTNULL(app_class_getClass_method);
+    // jobject app_class_obj =
     //    env->CallObjectMethod(app_object_, app_class_getClass_method);
-    //CHECK_NOTNULL(app_class_obj);
+    // CHECK_NOTNULL(app_class_obj);
 
     jclass app_context_getter_class = env->FindClass(APP_CONTEXT_GETTER_CLASS);
     CHECK_NOTNULL(app_context_getter_class);
