@@ -112,6 +112,7 @@ class JavaContextBase : public grape::ContextBase {
       jobject app_object = createObject(env, app_class, app_class_name_);
       CHECK_NOTNULL(app_object);
       app_object_ = env->NewGlobalRef(app_object);
+      CHECK_NOTNULL(app_object_);
 
       std::string _context_class_name_str =
           get_ctx_class_name_from_app_object(env);
@@ -193,6 +194,15 @@ class JavaContextBase : public grape::ContextBase {
   }
   // Loading jni library with absolute path
   void load_jni_library(JNIEnv* env, std::string& user_library_name) {
+    const char * propertyName = "java.class.path";
+    jclass systemClass = env->FindClass( "java/lang/System" );
+    jmethodID getPropertyMethod = env->GetStaticMethodID( systemClass, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;" );
+    jstring propertyNameString = env->NewStringUTF( propertyName );
+    jstring propertyString = (jstring) env->CallStaticObjectMethod( systemClass, getPropertyMethod, propertyNameString );
+    if ( propertyString == 0 ) {
+        LOG(FATAL) << "empty property string for java.class.path";
+    }
+    LOG(INFO) <<"java.class.path: "<<jstring2string(env, propertyString); 
     jclass grape_load_library =
         env->FindClass("com/alibaba/grape/utils/LoadLibrary");
     CHECK_NOTNULL(grape_load_library);

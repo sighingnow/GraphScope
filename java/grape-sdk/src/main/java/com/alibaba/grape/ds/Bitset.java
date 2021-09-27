@@ -5,9 +5,10 @@ import com.alibaba.ffi.*;
 import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GRAPE_BIT_SET;
 import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.GRAPE_BIT_SET_H;
 import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
+import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.GRAPE_WORKER_COMM_SPEC_H;;
 
 @FFIGen(library = GRAPE_JNI_LIBRARY)
-@CXXHead(value = {"aaa.h", GRAPE_BIT_SET_H})
+@CXXHead(value = {GRAPE_WORKER_COMM_SPEC_H, GRAPE_BIT_SET_H})
 @FFITypeAlias(GRAPE_BIT_SET)
 public interface Bitset extends FFIPointer, CXXPointer {
 

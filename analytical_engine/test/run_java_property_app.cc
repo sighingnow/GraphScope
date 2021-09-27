@@ -413,8 +413,8 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   // The path to sdk jni library
   // In production this should be replaced with user'jni lib.
   pt.put("user_library_name",
-         "/home/admin/GAE-ODPSGraph/pie-sdk/vineyard-graph/target/classes/"
-         "natives/linux_64/libgraphscope-jni.so");
+         "/home/admin/gs/java/graphscope-sdk/target/"
+         "native/libgraphscope-jni.so");
   pt.put("num_hosts", "1");
   pt.put("num_worker", "1");
   char* jvm_opts = getenv("RUN_JVM_OPTS");

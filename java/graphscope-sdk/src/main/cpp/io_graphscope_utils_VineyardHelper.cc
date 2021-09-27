@@ -20,7 +20,7 @@ std::string ipc_socket_frag = "/tmp/vineyard.sock";
  * Method:    objectID2Address
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_io_v6d_modules_graph_utils_VineyardHelper_objectID2Address
+JNIEXPORT jlong JNICALL Java_io_graphscope_utils_VineyardHelper_objectID2Address
   (JNIEnv *env , jclass clz, jlong objectId){
     using frag_type =vineyard::ArrowFragment<vineyard::property_graph_types::OID_TYPE,vineyard::property_graph_types::VID_TYPE>;
     if (!fragClient){
@@ -32,12 +32,12 @@ JNIEXPORT jlong JNICALL Java_io_v6d_modules_graph_utils_VineyardHelper_objectID2
     return reinterpret_cast<jlong>(frag.get());
 }
 
-JNIEXPORT jlong JNICALL Java_io_v6d_modules_graph_utils_VineyardHelper_fragGroupId2Address
+JNIEXPORT jlong JNICALL Java_io_graphscope_utils_VineyardHelper_fragGroupId2Address
   (JNIEnv *env , jclass clz, jlong objectId){
     using frag_group_type = vineyard::ArrowFragmentGroup;
     if (!fragClient){
-        fragGroupClient = new vineyard::Client();
-        VINEYARD_CHECK_OK(fragGroupClient->Connect(ipc_socket_frag));
+        fragClient = new vineyard::Client();
+        VINEYARD_CHECK_OK(fragClient->Connect(ipc_socket_frag));
     }
     auto frag_group_object = fragClient->GetObject(static_cast<uint64_t>(objectId));
     static auto frag_group = std::dynamic_pointer_cast<frag_group_type>(frag_group_object);
