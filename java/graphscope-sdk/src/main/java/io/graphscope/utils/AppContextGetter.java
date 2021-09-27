@@ -80,12 +80,13 @@ public class AppContextGetter {
         return clz.getName();
     }
 
-    public static String getContextName(Class<?> appClass) {
-        if (PropertyDefaultAppBase.class.isAssignableFrom(appClass)) {
-            return getPropertyDefaultContextName((Class<? extends PropertyDefaultAppBase>) appClass);
+    public static String getContextName(Object obj) {
+        System.out.println("obj class " + obj.getClass().getName());
+        if (obj instanceof PropertyDefaultAppBase){
+            return getPropertyDefaultContextName((Class<? extends PropertyDefaultAppBase>) obj.getClass());
         }
-        if (ProjectedDefaultAppBase.class.isAssignableFrom(appClass)) {
-            return getProjectedDefaultContextName((Class<? extends ProjectedDefaultAppBase>) appClass);
+        if (obj instanceof ProjectedDefaultAppBase) {
+            return getProjectedDefaultContextName((Class<? extends ProjectedDefaultAppBase>) obj.getClass());
         }
         System.err.println("Unrecoginizable app class");
         return null;

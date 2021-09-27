@@ -35,10 +35,12 @@ public class AppContextGetterTest {
     @Test
     public void test() {
         Class<? extends PropertyDefaultAppBase> appClass = SampleApp.class;
+        SampleApp sampleApp = new SampleApp();
+
 //        Class<?> ctxClass = AppContextGetter.getPropertyDefaultContext(appClass);
         try {
 //            Assert.assertTrue(ctxClass.newInstance() instanceof PropertyDefaultContextBase);
-            System.out.println(AppContextGetter.getContextName(appClass));
+            System.out.println(AppContextGetter.getContextName(sampleApp));
         } catch (Exception e) {
             e.printStackTrace();
         }

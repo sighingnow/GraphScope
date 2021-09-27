@@ -87,7 +87,7 @@ def _parse_user_app(java_app_class: str, java_jar_full_path : str):
             raise Exception("Error occured in verifying user app")
         if line.find("TypeParams"):
             _frag_param_str = line.split(":")[1].strip()
-    logger.info("java app type: {}, frag type str: {}]".format(_java_app_type, _frag_param_str))
+    logger.info("Java app type: {}, frag type str: {}]".format(_java_app_type, _frag_param_str))
 
     #java_codegen_stderr_watcher = PipeWatcher(parse_user_app_process.stderr, sys.stdout)
     #setattr(parse_user_app_process, "stderr_watcher", java_codegen_stderr_watcher)
@@ -166,23 +166,15 @@ class JavaApp(AppAssets):
             raise RuntimeError("Unexpected app type: {}".format(self._java_app_type))
     # Override is_compatible to make sure type params of graph consists with java app.
     def is_compatible(self, graph):
-        return self._judge_graph_app_consistency(graph.template_str, self.java_app_type, self.frag_param_str)
-    def _pack_jar(self, full_jar_path):
-        garfile = InMemoryZip()
-        tmp_jar_file = open(full_jar_path, 'rb')
-        bytes = tmp_jar_file.read()
-        garfile.append("{}".format(full_jar_path.split("/")[-1]), bytes)
-        return garfile
-    def _judge_graph_app_consistency(self, graph_template_str : str, java_app_type : str, frag_param_str: str):
-        splited = graph_template_str.split("<")
-        java_app_type_params = frag_param_str.split(",")
+        splited = graph.template_str.split("<")
+        java_app_type_params = self.frag_param_str.split(",")
         if len(splited != 2):
-            raise Exception("Unrecoginizable graph template str: {}".format(graph_template_str))
+            raise Exception("Unrecoginizable graph template str: {}".format(graph.template_str))
         if (splited[0] == "vineyard::ArrowFragment"):
-            if (java_app_type != "property"):
+            if (self.java_app_type != "property"):
                 return False
         if (splited[1] == "gs::ArrowProjectedFragment"):
-            if (java_app_type != "projected"):
+            if (self.java_app_type != "projected"):
                 return False
         
         graph_actual_type_params = splited[1][:-1].split(",")
@@ -192,6 +184,12 @@ class JavaApp(AppAssets):
             if (not _type_param_consistent(graph_actucal_type_param, java_app_type_param)):
                 return False
         return True
+    def _pack_jar(self, full_jar_path):
+        garfile = InMemoryZip()
+        tmp_jar_file = open(full_jar_path, 'rb')
+        bytes = tmp_jar_file.read()
+        garfile.append("{}".format(full_jar_path.split("/")[-1]), bytes)
+        return garfile
 
     def signature(self):
         s = hashlib.sha256()
