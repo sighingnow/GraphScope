@@ -137,8 +137,8 @@ def get_app_sha256(attr):
     elif app_type == "java_pie":
         s = hashlib.sha256()
         #CAUTION!!!!!
-        #remove graph type since java jar is not dependent on graph_type
-        s.update(f"{app_type}.{java_jar_path}.{app_class}.{java_app_class}".encode("utf-8"))
+        #We believe jar_path.java_app_class can uniquely define one java app
+        s.update(f"{app_type}.{java_jar_path}.{java_app_class}".encode("utf-8"))
         if types_pb2.GAR in attr:
             s.update(attr[types_pb2.GAR].s)
         return s.hexdigest()
@@ -220,8 +220,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         if not os.path.isfile(LLVM_LLD):
             raise RuntimeError("ld.lld not found")
 
-        cmake_commands += [
-                            "-DCMAKE_CXX_COMPILER={}/bin/clang++".format(LLVM11_HOME),
+        cmake_commands += ["-DCMAKE_CXX_COMPILER={}/bin/clang++".format(LLVM11_HOME),
                             # "-DLLVM_DIR={}/lib/cmake/llvm".format(LLVM11_HOME),
                             # "-DCMAKE_CXX_FLAGS=\"-flto -fforce-emit-vtables\"",
                             # "-DCMAKE_JNI_LINKER_FLAGS=\"-fuse-ld={} -Xlinker -mllvm=-lto-embed-bitcode\"".format(LLVM_LLD),

@@ -200,7 +200,7 @@ class JavaApp(AppAssets):
 
     def signature(self):
         s = hashlib.sha256()
-        s.update(f"{self.type}.{self.jar_path}.{self.cpp_driver_class}.{self.java_app_class}".encode("utf-8"))
+        s.update(f"{self.type}.{self.jar_path}.{self.java_app_class}".encode("utf-8"))
         s.update(self.gar)
         return s.hexdigest()
     @property
