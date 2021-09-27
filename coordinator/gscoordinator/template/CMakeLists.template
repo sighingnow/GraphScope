@@ -204,7 +204,7 @@ elseif (JAVA_PIE_APP)
     #1. Do preprocess with grape processor
     execute_process(COMMAND java -cp ${PRE_CP} ${PROCESSOR_MAIN_CLASS} ${JAR_PATH} ${OUTPUT_DIR} $_graph_type
                     RESULT_VARIABLE ret)
-    if (ret EQUAL "1)
+    if (ret EQUAL "1")
         message(FATAL_ERROR "Bad exit status")
     endif()
 

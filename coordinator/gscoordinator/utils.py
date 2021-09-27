@@ -77,7 +77,7 @@ ANALYTICAL_ENGINE_HOME = os.path.join(GRAPHSCOPE_HOME, "analytical_engine")
 ANALYTICAL_ENGINE_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "build", "grape_engine")
 JAVA_CODEGNE_OUTPUT_PREFIX = "gs-ffi"
 M2_REPO_PATH = os.path.join(str(Path.home()), ".m2/repository/com/alibaba/grape")
-GRAPE_PROCESSOR_JAR=os.path.join(M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-jar-with-dependencies.jar")
+GRAPE_PROCESSOR_JAR=os.path.join(M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-jar-shade.jar")
 if not os.path.isfile(ANALYTICAL_ENGINE_PATH):
     ANALYTICAL_ENGINE_HOME = "/usr/local/bin"
     ANALYTICAL_ENGINE_PATH = "/usr/local/bin/grape_engine"
@@ -1095,7 +1095,7 @@ def _codegen_app_info(attr, meta_file: str):
                 return (
                     app_type, 
                     app["driver_header"],#cxx header
-                    app["class_name"], #cxx class name
+                    "{}<_GRAPH_TYPE>".format(app["class_name"]),#cxx class name
                     None,  # vd_type,
                     None,  # md_type
                     None,  # pregel combine
