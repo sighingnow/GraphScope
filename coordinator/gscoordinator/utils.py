@@ -222,15 +222,14 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
 
         cmake_commands += ["-DCMAKE_CXX_COMPILER={}/bin/clang++".format(LLVM11_HOME),
                             "-DLLVM_DIR={}/lib/cmake/llvm".format(LLVM11_HOME),
-                            "-DCMAKE_CXX_FLAGS=-flto -fforce-emit-vtables",
-                            "-DCMAKE_JNI_LINKER_FLAGS=-fuse-ld={} -Xlinker -mllvm=-lto-embed-bitcode".format(LLVM_LLD),
-                            "-DENABLE_JAVA_SDK",
-                            "-DJAVA_PIE_APP=True",
+                            "-DCMAKE_CXX_FLAGS=\"-flto -fforce-emit-vtables\"",
+                            "-DCMAKE_JNI_LINKER_FLAGS=\"-fuse-ld={} -Xlinker -mllvm=-lto-embed-bitcode\"".format(LLVM_LLD),
+                            "-DENABLE_JAVA_SDK=ON",
+                            "-DJAVA_PIE_APP=ON",
                             "-DPRE_CP={}:{}".format(GRAPE_PROCESSOR_JAR, java_jar_path),
                             "-DPROCESSOR_MAIN_CLASS={}".format(PROCESSOR_MAIN_CLASS),
                             "-DJAR_PATH={}".format(java_jar_path),
                             "-DOUTPUT_DIR={}".format(java_codegen_out_dir)]
-        cmake_commands += ["."]
         logger.info(" ".join(cmake_commands))
     elif app_type != "cpp_pie":
         if app_type == "cython_pregel":
