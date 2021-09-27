@@ -183,19 +183,9 @@ ret:
   return jvm;
 }
 
-// kill existing javavm when flag set to true.
-// otherwise don't create new jvm.
-JavaVM* GetJavaVM(bool newJvm) {
+// One process can only create jvm for once.
+JavaVM* GetJavaVM() {
   if (_jvm == NULL) {
-    _jvm = CreateJavaVM();
-    return _jvm;
-  }
-  if (newJvm) {
-    LOG(INFO) << "Destroying exiting jvm to create a new one";
-    jint res = _jvm->DestroyJavaVM();
-    _jvm = NULL;
-    LOG(INFO) << "Kill javavm status: " << res;
-    usleep(2);  // Do we need to wait?
     _jvm = CreateJavaVM();
   }
   return _jvm;
@@ -205,21 +195,18 @@ struct JNIEnvMark {
   JNIEnv* _env;
 
   JNIEnvMark() : _env(NULL) {
-    if (GetJavaVM(false) == NULL) {
-      LOG(FATAL) << "Get java VM failed.";
+    if (!GetJavaVM())
       return;
-    }
-    int status = GetJavaVM(false)->AttachCurrentThread(
+    int status = GetJavaVM()->AttachCurrentThread(
         reinterpret_cast<void**>(&_env), nullptr);
     if (status != JNI_OK) {
       LOG(ERROR) << "Error attach current thread: " << status;
     }
-    LOG(INFO) << "Successfully attached to current thread: " << status;
   }
 
   ~JNIEnvMark() {
     if (_env)
-      GetJavaVM(false)->DetachCurrentThread();
+      GetJavaVM()->DetachCurrentThread();
   }
 
   JNIEnv* env() { return _env; }
