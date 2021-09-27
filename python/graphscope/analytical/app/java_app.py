@@ -46,11 +46,11 @@ DEFAULT_JVM_CONFIG_FILE = "java_app.yaml"
 JAVA_CODEGNE_OUTPUT_PREFIX = 'gs-ffi'
 WORKSPACE = "/tmp/gs"
 GRAPHSCOPE_JAVA_HOME = None
-if "GRAPHSCOPE_HOME" not in os.environ:
+if "GRAPHSCOPE_JAVA_HOME" not in os.environ:
     # only launch GAE
     logger.error("Can't found GRAPHSCOPE_HOME in environment.")
 else:
-    GRAPHSCOPE_JAVA_HOME = os.environ["GRAPHSCOPE_HOME"]
+    GRAPHSCOPE_JAVA_HOME = os.environ["GRAPHSCOPE_JAVA_HOME"]
 #In future, this two lib will be move to GRAPHSCOPE_HOME/lib
 GRAPE_JNI_LIB=os.path.join(GRAPHSCOPE_JAVA_HOME,  "grape-sdk/target/native")
 GRAPHSCOPE_JNI_LIB = os.path.join(GRAPHSCOPE_JAVA_HOME,  "graphscope-sdk/target/native")
