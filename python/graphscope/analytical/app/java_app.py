@@ -79,12 +79,14 @@ def _parse_user_app(java_app_class: str, java_jar_full_path : str):
         logger.error(line)
     for line in out.split("\n"):
         logger.info(line)
+        if (len(line) == 0):
+            continue
         if line.find("PropertyDefaultApp") != -1:
             _java_app_type = "property"
-            continue 
+            continue
         if line.find("ProjectedDefaultApp") != -1:
             _java_app_type = "projected"
-            continue 
+            continue
         if line.find("Error") != -1:
             raise Exception("Error occured in verifying user app")
         if line.find("TypeParams") != 1:
@@ -175,20 +177,30 @@ class JavaApp(AppAssets):
     def is_compatible(self, graph):
         splited = graph.template_str.split("<")
         java_app_type_params = self.frag_param_str.split(",")
-        if len(splited != 2):
+        num_type_params=0
+        if len(splited) != 2:
             raise Exception("Unrecoginizable graph template str: {}".format(graph.template_str))
         if (splited[0] == "vineyard::ArrowFragment"):
             if (self.java_app_type != "property"):
+                logger.error("Expected property app")
                 return False
+            if (len(java_app_type_params) != 1):
+                logger.error("Expected one type params.")
+                return False
+            num_type_params=1
         if (splited[1] == "gs::ArrowProjectedFragment"):
             if (self.java_app_type != "projected"):
+                logger.error("Expected projected app")
                 return False
-        
+            if (len(java_app_type_params) != 4):
+                logger.error("Expected 4 type params")
+                return False
+            num_type_params=4
         graph_actual_type_params = splited[1][:-1].split(",")
-        if (len(graph_actual_type_params) != len(java_app_type_params)):
-            raise Exception("Although graph type same, the type params can not match")
-        for graph_actucal_type_param, java_app_type_param in zip(graph_actual_type_params, java_app_type_params):
-            if (not _type_param_consistent(graph_actucal_type_param, java_app_type_param)):
+        for i in range(0, num_type_params):
+            graph_actual_type_param = graph_actual_type_params[i]
+            java_app_type_param = java_app_type_params[i]
+            if (not _type_param_consistent(graph_actual_type_param, java_app_type_param)):
                 return False
         return True
     def _pack_jar(self, full_jar_path):

@@ -77,7 +77,7 @@ ANALYTICAL_ENGINE_HOME = os.path.join(GRAPHSCOPE_HOME, "analytical_engine")
 ANALYTICAL_ENGINE_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "build", "grape_engine")
 JAVA_CODEGNE_OUTPUT_PREFIX = "gs-ffi"
 M2_REPO_PATH = os.path.join(str(Path.home()), ".m2/repository/com/alibaba/grape")
-GRAPE_PROCESSOR_JAR=os.path.join(M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-jar-shade.jar")
+GRAPE_PROCESSOR_JAR=os.path.join(M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-shaded.jar")
 if not os.path.isfile(ANALYTICAL_ENGINE_PATH):
     ANALYTICAL_ENGINE_HOME = "/usr/local/bin"
     ANALYTICAL_ENGINE_PATH = "/usr/local/bin/grape_engine"
