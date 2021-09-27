@@ -220,10 +220,11 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         if not os.path.isfile(LLVM_LLD):
             raise RuntimeError("ld.lld not found")
 
-        cmake_commands += ["-DCMAKE_CXX_COMPILER={}/bin/clang++".format(LLVM11_HOME),
-                            "-DLLVM_DIR={}/lib/cmake/llvm".format(LLVM11_HOME),
-                            "-DCMAKE_CXX_FLAGS=\"-flto -fforce-emit-vtables\"",
-                            "-DCMAKE_JNI_LINKER_FLAGS=\"-fuse-ld={} -Xlinker -mllvm=-lto-embed-bitcode\"".format(LLVM_LLD),
+        cmake_commands += [
+                            "-DCMAKE_CXX_COMPILER={}/bin/clang++".format(LLVM11_HOME),
+                            # "-DLLVM_DIR={}/lib/cmake/llvm".format(LLVM11_HOME),
+                            # "-DCMAKE_CXX_FLAGS=\"-flto -fforce-emit-vtables\"",
+                            # "-DCMAKE_JNI_LINKER_FLAGS=\"-fuse-ld={} -Xlinker -mllvm=-lto-embed-bitcode\"".format(LLVM_LLD),
                             "-DENABLE_JAVA_SDK=ON",
                             "-DJAVA_PIE_APP=ON",
                             "-DPRE_CP={}:{}".format(GRAPE_PROCESSOR_JAR, java_jar_path),
