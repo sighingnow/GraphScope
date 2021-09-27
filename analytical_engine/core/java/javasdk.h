@@ -193,7 +193,9 @@ JavaVM* GetJavaVM(bool newJvm) {
   if (newJvm) {
     LOG(INFO) << "Destroying exiting jvm to create a new one";
     jint res = _jvm->DestroyJavaVM();
+    _jvm = NULL;
     LOG(INFO) << "Kill javavm status: " << res;
+    usleep(2);  // Do we need to wait?
     _jvm = CreateJavaVM();
   }
   return _jvm;

@@ -219,17 +219,21 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         LLVM_LLD = os.path.join(LLVM11_HOME, "/bin/ld.lld")
         if not os.path.isfile(LLVM_LLD):
             raise RuntimeError("ld.lld not found")
+        #if run llvm4jni.sh not found, we just go ahead,since it is optional.
+        if not os.path.isfile(RUN_LLVM4JNI_SH):
+            logger.warning("Run llvm4jni failed because file not found {}".format(RUN_LLVM4JNI_SH))
+        llvm4jni_user_out_dir = os.path.join(workspace, "{}-{}".format(LLVM4JNI_USER_OUT_DIR_BASE, library_name))
 
         cmake_commands += ["-DCMAKE_CXX_COMPILER={}/bin/clang++".format(LLVM11_HOME),
-                            # "-DLLVM_DIR={}/lib/cmake/llvm".format(LLVM11_HOME),
-                            # "-DCMAKE_CXX_FLAGS=\"-flto -fforce-emit-vtables\"",
-                            # "-DCMAKE_JNI_LINKER_FLAGS=\"-fuse-ld={} -Xlinker -mllvm=-lto-embed-bitcode\"".format(LLVM_LLD),
                             "-DENABLE_JAVA_SDK=ON",
                             "-DJAVA_PIE_APP=ON",
                             "-DPRE_CP={}:{}".format(GRAPE_PROCESSOR_JAR, java_jar_path),
                             "-DPROCESSOR_MAIN_CLASS={}".format(PROCESSOR_MAIN_CLASS),
                             "-DJAR_PATH={}".format(java_jar_path),
-                            "-DOUTPUT_DIR={}".format(java_codegen_out_dir)]
+                            "-DOUTPUT_DIR={}".format(java_codegen_out_dir),
+                            "-DRUN_LLVM4JNI_SH={}".format(RUN_LLVM4JNI_SH),
+                            "-DLLVM4JNI_OUTPUT={}".format(llvm4jni_user_out_dir),
+                            "-DLIB_PATH={}".format(get_lib_path(app_dir, library_name))]
         logger.info(" ".join(cmake_commands))
     elif app_type != "cpp_pie":
         if app_type == "cython_pregel":
@@ -300,38 +304,6 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     lib_path = get_lib_path(app_dir, library_name)
     assert os.path.isfile(lib_path), "Error occurs when building the frame library."
 
-    # After built user library, we do optimization 
-    if not os.path.isfile(RUN_LLVM4JNI_SH):
-        raise RuntimeError("Run llvm4jni failed because file not found {}".format(RUN_LLVM4JNI_SH))
-    llvm4jni_user_out_dir = os.path.join(workspace, "{}-{}".format(LLVM4JNI_USER_OUT_DIR_BASE, library_name))
-    run_llvm_user_commands = [
-        "bash",
-        RUN_LLVM4JNI_SH,
-        "-output",
-        llvm4jni_user_out_dir,
-        "-cp",
-        os.path.join(java_codegen_out_dir, "CLASS_OUTPUT"),
-        "-lib",
-        lib_path,
-        "-v",
-        "ERROR"
-    ]
-    optimize_env=os.environ.copy()
-    optimize_env["VM_OPTS"] = "-Dllvm4jni.supportLocalConstant=true -Dllvm4jni.supportIndirectCall=false"
-    logger.info(" ".join(run_llvm_user_commands))
-    grape_sdk_optimize_process = subprocess.Popen(
-        run_llvm_user_commands,
-        env=optimize_env,
-        universal_newlines=True,
-        encoding="utf-8",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    grape_sdk_optimize_process_watcher = PipeWatcher(grape_sdk_optimize_process.stderr, sys.stdout)
-    setattr(grape_sdk_optimize_process, "stderr_watcher", grape_sdk_optimize_process_watcher)
-    grape_sdk_optimize_process.wait()
-    logger.info("User optimization complete, output to {}".format(llvm4jni_user_out_dir))
-    
     return lib_path, java_jar_path, java_codegen_out_dir, app_type
 
 
