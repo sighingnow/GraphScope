@@ -7,7 +7,7 @@ project(GRAPE-LITE-JNI)
 
 #include(CheckLibraryExists)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -O3 -g -fopenmp -Werror")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Wall -O3 -g -fopenmp -Werror")
 #if (APPLE)
 #    SET(CMAKE_MACOSX_RPATH ON)
 #else ()

@@ -10,10 +10,10 @@
         <version>0.1</version>
     </parent>
 
-    <artifactId>vineyard-graph</artifactId>
+    <artifactId>graphscope-sdk</artifactId>
     <version>0.1</version>
     <packaging>jar</packaging>
-    <name>vineyard-graph</name>
+    <name>graphscope-sdk</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

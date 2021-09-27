@@ -8,7 +8,7 @@ import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.GRAPE_WORKER_COMM_SPEC_
 import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
 
 @FFIGen(library = GRAPE_JNI_LIBRARY)
-@CXXHead(value = {"aaa.h", GRAPE_WORKER_COMM_SPEC_H, GRAPE_DENSE_VERTEX_SET_H})
+@CXXHead(value =  {GRAPE_WORKER_COMM_SPEC_H, GRAPE_DENSE_VERTEX_SET_H})
 @FFITypeAlias(GRAPE_DENSE_VERTEX_SET)
 @CXXTemplate(cxx = {"uint32_t"}, java = {"java.lang.Integer"})
 @CXXTemplate(cxx = {"uint64_t"}, java = {"java.lang.Long"})

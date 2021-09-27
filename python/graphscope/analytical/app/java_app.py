@@ -100,7 +100,14 @@ def _type_param_consistent(graph_actucal_type_param, java_app_type_param):
             return True
         return False
     if (java_app_type_param == "java.lang.Double"):
-        if (graph_actucal_type_param in {""})
+        if (graph_actucal_type_param in {"double"}):
+            return True
+        return False
+    if (java_app_type_param == "java.lang.Integer"):
+        if (graph_actucal_type_param in {"int32_t", "uint32_t"}):
+            return True
+        return False
+    return False
 
 def _get_lib_path(app_name):
     lib_path = ""
@@ -130,7 +137,6 @@ class JavaApp(AppAssets):
     def __init__(self, full_jar_path : str, java_app_class: str):
         self._java_app_class = java_app_class
         self._full_jar_path = full_jar_path
-        
         gar = self._pack_jar(self._full_jar_path)
         gs_config = {
             "app": [
@@ -144,7 +150,6 @@ class JavaApp(AppAssets):
         }
         #extract java app type with help of java class.
         self._java_app_type, self._frag_param_str = _parse_user_app(java_app_class, full_jar_path)
-        
         #For two different java type, we use two different driver class
         if self._java_app_type == "property":
             self._cpp_driver_class =  "gs::JavaPIEPropertyDefaultApp"
@@ -281,7 +286,7 @@ class JavaAppDagNode(AppDAGNode):
             frag_name_for_java = self._convert_arrow_frag_for_java(self._graph.template_str)
             logger.info("Set frag name to {}, {}".format(self._graph.template_str, frag_name_for_java))
         else :
-            frag_name_for_java = self._graph.template_str        
+            frag_name_for_java = self._graph.template_str 
         # get number of worker on each host, so we can determine the java memory settings.
         num_hosts_ = len(self._session.info["engine_hosts"].split(","))
         num_worker_ = int(self._session.info["num_workers"])

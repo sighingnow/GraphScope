@@ -41,7 +41,7 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.grape</groupId>
-            <artifactId>vineyard-graph</artifactId>
+            <artifactId>graphscope-sdk</artifactId>
             <version>0.1</version>
             <scope>compile</scope>
         </dependency>
