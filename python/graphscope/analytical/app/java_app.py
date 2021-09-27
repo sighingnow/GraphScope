@@ -79,18 +79,16 @@ def _parse_user_app(java_app_class: str, java_jar_full_path : str):
         logger.error(line)
     for line in out.split("\n"):
         logger.info(line)
-        if line.find("PropertyDefaultApp"):
+        if line.find("PropertyDefaultApp") != -1:
             _java_app_type = "property"
             continue 
-        if line.find("ProjectedDefaultApp"):
+        if line.find("ProjectedDefaultApp") != -1:
             _java_app_type = "projected"
             continue 
-        if line.find("Error"):
+        if line.find("Error") != -1:
             raise Exception("Error occured in verifying user app")
-            continue 
-        if line.find("TypeParams"):
+        if line.find("TypeParams") != 1:
             _frag_param_str = line.split(":")[1].strip()
-            continue 
     logger.info("Java app type: {}, frag type str: {}]".format(_java_app_type, _frag_param_str))
 
     #java_codegen_stderr_watcher = PipeWatcher(parse_user_app_process.stderr, sys.stdout)
