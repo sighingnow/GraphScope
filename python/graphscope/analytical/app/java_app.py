@@ -121,6 +121,7 @@ def _get_lib_path(app_name):
         raise RuntimeError("Unsupported platform.")
     return lib_path
 
+# Java codegen cp can be empty when no bitcode is generated.
 def _construct_jvm_options_from_params(app_lib_dir, jar_unpacked_path, llvm4jni_output_dir, java_codegen_cp):
     performance_args = " "
     #May be we should move this out of here.
@@ -278,6 +279,7 @@ class JavaAppDagNode(AppDAGNode):
         assert (os.path.isfile(jar_unpacked_path)), "{} not found ".format(jar_unpacked_path)
 
         llvm4jni_output_dir = os.path.join(udf_workspace, "{}-{}".format(LLVM4JNI_USER_OUT_DIR_BASE, app_lib_name))
+        #Java codegen directory can be empty.
         java_codegen_cp = os.path.join(udf_workspace, "{}-{}".format(JAVA_CODEGNE_OUTPUT_PREFIX, app_lib_name), "CLASS_OUTPUT")
 
         jvm_options = _construct_jvm_options_from_params(app_lib_name, app_lib_dir, jar_unpacked_path, llvm4jni_output_dir, java_codegen_cp)
