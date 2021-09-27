@@ -38,11 +38,13 @@
             <groupId>com.alibaba.grape</groupId>
             <artifactId>grape-sdk</artifactId>
             <version>0.1</version>
+            <classifier>shaded</classifier>
         </dependency>
         <dependency>
             <groupId>com.alibaba.grape</groupId>
             <artifactId>graphscope-sdk</artifactId>
             <version>0.1</version>
+            <classifier>shaded</classifier>
             <scope>compile</scope>
         </dependency>
     </dependencies>
@@ -82,22 +84,13 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>ffi.properties</resource>
-                                </transformer>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>ffi.properties</resource>
-                                </transformer>
+                                </transformer>  
                             </transformers>
-                            <artifactSet>
-                                <includes>
-                                    <include>com.alibaba.grape:grape-sdk</include>
-                                    <include>com.alibaba.grape:graphscope-sdk</include>
-                                </includes>
-                            </artifactSet>
                         </configuration>
                     </execution>
                 </executions>

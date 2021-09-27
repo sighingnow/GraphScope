@@ -124,8 +124,8 @@ pushd "${ENGINE_HOME}"/build
 
 #start_vineyard
 
-demo_jar=/home/admin/.m2/repository/com/alibaba/grape/graphscope-demo/0.1/graphscope-demo-0.1-jar-with-dependencies.jar
-#demo_jar=/home/admin/.m2/repository/com/alibaba/grape/graphscope-demo/0.1/graphscope-demo-0.1.jar
+#demo_jar=/home/admin/.m2/repository/com/alibaba/grape/graphscope-demo/0.1/graphscope-demo-0.1-jar-with-dependencies.jar
+demo_jar=/home/admin/.m2/repository/com/alibaba/grape/graphscope-demo/0.1/graphscope-demo-0.1-shaded.jar
 GRAPE_SDK_BUILD=/home/admin/gs/java/grape-sdk/target/
 GRAPE_SDK_BUILD_NATIVE=${GRAPE_SDK_BUILD}/native/
 VINEYARD_GRAPH_BUILD=/home/admin/gs/java/graphscope-sdk/target/

@@ -287,25 +287,25 @@ class JavaContextBase : public grape::ContextBase {
   // get the java context name with is bounded to app_object_.
   std::string get_ctx_class_name_from_app_object(JNIEnv* env) {
     // get app_class's class object
-    jclass app_class_class = env->GetObjectClass(app_object_);
-    CHECK_NOTNULL(app_class_class);
-    jmethodID app_class_getClass_method =
-        env->GetMethodID(app_class_class, "getClass", "()Ljava/lang/Class;");
-    CHECK_NOTNULL(app_class_getClass_method);
-    jobject app_class_obj =
-        env->CallObjectMethod(app_object_, app_class_getClass_method);
-    CHECK_NOTNULL(app_class_obj);
+    //jclass app_class_class = env->GetObjectClass(app_object_);
+    //CHECK_NOTNULL(app_class_class);
+    //jmethodID app_class_getClass_method =
+    //    env->GetMethodID(app_class_class, "getClass", "()Ljava/lang/Class;");
+    //CHECK_NOTNULL(app_class_getClass_method);
+    //jobject app_class_obj =
+    //    env->CallObjectMethod(app_object_, app_class_getClass_method);
+    //CHECK_NOTNULL(app_class_obj);
 
     jclass app_context_getter_class = env->FindClass(APP_CONTEXT_GETTER_CLASS);
     CHECK_NOTNULL(app_context_getter_class);
 
     jmethodID app_context_getter_method =
         env->GetStaticMethodID(app_context_getter_class, "getContextName",
-                               "(Ljava/lang/Class;)Ljava/lang/String;");
+                               "(Ljava/lang/Object;)Ljava/lang/String;");
     CHECK_NOTNULL(app_context_getter_method);
     // Pass app class's class object
     jstring context_class_jstring = (jstring) env->CallStaticObjectMethod(
-        app_context_getter_class, app_context_getter_method, app_class_obj);
+        app_context_getter_class, app_context_getter_method, app_object_);
     CHECK_NOTNULL(context_class_jstring);
     return jstring2string(env, context_class_jstring);
   }
