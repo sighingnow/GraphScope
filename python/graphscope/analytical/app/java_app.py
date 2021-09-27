@@ -42,7 +42,7 @@ logger = logging.getLogger("graphscope")
 
 DEFAULT_GS_CONFIG_FILE = ".gs_conf.yaml"
 LLVM4JNI_USER_OUT_DIR_BASE = "user-llvm4jni-output"
-DEFAULT_JVM_CONFIG_FILE = "java_app.yaml"
+
 JAVA_CODEGNE_OUTPUT_PREFIX = 'gs-ffi'
 WORKSPACE = "/tmp/gs"
 GRAPHSCOPE_JAVA_HOME = None
@@ -54,6 +54,7 @@ else:
 #In future, this two lib will be move to GRAPHSCOPE_HOME/lib
 GRAPE_JNI_LIB=os.path.join(GRAPHSCOPE_JAVA_HOME,  "grape-sdk/target/native")
 GRAPHSCOPE_JNI_LIB = os.path.join(GRAPHSCOPE_JAVA_HOME,  "graphscope-sdk/target/native")
+DEFAULT_JVM_CONFIG_FILE = os.path.join(GRAPHSCOPE_JAVA_HOME, "jvm_options.yaml")
 
 def _parse_user_app(java_app_class: str, java_jar_full_path : str):
     _java_app_type = ""
@@ -136,7 +137,7 @@ def _construct_jvm_options_from_params(app_lib_dir, jar_unpacked_path, llvm4jni_
     
     library_path = "-Djava.library.path={}:{}:{}".format(app_lib_dir, GRAPE_JNI_LIB, GRAPHSCOPE_JNI_LIB)
     class_path = "-Djava.class.path={}:{}:{}".format(llvm4jni_output_dir, java_codegen_cp, jar_unpacked_path)
-    return " ".join([performance_args, library_path, class_path, "-Xrs"])
+    return " ".join([performance_args, library_path, class_path, "-Xrs"]).strip()
 
 class JavaApp(AppAssets):
     def __init__(self, full_jar_path : str, java_app_class: str):

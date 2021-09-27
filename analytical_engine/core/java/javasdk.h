@@ -171,7 +171,7 @@ JavaVM* CreateJavaVM() {
     InitWellKnownClasses(env);
   } else if (status == JNI_EEXIST) {
   } else {
-    LOG(ERROR) << "error, create java virtual machine failed. return JNI_CODE ("
+    LOG(FATAL) << "error, create java virtual machine failed. return JNI_CODE ("
                << status << ")\n";
   }
 
