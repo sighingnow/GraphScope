@@ -288,7 +288,6 @@ del version_file_path
 setup(
     name="graphscope",
     description="GraphScope: A One-Stop Large-Scale Graph Computing System from Alibaba",
-    include_package_data=True,
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Alibaba Damo Academy",
@@ -321,11 +320,6 @@ setup(
     setup_requires=["setuptools_scm>=5.0.0", "grpcio", "grpcio-tools"],
     package_dir=resolve_graphscope_package_dir(),
     packages=find_graphscope_packages(),
-    package_data={
-        "graphscope": [
-            "analytical/app/java_app.yaml"
-        ]
-    },
     ext_modules=build_learning_engine(),
     cmdclass={
         "build_proto": BuildProto,

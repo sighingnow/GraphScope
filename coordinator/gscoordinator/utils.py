@@ -283,7 +283,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         env=os.environ.copy(),
         universal_newlines=True,
         encoding="utf-8",
-        stdout=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
     cmake_stderr_watcher = PipeWatcher(cmake_process.stderr, sys.stdout)
@@ -295,7 +295,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         env=os.environ.copy(),
         universal_newlines=True,
         encoding="utf-8",
-        stdout=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
     make_stderr_watcher = PipeWatcher(make_process.stderr, sys.stdout)
