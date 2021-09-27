@@ -209,7 +209,7 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
         "-DNETWORKX=" + engine_config["networkx"],
     ]
     if app_type == "java_pie":
-        if not s.path.isfile(GRAPE_PROCESSOR_JAR):
+        if not os.path.isfile(GRAPE_PROCESSOR_JAR):
             raise RuntimeError("Grape processor need to be installed")
         #for java need to run preprocess
         java_codegen_out_dir = os.path.join(workspace, "{}-{}".format(JAVA_CODEGNE_OUTPUT_PREFIX, library_name))
