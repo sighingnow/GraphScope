@@ -379,10 +379,19 @@ class JavaContextBase : public grape::ContextBase {
     if (end == std::string::npos) {
       end = jvm_opts_str.size();
     }
-    std::string cp_from_jvm_opts = jvm_opts_str.substr(start, end - start);
+    std::string cp_from_jvm_opts =
+        jvm_opts_str.substr(start + 18, end - start - 18);
     LOG(INFO) << "Class path from jvm opts: " << cp_from_jvm_opts;
     jstring cp_jstring = env->NewStringUTF(cp_from_jvm_opts.c_str());
     jobject class_loader = env->CallStaticObjectMethod(clz, method, cp_jstring);
+    // Catch exception
+    if (env->ExceptionOccurred()) {
+      LOG(ERROR) << std::string("Exception in creating class loader: ")
+                 << cp_from_jvm_opts;
+      env->ExceptionDescribe();
+      env->ExceptionClear();
+      LOG(FATAL) << "exiting since exception occurred";
+    }
     CHECK_NOTNULL(class_loader);
     return env->NewGlobalRef(class_loader);
   }
