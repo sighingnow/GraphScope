@@ -438,6 +438,18 @@ void init_java_communicator(JNIEnv* env, const jobject& java_app,
   LOG(INFO) << "No initing since not a sub class from Communicator.";
 }
 
+std::string get_java_property(JNIEnv* env, const char* propertyName) {
+  jclass systemClass = env->FindClass("java/lang/System");
+  jmethodID getPropertyMethod = env->GetStaticMethodID(
+      systemClass, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
+  jstring propertyNameString = env->NewStringUTF(propertyName);
+  jstring propertyString = (jstring) env->CallStaticObjectMethod(
+      systemClass, getPropertyMethod, propertyNameString);
+  if (propertyString == 0) {
+    LOG(FATAL) << "empty property string for " << property_name;
+  }
+  return jstring2string(env, propertyString);
+}
 }  // namespace gs
 #endif
 #endif  // ANALYTICAL_ENGINE_CORE_JAVA_JAVASDK_H_

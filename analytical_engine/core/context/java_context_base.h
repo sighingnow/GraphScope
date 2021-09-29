@@ -26,6 +26,8 @@ limitations under the License.
 #include <vector>
 
 #include <grape/grape.h>
+#include "boost/algorithm/string.hpp"
+#include "boost/algorithm/string/split.hpp"
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
 #include "core/config.h"
@@ -40,6 +42,8 @@ limitations under the License.
 namespace gs {
 static constexpr const char* APP_CONTEXT_GETTER_CLASS =
     "io/graphscope/utils/AppContextGetter";
+static constexpr const char* IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER =
+    "io.graphscope.utils.GraphScopeClassLoader";
 /**
  * @brief JavaContextBase is the base class for JavaPropertyContext and
  * JavaProjectedContext.
@@ -57,7 +61,8 @@ class JavaContextBase : public grape::ContextBase {
         app_object_(NULL),
         context_object_(NULL),
         fragment_object_(NULL),
-        mm_object_(NULL) {}
+        mm_object_(NULL),
+        gs_class_loader_object_(NULL) {}
 
   virtual ~JavaContextBase() {
     if (app_class_name_) {
@@ -96,39 +101,51 @@ class JavaContextBase : public grape::ContextBase {
     std::string args_str =
         parse_params_and_setup_jvm_env(params, user_library_name);
 
-    // always create new java vm
     JavaVM* jvm = GetJavaVM();
     (void) jvm;
     LOG(INFO) << "Successfully get jvm";
+
+    // It is possible for multiple java app run is one grape instance, we need
+    // to find the user jar. But it is not possible to restart a jvm with new
+    // class path, so we utilize java class loader to load the new jar
+    // add_class_path_at_runtime();
 
     JNIEnvMark m;
     if (m.env()) {
       JNIEnv* env = m.env();
       load_jni_library(env, user_library_name);
 
-      jclass app_class = env->FindClass(app_class_name_);
-      CHECK_NOTNULL(app_class);
+      // Create a graphscope class loader to load app_class and ctx_class. This
+      // means will create a new class loader for each for run_app.
+      // The intent is to provide isolation, and avoid class conflicts。
+      {
+        jobject gs_class_loader_obj = create_class_loader(env);
+        CHECK_NOTNULL(gs_class_loader_obj);
+        gs_class_loader_object_ = env->NewGlobalRef(gs_class_loader_obj);
+      }
 
-      jobject app_object = createObject(env, app_class, app_class_name_);
-      CHECK_NOTNULL(app_object);
-      app_object_ = env->NewGlobalRef(app_object);
-      CHECK_NOTNULL(app_object_);
-
-      std::string _context_class_name_str =
-          get_ctx_class_name_from_app_object(env);
-      LOG(INFO) << "Java Context name: " << _context_class_name_str;
-      // The retrived context class str is dash-sperated, convert to /-seperated
-      char* _context_class_name_c_str =
-          java_class_name_dash_to_slash(_context_class_name_str);
-      CHECK_NOTNULL(_context_class_name_c_str);
-
-      jclass context_class = env->FindClass(_context_class_name_c_str);
-      CHECK_NOTNULL(context_class);
-
-      jobject ctx_object =
-          createObject(env, context_class, _context_class_name_c_str);
-      CHECK_NOTNULL(ctx_object);
-      context_object_ = env->NewGlobalRef(ctx_object);
+      {
+        jobject app_obj = load_and_create(env, app_class_name_);
+        CHECK_NOTNULL(app_obj);
+        app_object_ = env->NewGlobalRef(app_object);
+        LOG(INFO) << "Successfully create app object with class loader:"
+                  << &gs_class_loader_object_
+                  << ", of type: " << std::string(app_class_name_);
+      }
+      {
+        std::string _context_class_name_str =
+            get_ctx_class_name_from_app_object(env);
+        // The retrived context class str is dash-sperated, convert to
+        // -seperated
+        char* _context_class_name_c_str =
+            java_class_name_dash_to_slash(_context_class_name_str);
+        jobject ctx_obj = load_and_create(env, _context_class_name_c_str);
+        CHECK_NOTNULL(ctx_obj);
+        context_object_ = env->NewGlobalRef(ctx_object);
+        LOG(INFO) << "Successfully create ctx object with class loader:"
+                  << &gs_class_loader_object_
+                  << ", of type: " << _context_class_name_str;
+      }
 
       jmethodID InitMethodID =
           env->GetMethodID(context_class, "init", eval_descriptor());
@@ -184,27 +201,10 @@ class JavaContextBase : public grape::ContextBase {
   }
 
  private:
-  bool init_app_class_name(std::string& app_class) {
-    if (app_class.empty()) {
-      LOG(FATAL) << "Class names for java app is empty";
-      return false;
-    }
-    app_class_name_ = java_class_name_dash_to_slash(app_class);
-    return true;
-  }
   // Loading jni library with absolute path
   void load_jni_library(JNIEnv* env, std::string& user_library_name) {
-    const char* propertyName = "java.class.path";
-    jclass systemClass = env->FindClass("java/lang/System");
-    jmethodID getPropertyMethod = env->GetStaticMethodID(
-        systemClass, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
-    jstring propertyNameString = env->NewStringUTF(propertyName);
-    jstring propertyString = (jstring) env->CallStaticObjectMethod(
-        systemClass, getPropertyMethod, propertyNameString);
-    if (propertyString == 0) {
-      LOG(FATAL) << "empty property string for java.class.path";
-    }
-    LOG(INFO) << "java.class.path: " << jstring2string(env, propertyString);
+    LOG(INFO) << "java.class.path: "
+              << get_java_property(env, "java.lang.path");
     jclass grape_load_library =
         env->FindClass("com/alibaba/grape/utils/LoadLibrary");
     CHECK_NOTNULL(grape_load_library);
@@ -251,7 +251,7 @@ class JavaContextBase : public grape::ContextBase {
     std::string app_class_name = pt.get<std::string>("app_class");
     CHECK(!app_class_name.empty());
     LOG(INFO) << "parse app class name: " << app_class_name;
-    CHECK(init_app_class_name(app_class_name));
+    app_class_name_ = java_class_name_dash_to_slash(app_class_name);
     pt.erase("app_class");
 
     user_library_name = pt.get<std::string>("user_library_name");
@@ -288,16 +288,6 @@ class JavaContextBase : public grape::ContextBase {
 
   // get the java context name with is bounded to app_object_.
   std::string get_ctx_class_name_from_app_object(JNIEnv* env) {
-    // get app_class's class object
-    // jclass app_class_class = env->GetObjectClass(app_object_);
-    // CHECK_NOTNULL(app_class_class);
-    // jmethodID app_class_getClass_method =
-    //    env->GetMethodID(app_class_class, "getClass", "()Ljava/lang/Class;");
-    // CHECK_NOTNULL(app_class_getClass_method);
-    // jobject app_class_obj =
-    //    env->CallObjectMethod(app_object_, app_class_getClass_method);
-    // CHECK_NOTNULL(app_class_obj);
-
     jclass app_context_getter_class = env->FindClass(APP_CONTEXT_GETTER_CLASS);
     CHECK_NOTNULL(app_context_getter_class);
 
@@ -311,6 +301,97 @@ class JavaContextBase : public grape::ContextBase {
     CHECK_NOTNULL(context_class_jstring);
     return jstring2string(env, context_class_jstring);
   }
+  void add_class_path_at_runtime() {
+    std::string java_class_path = get_java_property(env, "java.lang.path");
+    LOG(INFO) << "java.class.path: " << java_class_path;
+    char* jvm_opts = getenv("JVM_OPTS");
+    std::string jvm_opts_str = jvm_opts;
+    std::size_t start = jvm_opts_str.find("-Djava.class.path=");
+    if (start == std::string::npos) {
+      LOG(ERROR) << "No env var JVM OPTS found.";
+      return;
+    }
+    std::size_t end = jvm_opts_str.find(" ", start);
+    if (end == std::string::npos) {
+      end = jvm_opts_str.size();
+    }
+    std::string cp_from_jvm_opts = jvm_opts_str.substr(start, start - end);
+    LOG(INFO) << "class path from jvm opts: " << cp_from_jvm_opts;
+
+    std::vector<std::string> already_in_java_cp;
+    boost::split(already_in_java_cp, java_class_path, boost::is_any_of(":"));
+
+    std::vector<std::string> to_be_added;
+    boost::split(to_be_added, cp_from_jvm_opts, boost::is_any_of(":"));
+
+    std::unordered_set<std::string> already_in_java_cp_set(
+        already_in_java_cp.begin(), already_in_java_cp.end());
+    for (auto iter = to_be_added.begin(); iter != to_be_added.end()) {
+      if (already_in_java_cp_set.find(*iter) != already_in_java_cp_set.end()) {
+        iter = to_be_added.erase(iter);
+      } else {
+        iter++;
+      }
+    }
+    if (to_be_added.empty()) {
+      LOG(INFO) << "Nothing to add for class path." return;
+    }
+    std::string joined_string = boost::algorithm::join(to_be_added, ":");
+    LOG(INFO) << "Adding class path: "
+              << joined_string
+
+                     // Now call java method
+                     jclass helper_class =
+        env->FindClass(IO_GRAPHSCOPE_UTILS_CLASS_PATH_HELPER);
+    CHECK_NOTNULL(helper_class);
+    jmethodID methodId = env->GetStaticMethodID(
+        systemClass, "addFileToClassPath", "(Ljava/lang/String;)V");
+    CHECK_NOTNULL(methodId);
+    jstring joined_String_jstring = env->NewStringUTF(joined_string);
+    env->CallStaticVoidMethod(helper_class, methodId, joined_String_jstring);
+    LOG(INFO) << "Successfully added new class_path";
+  }
+  jobject& create_class_loader(JNIEnv* env) {
+    jclass clz = env->FindClass(IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER);
+    CHECK_NOTNULL(clz);
+
+    jmethodID method =
+        env->GetMethod(clz, "newGraphScopeClassLoader",
+                       "(Ljava/lang/String;)Ljava/net/URLClassLoader");
+    CHECK_NOTNULL(method);
+
+    char* jvm_opts = getenv("JVM_OPTS");
+    std::string jvm_opts_str = jvm_opts;
+    std::size_t start = jvm_opts_str.find("-Djava.class.path=");
+    if (start == std::string::npos) {
+      LOG(ERROR) << "No env var JVM OPTS found.";
+      return NULL;
+    }
+    std::size_t end = jvm_opts_str.find(" ", start);
+    if (end == std::string::npos) {
+      end = jvm_opts_str.size();
+    }
+    std::string cp_from_jvm_opts = jvm_opts_str.substr(start, start - end);
+    LOG(INFO) << "Class path from jvm opts: " << cp_from_jvm_opts;
+    jstring cp_jstring = env->NewStringUTF(cp_from_jvm_opts.c_str());
+    jobject class_loader =
+        env->CallStaticObjectMethod(env, clz, method, cp_jstring);
+    CHECK_NOTNULL(class_loader);
+    return class_loader;
+  }
+  jobject& load_and_create(JNIEnv* env, const char* class_name) {
+    jstring class_name_jstring = new->NewStringUTF(class_name.c_str());
+    jclass clz = env->FindClass(IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER);
+    CHECK_NOTNULL(clz);
+
+    jmethodID method = env->GetMethod(
+        clz, "loadAndCreateObject",
+        "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Object");
+    CHECK_NOTNULL(method);
+    jobject res = env->CallStaticObjectMethod(
+        env, clz, method, gs_class_loader_object_, class_name_jstring);
+    return res;
+  }
   std::string graph_type_str_;
   char* app_class_name_;
   uint64_t inner_ctx_addr_;
@@ -320,6 +401,7 @@ class JavaContextBase : public grape::ContextBase {
   jobject context_object_;
   jobject fragment_object_;
   jobject mm_object_;
+  jobject gs_class_loader_object_;
 };
 
 }  // namespace gs
