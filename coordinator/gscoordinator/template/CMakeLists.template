@@ -230,8 +230,8 @@ elseif (JAVA_PIE_APP)
     set_target_properties(${FRAME_NAME} PROPERTIES COMPILE_FLAGS "-fPIC")
     # 3.Post build after compilation, run run-llvm4jni.sh to generate bitcode
     add_custom_command(TARGET ${FRAME_NAME} POST_BUILD COMMAND bash ${RUN_LLVM4JNI_SH} "-output" ${LLVM4JNI_OUTPUT} "-cp" ${OUTPUT_DIR}/CLASS_OUTPUT 
-                                                                "-lib" ${LIB_PATH} "-v" "ERROR"
-                                                        COMMENT "Running run-llvm4jni.sh")
+                                                                "-lib" ${LIB_PATH} "-v" "WARN"
+                                                        COMMENT "Running run-llvm4jni.sh: ${RUN_LLVM4JNI_SH} -output ${LLVM4JNI_OUTPUT} -cp ${OUTPUT_DIR}/CLASS_OUTPUT -lib ${LIB_PATH} -v WARN")
 elseif (PROPERTY_GRAPH_FRAME)
     add_library(${FRAME_NAME} SHARED ${ANALYTICAL_ENGINE_FRAME_DIR}/property_graph_frame.cc)
     target_compile_definitions(${FRAME_NAME} PRIVATE _GRAPH_TYPE=$_graph_type)

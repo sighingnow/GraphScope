@@ -237,7 +237,6 @@ class JavaApp(AppAssets):
         kwargs_extend = dict(app_class = self.java_app_class, **kwargs)
         if not hasattr(graph, "graph_type"):
             raise InvalidArgumentError("Missing graph_type attribute in graph object.")
-        # Check the consistency between Java app and applied graph
 
         if self.java_app_type == "projected" and graph.graph_type == graph_def_pb2.ARROW_PROPERTY:
             graph = graph._project_to_simple()
