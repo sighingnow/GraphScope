@@ -359,8 +359,8 @@ class JavaContextBase : public grape::ContextBase {
     CHECK_NOTNULL(clz);
 
     jmethodID method =
-        env->GetMethodID(clz, "newGraphScopeClassLoader",
-                         "(Ljava/lang/String;)Ljava/net/URLClassLoader;");
+        env->GetStaticMethodID(clz, "newGraphScopeClassLoader",
+                               "(Ljava/lang/String;)Ljava/net/URLClassLoader;");
     CHECK_NOTNULL(method);
 
     char* jvm_opts = getenv("JVM_OPTS");
@@ -386,7 +386,7 @@ class JavaContextBase : public grape::ContextBase {
     jclass clz = env->FindClass(IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER);
     CHECK_NOTNULL(clz);
 
-    jmethodID method = env->GetMethodID(
+    jmethodID method = env->GetStaticMethodID(
         clz, "loadAndCreateObject",
         "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Object:");
     CHECK_NOTNULL(method);

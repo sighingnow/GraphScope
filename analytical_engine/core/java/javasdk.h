@@ -174,6 +174,12 @@ JavaVM* CreateJavaVM() {
     LOG(FATAL) << "error, create java virtual machine failed. return JNI_CODE ("
                << status << ")\n";
   }
+  // Why does env JVM_OPTS unseted after this?
+  if (setenv("JVM_OPTS", jvm_opts_str.c_str(), 1) == 0) {
+    LOG(INFO) << "Successfully reset jvm opts to: " << jvm_opts_str;
+  } else {
+    LOG(ERROR) << "Failed to set jvm opts";
+  }
 
 ret:
   for (int i = 0; i < num_of_opts; i++) {
