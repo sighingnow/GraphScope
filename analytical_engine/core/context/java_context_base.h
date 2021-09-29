@@ -261,6 +261,7 @@ class JavaContextBase : public grape::ContextBase {
     const char * ch = app_class_name.c_str();
     app_class_name_ = new char [strlen(ch)+1];
     memcpy(app_class_name_, ch, strlen(ch));
+    app_class_name_[strlen(ch)] = '\0';
     // app_class_name_ = java_class_name_dash_to_slash(app_class_name);
     pt.erase("app_class");
 
