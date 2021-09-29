@@ -5,6 +5,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -38,8 +39,7 @@ public class GraphScopeClassLoader {
             return new URL[]{};
         }
         String[] splited = classPath.split(":");
-        URL[] res = new URL[splited.length];
-        Arrays.stream(splited)
+        List<URL> res= Arrays.stream(splited)
                 .map(File::new)
                 .map(file -> {
                     try {
@@ -50,9 +50,13 @@ public class GraphScopeClassLoader {
                     return null;
                 })
                 .collect(Collectors.toList());
-        System.out.println(String.join(
+        System.out.println("Extracted URL" + String.join(
                 ":",
-                Arrays.stream(res).map(URL::toString).collect(Collectors.toList())));
-        return res;
+                res.stream().map(URL::toString).collect(Collectors.toList())));
+        URL [] ret = new URL[splited.length];
+        for (int i = 0; i < splited.length; ++i){
+            ret[i] = res.get(i);
+        }
+        return ret;
     }
 }
