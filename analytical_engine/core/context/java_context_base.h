@@ -140,9 +140,9 @@ class JavaContextBase : public grape::ContextBase {
             get_ctx_class_name_from_app_object(env);
         // The retrived context class str is dash-sperated, convert to
         // -seperated
-        char* _context_class_name_c_str =
-            java_class_name_dash_to_slash(_context_class_name_str);
-        jobject ctx_obj = load_and_create(env, _context_class_name_c_str);
+        // char* _context_class_name_c_str =
+        //     java_class_name_dash_to_slash(_context_class_name_str);
+        jobject ctx_obj = load_and_create(env, _context_class_name_str.c_str());
         CHECK_NOTNULL(ctx_obj);
         context_object_ = env->NewGlobalRef(ctx_obj);
         LOG(INFO) << "Successfully create ctx object with class loader:"
@@ -150,6 +150,7 @@ class JavaContextBase : public grape::ContextBase {
                   << ", of type: " << _context_class_name_str;
       }
       jclass context_class = env->GetObjectClass(context_object_);
+      CHECK_NOTNULL(context_class);
 
       jmethodID InitMethodID =
           env->GetMethodID(context_class, "init", eval_descriptor());
@@ -255,7 +256,8 @@ class JavaContextBase : public grape::ContextBase {
     std::string app_class_name = pt.get<std::string>("app_class");
     CHECK(!app_class_name.empty());
     LOG(INFO) << "parse app class name: " << app_class_name;
-    app_class_name_ = java_class_name_dash_to_slash(app_class_name);
+    app_class_name_ = app_class_name.c_str();
+    // app_class_name_ = java_class_name_dash_to_slash(app_class_name);
     pt.erase("app_class");
 
     user_library_name = pt.get<std::string>("user_library_name");
@@ -406,6 +408,13 @@ class JavaContextBase : public grape::ContextBase {
     CHECK_NOTNULL(method);
     jobject res = env->CallStaticObjectMethod(
         clz, method, gs_class_loader_object_, class_name_jstring);
+    if (env->ExceptionOccurred()) {
+      LOG(ERROR) << std::string("Exception in creating class loader: ")
+                 << cp_from_jvm_opts;
+      env->ExceptionDescribe();
+      env->ExceptionClear();
+      LOG(FATAL) << "exiting since exception occurred";
+    }
     return env->NewGlobalRef(res);
   }
   std::string graph_type_str_;
