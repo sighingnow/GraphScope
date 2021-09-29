@@ -258,8 +258,8 @@ class JavaContextBase : public grape::ContextBase {
     std::string app_class_name = pt.get<std::string>("app_class");
     CHECK(!app_class_name.empty());
     LOG(INFO) << "parse app class name: " << app_class_name;
-    const char * ch = app_class_name.c_str();
-    app_class_name_ = new char [strlen(ch)+1];
+    const char* ch = app_class_name.c_str();
+    app_class_name_ = new char[strlen(ch) + 1];
     memcpy(app_class_name_, ch, strlen(ch));
     app_class_name_[strlen(ch)] = '\0';
     // app_class_name_ = java_class_name_dash_to_slash(app_class_name);
@@ -299,7 +299,28 @@ class JavaContextBase : public grape::ContextBase {
 
   // get the java context name with is bounded to app_object_.
   std::string get_ctx_class_name_from_app_object(JNIEnv* env) {
-    jclass app_context_getter_class = env->FindClass(APP_CONTEXT_GETTER_CLASS);
+    // jclass app_context_getter_class =
+    // env->FindClass(APP_CONTEXT_GETTER_CLASS);
+    jclass clz = env->FindClass(IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER);
+    CHECK_NOTNULL(clz);
+
+    jmethodID method = env->GetStaticMethodID(
+        clz, "loadClass",
+        "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
+    CHECK_NOTNULL(method);
+
+    jstring context_getter_class_name =
+        env->NewStringUTF(APP_CONTEXT_GETTER_CLASS);
+    jclass app_context_getter_class = (jclass) env->CallStaticObjectMethod(
+        clz, method, gs_class_loader_object_, context_getter_class_name);
+    if (env->ExceptionOccurred()) {
+      LOG(ERROR) << "Exception in loading class: "
+                 << std::string(APP_CONTEXT_GETTER_CLASS);
+      env->ExceptionDescribe();
+      env->ExceptionClear();
+      LOG(FATAL) << "exiting since exception occurred";
+    }
+
     CHECK_NOTNULL(app_context_getter_class);
 
     jmethodID app_context_getter_method =
@@ -415,7 +436,8 @@ class JavaContextBase : public grape::ContextBase {
     jobject res = env->CallStaticObjectMethod(
         clz, method, gs_class_loader_object_, class_name_jstring);
     if (env->ExceptionOccurred()) {
-      LOG(ERROR) << "Exception in loading and creating class: " << std::string(class_name);
+      LOG(ERROR) << "Exception in loading and creating class: "
+                 << std::string(class_name);
       env->ExceptionDescribe();
       env->ExceptionClear();
       LOG(FATAL) << "exiting since exception occurred";

@@ -33,6 +33,10 @@ public class GraphScopeClassLoader {
         return clz.newInstance();
     }
 
+    public static Class<?> loadClass(URLClassLoader classLoader, String className) throws ClassNotFoundException {
+        return classLoader.loadClass(className);
+    }
+
     private static URL[] classPath2URLArray(String classPath) {
         if (Objects.isNull(classPath) || classPath.length() == 0) {
             System.err.println("Empty class Path!");
