@@ -85,10 +85,11 @@ public class AppContextGetter {
         if (obj instanceof PropertyDefaultAppBase){
             return getPropertyDefaultContextName((Class<? extends PropertyDefaultAppBase>) obj.getClass());
         }
+        System.out.println("obj class" + obj.getClass().getName() + " is not instance of PropertyDefaultAppBase.");
         if (obj instanceof ProjectedDefaultAppBase) {
             return getProjectedDefaultContextName((Class<? extends ProjectedDefaultAppBase>) obj.getClass());
         }
-        System.err.println("Unrecoginizable app class");
+        System.out.println("obj class" + obj.getClass().getName() + " is not instance of ProjectedDefaultAppBase.");
         return null;
     }
 
