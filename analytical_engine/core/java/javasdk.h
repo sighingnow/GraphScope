@@ -187,6 +187,9 @@ ret:
 JavaVM* GetJavaVM() {
   if (_jvm == NULL) {
     _jvm = CreateJavaVM();
+    char* jvm_opts = getenv("JVM_OPTS");
+    std::string jvm_opts_str = jvm_opts;
+    LOG(INFO) << "after creating jvm, jvm opts str " << jvm_opts_str;
   }
   return _jvm;
 }

@@ -359,22 +359,27 @@ class JavaContextBase : public grape::ContextBase {
     CHECK_NOTNULL(clz);
 
     jmethodID method =
-        env->GetMethodID(clz, "newGraphScopeClassLoader",
+        env->GetStaticMethodID(clz, "newGraphScopeClassLoader",
                          "(Ljava/lang/String;)Ljava/net/URLClassLoader;");
     CHECK_NOTNULL(method);
 
     char* jvm_opts = getenv("JVM_OPTS");
+    if (jvm_opts == NULL){
+        LOG(ERROR) << "No env var JVM OPTS found.";
+        return NULL;
+    }
     std::string jvm_opts_str = jvm_opts;
+    LOG(INFO) << "jvm opt str: "<< jvm_opts_str;
     std::size_t start = jvm_opts_str.find("-Djava.class.path=");
     if (start == std::string::npos) {
-      LOG(ERROR) << "No env var JVM OPTS found.";
+      LOG(ERROR) << "No java.class.pth found.";
       return NULL;
     }
     std::size_t end = jvm_opts_str.find(" ", start);
     if (end == std::string::npos) {
       end = jvm_opts_str.size();
     }
-    std::string cp_from_jvm_opts = jvm_opts_str.substr(start, start - end);
+    std::string cp_from_jvm_opts = jvm_opts_str.substr(start, end - start);
     LOG(INFO) << "Class path from jvm opts: " << cp_from_jvm_opts;
     jstring cp_jstring = env->NewStringUTF(cp_from_jvm_opts.c_str());
     jobject class_loader = env->CallStaticObjectMethod(clz, method, cp_jstring);
@@ -386,7 +391,7 @@ class JavaContextBase : public grape::ContextBase {
     jclass clz = env->FindClass(IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER);
     CHECK_NOTNULL(clz);
 
-    jmethodID method = env->GetMethodID(
+    jmethodID method = env->GetStaticMethodID(
         clz, "loadAndCreateObject",
         "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Object:");
     CHECK_NOTNULL(method);
