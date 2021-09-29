@@ -1,4 +1,4 @@
 # Store the configuration for JVM
 jvm:
-  -performance: "-Dcom.alibaba.ffi.rvBuffer=2147483648 -XX:+StartAttachListener -XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
+    performance: "-Dcom.alibaba.ffi.rvBuffer=2147483648 -XX:+StartAttachListener -XX:+PreserveFramePointer -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1"
   
