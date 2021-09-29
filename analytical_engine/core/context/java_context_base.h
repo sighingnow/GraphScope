@@ -402,7 +402,7 @@ class JavaContextBase : public grape::ContextBase {
 
     jmethodID method = env->GetStaticMethodID(
         clz, "loadAndCreateObject",
-        "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Object:");
+        "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Object;");
     CHECK_NOTNULL(method);
     jobject res = env->CallStaticObjectMethod(
         clz, method, gs_class_loader_object_, class_name_jstring);
