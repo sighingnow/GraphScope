@@ -357,7 +357,7 @@ class JavaContextBase : public grape::ContextBase {
 
     jmethodID method =
         env->GetMethod(clz, "newGraphScopeClassLoader",
-                       "(Ljava/lang/String;)Ljava/net/URLClassLoader");
+                       "(Ljava/lang/String;)Ljava/net/URLClassLoader;");
     CHECK_NOTNULL(method);
 
     char* jvm_opts = getenv("JVM_OPTS");
