@@ -128,6 +128,7 @@ class JavaContextBase : public grape::ContextBase {
       }
 
       {
+        LOG(INFO) << "Now create app object: " << app_class_name_;
         jobject app_obj = load_and_create(env, app_class_name_);
         CHECK_NOTNULL(app_obj);
         app_object_ = env->NewGlobalRef(app_obj);
@@ -138,6 +139,7 @@ class JavaContextBase : public grape::ContextBase {
       {
         std::string _context_class_name_str =
             get_ctx_class_name_from_app_object(env);
+        LOG(INFO) << "context class name: " << _context_class_name_str;
         // The retrived context class str is dash-sperated, convert to
         // -seperated
         // char* _context_class_name_c_str =
@@ -256,7 +258,9 @@ class JavaContextBase : public grape::ContextBase {
     std::string app_class_name = pt.get<std::string>("app_class");
     CHECK(!app_class_name.empty());
     LOG(INFO) << "parse app class name: " << app_class_name;
-    app_class_name_ = app_class_name.c_str();
+    const char * ch = app_class_name.c_str();
+    app_class_name_ = new char [strlen(ch)+1];
+    memcpy(app_class_name_, ch, strlen(ch));
     // app_class_name_ = java_class_name_dash_to_slash(app_class_name);
     pt.erase("app_class");
 
@@ -398,19 +402,19 @@ class JavaContextBase : public grape::ContextBase {
     return env->NewGlobalRef(class_loader);
   }
   jobject load_and_create(JNIEnv* env, const char* class_name) {
+    LOG(INFO) << "Loading and creating for class: " << class_name;
     jstring class_name_jstring = env->NewStringUTF(class_name);
     jclass clz = env->FindClass(IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER);
     CHECK_NOTNULL(clz);
 
     jmethodID method = env->GetStaticMethodID(
         clz, "loadAndCreateObject",
-        "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Object:");
+        "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Object;");
     CHECK_NOTNULL(method);
     jobject res = env->CallStaticObjectMethod(
         clz, method, gs_class_loader_object_, class_name_jstring);
     if (env->ExceptionOccurred()) {
-      LOG(ERROR) << std::string("Exception in creating class loader: ")
-                 << cp_from_jvm_opts;
+      LOG(ERROR) << "Exception in loading and creating class: " << std::string(class_name);
       env->ExceptionDescribe();
       env->ExceptionClear();
       LOG(FATAL) << "exiting since exception occurred";
