@@ -47,7 +47,7 @@ static constexpr const char* APP_CONTEXT_GETTER_CLASS_DASH =
 // static constexpr const char* IO_GRAPHSCOPE_UTILS_CLASS_PATH_HELPER =
 // "io/graphscope/utils/ClassPathHelper";
 static constexpr const char* LOAD_LIBRARY_CLASS =
-    "io/graphscope/runtime/LoadLibrary"
+    "io/graphscope/runtime/LoadLibrary";
     /**
      * @brief JavaContextBase is the base class for JavaPropertyContext and
      * JavaProjectedContext.
