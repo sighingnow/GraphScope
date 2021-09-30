@@ -37,6 +37,7 @@
         <module>grape-sdk</module>
         <module>graphscope-sdk</module>
         <module>graphscope-demo</module>
+        <module>graphscope-runtime</module>
     </modules>
 
     <dependencyManagement>

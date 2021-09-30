@@ -26,8 +26,8 @@ limitations under the License.
 #include "grape/grape.h"
 
 namespace gs {
-static constexpr const char* IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER =
-    "io/graphscope/utils/GraphScopeClassLoader";
+static constexpr const char* GRAPHSCOPE_CLASS_LOADER =
+    "io/graphscope/runtime/GraphScopeClassLoader";
 static constexpr const char* FFI_TYPE_FACTORY_CLASS_NAME_DASH =
     "com.alibaba.ffi.FFITypeFactory";
 static constexpr const char* FFI_TYPE_FACTORY_GET_TYPE_METHOD_NAME = "getType";
@@ -316,7 +316,7 @@ jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
   jstring jstring_name = env->NewStringUTF(type_name);
   // the global factory class may in previous jar, we need to load from current
   // jar.
-  jclass clz = env->FindClass(IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER);
+  jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
   CHECK_NOTNULL(clz);
 
   jmethodID method = env->GetStaticMethodID(
@@ -325,7 +325,6 @@ jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
   CHECK_NOTNULL(method);
 
   jstring ffi_type_factory_jstring =
-
       env->NewStringUTF(FFI_TYPE_FACTORY_CLASS_NAME_DASH);
   jclass ffi_type_factory_class = (jclass) env->CallStaticObjectMethod(
       clz, method, gs_class_loader, ffi_type_factory_jstring);
