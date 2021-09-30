@@ -416,7 +416,7 @@ class JavaContextBase : public grape::ContextBase {
     // Catch exception
     if (env->ExceptionOccurred()) {
       LOG(ERROR) << std::string("Exception in creating class loader: ")
-                 << cp_from_jvm_opts;
+                 << java_cp_str;
       env->ExceptionDescribe();
       env->ExceptionClear();
       LOG(FATAL) << "exiting since exception occurred";

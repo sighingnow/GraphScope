@@ -343,7 +343,7 @@ jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
     env->ExceptionClear();
     return NULL;
   }
-  jclass gs_the_class method_plus = env->GetStaticMethodID(
+  jmethodID method_plus = env->GetStaticMethodID(
       clz, "loadClass",
       "(Ljava/net/URLClassLoader;Ljava/lang/Class;)Ljava/lang/Class;");
   CHECK_NOTNULL(method_plus);
