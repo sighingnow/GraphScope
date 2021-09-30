@@ -160,13 +160,13 @@ class JavaContextBase : public grape::ContextBase {
 
       // TODO: create ffi pointer object with gs_class_loader
       jobject fragObject = createFFIPointerObjectSafe(
-          env, graph_type_str_.c_str(), reinterpret_cast<jlong>(&fragment_));
+          env, graph_type_str_.c_str(), gs_class_loader_object_, reinterpret_cast<jlong>(&fragment_));
       CHECK_NOTNULL(fragObject);
       fragment_object_ = env->NewGlobalRef(fragObject);
 
       // 2. Create Message manager Java object
       jobject messagesObject = createFFIPointerObjectSafe(
-          env, java_message_manager_name, messages_addr);
+          env, java_message_manager_name,gs_class_loader_object_, messages_addr);
       CHECK_NOTNULL(messagesObject);
       mm_object_ = env->NewGlobalRef(messagesObject);
 
