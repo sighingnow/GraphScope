@@ -389,26 +389,26 @@ class JavaContextBase : public grape::ContextBase {
                                "(Ljava/lang/String;)Ljava/net/URLClassLoader;");
     CHECK_NOTNULL(method);
 
-    char* jvm_opts = getenv("JVM_OPTS");
-    if (jvm_opts == NULL) {
-      LOG(ERROR) << "No env var JVM OPTS found.";
+    char* java_cp = getenv("JAVA_CP");
+    if (java_cp == NULL) {
+      LOG(ERROR) << "No env var JAVA_CP found.";
       return NULL;
     }
-    std::string jvm_opts_str = jvm_opts;
-    LOG(INFO) << "jvm opt str: " << jvm_opts_str;
-    std::size_t start = jvm_opts_str.find("-Djava.class.path=");
-    if (start == std::string::npos) {
-      LOG(ERROR) << "No java.class.pth found.";
-      return NULL;
-    }
-    std::size_t end = jvm_opts_str.find(" ", start);
-    if (end == std::string::npos) {
-      end = jvm_opts_str.size();
-    }
-    std::string cp_from_jvm_opts =
-        jvm_opts_str.substr(start + 18, end - start - 18);
-    LOG(INFO) << "Class path from jvm opts: " << cp_from_jvm_opts;
-    jstring cp_jstring = env->NewStringUTF(cp_from_jvm_opts.c_str());
+    std::string java_cp_str = java_cp;
+    LOG(INFO) << "java cp str: " << java_cp_str;
+    // std::size_t start = jvm_opts_str.find("-Djava.class.path=");
+    // if (start == std::string::npos) {
+    //   LOG(ERROR) << "No java.class.pth found.";
+    //   return NULL;
+    // }
+    // std::size_t end = jvm_opts_str.find(" ", start);
+    // if (end == std::string::npos) {
+    //   end = jvm_opts_str.size();
+    // }
+    // std::string cp_from_jvm_opts =
+    //     jvm_opts_str.substr(start + 18, end - start - 18);
+    LOG(INFO) << "Class path from jvm opts: " << java_cp_str;
+    jstring cp_jstring = env->NewStringUTF(java_cp_str.c_str());
     jobject class_loader = env->CallStaticObjectMethod(clz, method, cp_jstring);
     // Catch exception
     if (env->ExceptionOccurred()) {
