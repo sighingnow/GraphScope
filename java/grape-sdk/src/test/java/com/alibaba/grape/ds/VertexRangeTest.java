@@ -3,20 +3,11 @@ package com.alibaba.grape.ds;
 import com.alibaba.ffi.FFITypeFactory;
 import org.junit.Assert;
 import org.junit.Test;
-import org.scijava.nativelib.NativeLoader;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
 
 public class VertexRangeTest {
-    static {
-        try {
-            NativeLoader.loadLibrary(GRAPE_JNI_LIBRARY);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     private VertexRange.Factory factory = FFITypeFactory.getFactory(VertexRange.class, "grape::VertexRange<uint64_t>");
 

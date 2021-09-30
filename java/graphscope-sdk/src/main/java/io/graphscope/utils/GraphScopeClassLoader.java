@@ -34,7 +34,9 @@ public class GraphScopeClassLoader {
     }
 
     public static Class<?> loadClass(URLClassLoader classLoader, String className) throws ClassNotFoundException {
-        return classLoader.loadClass(className);
+        Class<?> clz = classLoader.loadClass(className);
+        System.out.print("[GS class loader]: loading class " + className + ", " + clz.getName());
+        return clz;
     }
 
     private static URL[] classPath2URLArray(String classPath) {
