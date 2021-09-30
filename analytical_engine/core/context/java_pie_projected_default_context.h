@@ -40,6 +40,7 @@ namespace gs {
 
 static constexpr const char* _java_projected_message_manager_name =
     "grape::DefaultMessageManager";
+
 /**
  * @brief Context for the java pie app, used by java sdk.
  *
@@ -275,8 +276,9 @@ class JavaPIEProjectedDefaultContextWrapper
   std::string get_java_ctx_type_name(const jobject& ctx_object) {
     JNIEnvMark m;
     if (m.env()) {
-      jclass context_utils_class =
-          m.env()->FindClass("io/graphscope/utils/ContextUtils");
+      // jclass context_utils_class = m.env()->FindClass(CONTEXT_UTILS_CLASS);
+      jclass context_utils_class = load_class_with_class_loader(
+          gs_class_loader_object(), CONTEXT_UTILS_CLASS);
       CHECK_NOTNULL(context_utils_class);
       jmethodID ctx_base_class_name_get_method = m.env()->GetStaticMethodID(
           context_utils_class, "getProjectedCtxObjBaseClzName",
@@ -295,8 +297,8 @@ class JavaPIEProjectedDefaultContextWrapper
   std::string get_vertex_data_context_data_type(const jobject& ctx_object) {
     JNIEnvMark m;
     if (m.env()) {
-      jclass app_context_getter_class =
-          m.env()->FindClass(APP_CONTEXT_GETTER_CLASS);
+      jclass app_context_getter_class = load_class_with_class_loader(
+          gs_class_loader_object(), APP_CONTEXT_GETTER_CLASS);
       CHECK_NOTNULL(app_context_getter_class);
       jmethodID getter_method = m.env()->GetStaticMethodID(
           app_context_getter_class, "getVertexDataContextDataType",

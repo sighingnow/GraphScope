@@ -41,6 +41,8 @@ static jmethodID FFITypeFactory_getTypeMethodID = NULL;
 static jmethodID FFITypeFactory_getTypeMethodID_plus = NULL;
 static jclass FFIVectorClass = NULL;
 static jclass StdVectorClass = NULL;
+static jmethodID class_loader_load_class_methodID = NULL;
+static jclass class_loader_clz == NULL;
 
 std::string jstring2string(JNIEnv* env, jstring jStr);
 bool InitWellKnownClasses(JNIEnv* env) {
@@ -520,6 +522,31 @@ std::string get_java_property(JNIEnv* env, const char* property_name) {
     LOG(FATAL) << "empty property string for " << property_name;
   }
   return jstring2string(env, propertyString);
+}
+// May return null.
+jclass load_class_with_class_loader(jobject& gs_class_loader,
+                                    const char* class_name) {
+  jstring class_name_jstring = env->NewStringUTF(class_name);
+  // if (class_loader_clz == NULL) {
+  //   jclass class_loader_clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
+  //   CHECK_NOTNULL(class_loader_clz);
+
+  //   jmethodID class_loader_load_class_methodID = env->GetStaticMethodID(
+  //       class_loader_clz, "loadClass",
+  //       "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
+  //   CHECK_NOTNULL(class_loader_load_class_methodID);
+  // }
+
+  jclass result_class = (jclass) env->CallStaticObjectMethod(
+      class_loader_clz, class_loader_load_class_methodID, gs_class_loader,
+      class_name_jstring);
+  if (env->ExceptionCheck()) {
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+    LOG(FATAL) << "Error in loading class " << class_name
+               << " with class loader " << &gs_class_loader;
+  }
+  return result_class;
 }
 }  // namespace gs
 #endif

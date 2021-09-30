@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PropertySSSP implements PropertyDefaultAppBase<Long, PropertySSSPContext> {
-    public static Logger logger = LoggerFactory.getLogger(PropertySSSPContext.class.getName());
+    public static Logger logger = LoggerFactory.getLogger(PropertySSSP.class.getName());
 
     @Override
     public void PEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context, PropertyMessageManager messageManager) {

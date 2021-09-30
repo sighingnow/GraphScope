@@ -58,10 +58,22 @@ public class GraphScopeClassLoader {
         return res;
     }
 
+    /**
+     * We now accept two kind of className, a/b/c or a.b.c are both ok
+     * @param classLoader
+     * @param className
+     * @return
+     * @throws ClassNotFoundException
+     */
     public static Class<?> loadClass(URLClassLoader classLoader, String className) throws ClassNotFoundException {
-        Class<?> clz = classLoader.loadClass(className);
+        String formattedClassName = formatting(className);
+        Class<?> clz = classLoader.loadClass(formattedClassName);
         System.out.println("[GS class loader]: loading class " + className + ", " + clz.getName());
         return clz;
+    }
+    private static String formatting(String className){
+        if (className.indexOf("/") == -1) return className;
+        return className.replace("/", ".");
     }
 
     private static URL[] classPath2URLArray(String classPath) {

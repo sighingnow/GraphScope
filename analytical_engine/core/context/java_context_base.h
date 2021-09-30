@@ -42,19 +42,17 @@ limitations under the License.
 namespace gs {
 static constexpr const char* APP_CONTEXT_GETTER_CLASS =
     "io/graphscope/utils/AppContextGetter";
-static constexpr const char* APP_CONTEXT_GETTER_CLASS_DASH =
-    "io.graphscope.utils.AppContextGetter";
-// static constexpr const char* IO_GRAPHSCOPE_UTILS_CLASS_PATH_HELPER =
-// "io/graphscope/utils/ClassPathHelper";
 static constexpr const char* LOAD_LIBRARY_CLASS =
-    "io/graphscope/runtime/LoadLibrary"
-    /**
-     * @brief JavaContextBase is the base class for JavaPropertyContext and
-     * JavaProjectedContext.
-     *
-     */
-    template <typename FRAG_T>
-    class JavaContextBase : public grape::ContextBase {
+    "io/graphscope/runtime/LoadLibrary";
+static constexpr const char* CONTEXT_UTILS_CLASS =
+    "io/graphscope/utils/ContextUtils";
+/**
+ * @brief JavaContextBase is the base class for JavaPropertyContext and
+ * JavaProjectedContext.
+ *
+ */
+template <typename FRAG_T>
+class JavaContextBase : public grape::ContextBase {
  public:
   using fragment_t = FRAG_T;
 
@@ -92,6 +90,9 @@ static constexpr const char* LOAD_LIBRARY_CLASS =
   const jobject& context_object() const { return context_object_; }
   const jobject& fragment_object() const { return fragment_object_; }
   const jobject& message_manager_object() const { return mm_object_; }
+  const jobject& gs_class_loader_object() const {
+    return gs_class_loader_object_;
+  }
 
  protected:
   virtual const char* eval_descriptor() = 0;
@@ -327,7 +328,7 @@ static constexpr const char* LOAD_LIBRARY_CLASS =
     CHECK_NOTNULL(method);
 
     jstring context_getter_class_name =
-        env->NewStringUTF(APP_CONTEXT_GETTER_CLASS_DASH);
+        env->NewStringUTF(APP_CONTEXT_GETTER_CLASS);
     jclass app_context_getter_class = (jclass) env->CallStaticObjectMethod(
         clz, method, gs_class_loader_object_, context_getter_class_name);
     if (env->ExceptionOccurred()) {
@@ -350,57 +351,7 @@ static constexpr const char* LOAD_LIBRARY_CLASS =
     CHECK_NOTNULL(context_class_jstring);
     return jstring2string(env, context_class_jstring);
   }
-  // void add_class_path_at_runtime(JNIEnv* env) {
-  //   std::string java_class_path = get_java_property(env, "java.lang.path");
-  //   LOG(INFO) << "java.class.path: " << java_class_path;
-  //   char* jvm_opts = getenv("JVM_OPTS");
-  //   std::string jvm_opts_str = jvm_opts;
-  //   std::size_t start = jvm_opts_str.find("-Djava.class.path=");
-  //   if (start == std::string::npos) {
-  //     LOG(ERROR) << "No env var JVM OPTS found.";
-  //     return;
-  //   }
-  //   std::size_t end = jvm_opts_str.find(" ", start);
-  //   if (end == std::string::npos) {
-  //     end = jvm_opts_str.size();
-  //   }
-  //   std::string cp_from_jvm_opts = jvm_opts_str.substr(start, start - end);
-  //   LOG(INFO) << "class path from jvm opts: " << cp_from_jvm_opts;
 
-  //   std::vector<std::string> already_in_java_cp;
-  //   boost::split(already_in_java_cp, java_class_path, boost::is_any_of(":"));
-
-  //   std::vector<std::string> to_be_added;
-  //   boost::split(to_be_added, cp_from_jvm_opts, boost::is_any_of(":"));
-
-  //   std::unordered_set<std::string> already_in_java_cp_set(
-  //       already_in_java_cp.begin(), already_in_java_cp.end());
-  //   for (auto iter = to_be_added.begin(); iter != to_be_added.end();) {
-  //     if (already_in_java_cp_set.find(*iter) != already_in_java_cp_set.end())
-  //     {
-  //       iter = to_be_added.erase(iter);
-  //     } else {
-  //       iter++;
-  //     }
-  //   }
-  //   if (to_be_added.empty()) {
-  //     LOG(INFO) << "Nothing to add for class path.";
-  //     return;
-  //   }
-  //   std::string joined_string = boost::algorithm::join(to_be_added, ":");
-  //   LOG(INFO) << "Adding class path: " << joined_string;
-
-  //   // Now call java method
-  //   jclass helper_class =
-  //   env->FindClass(IO_GRAPHSCOPE_UTILS_CLASS_PATH_HELPER);
-  //   CHECK_NOTNULL(helper_class);
-  //   jmethodID methodId = env->GetStaticMethodID(
-  //       helper_class, "addFileToClassPath", "(Ljava/lang/String;)V");
-  //   CHECK_NOTNULL(methodId);
-  //   jstring joined_String_jstring = env->NewStringUTF(joined_string.c_str());
-  //   env->CallStaticVoidMethod(helper_class, methodId, joined_String_jstring);
-  //   LOG(INFO) << "Successfully added new class_path";
-  // }
   jobject create_class_loader(JNIEnv* env) {
     jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
     CHECK_NOTNULL(clz);
@@ -417,17 +368,7 @@ static constexpr const char* LOAD_LIBRARY_CLASS =
     }
     std::string java_cp_str = java_cp;
     LOG(INFO) << "java cp str: " << java_cp_str;
-    // std::size_t start = jvm_opts_str.find("-Djava.class.path=");
-    // if (start == std::string::npos) {
-    //   LOG(ERROR) << "No java.class.pth found.";
-    //   return NULL;
-    // }
-    // std::size_t end = jvm_opts_str.find(" ", start);
-    // if (end == std::string::npos) {
-    //   end = jvm_opts_str.size();
-    // }
-    // std::string cp_from_jvm_opts =
-    //     jvm_opts_str.substr(start + 18, end - start - 18);
+
     LOG(INFO) << "Class path from jvm opts: " << java_cp_str;
     jstring cp_jstring = env->NewStringUTF(java_cp_str.c_str());
     jobject class_loader = env->CallStaticObjectMethod(clz, method, cp_jstring);
