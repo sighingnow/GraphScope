@@ -1,6 +1,7 @@
 package io.graphscope.utils;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -36,7 +37,25 @@ public class GraphScopeClassLoader {
     public static Class<?> loadClass(URLClassLoader classLoader, String className) throws ClassNotFoundException {
         Class<?> clz = classLoader.loadClass(className);
         System.out.print("[GS class loader]: loading class " + className + ", " + clz.getName());
-        return clz;
+        System.out.println("[GS class loader]: url loader: " + classLoader + ", getClassLoader: " + clz.getClassLoader().toString());
+        {
+            Constructor[] constructors = clz.getDeclaredConstructors();
+            for (Constructor constructor : constructors){
+                if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].getName().equals("long")){
+                    System.out.println("[GS class loader]: ffi get class, desired constructor exists.");
+                }
+            }
+        }
+        Class<?> urlLoadedClass = classLoader.loadClass(clz.getName());
+        {
+            Constructor[] constructors = urlLoadedClass.getDeclaredConstructors();
+            for (Constructor constructor : constructors){
+                if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].getName().equals("long")){
+                    System.out.println("[GS class loader]: url loaded class, desired constructor exists.");
+                }
+            }
+        }
+        return urlLoadedClass;
     }
 
     private static URL[] classPath2URLArray(String classPath) {
