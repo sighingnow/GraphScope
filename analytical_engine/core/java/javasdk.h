@@ -175,7 +175,7 @@ JavaVM* CreateJavaVM() {
 
   status = JNI_CreateJavaVM(&jvm, reinterpret_cast<void**>(&env), &vm_args);
   if (status == JNI_OK) {
-    InitWellKnownClasses(env);
+    //InitWellKnownClasses(env);
   } else if (status == JNI_EEXIST) {
   } else {
     LOG(FATAL) << "error, create java virtual machine failed. return JNI_CODE ("
@@ -356,7 +356,7 @@ jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
     env->ExceptionClear();
     return NULL;
   }
-  CHECK_NOTNULL(the_object)
+  CHECK_NOTNULL(the_object);
   return the_object;
 }
 
