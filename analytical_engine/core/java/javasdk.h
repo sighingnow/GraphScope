@@ -325,7 +325,7 @@ jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
   CHECK_NOTNULL(method);
 
   jstring ffi_type_factory_jstring =
-      env->NewStringUTF(FFI_TYPE_FACTORY_ClASS_NAME);
+      env->NewStringUTF(FFI_TYPE_FACTORY_CLASS_NAME);
   jclass ffi_type_factory_class = (jclass) env->CallStaticObjectMethod(
       clz, method, gs_class_loader, ffi_type_factory_jstring);
   CHECK_NOTNULL(ffi_type_factory_class);
