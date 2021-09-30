@@ -336,10 +336,15 @@ jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
   jclass the_class = (jclass) env->CallStaticObjectMethod(
       ffi_type_factory_class, ffi_type_factory_get_type_method, jstring_name);
   if (env->ExceptionOccurred()) {
-    LOG(FATAL) << std::string("Exception occurred in get ffi class: ")
-               << type_name;
-    env->ExceptionDescribe();
-    env->ExceptionClear();
+    jthrowable e = env->ExceptionOccurred();
+    env->ExceptionClear();  // clears the exception; e seems to remain valid
+
+    jclass clazz = env->GetObjectClass(e);
+    jmethodID getMessage =
+        env->GetMethodID(clazz, "getMessage", "()Ljava/lang/String;");
+    jstring message = (jstring) env->CallObjectMethod(e.get(), getMessage);
+    const char* mstr = env->GetStringUTFChars(message, NULL);
+    LOG(INFO) << "Caughted exception: " << mstr;
     return NULL;
   }
   // Reload the class with our class loader
@@ -486,21 +491,21 @@ void init_java_communicator(JNIEnv* env, const jobject& java_app,
                             jlong app_address) {
   CHECK_NOTNULL(env);
   CHECK(app_address != 0);
-  if (env->IsInstanceOf(java_app, CommunicatorClass)) {
-    jmethodID initCommunicatorMethod =
-        env->GetMethodID(CommunicatorClass, "initCommunicator", "(Z;)V");
-    CHECK_NOTNULL(initCommunicatorMethod);
-    env->CallVoidMethod(java_app, initCommunicatorMethod, app_address);
-    if (env->ExceptionOccurred()) {
-      LOG(ERROR) << "Exception occurred in init communicator";
-      env->ExceptionDescribe();
-      env->ExceptionClear();
-      // env->DeleteLocalRef(main_class);
-      LOG(FATAL) << "Exiting...";
-    }
-    LOG(INFO) << "Successfully init communicator.";
-    return;
-  }
+  // if (env->IsInstanceOf(java_app, CommunicatorClass)) {
+  //   jmethodID initCommunicatorMethod =
+  //       env->GetMethodID(CommunicatorClass, "initCommunicator", "(Z;)V");
+  //   CHECK_NOTNULL(initCommunicatorMethod);
+  //   env->CallVoidMethod(java_app, initCommunicatorMethod, app_address);
+  //   if (env->ExceptionOccurred()) {
+  //     LOG(ERROR) << "Exception occurred in init communicator";
+  //     env->ExceptionDescribe();
+  //     env->ExceptionClear();
+  //     // env->DeleteLocalRef(main_class);
+  //     LOG(FATAL) << "Exiting...";
+  //   }
+  //   LOG(INFO) << "Successfully init communicator.";
+  //   return;
+  // }
   LOG(INFO) << "No initing since not a sub class from Communicator.";
 }
 
