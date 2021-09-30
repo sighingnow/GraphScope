@@ -28,8 +28,8 @@ limitations under the License.
 namespace gs {
 static constexpr const char* IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER =
     "io/graphscope/utils/GraphScopeClassLoader";
-static constexpr const char* FFI_TYPE_FACTORY_CLASS_NAME =
-    "com/alibaba/ffi/FFITypeFactory";
+static constexpr const char* FFI_TYPE_FACTORY_CLASS_NAME_DASH =
+    "com.alibaba.ffi.FFITypeFactory";
 static constexpr const char* FFI_TYPE_FACTORY_GET_TYPE_METHOD_NAME = "getType";
 
 static constexpr const char* FFI_TYPE_FACTORY_GET_TYPE_METHOD_SIG =
@@ -325,7 +325,7 @@ jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
   CHECK_NOTNULL(method);
 
   jstring ffi_type_factory_jstring =
-      env->NewStringUTF(FFI_TYPE_FACTORY_ClASS_NAME);
+      env->NewStringUTF(FFI_TYPE_FACTORY_ClASS_NAME_DASH);
   jclass ffi_type_factory_class = (jclass) env->CallStaticObjectMethod(
       clz, method, gs_class_loader, ffi_type_factory_jstring);
   CHECK_NOTNULL(ffi_type_factory_class);
