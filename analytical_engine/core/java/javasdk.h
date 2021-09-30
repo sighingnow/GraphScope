@@ -26,7 +26,14 @@ limitations under the License.
 #include "grape/grape.h"
 
 namespace gs {
+static constexpr const char* IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER =
+    "io/graphscope/utils/GraphScopeClassLoader";
+static constexpr const char* FFI_TYPE_FACTORY_CLASS_NAME =
+    "com/alibaba/ffi/FFITypeFactory";
+static constexpr const char* FFI_TYPE_FACTORY_GET_TYPE_METHOD_NAME = "getType";
 
+static constexpr const char* FFI_TYPE_FACTORY_GET_TYPE_METHOD_SIG =
+    "(Ljava/lang/String;)Ljava/lang/Class;";
 static JavaVM* _jvm = NULL;
 static jclass FFITypeFactoryClass = NULL;
 static jclass CommunicatorClass = NULL;
@@ -303,6 +310,57 @@ jobject createFFIPointerObject(JNIEnv* env, const char* type_name,
   }
   return the_object;
 }
+jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
+                                   jobject& gs_class_loader, jlong pointer) {
+  // must be properly encoded
+  jstring jstring_name = env->NewStringUTF(type_name);
+  // the global factory class may in previous jar, we need to load from current
+  // jar.
+  jclass clz = env->FindClass(IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER);
+  CHECK_NOTNULL(clz);
+
+  jmethodID method = env->GetStaticMethodID(
+      clz, "loadClass",
+      "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
+  CHECK_NOTNULL(method);
+
+  jstring ffi_type_factory_jstring =
+      env->NewStringUTF(FFI_TYPE_FACTORY_ClASS_NAME);
+  jclass ffi_type_factory_class = (jclass) env->CallStaticObjectMethod(
+      clz, method, gs_class_loader, ffi_type_factory_jstring);
+  CHECK_NOTNULL(ffi_type_factory_class);
+  jmethodID ffi_type_factory_get_type_method = env->GetStaticMethodID(
+      ffi_type_factory_class, FFI_TYPE_FACTORY_GET_TYPE_METHOD_NAME,
+      FFI_TYPE_FACTORY_GET_TYPE_METHOD_SIG);
+  CHECK_NOTNULL(ffi_type_factory_get_type_method);
+  jclass the_class = (jclass) env->CallStaticObjectMethod(
+      ffi_type_factory_class, ffi_type_factory_get_type_method, jstring_name);
+  if (env->ExceptionOccurred()) {
+    LOG(FATAL) << std::string("Exception occurred in get ffi class: ")
+               << type_name;
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+    return NULL;
+  }
+  if (the_class == NULL) {
+    LOG(FATAL) << "Cannot find Class for " << type_name;
+    return NULL;
+  }
+
+  jmethodID the_ctor = env->GetMethodID(the_class, "<init>", "(J)V");
+  if (the_ctor == NULL) {
+    LOG(FATAL) << "Cannot find <init>(J)V constructor in " << type_name;
+    return NULL;
+  }
+
+  jobject the_object = env->NewObject(the_class, the_ctor, pointer);
+  if (the_object == NULL) {
+    LOG(FATAL) << "Cannot call <init>(J)V constructor in " << type_name;
+    return NULL;
+  }
+  return the_object;
+}
+
 std::string jstring2string(JNIEnv* env, jstring jStr) {
   if (!jStr)
     return "";

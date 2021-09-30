@@ -46,8 +46,6 @@ static constexpr const char* APP_CONTEXT_GETTER_CLASS_DASH =
     "io.graphscope.utils.AppContextGetter";
 static constexpr const char* IO_GRAPHSCOPE_UTILS_CLASS_PATH_HELPER =
     "io/graphscope/utils/ClassPathHelper";
-static constexpr const char* IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER =
-    "io/graphscope/utils/GraphScopeClassLoader";
 /**
  * @brief JavaContextBase is the base class for JavaPropertyContext and
  * JavaProjectedContext.
@@ -160,14 +158,15 @@ class JavaContextBase : public grape::ContextBase {
           env->GetMethodID(context_class, "init", eval_descriptor());
       CHECK_NOTNULL(InitMethodID);
 
-      jobject fragObject = createFFIPointerObject(
+      // TODO: create ffi pointer object with gs_class_loader
+      jobject fragObject = createFFIPointerObjectSafe(
           env, graph_type_str_.c_str(), reinterpret_cast<jlong>(&fragment_));
       CHECK_NOTNULL(fragObject);
       fragment_object_ = env->NewGlobalRef(fragObject);
 
       // 2. Create Message manager Java object
-      jobject messagesObject =
-          createFFIPointerObject(env, java_message_manager_name, messages_addr);
+      jobject messagesObject = createFFIPointerObjectSafe(
+          env, java_message_manager_name, messages_addr);
       CHECK_NOTNULL(messagesObject);
       mm_object_ = env->NewGlobalRef(messagesObject);
 
