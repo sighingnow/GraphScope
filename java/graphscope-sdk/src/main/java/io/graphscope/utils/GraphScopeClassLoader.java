@@ -35,7 +35,7 @@ public class GraphScopeClassLoader {
         return clz.newInstance();
     }
 
-    public static Object loadClassAndCreate(URLClassLoader classLoader, Class<?> clz, long address) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public static Object loadClassAndCreate(URLClassLoader classLoader, Class<?> clz, long address) throws ClassNotFoundException {
         System.out.println("[GS class loader]: re loading class " + clz.getName() + " with loader: " + classLoader + ", " + clz.getClassLoader());
         Class<?> clazz = loadClass(classLoader, clz.getName());
 
@@ -44,8 +44,13 @@ public class GraphScopeClassLoader {
         for (Constructor constructor : constructors){
             if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].getName().equals("long")){
                 System.out.println("[GS class loader]: desired constructor exists.");
-                res = constructor.newInstance(address);
-                System.out.println("[GS class loader]: Construct "+ res);
+                try {
+                    res = constructor.newInstance(address);
+                    System.out.println("[GS class loader]: Construct "+ res);
+                }
+                catch (Exception e){
+                    e.printStackTrace();
+                }
             }
         }
         if (Objects.isNull(res)){
