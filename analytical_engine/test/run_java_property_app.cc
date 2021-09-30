@@ -422,9 +422,13 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   pt.put("num_hosts", "1");
   pt.put("num_worker", "1");
   char* jvm_opts = getenv("RUN_JVM_OPTS");
-
+  CHECK_NOTNULL(jvm_opts);
   pt.put("jvm_runtime_opt", std::string(jvm_opts));
-  LOG(INFO) << "geted shell env : " << std::string(jvm_opts);
+  char* class_path = getenv("JAVA_CP");
+  CHECK_NOTNULL(class_path);
+  pt.put("java_cp", std::string(class_path));
+  LOG(INFO) << "geted shell env [RUN_JVM_OPTS]: " << std::string(jvm_opts);
+  LOG(INFO) << "geted shell env [JAVA_CP]: " << std::string(class_path);
 
   if (!run_projected) {
     pt.put("frag_name", "vineyard::ArrowFragmentDefault<int64_t>");
