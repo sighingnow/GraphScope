@@ -3,18 +3,9 @@ package com.alibaba.grape.ds;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;
 import org.junit.Assert;
 import org.junit.Test;
-import org.scijava.nativelib.NativeLoader;
 
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
 
 public class DenseVertexSetTest {
-    static {
-        try {
-            NativeLoader.loadLibrary(GRAPE_JNI_LIBRARY);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     private DenseVertexSet<Long> denseVertexSet;
 

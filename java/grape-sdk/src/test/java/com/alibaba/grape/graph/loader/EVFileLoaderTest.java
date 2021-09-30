@@ -8,22 +8,12 @@ import com.alibaba.grape.graph.loader.evfileLoader.EVFileLoader;
 import com.alibaba.grape.jobConf.JobConf;
 import org.junit.Before;
 import org.junit.Test;
-import org.scijava.nativelib.NativeLoader;
 
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
 
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
-
 public class EVFileLoaderTest {
-    static {
-        try {
-            NativeLoader.loadLibrary(GRAPE_JNI_LIBRARY);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     private EVFileLoader<Long, Long, Double> loader;
     private FFIVector.Factory longFactory = FFITypeFactory.getFactory(FFIVector.class, "std::vector<std::vector<jlong>>");

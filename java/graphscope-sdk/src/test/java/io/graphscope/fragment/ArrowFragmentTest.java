@@ -8,7 +8,6 @@ import io.graphscope.ds.*;
 import io.graphscope.utils.VineyardHelper;
 import org.junit.Assert;
 import org.junit.Test;
-import org.scijava.nativelib.NativeLoader;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
@@ -17,7 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
 import static io.graphscope.utils.CPP_CLASS.ARROW_FRAGMENT;
 import static io.graphscope.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
 
@@ -25,11 +23,6 @@ public class ArrowFragmentTest {
     static {
         try {
             System.loadLibrary(VINEYARD_JNI_LIBRARY);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
-            NativeLoader.loadLibrary(GRAPE_JNI_LIBRARY);
         } catch (Exception e) {
             e.printStackTrace();
         }

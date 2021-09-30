@@ -121,11 +121,11 @@
                 <artifactId>guava</artifactId>
                 <version>30.1.1-jre</version>
             </dependency>
-            <dependency>
-                <groupId>org.scijava</groupId>
-                <artifactId>native-lib-loader</artifactId>
-                <version>${native-lib-loader.version}</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.scijava</groupId>-->
+<!--                <artifactId>native-lib-loader</artifactId>-->
+<!--                <version>${native-lib-loader.version}</version>-->
+<!--            </dependency>-->
         </dependencies>
     </dependencyManagement>
 
