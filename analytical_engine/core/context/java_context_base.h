@@ -176,7 +176,22 @@ static constexpr const char* LOAD_LIBRARY_CLASS =
 
       // 3. Create arguments array
       {
-        jclass json_class = env->FindClass("com/alibaba/fastjson/JSON");
+        jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
+        CHECK_NOTNULL(clz);
+
+        jmethodID method = env->GetStaticMethodID(
+            clz, "loadClass",
+            "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
+        CHECK_NOTNULL(method);
+        jstring json_class_name_jstr = env->NewStringUTF(JSON_CLASS_NAME);
+        jclass json_class = (jclass) env->CallStaticObjectMethod(
+            clz, method, gs_class_loader_object_, json_class_name_jstr);
+        if (env->ExceptionCheck()) {
+          env->ExceptionDescribe();
+          env->ExceptionClear();
+          LOG(FATAL) << "Exception in loading json class ";
+        }
+        // jclass json_class = env->FindClass("com/alibaba/fastjson/JSON");
         CHECK_NOTNULL(json_class);
         jmethodID parse_method = env->GetStaticMethodID(
             json_class, "parseObject",
@@ -191,12 +206,10 @@ static constexpr const char* LOAD_LIBRARY_CLASS =
         // 4. Invoke java method
         env->CallVoidMethod(context_object_, InitMethodID, fragment_object_,
                             mm_object_, json_object);
-        if (env->ExceptionOccurred()) {
-          LOG(ERROR) << std::string("Exception occurred in calling ctx init");
+        if (env->ExceptionCheck()) {
           env->ExceptionDescribe();
           env->ExceptionClear();
-          // env->DeleteLocalRef(main_class);
-          LOG(FATAL) << "exiting since exception occurred";
+          LOG(FATAL) << "Exception in context Init";
         }
         LOG(INFO) << "invokd ctx init method success";
         // 5. to output the result, we need the c++ context held by java object.
