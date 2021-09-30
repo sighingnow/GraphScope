@@ -2,6 +2,7 @@ package io.graphscope.utils;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -34,33 +35,47 @@ public class GraphScopeClassLoader {
         return clz.newInstance();
     }
 
-    public static Class<?> loadClass(URLClassLoader classLoader, Class<?> clz) throws ClassNotFoundException{
-        System.out.println("[GS class loader]: re loading class " + classLoader + ", " + clz.getClassLoader());
-        return loadClass(classLoader, clz.getName());
+    public static Object loadClassAndCreate(URLClassLoader classLoader, Class<?> clz, long address) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        System.out.println("[GS class loader]: re loading class " + clz.getName() + " with loader: " + classLoader + ", " + clz.getClassLoader());
+        Class<?> clazz = loadClass(classLoader, clz.getName());
+
+        Constructor[] constructors = clazz.getDeclaredConstructors();
+        Object res = null;
+        for (Constructor constructor : constructors){
+            if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].getName().equals("long")){
+                System.out.println("[GS class loader]: desired constructor exists.");
+                res = constructor.newInstance(address);
+                System.out.println("[GS class loader]: Construct "+ res);
+            }
+        }
+        if (Objects.isNull(res)){
+            System.out.println("[ERROR] No desired constructor found for " + clz.getName());
+        }
+        return res;
     }
 
     public static Class<?> loadClass(URLClassLoader classLoader, String className) throws ClassNotFoundException {
         Class<?> clz = classLoader.loadClass(className);
         System.out.println("[GS class loader]: loading class " + className + ", " + clz.getName());
-        System.out.println("[GS class loader]: url loader: " + classLoader + ", getClassLoader: " + clz.getClassLoader().toString());
-        {
-            Constructor[] constructors = clz.getDeclaredConstructors();
-            for (Constructor constructor : constructors){
-                if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].getName().equals("long")){
-                    System.out.println("[GS class loader]: ffi get class, desired constructor exists.");
-                }
-            }
-        }
-        Class<?> urlLoadedClass = classLoader.loadClass(clz.getName());
-        {
-            Constructor[] constructors = urlLoadedClass.getDeclaredConstructors();
-            for (Constructor constructor : constructors){
-                if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].getName().equals("long")){
-                    System.out.println("[GS class loader]: url loaded class, desired constructor exists.");
-                }
-            }
-        }
-        return urlLoadedClass;
+//        System.out.println("[GS class loader]: url loader: " + classLoader + ", getClassLoader: " + clz.getClassLoader().toString());
+//        {
+//            Constructor[] constructors = clz.getDeclaredConstructors();
+//            for (Constructor constructor : constructors){
+//                if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].getName().equals("long")){
+//                    System.out.println("[GS class loader]: ffi get class, desired constructor exists.");
+//                }
+//            }
+//        }
+//        Class<?> urlLoadedClass = classLoader.loadClass(clz.getName());
+//        {
+//            Constructor[] constructors = urlLoadedClass.getDeclaredConstructors();
+//            for (Constructor constructor : constructors){
+//                if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].getName().equals("long")){
+//                    System.out.println("[GS class loader]: url loaded class, desired constructor exists.");
+//                }
+//            }
+//        }
+        return clz;
     }
 
     private static URL[] classPath2URLArray(String classPath) {

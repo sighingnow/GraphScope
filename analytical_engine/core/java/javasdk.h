@@ -326,7 +326,7 @@ jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
 
   jstring ffi_type_factory_jstring =
 
-  env->NewStringUTF(FFI_TYPE_FACTORY_CLASS_NAME_DASH);
+      env->NewStringUTF(FFI_TYPE_FACTORY_CLASS_NAME_DASH);
   jclass ffi_type_factory_class = (jclass) env->CallStaticObjectMethod(
       clz, method, gs_class_loader, ffi_type_factory_jstring);
   CHECK_NOTNULL(ffi_type_factory_class);
@@ -343,35 +343,21 @@ jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
     env->ExceptionClear();
     return NULL;
   }
+  // Reload the class with our class loader
   jmethodID method_plus = env->GetStaticMethodID(
-      clz, "loadClass",
-      "(Ljava/net/URLClassLoader;Ljava/lang/Class;)Ljava/lang/Class;");
+      clz, "loadClassAndCreate",
+      "(Ljava/net/URLClassLoader;Ljava/lang/Class;J)Ljava/lang/Object;");
   CHECK_NOTNULL(method_plus);
-  jclass the_class_plus = (jclass) env->CallStaticObjectMethod(
-      clz, method_plus, gs_class_loader, the_class);
+  jobject the_object = env->CallStaticObjectMethod(
+      clz, method_plus, gs_class_loader, the_class, pointer);
   if (env->ExceptionOccurred()) {
-    LOG(FATAL) << std::string("Exception occurred in reload class: ")
+    LOG(FATAL) << std::string("Exception occurred in load class and create: ")
                << type_name;
     env->ExceptionDescribe();
     env->ExceptionClear();
     return NULL;
   }
-  if (the_class_plus == NULL) {
-    LOG(FATAL) << "Cannot find Class for " << type_name;
-    return NULL;
-  }
-
-  jmethodID the_ctor = env->GetMethodID(the_class_plus, "<init>", "(J)V");
-  if (the_ctor == NULL) {
-    LOG(FATAL) << "Cannot find <init>(J)V constructor in " << type_name;
-    return NULL;
-  }
-
-  jobject the_object = env->NewObject(the_class_plus, the_ctor, pointer);
-  if (the_object == NULL) {
-    LOG(FATAL) << "Cannot call <init>(J)V constructor in " << type_name;
-    return NULL;
-  }
+  CHECK_NOTNULL(the_object)
   return the_object;
 }
 
