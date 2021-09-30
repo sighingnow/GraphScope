@@ -42,6 +42,8 @@ limitations under the License.
 namespace gs {
 static constexpr const char* APP_CONTEXT_GETTER_CLASS =
     "io/graphscope/utils/AppContextGetter";
+static constexpr const char* APP_CONTEXT_GETTER_CLASS_DASH =
+    "io.graphscope.utils.AppContextGetter";
 static constexpr const char* IO_GRAPHSCOPE_UTILS_CLASS_PATH_HELPER =
     "io/graphscope/utils/ClassPathHelper";
 static constexpr const char* IO_GRAPHSCOPE_UTILS_GRAPH_SCOPE_CLASS_LOADER =
@@ -310,7 +312,7 @@ class JavaContextBase : public grape::ContextBase {
     CHECK_NOTNULL(method);
 
     jstring context_getter_class_name =
-        env->NewStringUTF(APP_CONTEXT_GETTER_CLASS);
+        env->NewStringUTF(APP_CONTEXT_GETTER_CLASS_DASH);
     jclass app_context_getter_class = (jclass) env->CallStaticObjectMethod(
         clz, method, gs_class_loader_object_, context_getter_class_name);
     if (env->ExceptionOccurred()) {
