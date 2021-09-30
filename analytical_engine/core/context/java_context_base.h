@@ -48,6 +48,7 @@ static constexpr const char* APP_CONTEXT_GETTER_CLASS_DASH =
 // "io/graphscope/utils/ClassPathHelper";
 static constexpr const char* LOAD_LIBRARY_CLASS =
     "io/graphscope/runtime/LoadLibrary";
+static constexpr const char* JSON_CLASS_NAME = "com.alibaba.fastjson.JSON";
     /**
      * @brief JavaContextBase is the base class for JavaPropertyContext and
      * JavaProjectedContext.

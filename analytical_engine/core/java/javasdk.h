@@ -335,16 +335,9 @@ jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
   CHECK_NOTNULL(ffi_type_factory_get_type_method);
   jclass the_class = (jclass) env->CallStaticObjectMethod(
       ffi_type_factory_class, ffi_type_factory_get_type_method, jstring_name);
-  if (env->ExceptionOccurred()) {
-    jthrowable e = env->ExceptionOccurred();
+  if (env->ExceptionCheck()) {
+    env->ExceptionDescribe();
     env->ExceptionClear();  // clears the exception; e seems to remain valid
-
-    jclass clazz = env->GetObjectClass(e);
-    jmethodID getMessage =
-        env->GetMethodID(clazz, "getMessage", "()Ljava/lang/String;");
-    jstring message = (jstring) env->CallObjectMethod(e.get(), getMessage);
-    const char* mstr = env->GetStringUTFChars(message, NULL);
-    LOG(INFO) << "Caughted exception: " << mstr;
     return NULL;
   }
   // Reload the class with our class loader
@@ -354,14 +347,12 @@ jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
   CHECK_NOTNULL(method_plus);
   jobject the_object = env->CallStaticObjectMethod(
       clz, method_plus, gs_class_loader, the_class, pointer);
-  if (env->ExceptionOccurred()) {
-    LOG(FATAL) << std::string("Exception occurred in load class and create: ")
-               << type_name;
+  if (env->ExceptionCheck()) {
     env->ExceptionDescribe();
-    env->ExceptionClear();
+    env->ExceptionClear();  // clears the exception; e seems to remain valid
     return NULL;
   }
-  CHECK_NOTNULL(the_object);
+   CHECK_NOTNULL(the_object);
   return the_object;
 }
 
