@@ -343,18 +343,31 @@ jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
     env->ExceptionClear();
     return NULL;
   }
-  if (the_class == NULL) {
+  jclass gs_the_class method_plus = env->GetStaticMethodID(
+      clz, "loadClass",
+      "(Ljava/net/URLClassLoader;Ljava/lang/Class;)Ljava/lang/Class;");
+  CHECK_NOTNULL(method_plus);
+  jclass the_class_plus = (jclass) env->CallStaticObjectMethod(
+      clz, method_plus, gs_class_loader, the_class);
+  if (env->ExceptionOccurred()) {
+    LOG(FATAL) << std::string("Exception occurred in reload class: ")
+               << type_name;
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+    return NULL;
+  }
+  if (the_class_plus == NULL) {
     LOG(FATAL) << "Cannot find Class for " << type_name;
     return NULL;
   }
 
-  jmethodID the_ctor = env->GetMethodID(the_class, "<init>", "(J)V");
+  jmethodID the_ctor = env->GetMethodID(the_class_plus, "<init>", "(J)V");
   if (the_ctor == NULL) {
     LOG(FATAL) << "Cannot find <init>(J)V constructor in " << type_name;
     return NULL;
   }
 
-  jobject the_object = env->NewObject(the_class, the_ctor, pointer);
+  jobject the_object = env->NewObject(the_class_plus, the_ctor, pointer);
   if (the_object == NULL) {
     LOG(FATAL) << "Cannot call <init>(J)V constructor in " << type_name;
     return NULL;

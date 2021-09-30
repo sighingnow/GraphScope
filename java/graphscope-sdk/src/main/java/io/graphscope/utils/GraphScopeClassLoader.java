@@ -34,9 +34,14 @@ public class GraphScopeClassLoader {
         return clz.newInstance();
     }
 
+    public static Class<?> loadClass(URLClassLoader classLoader, Class<?> clz) throws ClassNotFoundException{
+        System.out.println("[GS class loader]: re loading class " + classLoader + ", " + clz.getClassLoader());
+        return loadClass(classLoader, clz.getName());
+    }
+
     public static Class<?> loadClass(URLClassLoader classLoader, String className) throws ClassNotFoundException {
         Class<?> clz = classLoader.loadClass(className);
-        System.out.print("[GS class loader]: loading class " + className + ", " + clz.getName());
+        System.out.println("[GS class loader]: loading class " + className + ", " + clz.getName());
         System.out.println("[GS class loader]: url loader: " + classLoader + ", getClassLoader: " + clz.getClassLoader().toString());
         {
             Constructor[] constructors = clz.getDeclaredConstructors();
