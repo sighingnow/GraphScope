@@ -72,8 +72,15 @@ class JavaContextBase : public grape::ContextBase {
     if (app_class_name_) {
       delete[] app_class_name_;
     }
-    jint res = GetJavaVM()->DestroyJavaVM();
-    LOG(INFO) << "Kill javavm status: " << res;
+    JNIEnvMark m;
+    if (m.env()){
+        m.env()->DeleteGlobalRef(url_class_loader_object_);
+        invoke_gc(m.env());
+        LOG(INFO) << "deleted usl class loader";
+    }
+    //jint res = GetJavaVM()->DestroyJavaVM();
+    //LOG(INFO) << "Kill javavm status: " << res;
+
   }
   const fragment_t& fragment() const { return fragment_; }
 

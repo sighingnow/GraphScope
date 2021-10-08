@@ -76,7 +76,7 @@ bool InitWellKnownClasses(JNIEnv* env) {
   CHECK_NOTNULL(system_class);
   system_class = (jclass) env->NewGlobalRef(system_class);
 
-  gc_methodID = env->GetStaticMethodId(system_class, "gc", "()V");
+  gc_methodID = env->GetStaticMethodID(system_class, "gc", "()V");
   CHECK_NOTNULL(gc_methodID);
 
   return true;
