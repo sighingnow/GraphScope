@@ -3,15 +3,15 @@ package io.graphscope.utils;
 import static io.graphscope.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
 
 public class LoadLibrary {
-    static {
-        //load grape jni library
-        try {
-//            NativeLoader.loadLibrary(VINEYARD_JNI_LIBRARY);
-            System.loadLibrary(VINEYARD_JNI_LIBRARY);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    static {
+//        //load grape jni library
+//        try {
+////            NativeLoader.loadLibrary(VINEYARD_JNI_LIBRARY);
+//            System.loadLibrary(VINEYARD_JNI_LIBRARY);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     /**
      * Used by c++ to load compiled user app

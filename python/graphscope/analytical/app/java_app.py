@@ -311,7 +311,7 @@ class JavaAppDagNode(AppDAGNode):
         kwargs_extend = dict(
             jvm_runtime_opt=jvm_options,
             user_class_path=user_class_path,
-            user_library_name = app_lib_name,
+            user_library_name = app_lib_full_path,
             frag_name = frag_name_for_java,
             num_hosts= num_hosts_,
             num_worker = num_worker_,

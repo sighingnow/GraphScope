@@ -43,7 +43,7 @@ namespace gs {
 static constexpr const char* APP_CONTEXT_GETTER_CLASS =
     "io/graphscope/utils/AppContextGetter";
 static constexpr const char* LOAD_LIBRARY_CLASS =
-    "io/graphscope/runtime/LoadLibrary";
+    "io/graphscope/utils/LoadLibrary";
 static constexpr const char* CONTEXT_UTILS_CLASS =
     "io/graphscope/utils/ContextUtils";
 static constexpr const char* JSON_CLASS_NAME = "com.alibaba.fastjson.JSON";
@@ -128,7 +128,7 @@ class JavaContextBase : public grape::ContextBase {
     JNIEnvMark m;
     if (m.env()) {
       JNIEnv* env = m.env();
-      load_jni_library(env, user_library_name);
+      // load_jni_library(env, user_library_name);
 
       // Create a graphscope class loader to load app_class and ctx_class. This
       // means will create a new class loader for each for run_app.
@@ -148,6 +148,29 @@ class JavaContextBase : public grape::ContextBase {
         LOG(INFO) << "Successfully create app object with class loader:"
                   << &url_class_loader_object_
                   << ", of type: " << std::string(app_class_name_);
+      }
+      {
+        // Since we load loadLibraryClass with urlClassLoader, the
+        // fromClass.classLoader in System.load is urlClassLoader.
+        jclass load_library_class = (jclass) load_class_with_class_loader(
+            env, url_class_loader_object_, LOAD_LIBRARY_CLASS);
+        CHECK_NOTNULL(load_library_class);
+        jstring user_library_jstring =
+            env->NewStringUTF(user_library_name.c_str());
+        jmethodID load_library_methodID = env->GetStaticMethodID(
+            load_library_class, "invoke", "(Ljava/lang/String;)V");
+
+        // call static method
+        env->CallStaticVoidMethod(load_library_class, load_library_methodID,
+                                  user_library_jstring);
+        if (env->ExceptionCheck()) {
+          LOG(ERROR) << std::string(
+              "Exception occurred in loading user library");
+          env->ExceptionDescribe();
+          env->ExceptionClear();
+          LOG(FATAL) << "Exiting since exception occurred";
+        }
+        LOG(INFO) << "Loaded specified user jni library: " << user_library_name;
       }
       {
         std::string _context_class_name_str =
