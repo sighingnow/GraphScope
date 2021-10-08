@@ -138,7 +138,7 @@ def _construct_jvm_options_from_params(app_lib_dir, jar_unpacked_path, llvm4jni_
     library_path = "-Djava.library.path={}:{}".format(GRAPE_JNI_LIB, GRAPHSCOPE_JNI_LIB)
     runtime_class_path = "-Djava.class.path={}".format(GRAPHSCOPE_RUNTIME_JAR)
     #Put jni lib in user_class_path, so url class loader can find.
-    user_class_path = "{}:{}:{}:{}".format(app_lib_dir, llvm4jni_output_dir, java_codegen_cp, jar_unpacked_path) 
+    user_class_path = "{}:{}:{}:{}:{}:{}".format(app_lib_dir, GRAPE_JNI_LIB, GRAPHSCOPE_JNI_LIB, llvm4jni_output_dir, java_codegen_cp, jar_unpacked_path)
     return " ".join([performance_args, library_path, runtime_class_path, "-Xrs"]).strip(), user_class_path
 
 class JavaApp(AppAssets):

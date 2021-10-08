@@ -73,14 +73,13 @@ class JavaContextBase : public grape::ContextBase {
       delete[] app_class_name_;
     }
     JNIEnvMark m;
-    if (m.env()){
-        m.env()->DeleteGlobalRef(url_class_loader_object_);
-        invoke_gc(m.env());
-        LOG(INFO) << "deleted usl class loader";
+    if (m.env()) {
+      m.env()->DeleteGlobalRef(url_class_loader_object_);
+      invoke_gc(m.env());
+      LOG(INFO) << "deleted usl class loader";
     }
-    //jint res = GetJavaVM()->DestroyJavaVM();
-    //LOG(INFO) << "Kill javavm status: " << res;
-
+    // jint res = GetJavaVM()->DestroyJavaVM();
+    // LOG(INFO) << "Kill javavm status: " << res;
   }
   const fragment_t& fragment() const { return fragment_; }
 
@@ -245,16 +244,16 @@ class JavaContextBase : public grape::ContextBase {
   void load_jni_library(JNIEnv* env, std::string& user_library_name) {
     LOG(INFO) << "java.class.path: "
               << get_java_property(env, "java.class.path");
-    jclass grape_load_library = env->FindClass(LOAD_LIBRARY_CLASS);
-    CHECK_NOTNULL(grape_load_library);
+    jclass load_library_clz = env->FindClass(LOAD_LIBRARY_CLASS);
+    CHECK_NOTNULL(load_library_clz);
 
     const char* load_library_signature = "(Ljava/lang/String;)V";
     jstring user_library_jstring = env->NewStringUTF(user_library_name.c_str());
-    jmethodID grape_load_library_method = env->GetStaticMethodID(
-        grape_load_library, "invoke", load_library_signature);
+    jmethodID load_library_methodID = env->GetStaticMethodID(
+        load_library_clz, "invoke", load_library_signature);
 
     // call static method
-    env->CallStaticVoidMethod(grape_load_library, grape_load_library_method,
+    env->CallStaticVoidMethod(load_library_clz, load_library_methodID,
                               user_library_jstring);
 
     if (env->ExceptionOccurred()) {
