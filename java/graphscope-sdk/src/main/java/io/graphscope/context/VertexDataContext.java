@@ -22,7 +22,7 @@ public abstract class VertexDataContext<FRAG_T extends ArrowProjectedFragment, D
      */
     protected void createFFIContext(FRAG_T fragment, Class<?> dataClass, boolean includeOuter) {
 //        String fragmentTemplateStr = FFITypeFactory.getFFITypeName(fragment.getClass(), true);
-        String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment.getClass());
+        String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment);
         System.out.println("fragment: " + fragmentTemplateStr);
         String contextName = FFITypeFactoryhelper.makeParameterize(CPP_CLASS.VERTEX_DATA_CONTEXT,
                 fragmentTemplateStr,

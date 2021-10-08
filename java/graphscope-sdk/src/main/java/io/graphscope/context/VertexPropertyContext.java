@@ -31,7 +31,7 @@ public abstract class VertexPropertyContext<FRAG_T extends ArrowProjectedFragmen
      * @param fragment
      */
     protected void createFFIContext(FRAG_T fragment) {
-        String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment.getClass());
+        String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment);
         System.out.println("fragment str: " + fragmentTemplateStr);
         String contextName = FFITypeFactoryhelper.makeParameterize(CPP_CLASS.VERTEX_PROPERTY_CONTEXT, fragmentTemplateStr);
         System.out.println("context name: " + contextName);

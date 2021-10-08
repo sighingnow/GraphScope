@@ -26,7 +26,7 @@ public abstract class LabeledVertexPropertyContext<OID_T> implements PropertyDef
      * @param fragment
      */
     protected void createFFIContext(ArrowFragment<OID_T> fragment) {
-        String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment.getClass());
+        String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment);
         String contextName = FFITypeFactoryhelper.makeParameterize(CPP_CLASS.LABELED_VERTEX_PROPERTY_CONTEXT, fragmentTemplateStr);
         System.out.println("context name: " + contextName);
         factory = FFITypeFactory.getFactory(FFILabeledVertexPropertyContext.class, contextName);
