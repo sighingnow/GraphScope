@@ -21,8 +21,8 @@ import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
         java = {"Long", "Long", "com.alibaba.grape.ds.EmptyType", "Long"})
 @CXXTemplate(cxx = {"int64_t", "uint64_t", "double", "int64_t"},
         java = {"Long", "Long", "Double", "Long"})
-@CXXTemplate(cxx = {"int64_t", "uint64_t", "int64_t", "int64_t"},
-        java = {"Long", "Long", "Long", "Long"})
+//@CXXTemplate(cxx = {"int64_t", "uint64_t", "int64_t", "int64_t"},
+//        java = {"Long", "Long", "Long", "Long"})
 //TODO: vdata = string
 public interface ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T> extends FFIPointer {
     int fid();
