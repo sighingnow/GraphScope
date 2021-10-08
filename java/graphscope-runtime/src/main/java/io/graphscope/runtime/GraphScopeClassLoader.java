@@ -57,6 +57,10 @@ public class GraphScopeClassLoader {
             }
         }
         log("Creating FFIPointer, typename [" + foreignName + "], address [" + address + "]" + ", ffi type factor [" + ffiTypeFactoryClass);
+        //a new classLoader contains new class path, we load the ffi.properties here.
+        Method loadClassLoaderMethod = ffiTypeFactoryClass.getDeclaredMethod("loadClassLoader", ClassLoader.class);
+        loadClassLoaderMethod.invoke(null, classLoader);
+
         //First load class by FFITypeFactor
         Method getTypeMethod = ffiTypeFactoryClass.getDeclaredMethod("getType", String.class);
         Class<?> ffiJavaClass = (Class<?>) getTypeMethod.invoke(null, foreignName);
