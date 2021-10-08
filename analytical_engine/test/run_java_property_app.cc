@@ -424,11 +424,13 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   char* jvm_opts = getenv("RUN_JVM_OPTS");
   CHECK_NOTNULL(jvm_opts);
   pt.put("jvm_runtime_opt", std::string(jvm_opts));
-  char* class_path = getenv("JAVA_CP");
-  CHECK_NOTNULL(class_path);
-  pt.put("java_cp", std::string(class_path));
+
+  char* user_class_path = getenv("JAVA_CP");
+  CHECK_NOTNULL(user_class_path);
+  pt.put("user_class_path", std::string(user_class_path));
+  CHECK_NOTNULL(user_class_path);
   LOG(INFO) << "geted shell env [RUN_JVM_OPTS]: " << std::string(jvm_opts);
-  LOG(INFO) << "geted shell env [JAVA_CP]: " << std::string(class_path);
+  LOG(INFO) << "geted shell env [JAVA_CP]: " << std::string(user_class_path);
 
   if (!run_projected) {
     pt.put("frag_name", "vineyard::ArrowFragmentDefault<int64_t>");
@@ -463,7 +465,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
     // 1. run java query
     Query(client, fragment, comm_spec, app_name, "/tmp", basic_params,
           selector_string, selectors_string);
-        // 2.run c++ query
+    // 2.run c++ query
     RunSSSP(client, fragment, comm_spec, "/tmp", selector_string,
             selectors_string);
   }

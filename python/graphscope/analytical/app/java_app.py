@@ -55,7 +55,7 @@ else:
 GRAPE_JNI_LIB=os.path.join(GRAPHSCOPE_JAVA_HOME,  "grape-sdk/target/native")
 GRAPHSCOPE_JNI_LIB = os.path.join(GRAPHSCOPE_JAVA_HOME,  "graphscope-sdk/target/native")
 DEFAULT_JVM_CONFIG_FILE = os.path.join(GRAPHSCOPE_JAVA_HOME, "jvm_options.yaml")
-
+GRAPHSCOPE_RUNTIME_JAR=os.path.join(GRAPHSCOPE_JAVA_HOME, "graphscope-runtime/target/graphscope-runtime-0.1.jar")
 def _parse_user_app(java_app_class: str, java_jar_full_path : str):
     _java_app_type = ""
     _frag_param_str = ""
@@ -136,8 +136,9 @@ def _construct_jvm_options_from_params(app_lib_dir, jar_unpacked_path, llvm4jni_
         logger.info("No jvm config found, we still proceed...")
     
     library_path = "-Djava.library.path={}:{}:{}".format(app_lib_dir, GRAPE_JNI_LIB, GRAPHSCOPE_JNI_LIB)
-    class_path = "-Djava.class.path={}:{}:{}".format(llvm4jni_output_dir, java_codegen_cp, jar_unpacked_path)
-    return " ".join([performance_args, library_path, class_path, "-Xrs"]).strip()
+    runtime_class_path = "-Djava.class.path={}".format(GRAPHSCOPE_RUNTIME_JAR)
+    user_class_path = "{}:{}:{}".format(llvm4jni_output_dir, java_codegen_cp, jar_unpacked_path)
+    return " ".join([performance_args, library_path, runtime_class_path, "-Xrs"]).strip(), user_class_path
 
 class JavaApp(AppAssets):
     def __init__(self, full_jar_path : str, java_app_class: str):
@@ -294,9 +295,9 @@ class JavaAppDagNode(AppDAGNode):
         #Java codegen directory can be empty.
         java_codegen_cp = os.path.join(udf_workspace, "{}-{}".format(JAVA_CODEGNE_OUTPUT_PREFIX, app_lib_name), "CLASS_OUTPUT")
 
-        jvm_options = _construct_jvm_options_from_params(app_lib_dir, jar_unpacked_path, llvm4jni_output_dir, java_codegen_cp)
+        jvm_options,user_class_path = _construct_jvm_options_from_params(app_lib_dir, jar_unpacked_path, llvm4jni_output_dir, java_codegen_cp)
 
-        logger.info("running {} with jvm options: {}".format(self._app_assets.algo, jvm_options))
+        logger.info("running {} with jvm options: {}, class path: {}".format(self._app_assets.algo, jvm_options, user_class_path))
 
         if self._app_assets.java_app_type =="property":
             frag_name_for_java = self._convert_arrow_frag_for_java(self._graph.template_str)
@@ -308,6 +309,7 @@ class JavaAppDagNode(AppDAGNode):
         num_worker_ = int(self._session.info["num_workers"])
         kwargs_extend = dict(
             jvm_runtime_opt=jvm_options,
+            user_class_path=user_class_path,
             user_library_name = app_lib_full_path,
             frag_name = frag_name_for_java,
             num_hosts= num_hosts_,

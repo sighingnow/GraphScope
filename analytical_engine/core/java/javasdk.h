@@ -89,7 +89,7 @@ void SetupEnv(int local_num) {
            systemMemoryPerWorker, systemMemoryPerWorker, mnPerWorker);
 
   char* jvm_opts = getenv("JVM_OPTS");
-
+  // char* jvm_opts = jvm_option.c_str();
   char setStr[32010];
   if (jvm_opts == NULL || *jvm_opts == '\0') {
     snprintf(setStr, sizeof(setStr), "JVM_OPTS=%s", kvPair);
@@ -232,7 +232,7 @@ struct JNIEnvMark {
 // LOG(INFO) << "java cp str: " << java_cp_str;
 
 // Create a URL class loader
-jobject create_class_loader(JNIEnv* env, const char* class_path) {
+jobject create_class_loader(JNIEnv* env, const std::string& class_path) {
   jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
   CHECK_NOTNULL(clz);
 
@@ -241,7 +241,7 @@ jobject create_class_loader(JNIEnv* env, const char* class_path) {
                              "(Ljava/lang/String;)Ljava/net/URLClassLoader;");
   CHECK_NOTNULL(method);
 
-  jstring cp_jstring = env->NewStringUTF(class_path);
+  jstring cp_jstring = env->NewStringUTF(class_path.c_str());
   jobject class_loader = env->CallStaticObjectMethod(clz, method, cp_jstring);
   if (env->ExceptionCheck()) {
     env->ExceptionDescribe();
