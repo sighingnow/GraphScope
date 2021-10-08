@@ -105,8 +105,9 @@ class JavaContextBase : public grape::ContextBase {
       return;
     }
     std::string user_library_name;
-    std::string args_str =
-        parse_params_and_setup_jvm_env(params, user_library_name);
+    std::string user_class_path;
+    std::string args_str = parse_params_and_setup_jvm_env(
+        params, user_library_name, user_class_path);
 
     JavaVM* jvm = GetJavaVM();
     (void) jvm;
@@ -127,7 +128,7 @@ class JavaContextBase : public grape::ContextBase {
       // means will create a new class loader for each for run_app.
       // The intent is to provide isolation, and avoid class conflicts。
       {
-        jobject gs_class_loader_obj = create_class_loader(env);
+        jobject gs_class_loader_obj = create_class_loader(env, user_class_path);
         CHECK_NOTNULL(gs_class_loader_obj);
         url_class_loader_object_ = env->NewGlobalRef(gs_class_loader_obj);
       }
@@ -256,7 +257,8 @@ class JavaContextBase : public grape::ContextBase {
 
   // user library name should be absolute
   std::string parse_params_and_setup_jvm_env(const std::string& params,
-                                             std::string& user_library_name) {
+                                             std::string& user_library_name,
+                                             std::string& user_class_path) {
     boost::property_tree::ptree pt;
     std::stringstream ss;
     {
@@ -304,14 +306,16 @@ class JavaContextBase : public grape::ContextBase {
     // JVM runtime opt should consists of java.libaray.path and
     // java.class.path maybe this should be set by the backend not user.
     std::string jvm_runtime_opt = pt.get<std::string>("jvm_runtime_opt");
+    user_class_path = pt.get<std::string>("user_class_path");
     // put the cp and library.path in env
     if (setenv("JVM_OPTS", jvm_runtime_opt.c_str(), 1) == 0) {
       LOG(INFO) << " successfully set jvm opts to: " << jvm_runtime_opt;
     } else {
-      LOG(ERROR) << " failed to set jvm opts";
+      LOG(ERROR) << "Failed to set jvm opts";
     }
     SetupEnv(local_num_);
     pt.erase("jvm_runtime_opt");
+    pt.erase("user_class_path");
     ss.str("");  // reset the stream buffer
     boost::property_tree::json_parser::write_json(ss, pt);
     return ss.str();
