@@ -135,7 +135,8 @@ class JavaContextBase : public grape::ContextBase {
 
       {
         LOG(INFO) << "Now create app object: " << app_class_name_;
-        jobject app_obj = load_and_create(env, app_class_name_);
+        jobject app_obj =
+            load_and_create(env, url_class_loader_object_, app_class_name_);
         CHECK_NOTNULL(app_obj);
         app_object_ = env->NewGlobalRef(app_obj);
         LOG(INFO) << "Successfully create app object with class loader:"
@@ -150,7 +151,8 @@ class JavaContextBase : public grape::ContextBase {
         // -seperated
         // char* _context_class_name_c_str =
         //     java_class_name_dash_to_slash(_context_class_name_str);
-        jobject ctx_obj = load_and_create(env, _context_class_name_str.c_str());
+        jobject ctx_obj = load_and_create(env, url_class_loader_object_,
+                                          _context_class_name_str.c_str());
         CHECK_NOTNULL(ctx_obj);
         context_object_ = env->NewGlobalRef(ctx_obj);
         LOG(INFO) << "Successfully create ctx object with class loader:"
@@ -180,16 +182,18 @@ class JavaContextBase : public grape::ContextBase {
 
       // 3. Create arguments array
       {
-        jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
-        CHECK_NOTNULL(clz);
+        // jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
+        // CHECK_NOTNULL(clz);
 
-        jmethodID method = env->GetStaticMethodID(
-            clz, "loadClass",
-            "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
-        CHECK_NOTNULL(method);
-        jstring json_class_name_jstr = env->NewStringUTF(JSON_CLASS_NAME);
-        jclass json_class = (jclass) env->CallStaticObjectMethod(
-            clz, method, url_class_loader_object_, json_class_name_jstr);
+        // jmethodID method = env->GetStaticMethodID(
+        //     clz, "loadClass",
+        //     "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
+        // CHECK_NOTNULL(method);
+        // jstring json_class_name_jstr = env->NewStringUTF(JSON_CLASS_NAME);
+        // jclass json_class = (jclass) env->CallStaticObjectMethod(
+        //     clz, method, url_class_loader_object_, json_class_name_jstr);
+        jclass json_class = (jclass) load_class_with_class_loader(
+            env, url_class_loader_object_, JSON_CLASS_NAME);
         if (env->ExceptionCheck()) {
           env->ExceptionDescribe();
           env->ExceptionClear();
@@ -325,19 +329,21 @@ class JavaContextBase : public grape::ContextBase {
   std::string get_ctx_class_name_from_app_object(JNIEnv* env) {
     // jclass app_context_getter_class =
     // env->FindClass(APP_CONTEXT_GETTER_CLASS);
-    jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
-    CHECK_NOTNULL(clz);
+    // jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
+    // CHECK_NOTNULL(clz);
 
-    jmethodID method = env->GetStaticMethodID(
-        clz, "loadClass",
-        "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
-    CHECK_NOTNULL(method);
+    // jmethodID method = env->GetStaticMethodID(
+    //     clz, "loadClass",
+    //     "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
+    // CHECK_NOTNULL(method);
 
-    jstring context_getter_class_name =
-        env->NewStringUTF(APP_CONTEXT_GETTER_CLASS);
-    jclass app_context_getter_class = (jclass) env->CallStaticObjectMethod(
-        clz, method, url_class_loader_object_, context_getter_class_name);
-    if (env->ExceptionOccurred()) {
+    // jstring context_getter_class_name =
+    //     env->NewStringUTF(APP_CONTEXT_GETTER_CLASS);
+    // jclass app_context_getter_class = (jclass) env->CallStaticObjectMethod(
+    //     clz, method, url_class_loader_object_, context_getter_class_name);
+    jclass app_context_getter_class = (jclass) load_class_with_class_loader(
+        env, url_class_loader_object_, APP_CONTEXT_GETTER_CLASS);
+    if (env->ExceptionCheck()) {
       LOG(ERROR) << "Exception in loading class: "
                  << std::string(APP_CONTEXT_GETTER_CLASS);
       env->ExceptionDescribe();
@@ -358,27 +364,6 @@ class JavaContextBase : public grape::ContextBase {
     return jstring2string(env, context_class_jstring);
   }
 
-  jobject load_and_create(JNIEnv* env, const char* class_name) {
-    LOG(INFO) << "Loading and creating for class: " << class_name;
-    jstring class_name_jstring = env->NewStringUTF(class_name);
-    jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
-    CHECK_NOTNULL(clz);
-
-    jmethodID method = env->GetStaticMethodID(
-        clz, "loadAndCreateObject",
-        "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Object;");
-    CHECK_NOTNULL(method);
-    jobject res = env->CallStaticObjectMethod(
-        clz, method, url_class_loader_object_, class_name_jstring);
-    if (env->ExceptionOccurred()) {
-      LOG(ERROR) << "Exception in loading and creating class: "
-                 << std::string(class_name);
-      env->ExceptionDescribe();
-      env->ExceptionClear();
-      LOG(FATAL) << "exiting since exception occurred";
-    }
-    return env->NewGlobalRef(res);
-  }
   std::string graph_type_str_;
   char* app_class_name_;
   uint64_t inner_ctx_addr_;
