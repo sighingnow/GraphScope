@@ -135,9 +135,10 @@ def _construct_jvm_options_from_params(app_lib_dir, jar_unpacked_path, llvm4jni_
     else:
         logger.info("No jvm config found, we still proceed...")
     
-    library_path = "-Djava.library.path={}:{}:{}".format(app_lib_dir, GRAPE_JNI_LIB, GRAPHSCOPE_JNI_LIB)
+    library_path = "-Djava.library.path={}:{}".format(GRAPE_JNI_LIB, GRAPHSCOPE_JNI_LIB)
     runtime_class_path = "-Djava.class.path={}".format(GRAPHSCOPE_RUNTIME_JAR)
-    user_class_path = "{}:{}:{}".format(llvm4jni_output_dir, java_codegen_cp, jar_unpacked_path)
+    #Put jni lib in user_class_path, so url class loader can find.
+    user_class_path = "{}:{}:{}:{}".format(app_lib_dir, llvm4jni_output_dir, java_codegen_cp, jar_unpacked_path) 
     return " ".join([performance_args, library_path, runtime_class_path, "-Xrs"]).strip(), user_class_path
 
 class JavaApp(AppAssets):
