@@ -7,6 +7,6 @@ public class LoadLibrary {
      */
     public static void invoke(String userLibrary) {
         System.out.println("loading " + userLibrary);
-        System.load(userLibrary);
+        System.loadLibrary(userLibrary);
     }
 }
