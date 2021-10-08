@@ -42,36 +42,29 @@ static jmethodID FFITypeFactory_getTypeMethodID_plus = NULL;
 static jclass FFIVectorClass = NULL;
 static jclass StdVectorClass = NULL;
 static jmethodID class_loader_load_class_methodID = NULL;
-static jclass class_loader_clz == NULL;
+static jclass class_loader_clz = NULL;
+static jmethodID class_loader_create_ffipointer_methodID = NULL;
+static jmethodID class_loader_load_class_methodID = NULL;
 
 std::string jstring2string(JNIEnv* env, jstring jStr);
 bool InitWellKnownClasses(JNIEnv* env) {
-  FFITypeFactoryClass = env->FindClass("com/alibaba/ffi/FFITypeFactory");
-  FFIVectorClass = env->FindClass("com/alibaba/ffi/FFIVector");
-  StdVectorClass = env->FindClass("com/alibaba/grape/stdcxx/StdVector");
-  CommunicatorClass =
-      env->FindClass("com/alibaba/grape/communication/Communicator");
+  // FFITypeFactoryClass = env->FindClass("com/alibaba/ffi/FFITypeFactory");
+  // FFIVectorClass = env->FindClass("com/alibaba/ffi/FFIVector");
+  // StdVectorClass = env->FindClass("com/alibaba/grape/stdcxx/StdVector");
+  class_loader_clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
+  CHECK_NOTNULL(class_loader_clz);
+  class_loader_clz = (jclass) env->NewGlobalRef(class_loader_clz);
 
-  if ((FFITypeFactoryClass == NULL) || (FFIVectorClass == NULL) ||
-      (StdVectorClass == NULL) || (CommunicatorClass == NULL)) {
-    return false;
-  }
+  class_loader_create_ffipointer_methodID = env->GetStaticMethodID(
+      class_loader_clz, "createFFIPointer",
+      "(Ljava/net/URLClassLoader;Ljava/lang/String;J)Ljava/lang/Object;");
+  CHECK_NOTNULL(class_loader_create_ffipointer_methodID);
 
-  // save into Global Handle
-  FFITypeFactoryClass = (jclass) env->NewGlobalRef(FFITypeFactoryClass);
-  FFITypeFactory_getTypeMethodID = env->GetStaticMethodID(
-      FFITypeFactoryClass, "getType", "(Ljava/lang/String;)Ljava/lang/Class;");
-  FFITypeFactory_getTypeMethodID_plus = env->GetStaticMethodID(
-      FFITypeFactoryClass, "getType",
-      "(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Class;");
-  CommunicatorClass = (jclass) env->NewGlobalRef(CommunicatorClass);
+  class_loader_load_class_methodID = env->GetStaticMethodID(
+      class_loader_clz, "loadClass",
+      "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
+  CHECK_NOTNULL(class_loader_load_class_methodID);
 
-  if ((FFITypeFactory_getTypeMethodID == NULL) ||
-      (FFITypeFactory_getTypeMethodID_plus == NULL)) {
-    LOG(ERROR) << "get gettype method failed";
-    return false;
-  }
-  CHECK_NOTNULL(CommunicatorClass);
   return true;
 }
 
@@ -230,6 +223,52 @@ struct JNIEnvMark {
   JNIEnv* env() { return _env; }
 };
 
+// char* java_cp = getenv("JAVA_CP");
+// if (java_cp == NULL) {
+//   LOG(ERROR) << "No env var JAVA_CP found.";
+//   return NULL;
+// }
+// std::string java_cp_str = java_cp;
+// LOG(INFO) << "java cp str: " << java_cp_str;
+
+// Create a URL class loader
+jobject create_class_loader(JNIEnv* env, const char* class_path) {
+  jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
+  CHECK_NOTNULL(clz);
+
+  jmethodID method =
+      env->GetStaticMethodID(clz, "newGraphScopeClassLoader",
+                             "(Ljava/lang/String;)Ljava/net/URLClassLoader;");
+  CHECK_NOTNULL(method);
+
+  jstring cp_jstring = env->NewStringUTF(class_path);
+  jobject class_loader = env->CallStaticObjectMethod(clz, method, cp_jstring);
+  if (env->ExceptionCheck()) {
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+    return NULL;
+  }
+  CHECK_NOTNULL(class_loader);
+  return env->NewGlobalRef(class_loader);
+}
+
+jobject createFFIPointer(JNIEnv* env, const char* type_name,
+                         jobject& class_loader, jlong pointer) {
+  jstring type_name_jstring = env->NewStringUTF(type_name);
+  jobject ffi_pointer = env->CallStaticObjectMethod(
+      class_loader_clz, class_loader_create_ffipointer_methodID, class_loader,
+      type_name_jstring, pointer);
+  if (env->ExceptionCheck()) {
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+    LOG(FATAL) << "Fail to create FFIPointer " << type_name
+               << " addr: " << pointer;
+    return NULL;
+  }
+  return env->NewGlobalRef(ffi_pointer);
+}
+
+// TODO:Remove
 jobject createObject(JNIEnv* env, jclass clazz, const char* class_name) {
   jmethodID ctor = env->GetMethodID(clazz, "<init>", "()V");
   if (ctor == NULL) {
@@ -239,6 +278,7 @@ jobject createObject(JNIEnv* env, jclass clazz, const char* class_name) {
   jobject object = env->NewObject(clazz, ctor);
   return object;
 }
+// TODO: remove
 jobject createStdVectorObject(JNIEnv* env, const char* type_name,
                               jlong pointer) {
   // must be properly encoded
@@ -280,6 +320,8 @@ jobject createStdVectorObject(JNIEnv* env, const char* type_name,
 
   return the_object;
 }
+
+// TODO: remove
 jobject createFFIPointerObject(JNIEnv* env, const char* type_name,
                                jlong pointer) {
   // must be properly encoded
@@ -312,60 +354,54 @@ jobject createFFIPointerObject(JNIEnv* env, const char* type_name,
   }
   return the_object;
 }
-jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
-                                   jobject& gs_class_loader, jlong pointer) {
-  // must be properly encoded
-  jstring jstring_name = env->NewStringUTF(type_name);
-  // the global factory class may in previous jar, we need to load from current
-  // jar.
-  jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
-  CHECK_NOTNULL(clz);
 
-  jmethodID method = env->GetStaticMethodID(
-      clz, "loadClass",
-      "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
-  CHECK_NOTNULL(method);
+// TODO: remove
+// jobject createFFIPointerObjectSafe(JNIEnv* env, const char* type_name,
+//                                    jobject& gs_class_loader, jlong pointer) {
+//   // must be properly encoded
+//   jstring jstring_name = env->NewStringUTF(type_name);
+//   // the global factory class may in previous jar, we need to load from
+//   current
+//   // jar.
+//   jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
+//   CHECK_NOTNULL(clz);
 
-  jstring ffi_type_factory_jstring =
-      env->NewStringUTF(FFI_TYPE_FACTORY_CLASS_NAME_DASH);
-  jclass ffi_type_factory_class = (jclass) env->CallStaticObjectMethod(
-      clz, method, gs_class_loader, ffi_type_factory_jstring);
-  CHECK_NOTNULL(ffi_type_factory_class);
-  jmethodID ffi_type_factory_get_type_method = env->GetStaticMethodID(
-      ffi_type_factory_class, FFI_TYPE_FACTORY_GET_TYPE_METHOD_NAME,
-      FFI_TYPE_FACTORY_GET_TYPE_METHOD_SIG);
-  CHECK_NOTNULL(ffi_type_factory_get_type_method);
-  jclass the_class = (jclass) env->CallStaticObjectMethod(
-      ffi_type_factory_class, ffi_type_factory_get_type_method, jstring_name);
-  if (env->ExceptionOccurred()) {
-    jthrowable e = env->ExceptionOccurred();
-    env->ExceptionClear();  // clears the exception; e seems to remain valid
+//   jmethodID method = env->GetStaticMethodID(
+//       clz, "loadClass",
+//       "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
+//   CHECK_NOTNULL(method);
 
-    jclass clazz = env->GetObjectClass(e);
-    jmethodID getMessage =
-        env->GetMethodID(clazz, "getMessage", "()Ljava/lang/String;");
-    jstring message = (jstring) env->CallObjectMethod(e.get(), getMessage);
-    const char* mstr = env->GetStringUTFChars(message, NULL);
-    LOG(INFO) << "Caughted exception: " << mstr;
-    return NULL;
-  }
-  // Reload the class with our class loader
-  jmethodID method_plus = env->GetStaticMethodID(
-      clz, "loadClassAndCreate",
-      "(Ljava/net/URLClassLoader;Ljava/lang/Class;J)Ljava/lang/Object;");
-  CHECK_NOTNULL(method_plus);
-  jobject the_object = env->CallStaticObjectMethod(
-      clz, method_plus, gs_class_loader, the_class, pointer);
-  if (env->ExceptionOccurred()) {
-    LOG(FATAL) << std::string("Exception occurred in load class and create: ")
-               << type_name;
-    env->ExceptionDescribe();
-    env->ExceptionClear();
-    return NULL;
-  }
-  CHECK_NOTNULL(the_object)
-  return the_object;
-}
+// jstring ffi_type_factory_jstring =
+//     env->NewStringUTF(FFI_TYPE_FACTORY_CLASS_NAME_DASH);
+// jclass ffi_type_factory_class = (jclass) env->CallStaticObjectMethod(
+//     clz, method, gs_class_loader, ffi_type_factory_jstring);
+// CHECK_NOTNULL(ffi_type_factory_class);
+// jmethodID ffi_type_factory_get_type_method = env->GetStaticMethodID(
+//     ffi_type_factory_class, FFI_TYPE_FACTORY_GET_TYPE_METHOD_NAME,
+//     FFI_TYPE_FACTORY_GET_TYPE_METHOD_SIG);
+// CHECK_NOTNULL(ffi_type_factory_get_type_method);
+// jclass the_class = (jclass) env->CallStaticObjectMethod(
+//     ffi_type_factory_class, ffi_type_factory_get_type_method, jstring_name);
+// if (env->ExceptionCheck()) {
+//   env->ExceptionDescribe();
+//   env->ExceptionClear();  // clears the exception; e seems to remain valid
+//   return NULL;
+// }
+// Reload the class with our class loader
+//   jmethodID method_plus = env->GetStaticMethodID(
+//       clz, "loadClassAndCreate",
+//       "(Ljava/net/URLClassLoader;Ljava/lang/Class;J)Ljava/lang/Object;");
+//   CHECK_NOTNULL(method_plus);
+//   jobject the_object = env->CallStaticObjectMethod(
+//       clz, method_plus, gs_class_loader, the_class, pointer);
+//   if (env->ExceptionCheck()) {
+//     env->ExceptionDescribe();
+//     env->ExceptionClear();  // clears the exception; e seems to remain valid
+//     return NULL;
+//   }
+//   CHECK_NOTNULL(the_object);
+//   return the_object;
+// }
 
 std::string jstring2string(JNIEnv* env, jstring jStr) {
   if (!jStr)
@@ -388,92 +424,24 @@ std::string jstring2string(JNIEnv* env, jstring jStr) {
   return ret;
 }
 
-jobject createFFIVectorObject(JNIEnv* env, const char* type_name,
-                              jlong pointer) {
-  // must be properly encoded
-  jstring jstring_name = env->NewStringUTF(type_name);
-
-  jclass the_class = (jclass) env->CallStaticObjectMethod(
-      FFITypeFactoryClass, FFITypeFactory_getTypeMethodID_plus, FFIVectorClass,
-      jstring_name);
-  if (env->ExceptionOccurred()) {
-    LOG(ERROR) << std::string("Exception occurred in get ffi vector class");
-    env->ExceptionDescribe();
-    env->ExceptionClear();
-    // env->DeleteLocalRef(main_class);
-    return NULL;
-  }
-  if (the_class == NULL) {
-    LOG(FATAL) << "Cannot find Class for " << type_name;
-    return NULL;
-  }
-
-  jmethodID the_ctor = env->GetMethodID(the_class, "<init>", "(J)V");
-  if (the_ctor == NULL) {
-    LOG(FATAL) << "Cannot find <init>(J)V constructor in " << type_name;
-    return NULL;
-  }
-
-  jobject the_object = env->NewObject(the_class, the_ctor, pointer);
-  if (the_object == NULL) {
-    LOG(FATAL) << "Cannot call <init>(J)V constructor in " << type_name;
-    return NULL;
-  }
-
-  return the_object;
-}
-
 std::string get_jobject_class_name(JNIEnv* env, jobject object) {
+  CHECK_NOTNULL(object);
   jclass object_class = env->GetObjectClass(object);
-  if (object_class == NULL) {
-    LOG(FATAL) << "The object class is null";
-    return NULL;
-  }
+
   jmethodID obj_class_getClass_method =
       env->GetMethodID(object_class, "getClass", "()Ljava/lang/Class;");
-  if (obj_class_getClass_method == NULL) {
-    LOG(FATAL) << "getclass method null";
-    return NULL;
-  }
+
   jobject obj_class_obj =
       env->CallObjectMethod(object, obj_class_getClass_method);
-  if (obj_class_obj == NULL) {
-    LOG(FATAL) << "obj class obj null";
-    return NULL;
-  }
 
   jclass obj_class_obj_class = env->GetObjectClass(obj_class_obj);
-  if (obj_class_obj_class == NULL) {
-    LOG(FATAL) << "obj_class_obj_class null";
-    return NULL;
-  }
+
   jmethodID get_name_method =
       env->GetMethodID(obj_class_obj_class, "getName", "()Ljava/lang/String;");
-  if (get_name_method == NULL) {
-    LOG(FATAL) << "get name method null";
-    return NULL;
-  }
+
   jstring class_name_jstr =
       (jstring) env->CallObjectMethod(obj_class_obj, get_name_method);
   return jstring2string(env, class_name_jstr);
-}
-
-jclass getClassByJavaPath(JNIEnv* env, const std::string& main_class_name) {
-  char* c_class_name = new char[main_class_name.length() + 1];
-  c_class_name[main_class_name.length()] = '\0';
-  strcpy(c_class_name, main_class_name.c_str());
-  char* p = c_class_name;
-  while (*p) {
-    if (*p == '.')
-      *p = '/';
-    p++;
-  }
-  jclass main_class = env->FindClass(c_class_name);
-  if (main_class == NULL) {
-    LOG(ERROR) << "fail to find main class";
-    return NULL;
-  }
-  return main_class;
 }
 
 char* java_class_name_dash_to_slash(const std::string& str) {
@@ -489,25 +457,30 @@ char* java_class_name_dash_to_slash(const std::string& str) {
 }
 // judge whether java app class instance of Communicator, if yes, we call
 // the init communicator method.
-void init_java_communicator(JNIEnv* env, const jobject& java_app,
-                            jlong app_address) {
+void init_java_communicator(JNIEnv* env, const jobject& url_class_loader,
+                            const jobject& java_app, jlong app_address) {
   CHECK_NOTNULL(env);
   CHECK(app_address != 0);
-  // if (env->IsInstanceOf(java_app, CommunicatorClass)) {
-  //   jmethodID initCommunicatorMethod =
-  //       env->GetMethodID(CommunicatorClass, "initCommunicator", "(Z;)V");
-  //   CHECK_NOTNULL(initCommunicatorMethod);
-  //   env->CallVoidMethod(java_app, initCommunicatorMethod, app_address);
-  //   if (env->ExceptionOccurred()) {
-  //     LOG(ERROR) << "Exception occurred in init communicator";
-  //     env->ExceptionDescribe();
-  //     env->ExceptionClear();
-  //     // env->DeleteLocalRef(main_class);
-  //     LOG(FATAL) << "Exiting...";
-  //   }
-  //   LOG(INFO) << "Successfully init communicator.";
-  //   return;
-  // }
+  // load communicator class with class_loader
+  jstring communicator_jstring = env->NewStringUTF("Communicator");
+  jclass communicator_class = (jclass) env->CallStaticObjectMethod(
+      class_loader_clz, class_loader_load_class_methodID, url_class_loader,
+      communicator_jstring);
+  CHECK_NOTNULL(communicator_class);
+  if (env->IsInstanceOf(java_app, communicator_class)) {
+    jmethodID init_communicator_method =
+        env->GetMethodID(communicator_class, "initCommunicator", "(Z;)V");
+    CHECK_NOTNULL(initCommunicatorMethod);
+    env->CallVoidMethod(java_app, initCommunicatorMethod, app_address);
+    if (env->ExceptionCheck()) {
+      LOG(ERROR) << "Exception occurred in init communicator";
+      env->ExceptionDescribe();
+      env->ExceptionClear();
+      LOG(FATAL) << "Exiting...";
+    }
+    LOG(INFO) << "Successfully init communicator.";
+    return;
+  }
   LOG(INFO) << "No initing since not a sub class from Communicator.";
 }
 
@@ -527,15 +500,6 @@ std::string get_java_property(JNIEnv* env, const char* property_name) {
 jclass load_class_with_class_loader(jobject& gs_class_loader,
                                     const char* class_name) {
   jstring class_name_jstring = env->NewStringUTF(class_name);
-  // if (class_loader_clz == NULL) {
-  //   jclass class_loader_clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
-  //   CHECK_NOTNULL(class_loader_clz);
-
-  //   jmethodID class_loader_load_class_methodID = env->GetStaticMethodID(
-  //       class_loader_clz, "loadClass",
-  //       "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
-  //   CHECK_NOTNULL(class_loader_load_class_methodID);
-  // }
 
   jclass result_class = (jclass) env->CallStaticObjectMethod(
       class_loader_clz, class_loader_load_class_methodID, gs_class_loader,

@@ -46,6 +46,8 @@ static constexpr const char* LOAD_LIBRARY_CLASS =
     "io/graphscope/runtime/LoadLibrary";
 static constexpr const char* CONTEXT_UTILS_CLASS =
     "io/graphscope/utils/ContextUtils";
+static constexpr const char* JSON_CLASS_NAME = "com.alibaba.fastjson.JSON";
+
 /**
  * @brief JavaContextBase is the base class for JavaPropertyContext and
  * JavaProjectedContext.
@@ -64,7 +66,7 @@ class JavaContextBase : public grape::ContextBase {
         context_object_(NULL),
         fragment_object_(NULL),
         mm_object_(NULL),
-        gs_class_loader_object_(NULL) {}
+        url_class_loader_object_(NULL) {}
 
   virtual ~JavaContextBase() {
     if (app_class_name_) {
@@ -90,8 +92,8 @@ class JavaContextBase : public grape::ContextBase {
   const jobject& context_object() const { return context_object_; }
   const jobject& fragment_object() const { return fragment_object_; }
   const jobject& message_manager_object() const { return mm_object_; }
-  const jobject& gs_class_loader_object() const {
-    return gs_class_loader_object_;
+  const jobject& url_class_loader_object() const {
+    return url_class_loader_object_;
   }
 
  protected:
@@ -127,7 +129,7 @@ class JavaContextBase : public grape::ContextBase {
       {
         jobject gs_class_loader_obj = create_class_loader(env);
         CHECK_NOTNULL(gs_class_loader_obj);
-        gs_class_loader_object_ = env->NewGlobalRef(gs_class_loader_obj);
+        url_class_loader_object_ = env->NewGlobalRef(gs_class_loader_obj);
       }
 
       {
@@ -136,7 +138,7 @@ class JavaContextBase : public grape::ContextBase {
         CHECK_NOTNULL(app_obj);
         app_object_ = env->NewGlobalRef(app_obj);
         LOG(INFO) << "Successfully create app object with class loader:"
-                  << &gs_class_loader_object_
+                  << &url_class_loader_object_
                   << ", of type: " << std::string(app_class_name_);
       }
       {
@@ -151,7 +153,7 @@ class JavaContextBase : public grape::ContextBase {
         CHECK_NOTNULL(ctx_obj);
         context_object_ = env->NewGlobalRef(ctx_obj);
         LOG(INFO) << "Successfully create ctx object with class loader:"
-                  << &gs_class_loader_object_
+                  << &url_class_loader_object_
                   << ", of type: " << _context_class_name_str;
       }
       jclass context_class = env->GetObjectClass(context_object_);
@@ -162,16 +164,16 @@ class JavaContextBase : public grape::ContextBase {
       CHECK_NOTNULL(InitMethodID);
 
       // TODO: create ffi pointer object with gs_class_loader
-      jobject fragObject = createFFIPointerObjectSafe(
-          env, graph_type_str_.c_str(), gs_class_loader_object_,
+      jobject fragObject = createFFIPointer(
+          env, graph_type_str_.c_str(), url_class_loader_object_,
           reinterpret_cast<jlong>(&fragment_));
       CHECK_NOTNULL(fragObject);
       fragment_object_ = env->NewGlobalRef(fragObject);
 
       // 2. Create Message manager Java object
       jobject messagesObject =
-          createFFIPointerObjectSafe(env, java_message_manager_name,
-                                     gs_class_loader_object_, messages_addr);
+          createFFIPointer(env, java_message_manager_name,
+                           url_class_loader_object_, messages_addr);
       CHECK_NOTNULL(messagesObject);
       mm_object_ = env->NewGlobalRef(messagesObject);
 
@@ -186,7 +188,7 @@ class JavaContextBase : public grape::ContextBase {
         CHECK_NOTNULL(method);
         jstring json_class_name_jstr = env->NewStringUTF(JSON_CLASS_NAME);
         jclass json_class = (jclass) env->CallStaticObjectMethod(
-            clz, method, gs_class_loader_object_, json_class_name_jstr);
+            clz, method, url_class_loader_object_, json_class_name_jstr);
         if (env->ExceptionCheck()) {
           env->ExceptionDescribe();
           env->ExceptionClear();
@@ -330,7 +332,7 @@ class JavaContextBase : public grape::ContextBase {
     jstring context_getter_class_name =
         env->NewStringUTF(APP_CONTEXT_GETTER_CLASS);
     jclass app_context_getter_class = (jclass) env->CallStaticObjectMethod(
-        clz, method, gs_class_loader_object_, context_getter_class_name);
+        clz, method, url_class_loader_object_, context_getter_class_name);
     if (env->ExceptionOccurred()) {
       LOG(ERROR) << "Exception in loading class: "
                  << std::string(APP_CONTEXT_GETTER_CLASS);
@@ -352,37 +354,6 @@ class JavaContextBase : public grape::ContextBase {
     return jstring2string(env, context_class_jstring);
   }
 
-  jobject create_class_loader(JNIEnv* env) {
-    jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
-    CHECK_NOTNULL(clz);
-
-    jmethodID method =
-        env->GetStaticMethodID(clz, "newGraphScopeClassLoader",
-                               "(Ljava/lang/String;)Ljava/net/URLClassLoader;");
-    CHECK_NOTNULL(method);
-
-    char* java_cp = getenv("JAVA_CP");
-    if (java_cp == NULL) {
-      LOG(ERROR) << "No env var JAVA_CP found.";
-      return NULL;
-    }
-    std::string java_cp_str = java_cp;
-    LOG(INFO) << "java cp str: " << java_cp_str;
-
-    LOG(INFO) << "Class path from jvm opts: " << java_cp_str;
-    jstring cp_jstring = env->NewStringUTF(java_cp_str.c_str());
-    jobject class_loader = env->CallStaticObjectMethod(clz, method, cp_jstring);
-    // Catch exception
-    if (env->ExceptionOccurred()) {
-      LOG(ERROR) << std::string("Exception in creating class loader: ")
-                 << java_cp_str;
-      env->ExceptionDescribe();
-      env->ExceptionClear();
-      LOG(FATAL) << "exiting since exception occurred";
-    }
-    CHECK_NOTNULL(class_loader);
-    return env->NewGlobalRef(class_loader);
-  }
   jobject load_and_create(JNIEnv* env, const char* class_name) {
     LOG(INFO) << "Loading and creating for class: " << class_name;
     jstring class_name_jstring = env->NewStringUTF(class_name);
@@ -394,7 +365,7 @@ class JavaContextBase : public grape::ContextBase {
         "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Object;");
     CHECK_NOTNULL(method);
     jobject res = env->CallStaticObjectMethod(
-        clz, method, gs_class_loader_object_, class_name_jstring);
+        clz, method, url_class_loader_object_, class_name_jstring);
     if (env->ExceptionOccurred()) {
       LOG(ERROR) << "Exception in loading and creating class: "
                  << std::string(class_name);
@@ -413,7 +384,7 @@ class JavaContextBase : public grape::ContextBase {
   jobject context_object_;
   jobject fragment_object_;
   jobject mm_object_;
-  jobject gs_class_loader_object_;
+  jobject url_class_loader_object_;
 };
 
 }  // namespace gs

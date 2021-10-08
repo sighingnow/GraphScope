@@ -101,8 +101,9 @@ class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {
         mm_object_ = env->NewGlobalRef(messages_object);
       }
 
-      jobject args_object = createStdVectorObject(
-          env, "std::vector<std::string>", reinterpret_cast<jlong>(&args));
+      jobject args_object = createFFIPointer(env, "std::vector<std::string>",
+                                             url_class_loader_object(),
+                                             reinterpret_cast<jlong>(&args));
       CHECK_NOTNULL(args_object);
 
       const char* descriptor =

@@ -55,7 +55,8 @@ class JavaPIEParallelApp
       JNIEnv* env = m.env();
 
       jobject app_object = ctx.app_object();
-      init_java_communicator(env, app_object, reinterpret_cast<jlong>(this));
+      init_java_communicator(env, ctx.url_class_loader_object(), app_object,
+                             reinterpret_cast<jlong>(this));
 
       jclass app_class = env->GetObjectClass(app_object);
       CHECK_NOTNULL(app_class);

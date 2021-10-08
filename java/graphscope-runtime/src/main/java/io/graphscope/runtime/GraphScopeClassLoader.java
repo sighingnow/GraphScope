@@ -2,6 +2,8 @@ package io.graphscope.runtime;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -11,6 +13,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class GraphScopeClassLoader {
+    private static String FFI_TYPE_FACTORY_CLASS = "com.alibaba.ffi.FFITypeFactory";
+    public static Class<?> ffiTypeFactoryClass = null;
     public static URLClassLoader newGraphScopeClassLoader(String classPath) {
         return new URLClassLoader(classPath2URLArray(classPath),
                 Thread.currentThread().getContextClassLoader());
@@ -20,55 +24,73 @@ public class GraphScopeClassLoader {
      * Invoke the non-param constructor
      *
      * @param classLoader
-     * @param className
+     * @param className a/b/c/ or a.b.c
      * @return
      * @throws ClassNotFoundException
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
-    public static Object loadAndCreateObject(URLClassLoader classLoader,
+    public static Object loadAndCreate(URLClassLoader classLoader,
                                              String className)
             throws ClassNotFoundException, InstantiationException,
             IllegalAccessException {
-        Class<?> clz = classLoader.loadClass(className);
+        Class<?> clz = classLoader.loadClass(formatting(className));
         return clz.newInstance();
     }
 
-    public static Object loadClassAndCreate(URLClassLoader classLoader, Class<?> clz, long address) throws ClassNotFoundException {
-        System.out.println("[GS class loader]: re loading class " + clz.getName() + " with loader: " + classLoader + ", " + clz.getClassLoader());
-        Class<?> clazz = loadClass(classLoader, clz.getName());
-
-        Constructor[] constructors = clazz.getDeclaredConstructors();
-        Object res = null;
-        for (Constructor constructor : constructors){
-            if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].getName().equals("long")){
-                System.out.println("[GS class loader]: desired constructor exists.");
-                try {
-                    res = constructor.newInstance(address);
-                    System.out.println("[GS class loader]: Construct "+ res);
-                }
-                catch (Exception e){
-                    e.printStackTrace();
-                }
+    /**
+     * Create FFIPointer with the helper of FFITypeFactory class. FFITupeFactoryClass should be able to load in classLoader.
+     * @param classLoader
+     * @param foreignName
+     * @param address
+     * @return
+     * @throws ClassNotFoundException
+     * @throws NoSuchMethodException
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     * @throws InstantiationException
+     */
+    public static Object createFFIPointer(URLClassLoader classLoader, String foreignName, long address) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, InstantiationException {
+        synchronized (FFI_TYPE_FACTORY_CLASS){
+            if (Objects.isNull(ffiTypeFactoryClass)){
+                ffiTypeFactoryClass = classLoader.loadClass(FFI_TYPE_FACTORY_CLASS);
             }
         }
-        if (Objects.isNull(res)){
-            System.out.println("[ERROR] No desired constructor found for " + clz.getName());
+        log("Creating FFIPointer, typename [" + foreignName + "], address [" + address + "]" + ", ffi type factor [" + ffiTypeFactoryClass);
+        //First load class by FFITypeFactor
+        Method getTypeMethod = ffiTypeFactoryClass.getDeclaredMethod("getType", String.class);
+        Class<?> javaClass = (Class<?>) getTypeMethod.invoke(null, foreignName);
+        if (Objects.nonNull(javaClass)){
+            Constructor[] constructors = javaClass.getDeclaredConstructors();
+            for (Constructor constructor : constructors){
+                if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].getName().equals("long")){
+                    log("Desired constructor exists for " + javaClass.getName());
+                    Object obj = constructor.newInstance(address);
+                    log("Successfully Construct "+ obj);
+                    return obj;
+                }
+            }
+            log("No Suitable constructors found.");
         }
-        return res;
+        return null;
     }
 
     /**
-     * We now accept two kind of className, a/b/c or a.b.c are both ok
+     * We now accept two kind of className, a/b/c or a.b.c are both ok.
+     * Special case: for 'Communicator'
      * @param classLoader
      * @param className
      * @return
      * @throws ClassNotFoundException
      */
     public static Class<?> loadClass(URLClassLoader classLoader, String className) throws ClassNotFoundException {
-        String formattedClassName = formatting(className);
-        Class<?> clz = classLoader.loadClass(formattedClassName);
-        System.out.println("[GS class loader]: loading class " + className + ", " + clz.getName());
+        if (className.equals("Communicator")){
+            Class<?> clz = classLoader.loadClass(formatting(new String("com.alibaba.grape.communication.Communicator")));
+            log("Loaded communicator class");
+            return clz;
+        }
+        Class<?> clz = classLoader.loadClass(formatting(className));
+        log("Loaded class " + className);
         return clz;
     }
     private static String formatting(String className){
@@ -101,5 +123,9 @@ public class GraphScopeClassLoader {
             ret[i] = res.get(i);
         }
         return ret;
+    }
+    private static void log(String info){
+        System.out.print("[GS Class Loader]: ");
+        System.out.println(info);
     }
 }
