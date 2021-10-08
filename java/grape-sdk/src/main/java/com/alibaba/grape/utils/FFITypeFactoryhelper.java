@@ -253,19 +253,16 @@ public class FFITypeFactoryhelper {
     /**
      * For Any ffi-gened class, we can get the typealias via annotation
      *
-     * @param clz
-     * @return
+     * @param ffiPointer
+     * @return foreignName
      */
-    public static String getForeignName(Class<?> clz) {
-        if (clz.getGenericSuperclass() instanceof FFIPointer) {
-            FFIForeignType ffiForeignType = clz.getAnnotation(FFIForeignType.class);
-            if (ffiForeignType == null) {
-                logger.error("No FFIForeign type annotation found");
-                return null;
-            }
-            return ffiForeignType.value();
+    public static String getForeignName(FFIPointer ffiPointer) {
+        Class<?> clz = ffiPointer.getClass();
+        FFIForeignType ffiForeignType = clz.getAnnotation(FFIForeignType.class);
+        if (ffiForeignType == null) {
+            logger.error("No FFIForeign type annotation found");
+            return null;
         }
-        logger.error("Not a subclass for FFIPointer interface, clz: " + clz.getName() + ", generic super class: " + clz.getGenericSuperclass().getTypeName());
-        return null;
+        return ffiForeignType.value();
     }
 }

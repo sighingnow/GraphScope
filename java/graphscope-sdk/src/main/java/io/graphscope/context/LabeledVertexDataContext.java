@@ -24,7 +24,7 @@ public abstract class LabeledVertexDataContext<OID_T, DATA_T> implements Propert
      */
     protected void createFFIContext(ArrowFragment<OID_T> fragment, Class<?> oidClass, Class<?> dataClass) {
 //        System.out.println("fragment: " + FFITypeFactoryhelper.makeParameterize(ARROW_FRAGMENT, FFITypeFactoryhelper.javaType2CppType(oidClass)));
-        String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment.getClass());
+        String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment);
         String contextName = FFITypeFactoryhelper.makeParameterize(CPP_CLASS.LABELED_VERTEX_DATA_CONTEXT, fragmentTemplateStr, FFITypeFactoryhelper.javaType2CppType(dataClass));
         System.out.println("context name: " + contextName);
         factory = FFITypeFactory.getFactory(FFILabeledVertexDataContext.class, contextName);

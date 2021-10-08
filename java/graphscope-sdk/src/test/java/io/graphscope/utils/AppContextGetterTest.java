@@ -55,6 +55,6 @@ public class AppContextGetterTest {
     @Test
     public void test2() {
         Vertex<Long> prev = FFITypeFactoryhelper.newVertexLong();
-        System.out.println("Vertex<Long>: " + FFITypeFactoryhelper.getForeignName(prev.getClass()));
+        System.out.println("Vertex<Long>: " + FFITypeFactoryhelper.getForeignName(prev));
     }
 }
