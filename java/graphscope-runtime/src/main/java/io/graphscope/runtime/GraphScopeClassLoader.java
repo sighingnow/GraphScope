@@ -10,14 +10,33 @@ import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Vector;
 import java.util.stream.Collectors;
 
 public class GraphScopeClassLoader {
+    static class ClassScope {
+        private static java.lang.reflect.Field LIBRARIES = null;
+        static {
+            try {
+                LIBRARIES = ClassLoader.class.getDeclaredField("loadedLibraryNames");
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            }
+            LIBRARIES.setAccessible(true);
+        }
+        public static String[] getLoadedLibraries(final ClassLoader loader) throws IllegalAccessException {
+            final Vector<String> libraries = (Vector<String>) LIBRARIES.get(loader);
+            return libraries.toArray(new String[] {});
+        }
+    }
     private static String FFI_TYPE_FACTORY_CLASS = "com.alibaba.ffi.FFITypeFactory";
     public static Class<?> ffiTypeFactoryClass = null;
-    public static URLClassLoader newGraphScopeClassLoader(String classPath) {
+    public static URLClassLoader newGraphScopeClassLoader(String classPath) throws IllegalAccessException {
+        String [] libraries = ClassScope.getLoadedLibraries(ClassLoader.getSystemClassLoader());
+        log("loaded lib: " + String.join(" ", libraries));
         return new URLClassLoader(classPath2URLArray(classPath),
                 Thread.currentThread().getContextClassLoader());
+
     }
 
     /**
