@@ -496,7 +496,7 @@ std::string get_java_property(JNIEnv* env, const char* property_name) {
   return jstring2string(env, propertyString);
 }
 // May return null.
-jclass load_class_with_class_loader(JNIEnv* env, jobject& gs_class_loader,
+jclass load_class_with_class_loader(JNIEnv* env,const jobject& gs_class_loader,
                                     const char* class_name) {
   jstring class_name_jstring = env->NewStringUTF(class_name);
 
