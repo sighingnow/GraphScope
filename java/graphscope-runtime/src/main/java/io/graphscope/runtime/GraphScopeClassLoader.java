@@ -59,7 +59,9 @@ public class GraphScopeClassLoader {
         log("Creating FFIPointer, typename [" + foreignName + "], address [" + address + "]" + ", ffi type factor [" + ffiTypeFactoryClass);
         //First load class by FFITypeFactor
         Method getTypeMethod = ffiTypeFactoryClass.getDeclaredMethod("getType", String.class);
-        Class<?> javaClass = (Class<?>) getTypeMethod.invoke(null, foreignName);
+        Class<?> ffiJavaClass = (Class<?>) getTypeMethod.invoke(null, foreignName);
+        //The class loaded by FFITypeFactor's classLoader can not be directly used by us. We load again with our class loader.
+        Class<?> javaClass = classLoader.loadClass(ffiJavaClass.getName());
         if (Objects.nonNull(javaClass)){
             Constructor[] constructors = javaClass.getDeclaredConstructors();
             for (Constructor constructor : constructors){
