@@ -45,6 +45,7 @@ static jmethodID class_loader_load_class_methodID = NULL;
 static jclass class_loader_clz = NULL;
 static jmethodID class_loader_create_ffipointer_methodID = NULL;
 static jmethodID class_loader_load_class_methodID = NULL;
+static jmethodID class_loader_load_and_create_methodID = NULL;
 
 std::string jstring2string(JNIEnv* env, jstring jStr);
 bool InitWellKnownClasses(JNIEnv* env) {
@@ -64,6 +65,11 @@ bool InitWellKnownClasses(JNIEnv* env) {
       class_loader_clz, "loadClass",
       "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
   CHECK_NOTNULL(class_loader_load_class_methodID);
+
+  class_loader_load_and_create_methodID = env->GetStaticMethodID(
+      class_loader_clz, "loadAndCreate",
+      "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Object;");
+  CHECK_NOTNULL(method);
 
   return true;
 }
@@ -266,6 +272,24 @@ jobject createFFIPointer(JNIEnv* env, const char* type_name,
     return NULL;
   }
   return env->NewGlobalRef(ffi_pointer);
+}
+
+jobject load_and_create(JNIEnv* env, const jobject& url_class_loader_obj,
+                        const char* class_name) {
+  LOG(INFO) << "Loading and creating for class: " << class_name;
+  jstring class_name_jstring = env->NewStringUTF(class_name);
+
+  jobject res = env->CallStaticObjectMethod(
+      class_loader_clz, class_loader_load_and_create_methodID,
+      url_class_loader_obj, class_name_jstring);
+  if (env->ExceptionCheck()) {
+    LOG(ERROR) << "Exception in loading and creating class: "
+               << std::string(class_name);
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+    LOG(FATAL) << "exiting since exception occurred";
+  }
+  return env->NewGlobalRef(res);
 }
 
 // TODO:Remove
@@ -497,20 +521,21 @@ std::string get_java_property(JNIEnv* env, const char* property_name) {
   return jstring2string(env, propertyString);
 }
 // May return null.
-jclass load_class_with_class_loader(jobject& gs_class_loader,
+jclass load_class_with_class_loader(JNIEnv* env,
+                                    const jobject& url_class_loader,
                                     const char* class_name) {
   jstring class_name_jstring = env->NewStringUTF(class_name);
 
   jclass result_class = (jclass) env->CallStaticObjectMethod(
-      class_loader_clz, class_loader_load_class_methodID, gs_class_loader,
+      class_loader_clz, class_loader_load_class_methodID, url_class_loader,
       class_name_jstring);
   if (env->ExceptionCheck()) {
     env->ExceptionDescribe();
     env->ExceptionClear();
     LOG(FATAL) << "Error in loading class " << class_name
-               << " with class loader " << &gs_class_loader;
+               << " with class loader " << &url_class_loader;
   }
-  return result_class;
+  return env->NewGlobalRef(result_class);
 }
 }  // namespace gs
 #endif
