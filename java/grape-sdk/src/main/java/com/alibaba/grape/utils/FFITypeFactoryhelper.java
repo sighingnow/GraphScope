@@ -1,9 +1,6 @@
 package com.alibaba.grape.utils;
 
-import com.alibaba.ffi.FFIForeignType;
-import com.alibaba.ffi.FFIPointerImpl;
-import com.alibaba.ffi.FFITypeFactory;
-import com.alibaba.ffi.FFIVector;
+import com.alibaba.ffi.*;
 import com.alibaba.ffi.impl.CXXStdVector;
 import com.alibaba.grape.ds.*;
 import com.alibaba.grape.parallel.MessageInBuffer;
@@ -260,7 +257,7 @@ public class FFITypeFactoryhelper {
      * @return
      */
     public static String getForeignName(Class<?> clz) {
-        if (clz.getGenericSuperclass().equals(FFIPointerImpl.class)) {
+        if (clz.getGenericSuperclass() instanceof FFIPointer) {
             FFIForeignType ffiForeignType = clz.getAnnotation(FFIForeignType.class);
             if (ffiForeignType == null) {
                 logger.error("No FFIForeign type annotation found");
@@ -268,7 +265,7 @@ public class FFITypeFactoryhelper {
             }
             return ffiForeignType.value();
         }
-        logger.error("Not a subclass for FFIPointerImpl class, clz: " + clz.getName() + ", generic super class: " + clz.getGenericSuperclass().getTypeName());
+        logger.error("Not a subclass for FFIPointer interface, clz: " + clz.getName() + ", generic super class: " + clz.getGenericSuperclass().getTypeName());
         return null;
     }
 }
