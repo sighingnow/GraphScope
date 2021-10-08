@@ -41,7 +41,6 @@ static jmethodID FFITypeFactory_getTypeMethodID = NULL;
 static jmethodID FFITypeFactory_getTypeMethodID_plus = NULL;
 static jclass FFIVectorClass = NULL;
 static jclass StdVectorClass = NULL;
-static jmethodID class_loader_load_class_methodID = NULL;
 static jclass class_loader_clz = NULL;
 static jmethodID class_loader_create_ffipointer_methodID = NULL;
 static jmethodID class_loader_load_class_methodID = NULL;
@@ -470,8 +469,8 @@ void init_java_communicator(JNIEnv* env, const jobject& url_class_loader,
   if (env->IsInstanceOf(java_app, communicator_class)) {
     jmethodID init_communicator_method =
         env->GetMethodID(communicator_class, "initCommunicator", "(Z;)V");
-    CHECK_NOTNULL(initCommunicatorMethod);
-    env->CallVoidMethod(java_app, initCommunicatorMethod, app_address);
+    CHECK_NOTNULL(init_communicator_method);
+    env->CallVoidMethod(java_app, init_communicator_method, app_address);
     if (env->ExceptionCheck()) {
       LOG(ERROR) << "Exception occurred in init communicator";
       env->ExceptionDescribe();
@@ -497,7 +496,7 @@ std::string get_java_property(JNIEnv* env, const char* property_name) {
   return jstring2string(env, propertyString);
 }
 // May return null.
-jclass load_class_with_class_loader(jobject& gs_class_loader,
+jclass load_class_with_class_loader(JNIEnv* env, jobject& gs_class_loader,
                                     const char* class_name) {
   jstring class_name_jstring = env->NewStringUTF(class_name);
 
