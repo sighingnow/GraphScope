@@ -46,6 +46,8 @@ static jclass class_loader_clz = NULL;
 static jmethodID class_loader_create_ffipointer_methodID = NULL;
 static jmethodID class_loader_load_class_methodID = NULL;
 static jmethodID class_loader_load_and_create_methodID = NULL;
+static jclass system_class = NULL;
+static jmethodID gc_methodID = NULL;
 
 std::string jstring2string(JNIEnv* env, jstring jStr);
 bool InitWellKnownClasses(JNIEnv* env) {
@@ -70,6 +72,13 @@ bool InitWellKnownClasses(JNIEnv* env) {
       class_loader_clz, "loadAndCreate",
       "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Object;");
   CHECK_NOTNULL(method);
+
+  system_class = env->FindClass("java/lang/System");
+  CHECK_NOTNULL(system_class);
+  system_class = (jclass) env->NewGlobalRef(system_class);
+
+  gc_methodID = env->GetStaticMethodId(system_class, "gc", "()V");
+  CHECK_NOTNULL(gc_methodID);
 
   return true;
 }
@@ -290,6 +299,11 @@ jobject load_and_create(JNIEnv* env, const jobject& url_class_loader_obj,
     LOG(FATAL) << "exiting since exception occurred";
   }
   return env->NewGlobalRef(res);
+}
+
+void invoke_gc(JNIEnv* env) {
+  LOG(INFO) << "GC ...";
+  env->CallStaticVoidMethod(system_class, gc_methodID);
 }
 
 // TODO:Remove
