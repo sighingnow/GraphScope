@@ -139,6 +139,8 @@ export RUN_CP=${RUN_CP}:~/.m2/repository/com/google/guava/guava/30.1.1-jre/guava
 export RUN_CP=${RUN_CP}:${demo_jar}
 export RUN_CP=/home/admin/.m2/repository/com/alibaba/grape/graphscope-runtime/0.1/graphscope-runtime-0.1.jar
 export JAVA_CP=/tmp/gs/session_zjbdxlaf/user-llvm4jni-output-120b3412f1ad7ebcc7a02f26582bae1663991fbd7259dd0eda838c559dc13554:/tmp/gs/session_zjbdxlaf/gs-ffi-120b3412f1ad7ebcc7a02f26582bae1663991fbd7259dd0eda838c559dc13554/CLASS_OUTPUT:/home/admin/.m2/repository/com/alibaba/grape/graphscope-demo/0.1/graphscope-demo-0.1-shaded.jar:${VINEYARD_GRAPH_BUILD_NATIVE}:${GRAPE_SDK_BUILD_NATIVE}
+export JAVA_CP_2=/tmp/graphscope-demo/:${VINEYARD_GRAPH_BUILD_NATIVE}:${GRAPE_SDK_BUILD_NATIVE}
+
 #export RUN_CP=${RUN_CP}:~/.m2/repository/com/alibaba/ffi/llvm4jni-runtime/0.1/llvm4jni-runtime-0.1-jar-with-dependencies.jar
 echo "run class path "${RUN_CP}
 echo "java libraray path "${GRAPE_SDK_BUILD_NATIVE}:${VINEYARD_GRAPH_BUILD_NATIVE}
@@ -148,8 +150,8 @@ export RUN_JVM_OPTS="-Djava.library.path=${GRAPE_SDK_BUILD_NATIVE}:${VINEYARD_GR
 #export RUN_JVM_OPTS="-Djava.library.path=/tmp/gs/session_cxqhclvv/b48c2451b725e7a976c786d88164ccd3eb3ad93cea83417bf541bc878a9449e3:/home/admin/gs/java/grape-sdk/target/native:/home/admin/gs/java/graphscope-sdk/target/native -Djava.class.path=/tmp/gs/session_cxqhclvv/user-llvm4jni-output-b48c2451b725e7a976c786d88164ccd3eb3ad93cea83417bf541bc878a9449e3:/tmp/gs/session_cxqhclvv/gs-ffi-b48c2451b725e7a976c786d88164ccd3eb3ad93cea83417bf541bc878a9449e3/CLASS_OUTPUT:/home/admin/.m2/repository/com/alibaba/grape/graphscope-demo/0.1/graphscope-demo-0.1-shaded.jar -Xrs"
 #-verbose:class 
 np=1
-run_projected=1
-run_property=0
+run_projected=0
+run_property=1
 directed=1
 #GLOG_v=1 run_vy ${np} ./run_java_vertex_property_ctx "${socket_file}" 2 "${test_dir}"/new_property/v2_e2/twitter_e 2 "${test_dir}"/new_property/v2_e2/twitter_v 0 1 io.graphscope.example.sssp.PropertySSSP
 if [ "$run_projected"x = "0"x ]

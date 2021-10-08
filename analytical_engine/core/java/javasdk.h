@@ -41,7 +41,6 @@ static jmethodID FFITypeFactory_getTypeMethodID = NULL;
 static jmethodID FFITypeFactory_getTypeMethodID_plus = NULL;
 static jclass FFIVectorClass = NULL;
 static jclass StdVectorClass = NULL;
-static jmethodID class_loader_load_class_methodID = NULL;
 static jclass class_loader_clz = NULL;
 static jmethodID class_loader_create_ffipointer_methodID = NULL;
 static jmethodID class_loader_load_class_methodID = NULL;
@@ -71,13 +70,13 @@ bool InitWellKnownClasses(JNIEnv* env) {
   class_loader_load_and_create_methodID = env->GetStaticMethodID(
       class_loader_clz, "loadAndCreate",
       "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Object;");
-  CHECK_NOTNULL(method);
+  CHECK_NOTNULL(class_loader_load_and_create_methodID);
 
   system_class = env->FindClass("java/lang/System");
   CHECK_NOTNULL(system_class);
   system_class = (jclass) env->NewGlobalRef(system_class);
 
-  gc_methodID = env->GetStaticMethodId(system_class, "gc", "()V");
+  gc_methodID = env->GetStaticMethodID(system_class, "gc", "()V");
   CHECK_NOTNULL(gc_methodID);
 
   return true;
@@ -508,8 +507,8 @@ void init_java_communicator(JNIEnv* env, const jobject& url_class_loader,
   if (env->IsInstanceOf(java_app, communicator_class)) {
     jmethodID init_communicator_method =
         env->GetMethodID(communicator_class, "initCommunicator", "(Z;)V");
-    CHECK_NOTNULL(initCommunicatorMethod);
-    env->CallVoidMethod(java_app, initCommunicatorMethod, app_address);
+    CHECK_NOTNULL(init_communicator_method);
+    env->CallVoidMethod(java_app, init_communicator_method, app_address);
     if (env->ExceptionCheck()) {
       LOG(ERROR) << "Exception occurred in init communicator";
       env->ExceptionDescribe();
@@ -535,6 +534,7 @@ std::string get_java_property(JNIEnv* env, const char* property_name) {
   return jstring2string(env, propertyString);
 }
 // May return null.
+
 jclass load_class_with_class_loader(JNIEnv* env,
                                     const jobject& url_class_loader,
                                     const char* class_name) {
@@ -549,7 +549,7 @@ jclass load_class_with_class_loader(JNIEnv* env,
     LOG(FATAL) << "Error in loading class " << class_name
                << " with class loader " << &url_class_loader;
   }
-  return env->NewGlobalRef(result_class);
+  return result_class;
 }
 }  // namespace gs
 #endif

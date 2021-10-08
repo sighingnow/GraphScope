@@ -210,10 +210,6 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
   auto spec = grape::DefaultParallelEngineSpec();
   worker->Init(comm_spec, spec);
   worker->Query(basic_params);
-  worker->Query(basic_params);
-  worker->Query(basic_params);
-  worker->Query(basic_params);
-  worker->Query(basic_params);
   std::ofstream ostream;
   std::string output_path =
       grape::GetResultFilename(out_prefix, fragment->fid());
@@ -437,7 +433,13 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
     std::stringstream ss;
     boost::property_tree::json_parser::write_json(ss, pt);
     std::string basic_params = ss.str();
-    LOG(INFO) << "basic_params" << basic_params;
+    LOG(INFO) << "basic_params: " << basic_params;
+
+    pt.put("user_class_path", std::string(getenv("JAVA_CP_2")));
+    std::stringstream ss2;
+    boost::property_tree::json_parser::write_json(ss2, pt);
+    std::string basic_params2 = ss2.str();
+    LOG(INFO) << "basic_params 2 : " << basic_params2;
 
     std::string selector_string;
     std::string selectors_string;
@@ -465,6 +467,9 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
     // 1. run java query
     Query(client, fragment, comm_spec, app_name, "/tmp", basic_params,
           selector_string, selectors_string);
+    // 2. second run
+    Query(client, fragment, comm_spec, app_name, "/tmp", basic_params2,
+          selector_string, selectors_string);
     // 2.run c++ query
     RunSSSP(client, fragment, comm_spec, "/tmp", selector_string,
             selectors_string);
@@ -489,11 +494,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
     projected_fragment->GetInnerVertex(4, vertex);
     LOG(INFO) << "source vertex" << vertex.GetValue();
     auto adjlist = projected_fragment->GetOutgoingAdjList(vertex);
-    for (auto e : adjlist) {
-      auto v = e.neighbor();
-      int64_t edata = static_cast<int64_t>(e.get_data());
-      LOG(INFO) << v.GetValue() << "edata: " << edata;
-    }
+
     int cnt = 0;
     // vdata print
     while (cnt < 5) {
