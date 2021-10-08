@@ -268,7 +268,7 @@ public class FFITypeFactoryhelper {
             }
             return ffiForeignType.value();
         }
-        logger.error("Not a subclass for FFIPointerImpl class");
+        logger.error("Not a subclass for FFIPointerImpl class, clz: " + clz.getName() + ", generic super class: " + clz.getGenericSuperclass().getTypeName());
         return null;
     }
 }

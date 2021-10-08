@@ -46,7 +46,7 @@ public class SSSPProjected implements ProjectedDefaultAppBase<Long, Long, Double
                 ctx.nextModified.set(vertex);
             }
             iterTime += 1;
-            logger.info("vertex<" + vertex.GetValue() + ">nbrdata :" + curDist + ", prev: " + prev + " after: " + ctx.partialResults.get(vertex));
+            //logger.info("vertex<" + vertex.GetValue() + ">nbrdata :" + curDist + ", prev: " + prev + " after: " + ctx.partialResults.get(vertex));
         }
         logger.info("peval iteration " + iterTime);
 
