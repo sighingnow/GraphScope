@@ -30,7 +30,7 @@ public class GraphScopeClassLoader {
         }
     }
     private static String FFI_TYPE_FACTORY_CLASS = "com.alibaba.ffi.FFITypeFactory";
-    public static Class<?> ffiTypeFactoryClass = null;
+//    public static Class<?> ffiTypeFactoryClass = null;
     public static URLClassLoader newGraphScopeClassLoader(String classPath) throws IllegalAccessException {
         String [] libraries = ClassScope.getLoadedLibraries(ClassLoader.getSystemClassLoader());
         log("loaded lib: " + String.join(" ", libraries));
@@ -70,11 +70,11 @@ public class GraphScopeClassLoader {
      * @throws InstantiationException
      */
     public static Object createFFIPointer(URLClassLoader classLoader, String foreignName, long address) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, InstantiationException {
-        synchronized (FFI_TYPE_FACTORY_CLASS){
-            if (Objects.isNull(ffiTypeFactoryClass)){
-                ffiTypeFactoryClass = classLoader.loadClass(FFI_TYPE_FACTORY_CLASS);
-            }
-        }
+//        synchronized (FFI_TYPE_FACTORY_CLASS){
+//            if (Objects.isNull(ffiTypeFactoryClass)){
+        Class<?> ffiTypeFactoryClass = classLoader.loadClass(FFI_TYPE_FACTORY_CLASS);
+//            }
+//        }
         log("Creating FFIPointer, typename [" + foreignName + "], address [" + address + "]" + ", ffi type factor [" + ffiTypeFactoryClass);
         //a new classLoader contains new class path, we load the ffi.properties here.
         Method loadClassLoaderMethod = ffiTypeFactoryClass.getDeclaredMethod("loadClassLoader", ClassLoader.class);
