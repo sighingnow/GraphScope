@@ -145,6 +145,7 @@ class JavaApp(AppAssets):
     def __init__(self, full_jar_path : str, java_app_class: str):
         self._java_app_class = java_app_class
         self._full_jar_path = full_jar_path
+        self._jar_name = Path(self._full_jar_path).name
         gar = self._pack_jar(self._full_jar_path)
         gs_config = {
             "app": [
@@ -229,6 +230,9 @@ class JavaApp(AppAssets):
     def jar_path(self):
         return self._full_jar_path
     @property
+    def jar_name(self):
+        return self._jar_name
+    @property
     def java_app_type(self):
         return self._java_app_type
     @property
@@ -288,7 +292,7 @@ class JavaAppDagNode(AppDAGNode):
         app_lib_name = self._app_assets.signature()
         app_lib_dir = os.path.join(udf_workspace, app_lib_name)
         app_lib_full_path = os.path.join(app_lib_dir, _get_lib_path(app_lib_name))
-        jar_unpacked_path = os.path.join(app_lib_dir, self._app_assets.jar_path)
+        jar_unpacked_path = os.path.join(app_lib_dir, self._app_assets.jar_name)
         assert (os.path.isfile(app_lib_full_path)), "{} not found ".format(app_lib_full_path)
         assert (os.path.isfile(jar_unpacked_path)), "{} not found ".format(jar_unpacked_path)
 

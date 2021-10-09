@@ -81,7 +81,7 @@ public class GraphScopeClassLoader {
         loadClassLoaderMethod.invoke(null, classLoader);
 
         //To make FFITypeFactor use our classLoader to find desired type matching, we load FFIType with our classLoader.
-        Class<?> ffiTypeClass = classLoader.loadClass("com.alibaba.fastffi.FFIType");
+        Class<?> ffiTypeClass = classLoader.loadClass("com.alibaba.ffi.FFIType");
         System.out.println("ffitype cl :" + ffiTypeClass.getClassLoader() + ", url cl: " + classLoader);
 
         //First load class by FFITypeFactor
