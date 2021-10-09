@@ -42,7 +42,7 @@ static jmethodID class_loader_new_simple_gs_class_loader_methodID = NULL;
 static jclass system_class = NULL;
 static jmethodID gc_methodID = NULL;
 
-std::string jstring2string(const JNIEnv* env, jstring jStr) {
+std::string jstring2string(JNIEnv* env, jstring jStr) {
   if (!jStr)
     return "";
 
@@ -62,7 +62,7 @@ std::string jstring2string(const JNIEnv* env, jstring jStr) {
   env->DeleteLocalRef(stringClass);
   return ret;
 }
-bool InitWellKnownClasses(const JNIEnv* env) {
+bool InitWellKnownClasses(JNIEnv* env) {
   gs_class_loader_clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
   CHECK_NOTNULL(gs_class_loader_clz);
   gs_class_loader_clz = (jclass) env->NewGlobalRef(gs_class_loader_clz);
@@ -255,7 +255,7 @@ struct JNIEnvMark {
 };
 
 // Create a URL class loader
-jobject create_class_loader(const JNIEnv* env, const std::string& class_path) {
+jobject create_class_loader(JNIEnv* env, const std::string& class_path) {
   jstring cp_jstring = env->NewStringUTF(class_path.c_str());
   jobject url_class_loader = env->CallStaticObjectMethod(
       gs_class_loader_clz, class_loader_new_gs_class_loader_methodID,
@@ -272,7 +272,7 @@ jobject create_class_loader(const JNIEnv* env, const std::string& class_path) {
 
 // For pie_default and pie_parallel context, we create a url class loader with
 // no extra class path.
-jobject create_class_loader(const JNIEnv* env) {
+jobject create_class_loader(JNIEnv* env) {
   // jstring cp_jstring = env->NewStringUTF(class_path.c_str());
   jobject url_class_loader = env->CallStaticObjectMethod(
       gs_class_loader_clz, class_loader_new_simple_gs_class_loader_methodID);
@@ -286,7 +286,7 @@ jobject create_class_loader(const JNIEnv* env) {
   return env->NewGlobalRef(url_class_loader);
 }
 
-jobject createFFIPointer(const JNIEnv* env, const char* type_name,
+jobject createFFIPointer(JNIEnv* env, const char* type_name,
                          const jobject& url_class_loader, jlong pointer) {
   jstring type_name_jstring = env->NewStringUTF(type_name);
   jobject ffi_pointer = env->CallStaticObjectMethod(
@@ -302,7 +302,7 @@ jobject createFFIPointer(const JNIEnv* env, const char* type_name,
   return env->NewGlobalRef(ffi_pointer);
 }
 
-jobject load_and_create(const JNIEnv* env, const jobject& url_class_loader_obj,
+jobject load_and_create(JNIEnv* env, const jobject& url_class_loader_obj,
                         const char* class_name) {
   LOG(INFO) << "Loading and creating for class: " << class_name;
   jstring class_name_jstring = env->NewStringUTF(class_name);
@@ -327,7 +327,7 @@ void invoke_gc(JNIEnv* env) {
 }
 
 // Calling clazz's default constructor and return the jobject.
-jobject createObject(const JNIEnv* env, jclass clazz, const char* class_name) {
+jobject createObject(JNIEnv* env, jclass clazz, const char* class_name) {
   jmethodID ctor = env->GetMethodID(clazz, "<init>", "()V");
   if (ctor == NULL) {
     LOG(ERROR) << "Cannot find default constructor " << class_name;
@@ -336,7 +336,7 @@ jobject createObject(const JNIEnv* env, jclass clazz, const char* class_name) {
   return env->NewObject(clazz, ctor);
 }
 // TODO: remove
-// jobject createFFIPointerObject(const JNIEnv* env, const char* type_name,
+// jobject createFFIPointerObject(JNIEnv* env, const char* type_name,
 //                                jlong pointer) {
 //   // must be properly encoded
 //   std::string tmp = type_name;
@@ -369,7 +369,7 @@ jobject createObject(const JNIEnv* env, jclass clazz, const char* class_name) {
 //   return the_object;
 // }
 
-std::string get_jobject_class_name(const JNIEnv* env, jobject object) {
+std::string get_jobject_class_name(JNIEnv* env, jobject object) {
   CHECK_NOTNULL(object);
   jclass object_class = env->GetObjectClass(object);
 
@@ -403,7 +403,7 @@ char* java_class_name_dash_to_slash(const std::string& str) {
 
 // judge whether java app class instance of Communicator, if yes, we call
 // the init communicator method.
-void init_java_communicator(const JNIEnv* env, const jobject& url_class_loader,
+void init_java_communicator(JNIEnv* env, const jobject& url_class_loader,
                             const jobject& java_app, jlong app_address) {
   CHECK_NOTNULL(env);
   CHECK(app_address != 0);
@@ -430,7 +430,7 @@ void init_java_communicator(const JNIEnv* env, const jobject& url_class_loader,
   LOG(INFO) << "No initing since not a sub class from Communicator.";
 }
 
-std::string get_java_property(const JNIEnv* env, const char* property_name) {
+std::string get_java_property(JNIEnv* env, const char* property_name) {
   jclass systemClass = env->FindClass("java/lang/System");
   jmethodID getPropertyMethod = env->GetStaticMethodID(
       systemClass, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
@@ -444,7 +444,7 @@ std::string get_java_property(const JNIEnv* env, const char* property_name) {
   return jstring2string(env, propertyString);
 }
 
-jclass load_class_with_class_loader(const JNIEnv* env,
+jclass load_class_with_class_loader(JNIEnv* env,
                                     const jobject& url_class_loader,
                                     const char* class_name) {
   jstring class_name_jstring = env->NewStringUTF(class_name);
