@@ -128,7 +128,6 @@ class JavaContextBase : public grape::ContextBase {
     JNIEnvMark m;
     if (m.env()) {
       JNIEnv* env = m.env();
-      // load_jni_library(env, user_library_name);
 
       // Create a graphscope class loader to load app_class and ctx_class. This
       // means will create a new class loader for each for run_app.
@@ -140,18 +139,9 @@ class JavaContextBase : public grape::ContextBase {
       }
 
       {
-        LOG(INFO) << "Now create app object: " << app_class_name_;
-        jobject app_obj =
-            load_and_create(env, url_class_loader_object_, app_class_name_);
-        CHECK_NOTNULL(app_obj);
-        app_object_ = env->NewGlobalRef(app_obj);
-        LOG(INFO) << "Successfully create app object with class loader:"
-                  << &url_class_loader_object_
-                  << ", of type: " << std::string(app_class_name_);
-      }
-      {
         // Since we load loadLibraryClass with urlClassLoader, the
-        // fromClass.classLoader in System.load is urlClassLoader.
+        // fromClass.classLoader literal, which is used in System.load, should
+        // be urlClassLoader.
         jclass load_library_class = (jclass) load_class_with_class_loader(
             env, url_class_loader_object_, LOAD_LIBRARY_CLASS);
         CHECK_NOTNULL(load_library_class);
@@ -172,18 +162,22 @@ class JavaContextBase : public grape::ContextBase {
         }
         LOG(INFO) << "Loaded specified user jni library: " << user_library_name;
       }
+
+      {
+        LOG(INFO) << "Now create app object: " << app_class_name_;
+        app_object_ =
+            load_and_create(env, url_class_loader_object_, app_class_name_);
+        LOG(INFO) << "Successfully create app object with class loader:"
+                  << &url_class_loader_object_
+                  << ", of type: " << std::string(app_class_name_);
+      }
+
       {
         std::string _context_class_name_str =
             get_ctx_class_name_from_app_object(env);
         LOG(INFO) << "context class name: " << _context_class_name_str;
-        // The retrived context class str is dash-sperated, convert to
-        // -seperated
-        // char* _context_class_name_c_str =
-        //     java_class_name_dash_to_slash(_context_class_name_str);
-        jobject ctx_obj = load_and_create(env, url_class_loader_object_,
+        context_object_ = load_and_create(env, url_class_loader_object_,
                                           _context_class_name_str.c_str());
-        CHECK_NOTNULL(ctx_obj);
-        context_object_ = env->NewGlobalRef(ctx_obj);
         LOG(INFO) << "Successfully create ctx object with class loader:"
                   << &url_class_loader_object_
                   << ", of type: " << _context_class_name_str;
@@ -263,31 +257,6 @@ class JavaContextBase : public grape::ContextBase {
   }
 
  private:
-  // Loading jni library with absolute path
-  void load_jni_library(JNIEnv* env, std::string& user_library_name) {
-    LOG(INFO) << "java.class.path: "
-              << get_java_property(env, "java.class.path");
-    jclass load_library_clz = env->FindClass(LOAD_LIBRARY_CLASS);
-    CHECK_NOTNULL(load_library_clz);
-
-    const char* load_library_signature = "(Ljava/lang/String;)V";
-    jstring user_library_jstring = env->NewStringUTF(user_library_name.c_str());
-    jmethodID load_library_methodID = env->GetStaticMethodID(
-        load_library_clz, "invoke", load_library_signature);
-
-    // call static method
-    env->CallStaticVoidMethod(load_library_clz, load_library_methodID,
-                              user_library_jstring);
-
-    if (env->ExceptionOccurred()) {
-      LOG(ERROR) << std::string("Exception occurred in loading user library");
-      env->ExceptionDescribe();
-      env->ExceptionClear();
-      LOG(FATAL) << "Exiting since exception occurred";
-    }
-    LOG(INFO) << "Loaded specified user jni library: " << user_library_name;
-  }
-
   // user library name should be absolute
   std::string parse_params_and_setup_jvm_env(const std::string& params,
                                              std::string& user_library_name,
@@ -356,20 +325,6 @@ class JavaContextBase : public grape::ContextBase {
 
   // get the java context name with is bounded to app_object_.
   std::string get_ctx_class_name_from_app_object(JNIEnv* env) {
-    // jclass app_context_getter_class =
-    // env->FindClass(APP_CONTEXT_GETTER_CLASS);
-    // jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
-    // CHECK_NOTNULL(clz);
-
-    // jmethodID method = env->GetStaticMethodID(
-    //     clz, "loadClass",
-    //     "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
-    // CHECK_NOTNULL(method);
-
-    // jstring context_getter_class_name =
-    //     env->NewStringUTF(APP_CONTEXT_GETTER_CLASS);
-    // jclass app_context_getter_class = (jclass) env->CallStaticObjectMethod(
-    //     clz, method, url_class_loader_object_, context_getter_class_name);
     jclass app_context_getter_class = (jclass) load_class_with_class_loader(
         env, url_class_loader_object_, APP_CONTEXT_GETTER_CLASS);
     if (env->ExceptionCheck()) {

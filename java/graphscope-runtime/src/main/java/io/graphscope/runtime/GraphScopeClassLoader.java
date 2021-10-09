@@ -33,10 +33,23 @@ public class GraphScopeClassLoader {
 //    public static Class<?> ffiTypeFactoryClass = null;
     public static URLClassLoader newGraphScopeClassLoader(String classPath) throws IllegalAccessException {
         String [] libraries = ClassScope.getLoadedLibraries(ClassLoader.getSystemClassLoader());
-        log("loaded lib: " + String.join(" ", libraries));
+        log("Loaded lib: " + String.join(" ", libraries));
         return new URLClassLoader(classPath2URLArray(classPath),
                 Thread.currentThread().getContextClassLoader());
 
+    }
+
+    /**
+     * Return a URL class loader which has no extra class path compared to its parent.
+     * @return
+     * @throws IllegalAccessException
+     */
+    public static URLClassLoader newGraphScopeClassLoader() throws IllegalAccessException {
+        String [] libraries = ClassScope.getLoadedLibraries(ClassLoader.getSystemClassLoader());
+        log("Loaded lib: " + String.join(" ", libraries));
+        //CAUTION: add '.' to avoid empty url.
+        return new URLClassLoader(classPath2URLArray("."),
+                Thread.currentThread().getContextClassLoader());
     }
 
     /**

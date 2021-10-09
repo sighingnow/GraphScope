@@ -198,14 +198,15 @@ if (ENABLE_JAVA_SDK)
             ${JNI_LIBRARIES}
             $ENV{JAVA_HOME}/jre/lib/amd64/libjsig.so
             )
-endif()
-target_link_libraries(grape_engine PRIVATE gs_proto
+else ()
+    target_link_libraries(grape_engine PRIVATE gs_proto
         ${LIBGRAPELITE_LIBRARIES}
         ${GFLAGS_LIBRARIES}
         ${CMAKE_DL_LIBS}
         ${Boost_LIBRARIES}
         ${VINEYARD_LIBRARIES}
         )
+endif()
 
 if (${LIBUNWIND_FOUND})
     target_link_libraries(grape_engine PRIVATE ${LIBUNWIND_LIBRARIES})

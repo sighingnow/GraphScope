@@ -43,7 +43,8 @@ class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {
         app_object_(NULL),
         context_object_(NULL),
         fragment_object_(NULL),
-        mm_object_(NULL) {}
+        mm_object_(NULL),
+        url_class_loader_object_(NULL) {}
 
   virtual ~JavaPIEDefaultContext() {
     delete[] app_class_name_;
@@ -54,6 +55,7 @@ class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {
       m.env()->DeleteGlobalRef(context_object_);
       m.env()->DeleteGlobalRef(fragment_object_);
       m.env()->DeleteGlobalRef(mm_object_);
+      m.env()->DeleteGlobalRef(url_class_loader_object_);
     }
   }
   const fragment_t& fragment() { return fragment_; }
@@ -63,6 +65,9 @@ class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {
   const jobject& context_object() const { return context_object_; }
   const jobject& fragment_object() const { return fragment_object_; }
   const jobject& message_manager_object() const { return mm_object_; }
+  const jobject& url_class_loader_object() const {
+    return url_class_loader_object_;
+  }
 
   void Init(grape::DefaultMessageManager& messages, std::string& frag_name,
             std::string& app_class_name, std::string& app_context_name,
@@ -72,37 +77,56 @@ class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {
       JNIEnv* env = m.env();
       CHECK(!init_class_names(app_class_name, app_context_name));
 
-      jclass context_class = env->FindClass(context_class_name_);
-      CHECK_NOTNULL(context_class);
       {
-        jobject object = createObject(env, context_class, context_class_name_);
-        CHECK_NOTNULL(object);
-        context_object_ = env->NewGlobalRef(object);
+        // Create a gs class loader obj which has same classPath with parent
+        // classLoader.
+        jobject gs_class_loader_obj = create_class_loader(env);
+        CHECK_NOTNULL(gs_class_loader_obj);
+        url_class_loader_object_ = env->NewGlobalRef(gs_class_loader_obj);
       }
-      jclass app_class = env->FindClass(app_class_name_);
-      CHECK_NOTNULL(app_class);
+
+      // jclass context_class = env->FindClass(context_class_name_);
+      // CHECK_NOTNULL(context_class);
       {
-        jobject object = createObject(env, app_class, app_class_name_);
-        CHECK_NOTNULL(object);
-        app_object_ = env->NewGlobalRef(object);
+        // jobject object = createObject(env, context_class,
+        // context_class_name_); CHECK_NOTNULL(object); context_object_ =
+        // env->NewGlobalRef(object);
+        context_object_ =
+            load_and_create(env, url_class_loader_object_, context_class_name_);
+      }
+      // jclass app_class = env->FindClass(app_class_name_);
+      // CHECK_NOTNULL(app_class);
+      {
+        // jobject object = createObject(env, app_class, app_class_name_);
+        // CHECK_NOTNULL(object);
+        // app_object_ = env->NewGlobalRef(object);
+        app_object_ =
+            load_and_create(env, url_class_loader_object_, app_class_name_);
       }
       {
         java_frag_type_name_ = frag_name;
-        jobject frag_object = createFFIPointerObject(
-            env, java_frag_type_name_.c_str(), reinterpret_cast<jlong>(&frag));
-        CHECK_NOTNULL(frag_object);
-        fragment_object_ = env->NewGlobalRef(frag_object);
+        // jobject frag_object = createFFIPointerObject(
+        //     env, java_frag_type_name_.c_str(),
+        //     reinterpret_cast<jlong>(&frag));
+        // CHECK_NOTNULL(frag_object);
+        // fragment_object_ = env->NewGlobalRef(frag_object);
+        fragment_object_ = createFFIPointer(
+            env, java_frag_type_name_.c_str(), url_class_loader_object_,
+            reinterpret_cast<jlong>(&fragment_));
       }
       {
-        jobject messages_object =
-            createFFIPointerObject(env, default_java_message_mananger_name_,
-                                   reinterpret_cast<jlong>(&messages));
+        // jobject messages_object =
+        //     createFFIPointerObject(env, default_java_message_mananger_name_,
+        //                            reinterpret_cast<jlong>(&messages));
+        mm_object_ = createFFIPointer(env, parallel_java_message_mananger_name_,
+                                      url_class_loader_object_,
+                                      reinterpret_cast<jlong>(&messages));
         CHECK_NOTNULL(messages_object);
-        mm_object_ = env->NewGlobalRef(messages_object);
+        // mm_object_ = env->NewGlobalRef(messages_object);
       }
 
       jobject args_object = createFFIPointer(env, "std::vector<std::string>",
-                                             url_class_loader_object(),
+                                             url_class_loader_object_,
                                              reinterpret_cast<jlong>(&args));
       CHECK_NOTNULL(args_object);
 
@@ -140,7 +164,8 @@ class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {
   }
 
  private:
-  bool init_class_names(std::string& app_class, std::string& context_class) {
+  bool init_class_names(const std::string& app_class,
+                        const std::string& context_class) {
     if (app_class.empty() || context_class.empty()) {
       LOG(ERROR) << "Class names for java app and java app context are empty";
       return false;
@@ -159,6 +184,7 @@ class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {
   jobject fragment_object_;
   jobject mm_object_;
   const fragment_t& fragment_;
+  jobject url_class_loader_object_;
 };
 }  // namespace gs
 #endif
