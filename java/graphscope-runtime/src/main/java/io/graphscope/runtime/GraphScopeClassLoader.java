@@ -80,9 +80,13 @@ public class GraphScopeClassLoader {
         Method loadClassLoaderMethod = ffiTypeFactoryClass.getDeclaredMethod("loadClassLoader", ClassLoader.class);
         loadClassLoaderMethod.invoke(null, classLoader);
 
+        //To make FFITypeFactor use our classLoader to find desired type matching, we load FFIType with our classLoader.
+        Class<?> ffiTypeClass = classLoader.loadClass("com.alibaba.fastffi.FFIType");
+        System.out.println("ffitype cl :" + ffiTypeClass.getClassLoader() + ", url cl: " + classLoader);
+
         //First load class by FFITypeFactor
-        Method getTypeMethod = ffiTypeFactoryClass.getDeclaredMethod("getType", String.class);
-        Class<?> ffiJavaClass = (Class<?>) getTypeMethod.invoke(null, foreignName);
+        Method getTypeMethod = ffiTypeFactoryClass.getDeclaredMethod("getType", Class.class, String.class);
+        Class<?> ffiJavaClass = (Class<?>) getTypeMethod.invoke(null, ffiTypeClass, foreignName);
         //The class loaded by FFITypeFactor's classLoader can not be directly used by us. We load again with our class loader.
         Class<?> javaClass = classLoader.loadClass(ffiJavaClass.getName());
         if (Objects.nonNull(javaClass)){
@@ -97,6 +101,7 @@ public class GraphScopeClassLoader {
             }
             log("No Suitable constructors found.");
         }
+        log("Loaded null class.");
         return null;
     }
 
