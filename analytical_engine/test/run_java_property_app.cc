@@ -412,9 +412,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   pt.put("app_class", app_name);
   // The path to sdk jni library
   // In production this should be replaced with user'jni lib.
-  pt.put("user_library_name",
-         "/home/admin/gs/java/graphscope-sdk/target/"
-         "native/libgraphscope-jni.so");
+  pt.put("user_library_name", getenv("USER_LIB_PATH"));
   pt.put("num_hosts", "1");
   pt.put("num_worker", "1");
   char* jvm_opts = getenv("RUN_JVM_OPTS");
