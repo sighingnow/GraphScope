@@ -190,10 +190,10 @@ class PropertyGraphOutStream : public Registered<PropertyGraphOutStream> {
     return meta_.GetClient()->instance_id();
   }
 
-  static std::shared_ptr<PropertyGraphOutStream> Create(
+  static std::unique_ptr<PropertyGraphOutStream> Create(
       Client& client, const char* graph_name, MGPropertyGraphSchema* schema,
       const int index) {
-    auto s = std::make_shared<PropertyGraphOutStream>();
+    auto s = std::unique_ptr<PropertyGraphOutStream>(new PropertyGraphOutStream());
 
     // take ownership of the `MGPropertyGraphSchema` object.
     s->graph_schema_ = std::shared_ptr<MGPropertyGraphSchema>(schema);
@@ -234,9 +234,9 @@ class PropertyGraphOutStream : public Registered<PropertyGraphOutStream> {
     return s;
   }
 
-  static std::shared_ptr<Object> Create() __attribute__((used)) {
+  static std::unique_ptr<Object> Create() __attribute__((used)) {
     return std::static_pointer_cast<Object>(
-        std::make_shared<PropertyGraphOutStream>());
+        std::unique_ptr<PropertyGraphOutStream>(new PropertyGraphOutStream()));
   }
 
   void Construct(const ObjectMeta& meta) override {
@@ -308,6 +308,9 @@ class PropertyGraphOutStream : public Registered<PropertyGraphOutStream> {
 
   std::map<LabelId, std::unique_ptr<arrow::RecordBatchBuilder>>
       vertex_builders_;
+  // vertex label id to its primary key column (assuming only signle column key) ordinal mapping
+  // -1 means no primary key column
+  static constexpr size_t kNoPrimaryKeyColumn = static_cast<size_t>(-1);
   std::map<LabelId, size_t> vertex_primary_key_column_;
   std::map<LabelId, std::shared_ptr<detail::PropertyTableAppender>>
       vertex_appenders_;
@@ -367,9 +370,9 @@ class GlobalPGStreamBuilder;
 
 class GlobalPGStream : public Registered<GlobalPGStream>, GlobalObject {
  public:
-  static std::shared_ptr<Object> Create() __attribute__((used)) {
+  static std::unique_ptr<Object> Create() __attribute__((used)) {
     return std::static_pointer_cast<Object>(
-        std::make_shared<GlobalPGStream>());
+        std::unique_ptr<GlobalPGStream>(new GlobalPGStream()));
   }
 
   std::shared_ptr<PropertyGraphOutStream> StreamAt(size_t const index) const {

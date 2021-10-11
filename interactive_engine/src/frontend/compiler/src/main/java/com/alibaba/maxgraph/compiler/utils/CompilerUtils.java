@@ -17,12 +17,13 @@ package com.alibaba.maxgraph.compiler.utils;
 
 import com.alibaba.maxgraph.Message;
 import com.alibaba.maxgraph.QueryFlowOuterClass;
+import com.alibaba.maxgraph.common.util.SchemaUtils;
 import com.alibaba.maxgraph.compiler.api.schema.GraphEdge;
 import com.alibaba.maxgraph.compiler.api.schema.GraphElement;
 import com.alibaba.maxgraph.compiler.api.schema.GraphProperty;
 import com.alibaba.maxgraph.compiler.api.schema.GraphSchema;
 import com.alibaba.maxgraph.compiler.api.schema.GraphVertex;
-import com.alibaba.maxgraph.compiler.api.schema.PropDataType;
+import com.alibaba.maxgraph.compiler.api.schema.DataType;
 import com.alibaba.maxgraph.compiler.tree.value.ListValueType;
 import com.alibaba.maxgraph.compiler.tree.value.ValueType;
 import com.alibaba.maxgraph.compiler.tree.value.VarietyValueType;
@@ -30,10 +31,8 @@ import com.alibaba.maxgraph.compiler.logical.LogicalEdge;
 import com.alibaba.maxgraph.compiler.tree.*;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.*;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.dim.DimMatchType;
-import com.alibaba.maxgraph.sdkcommon.compiler.custom.dim.DimOdpsTable;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.dim.DimPredicate;
 import com.alibaba.maxgraph.sdkcommon.graph.CompositeId;
-import com.alibaba.maxgraph.sdkcommon.meta.DataType;
 import com.alibaba.maxgraph.sdkcommon.meta.InternalDataType;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -55,8 +54,6 @@ import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class CompilerUtils {
     public static long parseLongIdValue(Object id, boolean vertexFlag) {
@@ -110,11 +107,11 @@ public class CompilerUtils {
                     }
                     logicalCompareBuilder.setValue(Message.Value.newBuilder()
                             .setIntValue(labelId)
-                            .setValueType(Message.VariantType.VT_INTEGER))
-                            .setType(Message.VariantType.VT_INTEGER);
+                            .setValueType(Message.VariantType.VT_INT))
+                            .setType(Message.VariantType.VT_INT);
                 } else if (hasContainer.getBiPredicate() instanceof Contains) {
                     Collection<String> labelIdList = (Collection<String>) hasContainer.getValue();
-                    Message.Value.Builder valueBuilder = Message.Value.newBuilder().setValueType(Message.VariantType.VT_INTEGER_LIST);
+                    Message.Value.Builder valueBuilder = Message.Value.newBuilder().setValueType(Message.VariantType.VT_INT_LIST);
                     labelIdList.forEach(v -> {
                         try {
                             GraphElement element = schema.getElement(v);
@@ -122,7 +119,7 @@ public class CompilerUtils {
                         } catch (Exception ignored) {
                         }
                     });
-                    logicalCompareBuilder.setValue(valueBuilder).setType(Message.VariantType.VT_INTEGER_LIST);
+                    logicalCompareBuilder.setValue(valueBuilder).setType(Message.VariantType.VT_INT_LIST);
                 } else {
                     throw new IllegalArgumentException("label compare => " + hasContainer.getBiPredicate());
                 }
@@ -282,7 +279,7 @@ public class CompilerUtils {
     private static Message.Value.Builder parseValueBuilderFromType(Object value, Message.VariantType variantType) {
         Message.Value.Builder valueBuilder = Message.Value.newBuilder().setValueType(variantType);
         switch (variantType) {
-            case VT_INTEGER:
+            case VT_INT:
                 valueBuilder.setIntValue(Integer.class.cast(value));
                 break;
             case VT_LONG:
@@ -303,7 +300,7 @@ public class CompilerUtils {
             case VT_LONG_LIST:
                 valueBuilder.addAllLongValueList((List<Long>) value);
                 break;
-            case VT_INTEGER_LIST:
+            case VT_INT_LIST:
                 valueBuilder.addAllIntValueList((List<Integer>) value);
                 break;
             default:
@@ -313,39 +310,6 @@ public class CompilerUtils {
         return valueBuilder;
     }
 
-    /**
-     * Parse dim odps table to OdpsQueryInput
-     *
-     * @param dimOdpsTable The given dim odps table
-     * @return The odps query input result
-     */
-    public static QueryFlowOuterClass.OdpsQueryInput parseDimOdpsTable(DimOdpsTable dimOdpsTable) {
-        QueryFlowOuterClass.OdpsQueryInput.Builder odpsQueryBuilder = QueryFlowOuterClass.OdpsQueryInput.newBuilder()
-                .setProject(checkNotNull(dimOdpsTable.getProject(), "project can't be null"))
-                .setTableName(checkNotNull(dimOdpsTable.getTable(), "table can't be null"))
-                .setEndpoint(checkNotNull(dimOdpsTable.getEndpoint()))
-                .setAccessId(checkNotNull(dimOdpsTable.getAccessId()))
-                .setAccessKey(checkNotNull(dimOdpsTable.getAccessKey()))
-                .addAllPkNameList(dimOdpsTable.getPkList());
-        for (Pair<String, P<?>> filterPair : dimOdpsTable.getFilterPairList()) {
-            P<?> predicate = filterPair.getRight();
-            BiPredicate biPredicate = predicate instanceof CustomPredicate ? null : predicate.getBiPredicate();
-            Object value = predicate instanceof CustomPredicate ? null : predicate.getValue();
-            Pair<Message.CompareType, Message.Value.Builder> compareValuePair = parseCompareValuePair(predicate, biPredicate, value);
-            Message.ColumnLogicalCompare columnLogicalCompare = Message.ColumnLogicalCompare.newBuilder()
-                    .setColumnName(filterPair.getLeft())
-                    .setCompare(compareValuePair.getLeft())
-                    .setValue(compareValuePair.getRight())
-                    .setType(compareValuePair.getRight().getValueType())
-                    .build();
-            odpsQueryBuilder.addLogicalCompare(columnLogicalCompare);
-        }
-        if (StringUtils.isNotEmpty(dimOdpsTable.getDs())) {
-            odpsQueryBuilder.setDs(dimOdpsTable.getDs());
-        }
-
-        return odpsQueryBuilder.build();
-    }
 
     /**
      * Get {@link Message.VariantType} from Class<\?>
@@ -357,57 +321,63 @@ public class CompilerUtils {
         if (value instanceof List) {
             List<Object> valueList = List.class.cast(value);
             Object valueObject = valueList.get(0);
-            return Message.VariantType.valueOf("VT_" + StringUtils.upperCase(valueObject.getClass().getSimpleName()) + "_LIST");
-        } else if (value instanceof DimOdpsTable) {
-            return Message.VariantType.VT_DIM_ODPS;
+            String className = valueObject.getClass().getSimpleName();
+            if (className.contains("Integer")) {
+                className = className.replace("Integer", "Int");
+            }
+            return Message.VariantType.valueOf("VT_" + StringUtils.upperCase(className) + "_LIST");
         } else if (StringUtils.contains(value.getClass().toString(), "PickTokenKey")) {
             Number number = ReflectionUtils.getFieldValue(BranchStep.class.getDeclaredClasses()[0], value, "number");
             return Message.VariantType.valueOf("VT_" + StringUtils.upperCase(number.getClass().getSimpleName()));
         } else {
-            return Message.VariantType.valueOf("VT_" + StringUtils.upperCase(valueClazz.getSimpleName()));
+            String className = valueClazz.getSimpleName();
+            if (className.contains("Integer")) {
+                className = className.replace("Integer", "Int");
+            }
+            return Message.VariantType.valueOf("VT_" + StringUtils.upperCase(className));
         }
     }
 
-    public static Message.VariantType parseVariantFromDataType(PropDataType dataType) {
+    public static Message.VariantType parseVariantFromDataType(DataType dataType) {
         return Message.VariantType.valueOf("VT_" + StringUtils.upperCase(dataType.name()));
     }
 
-    public static DataType parseDataTypeFromPropDataType(PropDataType dataType) {
+    public static com.alibaba.maxgraph.sdkcommon.meta.DataType parseDataTypeFromPropDataType(DataType dataType) {
         try {
             switch (dataType) {
-                case INTEGER: {
-                    return DataType.INT;
+                case INT: {
+                    return com.alibaba.maxgraph.sdkcommon.meta.DataType.INT;
                 }
-                case INTEGER_LIST: {
-                    DataType type = new DataType(InternalDataType.LIST);
+                case INT_LIST: {
+                    com.alibaba.maxgraph.sdkcommon.meta.DataType type = new com.alibaba.maxgraph.sdkcommon.meta.DataType(InternalDataType.LIST);
                     type.setExpression("INT");
                     return type;
                 }
                 case LONG_LIST: {
-                    DataType type = new DataType(InternalDataType.LIST);
+                    com.alibaba.maxgraph.sdkcommon.meta.DataType type = new com.alibaba.maxgraph.sdkcommon.meta.DataType(InternalDataType.LIST);
                     type.setExpression("LONG");
                     return type;
                 }
                 case FLOAT_LIST: {
-                    DataType type = new DataType(InternalDataType.LIST);
+                    com.alibaba.maxgraph.sdkcommon.meta.DataType type = new com.alibaba.maxgraph.sdkcommon.meta.DataType(InternalDataType.LIST);
                     type.setExpression("FLOAT");
                     return type;
                 }
                 case DOUBLE_LIST: {
-                    DataType type = new DataType(InternalDataType.LIST);
+                    com.alibaba.maxgraph.sdkcommon.meta.DataType type = new com.alibaba.maxgraph.sdkcommon.meta.DataType(InternalDataType.LIST);
                     type.setExpression("DOUBLE");
                     return type;
                 }
                 case STRING_LIST: {
-                    DataType type = new DataType(InternalDataType.LIST);
+                    com.alibaba.maxgraph.sdkcommon.meta.DataType type = new com.alibaba.maxgraph.sdkcommon.meta.DataType(InternalDataType.LIST);
                     type.setExpression("STRING");
                     return type;
                 }
-                case BINARY: {
-                    return DataType.BYTES;
+                case BYTES: {
+                    return com.alibaba.maxgraph.sdkcommon.meta.DataType.BYTES;
                 }
                 default: {
-                    return DataType.valueOf(dataType.name());
+                    return com.alibaba.maxgraph.sdkcommon.meta.DataType.valueOf(dataType.name());
                 }
             }
         } catch (Exception e) {
@@ -582,7 +552,7 @@ public class CompilerUtils {
 
     public static Object convertValueWithType(Object value, Message.VariantType dataType) {
         switch (dataType) {
-            case VT_INTEGER:
+            case VT_INT:
                 return Integer.parseInt(value.toString());
             case VT_LONG:
                 return Long.parseLong(value.toString());
@@ -592,7 +562,7 @@ public class CompilerUtils {
                 return Double.parseDouble(value.toString());
             case VT_STRING:
                 return value.toString();
-            case VT_INTEGER_LIST:
+            case VT_INT_LIST:
                 if (value instanceof Collection) {
                     return ((Collection) value).stream().map(v -> Integer.parseInt(v.toString())).collect(Collectors.toList());
                 } else {

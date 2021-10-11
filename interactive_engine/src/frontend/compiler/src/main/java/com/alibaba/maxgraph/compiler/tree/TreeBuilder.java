@@ -16,20 +16,18 @@
 package com.alibaba.maxgraph.compiler.tree;
 
 import com.alibaba.maxgraph.Message;
+import com.alibaba.maxgraph.common.util.SchemaUtils;
 import com.alibaba.maxgraph.compiler.api.schema.GraphSchema;
-import com.alibaba.maxgraph.compiler.api.schema.PropDataType;
+import com.alibaba.maxgraph.compiler.api.schema.DataType;
 import com.alibaba.maxgraph.compiler.tree.addition.JoinZeroNode;
 import com.alibaba.maxgraph.compiler.tree.source.EstimateCountTreeNode;
-import com.alibaba.maxgraph.compiler.tree.source.GraphSourceTreeNode;
 import com.alibaba.maxgraph.compiler.tree.source.SourceCreateGraphTreeNode;
-import com.alibaba.maxgraph.compiler.utils.SchemaUtils;
 import com.alibaba.maxgraph.compiler.utils.TreeNodeUtils;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.aggregate.CustomAggregationListTraversal;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.branch.CustomCaseWhenFunction;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.branch.CustomWhenThenFunction;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.map.MapPropFillFunction;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.map.RangeSumFunction;
-import com.alibaba.maxgraph.sdkcommon.compiler.custom.output.OutputOdpsFunction;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.program.VertexRatioProgram;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.CustomPredicate;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.ListKeyPredicate;
@@ -61,7 +59,6 @@ import com.alibaba.maxgraph.tinkerpop.steps.CreateGraphStep;
 import com.alibaba.maxgraph.tinkerpop.steps.CustomVertexProgramStep;
 import com.alibaba.maxgraph.tinkerpop.steps.EdgeVertexWithByStep;
 import com.alibaba.maxgraph.tinkerpop.steps.EstimateCountStep;
-import com.alibaba.maxgraph.tinkerpop.steps.GraphSourceStep;
 import com.alibaba.maxgraph.tinkerpop.steps.HitsStep;
 import com.alibaba.maxgraph.tinkerpop.steps.HitsVertexProgramStep;
 import com.alibaba.maxgraph.tinkerpop.steps.LabelPropagationStep;
@@ -95,15 +92,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.Pop;
 import org.apache.tinkerpop.gremlin.process.traversal.Step;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
-import org.apache.tinkerpop.gremlin.process.traversal.lambda.AbstractLambdaTraversal;
-import org.apache.tinkerpop.gremlin.process.traversal.lambda.ColumnTraversal;
-import org.apache.tinkerpop.gremlin.process.traversal.lambda.ConstantTraversal;
-import org.apache.tinkerpop.gremlin.process.traversal.lambda.ElementValueTraversal;
-import org.apache.tinkerpop.gremlin.process.traversal.lambda.FunctionTraverser;
-import org.apache.tinkerpop.gremlin.process.traversal.lambda.IdentityTraversal;
-import org.apache.tinkerpop.gremlin.process.traversal.lambda.LoopTraversal;
-import org.apache.tinkerpop.gremlin.process.traversal.lambda.TokenTraversal;
-import org.apache.tinkerpop.gremlin.process.traversal.lambda.TrueTraversal;
+import org.apache.tinkerpop.gremlin.process.traversal.lambda.*;
 import org.apache.tinkerpop.gremlin.process.traversal.step.TraversalOptionParent;
 import org.apache.tinkerpop.gremlin.process.traversal.step.TraversalParent;
 import org.apache.tinkerpop.gremlin.process.traversal.step.branch.BranchStep;
@@ -148,11 +137,7 @@ import org.apache.tinkerpop.gremlin.structure.T;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -429,8 +414,6 @@ public class TreeBuilder {
                     return visitVertexByModulatingStep((VertexByModulatingStep) step, prev);
                 case OrStep:
                     return visitOrStep((OrStep) step, prev);
-                case GraphSourceStep:
-                    return visitGraphSourceStep((GraphSourceStep) step, prev);
                 case CustomVertexProgramStep:
                     return visitCustomVertexProgramStep((CustomVertexProgramStep) step, prev);
                 case ChooseStep:
@@ -618,9 +601,24 @@ public class TreeBuilder {
 
     private TreeNode visitBranchStep(BranchStep step, TreeNode prev) {
         Traversal.Admin<?, ?> branchTraversal = ReflectionUtils.getFieldValue(BranchStep.class, step, "branchTraversal");
-        Map<Object, List<Traversal.Admin<?, ?>>> traversalOptions = ReflectionUtils.getFieldValue(BranchStep.class, step, "traversalOptions");
+        Map<TraversalOptionParent.Pick, List<Traversal.Admin<?, ?>>> traversalPickOptions =
+                ReflectionUtils.getFieldValue(BranchStep.class, step, "traversalPickOptions");
+        List<org.javatuples.Pair<Traversal.Admin, Traversal.Admin<?, ?>>> traversalOptions =
+                ReflectionUtils.getFieldValue(BranchStep.class, step, "traversalOptions");
         checkNotNull(branchTraversal, "branch traversal can't be null");
-        checkArgument(!traversalOptions.isEmpty(), "traversal options can't be empty");
+        checkArgument(!traversalPickOptions.isEmpty() || !traversalOptions.isEmpty(),
+                "traversal options can't be empty");
+
+        Map<Object, List<Traversal.Admin<?, ?>>> traversalAllOptions = new HashMap<>();
+        traversalAllOptions.putAll(traversalPickOptions);
+        traversalOptions.forEach(pair -> {
+            Traversal.Admin left = pair.getValue0();
+            if (left instanceof PredicateTraversal.Admin) {
+                PredicateTraversal predicateTraversal = (PredicateTraversal) left;
+                P p = ReflectionUtils.getFieldValue(PredicateTraversal.class, predicateTraversal, "predicate");
+                traversalAllOptions.computeIfAbsent(p.getValue(), k -> Lists.newArrayList()).add(pair.getValue1());
+            }
+        });
 
         boolean saveFlag = rootPathFlag;
         rootPathFlag = false;
@@ -630,7 +628,7 @@ public class TreeBuilder {
         TreeNode noneTreeNode = null, anyTreeNode = null;
         Map<Object, List<TreeNode>> branchOptionList = Maps.newHashMap();
         BranchTreeNode branchOptionTreeNode = new BranchTreeNode(prev, schema, branchTreeNode);
-        for (Map.Entry<Object, List<Traversal.Admin<?, ?>>> entry : traversalOptions.entrySet()) {
+        for (Map.Entry<Object, List<Traversal.Admin<?, ?>>> entry : traversalAllOptions.entrySet()) {
             if (entry.getKey() == TraversalOptionParent.Pick.none) {
                 checkArgument(entry.getValue().size() == 1);
                 noneTreeNode = travelTraversalAdmin(entry.getValue().get(0), new SourceDelegateNode(prev, schema));
@@ -654,14 +652,12 @@ public class TreeBuilder {
     }
 
     private TreeNode visitChooseStep(ChooseStep step, TreeNode prev) {
-        Map<Object, List<Traversal.Admin<?, ?>>> traversalOptions = ReflectionUtils.getFieldValue(BranchStep.class, step, "traversalOptions");
-
-        if (traversalOptions.size() == 2 && traversalOptions.containsKey(true) && traversalOptions.containsKey(false)) {
-            List<Traversal.Admin<?, ?>> trueOptionList = traversalOptions.get(true);
-            List<Traversal.Admin<?, ?>> falseOptionList = traversalOptions.get(false);
-            if (trueOptionList.size() != 1 || falseOptionList.size() != 1) {
-                throw new IllegalArgumentException("Only support option list size is 1");
-            }
+        List<org.javatuples.Pair<Traversal.Admin, Traversal.Admin<?, ?>>> traversalOptions =
+                ReflectionUtils.getFieldValue(BranchStep.class, step, "traversalOptions");
+        Traversal.Admin<?, ?> trueOptionTraversal, falseOptionTraversal;
+        if (traversalOptions.size() == 2
+                && (trueOptionTraversal = getTraversalOption(true, traversalOptions)) != null
+                && (falseOptionTraversal = getTraversalOption(false, traversalOptions)) != null) {
 
             boolean saveFlag = this.rootPathFlag;
             this.rootPathFlag = false;
@@ -669,15 +665,29 @@ public class TreeBuilder {
             TreeNode branchNode = branchTraversal == null ? null : travelTraversalAdmin(branchTraversal, new SourceDelegateNode(prev, schema));
             this.rootPathFlag = saveFlag;
 
-            Traversal.Admin<?, ?> trueOptionTraversal = trueOptionList.get(0);
             TreeNode trueOptionNode = travelTraversalAdmin(trueOptionTraversal, new SourceDelegateNode(prev, schema));
-            Traversal.Admin<?, ?> falseOptionTraversal = falseOptionList.get(0);
             TreeNode falseOptionNode = travelTraversalAdmin(falseOptionTraversal, new SourceDelegateNode(prev, schema));
 
             return new OptionalTreeNode(prev, schema, branchNode, trueOptionNode, falseOptionNode);
         } else {
             throw new UnsupportedOperationException("Not support choose yet.");
         }
+    }
+
+    private Traversal.Admin<?, ?> getTraversalOption(boolean predicate, List<org.javatuples.Pair<Traversal.Admin,
+            Traversal.Admin<?, ?>>> traversalOptions) {
+        for (int i = 0; i < 2; ++i) {
+            org.javatuples.Pair<Traversal.Admin, Traversal.Admin<?, ?>> pair = traversalOptions.get(i);
+            Traversal.Admin left = pair.getValue0();
+            if (left instanceof PredicateTraversal.Admin) {
+                PredicateTraversal predicateTraversal = (PredicateTraversal) left;
+                P p = ReflectionUtils.getFieldValue(PredicateTraversal.class, predicateTraversal, "predicate");
+                if (p.getValue().equals(predicate)) {
+                    return pair.getValue1();
+                }
+            }
+        }
+        return null;
     }
 
     private TreeNode visitOrStep(OrStep step, TreeNode prev) {
@@ -776,10 +786,6 @@ public class TreeBuilder {
 
     private TreeNode visitOutputStep(OutputStep step, TreeNode prev) {
         return new OutputTreeNode(prev, schema, step.path, step.properties);
-    }
-
-    private TreeNode visitGraphSourceStep(GraphSourceStep step, TreeNode prev) {
-        return new GraphSourceTreeNode(schema, step.getGraphSource());
     }
 
     private TreeNode visitVertexByModulatingStep(VertexByModulatingStep step, TreeNode prev) {
@@ -949,7 +955,7 @@ public class TreeBuilder {
             }
             this.rootPathFlag = saveFlag;
             return new AggregationListTreeNode(prev, schema, customAggregationListTraversal.getNameList(), aggregateNodeList);
-        } else if (mapFunction instanceof OutputOdpsFunction || mapFunction instanceof MapPropFillFunction || mapFunction instanceof RangeSumFunction) {
+        } else if (mapFunction instanceof MapPropFillFunction || mapFunction instanceof RangeSumFunction) {
             return new LambdaMapTreeNode(prev, schema, mapFunction, null);
         } else {
             if (this.lambdaEnableFlag) {
@@ -1270,7 +1276,7 @@ public class TreeBuilder {
                 validPredicateVariantType(variantType, predicateType);
                 return new HasContainer(key, CustomPredicate.class.cast(predicate));
             } else {
-                Set<PropDataType> dataTypeSet = SchemaUtils.getPropDataTypeList(key, schema);
+                Set<DataType> dataTypeSet = SchemaUtils.getPropDataTypeList(key, schema);
                 if (dataTypeSet.isEmpty()) {
                     return new HasContainer(key, CustomPredicate.class.cast(predicate));
                 } else {
@@ -1290,7 +1296,7 @@ public class TreeBuilder {
                 Message.VariantType variantType = ValueValueType.class.cast(inputValueType).getDataType();
                 return createContainerFromVariantyType(key, P.class.cast(predicate), variantType);
             } else {
-                Set<PropDataType> dataTypeSet = SchemaUtils.getPropDataTypeList(key, schema);
+                Set<DataType> dataTypeSet = SchemaUtils.getPropDataTypeList(key, schema);
                 if (dataTypeSet.isEmpty()) {
                     return new HasContainer(key, P.class.cast(predicate));
                 } else {
@@ -1348,7 +1354,7 @@ public class TreeBuilder {
                 break;
             }
             case LIST: {
-                checkArgument(variantType == Message.VariantType.VT_INTEGER_LIST ||
+                checkArgument(variantType == Message.VariantType.VT_INT_LIST ||
                                 variantType == Message.VariantType.VT_LONG_LIST ||
                                 variantType == Message.VariantType.VT_STRING_LIST,
                         "List predicate only support list output while current value type=>" + variantType);

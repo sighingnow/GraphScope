@@ -28,7 +28,6 @@ import logging
 import numbers
 import os
 import pickle
-import random
 import shutil
 import socket
 import subprocess
@@ -45,6 +44,7 @@ from pathlib import Path
 
 import yaml
 from graphscope.framework import utils
+from graphscope.framework.errors import CompilationError
 from graphscope.framework.graph_schema import GraphSchema
 from graphscope.proto import attr_value_pb2
 from graphscope.proto import graph_def_pb2
@@ -55,6 +55,16 @@ from gscoordinator.io_utils import PipeWatcher
 
 logger = logging.getLogger("graphscope")
 
+
+# runtime workspace
+try:
+    WORKSPACE = os.environ["GRAPHSCOPE_RUNTIME"]
+except KeyError:
+    WORKSPACE = "/tmp/gs"
+
+# COORDINATOR_HOME
+#   1) get from gscoordinator python module, if failed,
+#   2) infer from current directory
 try:
     import gscoordinator
 
@@ -64,41 +74,63 @@ except ModuleNotFoundError:
 
 GRAPHSCOPE_HOME = os.path.join(COORDINATOR_HOME, "..")
 
-
-if "LLVM4JNI_HOME"  not in os.environ:
-    raise RuntimeError("Expect LLVM4JNI_HOME set")
-LLVM4JNI_HOME = os.environ["LLVM4JNI_HOME"]
-WORKSPACE = "/tmp/gs"
-RUN_LLVM4JNI_SH = os.path.join(LLVM4JNI_HOME, "run.sh")
-LLVM4JNI_USER_OUT_DIR_BASE = "user-llvm4jni-output"
-PROCESSOR_MAIN_CLASS = "com.alibaba.grape.annotation.Main"
-DEFAULT_GS_CONFIG_FILE = ".gs_conf.yaml"
-ANALYTICAL_ENGINE_HOME = os.path.join(GRAPHSCOPE_HOME, "analytical_engine")
-ANALYTICAL_ENGINE_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "build", "grape_engine")
-JAVA_CODEGNE_OUTPUT_PREFIX = "gs-ffi"
-M2_REPO_PATH = os.path.join(str(Path.home()), ".m2/repository/com/alibaba/grape")
-GRAPE_PROCESSOR_JAR=os.path.join(M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-shaded.jar")
-if not os.path.isfile(ANALYTICAL_ENGINE_PATH):
-    ANALYTICAL_ENGINE_HOME = "/usr/local/bin"
-    ANALYTICAL_ENGINE_PATH = "/usr/local/bin/grape_engine"
 TEMPLATE_DIR = os.path.join(COORDINATOR_HOME, "gscoordinator", "template")
+
+# builtin app resource
 BUILTIN_APP_RESOURCE_PATH = os.path.join(
     COORDINATOR_HOME, "gscoordinator", "builtin/app/builtin_app.gar"
 )
 sdk_optimized=False
+# default config file in gar resource
+DEFAULT_GS_CONFIG_FILE = ".gs_conf.yaml"
 
+# GRAPHSCOPE_HOME
+#   1) get from environment variable `GRAPHSCOPE_HOME`, if not exist,
+#   2) infer from COORDINATOR_HOME
+GRAPHSCOPE_HOME = os.environ.get("GRAPHSCOPE_HOME", None)
 
-def is_port_in_use(host, port):
-    """Check whether a port is in use.
+# resolve from pip installed package
+if GRAPHSCOPE_HOME is None:
+    if os.path.isdir(os.path.join(COORDINATOR_HOME, "graphscope.runtime")):
+        GRAPHSCOPE_HOME = os.path.join(COORDINATOR_HOME, "graphscope.runtime")
 
-    Args:
-        port (int): A port.
+# resolve from egg installed package
+if GRAPHSCOPE_HOME is None:
+    if os.path.isdir(os.path.join(COORDINATOR_HOME, "..", "graphscope.runtime")):
+        GRAPHSCOPE_HOME = os.path.join(COORDINATOR_HOME, "..", "graphscope.runtime")
 
-    Returns:
-        bool: True if the port in use.
-    """
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex((host, port)) == 0
+# resolve from develop source tree
+if GRAPHSCOPE_HOME is None:
+    GRAPHSCOPE_HOME = os.path.join(COORDINATOR_HOME, "..")
+
+# ANALYTICAL_ENGINE_HOME
+#   1) infer from GRAPHSCOPE_HOME
+ANALYTICAL_ENGINE_HOME = os.path.join(GRAPHSCOPE_HOME)
+ANALYTICAL_ENGINE_PATH = os.path.join(ANALYTICAL_ENGINE_HOME, "bin", "grape_engine")
+if not os.path.isfile(ANALYTICAL_ENGINE_PATH):
+    # try get analytical engine from build dir
+    ANALYTICAL_ENGINE_HOME = os.path.join(GRAPHSCOPE_HOME, "analytical_engine")
+    ANALYTICAL_ENGINE_PATH = os.path.join(
+        ANALYTICAL_ENGINE_HOME, "build", "grape_engine"
+    )
+
+# INTERACTIVE_ENGINE_SCRIPT
+INTERAVTIVE_INSTANCE_TIMEOUT_SECONDS = 600  # 10 mins
+INTERACTIVE_ENGINE_SCRIPT = os.path.join(GRAPHSCOPE_HOME, "bin", "giectl")
+if not os.path.isfile(INTERACTIVE_ENGINE_SCRIPT):
+    INTERACTIVE_ENGINE_SCRIPT = os.path.join(
+        GRAPHSCOPE_HOME, "interactive_engine", "bin", "giectl"
+    )
+
+if "LLVM4JNI_HOME"  not in os.environ:
+    raise RuntimeError("Expect LLVM4JNI_HOME set")
+LLVM4JNI_HOME = os.environ["LLVM4JNI_HOME"]
+RUN_LLVM4JNI_SH = os.path.join(LLVM4JNI_HOME, "run.sh")
+LLVM4JNI_USER_OUT_DIR_BASE = "user-llvm4jni-output"
+PROCESSOR_MAIN_CLASS = "com.alibaba.grape.annotation.Main"
+JAVA_CODEGNE_OUTPUT_PREFIX = "gs-ffi"
+M2_REPO_PATH = os.path.join(str(Path.home()), ".m2/repository/com/alibaba/grape")
+GRAPE_PROCESSOR_JAR=os.path.join(M2_REPO_PATH, "grape-processor/0.1/grape-processor-0.1-shaded.jar")
 
 
 def get_timestamp():
@@ -113,7 +145,7 @@ def get_lib_path(app_dir, app_name):
     elif sys.platform == "darwin":
         lib_path = os.path.join(app_dir, "lib%s.dylib" % app_name)
     else:
-        raise RuntimeError("Unsupported platform.")
+        raise RuntimeError(f"Unsupported platform {sys.platform}")
     return lib_path
 
 
@@ -206,7 +238,8 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     cmake_commands = [
         "cmake",
         ".",
-        "-DNETWORKX=" + engine_config["networkx"],
+        f"-DNETWORKX={engine_config['networkx']}",
+        "-DCMAKE_PREFIX_PATH={GRAPHSCOPE_HOME}",
     ]
     if app_type == "java_pie":
         if not os.path.isfile(GRAPE_PROCESSOR_JAR):
@@ -247,15 +280,15 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
 
         # Copy pxd file and generate cc file from pyx
         shutil.copyfile(
-            os.path.join(TEMPLATE_DIR, "{}.pxd.template".format(pxd_name)),
-            os.path.join(app_dir, "{}.pxd".format(pxd_name)),
+            os.path.join(TEMPLATE_DIR, f"{pxd_name}.pxd.template"),
+            os.path.join(app_dir, f"{pxd_name}.pxd"),
         )
         # Assume the gar will have and only have one .pyx file
         for pyx_file in glob.glob(app_dir + "/*.pyx"):
             module_name = os.path.splitext(os.path.basename(pyx_file))[0]
             cc_file = os.path.join(app_dir, module_name + ".cc")
             subprocess.check_call(["cython", "-3", "--cplus", "-o", cc_file, pyx_file])
-        app_header = "{}.h".format(module_name)
+        app_header = f"{module_name}.h"
 
     # replace and generate cmakelist
     cmakelists_file_tmp = os.path.join(TEMPLATE_DIR, "CMakeLists.template")
@@ -302,7 +335,8 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
     setattr(make_process, "stderr_watcher", make_stderr_watcher)
     make_process.wait()
     lib_path = get_lib_path(app_dir, library_name)
-    assert os.path.isfile(lib_path), "Error occurs when building the frame library."
+    if not os.path.isfile(lib_path):
+        raise CompilationError(f"Failed to compile app {app_class}")
 
     return lib_path, java_jar_path, java_codegen_out_dir, app_type
 
@@ -337,7 +371,8 @@ def compile_graph_frame(workspace: str, library_name, attr: dict, engine_config:
     cmake_commands = [
         "cmake",
         ".",
-        "-DNETWORKX=" + engine_config["networkx"],
+        f"-DNETWORKX={engine_config['networkx']}",
+        f"-DCMAKE_PREFIX_PATH={GRAPHSCOPE_HOME}",
     ]
     if graph_type == graph_def_pb2.ARROW_PROPERTY:
         cmake_commands += ["-DPROPERTY_GRAPH_FRAME=True"]
@@ -347,7 +382,7 @@ def compile_graph_frame(workspace: str, library_name, attr: dict, engine_config:
     ):
         cmake_commands += ["-DPROJECT_FRAME=True"]
     else:
-        raise ValueError("Illegal graph type: {}".format(graph_type))
+        raise ValueError(f"Illegal graph type: {graph_type}")
     # replace and generate cmakelist
     cmakelists_file_tmp = os.path.join(TEMPLATE_DIR, "CMakeLists.template")
     cmakelists_file = os.path.join(library_dir, "CMakeLists.txt")
@@ -387,7 +422,8 @@ def compile_graph_frame(workspace: str, library_name, attr: dict, engine_config:
     setattr(make_process, "stderr_watcher", make_stderr_watcher)
     make_process.wait()
     lib_path = get_lib_path(library_dir, library_name)
-    assert os.path.isfile(lib_path), "Error occurs when building the frame library."
+    if not os.path.isfile(lib_path):
+        raise CompilationError(f"Failed to compile graph {graph_class}")
     return lib_path, None, None, None
 
 
@@ -395,6 +431,8 @@ def op_pre_process(op, op_result_pool, key_to_op, **kwargs):  # noqa: C901
     if op.op == types_pb2.REPORT_GRAPH:
         # do nothing for nx report graph
         return
+    if op.op == types_pb2.CREATE_GRAPH:
+        _pre_process_for_create_graph_op(op, op_result_pool, key_to_op, **kwargs)
     if op.op == types_pb2.ADD_LABELS:
         _pre_process_for_add_labels_op(op, op_result_pool, key_to_op, **kwargs)
     if op.op == types_pb2.RUN_APP:
@@ -420,6 +458,8 @@ def op_pre_process(op, op_result_pool, key_to_op, **kwargs):  # noqa: C901
         _pre_process_for_output_graph_op(op, op_result_pool, key_to_op, **kwargs)
     if op.op == types_pb2.UNLOAD_APP:
         _pre_process_for_unload_app_op(op, op_result_pool, key_to_op, **kwargs)
+    if op.op == types_pb2.UNLOAD_CONTEXT:
+        _pre_process_for_unload_context_op(op, op_result_pool, key_to_op, **kwargs)
     if op.op == types_pb2.CREATE_INTERACTIVE_QUERY:
         _pre_process_for_create_interactive_query_op(
             op, op_result_pool, key_to_op, **kwargs
@@ -442,13 +482,32 @@ def op_pre_process(op, op_result_pool, key_to_op, **kwargs):  # noqa: C901
         _pre_process_for_close_learning_instance_op(
             op, op_result_pool, key_to_op, **kwargs
         )
+    if op.op == types_pb2.OUTPUT:
+        _pre_process_for_output_op(op, op_result_pool, key_to_op, **kwargs)
+
+
+def _pre_process_for_create_graph_op(op, op_result_pool, key_to_op, **kwargs):
+    assert len(op.parents) <= 1
+    if len(op.parents) == 1:
+        key_of_parent_op = op.parents[0]
+        parent_op = key_to_op[key_of_parent_op]
+        if parent_op.op == types_pb2.DATA_SOURCE:
+            for key, value in parent_op.attr.items():
+                op.attr[key].CopyFrom(value)
 
 
 def _pre_process_for_add_labels_op(op, op_result_pool, key_to_op, **kwargs):
-    assert len(op.parents) == 1
-    key_of_parent_op = op.parents[0]
-    result = op_result_pool[key_of_parent_op]
-    op.attr[types_pb2.GRAPH_NAME].CopyFrom(utils.s_to_attr(result.graph_def.key))
+    assert len(op.parents) == 2
+    for key_of_parent_op in op.parents:
+        parent_op = key_to_op[key_of_parent_op]
+        if parent_op.op == types_pb2.DATA_SOURCE:
+            for key, value in parent_op.attr.items():
+                op.attr[key].CopyFrom(value)
+        else:
+            result = op_result_pool[key_of_parent_op]
+            op.attr[types_pb2.GRAPH_NAME].CopyFrom(
+                utils.s_to_attr(result.graph_def.key)
+            )
 
 
 def _pre_process_for_close_interactive_query_op(
@@ -596,6 +655,17 @@ def _pre_process_for_unload_app_op(op, op_result_pool, key_to_op, **kwargs):
     op.attr[types_pb2.APP_NAME].CopyFrom(utils.s_to_attr(result.result.decode("utf-8")))
 
 
+def _pre_process_for_unload_context_op(op, op_result_pool, key_to_op, **kwargs):
+    assert len(op.parents) == 1
+    key_of_parent_op = op.parents[0]
+    result = op_result_pool[key_of_parent_op]
+    parent_op_result = json.loads(result.result.decode("utf-8"))
+    context_key = parent_op_result["context_key"]
+    op.attr[types_pb2.CONTEXT_KEY].CopyFrom(
+        attr_value_pb2.AttrValue(s=context_key.encode("utf-8"))
+    )
+
+
 def _pre_process_for_add_column_op(op, op_result_pool, key_to_op, **kwargs):
     for key_of_parent_op in op.parents:
         parent_op = key_to_op[key_of_parent_op]
@@ -617,7 +687,7 @@ def _pre_process_for_add_column_op(op, op_result_pool, key_to_op, **kwargs):
             selector = _tranform_dataframe_selector(context_type, schema, selector)
     op.attr[types_pb2.GRAPH_NAME].CopyFrom(utils.s_to_attr(graph_name))
     op.attr[types_pb2.GRAPH_TYPE].CopyFrom(utils.graph_type_to_attr(graph_type))
-    op.attr[types_pb2.CTX_NAME].CopyFrom(utils.s_to_attr(context_key))
+    op.attr[types_pb2.CONTEXT_KEY].CopyFrom(utils.s_to_attr(context_key))
     op.attr[types_pb2.SELECTOR].CopyFrom(utils.s_to_attr(selector))
 
 
@@ -650,7 +720,7 @@ def _pre_process_for_context_op(op, op_result_pool, key_to_op, **kwargs):
     parent_op_result = json.loads(r.result.decode("utf-8"))
     context_key = parent_op_result["context_key"]
     context_type = parent_op_result["context_type"]
-    op.attr[types_pb2.CTX_NAME].CopyFrom(
+    op.attr[types_pb2.CONTEXT_KEY].CopyFrom(
         attr_value_pb2.AttrValue(s=context_key.encode("utf-8"))
     )
     r = op_result_pool[graph_op.key]
@@ -667,6 +737,20 @@ def _pre_process_for_context_op(op, op_result_pool, key_to_op, **kwargs):
         op.attr[types_pb2.SELECTOR].CopyFrom(
             attr_value_pb2.AttrValue(s=selector.encode("utf-8"))
         )
+
+
+def _pre_process_for_output_op(op, op_result_pool, key_to_op, **kwargs):
+    assert len(op.parents) == 1
+    key_of_parent_op = op.parents[0]
+    parent_op = key_to_op[key_of_parent_op]
+    result = op_result_pool[key_of_parent_op]
+    if parent_op.output_type in (
+        types_pb2.VINEYARD_TENSOR,
+        types_pb2.VINEYARD_DATAFRAME,
+    ):
+        # dependent to to_vineyard_dataframe
+        r = json.loads(result.result.decode("utf-8"))["object_id"]
+        op.attr[types_pb2.VINEYARD_ID].CopyFrom(utils.s_to_attr(r))
 
 
 def _pre_process_for_output_graph_op(op, op_result_pool, key_to_op, **kwargs):
@@ -885,29 +969,29 @@ def _transform_vertex_property_data_r(selector):
 def _transform_labeled_vertex_data_v(schema, label, prop):
     label_id = schema.get_vertex_label_id(label)
     if prop == "id":
-        return "label{}.{}".format(label_id, prop)
+        return f"label{label_id}.{prop}"
     else:
         prop_id = schema.get_vertex_property_id(label, prop)
-        return "label{}.property{}".format(label_id, prop_id)
+        return f"label{label_id}.property{prop_id}"
 
 
 def _transform_labeled_vertex_data_e(schema, label, prop):
     label_id = schema.get_edge_label_id(label)
     if prop in ("src", "dst"):
-        return "label{}.{}".format(label_id, prop)
+        return f"label{label_id}.{prop}"
     else:
         prop_id = schema.get_vertex_property_id(label, prop)
-        return "label{}.property{}".format(label_id, prop_id)
+        return f"label{label_id}.property{prop_id}"
 
 
 def _transform_labeled_vertex_data_r(schema, label):
     label_id = schema.get_vertex_label_id(label)
-    return "label{}".format(label_id)
+    return f"label{label_id}"
 
 
 def _transform_labeled_vertex_property_data_r(schema, label, prop):
     label_id = schema.get_vertex_label_id(label)
-    return "label{}.{}".format(label_id, prop)
+    return f"label{label_id}.{prop}"
 
 
 def transform_vertex_data_selector(selector):
@@ -928,7 +1012,7 @@ def transform_vertex_data_selector(selector):
     elif segments[0] == "r":
         selector = _transform_vertex_data_r(selector)
     else:
-        raise SyntaxError("Invalid selector: %s, choose from v / e / r." % selector)
+        raise SyntaxError(f"Invalid selector: {selector}, choose from v / e / r.")
     return selector
 
 
@@ -942,7 +1026,7 @@ def transform_vertex_property_data_selector(selector):
         raise RuntimeError("selector cannot be None")
     segments = selector.split(".")
     if len(segments) != 2:
-        raise SyntaxError("Invalid selector: %s." % selector)
+        raise SyntaxError(f"Invalid selector: {selector}")
     if segments[0] == "v":
         selector = _transform_vertex_data_v(selector)
     elif segments[0] == "e":
@@ -950,7 +1034,7 @@ def transform_vertex_property_data_selector(selector):
     elif segments[0] == "r":
         selector = _transform_vertex_property_data_r(selector)
     else:
-        raise SyntaxError("Invalid selector: %s, choose from v / e / r." % selector)
+        raise SyntaxError(f"Invalid selector: {selector}, choose from v / e / r.")
     return selector
 
 
@@ -965,7 +1049,7 @@ def transform_labeled_vertex_data_selector(schema, selector):
 
     ret_type, segments = selector.split(":")
     if ret_type not in ("v", "e", "r"):
-        raise SyntaxError("Invalid selector: " + selector)
+        raise SyntaxError(f"Invalid selector: {selector}")
     segments = segments.split(".")
     ret = ""
     if ret_type == "v":
@@ -987,7 +1071,7 @@ def transform_labeled_vertex_property_data_selector(schema, selector):
         raise RuntimeError("selector cannot be None")
     ret_type, segments = selector.split(":")
     if ret_type not in ("v", "e", "r"):
-        raise SyntaxError("Invalid selector: " + selector)
+        raise SyntaxError(f"Invalid selector: {selector}")
     segments = segments.split(".")
     ret = ""
     if ret_type == "v":
@@ -996,7 +1080,7 @@ def transform_labeled_vertex_property_data_selector(schema, selector):
         ret = _transform_labeled_vertex_data_e(schema, *segments)
     elif ret_type == "r":
         ret = _transform_labeled_vertex_property_data_r(schema, *segments)
-    return "{}:{}".format(ret_type, ret)
+    return f"{ret_type}:{ret}"
 
 
 def _extract_gar(app_dir: str, attr):
@@ -1044,7 +1128,7 @@ def _codegen_app_info(attr, meta_file: str):
                 return (
                     app_type,
                     app["src"],
-                    "{}<_GRAPH_TYPE>".format(app["class_name"]),
+                    f"{app['class_name']}<_GRAPH_TYPE>",
                     None,
                     None,
                     None,
@@ -1199,11 +1283,9 @@ def parse_readable_memory(value):
     try:
         float(num)
     except ValueError as e:
-        raise ValueError(
-            "Argument cannot be interpreted as a number: %s" % value
-        ) from e
+        raise ValueError(f"Argument cannot be interpreted as a number: {value}") from e
     if suffix not in ["Ki", "Mi", "Gi"]:
-        raise ValueError("Memory suffix must be one of 'Ki', 'Mi' and 'Gi': %s" % value)
+        raise ValueError(f"Memory suffix must be one of 'Ki', 'Mi' and 'Gi': {value}")
     return value
 
 
@@ -1290,9 +1372,7 @@ class ResolveMPICmdPrefix(object):
             raise RuntimeError("The number of hosts less then num_workers")
 
         for i in range(host_list_len):
-            host_list[i] = "{}:{}".format(
-                host_list[i], int(host_to_proc_num[host_list[i]])
-            )
+            host_list[i] = f"{host_list[i]}:{host_to_proc_num[host_list[i]]}"
 
         return ",".join(host_list)
 
@@ -1324,9 +1404,9 @@ class ResolveMPICmdPrefix(object):
         cmd.extend(["-n", str(num_workers)])
         cmd.extend(["-host", self.alloc(num_workers, hosts)])
 
-        logger.debug("Resolve mpi cmd prefix: {}".format(cmd))
-        logger.debug("Resolve mpi env: {}".format(env))
-        return (cmd, env)
+        logger.debug("Resolve mpi cmd prefix: %s", " ".join(cmd))
+        logger.debug("Resolve mpi env: %s", json.dumps(env))
+        return cmd, env
 
 
 def get_gl_handle(schema, vineyard_id, engine_hosts, engine_config):
@@ -1483,4 +1563,31 @@ def check_argument(condition, message=None):
     if not condition:
         if message is None:
             message = "in '%s'" % inspect.stack()[1].code_context[0]
-        raise ValueError("Check failed: %s" % message)
+        raise ValueError(f"Check failed: {message}")
+
+
+def check_gremlin_server_ready(endpoint):
+    from gremlin_python.driver.client import Client
+
+    if "MY_POD_NAME" in os.environ:
+        # inner kubernetes env
+        if endpoint == "localhost" or endpoint == "127.0.0.1":
+            # now, used in mac os with docker-desktop kubernetes cluster,
+            # which external ip is 'localhost' when service type is 'LoadBalancer'
+            return True
+
+    client = Client(f"ws://{endpoint}/gremlin", "g")
+    error_message = ""
+    begin_time = time.time()
+    while True:
+        try:
+            client.submit("g.V().limit(1)").all().result()
+        except Exception as e:
+            error_message = str(e)
+        else:
+            client.close()
+            return True
+        time.sleep(3)
+        if time.time() - begin_time > INTERAVTIVE_INSTANCE_TIMEOUT_SECONDS:
+            client.close()
+            raise TimeoutError(f"Gremlin check query failed: {error_message}")

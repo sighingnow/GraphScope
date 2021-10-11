@@ -1,6 +1,9 @@
 daemons
+etcd-distro
 graphscope
 grpcio
 kubernetes
 protobuf
 PyYAML
+vineyard>=0.2.5
+vineyard-io>=0.2.5

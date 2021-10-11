@@ -799,18 +799,25 @@ class GSEngineBuilder(ReplicaSetBuilder):
         cmd = [
             "while ! ls $VINEYARD_IPC_SOCKET 2>/dev/null; do sleep 1 && echo -n .; done",
             ";",
+            'echo \'"@inherits": "@mars/deploy/oscar/base_config.yml"\' > /tmp/mars-on-vineyard.yml',
+            ";",
+            'echo "storage:" >> /tmp/mars-on-vineyard.yml',
+            ";",
+            'echo "  backends: [vineyard]" >> /tmp/mars-on-vineyard.yml',
+            ";",
+            'echo "  vineyard:" >> /tmp/mars-on-vineyard.yml',
+            ";",
+            'echo "    vineyard_socket: $VINEYARD_IPC_SOCKET" >> /tmp/mars-on-vineyard.yml',
+            ";",
+            "cat /tmp/mars-on-vineyard.yml",
+            ";",
             "python3",
             "-m",
-            "mars.worker.__main__",
-            "-a",
-            "$MY_POD_IP",
-            "-p",
-            str(port),
-            "-s",
-            scheduler_endpoint,
+            "mars.deploy.oscar.worker",
+            "--endpoint=$MY_POD_IP:%s" % port,
+            "--supervisors=%s" % scheduler_endpoint,
             "--log-level=debug",
-            "--ignore-avail-mem",
-            "--spill-dir=/tmp/mars",
+            "--config-file=/tmp/mars-on-vineyard.yml",
         ]
         cmd = ["bash", "-c", " ".join(cmd)]
 
@@ -852,14 +859,24 @@ class GSEngineBuilder(ReplicaSetBuilder):
         cmd = [
             "while ! ls $VINEYARD_IPC_SOCKET 2>/dev/null; do sleep 1 && echo -n .; done",
             ";",
+            'echo \'"@inherits": "@mars/deploy/oscar/base_config.yml"\' > /tmp/mars-on-vineyard.yml',
+            ";",
+            'echo "storage:" >> /tmp/mars-on-vineyard.yml',
+            ";",
+            'echo "  backends: [vineyard]" >> /tmp/mars-on-vineyard.yml',
+            ";",
+            'echo "  vineyard:" >> /tmp/mars-on-vineyard.yml',
+            ";",
+            'echo "    vineyard_socket: $VINEYARD_IPC_SOCKET" >> /tmp/mars-on-vineyard.yml',
+            ";",
+            "cat /tmp/mars-on-vineyard.yml",
+            ";",
             "python3",
             "-m",
-            "mars.scheduler.__main__",
-            "-a",
-            "$MY_POD_IP",
-            "-p",
-            str(port),
+            "mars.deploy.oscar.supervisor",
+            "--endpoint=$MY_POD_IP:%s" % port,
             "--log-level=debug",
+            "--config-file=/tmp/mars-on-vineyard.yml",
         ]
         cmd = ["bash", "-c", " ".join(cmd)]
 
@@ -1121,9 +1138,6 @@ class GSGraphManagerBuilder(DeploymentBuilder):
     _manager_requests_cpu = 0.2
     _manager_requests_mem = "256Mi"
 
-    _zookeeper_requests_cpu = 0.2
-    _zookeeper_requests_mem = "128Mi"
-
     def __init__(self, name, labels, image_pull_policy, replicas=1):
         self._name = name
         self._labels = labels
@@ -1184,50 +1198,6 @@ class GSGraphManagerBuilder(DeploymentBuilder):
                     "livenessProbe": None,
                     "readinessProbe": None,
                     "lifecycle": lifecycle_dict or None,
-                }
-            )
-        )
-
-    def add_zookeeper_container(self, name, image, cpu, mem, preemptive, **kwargs):
-        cmd = kwargs.pop("cmd", None)
-        args = kwargs.pop("args", None)
-
-        resources_dict = {
-            "requests": ResourceBuilder(
-                self._zookeeper_requests_cpu, self._zookeeper_requests_mem
-            ).build()
-            if preemptive
-            else ResourceBuilder(cpu, mem).build(),
-            "limits": ResourceBuilder(cpu, mem).build(),
-        }
-
-        volumeMounts = []
-        for vol in self._volumes:
-            for vol_mount in vol.build_mount():
-                volumeMounts.append(vol_mount)
-
-        ports = kwargs.pop("ports", None)
-        if ports is not None and not isinstance(ports, list):
-            ports = [ports]
-
-        super().add_container(
-            _remove_nones(
-                {
-                    "command": cmd,
-                    "args": args,
-                    "env": [env.build() for env in self._envs.values()] or None,
-                    "image": image,
-                    "name": name,
-                    "imagePullPolicy": self._image_pull_policy,
-                    "resources": dict((k, v) for k, v in resources_dict.items() if v)
-                    or None,
-                    "ports": [PortBuilder(port).build() for port in ports]
-                    if ports
-                    else None,
-                    "volumeMounts": volumeMounts or None,
-                    "livenessProbe": None,
-                    "readinessProbe": None,
-                    "lifecycle": None,
                 }
             )
         )

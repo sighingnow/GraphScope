@@ -16,10 +16,10 @@
 package com.alibaba.maxgraph.compiler.utils;
 
 import com.alibaba.maxgraph.Message;
-import com.alibaba.maxgraph.QueryFlowOuterClass;
 import com.alibaba.maxgraph.Message.LogicalCompare;
+import com.alibaba.maxgraph.common.util.SchemaUtils;
 import com.alibaba.maxgraph.compiler.api.schema.GraphSchema;
-import com.alibaba.maxgraph.compiler.api.schema.PropDataType;
+import com.alibaba.maxgraph.compiler.api.schema.DataType;
 import com.alibaba.maxgraph.compiler.tree.TreeConstants;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.CustomPredicate;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.ListMatchType;
@@ -30,7 +30,6 @@ import com.alibaba.maxgraph.sdkcommon.compiler.custom.NegatePredicate;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.RegexPredicate;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.StringPredicate;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.dim.DimMatchType;
-import com.alibaba.maxgraph.sdkcommon.compiler.custom.dim.DimOdpsTable;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.dim.DimPredicate;
 import com.alibaba.maxgraph.sdkcommon.compiler.custom.dim.DimTable;
 import com.alibaba.maxgraph.compiler.tree.value.ElementType;
@@ -51,7 +50,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.commons.lang3.StringUtils;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tinkerpop.gremlin.process.traversal.Compare;
 import org.apache.tinkerpop.gremlin.process.traversal.Contains;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
@@ -291,8 +289,6 @@ public class MaxGraphUtils {
             List<Object> valueList = List.class.cast(value);
             Object valueObject = valueList.get(0);
             return Message.VariantType.valueOf("VT_" + StringUtils.upperCase(valueObject.getClass().getSimpleName()) + "_LIST");
-        } else if (value instanceof DimOdpsTable) {
-            return Message.VariantType.VT_DIM_ODPS;
         } else {
             return Message.VariantType.valueOf("VT_" + StringUtils.upperCase(valueClazz.getSimpleName()));
         }
@@ -337,7 +333,7 @@ public class MaxGraphUtils {
     public static Message.Value.Builder createValueFromType(Object value, Message.VariantType variantType, CompilerConfig compilerConfig) {
         Message.Value.Builder valueBuilder = Message.Value.newBuilder();
         switch (variantType) {
-            case VT_INTEGER:
+            case VT_INT:
                 valueBuilder.setIntValue(Integer.class.cast(value));
                 break;
             case VT_LONG:
@@ -358,44 +354,14 @@ public class MaxGraphUtils {
             case VT_LONG_LIST:
                 valueBuilder.addAllLongValueList((List<Long>) value);
                 break;
-            case VT_INTEGER_LIST:
+            case VT_INT_LIST:
                 valueBuilder.addAllIntValueList((List<Integer>) value);
-                break;
-            case VT_DIM_ODPS:
-                valueBuilder.setPayload(parseDimOdpsTable(DimOdpsTable.class.cast(value), compilerConfig).toByteString());
                 break;
             default:
                 throw new UnsupportedOperationException("value=>" + value + " type=>" + variantType.toString());
         }
 
         return valueBuilder;
-    }
-
-    private static QueryFlowOuterClass.OdpsQueryInput parseDimOdpsTable(DimOdpsTable dimOdpsTable, CompilerConfig compilerConfig) {
-        QueryFlowOuterClass.OdpsQueryInput.Builder odpsQueryBuilder = QueryFlowOuterClass.OdpsQueryInput.newBuilder()
-                .setProject(checkNotNull(dimOdpsTable.getProject(), "project can't be null"))
-                .setTableName(checkNotNull(dimOdpsTable.getTable(), "table can't be null"))
-                .setEndpoint(checkNotNull(dimOdpsTable.getEndpoint()))
-                .setAccessId(checkNotNull(dimOdpsTable.getAccessId()))
-                .setAccessKey(checkNotNull(dimOdpsTable.getAccessKey()))
-                .addAllPkNameList(dimOdpsTable.getPkList());
-        for (Pair<String, P<?>> filterPair : dimOdpsTable.getFilterPairList()) {
-            Message.CompareType compareType = MaxGraphUtils.parseCompareType(filterPair.getRight(), filterPair.getRight().getBiPredicate());
-            Message.VariantType valueDataType = MaxGraphUtils.parseVariantType(checkNotNull(filterPair.getRight().getValue()).getClass(), filterPair.getRight().getValue());
-            Message.Value value = MaxGraphUtils.createValueFromType(filterPair.getRight().getValue(), valueDataType, compilerConfig).build();
-            Message.ColumnLogicalCompare columnLogicalCompare = Message.ColumnLogicalCompare.newBuilder()
-                    .setColumnName(filterPair.getLeft())
-                    .setCompare(compareType)
-                    .setValue(value)
-                    .setType(valueDataType)
-                    .build();
-            odpsQueryBuilder.addLogicalCompare(columnLogicalCompare);
-        }
-        if (StringUtils.isNotEmpty(dimOdpsTable.getDs())) {
-            odpsQueryBuilder.setDs(dimOdpsTable.getDs());
-        }
-
-        return odpsQueryBuilder.build();
     }
 
     /**
@@ -501,7 +467,7 @@ public class MaxGraphUtils {
         ByteBuffer byteBuffer = ByteBuffer.wrap(byteString.toByteArray());
         Object value;
         switch (variantType) {
-            case VT_INTEGER:
+            case VT_INT:
                 value = byteBuffer.getInt();
                 break;
             case VT_LONG:
@@ -516,7 +482,7 @@ public class MaxGraphUtils {
             case VT_DOUBLE:
                 value = byteBuffer.getDouble();
                 break;
-            case VT_INTEGER_LIST: {
+            case VT_INT_LIST: {
                 try {
                     Message.ListInt listIntValue = Message.ListInt.parseFrom(byteString);
                     return Lists.newArrayList(listIntValue.getValueList());
@@ -571,8 +537,8 @@ public class MaxGraphUtils {
 
     private static ValueType parseValueTypeFromDataType(Message.VariantType variantType) {
         switch (variantType) {
-            case VT_INTEGER_LIST:
-                return new ListValueType(new ElementValueType(ElementType.VALUE, Message.VariantType.VT_INTEGER));
+            case VT_INT_LIST:
+                return new ListValueType(new ElementValueType(ElementType.VALUE, Message.VariantType.VT_INT));
             case VT_LONG_LIST:
                 return new ListValueType(new ElementValueType(ElementType.VALUE, Message.VariantType.VT_LONG));
             case VT_STRING_LIST:
@@ -584,7 +550,7 @@ public class MaxGraphUtils {
 
     public static Message.VariantType parsePropertyDataType(String propKey, GraphSchema schema) {
         try {
-            Set<PropDataType> dataTypeSet = SchemaUtils.getPropDataTypeList(propKey, schema);
+            Set<DataType> dataTypeSet = SchemaUtils.getPropDataTypeList(propKey, schema);
             if (dataTypeSet.size() != 1) {
                 throw new IllegalArgumentException("invalid data type " + dataTypeSet + " for prop " + propKey);
             }

@@ -16,17 +16,12 @@
 # limitations under the License.
 #
 
-import os
 
 import pandas as pd
 import pytest
-import vineyard
 import vineyard.io
 
-from graphscope import hits
 from graphscope import lpa
-from graphscope import property_bfs
-from graphscope import property_sssp
 from graphscope import sssp
 from graphscope.framework.app import AppAssets
 from graphscope.framework.errors import InvalidArgumentError
@@ -133,6 +128,13 @@ def test_add_column(arrow_property_graph, property_context):
     )
     assert "result_0" in [p.name for p in g2.schema.get_vertex_properties("v0")]
     assert "result_1" in [p.name for p in g2.schema.get_vertex_properties("v1")]
+
+
+def test_context_output(simple_context):
+    simple_context.output(
+        fd="file:///tmp/rlt.csv",
+        selector={"id": "v.id", "data": "v.data", "result": "r"},
+    )
 
 
 def test_add_column_after_computation(arrow_property_graph):

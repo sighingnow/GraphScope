@@ -195,7 +195,7 @@ install_dependencies() {
   chmod +x kubectl && sudo mv kubectl /usr/local/bin/ && sudo ln /usr/local/bin/kubectl /usr/bin/kubectl || true
 
   log "Install kind."
-  curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.10.0/kind-linux-amd64
+  curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.10.0/kind-linux-amd64
   chmod +x kind && sudo mv kind /usr/local/bin/ && sudo ln /usr/local/bin/kind /usr/bin/kind || true
 }
 
@@ -252,15 +252,11 @@ launch_k8s_cluster() {
 pull_images() {
   log "Pulling GraphScope images."
   sudo docker pull registry.cn-hongkong.aliyuncs.com/graphscope/graphscope:${image_tag} || true
-  sudo docker pull registry.cn-hongkong.aliyuncs.com/graphscope/maxgraph_standalone_manager:${image_tag} || true
-  sudo docker pull zookeeper:3.4.14 || true
   sudo docker pull quay.io/coreos/etcd:v3.4.13 || true
   log "GraphScope images pulled successfully."
 
   log "Loading images into kind cluster."
   sudo kind load docker-image registry.cn-hongkong.aliyuncs.com/graphscope/graphscope:${image_tag} || true
-  sudo kind load docker-image registry.cn-hongkong.aliyuncs.com/graphscope/maxgraph_standalone_manager:${image_tag} || true
-  sudo kind load docker-image zookeeper:3.4.14 || true
   sudo kind load docker-image quay.io/coreos/etcd:v3.4.13 || true
   log "GraphScope images loaded into kind cluster successfully."
 }

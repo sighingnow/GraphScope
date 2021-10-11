@@ -19,14 +19,14 @@
 
 import logging
 import os
-import random
 import signal
 import subprocess
 import sys
 
 from graphscope.config import GSConfig as gs_config
-from graphscope.deploy.hosts.utils import is_port_in_use
 from graphscope.deploy.launcher import Launcher
+from graphscope.framework.utils import get_free_port
+from graphscope.framework.utils import is_free_port
 from graphscope.framework.utils import random_string
 
 try:
@@ -67,16 +67,18 @@ class HostsClusterLauncher(Launcher):
         self._proc = None
         self._closed = True
 
+    def poll(self):
+        if self._proc is not None:
+            return self._proc.poll()
+        return -1
+
     def _launch_coordinator(self):
         if self._port is None:
-            port = random.randint(60801, 63801)
-            while is_port_in_use(port):
-                port = random.randint(60801, 63801)
-            self._port = port
+            self._port = get_free_port()
         else:
             # check port conflict
-            if is_port_in_use(self._port):
-                raise RuntimeError("Port {} already used.")
+            if not is_free_port(self._port):
+                raise RuntimeError("Port {} already used.".format(self._port))
 
         self._coordinator_endpoint = "{}:{}".format(self._hosts[0], self._port)
 
@@ -120,7 +122,7 @@ class HostsClusterLauncher(Launcher):
             encoding="utf-8",
             stdin=subprocess.DEVNULL,
             stdout=sys.stdout if gs_config.show_log else subprocess.DEVNULL,
-            stderr=sys.stderr if gs_config.show_log else subprocess.DEVNULL,
+            stderr=sys.stderr,
             bufsize=1,
             env=env,
         )
@@ -134,7 +136,7 @@ class HostsClusterLauncher(Launcher):
         Raises:
             RuntimeError: If instance launch failed or timeout.
 
-        Returns: tulpe of process and endpoint
+        Returns: tuple of process and endpoint
         """
         try:
             self._launch_coordinator()
