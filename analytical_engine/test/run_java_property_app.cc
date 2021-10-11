@@ -230,9 +230,8 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
   auto range = std::make_pair("", "");
 
-  BOOST_LEAF_AUTO(selectors,
-                  gs::LabeledSelector::ParseSelectors(selectors_string));
-  BOOST_LEAF_AUTO(selector, gs::LabeledSelector::parse(selector_string));
+  auto selectors = gs::LabeledSelector::ParseSelectors(selectors_string).value();
+  auto selector = gs::LabeledSelector::parse(selector_string).value();
 
   /// 0. test ndarray
   {
@@ -303,8 +302,8 @@ void QueryProjected(vineyard::Client& client,
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
   //  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
 
-  BOOST_LEAF_AUTO(selectors, gs::Selector::ParseSelectors(selectors_string));
-  BOOST_LEAF_AUTO(selector, gs::Selector::parse(selector_string));
+  auto selectors = gs::Selector::ParseSelectors(selectors_string).value();
+  auto selector =  gs::Selector::parse(selector_string).value();
 
   auto range = std::make_pair("", "");
   /// 0. test ndarray

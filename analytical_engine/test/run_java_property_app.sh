@@ -139,8 +139,8 @@ export RUN_CP=${RUN_CP}:~/.m2/repository/com/google/guava/guava/30.1.1-jre/guava
 export RUN_CP=${RUN_CP}:${demo_jar}
 export RUN_CP=/home/admin/.m2/repository/com/alibaba/grape/graphscope-runtime/0.1/graphscope-runtime-0.1.jar
 export JAVA_CP=/tmp/gs/session_zjbdxlaf/user-llvm4jni-output-120b3412f1ad7ebcc7a02f26582bae1663991fbd7259dd0eda838c559dc13554:/tmp/gs/session_zjbdxlaf/gs-ffi-120b3412f1ad7ebcc7a02f26582bae1663991fbd7259dd0eda838c559dc13554/CLASS_OUTPUT:/home/admin/.m2/repository/com/alibaba/grape/graphscope-demo/0.1/graphscope-demo-0.1-shaded.jar:${VINEYARD_GRAPH_BUILD_NATIVE}:${GRAPE_SDK_BUILD_NATIVE}
-export JAVA_CP_2=/tmp/graphscope-demo/:${VINEYARD_GRAPH_BUILD_NATIVE}:${GRAPE_SDK_BUILD_NATIVE}
-
+export JAVA_CP_2=/tmp/gs/session_zjbdxlaf/user-llvm4jni-output-120b3412f1ad7ebcc7a02f26582bae1663991fbd7259dd0eda838c559dc13554:/tmp/gs/session_zjbdxlaf/gs-ffi-120b3412f1ad7ebcc7a02f26582bae1663991fbd7259dd0eda838c559dc13554/CLASS_OUTPUT:/home/admin/.m2/repository/com/alibaba/grape/graphscope-demo/0.1/graphscope-demo-0.1-shaded.jar:${VINEYARD_GRAPH_BUILD_NATIVE}:${GRAPE_SDK_BUILD_NATIVE}
+export USER_LIB_PATH=/tmp/gs/session_zjbdxlaf/120b3412f1ad7ebcc7a02f26582bae1663991fbd7259dd0eda838c559dc13554/lib120b3412f1ad7ebcc7a02f26582bae1663991fbd7259dd0eda838c559dc13554.so
 #export RUN_CP=${RUN_CP}:~/.m2/repository/com/alibaba/ffi/llvm4jni-runtime/0.1/llvm4jni-runtime-0.1-jar-with-dependencies.jar
 echo "run class path "${RUN_CP}
 echo "java libraray path "${GRAPE_SDK_BUILD_NATIVE}:${VINEYARD_GRAPH_BUILD_NATIVE}
