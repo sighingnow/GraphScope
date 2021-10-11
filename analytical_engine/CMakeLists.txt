@@ -22,18 +22,13 @@ option(BUILD_TESTS "Build unit test" ON)
 option(ENABLE_JAVA_SDK "Build with support for java sdk" OFF)
 
 if (ENABLE_JAVA_SDK)
-    if (DEFINED ENV{LLVM11_HOME})
-        message(STATUS "Using LLVM11 in $ENV{LLVM11_HOME}")
+    #check whether we are using clang.
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(STATUS "Using Clang compiler: ${CMAKE_CXX_COMPILER}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fforce-emit-vtables")
     else()
-        message(FATAL_ERROR "Please set env var LLVM11_HOME before using clang to compile")
+        message(FATAL_ERROR "Compiling with ENABLE_JAVA_SDK ON expects a minimum Clang-11 compiler, your compiler is ${CMAKE_CXX_COMPILER}")
     endif()
-    set(CMAKE_C_COMPILER $ENV{LLVM11_HOME}/bin/clang)
-    set(CMAKE_CXX_COMPILER $ENV{LLVM11_HOME}/bin/clang++)
-    message(STATUS "Using C compiler: ${CMAKE_C_COMPILER}")
-    message(STATUS "Using CXX compiler: ${CMAKE_CXX_COMPILER}")
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fforce-emit-vtables")
-    set(CMAKE_JNI_LINKER_FLAGS "${CMAKE_JNI_LINKER_FLAGS} -fuse-ld=${LLVM11_HOME}/bin/ld.lld -Xlinker -mllvm=-lto-embed-bitcode")
 endif()
 
 if (NETWORKX)
