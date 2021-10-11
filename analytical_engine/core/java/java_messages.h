@@ -14,29 +14,29 @@ namespace gs {
  */
 template <typename T>
 struct PrimitiveMessage {
+  T data;
+
   PrimitiveMessage() { data = (T) -1; }
   PrimitiveMessage(const T in_data) data(in_data) {}
   inline void setData(const T value) { data = value; }
   inline T getData() { return data; }
 
-  T data;
+  template <typename T>
+  friend inline grape::OutArchive& operator>>(grape::OutArchive& out_archive,
+                                              PrimitiveMessage<T>& msg) {
+    out_archive >> msg.data;
+    return out_archive;
+  }
+  template <typename T>
+  friend inline grape::InArchive& operator<<(grape::InArchive& in_archive,
+                                             const PrimitiveMessage<T>& msg) {
+    in_archive << msg.data;
+    return in_archive;
+  }
 };
 
 using DoubleMsg = PrimitiveMessage<double>;
 using LongMsg = PrimitiveMessage<int64_t>;
-
-template <typename T>
-inline grape::OutArchive& operator>>(grape::OutArchive& out_archive,
-                                     PrimitiveMessage<T>& msg) {
-  out_archive >> msg.data;
-  return out_archive;
-}
-template <typename T>
-inline grape::InArchive& operator<<(grape::InArchive& in_archive,
-                                    const PrimitiveMessage<T>& msg) {
-  in_archive << msg.data;
-  return in_archive;
-}
 
 // specify overloaded <, > operators
 template <typename T>
