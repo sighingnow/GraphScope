@@ -230,8 +230,9 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
   auto range = std::make_pair("", "");
 
-  BOOST_LEAF_AUTO(selectors, LabeledSelector::ParseSelectors(selectors_string));
-  BOOST_LEAF_AUTO(selector, LabeledSelector::parse(selector_string));
+  BOOST_LEAF_AUTO(selectors,
+                  gs::LabeledSelector::ParseSelectors(selectors_string));
+  BOOST_LEAF_AUTO(selector, gs::LabeledSelector::parse(selector_string));
 
   /// 0. test ndarray
   {
@@ -245,7 +246,7 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
 
   // 1. Test data frame
   {
-    // auto selectors = gs::Selector::ParseSelectors(s_selectors).value();
+    // auto selectors = gs::gs::Selector::ParseSelectors(s_selectors).value();
     std::unique_ptr<grape::InArchive> arc =
         std::move(ctx_wrapper.ToDataframe(comm_spec, selectors, range).value());
     std::string java_data_frame_out_prefix = out_prefix + "/java";
@@ -302,8 +303,8 @@ void QueryProjected(vineyard::Client& client,
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
   //  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
 
-  BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selectors_string));
-  BOOST_LEAF_AUTO(selector, Selector::parse(selector_string));
+  BOOST_LEAF_AUTO(selectors, gs::Selector::ParseSelectors(selectors_string));
+  BOOST_LEAF_AUTO(selector, gs::Selector::parse(selector_string));
 
   auto range = std::make_pair("", "");
   /// 0. test ndarray
@@ -319,7 +320,7 @@ void QueryProjected(vineyard::Client& client,
 
   // 1. Test data frame
   {
-    // auto selectors = gs::Selector::ParseSelectors(s_selectors).value();
+    // auto selectors = gs::gs::Selector::ParseSelectors(s_selectors).value();
     std::unique_ptr<grape::InArchive> arc =
         std::move(ctx_wrapper.ToDataframe(comm_spec, selectors, range).value());
     std::string java_data_frame_out_prefix = out_prefix + "/java_projected";
