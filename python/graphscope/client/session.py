@@ -175,7 +175,7 @@ class _FetchHandler(object):
         if context_type == "dynamic_vertex_data":
             # for nx
             return DynamicVertexDataContext(context_dag_node, ret["context_key"])
-        else: 
+        else:
             # for java
             context_type_splited = context_type.split(":")
             logger.info("context splited: {}".format(":".join(context_type_splited)))

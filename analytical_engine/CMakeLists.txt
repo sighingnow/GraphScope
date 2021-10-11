@@ -40,7 +40,6 @@ if (NETWORKX)
     add_definitions(-DNETWORKX)
 endif ()
 
-
 set(DEFAULT_BUILD_TYPE "Release")
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
@@ -276,13 +275,13 @@ if (BUILD_TESTS)
 
     add_vineyard_app(test_project_string SRCS test/test_project_string.cc)
 
-    #add_vineyard_app(basic_graph_benchmarks SRCS benchmarks/basic_graph_benchmarks.cc)
+    add_vineyard_app(basic_graph_benchmarks SRCS benchmarks/basic_graph_benchmarks.cc)
 
     add_vineyard_app(property_graph_loader SRCS benchmarks/property_graph_loader.cc)
 
-    #add_vineyard_app(property_graph_benchmarks SRCS benchmarks/property_graph_benchmarks.cc)
+    add_vineyard_app(property_graph_benchmarks SRCS benchmarks/property_graph_benchmarks.cc)
 
-    #add_vineyard_app(projected_graph_benchmarks SRCS benchmarks/projected_graph_benchmarks.cc)
+    add_vineyard_app(projected_graph_benchmarks SRCS benchmarks/projected_graph_benchmarks.cc)
 
     if (NETWORKX)
         add_vineyard_app(test_convert SRCS test/test_convert.cc)
