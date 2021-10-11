@@ -226,28 +226,30 @@ class IJavaPIEPropertyDefaultContextWrapper : public IContextWrapper {
       : IContextWrapper(id) {}
 
   virtual bl::result<std::unique_ptr<grape::InArchive>> ToNdArray(
-      const grape::CommSpec& comm_spec, const std::string& selector_string,
+      const grape::CommSpec& comm_spec, const LabeledSelector& selector,
       const std::pair<std::string, std::string>& range) = 0;
 
   virtual bl::result<std::unique_ptr<grape::InArchive>> ToDataframe(
-      const grape::CommSpec& comm_spec, const std::string& selector_string,
+      const grape::CommSpec& comm_spec,
+      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
       const std::pair<std::string, std::string>& range) = 0;
 
   virtual bl::result<vineyard::ObjectID> ToVineyardTensor(
       const grape::CommSpec& comm_spec, vineyard::Client& client,
-      const std::string& selector_string,
+      const LabeledSelector& selector,
       const std::pair<std::string, std::string>& range) = 0;
 
   virtual bl::result<vineyard::ObjectID> ToVineyardDataframe(
       const grape::CommSpec& comm_spec, vineyard::Client& client,
-      const std::string& selector_string,
+      const std::vector<std::pair<std::string, LabeledSelector>>& selectors,
       const std::pair<std::string, std::string>& range) = 0;
 
   virtual bl::result<std::map<
       label_id_t,
       std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>>
   ToArrowArrays(const grape::CommSpec& comm_spec,
-                const std::string& selector_string) = 0;
+                const std::vector<std::pair<std::string, LabeledSelector>>&
+                    selectors) = 0;
 };
 
 /**
@@ -255,34 +257,34 @@ class IJavaPIEPropertyDefaultContextWrapper : public IContextWrapper {
  * ctxWrapper,and redirect function calls to the inner ctxWrapper.
  */
 class IJavaPIEProjectedDefaultContextWrapper : public IContextWrapper {
-  using label_id_t = vineyard::property_graph_types::LABEL_ID_TYPE;
-
  public:
   explicit IJavaPIEProjectedDefaultContextWrapper(const std::string& id)
       : IContextWrapper(id) {}
 
   virtual bl::result<std::unique_ptr<grape::InArchive>> ToNdArray(
-      const grape::CommSpec& comm_spec, const std::string& selector_string,
+      const grape::CommSpec& comm_spec, const Selector& selector,
       const std::pair<std::string, std::string>& range) = 0;
 
   virtual bl::result<std::unique_ptr<grape::InArchive>> ToDataframe(
-      const grape::CommSpec& comm_spec, const std::string& selector_string,
+      const grape::CommSpec& comm_spec,
+      const std::vector<std::pair<std::string, Selector>>& selectors,
       const std::pair<std::string, std::string>& range) = 0;
 
   virtual bl::result<vineyard::ObjectID> ToVineyardTensor(
       const grape::CommSpec& comm_spec, vineyard::Client& client,
-      const std::string& selector_string,
+      const Selector& selector,
       const std::pair<std::string, std::string>& range) = 0;
 
   virtual bl::result<vineyard::ObjectID> ToVineyardDataframe(
       const grape::CommSpec& comm_spec, vineyard::Client& client,
-      const std::string& selector_string,
+      const std::vector<std::pair<std::string, Selector>>& selectors,
       const std::pair<std::string, std::string>& range) = 0;
 
   virtual bl::result<
       std::vector<std::pair<std::string, std::shared_ptr<arrow::Array>>>>
-  ToArrowArrays(const grape::CommSpec& comm_spec,
-                const std::string& selector_string) = 0;
+  ToArrowArrays(
+      const grape::CommSpec& comm_spec,
+      const std::vector<std::pair<std::string, Selector>>& selectors) = 0;
 };
 #endif
 

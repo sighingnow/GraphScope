@@ -375,7 +375,8 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToNumpy(
     auto wrapper =
         std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(
             base_ctx_wrapper);
-    return wrapper->ToNdArray(comm_spec_, s_selector, range);
+    BOOST_LEAF_AUTO(selector, LabeledSelector::parse(s_selector));
+    return wrapper->ToNdArray(comm_spec_, selector, range);
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
              std::string::npos) {
     std::vector<std::string> outer_and_inner;
@@ -388,7 +389,8 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToNumpy(
     auto wrapper =
         std::dynamic_pointer_cast<IJavaPIEProjectedDefaultContextWrapper>(
             base_ctx_wrapper);
-    return wrapper->ToNdArray(comm_spec_, s_selector, range);
+    BOOST_LEAF_AUTO(selector, Selector::parse(s_selector));
+    return wrapper->ToNdArray(comm_spec_, selector, range);
   }
 #endif
   RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
@@ -471,8 +473,8 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
     auto wrapper =
         std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(
             base_ctx_wrapper);
-    // delay the selector parsing to inner ctxWrapper;
-    return wrapper->ToDataframe(comm_spec_, s_selectors, range);
+    BOOST_LEAF_AUTO(selectors, LabeledSelector::ParseSelectors(s_selectors));
+    return wrapper->ToDataframe(comm_spec_, selectors, range);
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
              std::string::npos) {
     std::vector<std::string> outer_and_inner;
@@ -485,8 +487,8 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
     auto wrapper =
         std::dynamic_pointer_cast<IJavaPIEProjectedDefaultContextWrapper>(
             base_ctx_wrapper);
-    // delay the selector parsing to inner ctxWrapper;
-    return wrapper->ToDataframe(comm_spec_, s_selectors, range);
+    BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(s_selectors));
+    return wrapper->ToDataframe(comm_spec_, selectors, range);
   }
 #endif
   RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
@@ -562,8 +564,9 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
         std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(
             base_ctx_wrapper);
     BOOST_LEAF_AUTO(s_selector, params.Get<std::string>(rpc::SELECTOR));
+    BOOST_LEAF_AUTO(selector, LabeledSelector::parse(s_selector));
     BOOST_LEAF_ASSIGN(
-        id, wrapper->ToVineyardTensor(comm_spec_, *client_, s_selector, range));
+        id, wrapper->ToVineyardTensor(comm_spec_, *client_, selector, range));
     // RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
     //                 "GS is compiled with option ENABLE_JAVA_SDK off");
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
@@ -579,8 +582,9 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
         std::dynamic_pointer_cast<IJavaPIEProjectedDefaultContextWrapper>(
             base_ctx_wrapper);
     BOOST_LEAF_AUTO(s_selector, params.Get<std::string>(rpc::SELECTOR));
+    BOOST_LEAF_AUTO(selector, Selector::parse(s_selector));
     BOOST_LEAF_ASSIGN(
-        id, wrapper->ToVineyardTensor(comm_spec_, *client_, s_selector, range));
+        id, wrapper->ToVineyardTensor(comm_spec_, *client_, selector, range));
     // RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
     //                 "GS is compiled with option ENABLE_JAVA_SDK off");
   }
@@ -667,8 +671,9 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
         std::dynamic_pointer_cast<IJavaPIEPropertyDefaultContextWrapper>(
             base_ctx_wrapper);
     BOOST_LEAF_AUTO(s_selectors, params.Get<std::string>(rpc::SELECTOR));
+    BOOST_LEAF_AUTO(selectors, LabeledSelector::ParseSelectors(s_selectors));
     BOOST_LEAF_ASSIGN(id, vd_ctx_wrapper->ToVineyardDataframe(
-                              comm_spec_, *client_, s_selectors, range));
+                              comm_spec_, *client_, selectors, range));
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
              std::string::npos) {
     std::vector<std::string> outer_and_inner;
@@ -682,8 +687,9 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
         std::dynamic_pointer_cast<IJavaPIEProjectedDefaultContextWrapper>(
             base_ctx_wrapper);
     BOOST_LEAF_AUTO(s_selectors, params.Get<std::string>(rpc::SELECTOR));
+    BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(s_selectors));
     BOOST_LEAF_ASSIGN(id, vd_ctx_wrapper->ToVineyardDataframe(
-                              comm_spec_, *client_, s_selectors, range));
+                              comm_spec_, *client_, selectors, range));
   }
 #endif
   else {
