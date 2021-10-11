@@ -27,10 +27,6 @@
 #include "glog/logging.h"
 
 #include "core/config.h"
-// #ifdef ENABLE_JAVA_SDK
-// #include "core/context/java_pie_projected_default_context.h"
-// #include "core/context/java_pie_property_default_context.h"
-// #endif
 #include "core/error.h"
 #include "proto/data_types.pb.h"
 #include "proto/query_args.pb.h"

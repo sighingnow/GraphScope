@@ -1,11 +1,14 @@
 
 #ifndef ANALYTICAL_ENGINE_CORE_JAVA_JAVA_MESSAGES_H_
 #define ANALYTICAL_ENGINE_CORE_JAVA_JAVA_MESSAGES_H_
+
 #ifdef ENABLE_JAVA_SDK
+
+#include <string>
+
 #include "grape/serialization/in_archive.h"
 #include "grape/serialization/out_archive.h"
 
-#include <string>
 namespace gs {
 
 /**
