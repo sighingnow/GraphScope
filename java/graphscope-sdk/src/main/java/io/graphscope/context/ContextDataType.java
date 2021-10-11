@@ -4,11 +4,11 @@ package io.graphscope.context;
 import com.alibaba.ffi.CXXEnum;
 import com.alibaba.ffi.FFITypeAlias;
 import com.alibaba.ffi.FFITypeRefiner;
-import io.graphscope.utils.CPP_CLASS;
+import io.graphscope.utils.CppClassName;
 
 //@FFIGen(library = VINEYARD_JNI_LIBRARY)
 //@CXXHead(CONTEXT_PROTOCOLS_H)
-@FFITypeAlias(CPP_CLASS.CONTEXT_DATA_TYPE)
+@FFITypeAlias(CppClassName.CONTEXT_DATA_TYPE)
 @FFITypeRefiner("io.graphscope.context.ContextDataType.get")
 public enum ContextDataType implements CXXEnum {
     kBool,

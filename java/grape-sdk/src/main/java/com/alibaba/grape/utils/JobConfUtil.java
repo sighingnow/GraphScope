@@ -2,7 +2,7 @@ package com.alibaba.grape.utils;
 
 import com.alibaba.grape.jobConf.JobConf;
 
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.JAVA_APP_JNI_LIBRARY;
+import static com.alibaba.grape.utils.JNILibraryName.JAVA_APP_JNI_LIBRARY;
 
 public class JobConfUtil {
     static {

@@ -20,11 +20,12 @@ limitations under the License.
 
 #include <utility>
 
-#include "core/app/property_app_base.h"
-#include "core/context/java_pie_property_default_context.h"
 #include "grape/communication/communicator.h"
 #include "grape/grape.h"
 #include "grape/types.h"
+
+#include "core/app/property_app_base.h"
+#include "core/context/java_pie_property_default_context.h"
 
 namespace gs {
 

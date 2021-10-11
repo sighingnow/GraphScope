@@ -2,9 +2,9 @@ package com.alibaba.grape.parallel.message;
 
 import com.alibaba.ffi.*;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.DOUBLE_MSG;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.CORE_JAVA_JAVA_MESSAGES_H;
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
+import static com.alibaba.grape.utils.CppClassName.DOUBLE_MSG;
+import static com.alibaba.grape.utils.CppHeaderName.CORE_JAVA_JAVA_MESSAGES_H;
+import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
 
 @FFIGen(library = GRAPE_JNI_LIBRARY)

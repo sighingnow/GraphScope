@@ -11,9 +11,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.*;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.*;
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
+import static com.alibaba.grape.utils.CppClassName.*;
+import static com.alibaba.grape.utils.CppHeaderName.*;
+import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
 @FFIGen(library = GRAPE_JNI_LIBRARY)
 @FFITypeAlias(GRAPE_PARALLEL_MESSAGE_MANAGER)

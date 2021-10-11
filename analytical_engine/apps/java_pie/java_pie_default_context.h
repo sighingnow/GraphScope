@@ -15,16 +15,20 @@ limitations under the License.
 
 #ifndef ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_DEFAULT_CONTEXT_H_
 #define ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_DEFAULT_CONTEXT_H_
+
 #ifdef ENABLE_JAVA_SDK
-#include <grape/grape.h>
+
 #include <jni.h>
-#include "grape/grape.h"
 
 #include <iomanip>
 #include <limits>
 #include <vector>
-#include "core/java/javasdk.h"
+
 #include "grape/app/context_base.h"
+#include "grape/grape.h"
+
+#include "core/java/javasdk.h"
+
 namespace gs {
 
 /**

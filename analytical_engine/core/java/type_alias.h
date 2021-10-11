@@ -20,7 +20,7 @@
 #include "core/fragment/arrow_projected_fragment.h"
 #include "grape/utils/vertex_array.h"
 
-// Type alias for ease of use in Java.
+// Type alias for ease of use of some template types in Java.
 namespace gs {
 
 namespace arrow_projected_fragment_impl {

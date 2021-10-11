@@ -2,16 +2,16 @@ package io.graphscope.context.ffi;
 
 import com.alibaba.ffi.*;
 import com.alibaba.grape.ds.GSVertexArray;
-import io.graphscope.utils.CPP_HEADER;
+import io.graphscope.utils.CppHeaderName;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.ARROW_PROJECTED_FRAGMENT;
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GRAPE_EMPTY_TYPE;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.ARROW_PROJECTED_FRAGMENT_H;
-import static io.graphscope.utils.CPP_CLASS.VERTEX_DATA_CONTEXT;
-import static io.graphscope.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
+import static com.alibaba.grape.utils.CppClassName.ARROW_PROJECTED_FRAGMENT;
+import static com.alibaba.grape.utils.CppClassName.GRAPE_EMPTY_TYPE;
+import static com.alibaba.grape.utils.CppHeaderName.ARROW_PROJECTED_FRAGMENT_H;
+import static io.graphscope.utils.CppClassName.VERTEX_DATA_CONTEXT;
+import static io.graphscope.utils.JNILibraryName.VINEYARD_JNI_LIBRARY;
 
 @FFIGen(library = VINEYARD_JNI_LIBRARY)
-@CXXHead(CPP_HEADER.VERTEX_DATA_CONTEXT_H)
+@CXXHead(CppHeaderName.VERTEX_DATA_CONTEXT_H)
 @CXXHead(ARROW_PROJECTED_FRAGMENT_H)
 @FFITypeAlias(VERTEX_DATA_CONTEXT)
 @CXXTemplate(cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t," + GRAPE_EMPTY_TYPE + ",int64_t>", "double"},

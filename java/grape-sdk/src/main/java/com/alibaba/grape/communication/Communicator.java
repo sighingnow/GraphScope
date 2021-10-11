@@ -8,7 +8,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GRAPE_COMMUNICATOR;
+import static com.alibaba.grape.utils.CppClassName.GRAPE_COMMUNICATOR;
 
 /**
  * Let c++ detect whether the app class is instance of Communicator.

@@ -1,6 +1,6 @@
 package com.alibaba.grape.utils;
 
-public class CPP_CLASSES_STRINGS {
+public class CppClassName {
     public static final String DOUBLE_MSG = "gs::DoubleMsg";
     public static final String LONG_MSG = "gs::LongMsg";
     public static final String STRING_MSG = "gs::StringMsg";

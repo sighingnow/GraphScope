@@ -8,7 +8,7 @@ import io.graphscope.column.DoubleColumn;
 import io.graphscope.column.IntColumn;
 import io.graphscope.column.LongColumn;
 import io.graphscope.context.ffi.FFIVertexPropertyContext;
-import io.graphscope.utils.CPP_CLASS;
+import io.graphscope.utils.CppClassName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +33,7 @@ public abstract class VertexPropertyContext<FRAG_T extends ArrowProjectedFragmen
     protected void createFFIContext(FRAG_T fragment) {
         String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment);
         System.out.println("fragment str: " + fragmentTemplateStr);
-        String contextName = FFITypeFactoryhelper.makeParameterize(CPP_CLASS.VERTEX_PROPERTY_CONTEXT, fragmentTemplateStr);
+        String contextName = FFITypeFactoryhelper.makeParameterize(CppClassName.VERTEX_PROPERTY_CONTEXT, fragmentTemplateStr);
         System.out.println("context name: " + contextName);
         factory = FFITypeFactory.getFactory(FFIVertexPropertyContext.class, contextName);
         ffiVertexPropertyContext = factory.create(fragment);

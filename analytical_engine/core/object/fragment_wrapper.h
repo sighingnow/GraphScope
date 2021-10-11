@@ -303,11 +303,14 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
     if (context_type != CONTEXT_TYPE_VERTEX_DATA &&
         context_type != CONTEXT_TYPE_LABELED_VERTEX_DATA &&
         context_type != CONTEXT_TYPE_VERTEX_PROPERTY &&
-        context_type != CONTEXT_TYPE_LABELED_VERTEX_PROPERTY &&
-        (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) ==
-         std::string::npos) &&
+        context_type != CONTEXT_TYPE_LABELED_VERTEX_PROPERTY
+#ifdef ENABLE_JAVA_SDK
+        && (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) ==
+            std::string::npos) &&
         (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) ==
-         std::string::npos)) {
+         std::string::npos)
+#endif
+    ) {
       RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
                       "Illegal context type: " + context_type);
     }
@@ -379,9 +382,10 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
       BOOST_LEAF_ASSIGN(columns,
                         vp_ctx_wrapper->ToArrowArrays(comm_spec, selectors));
 
-    } else if (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
-               std::string::npos) {
+    }
 #ifdef ENABLE_JAVA_SDK
+    else if (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
+             std::string::npos) {
       std::vector<std::string> outer_and_inner;
       boost::split(outer_and_inner, context_type, boost::is_any_of(":"));
       if (outer_and_inner.size() != 2) {
@@ -394,13 +398,8 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
               ctx_wrapper);
       BOOST_LEAF_ASSIGN(columns,
                         vp_ctx_wrapper->ToArrowArrays(comm_spec, s_selectors));
-#else
-      RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
-                      "GS is compiled with option ENABLE_JAVA_SDK off");
-#endif
     } else if (context_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
                std::string::npos) {
-#ifdef ENABLE_JAVA_SDK
       std::vector<std::string> outer_and_inner;
       boost::split(outer_and_inner, context_type, boost::is_any_of(":"));
       if (outer_and_inner.size() != 2) {
@@ -419,11 +418,8 @@ class FragmentWrapper<vineyard::ArrowFragment<OID_T, VID_T>>
       BOOST_LEAF_AUTO(arrow_arrays,
                       vp_ctx_wrapper->ToArrowArrays(comm_spec, s_selectors));
       columns[v_label_id] = arrow_arrays;
-#else
-      RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
-                      "GS is compiled with option ENABLE_JAVA_SDK off");
-#endif
     }
+#endif
     vineyard::ObjectMeta ctx_meta, cur_meta;
     VINEYARD_CHECK_OK(client->GetMetaData(vm_id_from_ctx, ctx_meta));
     VINEYARD_CHECK_OK(

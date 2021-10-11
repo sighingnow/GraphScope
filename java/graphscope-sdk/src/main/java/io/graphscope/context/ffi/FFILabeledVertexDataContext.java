@@ -4,17 +4,17 @@ import com.alibaba.ffi.*;
 import com.alibaba.grape.ds.GSVertexArray;
 import com.alibaba.grape.ds.Vertex;
 import com.alibaba.grape.stdcxx.StdVector;
-import io.graphscope.utils.CPP_HEADER;
-import io.graphscope.utils.CPP_JNI_LIBRARY;
+import io.graphscope.utils.CppHeaderName;
+import io.graphscope.utils.JNILibraryName;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GRAPE_VERTEX;
-import static io.graphscope.utils.CPP_CLASS.ARROW_FRAGMENT;
-import static io.graphscope.utils.CPP_CLASS.LABELED_VERTEX_DATA_CONTEXT;
+import static com.alibaba.grape.utils.CppClassName.GRAPE_VERTEX;
+import static io.graphscope.utils.CppClassName.ARROW_FRAGMENT;
+import static io.graphscope.utils.CppClassName.LABELED_VERTEX_DATA_CONTEXT;
 
-@FFIGen(library = CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY)
-@CXXHead(CPP_HEADER.LABELED_VERTEX_DATA_CONTEXT_H)
-@CXXHead(CPP_HEADER.ARROW_FRAGMENT_H)
-@CXXHead(CPP_HEADER.CORE_JAVA_TYPE_ALIAS_H)
+@FFIGen(library = JNILibraryName.VINEYARD_JNI_LIBRARY)
+@CXXHead(CppHeaderName.LABELED_VERTEX_DATA_CONTEXT_H)
+@CXXHead(CppHeaderName.ARROW_FRAGMENT_H)
+@CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(LABELED_VERTEX_DATA_CONTEXT)
 @CXXTemplate(cxx = {ARROW_FRAGMENT + "<int64_t>", "double"},
         java = {"io.graphscope.fragment.ArrowFragment<java.lang.Long>", "java.lang.Double"})

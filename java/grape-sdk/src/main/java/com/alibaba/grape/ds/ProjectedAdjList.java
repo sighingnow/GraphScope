@@ -4,10 +4,10 @@ import com.alibaba.ffi.*;
 
 import java.util.Iterator;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.PROJECTED_ADJ_LIST;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.ARROW_PROJECTED_FRAGMENT_H;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.CORE_JAVA_TYPE_ALIAS_H;
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
+import static com.alibaba.grape.utils.CppClassName.PROJECTED_ADJ_LIST;
+import static com.alibaba.grape.utils.CppHeaderName.ARROW_PROJECTED_FRAGMENT_H;
+import static com.alibaba.grape.utils.CppHeaderName.CORE_JAVA_TYPE_ALIAS_H;
+import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
 @FFIGen(library = GRAPE_JNI_LIBRARY)
 @CXXHead(ARROW_PROJECTED_FRAGMENT_H)
