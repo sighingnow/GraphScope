@@ -608,15 +608,16 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
     //                 "GS is compiled with option ENABLE_JAVA_SDK off");
   }
 #endif
-  RETURN_GS_ERROR(vineyard::ErrorCode::kInvalidValueError,
-                  "Unsupported context type: " + std::string(ctx_type));
-}
+  else {
+    RETURN_GS_ERROR(vineyard::ErrorCode::kInvalidValueError,
+                    "Unsupported context type: " + std::string(ctx_type));
+  }
 
-auto s_id = vineyard::ObjectIDToString(id);
+  auto s_id = vineyard::ObjectIDToString(id);
 
-client_->PutName(id, s_id);
+  client_->PutName(id, s_id);
 
-return toJson({{"object_id", s_id}});
+  return toJson({{"object_id", s_id}});
 }
 
 bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
