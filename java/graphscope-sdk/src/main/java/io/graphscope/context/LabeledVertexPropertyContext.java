@@ -7,7 +7,7 @@ import io.graphscope.column.DoubleColumn;
 import io.graphscope.column.IntColumn;
 import io.graphscope.column.LongColumn;
 import io.graphscope.context.ffi.FFILabeledVertexPropertyContext;
-import io.graphscope.utils.CPP_CLASS;
+import io.graphscope.utils.CppClassName;
 import io.graphscope.fragment.ArrowFragment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ public abstract class LabeledVertexPropertyContext<OID_T> implements PropertyDef
      */
     protected void createFFIContext(ArrowFragment<OID_T> fragment) {
         String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment);
-        String contextName = FFITypeFactoryhelper.makeParameterize(CPP_CLASS.LABELED_VERTEX_PROPERTY_CONTEXT, fragmentTemplateStr);
+        String contextName = FFITypeFactoryhelper.makeParameterize(CppClassName.LABELED_VERTEX_PROPERTY_CONTEXT, fragmentTemplateStr);
         System.out.println("context name: " + contextName);
         factory = FFITypeFactory.getFactory(FFILabeledVertexPropertyContext.class, contextName);
         ffiLabeledVertexPropertyContext = factory.create(fragment);

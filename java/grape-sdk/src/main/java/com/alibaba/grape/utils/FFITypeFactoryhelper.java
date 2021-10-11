@@ -15,8 +15,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GRAPE_MESSAGE_IN_BUFFER;
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GS_VERTEX_ARRAY;
+import static com.alibaba.grape.utils.CppClassName.GRAPE_MESSAGE_IN_BUFFER;
+import static com.alibaba.grape.utils.CppClassName.GS_VERTEX_ARRAY;
 
 public class FFITypeFactoryhelper {
     private static Logger logger = LoggerFactory.getLogger(FFITypeFactoryhelper.class.getName());

@@ -1,13 +1,13 @@
 package io.graphscope.ds;
 
 import com.alibaba.ffi.*;
-import io.graphscope.utils.CPP_CLASS;
-import io.graphscope.utils.CPP_HEADER;
-import io.graphscope.utils.CPP_JNI_LIBRARY;
+import io.graphscope.utils.CppClassName;
+import io.graphscope.utils.CppHeaderName;
+import io.graphscope.utils.JNILibraryName;
 
-@FFIGen(library = CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY)
-@CXXHead(CPP_HEADER.PROPERTY_GRAPH_UTILS_H)
-@FFITypeAlias(CPP_CLASS.EDGE_DATA_COLUMN)
+@FFIGen(library = JNILibraryName.VINEYARD_JNI_LIBRARY)
+@CXXHead(CppHeaderName.PROPERTY_GRAPH_UTILS_H)
+@FFITypeAlias(CppClassName.EDGE_DATA_COLUMN)
 @CXXTemplate(cxx = {"uint64_t"},
         java = {"Long"})
 @CXXTemplate(cxx = {"double"},
@@ -20,5 +20,5 @@ import io.graphscope.utils.CPP_JNI_LIBRARY;
 public interface EdgeDataColumn<DATA_T> extends FFIPointer {
 
     @CXXOperator(value = "[]")
-    @CXXValue DATA_T get(@FFIConst @CXXReference @FFITypeAlias(CPP_CLASS.PROPERTY_NBR_UNIT + "<uint64_t>") PropertyNbrUnit<Long> nbr);
+    @CXXValue DATA_T get(@FFIConst @CXXReference @FFITypeAlias(CppClassName.PROPERTY_NBR_UNIT + "<uint64_t>") PropertyNbrUnit<Long> nbr);
 }

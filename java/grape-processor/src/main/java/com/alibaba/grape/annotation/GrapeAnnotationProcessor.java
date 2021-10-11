@@ -8,7 +8,7 @@ import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
 import com.alibaba.grape.parallel.DefaultMessageManager;
 import com.alibaba.grape.parallel.MessageInBuffer;
 import com.alibaba.grape.parallel.ParallelMessageManager;
-import com.alibaba.grape.utils.CPP_CLASSES_STRINGS;
+import com.alibaba.grape.utils.CppClassName;
 import com.squareup.javapoet.*;
 import io.graphscope.ds.*;
 import io.graphscope.fragment.ArrowFragment;
@@ -31,7 +31,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.*;
 
-import static io.graphscope.utils.CPP_CLASS.ARROW_FRAGMENT;
+import static io.graphscope.utils.CppClassName.ARROW_FRAGMENT;
 
 @SupportedAnnotationTypes({"com.alibaba.ffi.FFIMirror", "com.alibaba.ffi.FFIMirrorDefinition",
         "com.alibaba.grape.annotation.GraphType"})
@@ -47,7 +47,7 @@ public class GrapeAnnotationProcessor extends javax.annotation.processing.Abstra
     boolean graphTypeWrapperGenerated = false;
     AnnotationMirror graphType = null;
     private String javaImmutableFragmentTemplateName = ImmutableEdgecutFragment.class.getName();
-    private String foreignImmutableFragmentTemplateName = CPP_CLASSES_STRINGS.GRAPE_IMMUTABLE_FRAGMENT;
+    private String foreignImmutableFragmentTemplateName = CppClassName.GRAPE_IMMUTABLE_FRAGMENT;
 
     private String JavaArrowFragmentTemplateName = ArrowFragment.class.getName();
     private String foreignArrowFragmentTemplateName = ARROW_FRAGMENT;

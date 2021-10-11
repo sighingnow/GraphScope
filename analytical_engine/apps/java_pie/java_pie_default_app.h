@@ -15,13 +15,16 @@ limitations under the License.
 
 #ifndef ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_DEFAULT_APP_H_
 #define ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_DEFAULT_APP_H_
+
 #ifdef ENABLE_JAVA_SDK
+
 #include <utility>
 
-#include "core/app/app_base.h"
 #include "grape/communication/communicator.h"
 #include "grape/grape.h"
 #include "grape/types.h"
+
+#include "core/app/app_base.h"
 #include "java_pie/java_pie_default_context.h"
 
 namespace gs {

@@ -1,7 +1,5 @@
 package io.graphscope.utils;
 
-import static io.graphscope.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
-
 public class LoadLibrary {
 //    static {
 //        //load grape jni library

@@ -23,9 +23,10 @@ limitations under the License.
 #include <limits>
 #include <vector>
 
-#include "core/java/javasdk.h"
 #include "grape/app/context_base.h"
 #include "grape/parallel/parallel_message_manager.h"
+
+#include "core/java/javasdk.h"
 namespace gs {
 
 /**

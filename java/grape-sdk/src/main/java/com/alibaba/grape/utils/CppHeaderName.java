@@ -1,6 +1,6 @@
 package com.alibaba.grape.utils;
 
-public class CPP_HEADER_STRINGS {
+public class CppHeaderName {
     public static final String GRAPE_ADJ_LIST_H = "grape/graph/adj_list.h";
     public static final String GRAPE_TYPES_H = "grape/types.h";
     public static final String GRAPE_BIT_SET_H = "grape/utils/bitset.h";

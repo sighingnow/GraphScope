@@ -17,6 +17,7 @@ limitations under the License.
 #define ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_CONTEXT_BASE_H_
 
 #ifdef ENABLE_JAVA_SDK
+
 #include <jni.h>
 #include <iomanip>
 #include <limits>
@@ -25,20 +26,23 @@ limitations under the License.
 #include <ostream>
 #include <vector>
 
-#include <grape/grape.h>
 #include "boost/algorithm/string.hpp"
 #include "boost/algorithm/string/split.hpp"
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
+
+#include "grape/app/context_base.h"
+#include "grape/grape.h"
+#include "vineyard/client/client.h"
+#include "vineyard/graph/fragment/fragment_traits.h"
+
 #include "core/config.h"
 #include "core/context/labeled_vertex_property_context.h"
 #include "core/context/vertex_data_context.h"
 #include "core/context/vertex_property_context.h"
 #include "core/java/javasdk.h"
 #include "core/object/i_fragment_wrapper.h"
-#include "grape/app/context_base.h"
-#include "vineyard/client/client.h"
-#include "vineyard/graph/fragment/fragment_traits.h"
+
 namespace gs {
 static constexpr const char* APP_CONTEXT_GETTER_CLASS =
     "io/graphscope/utils/AppContextGetter";

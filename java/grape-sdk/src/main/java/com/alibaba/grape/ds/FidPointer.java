@@ -5,7 +5,7 @@ import com.alibaba.ffi.FFIGen;
 import com.alibaba.ffi.FFIPointer;
 import com.alibaba.ffi.FFITypeAlias;
 
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
+import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
 /**
  * A pointer to an unsigned pointer

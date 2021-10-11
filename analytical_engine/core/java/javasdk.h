@@ -17,12 +17,15 @@ limitations under the License.
 #define ANALYTICAL_ENGINE_CORE_JAVA_JAVASDK_H_
 
 #ifdef ENABLE_JAVA_SDK
+
 #include <jni.h>
 #include <stdlib.h>
 #include <unistd.h>
+
 #include <queue>
 #include <utility>
 #include <vector>
+
 #include "grape/grape.h"
 
 namespace gs {

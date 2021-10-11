@@ -1,6 +1,6 @@
 package io.graphscope.utils;
 
-public class CPP_CLASS {
+public class CppClassName {
     public static final String ARROW_FRAGMENT = "vineyard::ArrowFragmentDefault";
     public static final String ARROW_FRAGMENT_GROUP = "vineyard::ArrowFragmentGroup";
     public static final String PROPERTY_MESSAGE_MANAGER = "gs::PropertyMessageManager";

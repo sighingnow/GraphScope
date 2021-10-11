@@ -16,30 +16,28 @@
 #include <utility>
 #include <vector>
 
-#include "apps/property/sssp_property.h"
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
-#include "core/fragment/arrow_projected_fragment.h"
-#include "core/java/javasdk.h"
-#include "core/loader/arrow_fragment_loader.h"
-#include "core/object/fragment_wrapper.h"
 #include "glog/logging.h"
+
 #include "grape/grape.h"
 #include "grape/types.h"
 #include "grape/util.h"
-#include "java_pie/java_pie_projected_default_app.h"
-#include "java_pie/java_pie_property_default_app.h"
-#include "proto/graph_def.pb.h"
 #include "vineyard/basic/ds/types.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/arrow_fragment.h"
 #include "vineyard/graph/utils/grape_utils.h"
 
+#include "apps/property/sssp_property.h"
 #include "core/error.h"
 #include "core/fragment/arrow_projected_fragment.h"
+#include "core/java/javasdk.h"
 #include "core/loader/arrow_fragment_loader.h"
 #include "core/object/fragment_wrapper.h"
 #include "core/utils/transform_utils.h"
+#include "java_pie/java_pie_projected_default_app.h"
+#include "java_pie/java_pie_property_default_app.h"
+#include "proto/graph_def.pb.h"
 
 using FragmentType =
     vineyard::ArrowFragment<vineyard::property_graph_types::OID_TYPE,

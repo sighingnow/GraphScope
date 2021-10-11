@@ -2,9 +2,9 @@ package com.alibaba.grape.fragment;
 
 import com.alibaba.ffi.*;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GRAPE_IMMUTABLE_FRAGMENT;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.GRAPE_FRAGMENT_IMMUTABLE_EDGECUT_FRAGMENT_H;
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
+import static com.alibaba.grape.utils.CppClassName.GRAPE_IMMUTABLE_FRAGMENT;
+import static com.alibaba.grape.utils.CppHeaderName.GRAPE_FRAGMENT_IMMUTABLE_EDGECUT_FRAGMENT_H;
+import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
 /**
  * This is the base class for auto-generated ImmutableEdgecutFragment.

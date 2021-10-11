@@ -3,7 +3,7 @@ package com.alibaba.grape.stdcxx;
 import com.alibaba.ffi.*;
 import sun.misc.Unsafe;
 
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
+import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
 @FFIGen(library = GRAPE_JNI_LIBRARY)
 @CXXHead(system = "string")

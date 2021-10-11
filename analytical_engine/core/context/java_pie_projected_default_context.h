@@ -15,26 +15,29 @@ limitations under the License.
 
 #ifndef ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_CONTEXT_H_
 #define ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_CONTEXT_H_
-#define CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT "java_pie_projected_default"
-#ifdef ENABLE_JAVA_SDK
-#include <grape/grape.h>
-#include <jni.h>
 
-#include <grape/grape.h>
+#ifdef ENABLE_JAVA_SDK
+
 #include <jni.h>
 #include <iomanip>
 #include <limits>
 #include <map>
 #include <vector>
+
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
+
+#include "grape/grape.h"
+#include "grape/parallel/default_message_manager.h"
+#include "vineyard/client/client.h"
+#include "vineyard/graph/fragment/fragment_traits.h"
+
 #include "core/config.h"
 #include "core/context/java_context_base.h"
 #include "core/java/javasdk.h"
 #include "core/object/i_fragment_wrapper.h"
-#include "grape/parallel/default_message_manager.h"
-#include "vineyard/client/client.h"
-#include "vineyard/graph/fragment/fragment_traits.h"
+
+#define CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT "java_pie_projected_default"
 
 namespace gs {
 

@@ -1,6 +1,6 @@
 package io.graphscope.utils;
 
-public class CPP_HEADER {
+public class CppHeaderName {
     public static final String ARROW_FRAGMENT_H = "vineyard/graph/fragment/arrow_fragment.h";
     public static final String ARROW_FRAGMENT_GROUP_H = "vineyard/graph/fragment/arrow_fragment_group.h";
     public static final String PROPERTY_MESSAGE_MANAGER_H = "core/parallel/property_message_manager.h";

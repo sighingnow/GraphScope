@@ -5,14 +5,14 @@ import com.alibaba.ffi.*;
 import com.alibaba.grape.ds.GSVertexArray;
 import com.alibaba.grape.ds.Vertex;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.*;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.ARROW_PROJECTED_FRAGMENT_H;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.GRAPE_TYPES_H;
-import static io.graphscope.utils.CPP_CLASS.ARROW_FRAGMENT;
-import static io.graphscope.utils.CPP_CLASS.DOUBLE_COLUMN;
-import static io.graphscope.utils.CPP_HEADER.ARROW_FRAGMENT_H;
-import static io.graphscope.utils.CPP_HEADER.CORE_JAVA_TYPE_ALIAS_H;
-import static io.graphscope.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
+import static com.alibaba.grape.utils.CppClassName.*;
+import static com.alibaba.grape.utils.CppHeaderName.ARROW_PROJECTED_FRAGMENT_H;
+import static com.alibaba.grape.utils.CppHeaderName.GRAPE_TYPES_H;
+import static io.graphscope.utils.CppClassName.ARROW_FRAGMENT;
+import static io.graphscope.utils.CppClassName.DOUBLE_COLUMN;
+import static io.graphscope.utils.CppHeaderName.ARROW_FRAGMENT_H;
+import static io.graphscope.utils.CppHeaderName.CORE_JAVA_TYPE_ALIAS_H;
+import static io.graphscope.utils.JNILibraryName.VINEYARD_JNI_LIBRARY;
 
 @FFIGen(library = VINEYARD_JNI_LIBRARY)
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)

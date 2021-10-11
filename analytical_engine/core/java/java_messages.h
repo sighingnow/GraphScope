@@ -7,95 +7,79 @@
 
 #include <string>
 namespace gs {
+
 /**
  * @brief Since Java can not pass Double, Long as reference, we need a wrapper
  * for primitives.
  */
-class DoubleMsg {
- public:
-  DoubleMsg() { data = -1.0; }
-  DoubleMsg(double in_data) : data(in_data) {}
-  ~DoubleMsg() {}
-  inline void setData(double value) { data = value; }
-  inline double getData() { return data; }
+template <typename T>
+struct PrimitiveMessage {
+  PrimitiveMessage() { data = (T) -1; }
+  PrimitiveMessage(const T in_data) data(in_data) {}
+  inline void setData(const T value) { data = value; }
+  inline T getData() { return data; }
 
-  double data;
+  T data;
 };
 
-class LongMsg {
- public:
-  LongMsg() { data = -1; }
-  LongMsg(uint64_t in_data) : data(in_data) {}
-  ~LongMsg() {}
-  inline void setData(uint64_t value) { data = value; }
-  inline uint64_t getData() { return data; }
-  uint64_t data;
-};
+using DoubleMsg = PrimitiveMessage<double>;
+using LongMsg = PrimitiveMessage<int64_t>;
 
+template <typename T>
 inline grape::OutArchive& operator>>(grape::OutArchive& out_archive,
-                                     DoubleMsg& msg) {
+                                     PrimitiveMessage<T>& msg) {
   out_archive >> msg.data;
   return out_archive;
 }
+template <typename T>
 inline grape::InArchive& operator<<(grape::InArchive& in_archive,
-                                    const DoubleMsg& msg) {
+                                    const PrimitiveMessage<T>& msg) {
   in_archive << msg.data;
   return in_archive;
 }
-inline grape::OutArchive& operator>>(grape::OutArchive& out_archive,
-                                     LongMsg& msg) {
-  out_archive >> msg.data;
-  return out_archive;
-}
-inline grape::InArchive& operator<<(grape::InArchive& in_archive,
-                                    const LongMsg& msg) {
-  in_archive << msg.data;
-  return in_archive;
-}
+
 // specify overloaded <, > operators
-inline bool operator<(const DoubleMsg& lhs, const DoubleMsg& rhs) {
+template <typename T>
+inline bool operator<(const PrimitiveMessage<T>& lhs,
+                      const PrimitiveMessage<T>& rhs) {
   return lhs.data < rhs.data;
 }
-inline bool operator>(const DoubleMsg& lhs, const DoubleMsg& rhs) {
-  return rhs < lhs;
+template <typename T>
+inline bool operator>(const PrimitiveMessage<T>& lhs,
+                      const PrimitiveMessage<T>& rhs) {
+  return lhs.data < rhs.data;
 }
-inline bool operator<=(const DoubleMsg& lhs, const DoubleMsg& rhs) {
+template <typename T>
+inline bool operator<=(const PrimitiveMessage<T>& lhs,
+                       const PrimitiveMessage<T>& rhs) {
   return !(lhs > rhs);
 }
-inline bool operator>=(const DoubleMsg& lhs, const DoubleMsg& rhs) {
+template <typename T>
+inline bool operator>=(const PrimitiveMessage<T>& lhs,
+                       const PrimitiveMessage<T>& rhs) {
   return !(lhs < rhs);
 }
-inline bool operator==(const DoubleMsg& lhs, const DoubleMsg& rhs) {
+template <typename T>
+inline bool operator==(const PrimitiveMessage<T>& lhs,
+                       const PrimitiveMessage<T>& rhs) {
   return lhs.data == rhs.data;
 }
-inline bool operator!=(const DoubleMsg& lhs, const DoubleMsg& rhs) {
+template <typename T>
+inline bool operator!=(const PrimitiveMessage<T>& lhs,
+                       const PrimitiveMessage<T>& rhs) {
   return !(lhs == rhs);
 }
-inline DoubleMsg& operator+=(DoubleMsg& lhs, const DoubleMsg& rhs) {
+template <typename T>
+inline PrimitiveMessage<T>& operator+=(PrimitiveMessage<T>& lhs,
+                                       const PrimitiveMessage<T>& rhs) {
   lhs.data += rhs.data;
   return lhs;
 }
 
-inline bool operator<(const LongMsg& lhs, const LongMsg& rhs) {
-  return lhs.data < rhs.data;
-}
-inline bool operator>(const LongMsg& lhs, const LongMsg& rhs) {
-  return rhs < lhs;
-}
-inline bool operator<=(const LongMsg& lhs, const LongMsg& rhs) {
-  return !(lhs > rhs);
-}
-inline bool operator>=(const LongMsg& lhs, const LongMsg& rhs) {
-  return !(lhs < rhs);
-}
-inline bool operator==(const LongMsg& lhs, const LongMsg& rhs) {
-  return lhs.data == rhs.data;
-}
-inline bool operator!=(const LongMsg& lhs, const LongMsg& rhs) {
-  return !(lhs == rhs);
-}
-inline LongMsg& operator+=(LongMsg& lhs, const LongMsg& rhs) {
-  lhs.data += rhs.data;
+template <typename T>
+inline PrimitiveMessage<T>& operator-=(PrimitiveMessage<T>& lhs,
+                                       const PrimitiveMessage<T>& rhs) {
+  lhs.data -= rhs.data;
   return lhs;
 }
 

@@ -2,7 +2,7 @@ package com.alibaba.grape.sample.types;
 
 import com.alibaba.ffi.*;
 
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.JAVA_APP_JNI_LIBRARY;
+import static com.alibaba.grape.utils.JNILibraryName.JAVA_APP_JNI_LIBRARY;
 
 
 //@FFIGen(library = "pie-user")

@@ -2,10 +2,10 @@ package com.alibaba.grape.communication;
 
 import com.alibaba.ffi.*;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.*;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.CORE_JAVA_JAVA_MESSAGES_H;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.GRAPE_COMMUNICATOR_H;
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
+import static com.alibaba.grape.utils.CppClassName.*;
+import static com.alibaba.grape.utils.CppHeaderName.CORE_JAVA_JAVA_MESSAGES_H;
+import static com.alibaba.grape.utils.CppHeaderName.GRAPE_COMMUNICATOR_H;
+import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
 @FFIGen(library = GRAPE_JNI_LIBRARY)
 @CXXHead(GRAPE_COMMUNICATOR_H)

@@ -2,10 +2,10 @@ package com.alibaba.grape.ds;
 
 import com.alibaba.ffi.*;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GRAPE_BIT_SET;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.GRAPE_BIT_SET_H;
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.GRAPE_WORKER_COMM_SPEC_H;;
+import static com.alibaba.grape.utils.CppClassName.GRAPE_BIT_SET;
+import static com.alibaba.grape.utils.CppHeaderName.GRAPE_BIT_SET_H;
+import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
+import static com.alibaba.grape.utils.CppHeaderName.GRAPE_WORKER_COMM_SPEC_H;;
 
 @FFIGen(library = GRAPE_JNI_LIBRARY)
 @CXXHead(value = {GRAPE_WORKER_COMM_SPEC_H, GRAPE_BIT_SET_H})

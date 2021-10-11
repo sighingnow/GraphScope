@@ -15,16 +15,19 @@ limitations under the License.
 
 #ifndef ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PARALLEL_APP_H_
 #define ANALYTICAL_ENGINE_APPS_JAVA_PIE_JAVA_PIE_PARALLEL_APP_H_
+
 #ifdef ENABLE_JAVA_SDK
-#include "grape/grape.h"
 
 #include <queue>
 #include <utility>
 
-#include "core/app/java/java_parallel_app_base.h"
 #include "grape/communication/communicator.h"
+#include "grape/grape.h"
 #include "grape/types.h"
+
+#include "core/app/java/java_parallel_app_base.h"
 #include "java_pie/java_pie_parallel_context.h"
+
 namespace gs {
 
 /**

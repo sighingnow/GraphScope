@@ -2,9 +2,9 @@ package com.alibaba.grape.ds;
 
 import com.alibaba.ffi.*;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GRAPE_VERTEX;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.GRAPE_VERTEX_ARRAY_H;
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
+import static com.alibaba.grape.utils.CppClassName.GRAPE_VERTEX;
+import static com.alibaba.grape.utils.CppHeaderName.GRAPE_VERTEX_ARRAY_H;
+import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
 @FFIGen(library = GRAPE_JNI_LIBRARY)
 @CXXHead(GRAPE_VERTEX_ARRAY_H)

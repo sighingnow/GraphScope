@@ -6,12 +6,19 @@ import com.alibaba.grape.ds.ProjectedAdjList;
 import com.alibaba.grape.ds.Vertex;
 import com.alibaba.grape.ds.VertexRange;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.ARROW_PROJECTED_FRAGMENT;
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.GRAPE_EMPTY_TYPE;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.ARROW_PROJECTED_FRAGMENT_H;
-import static com.alibaba.grape.utils.CPP_HEADER_STRINGS.CORE_JAVA_TYPE_ALIAS_H;
-import static com.alibaba.grape.utils.CPP_LIBRARY_STRINGS.GRAPE_JNI_LIBRARY;
+import static com.alibaba.grape.utils.CppClassName.ARROW_PROJECTED_FRAGMENT;
+import static com.alibaba.grape.utils.CppClassName.GRAPE_EMPTY_TYPE;
+import static com.alibaba.grape.utils.CppHeaderName.ARROW_PROJECTED_FRAGMENT_H;
+import static com.alibaba.grape.utils.CppHeaderName.CORE_JAVA_TYPE_ALIAS_H;
+import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
+/**
+ * A subclass of {@link com.alibaba.grape.fragment.EdgecutFragment}
+ * @param <OID_T>
+ * @param <VID_T>
+ * @param <VDATA_T>
+ * @param <EDATA_T>
+ */
 @FFIGen(library = GRAPE_JNI_LIBRARY)
 @CXXHead(ARROW_PROJECTED_FRAGMENT_H)
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)

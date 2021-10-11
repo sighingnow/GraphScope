@@ -24,8 +24,10 @@
 #include "grape/app/void_context.h"
 
 #include "core/context/i_context.h"
+#ifdef ENABLE_JAVA_SDK
 #include "core/context/java_pie_projected_default_context.h"
 #include "core/context/java_pie_property_default_context.h"
+#endif
 #include "core/context/labeled_vertex_property_context.h"
 #include "core/context/tensor_context.h"
 #include "core/context/vertex_data_context.h"

@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import static io.graphscope.utils.CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY;
+import static io.graphscope.utils.JNILibraryName.VINEYARD_JNI_LIBRARY;
 
 public class ArrowFragmentGroupTest {
     static {

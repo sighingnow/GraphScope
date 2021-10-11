@@ -1,7 +1,7 @@
 package com.alibaba.grape.stdcxx;
 
 import com.alibaba.ffi.FFITypeFactory;
-import com.alibaba.grape.utils.CPP_CLASSES_STRINGS;
+import com.alibaba.grape.utils.CppClassName;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,7 +10,7 @@ import org.junit.Test;
 public class StdUnorderedMapTest {
 
     private StdUnorderedMap.Factory<Integer, Long> factory = FFITypeFactory.getFactory(StdUnorderedMap.class,
-            CPP_CLASSES_STRINGS.STD_UNORDERED_MAP + "<unsigned,uint64_t>");
+            CppClassName.STD_UNORDERED_MAP + "<unsigned,uint64_t>");
     private StdUnorderedMap<Integer, Long> map;
 
     @Before

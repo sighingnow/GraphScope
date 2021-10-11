@@ -2,16 +2,16 @@ package io.graphscope.fragment;
 
 import com.alibaba.ffi.*;
 import com.alibaba.grape.stdcxx.StdUnorderedMap;
-import io.graphscope.utils.CPP_CLASS;
-import io.graphscope.utils.CPP_HEADER;
-import io.graphscope.utils.CPP_JNI_LIBRARY;
+import io.graphscope.utils.CppClassName;
+import io.graphscope.utils.CppHeaderName;
+import io.graphscope.utils.JNILibraryName;
 
-import static com.alibaba.grape.utils.CPP_CLASSES_STRINGS.STD_UNORDERED_MAP;
+import static com.alibaba.grape.utils.CppClassName.STD_UNORDERED_MAP;
 
-@FFIGen(library = CPP_JNI_LIBRARY.VINEYARD_JNI_LIBRARY)
-@CXXHead(CPP_HEADER.ARROW_FRAGMENT_GROUP_H)
+@FFIGen(library = JNILibraryName.VINEYARD_JNI_LIBRARY)
+@CXXHead(CppHeaderName.ARROW_FRAGMENT_GROUP_H)
 @CXXHead(system = "stdint.h")
-@FFITypeAlias(CPP_CLASS.ARROW_FRAGMENT_GROUP)
+@FFITypeAlias(CppClassName.ARROW_FRAGMENT_GROUP)
 public interface ArrowFragmentGroup extends CXXPointer {
     @FFINameAlias("total_frag_num")
     int totalFragNum();
