@@ -465,10 +465,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
     // 1. run java query
     Query(client, fragment, comm_spec, app_name, "/tmp", basic_params,
           selector_string, selectors_string);
-    // 2. second run
-    Query(client, fragment, comm_spec, app_name, "/tmp", basic_params2,
-          selector_string, selectors_string);
-    // 2.run c++ query
+      // 2.run c++ query
     RunSSSP(client, fragment, comm_spec, "/tmp", selector_string,
             selectors_string);
   }
