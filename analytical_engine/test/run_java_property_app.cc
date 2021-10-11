@@ -229,10 +229,14 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
   gs::JavaPIEPropertyDefaultContextWrapper<FragmentType> ctx_wrapper(
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
   auto range = std::make_pair("", "");
+
+  BOOST_LEAF_AUTO(selectors, LabeledSelector::ParseSelectors(selectors_string));
+  BOOST_LEAF_AUTO(selector, LabeledSelector::parse(selector_string));
+
   /// 0. test ndarray
   {
-    std::unique_ptr<grape::InArchive> arc = std::move(
-        ctx_wrapper.ToNdArray(comm_spec, selector_string, range).value());
+    std::unique_ptr<grape::InArchive> arc =
+        std::move(ctx_wrapper.ToNdArray(comm_spec, selector, range).value());
     std::string java_out_prefix = out_prefix + "/java_assembled_ndarray.dat";
     output_nd_array(comm_spec, std::move(arc), java_out_prefix,
                     7);  // 7 for double
@@ -242,8 +246,8 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
   // 1. Test data frame
   {
     // auto selectors = gs::Selector::ParseSelectors(s_selectors).value();
-    std::unique_ptr<grape::InArchive> arc = std::move(
-        ctx_wrapper.ToDataframe(comm_spec, selectors_string, range).value());
+    std::unique_ptr<grape::InArchive> arc =
+        std::move(ctx_wrapper.ToDataframe(comm_spec, selectors, range).value());
     std::string java_data_frame_out_prefix = out_prefix + "/java";
     output_data_frame(comm_spec, std::move(arc), java_data_frame_out_prefix, 7);
   }
@@ -251,8 +255,7 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
   LOG(INFO) << "[1] java finish test dataframe";
   // 2. test vineyard tensor
   {
-    auto tmp =
-        ctx_wrapper.ToVineyardTensor(comm_spec, client, selector_string, range);
+    auto tmp = ctx_wrapper.ToVineyardTensor(comm_spec, client, selector, range);
     CHECK(tmp);
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string java_v6d_tensor_prefix = out_prefix + "/java";
@@ -298,11 +301,15 @@ void QueryProjected(vineyard::Client& client,
   gs::JavaPIEProjectedDefaultContextWrapper<ProjectedFragmentType> ctx_wrapper(
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
   //  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
+
+  BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(selectors_string));
+  BOOST_LEAF_AUTO(selector, Selector::parse(selector_string));
+
   auto range = std::make_pair("", "");
   /// 0. test ndarray
   {
-    std::unique_ptr<grape::InArchive> arc = std::move(
-        ctx_wrapper.ToNdArray(comm_spec, selector_string, range).value());
+    std::unique_ptr<grape::InArchive> arc =
+        std::move(ctx_wrapper.ToNdArray(comm_spec, selector, range).value());
     std::string java_out_prefix =
         out_prefix + "/java_projected_assembled_ndarray.dat";
     output_nd_array(comm_spec, std::move(arc), java_out_prefix,
@@ -313,8 +320,8 @@ void QueryProjected(vineyard::Client& client,
   // 1. Test data frame
   {
     // auto selectors = gs::Selector::ParseSelectors(s_selectors).value();
-    std::unique_ptr<grape::InArchive> arc = std::move(
-        ctx_wrapper.ToDataframe(comm_spec, selectors_string, range).value());
+    std::unique_ptr<grape::InArchive> arc =
+        std::move(ctx_wrapper.ToDataframe(comm_spec, selectors, range).value());
     std::string java_data_frame_out_prefix = out_prefix + "/java_projected";
     output_data_frame(comm_spec, std::move(arc), java_data_frame_out_prefix, 4);
   }
@@ -322,8 +329,7 @@ void QueryProjected(vineyard::Client& client,
   LOG(INFO) << "[1] java projected finish test dataframe";
   // 2. test vineyard tensor
   {
-    auto tmp =
-        ctx_wrapper.ToVineyardTensor(comm_spec, client, selector_string, range);
+    auto tmp = ctx_wrapper.ToVineyardTensor(comm_spec, client, selector, range);
     CHECK(tmp);
     vineyard::ObjectID ndarray_object = tmp.value();
     std::string java_v6d_tensor_prefix = out_prefix + "/java_projected";
