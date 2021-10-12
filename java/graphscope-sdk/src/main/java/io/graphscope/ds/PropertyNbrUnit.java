@@ -7,7 +7,7 @@ import io.graphscope.utils.CppHeaderName;
 import io.graphscope.utils.JNILibraryName;
 
 @FFIGen(library = JNILibraryName.VINEYARD_JNI_LIBRARY)
-@CXXHead(CppHeaderName.PROPERTY_GRAPH_UTILS_H)
+@CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.PROPERTY_NBR_UNIT)
 @CXXTemplate(cxx = {"uint64_t"}, java = {"java.lang.Long"})
 public interface PropertyNbrUnit<VID_T> extends FFIPointer, CXXPointerRangeElement<PropertyNbrUnit<VID_T>> {

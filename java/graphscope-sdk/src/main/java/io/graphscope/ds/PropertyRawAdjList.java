@@ -8,7 +8,7 @@ import io.graphscope.utils.JNILibraryName;
 import java.util.Iterator;
 
 @FFIGen(library = JNILibraryName.VINEYARD_JNI_LIBRARY)
-@CXXHead(CppHeaderName.PROPERTY_GRAPH_UTILS_H)
+@CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.PROPERTY_RAW_ADJ_LIST)
 @CXXTemplate(cxx = {"uint64_t"}, java = {"java.lang.Long"})
 public interface PropertyRawAdjList<VID_T> extends FFIPointer, CXXPointer {

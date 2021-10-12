@@ -9,7 +9,7 @@ import io.graphscope.utils.JNILibraryName;
 import static com.alibaba.grape.utils.CppClassName.GRAPE_VERTEX;
 
 @FFIGen(library = JNILibraryName.VINEYARD_JNI_LIBRARY)
-@CXXHead(CppHeaderName.PROPERTY_GRAPH_UTILS_H)
+@CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.VERTEX_DATA_COLUMN)
 @CXXTemplate(cxx = {"uint64_t"},
         java = {"Long"})
