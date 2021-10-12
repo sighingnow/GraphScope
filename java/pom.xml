@@ -15,6 +15,7 @@
         <junit.version>4.12</junit.version>
         <fastffi.ffi.version>0.1</fastffi.ffi.version>
         <fastffi.annotation-processor.version>0.1</fastffi.annotation-processor.version>
+        <fastffi.llvm4jni-runtime.version>0.1</fastffi.llvm4jni-runtime.version>
         <javapoet.version>1.13.0</javapoet.version>
         <slf4j-api.version>1.7.25</slf4j-api.version>
         <logback-classic.version>1.2.3</logback-classic.version>
@@ -57,6 +58,11 @@
                 <groupId>com.alibaba.fastffi</groupId>
                 <artifactId>annotation-processor</artifactId>
                 <version>${fastffi.annotation-processor.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.fastffi</groupId>
+                <artifactId>llvm4jni-runtime</artifactId>
+                <version>${fastffi.llvm4jni-runtime.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.squareup</groupId>
