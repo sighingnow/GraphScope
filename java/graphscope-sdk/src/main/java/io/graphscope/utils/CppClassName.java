@@ -4,13 +4,14 @@ public class CppClassName {
     public static final String ARROW_FRAGMENT = "vineyard::ArrowFragmentDefault";
     public static final String ARROW_FRAGMENT_GROUP = "vineyard::ArrowFragmentGroup";
     public static final String PROPERTY_MESSAGE_MANAGER = "gs::PropertyMessageManager";
-    public static final String EDGE_DATA_COLUMN = "vineyard::property_graph_utils::EdgeDataColumnDefault";
-    public static final String PROPERTY_ADJ_LIST = "vineyard::property_graph_utils::AdjListDefault";
 
-    public static final String PROPERTY_NBR = "vineyard::property_graph_utils::NbrDefault";
-    public static final String PROPERTY_NBR_UNIT = "vineyard::property_graph_utils::NbrUnitDefault";
-    public static final String PROPERTY_RAW_ADJ_LIST = "vineyard::property_graph_utils::RawAdjListDefault";
-    public static final String VERTEX_DATA_COLUMN = "vineyard::property_graph_utils::VertexDataColumnDefault";
+    public static final String EDGE_DATA_COLUMN = "gs::EdgeDataColumnDefault";
+    public static final String VERTEX_DATA_COLUMN = "gs::VertexDataColumnDefault";
+    public static final String PROPERTY_ADJ_LIST = "gs::AdjListDefault";
+    public static final String PROPERTY_NBR = "gs::NbrDefault";
+    public static final String PROPERTY_NBR_UNIT = "gs::NbrUnitDefault";
+    public static final String PROPERTY_RAW_ADJ_LIST = "gs::RawAdjListDefault";
+    
     public static final String I_COLUMN = "gs::IColumn";
     public static final String DOUBLE_COLUMN = "gs::DoubleColumn";
     public static final String LONG_COLUMN = "gs::LongColumn";

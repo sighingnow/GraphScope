@@ -14,11 +14,15 @@
  */
 #ifndef ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H
 #define ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H
+
 #ifdef ENABLE_JAVA_SDK
+
+#include "grape/utils/vertex_array.h"
+#include "vineyard/graph/fragment/property_graph_types.h"
+#include "vineyard/graph/fragment/property_graph_utils.h"
 
 #include "core/context/column.h"
 #include "core/fragment/arrow_projected_fragment.h"
-#include "grape/utils/vertex_array.h"
 
 // Type alias for ease of use of some template types in Java.
 namespace gs {
@@ -33,6 +37,32 @@ template <typename VID_T, typename EDATA_T>
 using AdjListDefault =
     AdjList<VID_T, vineyard::property_graph_types::EID_TYPE, EDATA_T>;
 }  // namespace arrow_projected_fragment_impl
+
+// vineyard property graph utils
+template <typename VID_T>
+using NbrUnitDefault = vineyard::property_graph_utils::NbrUnit<
+    VID_T, vineyard::property_graph_types::EID_TYPE>;
+
+template <typename VID_T>
+using NbrDefault = vineyard::property_graph_utils::Nbr<
+    VID_T, vineyard::property_graph_types::VID_TYPE>;
+
+template <typename VID_T>
+using RawAdjListDefault = vineyard::property_graph_utils::RawAdjList<
+    VID_T, vineyard::property_graph_types::EID_TYPE>;
+
+template <typename VID_T>
+using AdjListDefault = vineyard::property_graph_utils::AdjList<
+    VID_T, vineyard::property_graph_types::EID_TYPE>;
+
+template <typename DATA_T>
+using EdgeDataColumnDefault = vineyard::property_graph_utils::EdgeDataColumn<
+    DATA_T, NbrUnitDefault<vineyard::property_graph_types::VID_TYPE>>;
+
+template <typename DATA_T>
+using VertexDataColumnDefault =
+    vineyard::property_graph_utils::VertexDataColumn<
+        DATA_T, vineyard::property_graph_types::VID_TYPE>;
 
 template <typename DATA_T>
 using VertexArrayDefault = grape::VertexArray<DATA_T, uint64_t>;
