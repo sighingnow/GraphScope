@@ -48,6 +48,10 @@
             <groupId>com.alibaba.fastffi</groupId>
             <artifactId>annotation-processor</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.fastffi</groupId>
+            <artifactId>llvm4jni-runtime</artifactId>
+        </dependency>
 <!--        <dependency>-->
 <!--            <groupId>com.google.guava</groupId>-->
 <!--            <artifactId>guava</artifactId>-->
