@@ -1,6 +1,6 @@
 package com.alibaba.grape.app;
 
-import com.alibaba.ffi.FFIVector;
+import com.alibaba.fastffi.FFIVector;
 import com.alibaba.grape.graph.loader.LoaderBase;
 import com.alibaba.grape.graph.loader.evfileLoader.EVFileLoader;
 import com.alibaba.grape.graph.loader.tableLoader.TunnelLoader;

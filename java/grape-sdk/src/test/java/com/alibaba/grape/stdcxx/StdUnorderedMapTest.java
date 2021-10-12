@@ -1,6 +1,6 @@
 package com.alibaba.grape.stdcxx;
 
-import com.alibaba.ffi.FFITypeFactory;
+import com.alibaba.fastffi.FFITypeFactory;
 import com.alibaba.grape.utils.CppClassName;
 import org.junit.Assert;
 import org.junit.Before;

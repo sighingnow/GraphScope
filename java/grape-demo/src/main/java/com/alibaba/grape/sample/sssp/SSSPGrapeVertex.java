@@ -1,6 +1,6 @@
 package com.alibaba.grape.sample.sssp;
 
-import com.alibaba.ffi.CXXValueScope;
+import com.alibaba.fastffi.CXXValueScope;
 import com.alibaba.grape.app.DefaultAppBase;
 import com.alibaba.grape.app.DefaultContextBase;
 import com.alibaba.grape.app.lineparser.RecordLineParser;

@@ -1,6 +1,6 @@
 package io.graphscope.fragment;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 import com.alibaba.grape.stdcxx.StdUnorderedMap;
 import io.graphscope.utils.CppClassName;
 import io.graphscope.utils.CppHeaderName;

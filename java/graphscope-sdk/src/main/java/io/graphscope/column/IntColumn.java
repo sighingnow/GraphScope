@@ -1,6 +1,6 @@
 package io.graphscope.column;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 import com.alibaba.grape.ds.GSVertexArray;
 import com.alibaba.grape.ds.Vertex;
 

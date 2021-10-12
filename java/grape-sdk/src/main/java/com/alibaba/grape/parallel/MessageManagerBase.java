@@ -1,6 +1,6 @@
 package com.alibaba.grape.parallel;
 
-import com.alibaba.ffi.FFIPointer;
+import com.alibaba.fastffi.FFIPointer;
 
 public interface MessageManagerBase extends FFIPointer {
 

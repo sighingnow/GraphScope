@@ -1,6 +1,6 @@
 package com.alibaba.grape.fragment;
 
-import com.alibaba.ffi.FFIVector;
+import com.alibaba.fastffi.FFIVector;
 import com.alibaba.grape.graph.loader.EVFileLoaderTest;
 import org.junit.Before;
 import org.junit.Test;

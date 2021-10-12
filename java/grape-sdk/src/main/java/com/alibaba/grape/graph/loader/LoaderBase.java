@@ -1,6 +1,6 @@
 package com.alibaba.grape.graph.loader;
 
-import com.alibaba.ffi.FFIVector;
+import com.alibaba.fastffi.FFIVector;
 import com.alibaba.grape.stdcxx.StdVector;
 import java.io.IOException;
 

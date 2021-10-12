@@ -1,6 +1,6 @@
 package com.alibaba.grape.fragment.partitioner;
 
-import com.alibaba.ffi.FFIByteString;
+import com.alibaba.fastffi.FFIByteString;
 import com.alibaba.grape.utils.CityHash;
 
 public class CityHashPartitioner<T> implements  PartitionerBase<T>{

@@ -1,6 +1,6 @@
 package com.alibaba.grape.parallel.message;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 
 import static com.alibaba.grape.utils.CppClassName.DOUBLE_MSG;
 import static com.alibaba.grape.utils.CppHeaderName.CORE_JAVA_JAVA_MESSAGES_H;

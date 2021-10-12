@@ -1,6 +1,6 @@
 package com.alibaba.grape.sample.types;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 
 import static com.alibaba.grape.utils.JNILibraryName.JAVA_APP_JNI_LIBRARY;
 

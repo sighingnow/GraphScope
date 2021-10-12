@@ -1,9 +1,9 @@
 package io.graphscope.context;
 
 
-import com.alibaba.ffi.CXXEnum;
-import com.alibaba.ffi.FFITypeAlias;
-import com.alibaba.ffi.FFITypeRefiner;
+import com.alibaba.fastffi.CXXEnum;
+import com.alibaba.fastffi.FFITypeAlias;
+import com.alibaba.fastffi.FFITypeRefiner;
 import io.graphscope.utils.CppClassName;
 
 //@FFIGen(library = VINEYARD_JNI_LIBRARY)

@@ -1,6 +1,6 @@
 package io.graphscope.context.ffi;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 import io.graphscope.column.DoubleColumn;
 import io.graphscope.column.IntColumn;
 import io.graphscope.column.LongColumn;

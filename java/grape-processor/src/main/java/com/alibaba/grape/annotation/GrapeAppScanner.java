@@ -1,10 +1,10 @@
 package com.alibaba.grape.annotation;
 
-import com.alibaba.ffi.FFIMirror;
-import com.alibaba.ffi.FFINameSpace;
-import com.alibaba.ffi.FFISynthetic;
-import com.alibaba.ffi.FFITypeAlias;
-import com.alibaba.ffi.annotation.AnnotationProcessor;
+import com.alibaba.fastffi.FFIMirror;
+import com.alibaba.fastffi.FFINameSpace;
+import com.alibaba.fastffi.FFISynthetic;
+import com.alibaba.fastffi.FFITypeAlias;
+import com.alibaba.fastffi.annotation.AnnotationProcessor;
 import com.alibaba.grape.jobConf.JobConf;
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
@@ -230,7 +230,7 @@ public class GrapeAppScanner {
         String classSimpleName = "GraphType" + random.nextInt(Integer.MAX_VALUE);
         String className = packageName + "." + classSimpleName;
         JavaFileObject file = JavaFileObjects.forSourceLines(
-                className, String.format("package %s;", packageName), "import com.alibaba.ffi.*;",
+                className, String.format("package %s;", packageName), "import com.alibaba.fastffi.*;",
                 "import com.alibaba.grape.annotation.*;", getFFIGenBatch(), "@GraphType(",
                 String.format("  oidType = %s.class,", graphConfig.oidType),
                 String.format("  vidType = %s.class,", graphConfig.vidType),

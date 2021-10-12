@@ -3,7 +3,7 @@ package com.alibaba.grape.jobConf;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.ffi.FFITypeFactory;
+import com.alibaba.fastffi.FFITypeFactory;
 import com.alibaba.grape.app.lineparser.EVLineParserBase;
 import com.alibaba.grape.graph.loader.tableLoader.TableInfo;
 import com.aliyun.odps.utils.StringUtils;

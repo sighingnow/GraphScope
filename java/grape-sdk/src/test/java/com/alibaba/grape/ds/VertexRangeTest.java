@@ -1,6 +1,6 @@
 package com.alibaba.grape.ds;
 
-import com.alibaba.ffi.FFITypeFactory;
+import com.alibaba.fastffi.FFITypeFactory;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -1,6 +1,6 @@
 package com.alibaba.grape.sample.pagerank;
 
-import com.alibaba.ffi.FFIByteString;
+import com.alibaba.fastffi.FFIByteString;
 import com.alibaba.grape.app.DefaultContextBase;
 import com.alibaba.grape.ds.Vertex;
 import com.alibaba.grape.ds.VertexRange;

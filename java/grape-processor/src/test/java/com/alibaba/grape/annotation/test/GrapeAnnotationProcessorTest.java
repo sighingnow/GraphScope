@@ -32,7 +32,7 @@ public class GrapeAnnotationProcessorTest {
     @Test
     public void testMirror() throws IOException {
         JavaFileObject file1 = JavaFileObjects.forSourceLines(
-                "test.MirrorSample", "package test;", "import com.alibaba.ffi.*;",
+                "test.MirrorSample", "package test;", "import com.alibaba.fastffi.*;",
                 "@FFIGen(library = \"test\")", "@FFIMirror", "@FFITypeAlias(\"MirrorSample\")",
                 "@FFINameSpace(\"test\")", "public interface MirrorSample extends FFIPointer {",
                 "  @FFIGetter int intField();", "  @FFISetter void intField(int value);",
@@ -40,7 +40,7 @@ public class GrapeAnnotationProcessorTest {
                 "  @FFISetter void intVectorField(@CXXReference FFIVector<Integer> value);", "}");
 
         JavaFileObject file2 = JavaFileObjects.forSourceLines(
-                "test.Graph", "package test;", "import com.alibaba.ffi.*;",
+                "test.Graph", "package test;", "import com.alibaba.fastffi.*;",
                 "import com.alibaba.grape.annotation.*;", "@GraphType(", "  oidType = Integer.class,",
                 "  vidType = Long.class,", "  vdataType = MirrorSample.class,",
                 "  edataType = FFIByteString.class", ")", "public class Graph {", "}");
@@ -48,7 +48,7 @@ public class GrapeAnnotationProcessorTest {
         {
             Compilation compilation =
                     javac()
-                            .withProcessors(new com.alibaba.ffi.annotation.AnnotationProcessor(),
+                            .withProcessors(new com.alibaba.fastffi.annotation.AnnotationProcessor(),
                                     new GrapeAnnotationProcessor())
                             .compile(file1, file2);
             checkCompilation(compilation);
@@ -57,7 +57,7 @@ public class GrapeAnnotationProcessorTest {
             Compilation compilation =
                     javac()
                             .withProcessors(new GrapeAnnotationProcessor(),
-                                    new com.alibaba.ffi.annotation.AnnotationProcessor())
+                                    new com.alibaba.fastffi.annotation.AnnotationProcessor())
                             .compile(file2, file1);
             checkCompilation(compilation);
         }
@@ -146,15 +146,15 @@ public class GrapeAnnotationProcessorTest {
                             .toString();
             String expected = "package test;\n"
                     + "\n"
-                    + "import com.alibaba.ffi.CXXHead;\n"
-                    + "import com.alibaba.ffi.CXXReference;\n"
-                    + "import com.alibaba.ffi.FFIByteString;\n"
-                    + "import com.alibaba.ffi.FFIGen;\n"
-                    + "import com.alibaba.ffi.FFIGetter;\n"
-                    + "import com.alibaba.ffi.FFIMirror;\n"
-                    + "import com.alibaba.ffi.FFIPointer;\n"
-                    + "import com.alibaba.ffi.FFITypeAlias;\n"
-                    + "import com.alibaba.ffi.FFIVector;\n"
+                    + "import com.alibaba.fastffi.CXXHead;\n"
+                    + "import com.alibaba.fastffi.CXXReference;\n"
+                    + "import com.alibaba.fastffi.FFIByteString;\n"
+                    + "import com.alibaba.fastffi.FFIGen;\n"
+                    + "import com.alibaba.fastffi.FFIGetter;\n"
+                    + "import com.alibaba.fastffi.FFIMirror;\n"
+                    + "import com.alibaba.fastffi.FFIPointer;\n"
+                    + "import com.alibaba.fastffi.FFITypeAlias;\n"
+                    + "import com.alibaba.fastffi.FFIVector;\n"
                     + "import java.lang.Integer;\n"
                     + "import java.lang.Long;\n"
                     + "\n"

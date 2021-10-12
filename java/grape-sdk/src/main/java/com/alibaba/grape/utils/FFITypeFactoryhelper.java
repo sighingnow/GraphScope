@@ -1,7 +1,7 @@
 package com.alibaba.grape.utils;
 
-import com.alibaba.ffi.*;
-import com.alibaba.ffi.impl.CXXStdVector;
+import com.alibaba.fastffi.*;
+import com.alibaba.fastffi.impl.CXXStdVector;
 import com.alibaba.grape.ds.*;
 import com.alibaba.grape.parallel.MessageInBuffer;
 import com.alibaba.grape.parallel.message.DoubleMsg;

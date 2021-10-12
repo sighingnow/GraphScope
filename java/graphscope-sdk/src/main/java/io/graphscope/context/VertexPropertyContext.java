@@ -1,7 +1,7 @@
 package io.graphscope.context;
 
-import com.alibaba.ffi.FFIByteString;
-import com.alibaba.ffi.FFITypeFactory;
+import com.alibaba.fastffi.FFIByteString;
+import com.alibaba.fastffi.FFITypeFactory;
 import com.alibaba.grape.fragment.ArrowProjectedFragment;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;
 import io.graphscope.column.DoubleColumn;

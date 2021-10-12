@@ -1,7 +1,7 @@
 package com.alibaba.grape.annotation;
 
-import com.alibaba.ffi.*;
-import com.alibaba.ffi.annotation.AnnotationProcessorUtils;
+import com.alibaba.fastffi.*;
+import com.alibaba.fastffi.annotation.AnnotationProcessorUtils;
 import com.alibaba.grape.ds.AdjList;
 import com.alibaba.grape.ds.Nbr;
 import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
@@ -33,7 +33,7 @@ import java.util.*;
 
 import static io.graphscope.utils.CppClassName.ARROW_FRAGMENT;
 
-@SupportedAnnotationTypes({"com.alibaba.ffi.FFIMirror", "com.alibaba.ffi.FFIMirrorDefinition",
+@SupportedAnnotationTypes({"com.alibaba.fastffi.FFIMirror", "com.alibaba.fastffi.FFIMirrorDefinition",
         "com.alibaba.grape.annotation.GraphType"})
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class GrapeAnnotationProcessor extends javax.annotation.processing.AbstractProcessor {

@@ -1,7 +1,7 @@
 package com.alibaba.grape.sample.lineparser;
 
-import com.alibaba.ffi.FFIByteString;
-import com.alibaba.ffi.FFITypeFactory;
+import com.alibaba.fastffi.FFIByteString;
+import com.alibaba.fastffi.FFITypeFactory;
 import com.alibaba.grape.app.lineparser.EVLineParserBase;
 import com.alibaba.grape.graph.context.MutationContext;
 import com.alibaba.grape.sample.types.Edata;

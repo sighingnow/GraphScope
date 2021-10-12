@@ -1,6 +1,6 @@
 package io.graphscope.ds;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 import com.alibaba.grape.ds.Vertex;
 import io.graphscope.utils.CppClassName;
 import io.graphscope.utils.CppHeaderName;

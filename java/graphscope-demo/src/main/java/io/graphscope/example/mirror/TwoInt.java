@@ -1,6 +1,6 @@
 package io.graphscope.example.mirror;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 
 //How to hide this from user.
 //@FFIGen(library = "pie-user")

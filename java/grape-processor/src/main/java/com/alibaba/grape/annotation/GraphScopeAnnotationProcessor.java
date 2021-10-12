@@ -1,8 +1,8 @@
 package com.alibaba.grape.annotation;
 
 
-import com.alibaba.ffi.*;
-import com.alibaba.ffi.annotation.AnnotationProcessorUtils;
+import com.alibaba.fastffi.*;
+import com.alibaba.fastffi.annotation.AnnotationProcessorUtils;
 import com.alibaba.grape.fragment.ArrowProjectedFragment;
 import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
 import com.alibaba.grape.parallel.DefaultMessageManager;
@@ -38,7 +38,7 @@ import java.util.*;
 import static com.alibaba.grape.utils.CppClassName.ARROW_PROJECTED_FRAGMENT;
 import static io.graphscope.utils.CppClassName.*;
 
-@SupportedAnnotationTypes({"com.alibaba.ffi.FFIMirror", "com.alibaba.ffi.FFIMirrorDefinition",
+@SupportedAnnotationTypes({"com.alibaba.fastffi.FFIMirror", "com.alibaba.fastffi.FFIMirrorDefinition",
         "com.alibaba.grape.annotation.GraphType"})
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class GraphScopeAnnotationProcessor extends javax.annotation.processing.AbstractProcessor {

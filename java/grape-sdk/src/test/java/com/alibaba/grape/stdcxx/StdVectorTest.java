@@ -1,7 +1,7 @@
 package com.alibaba.grape.stdcxx;
 
-import com.alibaba.ffi.FFIByteString;
-import com.alibaba.ffi.FFITypeFactory;
+import com.alibaba.fastffi.FFIByteString;
+import com.alibaba.fastffi.FFITypeFactory;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -1,6 +1,6 @@
 package com.alibaba.grape.ds;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 
 import static com.alibaba.grape.utils.CppClassName.GRAPE_BIT_SET;
 import static com.alibaba.grape.utils.CppHeaderName.GRAPE_BIT_SET_H;

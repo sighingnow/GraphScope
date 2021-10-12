@@ -1,6 +1,6 @@
 package com.alibaba.grape.fragment;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 
 import static com.alibaba.grape.utils.CppClassName.GRAPE_IMMUTABLE_FRAGMENT;
 import static com.alibaba.grape.utils.CppHeaderName.GRAPE_FRAGMENT_IMMUTABLE_EDGECUT_FRAGMENT_H;

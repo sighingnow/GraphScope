@@ -1,6 +1,6 @@
 package com.alibaba.grape.ds;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 
 import java.util.Iterator;
 

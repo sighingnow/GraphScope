@@ -1,6 +1,6 @@
 package com.alibaba.grape.communication;
 
-import com.alibaba.ffi.FFITypeFactory;
+import com.alibaba.fastffi.FFITypeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

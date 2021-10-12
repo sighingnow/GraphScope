@@ -30,12 +30,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.alibaba.ffi</groupId>
+            <groupId>com.alibaba.fastffi</groupId>
             <artifactId>ffi</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.alibaba.ffi</groupId>
+            <groupId>com.alibaba.fastffi</groupId>
             <artifactId>annotation-processor</artifactId>
             <scope>compile</scope>
         </dependency>
@@ -89,91 +89,14 @@
 <!--        </dependency>-->
     </dependencies>
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <configuration>
-                        <!-- avoid overriding between surefire and jacoco's argLine-->
-                        <argLine>${argLine} -Dtest.tmpdir=${project.basedir}/target/testtmp
-                            -Djava.library.path=${jni.library.path}
-                        </argLine>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven-shade-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>ffi.properties</resource>
-                                </transformer>
-                            </transformers>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
-                <!-- don't put antrun in pluginManagement-->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <mkdir dir="${project.build.directory}/native"/>
-                                <property environment="env"/>
-                                <fail unless="env.LLVM11_HOME" message="LLVM11_HOME not set."/>
-                                <condition property="platform"
-                                           value="linux64">
-                                    <os family="unix" arch="amd64"/>
-                                </condition>
-                                <fail unless="platform" message="Not a supported platform."/>
-                                <condition property="lld"
-                                           value="${env.LLVM11_HOME}/bin/ld.lld">
-                                    <os family="unix" arch="amd64"/>
-                                </condition>
-                                <fail message="lld ${lld} not set or missing">
-                                    <condition>
-                                        <not>
-                                            <available file="${lld}"/>
-                                        </not>
-                                    </condition>
-                                </fail>
-                                <exec executable="cmake" dir="${project.build.directory}/native" failonerror="true">
-                                    <arg line="-DCMAKE_CXX_COMPILER=&quot;${env.LLVM11_HOME}/bin/clang++&quot; -DLLVM_DIR=${env.LLVM11_HOME}/lib/cmake/llvm -DCMAKE_CXX_FLAGS=&quot;-flto -fforce-emit-vtables&quot; -DCMAKE_JNI_LINKER_FLAGS=&quot;-fuse-ld=${lld} -Xlinker -mllvm=-lto-embed-bitcode&quot; ${basedir}"/>
-                                </exec>
-                                <exec executable="make" dir="${project.build.directory}/native" failonerror="true">
-                                    <arg line="VERBOSE=1 -j"/>
-                                </exec>
-                                <!--                                <exec executable="make" dir="${project.build.directory}/native" failonerror="true">-->
-                                <!--                                    <arg line="VERBOSE=1 install"/>-->
-                                <!--                                </exec>-->
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>

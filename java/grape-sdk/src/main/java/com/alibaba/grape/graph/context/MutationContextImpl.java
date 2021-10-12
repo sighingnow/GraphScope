@@ -1,6 +1,6 @@
 package com.alibaba.grape.graph.context;
 
-import com.alibaba.ffi.FFIVector;
+import com.alibaba.fastffi.FFIVector;
 import com.alibaba.grape.fragment.partitioner.HashcodePartitioner;
 import com.alibaba.grape.fragment.partitioner.PartitionerBase;
 import com.alibaba.grape.jobConf.JobConf;

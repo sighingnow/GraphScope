@@ -1,9 +1,9 @@
 package com.alibaba.grape.stdcxx;
 
-import com.alibaba.ffi.CXXHead;
-import com.alibaba.ffi.FFIGen;
-import com.alibaba.ffi.FFIPointer;
-import com.alibaba.ffi.FFITypeAlias;
+import com.alibaba.fastffi.CXXHead;
+import com.alibaba.fastffi.FFIGen;
+import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFITypeAlias;
 
 import static com.alibaba.grape.utils.CppHeaderName.GRAPE_FRAGMENT_IMMUTABLE_EDGECUT_FRAGMENT_H;
 import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;

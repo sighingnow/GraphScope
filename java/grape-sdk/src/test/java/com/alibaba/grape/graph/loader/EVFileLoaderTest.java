@@ -1,7 +1,7 @@
 package com.alibaba.grape.graph.loader;
 
-import com.alibaba.ffi.FFITypeFactory;
-import com.alibaba.ffi.FFIVector;
+import com.alibaba.fastffi.FFITypeFactory;
+import com.alibaba.fastffi.FFIVector;
 import com.alibaba.grape.app.lineparser.EVLineParserBase;
 import com.alibaba.grape.graph.context.MutationContext;
 import com.alibaba.grape.graph.loader.evfileLoader.EVFileLoader;

@@ -1,6 +1,6 @@
 package com.alibaba.grape.parallel;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 import com.alibaba.grape.ds.Vertex;
 
 import static com.alibaba.grape.utils.CppClassName.GRAPE_LONG_VERTEX;

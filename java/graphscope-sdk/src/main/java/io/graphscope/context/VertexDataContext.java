@@ -1,6 +1,6 @@
 package io.graphscope.context;
 
-import com.alibaba.ffi.FFITypeFactory;
+import com.alibaba.fastffi.FFITypeFactory;
 import com.alibaba.grape.ds.GSVertexArray;
 import com.alibaba.grape.fragment.ArrowProjectedFragment;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;

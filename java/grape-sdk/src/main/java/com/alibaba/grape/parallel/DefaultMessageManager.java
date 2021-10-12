@@ -1,6 +1,6 @@
 package com.alibaba.grape.parallel;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 import com.alibaba.grape.ds.Vertex;
 import com.alibaba.grape.fragment.ArrowProjectedFragment;
 import com.alibaba.grape.fragment.ImmutableEdgecutFragment;

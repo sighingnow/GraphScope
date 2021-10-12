@@ -29,7 +29,7 @@ public class GraphScopeClassLoader {
             return libraries.toArray(new String[] {});
         }
     }
-    private static String FFI_TYPE_FACTORY_CLASS = "com.alibaba.ffi.FFITypeFactory";
+    private static String FFI_TYPE_FACTORY_CLASS = "com.alibaba.fastffi.FFITypeFactory";
 //    public static Class<?> ffiTypeFactoryClass = null;
     public static URLClassLoader newGraphScopeClassLoader(String classPath) throws IllegalAccessException {
         String [] libraries = ClassScope.getLoadedLibraries(ClassLoader.getSystemClassLoader());
@@ -94,7 +94,7 @@ public class GraphScopeClassLoader {
         loadClassLoaderMethod.invoke(null, classLoader);
 
         //To make FFITypeFactor use our classLoader to find desired type matching, we load FFIType with our classLoader.
-        Class<?> ffiTypeClass = classLoader.loadClass("com.alibaba.ffi.FFIType");
+        Class<?> ffiTypeClass = classLoader.loadClass("com.alibaba.fastffi.FFIType");
         System.out.println("ffitype cl :" + ffiTypeClass.getClassLoader() + ", url cl: " + classLoader);
 
         //First load class by FFITypeFactor

@@ -1,8 +1,8 @@
 package com.alibaba.grape.fragment;
 
-import com.alibaba.ffi.CXXReference;
-import com.alibaba.ffi.CXXValue;
-import com.alibaba.ffi.FFINameAlias;
+import com.alibaba.fastffi.CXXReference;
+import com.alibaba.fastffi.CXXValue;
+import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.grape.ds.AdjList;
 import com.alibaba.grape.ds.DestList;
 import com.alibaba.grape.ds.Vertex;

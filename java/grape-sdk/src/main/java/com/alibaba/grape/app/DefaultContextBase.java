@@ -1,6 +1,6 @@
 package com.alibaba.grape.app;
 
-import com.alibaba.ffi.FFIByteString;
+import com.alibaba.fastffi.FFIByteString;
 import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
 import com.alibaba.grape.parallel.DefaultMessageManager;
 import com.alibaba.grape.stdcxx.StdVector;

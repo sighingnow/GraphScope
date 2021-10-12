@@ -1,6 +1,6 @@
 package io.graphscope.fragment;
 
-import com.alibaba.ffi.FFITypeFactory;
+import com.alibaba.fastffi.FFITypeFactory;
 import com.alibaba.grape.stdcxx.StdUnorderedMap;
 import io.graphscope.utils.VineyardHelper;
 import org.junit.Assert;

@@ -1,7 +1,7 @@
 package com.alibaba.grape.fragment;
 
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 import com.alibaba.grape.ds.ProjectedAdjList;
 import com.alibaba.grape.ds.Vertex;
 import com.alibaba.grape.ds.VertexRange;

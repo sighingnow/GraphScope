@@ -1,6 +1,6 @@
 package io.graphscope.fragment;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 import com.alibaba.grape.ds.DestList;
 import com.alibaba.grape.ds.Vertex;
 import com.alibaba.grape.ds.VertexRange;

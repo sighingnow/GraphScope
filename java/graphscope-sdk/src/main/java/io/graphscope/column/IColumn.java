@@ -1,6 +1,6 @@
 package io.graphscope.column;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 
 import static com.alibaba.grape.utils.CppHeaderName.CORE_JAVA_TYPE_ALIAS_H;
 import static io.graphscope.utils.CppClassName.I_COLUMN;

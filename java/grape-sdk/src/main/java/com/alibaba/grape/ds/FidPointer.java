@@ -1,9 +1,9 @@
 package com.alibaba.grape.ds;
 
-import com.alibaba.ffi.CXXPointerRangeElement;
-import com.alibaba.ffi.FFIGen;
-import com.alibaba.ffi.FFIPointer;
-import com.alibaba.ffi.FFITypeAlias;
+import com.alibaba.fastffi.CXXPointerRangeElement;
+import com.alibaba.fastffi.FFIGen;
+import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFITypeAlias;
 
 import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 

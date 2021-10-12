@@ -1,6 +1,6 @@
 package com.alibaba.grape.sample.wcc;
 
-import com.alibaba.ffi.FFIByteString;
+import com.alibaba.fastffi.FFIByteString;
 import com.alibaba.grape.app.ParallelContextBase;
 import com.alibaba.grape.ds.Vertex;
 import com.alibaba.grape.ds.VertexRange;

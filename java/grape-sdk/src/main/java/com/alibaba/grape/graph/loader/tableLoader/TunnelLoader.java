@@ -1,6 +1,6 @@
 package com.alibaba.grape.graph.loader.tableLoader;
 
-import com.alibaba.ffi.FFIVector;
+import com.alibaba.fastffi.FFIVector;
 import com.alibaba.grape.app.lineparser.*;
 import com.alibaba.grape.graph.context.MutationContext;
 import com.alibaba.grape.graph.context.MutationContextImpl;

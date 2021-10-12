@@ -1,7 +1,7 @@
 package com.alibaba.grape.sample.sssp;
 
-import com.alibaba.ffi.FFIByteString;
-import com.alibaba.ffi.FFITypeFactory;
+import com.alibaba.fastffi.FFIByteString;
+import com.alibaba.fastffi.FFITypeFactory;
 import com.alibaba.grape.app.DefaultContextBase;
 import com.alibaba.grape.ds.DenseVertexSet;
 import com.alibaba.grape.ds.Vertex;

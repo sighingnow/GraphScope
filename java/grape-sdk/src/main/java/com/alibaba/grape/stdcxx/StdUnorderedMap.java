@@ -1,6 +1,6 @@
 package com.alibaba.grape.stdcxx;
 
-import com.alibaba.ffi.*;
+import com.alibaba.fastffi.*;
 
 import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
