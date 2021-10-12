@@ -32,6 +32,7 @@
 #include "core/error.h"
 #include "core/fragment/arrow_projected_fragment.h"
 #include "core/java/javasdk.h"
+#include "core/java/type_alias.h"
 #include "core/loader/arrow_fragment_loader.h"
 #include "core/object/fragment_wrapper.h"
 #include "core/utils/transform_utils.h"
@@ -230,7 +231,8 @@ void Query(vineyard::Client& client, std::shared_ptr<FragmentType> fragment,
       "ctx_wrapper_" + vineyard::random_string(8), frag_wrapper, ctx);
   auto range = std::make_pair("", "");
 
-  auto selectors = gs::LabeledSelector::ParseSelectors(selectors_string).value();
+  auto selectors =
+      gs::LabeledSelector::ParseSelectors(selectors_string).value();
   auto selector = gs::LabeledSelector::parse(selector_string).value();
 
   /// 0. test ndarray
@@ -303,7 +305,7 @@ void QueryProjected(vineyard::Client& client,
   //  auto selector = gs::LabeledSelector::parse("r:label0.property0").value();
 
   auto selectors = gs::Selector::ParseSelectors(selectors_string).value();
-  auto selector =  gs::Selector::parse(selector_string).value();
+  auto selector = gs::Selector::parse(selector_string).value();
 
   auto range = std::make_pair("", "");
   /// 0. test ndarray
@@ -431,7 +433,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
   LOG(INFO) << "geted shell env [JAVA_CP]: " << std::string(user_class_path);
 
   if (!run_projected) {
-    pt.put("frag_name", "vineyard::ArrowFragmentDefault<int64_t>");
+    pt.put("frag_name", "gs::ArrowFragmentDefault<int64_t>");
     std::stringstream ss;
     boost::property_tree::json_parser::write_json(ss, pt);
     std::string basic_params = ss.str();
@@ -469,7 +471,7 @@ void Run(vineyard::Client& client, const grape::CommSpec& comm_spec,
     // 1. run java query
     Query(client, fragment, comm_spec, app_name, "/tmp", basic_params,
           selector_string, selectors_string);
-      // 2.run c++ query
+    // 2.run c++ query
     RunSSSP(client, fragment, comm_spec, "/tmp", selector_string,
             selectors_string);
   }
