@@ -66,6 +66,10 @@ class HostsClusterLauncher(Launcher):
         self._instance_id = random_string(6)
         self._proc = None
         self._closed = True
+    
+    @property
+    def instance_id(self):
+        return self._instance_id
 
     def poll(self):
         if self._proc is not None:

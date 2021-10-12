@@ -654,6 +654,7 @@ class Session(object):
         self._coordinator_endpoint = None
 
         self._launcher = None
+        self._cluster_instance_id = None
         self._heartbeat_sending_thread = None
 
         self._grpc_client = None
@@ -705,6 +706,10 @@ class Session(object):
     @property
     def dag(self):
         return self._dag
+
+    @property
+    def cluster_instance_id(self):
+        return self._launcher.instance_id
 
     def _load_config(self, path, slient=True):
         config_path = os.path.expandvars(os.path.expanduser(path))

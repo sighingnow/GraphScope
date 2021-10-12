@@ -153,6 +153,10 @@ class KubernetesClusterLauncher(Launcher):
     def __del__(self):
         self.stop()
 
+    @property
+    def instance_id(self):
+        return self._instance_id
+
     # TODO(dongze): Check the coordinator pod status, like the poll in Popen
     # we can use this to determine the coordinator status,
     # None for pending, 0 for successed (not likely), other int value for failed.
