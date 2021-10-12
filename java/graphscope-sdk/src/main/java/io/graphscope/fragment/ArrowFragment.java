@@ -17,6 +17,7 @@ import static com.alibaba.grape.utils.CppClassName.GRAPE_VERTEX_RANGE;
 
 @FFIGen(library = JNILibraryName.VINEYARD_JNI_LIBRARY)
 @CXXHead(CppHeaderName.ARROW_FRAGMENT_H)
+@CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @CXXHead(system = "stdint.h")
 @FFITypeAlias(CppClassName.ARROW_FRAGMENT)
 @CXXTemplate(cxx = {"int64_t"},

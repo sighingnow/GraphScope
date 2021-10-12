@@ -18,6 +18,7 @@
 #ifdef ENABLE_JAVA_SDK
 
 #include "grape/utils/vertex_array.h"
+#include "vineyard/graph/fragment/arrow_fragment.h"
 #include "vineyard/graph/fragment/property_graph_types.h"
 #include "vineyard/graph/fragment/property_graph_utils.h"
 
@@ -63,6 +64,9 @@ template <typename DATA_T>
 using VertexDataColumnDefault =
     vineyard::property_graph_utils::VertexDataColumn<
         DATA_T, vineyard::property_graph_types::VID_TYPE>;
+
+template <typename OID_T>
+using ArrowFragmentDefault = vineyard::ArrowFragment<OID_T, uint64_t>;
 
 template <typename DATA_T>
 using VertexArrayDefault = grape::VertexArray<DATA_T, uint64_t>;

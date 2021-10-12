@@ -12,7 +12,7 @@ import static com.alibaba.grape.utils.CppClassName.*;
 import static com.alibaba.grape.utils.CppHeaderName.CORE_JAVA_JAVA_MESSAGES_H;
 
 @FFIGen(library = JNILibraryName.VINEYARD_JNI_LIBRARY)
-@CXXHead({CppHeaderName.PROPERTY_MESSAGE_MANAGER_H, CppHeaderName.ARROW_FRAGMENT_H, CORE_JAVA_JAVA_MESSAGES_H})
+@CXXHead({CppHeaderName.PROPERTY_MESSAGE_MANAGER_H, CppHeaderName.ARROW_FRAGMENT_H, CORE_JAVA_JAVA_MESSAGES_H, CppHeaderName.CORE_JAVA_TYPE_ALIAS_H})
 @CXXHead("cstdint")
 @FFITypeAlias(CppClassName.PROPERTY_MESSAGE_MANAGER)
 public interface PropertyMessageManager extends MessageManagerBase {

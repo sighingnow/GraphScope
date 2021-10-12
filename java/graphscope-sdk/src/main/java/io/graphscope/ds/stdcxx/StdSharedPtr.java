@@ -10,11 +10,11 @@ import io.graphscope.utils.JNILibraryName;
 @CXXHead(CppHeaderName.ARROW_FRAGMENT_H)
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias("std::shared_ptr")
-@CXXTemplate(cxx = "gs::DoubleColumn<vineyard::ArrowFragmentDefault<int64_t>>",
+@CXXTemplate(cxx = "gs::DoubleColumn<gs::ArrowFragmentDefault<int64_t>>",
         java = "io.graphscope.column.DoubleColumn<io.graphscope.fragment.ArrowFragment<java.lang.Long>>")
-@CXXTemplate(cxx = "gs::IntColumn<vineyard::ArrowFragmentDefault<int64_t>>",
+@CXXTemplate(cxx = "gs::IntColumn<gs::ArrowFragmentDefault<int64_t>>",
         java = "io.graphscope.column.IntColumn<io.graphscope.fragment.ArrowFragment<java.lang.Long>>")
-@CXXTemplate(cxx = "gs::LongColumn<vineyard::ArrowFragmentDefault<int64_t>>",
+@CXXTemplate(cxx = "gs::LongColumn<gs::ArrowFragmentDefault<int64_t>>",
         java = "io.graphscope.column.LongColumn<io.graphscope.fragment.ArrowFragment<java.lang.Long>>")
 @CXXTemplate(cxx = "gs::DoubleColumn<gs::ArrowProjectedFragment<int64_t,uint64_t,grape::EmptyType,int64_t>>",
         java = "io.graphscope.column.DoubleColumn<com.alibaba.grape.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,com.alibaba.grape.ds.EmptyType,java.lang.Long>>")
