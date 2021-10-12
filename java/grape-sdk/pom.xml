@@ -13,7 +13,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jni.library.path>${project.basedir}/target/classes/natives/linux_64/:/usr/local/lib:
+        <jni.library.path>${project.basedir}/target/native/:/usr/local/lib:
         </jni.library.path>
         <jacoco.version>0.8.7</jacoco.version>
         <!--        <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>-->
@@ -97,6 +97,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>-Dtest.tmpdir=${project.basedir}/target/testtmp -Djava.library.path=${jni.library.path}
+                    </argLine>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>

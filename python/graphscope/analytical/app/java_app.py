@@ -287,7 +287,7 @@ class JavaAppDagNode(AppDAGNode):
         check_argument(
                 not args, "Only support using keyword arguments in cython app."
             )
-        udf_workspace = os.path.join(WORKSPACE, self._session.session_id)
+        udf_workspace = os.path.join(WORKSPACE, self._session.cluster_instance_id, self._session.session_id)
 
         app_lib_name = self._app_assets.signature()
         app_lib_dir = os.path.join(udf_workspace, app_lib_name)

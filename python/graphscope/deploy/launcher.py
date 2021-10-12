@@ -52,3 +52,7 @@ class Launcher(metaclass=ABCMeta):
     @abstractmethod
     def poll(self):
         pass
+
+    @abstractmethod
+    def instance_id(self):
+        pass

@@ -30,7 +30,7 @@
 <!--        <guava.version>30.1.1-jre</guava.version>-->
         <alibaba-grape-sdk.version>0.1</alibaba-grape-sdk.version>
         <jni.library.path>
-            ${project.basedir}/target/classes/native/:/usr/local/lib:${project.basedir}/../grape-sdk/target/classes/native/
+            ${project.basedir}/target/native/:/usr/local/lib:${project.basedir}/../grape-sdk/target/native/
         </jni.library.path>
     </properties>
 
@@ -72,13 +72,20 @@
                 <configuration>
                     <argLine>-Dtest.tmpdir=${project.basedir}/target/testtmp -Djava.library.path=${jni.library.path}
                     </argLine>
+                    <excludes>
+                        <exclude>**/*ArrowFragmentTest.java</exclude>
+                        <exclude>**/*ArrowFragmentGroupTest.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
             </plugin>
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
 </project>

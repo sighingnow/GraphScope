@@ -293,11 +293,11 @@ class LocalLauncher(Launcher):
             "--listen-client-urls",
             "http://0.0.0.0:{0}".format(str(self._etcd_client_port)),
             "--advertise-client-urls",
-            "http://localhost:{0}".format(str(self._etcd_client_port)),
+            "http://0.0.0.0:{0}".format(str(self._etcd_client_port)),
             "--initial-cluster",
-            "default=http://localhost:{0}".format(str(self._etcd_peer_port)),
+            "default=http://0.0.0.0:{0}".format(str(self._etcd_peer_port)),
             "--initial-advertise-peer-urls",
-            "http://localhost:{0}".format(str(self._etcd_peer_port)),
+            "http://0.0.0.0:{0}".format(str(self._etcd_peer_port)),
         ]
         logger.info("Launch etcd with command: %s", " ".join(cmd))
 
@@ -386,13 +386,13 @@ class LocalLauncher(Launcher):
         if not self._vineyard_socket:
             ts = get_timestamp()
             vineyard_socket = f"{self._vineyard_socket_prefix}{ts}"
-            cmd = [self._find_vineyardd()]
+            cmd = ["sudo", self._find_vineyardd()]
             cmd.extend(["--socket", vineyard_socket])
             cmd.extend(["--size", self._shared_mem])
             cmd.extend(
                 [
                     "-etcd_endpoint",
-                    "http://localhost:{0}".format(self._etcd_client_port),
+                    "http://0.0.0.0:{0}".format(self._etcd_client_port),
                 ]
             )
             cmd.extend(["--etcd_prefix", f"vineyard.gsa.{ts}"])
