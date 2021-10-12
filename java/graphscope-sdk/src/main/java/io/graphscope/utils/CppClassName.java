@@ -11,7 +11,7 @@ public class CppClassName {
     public static final String PROPERTY_NBR = "gs::NbrDefault";
     public static final String PROPERTY_NBR_UNIT = "gs::NbrUnitDefault";
     public static final String PROPERTY_RAW_ADJ_LIST = "gs::RawAdjListDefault";
-    
+
     public static final String I_COLUMN = "gs::IColumn";
     public static final String DOUBLE_COLUMN = "gs::DoubleColumn";
     public static final String LONG_COLUMN = "gs::LongColumn";
