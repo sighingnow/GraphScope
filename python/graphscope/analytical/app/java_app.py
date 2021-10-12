@@ -264,10 +264,10 @@ class JavaAppDagNode(AppDAGNode):
         self._session.dag.add_op(self._app_assets.op)
         self._session.dag.add_op(self._op)
 
-        """Convert ArrowFragment<OID,VID> to ArrowFragmentDefault<OID>"""
+        """Convert vineyard::ArrowFragment<OID,VID> to gs::ArrowFragmentDefault<OID>"""
     def _convert_arrow_frag_for_java(self, cpp_frag_str: str):
         res = cpp_frag_str.split(",")[0] + ">"
-        return res.replace("<", "Default<", 1)
+        return res.replace("<", "Default<", 1).replace("vineyard", "gs")
 
     def __call__(self, *args, **kwargs):
         """When called, check arguments based on app type, Then do build and query.
