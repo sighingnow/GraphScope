@@ -101,6 +101,7 @@ class HostsClusterLauncher(Launcher):
             "--instance_id",
             self._instance_id,
         ]
+        logger.info(" ".join(cmd))
 
         if self._vineyard_shared_mem is not None:
             cmd.extend(["--vineyard_shared_mem", self._vineyard_shared_mem])
