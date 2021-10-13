@@ -375,7 +375,7 @@ std::string get_jobject_class_name(JNIEnv* env, jobject object) {
 char* java_class_name_dash_to_slash(const std::string& str) {
   char* c_str = new char[str.length() + 1];
   // strcpy(c_str, str.c_str());
-  memcpy(c_str, str.length(), str.length());
+  memcpy(c_str, str.c_str(), str.length());
   char* p = c_str;
   while (*p) {
     if (*p == '.')
