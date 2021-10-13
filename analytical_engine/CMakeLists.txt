@@ -191,6 +191,7 @@ if (ENABLE_JAVA_SDK)
         ${Boost_LIBRARIES}
         ${VINEYARD_LIBRARIES}
         ${JAVA_JVM_LIBRARY}
+        ${JNI_LIBRARIES}
         $ENV{JAVA_HOME}/jre/lib/amd64/libjsig.so
         )
 else()
