@@ -28,7 +28,6 @@
 #include "grape/parallel/default_message_manager.h"
 #include "grape/parallel/parallel_engine.h"
 
-#include "core/java/javasdk.h"
 #include "core/parallel/property_message_manager.h"
 
 namespace gs {
@@ -77,29 +76,15 @@ class DefaultPropertyWorker {
 
     grape::InitParallelEngine(app_, pe_spec);
     grape::InitCommunicator(app_, comm_spec.comm());
-
-    JavaVM* jvm = GetJavaVM();
-    (void) jvm;
-    CHECK_NOTNULL(jvm);
-    LOG(INFO) << "Successfully get jvm";
   }
 
   void Finalize() {}
 
   template <class... Args>
   void Query(Args&&... args) {
-    JavaVM* jvm = GetJavaVM();
-    (void) jvm;
-    CHECK_NOTNULL(jvm);
-    LOG(INFO) << "Successfully get jvm";
     auto& graph = context_->fragment();
 
     MPI_Barrier(comm_spec_.comm());
-    JavaVM* jvm = GetJavaVM();
-    (void) jvm;
-    CHECK_NOTNULL(jvm);
-    LOG(INFO) << "Successfully get jvm";
-
     context_->Init(messages_, std::forward<Args>(args)...);
 
     int round = 0;
@@ -135,18 +120,10 @@ class DefaultPropertyWorker {
     MPI_Barrier(comm_spec_.comm());
 
     messages_.Finalize();
-    JavaVM* jvm = GetJavaVM();
-    (void) jvm;
-    CHECK_NOTNULL(jvm);
-    LOG(INFO) << "Successfully get jvm";
   }
 
   std::shared_ptr<context_t> GetContext() {
-    JavaVM* jvm = GetJavaVM();
-    (void) jvm;
-    CHECK_NOTNULL(jvm);
-    LOG(INFO) << "Successfully get jvm";
-    return context_;
+      return context_;
   }
 
   void Output(std::ostream& os) { context_->Output(os); }
