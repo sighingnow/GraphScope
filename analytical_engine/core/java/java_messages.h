@@ -20,7 +20,7 @@ struct PrimitiveMessage {
   T data;
 
   PrimitiveMessage() { data = (T) -1; }
-  PrimitiveMessage(const T in_data): data(in_data) {}
+  PrimitiveMessage(const T in_data) : data(in_data) {}
   inline void setData(const T value) { data = value; }
   inline T getData() { return data; }
 
