@@ -56,34 +56,6 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.aliyun.odps</groupId>
-            <artifactId>odps-sdk-commons</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.aliyun.odps</groupId>
-            <artifactId>odps-sdk-mapred</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.aliyun.odps</groupId>
-            <artifactId>cupid-table-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.aliyun.odps</groupId>
-            <artifactId>odps-sdk-core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.aliyun.odps</groupId>
-            <artifactId>cupid-sdk</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.aliyun.odps.cupid</groupId>
-            <artifactId>table-api-tunnel-impl</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
         </dependency>
@@ -99,10 +71,6 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.scijava</groupId>-->
-<!--            <artifactId>native-lib-loader</artifactId>-->
-<!--        </dependency>-->
     </dependencies>
     <build>
         <plugins>

@@ -19,32 +19,14 @@ package com.alibaba.grape.sample.sssp;
 import com.alibaba.fastffi.CXXValueScope;
 import com.alibaba.grape.app.DefaultAppBase;
 import com.alibaba.grape.app.DefaultContextBase;
-import com.alibaba.grape.app.lineparser.RecordLineParser;
 import com.alibaba.grape.ds.*;
 import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
-import com.alibaba.grape.graph.context.MutationContext;
 import com.alibaba.grape.parallel.DefaultMessageManager;
 import com.alibaba.grape.parallel.message.DoubleMsg;
 import com.alibaba.grape.utils.DoubleArrayWrapper;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;
-import com.aliyun.odps.io.WritableRecord;
-
-import java.io.IOException;
 
 public class SSSPDefault implements DefaultAppBase<Long, Long, Long, Double, SSSPDefaultContext> {
-    public static class SSSPLoader implements RecordLineParser<Long, Long, Double> {
-        @Override
-        public void load(Long recordNum, WritableRecord record,
-                         MutationContext<Long, Long, Double> context) throws IOException {
-            Long from_oid = Long.parseLong(record.get("a").toString());
-            Long to_oid = Long.parseLong(record.get("b").toString());
-            context.addVertexSimple(from_oid, 0L);
-            context.addVertexSimple(to_oid, 0L);
-
-            double doubleValue = Double.parseDouble(record.get("e").toString());
-            context.addEdgeRequest(from_oid, to_oid, doubleValue);
-        }
-    }
 
     @Override
     public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase ctx,

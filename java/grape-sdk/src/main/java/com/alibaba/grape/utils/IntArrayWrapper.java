@@ -18,7 +18,6 @@ package com.alibaba.grape.utils;
 
 import com.alibaba.grape.ds.Vertex;
 import com.alibaba.grape.ds.VertexRange;
-import org.apache.arrow.flatbuf.Int;
 
 import java.util.Arrays;
 

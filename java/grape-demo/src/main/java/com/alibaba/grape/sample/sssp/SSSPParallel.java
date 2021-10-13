@@ -18,40 +18,21 @@ package com.alibaba.grape.sample.sssp;
 
 import com.alibaba.grape.app.ParallelAppBase;
 import com.alibaba.grape.app.ParallelContextBase;
-import com.alibaba.grape.app.lineparser.RecordLineParser;
 import com.alibaba.grape.ds.AdjList;
 import com.alibaba.grape.ds.Nbr;
 import com.alibaba.grape.ds.Vertex;
 import com.alibaba.grape.ds.VertexSet;
 import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
-import com.alibaba.grape.graph.context.MutationContext;
 import com.alibaba.grape.parallel.ParallelMessageManager;
 import com.alibaba.grape.parallel.message.DoubleMsg;
 import com.alibaba.grape.utils.AtomicDoubleArrayWrapper;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;
-import com.aliyun.odps.io.WritableRecord;
 
-import java.io.IOException;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 public class SSSPParallel
         implements ParallelAppBase<Long, Long, Long, Double, SSSPParallelContext> {
-    public static class SSSPLoader implements RecordLineParser<Long, Long, Double> {
-        @Override
-        public void load(Long recordNum, WritableRecord record,
-                         MutationContext<Long, Long, Double> context) throws IOException {
-            Long from_oid = Long.valueOf(record.get("a").toString());
-            Long to_oid = Long.valueOf(record.get("b").toString());
-            context.addVertexSimple(from_oid, 0L);
-            context.addVertexSimple(to_oid, 0L);
-
-            double doubleValue = Double.valueOf(record.get("e").toString());
-            // Long edata = new Long((int) doubleValue);
-            context.addEdgeRequest(from_oid, to_oid, doubleValue);
-        }
-    }
-
     @Override
     public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase contextBase,
                       ParallelMessageManager mm) {

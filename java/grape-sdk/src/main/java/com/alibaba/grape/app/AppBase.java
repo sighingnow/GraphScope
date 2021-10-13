@@ -19,7 +19,6 @@ package com.alibaba.grape.app;
 import com.alibaba.fastffi.FFIVector;
 import com.alibaba.grape.graph.loader.LoaderBase;
 import com.alibaba.grape.graph.loader.evfileLoader.EVFileLoader;
-import com.alibaba.grape.graph.loader.tableLoader.TunnelLoader;
 import com.alibaba.grape.jobConf.JOB_CONF;
 import com.alibaba.grape.jobConf.JobConf;
 import com.alibaba.grape.utils.JobConfUtil;
@@ -56,8 +55,6 @@ public interface AppBase<OID_T, VID_T, VDATA_T, EDATA_T, C
         if (inputType.equals("null")) {
             System.err.println("Pls set input type before loading graph");
             return;
-        } else if (inputType.equals("odps")) {
-            loader = new TunnelLoader<OID_T, VDATA_T, EDATA_T>(workerId, workerNum, job);
         } else if (inputType.equals("evfile")) {
             loader = new EVFileLoader<OID_T, VDATA_T, EDATA_T>(workerId, workerNum, job);
         } else {

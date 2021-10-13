@@ -17,12 +17,9 @@
 package com.alibaba.grape.jobConf;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastffi.FFITypeFactory;
 import com.alibaba.grape.app.lineparser.EVLineParserBase;
-import com.alibaba.grape.graph.loader.tableLoader.TableInfo;
-import com.aliyun.odps.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -205,29 +202,6 @@ public class JobConf {
         conf.put(key, value);
     }
 
-    public void addInput(TableInfo tbl) throws IOException {
-        addInput(tbl, tbl.getCols());
-    }
-
-    public void addInput(TableInfo tbl, String[] cols) throws IOException {
-        tbl.validate();
-        String inputDesc = get(JOB_CONF.INPUT_TABLES, "[]");
-        JSONArray array = JSONObject.parseArray(inputDesc);
-        array.add(toJson(tbl, cols));
-        set(JOB_CONF.INPUT_TABLES, array.toJSONString());
-    }
-
-    public void addOutput(TableInfo tbl) throws IOException {
-        addOutput(tbl, true);
-    }
-
-    public void addOutput(TableInfo tbl, boolean overwrite) throws IOException {
-        if (!tbl.getLabel().equals(TableInfo.DEFAULT_LABEL)) {
-            processOutput(tbl, tbl.getLabel(), overwrite);
-        } else {
-            processOutput(tbl, null, overwrite);
-        }
-    }
 
     public void setEVLineParserClassName(String value) {
         this.conf.put(JOB_CONF.EV_FILE_LINE_PARSER, value);
@@ -235,7 +209,7 @@ public class JobConf {
 
     @SuppressWarnings("rawtypes")
     public Class<? extends EVLineParserBase> getEVLineParser() {
-        if (StringUtils.isEmpty(this.get(JOB_CONF.EV_FILE_LINE_PARSER))) {
+        if (this.get(JOB_CONF.EV_FILE_LINE_PARSER).isEmpty()){
             return null;
         }
         Class<? extends EVLineParserBase> res = null;
@@ -247,13 +221,6 @@ public class JobConf {
         return res;
     }
 
-
-    private void processOutput(TableInfo tbl, String label, boolean overwrite) {
-        String outputDesc = get(JOB_CONF.OUTPUT_TABLES, "[]");
-        JSONArray array = JSONObject.parseArray(outputDesc);
-        array.add(toJson(tbl, label, overwrite));
-        set(JOB_CONF.OUTPUT_TABLES, array.toJSONString());
-    }
 
     /**
      * 设置最大迭代次数，默认为0
@@ -271,53 +238,6 @@ public class JobConf {
      */
     public int getMaxIteration() {
         return conf.getIntValue(JOB_CONF.MAX_ITERATION);
-    }
-
-    private static JSONObject toJson(TableInfo tbl, String[] cols) {
-        JSONObject obj = new JSONObject();
-        String projectName = tbl.getProjectName();
-        if (projectName == null) {
-            projectName = "";
-        }
-        obj.put("projName", projectName);
-        obj.put("tblName", tbl.getTableName());
-        JSONArray array = new JSONArray();
-        LinkedHashMap<String, String> partSpec = tbl.getPartSpec();
-        for (Map.Entry<String, String> entry : partSpec.entrySet()) {
-            JSONObject tmp = new JSONObject();
-            String key = StringUtils.strip(entry.getKey(), "'\"");
-            String value = StringUtils.strip(entry.getValue(), "'\"");
-            tmp.put(key, value);
-            array.add(tmp);
-        }
-        obj.put("partSpec", array);
-        obj.put("cols", cols == null ? "" : StringUtils.join(cols, ','));
-        obj.put("loaderClassName", tbl.getLoaderClassName());
-        // Gson gson = new GsonBuilder().disableHtmlEscaping().create(); // remove unicode characters
-        // obj = new JsonParser().parse(gson.toJson(obj)).getAsJsonObject();
-        return obj;
-    }
-
-    private JSONObject toJson(TableInfo tbl, String label, boolean overwrite) {
-        JSONObject obj = new JSONObject();
-        String projectName = tbl.getProjectName();
-        if (projectName == null) {
-            projectName = "";
-        }
-        obj.put("projName", projectName);
-        obj.put("tblName", tbl.getTableName());
-        JSONArray array = new JSONArray();
-        LinkedHashMap<String, String> partSpec = tbl.getPartSpec();
-        for (Map.Entry<String, String> entry : partSpec.entrySet()) {
-            JSONObject tmp = new JSONObject();
-            tmp.put(entry.getKey(), entry.getValue());
-            array.add(tmp);
-        }
-        obj.put("partSpec", array);
-        obj.put("label", label == null ? "" : label);
-        obj.put("loaderClassName", tbl.getLoaderClassName());
-        obj.put("overwrite", overwrite);
-        return obj;
     }
 
     private void setMessageTypes(String key, String... msgTypes) {

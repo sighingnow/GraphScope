@@ -18,39 +18,18 @@ package com.alibaba.grape.sample.pagerank;
 
 import com.alibaba.grape.app.DefaultAppBase;
 import com.alibaba.grape.app.DefaultContextBase;
-import com.alibaba.grape.app.lineparser.RecordLineParser;
 import com.alibaba.grape.communication.Communicator;
 import com.alibaba.grape.ds.AdjList;
 import com.alibaba.grape.ds.Nbr;
 import com.alibaba.grape.ds.Vertex;
 import com.alibaba.grape.ds.VertexRange;
 import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
-import com.alibaba.grape.graph.context.MutationContext;
 import com.alibaba.grape.parallel.DefaultMessageManager;
 import com.alibaba.grape.parallel.message.DoubleMsg;
 import com.alibaba.grape.utils.DoubleArrayWrapper;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;
-import com.aliyun.odps.io.WritableRecord;
-
-import java.io.IOException;
 
 public class PageRankDefault extends Communicator implements DefaultAppBase<Long, Long, Long, Double, PageRankDefaultContext> {
-    public static class PageRankLoader implements RecordLineParser<Long, Long, Double> {
-        @Override
-        public void load(Long index, WritableRecord record, MutationContext<Long, Long, Double> ctx)
-                throws IOException {
-            Long fromOid = Long.valueOf(record.get("a").toString());
-            Long toOid = Long.valueOf(record.get("a").toString());
-
-            ctx.addVertexSimple(fromOid, 0L);
-            ctx.addVertexSimple(toOid, 0L);
-            Double doubleValue = Double.valueOf(record.get("e").toString());
-            // Long edata = new Long((int) doubleValue);
-            // System.out.println(", loading field [e]:" + edata);
-
-            ctx.addEdgeRequest(fromOid, toOid, doubleValue);
-        }
-    }
 
     @Override
     public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase ctx,
