@@ -401,7 +401,7 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToNumpy(
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
       RETURN_GS_ERROR(
-          vineyard::ErrorCode::kIllegalStateError,
+          vineyard::ErrorCode::kInvalidValueError,
           "Unsupported java projected context type: " + std::string(ctx_type));
     }
     auto wrapper =
@@ -411,7 +411,7 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToNumpy(
     return wrapper->ToNdArray(comm_spec_, selector, range);
 #endif
   }
-  RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
+  RETURN_GS_ERROR(vineyard::ErrorCode::kInvalidValueError,
                   "Unsupported context type: " + std::string(ctx_type));
 }
 
@@ -497,7 +497,7 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
       RETURN_GS_ERROR(
-          vineyard::ErrorCode::kIllegalStateError,
+          vineyard::ErrorCode::kInvalidValueError,
           "Unsupported java projected context type: " + std::string(ctx_type));
     }
     auto wrapper =
@@ -507,7 +507,7 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
     return wrapper->ToDataframe(comm_spec_, selectors, range);
 #endif
   }
-  RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
+  RETURN_GS_ERROR(vineyard::ErrorCode::kInvalidValueError,
                   "Unsupported context type: " + std::string(ctx_type));
 }
 

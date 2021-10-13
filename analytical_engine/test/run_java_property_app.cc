@@ -13,11 +13,7 @@
  * limitations under the License.
  */
 
-#include <gflags/gflags.h>
-#include <gflags/gflags_declare.h>
-#include <glog/logging.h>
 #include <unistd.h>
-
 #include <algorithm>
 #include <cstddef>
 #include <cstdio>
@@ -31,6 +27,9 @@
 #include <utility>
 #include <vector>
 
+#include <gflags/gflags.h>
+#include <gflags/gflags_declare.h>
+#include <glog/logging.h>
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
 

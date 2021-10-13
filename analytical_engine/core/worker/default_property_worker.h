@@ -85,6 +85,7 @@ class DefaultPropertyWorker {
     auto& graph = context_->fragment();
 
     MPI_Barrier(comm_spec_.comm());
+
     context_->Init(messages_, std::forward<Args>(args)...);
 
     int round = 0;

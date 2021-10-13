@@ -41,7 +41,6 @@ except ImportError:
     kube_config = None
 
 import graphscope
-
 from graphscope.client.rpc import GRPCClient
 from graphscope.client.utils import CaptureKeyboardInterrupt
 from graphscope.client.utils import GSLogger

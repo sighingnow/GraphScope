@@ -1112,7 +1112,6 @@ class CoordinatorServiceServicer(
             self._launcher.distribute_file(java_jar_path)
             self._launcher.distribute_directory(java_ffi_path)
         self._launcher.distribute_file(app_lib_path)
-        
         return app_lib_path
 
 

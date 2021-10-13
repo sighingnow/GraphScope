@@ -36,7 +36,7 @@ public class BFSDefault implements DefaultAppBase<Long, Long, Long, Double, BFSD
         boolean inThisFrag = frag.getInnerVertex(ctx.sourceOid, vertex);
         ctx.currentDepth = 1;
         if (inThisFrag) {
-            logger.info("in frag" + frag.fid() + " " + vertex.GetValue());
+            logger.debug("in frag" + frag.fid() + " " + vertex.GetValue());
             ctx.partialResults.set(vertex, 0);
             AdjList<Long, Double> adjList = frag.getOutgoingAdjList(vertex);
             for (Nbr<Long, Double> nbr : adjList) {
@@ -63,7 +63,6 @@ public class BFSDefault implements DefaultAppBase<Long, Long, Long, Double, BFSD
 
         {
             Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
-//            EmptyType emptyType = FFITypeFactoryhelper.createEmptyType();
             while (messageManager.getMessage(frag, vertex, emptyType)) {
                 if (ctx.partialResults.get(vertex) == Integer.MAX_VALUE) {
                     ctx.partialResults.set(vertex, ctx.currentDepth);

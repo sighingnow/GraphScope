@@ -97,7 +97,7 @@ inline PrimitiveMessage<T>& operator-=(PrimitiveMessage<T>& lhs,
   lhs.data -= rhs.data;
   return lhs;
 }
-
 }  // namespace gs
+
 #endif
 #endif  // ANALYTICAL_ENGINE_CORE_JAVA_JAVA_MESSAGES_H_

@@ -728,7 +728,7 @@ class Context(object):
         """Fetch result to client side"""
         df = self.to_dataframe(selector, vertex_range)
         df.to_csv(fd, header=True, index=False)
-        
+
     def unload(self):
         return self._session._wrapper(self._context_node.unload())
 
@@ -784,7 +784,6 @@ class DynamicVertexDataContext(collections.abc.Mapping):
 
     def __iter__(self):
         return iter(self._graph._graph)
-
 
 
 def create_context_node(context_type, bound_app, graph, *args, **kwargs):

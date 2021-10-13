@@ -72,7 +72,7 @@ try:
 except ModuleNotFoundError:
     COORDINATOR_HOME = os.path.abspath(os.path.join(__file__, "..", ".."))
 
-GRAPHSCOPE_HOME = os.path.join(COORDINATOR_HOME, "..")
+# template directory for codegen
 
 TEMPLATE_DIR = os.path.join(COORDINATOR_HOME, "gscoordinator", "template")
 
@@ -80,7 +80,7 @@ TEMPLATE_DIR = os.path.join(COORDINATOR_HOME, "gscoordinator", "template")
 BUILTIN_APP_RESOURCE_PATH = os.path.join(
     COORDINATOR_HOME, "gscoordinator", "builtin/app/builtin_app.gar"
 )
-sdk_optimized=False
+
 # default config file in gar resource
 DEFAULT_GS_CONFIG_FILE = ".gs_conf.yaml"
 
@@ -246,19 +246,12 @@ def compile_app(workspace: str, library_name, attr, engine_config: dict):
             raise RuntimeError("Grape processor need to be installed")
         #for java need to run preprocess
         java_codegen_out_dir = os.path.join(workspace, "{}-{}".format(JAVA_CODEGNE_OUTPUT_PREFIX, library_name))
-        LLVM11_HOME = os.environ.get("LLVM11_HOME")
-        if LLVM11_HOME is None:
-            raise RuntimeError("LLVM11_HOME should be set")
-        LLVM_LLD = os.path.join(LLVM11_HOME, "/bin/ld.lld")
-        if not os.path.isfile(LLVM_LLD):
-            raise RuntimeError("ld.lld not found")
         #if run llvm4jni.sh not found, we just go ahead,since it is optional.
         if not os.path.isfile(RUN_LLVM4JNI_SH):
             logger.warning("Run llvm4jni failed because file not found {}".format(RUN_LLVM4JNI_SH))
         llvm4jni_user_out_dir = os.path.join(workspace, "{}-{}".format(LLVM4JNI_USER_OUT_DIR_BASE, library_name))
 
-        cmake_commands += ["-DCMAKE_CXX_COMPILER={}/bin/clang++".format(LLVM11_HOME),
-                            "-DENABLE_JAVA_SDK=ON",
+        cmake_commands += ["-DENABLE_JAVA_SDK=ON",
                             "-DJAVA_PIE_APP=ON",
                             "-DPRE_CP={}:{}".format(GRAPE_PROCESSOR_JAR, java_jar_path),
                             "-DPROCESSOR_MAIN_CLASS={}".format(PROCESSOR_MAIN_CLASS),
