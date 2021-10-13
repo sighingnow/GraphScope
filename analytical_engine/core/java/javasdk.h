@@ -23,6 +23,7 @@ limitations under the License.
 #include <unistd.h>
 
 #include <algorithm>
+#include <memory>
 #include <queue>
 #include <string>
 #include <utility>
@@ -60,7 +61,7 @@ std::string jstring2string(JNIEnv* env, jstring jStr) {
   size_t length = (size_t) env->GetArrayLength(stringJbytes);
   jbyte* pBytes = env->GetByteArrayElements(stringJbytes, NULL);
 
-  std::string ret = std::string(static_cast<char*>(pBytes), length);
+  std::string ret = std::string(reinterpret_cast<char*>(pBytes), length);
   env->ReleaseByteArrayElements(stringJbytes, pBytes, JNI_ABORT);
 
   env->DeleteLocalRef(stringJbytes);
