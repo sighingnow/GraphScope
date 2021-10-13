@@ -16,6 +16,7 @@
 #ifndef ANALYTICAL_ENGINE_CORE_FRAGMENT_ARROW_PROJECTED_FRAGMENT_H_
 #define ANALYTICAL_ENGINE_CORE_FRAGMENT_ARROW_PROJECTED_FRAGMENT_H_
 
+#include <limits>
 #include <memory>
 #include <set>
 #include <string>

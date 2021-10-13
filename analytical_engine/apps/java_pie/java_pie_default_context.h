@@ -41,7 +41,7 @@ namespace gs {
 template <typename FRAG_T>
 class JavaPIEDefaultContext : public grape::ContextBase<FRAG_T> {
  public:
-  JavaPIEDefaultContext(const FRAG_T& fragment)
+  explicit JavaPIEDefaultContext(const FRAG_T& fragment)
       : fragment_(fragment),
         app_class_name_(NULL),
         context_class_name_(NULL),
