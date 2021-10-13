@@ -181,27 +181,18 @@ target_link_libraries(gs_proto ${Protobuf_LIBRARIES} ${GRPC_LIBRARY}
 
 add_executable(grape_engine ${CORE_GS_FILES} ${CORE_RPC_SRC_FILES})
 target_include_directories(grape_engine PRIVATE proto utils)
+
 if (ENABLE_JAVA_SDK)
     target_compile_definitions(grape_engine PUBLIC ENABLE_JAVA_SDK)
-    target_link_libraries(grape_engine PRIVATE gs_proto
-            ${LIBGRAPELITE_LIBRARIES}
-            ${GFLAGS_LIBRARIES}
-            ${CMAKE_DL_LIBS}
-            ${Boost_LIBRARIES}
-            ${VINEYARD_LIBRARIES}
-            ${JAVA_JVM_LIBRARY}
-            ${JNI_LIBRARIES}
-            $ENV{JAVA_HOME}/jre/lib/amd64/libjsig.so
-            )
-else ()
-    target_link_libraries(grape_engine PRIVATE gs_proto
-        ${LIBGRAPELITE_LIBRARIES}
-        ${GFLAGS_LIBRARIES}
-        ${CMAKE_DL_LIBS}
-        ${Boost_LIBRARIES}
-        ${VINEYARD_LIBRARIES}
-        )
 endif()
+
+target_link_libraries(grape_engine PRIVATE gs_proto
+    ${LIBGRAPELITE_LIBRARIES}
+    ${GFLAGS_LIBRARIES}
+    ${CMAKE_DL_LIBS}
+    ${Boost_LIBRARIES}
+    ${VINEYARD_LIBRARIES}
+    )
 
 if (${LIBUNWIND_FOUND})
     target_link_libraries(grape_engine PRIVATE ${LIBUNWIND_LIBRARIES})
