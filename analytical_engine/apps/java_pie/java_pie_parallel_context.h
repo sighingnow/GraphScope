@@ -18,12 +18,12 @@ limitations under the License.
 
 #ifdef ENABLE_JAVA_SDK
 
-#include <grape/grape.h>
 #include <iomanip>
 #include <limits>
 #include <vector>
 
 #include "grape/app/context_base.h"
+#include "grape/grape.h"
 #include "grape/parallel/parallel_message_manager.h"
 
 #include "core/java/javasdk.h"

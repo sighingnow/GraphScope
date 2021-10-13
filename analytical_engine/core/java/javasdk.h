@@ -231,7 +231,23 @@ ret:
 // One process can only create jvm for once.
 JavaVM* GetJavaVM() {
   if (_jvm == NULL) {
+    // Try to find whether there exists one javaVM
+    jsize nVMs;
+    JNI_GetCreatedJavaVMs(NULL, 0,
+                          &nVMs);  // 1. just get the required array length
+    LOG(INFO) << "Found " << nVMs << " VMs existing in this process.";
+    JavaVM** buffer = new JavaVM*[nVMs];
+    JNI_GetCreatedJavaVMs(buffer, nVMs, &nVMs);  // 2. get the data
+    for (auto i = 0; i < nVMs; ++i) {
+      if (buffer[i] != NULL) {
+        _jvm = buffer[i];
+        LOG(INFO) << "Found index " << i << " VM non null "
+                  << reinterpret_cast<jlong>(_jvm);
+        return _jvm;
+      }
+    }
     _jvm = CreateJavaVM();
+    LOG(INFO) << "Created JVM " << reinterpret_cast<jlong>(_jvm);
   }
   return _jvm;
 }
