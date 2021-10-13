@@ -13,14 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROPERTY_DEFAULT_CONTEXT_H_
-#define ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROPERTY_DEFAULT_CONTEXT_H_
+#ifndef ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_PROPERTY_DEFAULT_CONTEXT_H_
+#define ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_PROPERTY_DEFAULT_CONTEXT_H_
 
 #ifdef ENABLE_JAVA_SDK
 
 #include <iomanip>
 #include <limits>
 #include <map>
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "boost/property_tree/json_parser.hpp"
@@ -50,7 +53,7 @@ static constexpr const char* _java_property_message_manager_name =
 template <typename FRAG_T>
 class JavaPIEPropertyDefaultContext : public JavaContextBase<FRAG_T> {
  public:
-  JavaPIEPropertyDefaultContext(const FRAG_T& fragment)
+  explicit JavaPIEPropertyDefaultContext(const FRAG_T& fragment)
       : JavaContextBase<FRAG_T>(fragment) {}
   virtual ~JavaPIEPropertyDefaultContext() {}
   void Init(PropertyMessageManager& messages, const std::string& params) {
@@ -313,5 +316,6 @@ class JavaPIEPropertyDefaultContextWrapper
   std::shared_ptr<IContextWrapper> _inner_context_wrapper;
 };
 }  // namespace gs
+
 #endif
-#endif  // ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROPERTY_DEFAULT_CONTEXT_H_
+#endif  // ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_PROPERTY_DEFAULT_CONTEXT_H_

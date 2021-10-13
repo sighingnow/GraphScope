@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_CONTEXT_H_
-#define ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_CONTEXT_H_
+#ifndef ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_PROJECTED_DEFAULT_CONTEXT_H_
+#define ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_PROJECTED_DEFAULT_CONTEXT_H_
 
 #ifdef ENABLE_JAVA_SDK
 
@@ -22,6 +22,9 @@ limitations under the License.
 #include <iomanip>
 #include <limits>
 #include <map>
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "boost/property_tree/json_parser.hpp"
@@ -52,7 +55,7 @@ static constexpr const char* _java_projected_message_manager_name =
 template <typename FRAG_T>
 class JavaPIEProjectedDefaultContext : public JavaContextBase<FRAG_T> {
  public:
-  JavaPIEProjectedDefaultContext(const FRAG_T& fragment)
+  explicit JavaPIEProjectedDefaultContext(const FRAG_T& fragment)
       : JavaContextBase<FRAG_T>(fragment) {}
   virtual ~JavaPIEProjectedDefaultContext() {}
 
@@ -316,4 +319,4 @@ class JavaPIEProjectedDefaultContextWrapper
 
 }  // namespace gs
 #endif
-#endif  // ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_JAVA_PIE_PROJECTED_DEFAULT_CONTEXT_H_
+#endif  // ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_PIE_PROJECTED_DEFAULT_CONTEXT_H_

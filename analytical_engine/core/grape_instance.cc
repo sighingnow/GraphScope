@@ -380,10 +380,9 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToNumpy(
 
     BOOST_LEAF_AUTO(selector, LabeledSelector::parse(s_selector));
     return wrapper->ToNdArray(comm_spec_, selector, range);
-  }
 #ifdef ENABLE_JAVA_SDK
-  else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
-           std::string::npos) {
+  } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
+             std::string::npos) {
     std::vector<std::string> outer_and_inner;
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
@@ -410,8 +409,8 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToNumpy(
             base_ctx_wrapper);
     BOOST_LEAF_AUTO(selector, Selector::parse(s_selector));
     return wrapper->ToNdArray(comm_spec_, selector, range);
-  }
 #endif
+  }
   RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
                   "Unsupported context type: " + std::string(ctx_type));
 }
@@ -477,11 +476,9 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
 
     BOOST_LEAF_AUTO(selectors, LabeledSelector::ParseSelectors(s_selectors));
     return wrapper->ToDataframe(comm_spec_, selectors, range);
-  }
 #ifdef ENABLE_JAVA_SDK
-  else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
-           std::string::npos) {
-
+  } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
+             std::string::npos) {
     std::vector<std::string> outer_and_inner;
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
@@ -508,8 +505,8 @@ bl::result<std::shared_ptr<grape::InArchive>> GrapeInstance::contextToDataframe(
             base_ctx_wrapper);
     BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(s_selectors));
     return wrapper->ToDataframe(comm_spec_, selectors, range);
-  }
 #endif
+  }
   RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
                   "Unsupported context type: " + std::string(ctx_type));
 }
@@ -568,10 +565,9 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
     BOOST_LEAF_AUTO(selector, LabeledSelector::parse(s_selector));
     BOOST_LEAF_ASSIGN(
         id, wrapper->ToVineyardTensor(comm_spec_, *client_, selector, range));
-  }
 #ifdef ENABLE_JAVA_SDK
-  else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
-           std::string::npos) {
+  } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
+             std::string::npos) {
     std::vector<std::string> outer_and_inner;
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
@@ -586,8 +582,6 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
     BOOST_LEAF_AUTO(selector, LabeledSelector::parse(s_selector));
     BOOST_LEAF_ASSIGN(
         id, wrapper->ToVineyardTensor(comm_spec_, *client_, selector, range));
-    // RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
-    //                 "GS is compiled with option ENABLE_JAVA_SDK off");
   } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROJECTED_DEFAULT) !=
              std::string::npos) {
     std::vector<std::string> outer_and_inner;
@@ -604,11 +598,8 @@ bl::result<std::string> GrapeInstance::contextToVineyardTensor(
     BOOST_LEAF_AUTO(selector, Selector::parse(s_selector));
     BOOST_LEAF_ASSIGN(
         id, wrapper->ToVineyardTensor(comm_spec_, *client_, selector, range));
-    // RETURN_GS_ERROR(vineyard::ErrorCode::kIllegalStateError,
-    //                 "GS is compiled with option ENABLE_JAVA_SDK off");
-  }
 #endif
-  else {
+  } else {
     RETURN_GS_ERROR(vineyard::ErrorCode::kInvalidValueError,
                     "Unsupported context type: " + std::string(ctx_type));
   }
@@ -675,11 +666,10 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
     BOOST_LEAF_AUTO(selectors, LabeledSelector::ParseSelectors(s_selectors));
     BOOST_LEAF_ASSIGN(id, vd_ctx_wrapper->ToVineyardDataframe(
                               comm_spec_, *client_, selectors, range));
-  }
-#ifdef ENABLE_JAVA_SDK
-  else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
-           std::string::npos) {
 
+#ifdef ENABLE_JAVA_SDK
+  } else if (ctx_type.find(CONTEXT_TYPE_JAVA_PIE_PROPERTY_DEFAULT) !=
+             std::string::npos) {
     std::vector<std::string> outer_and_inner;
     boost::split(outer_and_inner, ctx_type, boost::is_any_of(":"));
     if (outer_and_inner.size() != 2) {
@@ -710,9 +700,8 @@ bl::result<std::string> GrapeInstance::contextToVineyardDataFrame(
     BOOST_LEAF_AUTO(selectors, Selector::ParseSelectors(s_selectors));
     BOOST_LEAF_ASSIGN(id, vd_ctx_wrapper->ToVineyardDataframe(
                               comm_spec_, *client_, selectors, range));
-  }
 #endif
-  else {
+  } else {
     RETURN_GS_ERROR(vineyard::ErrorCode::kInvalidValueError,
                     "Unsupported context type: " + std::string(ctx_type));
   }

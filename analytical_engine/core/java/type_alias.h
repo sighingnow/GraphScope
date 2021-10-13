@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H
-#define ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H
+
+#ifndef ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H_
+#define ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H_
 
 #ifdef ENABLE_JAVA_SDK
 
@@ -80,5 +81,6 @@ using LongColumn = Column<FRAG_T, uint64_t>;
 template <typename FRAG_T>
 using IntColumn = Column<FRAG_T, uint32_t>;
 }  // namespace gs
+
 #endif
-#endif  // ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H
+#endif  // ANALYTICAL_ENGINE_CORE_JAVA_TYPE_ALIAS_H_

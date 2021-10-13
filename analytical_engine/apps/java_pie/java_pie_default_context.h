@@ -22,6 +22,7 @@ limitations under the License.
 
 #include <iomanip>
 #include <limits>
+#include <string>
 #include <vector>
 
 #include "grape/app/context_base.h"

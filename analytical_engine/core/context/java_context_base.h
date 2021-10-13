@@ -1,17 +1,17 @@
 /** Copyright 2020 Alibaba Group Holding Limited.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 	http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #ifndef ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_CONTEXT_BASE_H_
 #define ANALYTICAL_ENGINE_CORE_CONTEXT_JAVA_CONTEXT_BASE_H_
@@ -24,6 +24,7 @@ limitations under the License.
 #include <map>
 #include <memory>
 #include <ostream>
+#include <string>
 #include <vector>
 
 #include "boost/algorithm/string.hpp"
@@ -62,7 +63,7 @@ class JavaContextBase : public grape::ContextBase {
  public:
   using fragment_t = FRAG_T;
 
-  JavaContextBase(const FRAG_T& fragment)
+  explicit JavaContextBase(const FRAG_T& fragment)
       : app_class_name_(NULL),
         inner_ctx_addr_(0),
         fragment_(fragment),
@@ -193,7 +194,6 @@ class JavaContextBase : public grape::ContextBase {
           env->GetMethodID(context_class, "init", eval_descriptor());
       CHECK_NOTNULL(InitMethodID);
 
-      // TODO: create ffi pointer object with gs_class_loader
       jobject fragObject = createFFIPointer(
           env, graph_type_str_.c_str(), url_class_loader_object_,
           reinterpret_cast<jlong>(&fragment_));
@@ -209,16 +209,6 @@ class JavaContextBase : public grape::ContextBase {
 
       // 3. Create arguments array
       {
-        // jclass clz = env->FindClass(GRAPHSCOPE_CLASS_LOADER);
-        // CHECK_NOTNULL(clz);
-
-        // jmethodID method = env->GetStaticMethodID(
-        //     clz, "loadClass",
-        //     "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Class;");
-        // CHECK_NOTNULL(method);
-        // jstring json_class_name_jstr = env->NewStringUTF(JSON_CLASS_NAME);
-        // jclass json_class = (jclass) env->CallStaticObjectMethod(
-        //     clz, method, url_class_loader_object_, json_class_name_jstr);
         jclass json_class = (jclass) load_class_with_class_loader(
             env, url_class_loader_object_, JSON_CLASS_NAME);
         if (env->ExceptionCheck()) {
@@ -299,9 +289,9 @@ class JavaContextBase : public grape::ContextBase {
     pt.erase("user_library_name");
 
     int num_hosts = std::stoi(pt.get<std::string>("num_hosts"));
-    CHECK(num_hosts > 0);
+    CHECK_GT(num_hosts, 0);
     int num_worker = std::stoi(pt.get<std::string>("num_worker"));
-    CHECK(num_worker > 0);
+    CHECK_GT(num_worker, 0);
     pt.erase("num_hosts");
     pt.erase("num_worker");
 

@@ -22,7 +22,9 @@ limitations under the License.
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <queue>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -58,7 +60,7 @@ std::string jstring2string(JNIEnv* env, jstring jStr) {
   size_t length = (size_t) env->GetArrayLength(stringJbytes);
   jbyte* pBytes = env->GetByteArrayElements(stringJbytes, NULL);
 
-  std::string ret = std::string((char*) pBytes, length);
+  std::string ret = std::string(static_cast<char*>(pBytes), length);
   env->ReleaseByteArrayElements(stringJbytes, pBytes, JNI_ABORT);
 
   env->DeleteLocalRef(stringJbytes);
@@ -106,8 +108,8 @@ bool InitWellKnownClasses(JNIEnv* env) {
 }
 
 inline uint64_t getTotalSystemMemory() {
-  long pages = sysconf(_SC_PHYS_PAGES);
-  long page_size = sysconf(_SC_PAGE_SIZE);
+  uint64_t pages = sysconf(_SC_PHYS_PAGES);
+  uint64_t page_size = sysconf(_SC_PAGE_SIZE);
   uint64_t ret = pages * page_size;
   // LOG(INFO) << "---> getTotalSystemMemory() -> " << ret;
   ret = ret / 1024;
@@ -213,12 +215,6 @@ JavaVM* CreateJavaVM() {
     LOG(FATAL) << "error, create java virtual machine failed. return JNI_CODE ("
                << status << ")\n";
   }
-  // Why does env JVM_OPTS unseted after this?
-  // if (setenv("JVM_OPTS", jvm_opts_str.c_str(), 1) == 0) {
-  //   LOG(INFO) << "Successfully reset jvm opts to: " << jvm_opts_str;
-  // } else {
-  //   LOG(ERROR) << "Failed to set jvm opts";
-  // }
 
 ret:
   for (int i = 0; i < num_of_opts; i++) {
@@ -354,39 +350,6 @@ jobject createObject(JNIEnv* env, jclass clazz, const char* class_name) {
   }
   return env->NewObject(clazz, ctor);
 }
-// TODO: remove
-// jobject createFFIPointerObject(JNIEnv* env, const char* type_name,
-//                                jlong pointer) {
-//   // must be properly encoded
-//   std::string tmp = type_name;
-//   jstring jstring_name = env->NewStringUTF(type_name);
-//   jclass the_class = (jclass) env->CallStaticObjectMethod(
-//       FFITypeFactoryClass, FFITypeFactory_getTypeMethodID, jstring_name);
-//   if (env->ExceptionOccurred()) {
-//     LOG(ERROR) << std::string("Exception occurred in get ffi class: ")
-//                << type_name;
-//     env->ExceptionDescribe();
-//     env->ExceptionClear();
-//     return NULL;
-//   }
-//   if (the_class == NULL) {
-//     LOG(FATAL) << "Cannot find Class for " << type_name;
-//     return NULL;
-//   }
-
-//   jmethodID the_ctor = env->GetMethodID(the_class, "<init>", "(J)V");
-//   if (the_ctor == NULL) {
-//     LOG(FATAL) << "Cannot find <init>(J)V constructor in " << type_name;
-//     return NULL;
-//   }
-
-//   jobject the_object = env->NewObject(the_class, the_ctor, pointer);
-//   if (the_object == NULL) {
-//     LOG(FATAL) << "Cannot call <init>(J)V constructor in " << type_name;
-//     return NULL;
-//   }
-//   return the_object;
-// }
 
 std::string get_jobject_class_name(JNIEnv* env, jobject object) {
   CHECK_NOTNULL(object);
@@ -410,13 +373,15 @@ std::string get_jobject_class_name(JNIEnv* env, jobject object) {
 
 char* java_class_name_dash_to_slash(const std::string& str) {
   char* c_str = new char[str.length() + 1];
-  strcpy(c_str, str.c_str());
+  // strcpy(c_str, str.c_str());
+  memcpy(c_str, str.length(), str.length());
   char* p = c_str;
   while (*p) {
     if (*p == '.')
       *p = '/';
     p++;
   }
+  c_str[str.length()] = '\0';
   return c_str;
 }
 
@@ -425,7 +390,7 @@ char* java_class_name_dash_to_slash(const std::string& str) {
 void init_java_communicator(JNIEnv* env, const jobject& url_class_loader,
                             const jobject& java_app, jlong app_address) {
   CHECK_NOTNULL(env);
-  CHECK(app_address != 0);
+  CHECK_NE(app_address, 0);
   // load communicator class with url_class_loader
   jstring communicator_jstring = env->NewStringUTF("Communicator");
   jclass communicator_class = (jclass) env->CallStaticObjectMethod(
