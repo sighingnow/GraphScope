@@ -122,9 +122,7 @@ class DefaultPropertyWorker {
     messages_.Finalize();
   }
 
-  std::shared_ptr<context_t> GetContext() {
-      return context_;
-  }
+  std::shared_ptr<context_t> GetContext() { return context_; }
 
   void Output(std::ostream& os) { context_->Output(os); }
 

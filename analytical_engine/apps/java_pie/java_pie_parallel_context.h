@@ -39,7 +39,7 @@ namespace gs {
 template <typename FRAG_T>
 class JavaPIEParallelContext : public grape::ContextBase<FRAG_T> {
  public:
-  JavaPIEParallelContext(const FRAG_T& fragment)
+  explicit JavaPIEParallelContext(const FRAG_T& fragment)
       : fragment_(fragment),
         app_class_name_(NULL),
         context_class_name_(NULL),
