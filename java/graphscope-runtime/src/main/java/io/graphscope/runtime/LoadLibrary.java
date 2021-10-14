@@ -18,7 +18,7 @@ package io.graphscope.runtime;
 
 public class LoadLibrary {
     /**
-     * Loading the library with absolute path.
+     * Loading the library with library name.
      * 
      * @param userLibrary
      */

@@ -29,8 +29,19 @@ import java.util.Objects;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
+/**
+ * GraphScope Class Loader contains several static functions which will be used by GraphScope grape_engine at runtime,
+ * to initiating java runtime environment.
+ * When java app(packed in jar) is submitted to grape engine, a jvm will be initiated via JNI interface pointer if jvm
+ * has not been created is this process.
+ * Rather than directly load java classes via JNI interface pointer, we utilize a URLClassLoader for each jar to do
+ * this. The benefit of this solution is the ioslated jvm environment provided by class loaders, which can avoid
+ * possible class conflicts.
+ */
 public class GraphScopeClassLoader {
-    static class ClassScope {
+    private static String FFI_TYPE_FACTORY_CLASS = "com.alibaba.fastffi.FFITypeFactory";
+
+    private static class ClassScope {
         private static java.lang.reflect.Field LIBRARIES = null;
         static {
             try {
@@ -41,26 +52,36 @@ public class GraphScopeClassLoader {
             LIBRARIES.setAccessible(true);
         }
 
+        /**
+         * Get the libraries already loaded in one classLoader. Note that one lib can not be loaded twice via the same
+         * class loader.
+         *
+         * @param loader
+         * @return
+         * @throws IllegalAccessException
+         */
         public static String[] getLoadedLibraries(final ClassLoader loader) throws IllegalAccessException {
             final Vector<String> libraries = (Vector<String>) LIBRARIES.get(loader);
             return libraries.toArray(new String[] {});
         }
     }
 
-    private static String FFI_TYPE_FACTORY_CLASS = "com.alibaba.fastffi.FFITypeFactory";
-
-    // public static Class<?> ffiTypeFactoryClass = null;
+    /**
+     * Create a new URLClassLoaders with given classPaths. The classPath shall be in form {@code /path/to/A:B.jar}.
+     * @param classPath
+     * @return
+     * @throws IllegalAccessException
+     */
     public static URLClassLoader newGraphScopeClassLoader(String classPath) throws IllegalAccessException {
         String[] libraries = ClassScope.getLoadedLibraries(ClassLoader.getSystemClassLoader());
         log("Loaded lib: " + String.join(" ", libraries));
         return new URLClassLoader(classPath2URLArray(classPath), Thread.currentThread().getContextClassLoader());
-
     }
 
     /**
-     * Return a URL class loader which has no extra class path compared to its parent.
-     * 
-     * @return
+     * Return a default URLClassLoader with no classPath.
+     *
+     * @return the class loader.
      * 
      * @throws IllegalAccessException
      */
@@ -72,13 +93,14 @@ public class GraphScopeClassLoader {
     }
 
     /**
-     * Invoke the non-param constructor
+     * Load the specified class with one URLClassLoader, return a new instance for this class. The class name
+     * could be fully-specified or dash-separated.
      *
      * @param classLoader
      * @param className
      *            a/b/c/ or a.b.c
      * 
-     * @return
+     * @return a instance for loaded class.
      * 
      * @throws ClassNotFoundException
      * @throws InstantiationException
@@ -91,14 +113,13 @@ public class GraphScopeClassLoader {
     }
 
     /**
-     * Create FFIPointer with the helper of FFITypeFactory class. FFITupeFactoryClass should be able to load in
-     * classLoader.
+     * This function wrap one C++ object into a java object, namely a FFIPointer.
      * 
-     * @param classLoader
-     * @param foreignName
-     * @param address
+     * @param classLoader The class loader with used to load java classes.
+     * @param foreignName The foreign name for C++ object,shall be fully specified.
+     * @param address The address for C++ object.
      * 
-     * @return
+     * @return a FFIPointer wrapper.
      * 
      * @throws ClassNotFoundException
      * @throws NoSuchMethodException
@@ -109,11 +130,8 @@ public class GraphScopeClassLoader {
     public static Object createFFIPointer(URLClassLoader classLoader, String foreignName, long address)
             throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException,
             InstantiationException {
-        // synchronized (FFI_TYPE_FACTORY_CLASS){
-        // if (Objects.isNull(ffiTypeFactoryClass)){
+        //FFITypeFactor class need to be ensure loaded in current classLoader, don't make it static.
         Class<?> ffiTypeFactoryClass = classLoader.loadClass(FFI_TYPE_FACTORY_CLASS);
-        // }
-        // }
         log("Creating FFIPointer, typename [" + foreignName + "], address [" + address + "]" + ", ffi type factor ["
                 + ffiTypeFactoryClass);
         // a new classLoader contains new class path, we load the ffi.properties here.
@@ -149,12 +167,13 @@ public class GraphScopeClassLoader {
     }
 
     /**
-     * We now accept two kind of className, a/b/c or a.b.c are both ok. Special case: for 'Communicator'
+     * We now accept two kind of className, a/b/c or a.b.c are both ok.
+     * TODO(lei): remove the special case for 'Communicator'
      * 
      * @param classLoader
      * @param className
      * 
-     * @return
+     * @return loaded class.
      * 
      * @throws ClassNotFoundException
      */
