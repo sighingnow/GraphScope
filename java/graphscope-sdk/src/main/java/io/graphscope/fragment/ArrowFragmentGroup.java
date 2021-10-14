@@ -38,10 +38,14 @@ public interface ArrowFragmentGroup extends CXXPointer {
     @FFINameAlias("vertex_label_num")
     int vertexLabelNum();
 
-    //compiling error
+    // compiling error
     @FFINameAlias("Fragments")
-    @CXXReference @FFITypeAlias(STD_UNORDERED_MAP + "<unsigned,uint64_t>") StdUnorderedMap<Integer, Long> fragments();
+    @CXXReference
+    @FFITypeAlias(STD_UNORDERED_MAP + "<unsigned,uint64_t>")
+    StdUnorderedMap<Integer, Long> fragments();
 
     @FFINameAlias("FragmentLocations")
-    @CXXReference @FFITypeAlias(STD_UNORDERED_MAP + "<unsigned,uint64_t>") StdUnorderedMap<Integer, Long> fragmentLocations();
+    @CXXReference
+    @FFITypeAlias(STD_UNORDERED_MAP + "<unsigned,uint64_t>")
+    StdUnorderedMap<Integer, Long> fragmentLocations();
 }

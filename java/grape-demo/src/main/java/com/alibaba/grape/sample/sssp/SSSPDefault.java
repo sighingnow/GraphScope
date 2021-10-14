@@ -30,7 +30,7 @@ public class SSSPDefault implements DefaultAppBase<Long, Long, Long, Double, SSS
 
     @Override
     public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase ctx,
-                      DefaultMessageManager mm) {
+            DefaultMessageManager mm) {
         SSSPDefaultContext ssspDefaultContext = (SSSPDefaultContext) ctx;
 
         ssspDefaultContext.execTime -= System.nanoTime();
@@ -42,8 +42,8 @@ public class SSSPDefault implements DefaultAppBase<Long, Long, Long, Double, SSS
         nextModified.clear();
         Vertex<Long> source = frag.innerVertices().begin();
         boolean sourceInThisFrag = frag.getInnerVertex(ssspDefaultContext.getSourceOid(), source);
-        System.out.println("source in this frag?" + frag.fid() + ", " + sourceInThisFrag
-                + ", lid: " + source.GetValue());
+        System.out
+                .println("source in this frag?" + frag.fid() + ", " + sourceInThisFrag + ", lid: " + source.GetValue());
         if (sourceInThisFrag) {
             partialResults.set(source.GetValue(), 0.0);
             AdjList<Long, Double> adjList = frag.getOutgoingAdjList(source);
@@ -69,7 +69,7 @@ public class SSSPDefault implements DefaultAppBase<Long, Long, Long, Double, SSS
 
     @Override
     public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase context,
-                        DefaultMessageManager messageManager) {
+            DefaultMessageManager messageManager) {
         SSSPDefaultContext ctx = (SSSPDefaultContext) context;
 
         ctx.receiveMessageTIme -= System.nanoTime();
@@ -93,11 +93,12 @@ public class SSSPDefault implements DefaultAppBase<Long, Long, Long, Double, SSS
         ctx.postProcessTime += System.nanoTime();
     }
 
-    private void receiveMessage(SSSPDefaultContext ctx, ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultMessageManager messageManager) {
+    private void receiveMessage(SSSPDefaultContext ctx, ImmutableEdgecutFragment<Long, Long, Long, Double> frag,
+            DefaultMessageManager messageManager) {
         ctx.nextModified.clear();
         Vertex<Long> curVertex = FFITypeFactoryhelper.newVertexLong();
         DoubleMsg msg = DoubleMsg.factory.create();
-//    double msg = 0.0;
+        // double msg = 0.0;
         try (CXXValueScope scope = new CXXValueScope()) {
             while (messageManager.getMessage(frag, curVertex, msg)) {
                 long curLid = curVertex.GetValue();
@@ -110,22 +111,22 @@ public class SSSPDefault implements DefaultAppBase<Long, Long, Long, Double, SSS
     }
 
     private void execute(SSSPDefaultContext ctx, ImmutableEdgecutFragment<Long, Long, Long, Double> frag) {
-//    BitSet curModifyBS = ctx.curModified.getBitSet();
+        // BitSet curModifyBS = ctx.curModified.getBitSet();
         VertexRange<Long> innerVertices = frag.innerVertices();
         for (Vertex<Long> vertex : innerVertices.locals()) {
-//    int innerVerteicesEnd = innerVertices.end().GetValue().intValue();
-//    for (Vertex<Long> vertex = innerVertices.begin();
-//         vertex.GetValue().intValue() != innerVerteicesEnd; vertex.inc()) {
+            // int innerVerteicesEnd = innerVertices.end().GetValue().intValue();
+            // for (Vertex<Long> vertex = innerVertices.begin();
+            // vertex.GetValue().intValue() != innerVerteicesEnd; vertex.inc()) {
             int vertexLid = vertex.GetValue().intValue();
             if (ctx.curModified.get(vertexLid)) {
                 double curDist = ctx.partialResults.get(vertexLid);
                 AdjList<Long, Double> adjList = frag.getOutgoingAdjList(vertex);
-//        AdjList<Long,Double> adjList = frag.GetOutgoingAdjList(vertex);
+                // AdjList<Long,Double> adjList = frag.GetOutgoingAdjList(vertex);
                 for (Nbr<Long, Double> nbr : adjList) {
-//        long endPointerAddr = adjList.end().getAddress();
-//        long nbrSize = adjList.begin().elementSize();
-//        for (Nbr<Long, Double> nbr = adjList.begin(); nbr.getAddress() != endPointerAddr;
-//             nbr.addV(nbrSize)) {
+                    // long endPointerAddr = adjList.end().getAddress();
+                    // long nbrSize = adjList.begin().elementSize();
+                    // for (Nbr<Long, Double> nbr = adjList.begin(); nbr.getAddress() != endPointerAddr;
+                    // nbr.addV(nbrSize)) {
                     long curLid = nbr.neighbor().GetValue();
                     double nextDist = curDist + nbr.data();
                     if (nextDist < ctx.partialResults.get(curLid)) {
@@ -137,7 +138,8 @@ public class SSSPDefault implements DefaultAppBase<Long, Long, Long, Double, SSS
         }
     }
 
-    private void sendMessage(SSSPDefaultContext ctx, ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultMessageManager messageManager) {
+    private void sendMessage(SSSPDefaultContext ctx, ImmutableEdgecutFragment<Long, Long, Long, Double> frag,
+            DefaultMessageManager messageManager) {
         VertexRange<Long> outerVertices = frag.outerVertices();
         for (Vertex<Long> vertex : outerVertices.locals()) {
             DoubleMsg msg = DoubleMsg.factory.create();

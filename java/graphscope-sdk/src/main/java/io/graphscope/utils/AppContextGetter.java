@@ -32,11 +32,12 @@ public class AppContextGetter {
      *
      * @param clz
      * @param index
+     * 
      * @return
      */
     private static Class<?> getInterfaceTemplateType(Class<?> clz, int index) {
         Type[] genericType = clz.getGenericInterfaces();
-//        System.out.println(genericType[0].getTypeName());
+        // System.out.println(genericType[0].getTypeName());
         if (!(genericType[0] instanceof ParameterizedType)) {
             System.err.println("not parameterize type");
             return null;
@@ -46,7 +47,7 @@ public class AppContextGetter {
             System.err.println("only " + typeParams.length + " params , out of index");
             return null;
         }
-//        System.out.println(typeParams[index].getTypeName());
+        // System.out.println(typeParams[index].getTypeName());
         return (Class<?>) typeParams[index];
     }
 
@@ -55,12 +56,13 @@ public class AppContextGetter {
      *
      * @param clz
      * @param index
+     * 
      * @return
      */
     private static Class<?> getBaseClassTemplateType(Class<?> clz, int index) {
-//        Type[] genericType = clz.getGenericInterfaces();
+        // Type[] genericType = clz.getGenericInterfaces();
         Type genericType = clz.getGenericSuperclass();
-//        System.out.println(genericType[0].getTypeName());
+        // System.out.println(genericType[0].getTypeName());
         if (!(genericType instanceof ParameterizedType)) {
             System.err.println("not parameterize type");
             return null;
@@ -70,7 +72,7 @@ public class AppContextGetter {
             System.err.println("only " + typeParams.length + " params , out of index");
             return null;
         }
-//        System.out.println(typeParams[index].getTypeName());
+        // System.out.println(typeParams[index].getTypeName());
         return (Class<?>) typeParams[index];
     }
 
@@ -78,10 +80,12 @@ public class AppContextGetter {
      * For PropertyDefaultApp, the context should be the 2rd, i.e. index of 1.
      *
      * @param appClass
+     * 
      * @return
      */
     public static String getPropertyDefaultContextName(Class<? extends PropertyDefaultAppBase> appClass) {
-        Class<? extends PropertyDefaultContextBase> clz = (Class<? extends PropertyDefaultContextBase>) getInterfaceTemplateType(appClass, 1);
+        Class<? extends PropertyDefaultContextBase> clz = (Class<? extends PropertyDefaultContextBase>) getInterfaceTemplateType(
+                appClass, 1);
         return clz.getName();
     }
 
@@ -89,16 +93,18 @@ public class AppContextGetter {
      * For ProjectedDefaultApp, the context should be the 2rd, i.e. index of 1.
      *
      * @param appClass
+     * 
      * @return
      */
     public static String getProjectedDefaultContextName(Class<? extends ProjectedDefaultAppBase> appClass) {
-        Class<? extends ProjectedDefaultContextBase> clz = (Class<? extends ProjectedDefaultContextBase>) getInterfaceTemplateType(appClass, 4);
+        Class<? extends ProjectedDefaultContextBase> clz = (Class<? extends ProjectedDefaultContextBase>) getInterfaceTemplateType(
+                appClass, 4);
         return clz.getName();
     }
 
     public static String getContextName(Object obj) {
         System.out.println("obj class " + obj.getClass().getName());
-        if (obj instanceof PropertyDefaultAppBase){
+        if (obj instanceof PropertyDefaultAppBase) {
             return getPropertyDefaultContextName((Class<? extends PropertyDefaultAppBase>) obj.getClass());
         }
         System.out.println("obj class" + obj.getClass().getName() + " is not instance of PropertyDefaultAppBase.");

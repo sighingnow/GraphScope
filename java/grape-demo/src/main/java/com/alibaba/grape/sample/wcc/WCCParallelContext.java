@@ -41,7 +41,8 @@ class WCCParallelContext implements ParallelContextBase<Long, Long, Long, Double
     public int innerVerticesNum;
 
     @Override
-    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelMessageManager messageManager, StdVector<FFIByteString> args) {
+    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelMessageManager messageManager,
+            StdVector<FFIByteString> args) {
         threadNum = Integer.parseInt(args.get(0).toString());
         System.out.println("thread num " + threadNum);
         comp_id = new AtomicLongArrayWrapper(frag.vertices(), Long.MAX_VALUE);

@@ -29,7 +29,8 @@ import io.graphscope.parallel.PropertyMessageManager;
 
 public class WCCDefault implements PropertyDefaultAppBase<Long, WCCDefaultContext> {
     @Override
-    public void PEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context, PropertyMessageManager messageManager) {
+    public void PEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context,
+            PropertyMessageManager messageManager) {
         WCCDefaultContext ctx = (WCCDefaultContext) context;
         int vertexLabelNum = fragment.vertexLabelNum();
         int edgeLabelNum = fragment.edgeLabelNum();
@@ -88,7 +89,8 @@ public class WCCDefault implements PropertyDefaultAppBase<Long, WCCDefaultContex
     }
 
     @Override
-    public void IncEval(ArrowFragment<Long> graph, PropertyDefaultContextBase<Long> context, PropertyMessageManager messageManager) {
+    public void IncEval(ArrowFragment<Long> graph, PropertyDefaultContextBase<Long> context,
+            PropertyMessageManager messageManager) {
         WCCDefaultContext ctx = (WCCDefaultContext) context;
     }
 }

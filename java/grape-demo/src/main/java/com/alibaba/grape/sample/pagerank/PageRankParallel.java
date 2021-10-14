@@ -33,11 +33,13 @@ import org.slf4j.LoggerFactory;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-public class PageRankParallel extends Communicator implements ParallelAppBase<Long, Long, Long, Double, PageRankParallelContext> {
+public class PageRankParallel extends Communicator
+        implements ParallelAppBase<Long, Long, Long, Double, PageRankParallelContext> {
     private static Logger logger = LoggerFactory.getLogger(PageRankParallel.class);
 
     @Override
-    public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase contextBase, ParallelMessageManager javaParallelMessageManager) {
+    public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase contextBase,
+            ParallelMessageManager javaParallelMessageManager) {
         PageRankParallelContext ctx = (PageRankParallelContext) contextBase;
         javaParallelMessageManager.initChannels(ctx.thread_num());
         VertexRange<Long> innerVertices = frag.innerVertices();
@@ -72,7 +74,8 @@ public class PageRankParallel extends Communicator implements ParallelAppBase<Lo
     }
 
     @Override
-    public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase contextBase, ParallelMessageManager javaParallelMessageManager) {
+    public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase contextBase,
+            ParallelMessageManager javaParallelMessageManager) {
         PageRankParallelContext ctx = (PageRankParallelContext) contextBase;
         int innerVertexNum = frag.getInnerVerticesNum().intValue();
         VertexRange<Long> innerVertices = frag.innerVertices();
@@ -89,18 +92,17 @@ public class PageRankParallel extends Communicator implements ParallelAppBase<Lo
         }
 
         int totalVertexNum = (int) frag.getTotalVerticesNum();
-        double base = (1.0 - ctx.alpha) / totalVertexNum
-                + ctx.alpha * ctx.danglingSum / totalVertexNum;
+        double base = (1.0 - ctx.alpha) / totalVertexNum + ctx.alpha * ctx.danglingSum / totalVertexNum;
 
-        //process received messages
+        // process received messages
         {
             BiConsumer<Vertex<Long>, DoubleMsg> consumer = ((vertex, aDouble) -> {
                 ctx.pagerank.set(vertex, aDouble.getData());
             });
             Supplier<DoubleMsg> msgSupplier = () -> DoubleMsg.factory.create();
             javaParallelMessageManager.parallelProcess(frag, ctx.thread_num, ctx.executor, msgSupplier, consumer);
-        } //finish receive data
-        //logger.info("end of receiving data");
+        } // finish receive data
+          // logger.info("end of receiving data");
 
         BiConsumer<Vertex<Long>, Integer> calc = ((vertex, finalTid) -> {
             if (ctx.degree.get(vertex) == 0) {
@@ -131,8 +133,7 @@ public class PageRankParallel extends Communicator implements ParallelAppBase<Lo
             ctx.swapTime += (System.nanoTime() - timeSwapStart);
         }
 
-
-        //logger.info("end of sending msg");
+        // logger.info("end of sending msg");
         double time0 = System.nanoTime();
         DoubleMsg msgDanglingSum = FFITypeFactoryhelper.newDoubleMsg(0.0);
         DoubleMsg localSumMsg = FFITypeFactoryhelper.newDoubleMsg(base * ctx.danglingVNum);

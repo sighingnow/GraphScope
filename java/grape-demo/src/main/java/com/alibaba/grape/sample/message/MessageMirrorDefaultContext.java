@@ -34,7 +34,8 @@ public class MessageMirrorDefaultContext implements DefaultContextBase<Oid, Long
     public long numMsgReceived;
 
     @Override
-    public void Init(ImmutableEdgecutFragment<Oid, Long, Vdata, Edata> fragment, DefaultMessageManager messageManager, StdVector<FFIByteString> args) {
+    public void Init(ImmutableEdgecutFragment<Oid, Long, Vdata, Edata> fragment, DefaultMessageManager messageManager,
+            StdVector<FFIByteString> args) {
         maxStep = Integer.parseInt(args.get(2).toString());
         step = 0;
         sendMsgTime = 0;
@@ -45,7 +46,9 @@ public class MessageMirrorDefaultContext implements DefaultContextBase<Oid, Long
 
     @Override
     public void Output(ImmutableEdgecutFragment<Oid, Long, Vdata, Edata> fragment) {
-        System.out.println("Frag " + fragment.fid() + "send msg time " + sendMsgTime / 1000000000 + " receive msg time" + receiveMsgTime / 1000000000);
-        System.out.println("Frag " + fragment.fid() + "sent msg number " + numMsgSent + " receive msg number" + numMsgReceived);
+        System.out.println("Frag " + fragment.fid() + "send msg time " + sendMsgTime / 1000000000 + " receive msg time"
+                + receiveMsgTime / 1000000000);
+        System.out.println(
+                "Frag " + fragment.fid() + "sent msg number " + numMsgSent + " receive msg number" + numMsgReceived);
     }
 }

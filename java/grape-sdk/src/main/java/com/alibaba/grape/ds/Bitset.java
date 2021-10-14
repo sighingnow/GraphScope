@@ -24,7 +24,7 @@ import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 import static com.alibaba.grape.utils.CppHeaderName.GRAPE_WORKER_COMM_SPEC_H;;
 
 @FFIGen(library = GRAPE_JNI_LIBRARY)
-@CXXHead(value = {GRAPE_WORKER_COMM_SPEC_H, GRAPE_BIT_SET_H})
+@CXXHead(value = { GRAPE_WORKER_COMM_SPEC_H, GRAPE_BIT_SET_H })
 @FFITypeAlias(GRAPE_BIT_SET)
 public interface Bitset extends FFIPointer, CXXPointer {
 
@@ -39,7 +39,7 @@ public interface Bitset extends FFIPointer, CXXPointer {
 
     void clear();
 
-//    void parallel_clear(int thread_num);
+    // void parallel_clear(int thread_num);
 
     boolean empty();
 
@@ -59,11 +59,11 @@ public interface Bitset extends FFIPointer, CXXPointer {
 
     long count();
 
-//    long parallel_count(int thread_num);
+    // long parallel_count(int thread_num);
 
     long partial_count(long begin, long end);
 
-//    long parallel_partial_count(int thread_num, long begin, long end);
+    // long parallel_partial_count(int thread_num, long begin, long end);
 
     long get_word(long i);
     // long get_word_ptr(long i);

@@ -22,7 +22,6 @@ import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-
 public class VertexRangeTest {
 
     private VertexRange.Factory factory = FFITypeFactory.getFactory(VertexRange.class, "grape::VertexRange<uint64_t>");

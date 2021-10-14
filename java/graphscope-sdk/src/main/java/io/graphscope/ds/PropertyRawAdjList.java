@@ -26,7 +26,7 @@ import java.util.Iterator;
 @FFIGen(library = JNILibraryName.VINEYARD_JNI_LIBRARY)
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.PROPERTY_RAW_ADJ_LIST)
-@CXXTemplate(cxx = {"uint64_t"}, java = {"java.lang.Long"})
+@CXXTemplate(cxx = { "uint64_t" }, java = { "java.lang.Long" })
 public interface PropertyRawAdjList<VID_T> extends FFIPointer, CXXPointer {
     @FFINameAlias("begin")
     PropertyNbrUnit<VID_T> begin();
@@ -62,6 +62,5 @@ public interface PropertyRawAdjList<VID_T> extends FFIPointer, CXXPointer {
             };
         };
     }
-
 
 }

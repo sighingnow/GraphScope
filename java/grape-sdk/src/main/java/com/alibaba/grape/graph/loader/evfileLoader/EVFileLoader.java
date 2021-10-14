@@ -46,18 +46,14 @@ public class EVFileLoader<OID_T, VDATA_T, EDATA_T> implements LoaderBase<OID_T, 
     }
 
     @Override
-    public void loadFragment(FFIVector<FFIVector<OID_T>> vidBuffers,
-                             FFIVector<FFIVector<VDATA_T>> vdataBuffers,
-                             FFIVector<FFIVector<OID_T>> esrcBuffers,
-                             FFIVector<FFIVector<OID_T>> edstBuffers,
-                             FFIVector<FFIVector<EDATA_T>> edataBuffers) throws IOException {
-        MutationContext<OID_T, VDATA_T, EDATA_T> mutationContext =
-                new MutationContextImpl<OID_T, VDATA_T, EDATA_T>(jobConf, workerId, workerNum, vidBuffers,
-                        vdataBuffers, esrcBuffers, edstBuffers,
-                        edataBuffers);
+    public void loadFragment(FFIVector<FFIVector<OID_T>> vidBuffers, FFIVector<FFIVector<VDATA_T>> vdataBuffers,
+            FFIVector<FFIVector<OID_T>> esrcBuffers, FFIVector<FFIVector<OID_T>> edstBuffers,
+            FFIVector<FFIVector<EDATA_T>> edataBuffers) throws IOException {
+        MutationContext<OID_T, VDATA_T, EDATA_T> mutationContext = new MutationContextImpl<OID_T, VDATA_T, EDATA_T>(
+                jobConf, workerId, workerNum, vidBuffers, vdataBuffers, esrcBuffers, edstBuffers, edataBuffers);
         EVLineParserBase evLineParser = createEVLineParser(jobConf.getEVLineParser());
 
-        //load vfile
+        // load vfile
         {
             BufferedReader reader = null;
             try {
@@ -86,10 +82,10 @@ public class EVFileLoader<OID_T, VDATA_T, EDATA_T> implements LoaderBase<OID_T, 
                         }
                     }
                 }
-                //if i!= workerId, it means there are less than workerNum lines
+                // if i!= workerId, it means there are less than workerNum lines
                 reader.close();
-                System.out.println("Finish processing vfile, worker " + workerId + " processed " + numLines
-                        + "out of " + totalLines + " lines");
+                System.out.println("Finish processing vfile, worker " + workerId + " processed " + numLines + "out of "
+                        + totalLines + " lines");
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -103,8 +99,7 @@ public class EVFileLoader<OID_T, VDATA_T, EDATA_T> implements LoaderBase<OID_T, 
             }
         }
 
-
-        //load efile
+        // load efile
         {
             BufferedReader reader = null;
             try {
@@ -134,10 +129,10 @@ public class EVFileLoader<OID_T, VDATA_T, EDATA_T> implements LoaderBase<OID_T, 
                         }
                     }
                 }
-                //if i!= workerId, it means there are less than workerNum lines
+                // if i!= workerId, it means there are less than workerNum lines
                 reader.close();
-                System.out.println("Finish processing efile, worker " + workerId + " processed " + numLines
-                        + "out of " + totoalLines + " lines");
+                System.out.println("Finish processing efile, worker " + workerId + " processed " + numLines + "out of "
+                        + totoalLines + " lines");
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -152,45 +147,42 @@ public class EVFileLoader<OID_T, VDATA_T, EDATA_T> implements LoaderBase<OID_T, 
         }
     }
 
+    // while ((tempString = reader.readLine()) != null) {
+    // if (cnt % workerNum == workerId){
+    // evLineParser.loadVertexLine(tempString, mutationContext);
+    // lines += 1;
+    // }
+    // // mutationContext.addVertexSimple((OID_T) splited[0], (VDATA_T) splited[1]);
+    // cnt += 1;
+    // }
 
-//      while ((tempString = reader.readLine()) != null) {
-//        if (cnt % workerNum == workerId){
-//          evLineParser.loadVertexLine(tempString, mutationContext);
-//          lines += 1;
-//        }
-//        // mutationContext.addVertexSimple((OID_T) splited[0], (VDATA_T) splited[1]);
-//        cnt += 1;
-//      }
-
-
-//    file = new File(efilePath);
-//    try {
+    // file = new File(efilePath);
+    // try {
     // count number of lines
 
-
-//      reader = new BufferedReader(new FileReader(file));
-//      String tempString = null;
-//      int cnt = 0;
-//      int lines = 0;
-//      while ((tempString = reader.readLine()) != null) {
-//        if (cnt % workerNum == workerId){
-//          evLineParser.loadEdgeLine(tempString, mutationContext);
-//          lines += 1;
-//        }
+    // reader = new BufferedReader(new FileReader(file));
+    // String tempString = null;
+    // int cnt = 0;
+    // int lines = 0;
+    // while ((tempString = reader.readLine()) != null) {
+    // if (cnt % workerNum == workerId){
+    // evLineParser.loadEdgeLine(tempString, mutationContext);
+    // lines += 1;
+    // }
     // mutationContext.addEdgeRequest((OID_T) splited[0], (OID_T) splited[1],
-    //                                (EDATA_T) splited[2]);
-//        cnt += 1;
-//      }
-//      reader.close();
+    // (EDATA_T) splited[2]);
+    // cnt += 1;
+    // }
+    // reader.close();
 
-//    } catch (IOException e) { e.printStackTrace(); } finally {
-//      if (reader != null) {
-//        try {
-//          reader.close();
-//        } catch (IOException e1) { e1.printStackTrace(); }
-//      }
-//    }
-//  }
+    // } catch (IOException e) { e.printStackTrace(); } finally {
+    // if (reader != null) {
+    // try {
+    // reader.close();
+    // } catch (IOException e1) { e1.printStackTrace(); }
+    // }
+    // }
+    // }
 
     @SuppressWarnings("rawtypes")
     private EVLineParserBase createEVLineParser(Class<? extends EVLineParserBase> clz) {

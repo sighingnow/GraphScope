@@ -23,7 +23,7 @@ import static com.alibaba.grape.utils.CppHeaderName.CORE_JAVA_TYPE_ALIAS_H;
 import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
 @FFIGen(library = GRAPE_JNI_LIBRARY)
-@CXXHead(system = {"vector", "string"})
+@CXXHead(system = { "vector", "string" })
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias("std::vector")
 @CXXTemplate(cxx = "jshort", java = "java.lang.Short")
@@ -38,14 +38,10 @@ import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 @CXXTemplate(cxx = "char", java = "java.lang.Byte")
 @CXXTemplate(cxx = "std::string", java = "com.alibaba.fastffi.FFIByteString")
 @CXXTemplate(cxx = "std::vector<char>", java = "com.alibaba.grape.stdcxx.StdVector<java.lang.Byte>")
-@CXXTemplate(cxx = "std::vector<int64_t>",
-        java = "com.alibaba.grape.stdcxx.StdVector<java.lang.Long>")
-@CXXTemplate(cxx = "std::vector<jint>",
-        java = "com.alibaba.grape.stdcxx.StdVector<java.lang.Integer>")
-@CXXTemplate(cxx = "std::vector<std::string>",
-        java = "com.alibaba.grape.stdcxx.StdVector<com.alibaba.fastffi.FFIByteString>")
-@CXXTemplate(cxx = GS_VERTEX_ARRAY + "<double>",
-        java = "com.alibaba.grape.ds.GSVertexArray<java.lang.Double>")
+@CXXTemplate(cxx = "std::vector<int64_t>", java = "com.alibaba.grape.stdcxx.StdVector<java.lang.Long>")
+@CXXTemplate(cxx = "std::vector<jint>", java = "com.alibaba.grape.stdcxx.StdVector<java.lang.Integer>")
+@CXXTemplate(cxx = "std::vector<std::string>", java = "com.alibaba.grape.stdcxx.StdVector<com.alibaba.fastffi.FFIByteString>")
+@CXXTemplate(cxx = GS_VERTEX_ARRAY + "<double>", java = "com.alibaba.grape.ds.GSVertexArray<java.lang.Double>")
 public interface StdVector<E> extends CXXPointer {
     @FFIFactory
     interface Factory<E> {
@@ -55,7 +51,8 @@ public interface StdVector<E> extends CXXPointer {
     long size();
 
     @CXXOperator("[]")
-    @CXXReference E get(long index);
+    @CXXReference
+    E get(long index);
 
     @CXXOperator("[]")
     void set(long index, @CXXReference E value);

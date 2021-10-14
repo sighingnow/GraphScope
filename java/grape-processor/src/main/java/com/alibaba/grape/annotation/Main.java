@@ -29,6 +29,7 @@ public class Main {
             System.out.println("Expected 3 params.");
             return;
         }
-        System.out.println("Files are generated in " + GrapeAppScanner.scanAppAndGenerate(args[0], args[1], args[2], true));
+        System.out.println(
+                "Files are generated in " + GrapeAppScanner.scanAppAndGenerate(args[0], args[1], args[2], true));
     }
 }

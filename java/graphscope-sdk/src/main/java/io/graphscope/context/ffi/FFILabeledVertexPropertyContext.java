@@ -33,29 +33,34 @@ import static io.graphscope.utils.CppClassName.LABELED_VERTEX_PROPERTY_CONTEXT;
 @CXXHead(CppHeaderName.LABELED_VERTEX_PROPERTY_CONTEXT_H)
 @CXXHead(CppHeaderName.ARROW_FRAGMENT_H)
 @FFITypeAlias(LABELED_VERTEX_PROPERTY_CONTEXT)
-@CXXTemplate(cxx = {ARROW_FRAGMENT + "<int64_t>"},
-        java = {"io.graphscope.fragment.ArrowFragment<java.lang.Long>"})
+@CXXTemplate(cxx = { ARROW_FRAGMENT + "<int64_t>" }, java = { "io.graphscope.fragment.ArrowFragment<java.lang.Long>" })
 public interface FFILabeledVertexPropertyContext<FRAG_T> extends FFIPointer {
     @FFINameAlias("add_column")
     long addColumn(int labelId, @CXXReference FFIByteString name, @CXXValue ContextDataType contextDataType);
 
     @FFINameAlias("get_typed_column<double>")
-    @CXXValue StdSharedPtr<DoubleColumn<FRAG_T>> getDoubleColumn(int labelId, long index);
+    @CXXValue
+    StdSharedPtr<DoubleColumn<FRAG_T>> getDoubleColumn(int labelId, long index);
 
     @FFINameAlias("get_typed_column<double>")
-    @CXXValue StdSharedPtr<DoubleColumn<FRAG_T>> getDoubleColumn(int labelId, @CXXReference FFIByteString name);
+    @CXXValue
+    StdSharedPtr<DoubleColumn<FRAG_T>> getDoubleColumn(int labelId, @CXXReference FFIByteString name);
 
     @FFINameAlias("get_typed_column<uint32_t>")
-    @CXXValue StdSharedPtr<IntColumn<FRAG_T>> getIntColumn(int labelId, long index);
+    @CXXValue
+    StdSharedPtr<IntColumn<FRAG_T>> getIntColumn(int labelId, long index);
 
     @FFINameAlias("get_typed_column<uint32_t>")
-    @CXXValue StdSharedPtr<IntColumn<FRAG_T>> getIntColumn(int labelId, @CXXReference FFIByteString name);
+    @CXXValue
+    StdSharedPtr<IntColumn<FRAG_T>> getIntColumn(int labelId, @CXXReference FFIByteString name);
 
     @FFINameAlias("get_typed_column<uint64_t>")
-    @CXXValue StdSharedPtr<LongColumn<FRAG_T>> getLongColumn(int labelId, long index);
+    @CXXValue
+    StdSharedPtr<LongColumn<FRAG_T>> getLongColumn(int labelId, long index);
 
     @FFINameAlias("get_typed_column<uint64_t>")
-    @CXXValue StdSharedPtr<LongColumn<FRAG_T>> getLongColumn(int labelId, @CXXReference FFIByteString name);
+    @CXXValue
+    StdSharedPtr<LongColumn<FRAG_T>> getLongColumn(int labelId, @CXXReference FFIByteString name);
 
     @FFIFactory
     interface Factory<FRAG_T> {

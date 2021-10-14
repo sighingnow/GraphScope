@@ -21,11 +21,10 @@ import io.graphscope.fragment.ArrowFragment;
 import io.graphscope.parallel.PropertyMessageManager;
 
 @SuppressWarnings("rawtypes")
-public interface PropertyDefaultAppBase<OID_T,
-        C extends PropertyDefaultContextBase<OID_T>> {
+public interface PropertyDefaultAppBase<OID_T, C extends PropertyDefaultContextBase<OID_T>> {
     void PEval(ArrowFragment<OID_T> fragment, PropertyDefaultContextBase<OID_T> context,
-               PropertyMessageManager messageManager);
+            PropertyMessageManager messageManager);
 
     void IncEval(ArrowFragment<OID_T> graph, PropertyDefaultContextBase<OID_T> context,
-                 PropertyMessageManager messageManager);
+            PropertyMessageManager messageManager);
 }

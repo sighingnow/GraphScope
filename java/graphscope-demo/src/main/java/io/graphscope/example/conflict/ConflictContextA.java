@@ -39,13 +39,13 @@ public class ConflictContextA extends LabeledVertexPropertyContext<Long> {
     /**
      * @param fragment
      * @param messageManager
-     * @param jsonObject     contains the user-defined parameters in json manner
+     * @param jsonObject
+     *            contains the user-defined parameters in json manner
      */
     @Override
     public void init(ArrowFragment<Long> fragment, PropertyMessageManager messageManager, JSONObject jsonObject) {
-        //must be called
+        // must be called
         createFFIContext(fragment);
         logger.info("Static var: " + flag);
     }
 }
-

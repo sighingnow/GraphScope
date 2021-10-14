@@ -23,11 +23,11 @@ import org.junit.Test;
 
 public class StdVectorTest {
 
-    private StdVector.Factory<Integer> intVectorFactory =
-            FFITypeFactory.getFactory(StdVector.class, "std::vector<jint>");
+    private StdVector.Factory<Integer> intVectorFactory = FFITypeFactory.getFactory(StdVector.class,
+            "std::vector<jint>");
 
-    private StdVector.Factory<FFIByteString> stringVectorFactory =
-            FFITypeFactory.getFactory(StdVector.class, "std::vector<std::string>");
+    private StdVector.Factory<FFIByteString> stringVectorFactory = FFITypeFactory.getFactory(StdVector.class,
+            "std::vector<std::string>");
     private StdString.Factory stringFactory = StdString.factory;
 
     @Test

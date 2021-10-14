@@ -42,7 +42,7 @@ public class JobConf {
     }
 
     public boolean submit() throws IOException {
-        //since fileWriter and printWriter are all autoClosable,
+        // since fileWriter and printWriter are all autoClosable,
         // we use this syntax to avoid finally usage.
         try (FileWriter fw = new FileWriter(confPath); PrintWriter pw = new PrintWriter(fw)) {
             pw.write(conf.toJSONString());
@@ -148,18 +148,17 @@ public class JobConf {
     public String getVfilePath() {
         return get(JOB_CONF.VERTEX_FILE_PATH, "null");
     }
-//  public void  setMessageTypes(String ...messageTypes){
-//    if (messageTypes.length == 0) return ;
-//    this.setMessageTypes(JOB_CONF.MESSAGE_TYPES, messageTypes);
-//  }
+    // public void setMessageTypes(String ...messageTypes){
+    // if (messageTypes.length == 0) return ;
+    // this.setMessageTypes(JOB_CONF.MESSAGE_TYPES, messageTypes);
+    // }
 
     /**
-     * Set the types of messages you want to use. PLS don't use primitive types,
-     * since methods like @link{ com.alibaba.grape.message.messageManager#getMsg() }
-     * expect you pass a reference to contain the received msg.
+     * Set the types of messages you want to use. PLS don't use primitive types, since methods like @link{
+     * com.alibaba.grape.message.messageManager#getMsg() } expect you pass a reference to contain the received msg.
      *
-     * @param clz Class you want to use as msg types.
-     * @
+     * @param clz
+     *            Class you want to use as msg types. @
      */
     public void setMessageTypes(Class<?>... clz) {
         List<String> messagesTuples = new ArrayList<>(clz.length);
@@ -202,14 +201,13 @@ public class JobConf {
         conf.put(key, value);
     }
 
-
     public void setEVLineParserClassName(String value) {
         this.conf.put(JOB_CONF.EV_FILE_LINE_PARSER, value);
     }
 
     @SuppressWarnings("rawtypes")
     public Class<? extends EVLineParserBase> getEVLineParser() {
-        if (this.get(JOB_CONF.EV_FILE_LINE_PARSER).isEmpty()){
+        if (this.get(JOB_CONF.EV_FILE_LINE_PARSER).isEmpty()) {
             return null;
         }
         Class<? extends EVLineParserBase> res = null;
@@ -221,11 +219,11 @@ public class JobConf {
         return res;
     }
 
-
     /**
      * 设置最大迭代次数，默认为0
      *
-     * @param maxIteration 最大迭代次数
+     * @param maxIteration
+     *            最大迭代次数
      */
     public void setMaxIteration(int maxIteration) {
         conf.put(JOB_CONF.MAX_ITERATION, maxIteration);

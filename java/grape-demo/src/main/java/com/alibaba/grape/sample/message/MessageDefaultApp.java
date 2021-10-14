@@ -23,10 +23,10 @@ import com.alibaba.grape.ds.VertexRange;
 import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
 import com.alibaba.grape.parallel.DefaultMessageManager;
 
-
 public class MessageDefaultApp implements DefaultAppBase<Long, Long, Long, Double, MessageDefaultContext> {
     @Override
-    public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> fragment, DefaultContextBase defaultContextBase, DefaultMessageManager messageManager) {
+    public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> fragment,
+            DefaultContextBase defaultContextBase, DefaultMessageManager messageManager) {
         MessageDefaultContext ctx = (MessageDefaultContext) defaultContextBase;
         VertexRange<Long> outerVertices = fragment.outerVertices();
         for (Vertex<Long> vertex : outerVertices.locals()) {
@@ -37,7 +37,8 @@ public class MessageDefaultApp implements DefaultAppBase<Long, Long, Long, Doubl
     }
 
     @Override
-    public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> fragment, DefaultContextBase defaultContextBase, DefaultMessageManager messageManager) {
+    public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> fragment,
+            DefaultContextBase defaultContextBase, DefaultMessageManager messageManager) {
         MessageDefaultContext ctx = (MessageDefaultContext) defaultContextBase;
         if (ctx.step >= ctx.maxStep) {
             return;
@@ -46,7 +47,7 @@ public class MessageDefaultApp implements DefaultAppBase<Long, Long, Long, Doubl
             Long msg = new Long(1L);
             Vertex<Long> curVertex = fragment.innerVertices().begin();
             while (messageManager.getMessage(fragment, curVertex, msg)) {
-                //process with the msg
+                // process with the msg
                 ctx.numMsgReceived += 1;
             }
             System.out.println("last received msg" + msg);

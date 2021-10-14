@@ -34,16 +34,19 @@ public class ContextUtilsTest {
         }
     }
 
-    public static class SampleContext2 extends VertexDataContext<ArrowProjectedFragment<Long, Long, Long, Double>, Double> {
+    public static class SampleContext2
+            extends VertexDataContext<ArrowProjectedFragment<Long, Long, Long, Double>, Double> {
         @Override
-        public void init(ArrowProjectedFragment<Long, Long, Long, Double> fragment, DefaultMessageManager messageManager, JSONObject jsonObject) {
+        public void init(ArrowProjectedFragment<Long, Long, Long, Double> fragment,
+                DefaultMessageManager messageManager, JSONObject jsonObject) {
 
         }
     }
 
     @Test
     public void test() {
-        Assert.assertTrue(ContextUtils.getPropertyCtxObjBaseClzName(new SampleContext()).equals("LabeledVertexDataContext"));
+        Assert.assertTrue(
+                ContextUtils.getPropertyCtxObjBaseClzName(new SampleContext()).equals("LabeledVertexDataContext"));
         Assert.assertTrue(ContextUtils.getProjectedCtxObjBaseClzName(new SampleContext2()).equals("VertexDataContext"));
     }
 }

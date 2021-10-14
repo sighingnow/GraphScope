@@ -20,21 +20,47 @@ import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
 import com.alibaba.grape.parallel.DefaultMessageManager;
 
 /**
- * The inerface for all PIE apps, also providing some useful functions.
+ * The base interface for sequential PIE apps.
  *
- * @param <OID_T>    original id type
- * @param <VID_T>    vertex id type
- * @param <VDATA_T>> vertex data type
- * @param <EDATA_T>> edge data type
- * @param <C>        context type
+ * @param <OID_T>
+ *            original id type
+ * @param <VID_T>
+ *            vertex id type
+ * @param <VDATA_T>>
+ *            vertex data type
+ * @param <EDATA_T>>
+ *            edge data type
+ * @param <C>
+ *            context type
  */
 @SuppressWarnings("rawtypes")
-public interface DefaultAppBase<OID_T, VID_T, VDATA_T, EDATA_T,
-        C extends DefaultContextBase<OID_T, VID_T, VDATA_T, EDATA_T>>
+public interface DefaultAppBase<OID_T, VID_T, VDATA_T, EDATA_T, C extends DefaultContextBase<OID_T, VID_T, VDATA_T, EDATA_T>>
         extends AppBase<OID_T, VID_T, VDATA_T, EDATA_T, C> {
+    /**
+     * Partial Evaluation to implement.
+     *
+     * @param graph
+     *            fragment. The graph fragment providing accesses to graph data.
+     * @param context
+     *            context. User defined context which manages data during the whole computations. Should be a
+     *            implementation for @see com.alibaba.grape.app.DefaultContextBase
+     * @param messageManager
+     *            DefaultMessageManager. Manages messages between fragments.
+     */
     void PEval(ImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> graph, DefaultContextBase context,
-               DefaultMessageManager messageManager);
+            DefaultMessageManager messageManager);
 
+    /**
+     * Partial Evaluation to implement.
+     *
+     * @param graph
+     *            fragment. The graph fragment providing accesses to graph data.
+     * @param context
+     *            context. User defined context which manages data during the whole computations. * Should be a
+     *            implementation for @see com.alibaba.grape.app.DefaultContextBase
+     * @param messageManager
+     *            DefaultMessageManager. Manages messages between fragments.
+     */
     void IncEval(ImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> graph, DefaultContextBase context,
-                 DefaultMessageManager messageManager);
+            DefaultMessageManager messageManager);
 }

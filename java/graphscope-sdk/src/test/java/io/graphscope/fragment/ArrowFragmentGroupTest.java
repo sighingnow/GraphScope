@@ -42,39 +42,38 @@ public class ArrowFragmentGroupTest {
 
     private static final String arrowFragmentGroupFFIName = "vineyard::ArrowFragmentGroup";
     public static List<String> params;
-    //    private static final String socket = "/tmp/vineyard.sock.fragGroup";
+    // private static final String socket = "/tmp/vineyard.sock.fragGroup";
     public long fragObjectId;
     private ArrowFragmentGroup fragmentGroup;
     private static Process vineyard_server;
 
-//    @BeforeClass
-//    public static void startVineyardServer() {
-//
-//        String[] commands = {"/bin/bash", "-c", "vineyardd -socket=" + socket};
-//        ProcessBuilder builder = new ProcessBuilder();
-//        try {
-//            builder.command(commands);
-//            File log = new File("vineyardd-log");
-//            File error = new File("vineyardd-error");
-//            builder.redirectOutput(ProcessBuilder.Redirect.appendTo(error));
-//            builder.redirectError(ProcessBuilder.Redirect.appendTo(log));
-//            vineyard_server = builder.start();
-//            Thread.sleep(4000);
-//            System.out.println("vineyardd server started, listening to" + socket);
-//        } catch (IOException | InterruptedException e) {
-//            e.printStackTrace();
-//            Assert.fail("exeception");
-//        } finally {
-//            System.out.println("finally");
-//        }
-//    }
-
+    // @BeforeClass
+    // public static void startVineyardServer() {
+    //
+    // String[] commands = {"/bin/bash", "-c", "vineyardd -socket=" + socket};
+    // ProcessBuilder builder = new ProcessBuilder();
+    // try {
+    // builder.command(commands);
+    // File log = new File("vineyardd-log");
+    // File error = new File("vineyardd-error");
+    // builder.redirectOutput(ProcessBuilder.Redirect.appendTo(error));
+    // builder.redirectError(ProcessBuilder.Redirect.appendTo(log));
+    // vineyard_server = builder.start();
+    // Thread.sleep(4000);
+    // System.out.println("vineyardd server started, listening to" + socket);
+    // } catch (IOException | InterruptedException e) {
+    // e.printStackTrace();
+    // Assert.fail("exeception");
+    // } finally {
+    // System.out.println("finally");
+    // }
+    // }
 
     public void cppLoadFragment() {
         loadConf();
         String concat = String.join(" ", params);
         System.out.println(concat);
-        String[] commands = {"/bin/bash", "-c", concat};
+        String[] commands = { "/bin/bash", "-c", concat };
         ProcessBuilder builder = new ProcessBuilder();
         try {
             builder.command(commands);
@@ -86,7 +85,8 @@ public class ArrowFragmentGroupTest {
             int exitVal = process.waitFor();
             if (exitVal == 0) {
                 System.out.println("Success!");
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream("vineyard-exec-log")))) {
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(new FileInputStream("vineyard-exec-log")))) {
                     String tmp;
                     while ((tmp = reader.readLine()) != null) {
                         if (tmp.indexOf("fragment_group_id") != -1) {
@@ -113,17 +113,19 @@ public class ArrowFragmentGroupTest {
     @Test
     public void testFFIFragment() {
         cppLoadFragment();
-        //create fragment
+        // create fragment
         try {
-//            Class<ArrowFragment> fragmentClass = (Class<ArrowFragment>) FFITypeFactory.getType(arrowFragmentFFIName);
-            Class<ArrowFragmentGroup> fragmentGroupClass = (Class<ArrowFragmentGroup>) FFITypeFactory.getType(arrowFragmentGroupFFIName);
+            // Class<ArrowFragment> fragmentClass = (Class<ArrowFragment>) FFITypeFactory.getType(arrowFragmentFFIName);
+            Class<ArrowFragmentGroup> fragmentGroupClass = (Class<ArrowFragmentGroup>) FFITypeFactory
+                    .getType(arrowFragmentGroupFFIName);
             Constructor[] constructors = fragmentGroupClass.getConstructors();
             if (constructors.length == 0) {
                 Assert.fail("no constructors found for " + arrowFragmentGroupFFIName);
             }
             for (Constructor constructor : constructors) {
                 System.out.println(constructor);
-                if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].getName().equals("long")) {
+                if (constructor.getParameterCount() == 1
+                        && constructor.getParameterTypes()[0].getName().equals("long")) {
                     System.out.println("frag object id " + fragObjectId);
                     long fragAddr = VineyardHelper.getFragGroupAddrFromObjectId(fragObjectId);
                     System.out.println(" fragAddr " + fragAddr);
@@ -139,7 +141,7 @@ public class ArrowFragmentGroupTest {
             Assert.fail("failed for other exceptions");
         }
 
-        //test some simple getter
+        // test some simple getter
         System.out.println("fragment group: address " + fragmentGroup.getAddress());
         System.out.println("fragment group: edge label num" + fragmentGroup.edgeLabelNum());
         System.out.println("fragment group: vertex label num" + fragmentGroup.vertexLabelNum());
@@ -153,19 +155,19 @@ public class ArrowFragmentGroupTest {
         long fragmentId = fragments.get(0);
         System.out.println("fragment id: " + fragmentId);
 
-        //More test to fragment?
+        // More test to fragment?
     }
 
-//    @AfterClass
-//    public static void shutdown() throws InterruptedException {
-//        vineyard_server.destroyForcibly();
-//        vineyard_server.waitFor();
-//        while (vineyard_server.isAlive()) {
-//            Thread.sleep(500);
-//            System.out.println("waiting for to be killed");
-//        }
-//        System.out.println("shutdown vineyard server");
-//    }
+    // @AfterClass
+    // public static void shutdown() throws InterruptedException {
+    // vineyard_server.destroyForcibly();
+    // vineyard_server.waitFor();
+    // while (vineyard_server.isAlive()) {
+    // Thread.sleep(500);
+    // System.out.println("waiting for to be killed");
+    // }
+    // System.out.println("shutdown vineyard server");
+    // }
 
     public static void loadConf() {
         params = new ArrayList<>();

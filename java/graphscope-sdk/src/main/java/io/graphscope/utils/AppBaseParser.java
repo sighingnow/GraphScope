@@ -53,7 +53,7 @@ public class AppBaseParser {
                 System.out.println("Error: Not a parameterized type " + type.getTypeName());
                 return;
             }
-            //try Projected
+            // try Projected
             flag = ProjectedDefaultAppBase.class.isAssignableFrom(clz);
             if (flag == true) {
                 System.out.println("ProjectedDefaultApp");

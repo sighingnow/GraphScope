@@ -31,7 +31,8 @@ public class MessageDefaultContext implements DefaultContextBase<Long, Long, Lon
     public long numMsgReceived;
 
     @Override
-    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> fragment, DefaultMessageManager messageManager, StdVector<FFIByteString> args) {
+    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> fragment, DefaultMessageManager messageManager,
+            StdVector<FFIByteString> args) {
         maxStep = Integer.parseInt(args.get(2).toString());
         step = 0;
         sendMsgTime = 0;
@@ -42,7 +43,9 @@ public class MessageDefaultContext implements DefaultContextBase<Long, Long, Lon
 
     @Override
     public void Output(ImmutableEdgecutFragment<Long, Long, Long, Double> fragment) {
-        System.out.println("Frag " + fragment.fid() + "send msg time " + sendMsgTime / 1000000000 + " receive msg time" + receiveMsgTime / 1000000000);
-        System.out.println("Frag " + fragment.fid() + "sent msg number " + numMsgSent + " receive msg number" + numMsgReceived);
+        System.out.println("Frag " + fragment.fid() + "send msg time " + sendMsgTime / 1000000000 + " receive msg time"
+                + receiveMsgTime / 1000000000);
+        System.out.println(
+                "Frag " + fragment.fid() + "sent msg number " + numMsgSent + " receive msg number" + numMsgReceived);
     }
 }

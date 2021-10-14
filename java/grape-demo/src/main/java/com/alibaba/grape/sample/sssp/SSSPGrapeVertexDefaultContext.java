@@ -35,12 +35,12 @@ public class SSSPGrapeVertexDefaultContext implements DefaultContextBase<Long, L
     public DoubleArrayWrapper partialResults;
     // private BooleanArrayWrapper curModified;
     // private BooleanArrayWrapper nextModified;
-//    public VertexSet curModified;
-//    public VertexSet nextModified;
+    // public VertexSet curModified;
+    // public VertexSet nextModified;
     public DenseVertexSet<Long> curModified;
     public DenseVertexSet<Long> nextModified;
-    public DenseVertexSet.Factory vertexSetFactory =
-            FFITypeFactory.getFactory(DenseVertexSet.class, "grape::DenseVertexSet<uint64_t>");
+    public DenseVertexSet.Factory vertexSetFactory = FFITypeFactory.getFactory(DenseVertexSet.class,
+            "grape::DenseVertexSet<uint64_t>");
     public double execTime = 0.0;
     public double sendMessageTime = 0.0;
     public double receiveMessageTIme = 0.0;
@@ -72,13 +72,13 @@ public class SSSPGrapeVertexDefaultContext implements DefaultContextBase<Long, L
     }
 
     @Override
-    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag,
-                     DefaultMessageManager mm, StdVector<FFIByteString> args) {
+    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultMessageManager mm,
+            StdVector<FFIByteString> args) {
         Long allVertexNum = frag.getVerticesNum();
         VertexRange<Long> vertices = frag.vertices();
         partialResults = new DoubleArrayWrapper(allVertexNum.intValue(), Double.MAX_VALUE);
-//        curModified = new VertexSet(0, allVertexNum.intValue());
-//        nextModified = new VertexSet(0, allVertexNum.intValue());
+        // curModified = new VertexSet(0, allVertexNum.intValue());
+        // nextModified = new VertexSet(0, allVertexNum.intValue());
         curModified = vertexSetFactory.create();
         nextModified = vertexSetFactory.create();
         curModified.Init(vertices);
@@ -95,8 +95,7 @@ public class SSSPGrapeVertexDefaultContext implements DefaultContextBase<Long, L
     public void Output(ImmutableEdgecutFragment<Long, Long, Long, Double> frag) {
         String prefix = "/tmp/sssp_output";
         System.out.println("frag: " + frag.fid() + " sendMessageTime: " + sendMessageTime / 1000000000);
-        System.out.println("frag: " + frag.fid()
-                + " receiveMessageTime: " + receiveMessageTIme / 1000000000);
+        System.out.println("frag: " + frag.fid() + " receiveMessageTime: " + receiveMessageTIme / 1000000000);
         System.out.println("frag: " + frag.fid() + " execTime: " + execTime / 1000000000);
         System.out.println("frag: " + frag.fid() + " postProcessTime: " + postProcessTime / 1000000000);
         System.out.println("frag: " + frag.fid() + " number of neighbor: " + numOfNbrs);
@@ -109,9 +108,9 @@ public class SSSPGrapeVertexDefaultContext implements DefaultContextBase<Long, L
 
             // ArrayListWrapper<Long> partialResults = this.getPartialResults();
             // System.out.println(frag.GetInnerVerticesNum() + " " + innerNodes.begin().GetValue() + " "
-            //                    + innerNodes.end().GetValue());
+            // + innerNodes.end().GetValue());
             // for (Vertex<Long> cur = innerNodes.begin(); cur.GetValue() != innerNodes.end().GetValue();
-            //      cur.inc()) {
+            // cur.inc()) {
             Vertex<Long> cur = innerNodes.begin();
             for (long index = 0; index < frag.getInnerVerticesNum(); ++index) {
                 cur.SetValue(index);

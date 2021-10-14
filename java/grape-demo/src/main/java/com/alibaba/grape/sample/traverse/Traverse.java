@@ -26,14 +26,10 @@ import com.alibaba.grape.ds.VertexRange;
 import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
 import com.alibaba.grape.parallel.DefaultMessageManager;
 
-/**
- * @author xiaolei.zl
- * @date 2021/06/14
- */
 public class Traverse implements DefaultAppBase<Long, Long, Long, Double, TraverseDefaultContext> {
     @Override
     public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> fragment,
-                      DefaultContextBase defaultContextBase, DefaultMessageManager messageManager) {
+            DefaultContextBase defaultContextBase, DefaultMessageManager messageManager) {
         TraverseDefaultContext ctx = (TraverseDefaultContext) defaultContextBase;
         VertexRange<Long> innerVertices = fragment.innerVertices();
         for (Vertex<Long> vertex : innerVertices.locals()) {
@@ -50,7 +46,7 @@ public class Traverse implements DefaultAppBase<Long, Long, Long, Double, Traver
 
     @Override
     public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> fragment,
-                        DefaultContextBase defaultContextBase, DefaultMessageManager messageManager) {
+            DefaultContextBase defaultContextBase, DefaultMessageManager messageManager) {
         TraverseDefaultContext ctx = (TraverseDefaultContext) defaultContextBase;
         if (ctx.step >= ctx.maxStep) {
             return;

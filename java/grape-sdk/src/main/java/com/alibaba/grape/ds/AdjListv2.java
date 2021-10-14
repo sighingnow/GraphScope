@@ -46,7 +46,6 @@ public class AdjListv2<VID_T, EDATA_T> implements Iterable<Nbr<VID_T, EDATA_T>> 
         return (endNbrAddr - beginNbrAddr) / elementSize;
     }
 
-
     public Iterator<Nbr<VID_T, EDATA_T>> iterator() {
         return new Iterator<Nbr<VID_T, EDATA_T>>() {
             private Nbr<VID_T, EDATA_T> cur = begin().moveTo(beginNbrAddr);

@@ -39,7 +39,8 @@ public interface FragmentBase<OID_T, VID_T, VDATA_T, EDATA_T> extends FFIPointer
     long getTotalVerticesNum();
 
     @FFINameAlias("Vertices")
-    @CXXValue VertexRange<VID_T> vertices();
+    @CXXValue
+    VertexRange<VID_T> vertices();
 
     @FFINameAlias("GetVertex")
     boolean getVertex(@CXXReference OID_T oid, @CXXReference Vertex<VID_T> vertex);
@@ -48,16 +49,19 @@ public interface FragmentBase<OID_T, VID_T, VDATA_T, EDATA_T> extends FFIPointer
      * Get the original Id
      *
      * @param vertex
+     * 
      * @return OID
      */
     @FFINameAlias("GetId")
-    @CXXValue OID_T getId(@CXXReference Vertex<VID_T> vertex);
+    @CXXValue
+    OID_T getId(@CXXReference Vertex<VID_T> vertex);
 
     @FFINameAlias("GetFragId")
     int getFragId(@CXXReference Vertex<VID_T> vertex);
 
     @FFINameAlias("GetData")
-    @CXXReference VDATA_T getData(@CXXReference Vertex<VID_T> vertex);
+    @CXXReference
+    VDATA_T getData(@CXXReference Vertex<VID_T> vertex);
 
     @FFINameAlias("SetData")
     void setData(@CXXReference Vertex<VID_T> vertex, @CXXReference VDATA_T val);
@@ -78,11 +82,14 @@ public interface FragmentBase<OID_T, VID_T, VDATA_T, EDATA_T> extends FFIPointer
     boolean gid2Vertex(@CXXReference VID_T gid, @CXXReference Vertex<VID_T> vertex);
 
     @FFINameAlias("Vertex2Gid")
-    @CXXValue VID_T vertex2Gid(@CXXReference Vertex<VID_T> vertex);
+    @CXXValue
+    VID_T vertex2Gid(@CXXReference Vertex<VID_T> vertex);
 
     @FFINameAlias("GetIncomingAdjList")
-    @CXXValue AdjList<VID_T, EDATA_T> getIncomingAdjList(@CXXReference Vertex<VID_T> vertex);
+    @CXXValue
+    AdjList<VID_T, EDATA_T> getIncomingAdjList(@CXXReference Vertex<VID_T> vertex);
 
     @FFINameAlias("GetOutgoingAdjList")
-    @CXXValue AdjList<VID_T, EDATA_T> getOutgoingAdjList(@CXXReference Vertex<VID_T> vertex);
+    @CXXValue
+    AdjList<VID_T, EDATA_T> getOutgoingAdjList(@CXXReference Vertex<VID_T> vertex);
 }

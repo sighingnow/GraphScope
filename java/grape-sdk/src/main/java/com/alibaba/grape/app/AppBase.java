@@ -26,10 +26,17 @@ import com.alibaba.grape.utils.JobConfUtil;
 import java.io.IOException;
 import java.util.Map;
 
-public interface AppBase<OID_T, VID_T, VDATA_T, EDATA_T, C
-        extends ContextBase<OID_T, VID_T, VDATA_T, EDATA_T>> {
+/**
+ * Root Interface for DefaultAppBase and ParallelAppBase.
+ * 
+ * @param <OID_T>
+ * @param <VID_T>
+ * @param <VDATA_T>
+ * @param <EDATA_T>
+ * @param <C>
+ */
+public interface AppBase<OID_T, VID_T, VDATA_T, EDATA_T, C extends ContextBase<OID_T, VID_T, VDATA_T, EDATA_T>> {
     /**
-     * Load fragment from odps, store data in the passed reference params.
      *
      * @param vidBuffers
      * @param vdataBuffers
@@ -38,15 +45,12 @@ public interface AppBase<OID_T, VID_T, VDATA_T, EDATA_T, C
      * @param edataBuffers
      * @param workerId
      * @param workerNum
+     * 
      * @throws IOException
      */
-    default void loadFragment(FFIVector<FFIVector<OID_T>> vidBuffers,
-                              FFIVector<FFIVector<VDATA_T>> vdataBuffers,
-                              FFIVector<FFIVector<OID_T>> esrcBuffers,
-                              FFIVector<FFIVector<OID_T>> edstBuffers,
-                              FFIVector<FFIVector<EDATA_T>> edataBuffers, int workerId,
-                              int workerNum) throws IOException {
-        // JobConf job = createGraphJob();
+    default void loadFragment(FFIVector<FFIVector<OID_T>> vidBuffers, FFIVector<FFIVector<VDATA_T>> vdataBuffers,
+            FFIVector<FFIVector<OID_T>> esrcBuffers, FFIVector<FFIVector<OID_T>> edstBuffers,
+            FFIVector<FFIVector<EDATA_T>> edataBuffers, int workerId, int workerNum) throws IOException {
         JobConf job = JobConfUtil.readJobConf(JOB_CONF.DEFAULT_JOB_CONF_PATH);
         LoaderBase<OID_T, VDATA_T, EDATA_T> loader;
 

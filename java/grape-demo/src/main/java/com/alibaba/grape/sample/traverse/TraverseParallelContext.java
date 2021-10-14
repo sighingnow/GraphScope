@@ -25,10 +25,6 @@ import com.alibaba.grape.stdcxx.StdVector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * @author xiaolei.zl
- * @date 2021/06/14
- */
 public class TraverseParallelContext implements ParallelContextBase<Long, Long, Long, Double> {
 
     public int step;
@@ -41,12 +37,12 @@ public class TraverseParallelContext implements ParallelContextBase<Long, Long, 
 
     @Override
     public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> immutableEdgecutFragment,
-                     ParallelMessageManager javaDefaultMessageManager, StdVector<FFIByteString> args) {
+            ParallelMessageManager javaDefaultMessageManager, StdVector<FFIByteString> args) {
         maxStep = Integer.parseInt(args.get(0).toString());
         threadNum = Integer.parseInt(args.get(1).toString());
         executor = Executors.newFixedThreadPool(threadNum);
         long innerVerticesNum = immutableEdgecutFragment.getInnerVerticesNum();
-//        chunkSize = (innerVerticesNum + threadNum - 1) / threadNum;
+        // chunkSize = (innerVerticesNum + threadNum - 1) / threadNum;
         chunkSize = 1024;
         step = 0;
     }

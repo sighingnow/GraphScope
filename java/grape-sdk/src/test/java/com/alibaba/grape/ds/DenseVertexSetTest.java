@@ -20,7 +20,6 @@ import com.alibaba.grape.utils.FFITypeFactoryhelper;
 import org.junit.Assert;
 import org.junit.Test;
 
-
 public class DenseVertexSetTest {
 
     private DenseVertexSet<Long> denseVertexSet;

@@ -33,7 +33,8 @@ public class SSSPDefault implements PropertyDefaultAppBase<Long, SSSPDefaultCont
     public static Logger logger = LoggerFactory.getLogger(SSSPDefault.class.getName());
 
     @Override
-    public void PEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context, PropertyMessageManager messageManager) {
+    public void PEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context,
+            PropertyMessageManager messageManager) {
         SSSPDefaultContext ctx = (SSSPDefaultContext) context;
 
         int vertexLabelNum = fragment.vertexLabelNum();
@@ -97,18 +98,19 @@ public class SSSPDefault implements PropertyDefaultAppBase<Long, SSSPDefaultCont
             ctx.curModified.get(i).assign(ctx.nextModified.get(i));
             ctx.nextModified.get(i).clear();
         }
-        //update partial results stored in java ds to c++ column
-//        for (int i = 0; i < vertexLabelNum; ++i) {
-//            VertexRange<Long> innerVertices = fragment.innerVertices(i);
-////            Column<ArrowFragment<Long, Long>, Double> column = ctx.getColumnDouble(i, ctx.columnsIndices.get(i));
-//            for (Vertex<Long> vertex : innerVertices.locals()) {
-//                column.set(vertex, ctx.partialResults.get(i).get(vertex));
-//            }
-//        }
+        // update partial results stored in java ds to c++ column
+        // for (int i = 0; i < vertexLabelNum; ++i) {
+        // VertexRange<Long> innerVertices = fragment.innerVertices(i);
+        //// Column<ArrowFragment<Long, Long>, Double> column = ctx.getColumnDouble(i, ctx.columnsIndices.get(i));
+        // for (Vertex<Long> vertex : innerVertices.locals()) {
+        // column.set(vertex, ctx.partialResults.get(i).get(vertex));
+        // }
+        // }
     }
 
     @Override
-    public void IncEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context, PropertyMessageManager messageManager) {
+    public void IncEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context,
+            PropertyMessageManager messageManager) {
         SSSPDefaultContext ctx = (SSSPDefaultContext) context;
         {
             Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
@@ -121,7 +123,6 @@ public class SSSPDefault implements PropertyDefaultAppBase<Long, SSSPDefaultCont
                 }
             }
         }
-
 
         int vertexLabelNum = fragment.vertexLabelNum();
         int edgeLabelNum = fragment.edgeLabelNum();
@@ -147,7 +148,7 @@ public class SSSPDefault implements PropertyDefaultAppBase<Long, SSSPDefaultCont
                 }
             }
         }
-        //sync out vertices
+        // sync out vertices
 
         DoubleMsg msg = DoubleMsg.factory.create();
         for (int i = 0; i < vertexLabelNum; ++i) {
@@ -161,7 +162,7 @@ public class SSSPDefault implements PropertyDefaultAppBase<Long, SSSPDefaultCont
             }
         }
 
-        //check condition to move forward
+        // check condition to move forward
         for (int i = 0; i < vertexLabelNum; ++i) {
             VertexRange<Long> innerVertices = fragment.innerVertices(i);
             boolean ok = false;
@@ -181,13 +182,13 @@ public class SSSPDefault implements PropertyDefaultAppBase<Long, SSSPDefaultCont
             ctx.curModified.get(i).assign(ctx.nextModified.get(i));
             ctx.nextModified.get(i).clear();
         }
-        //update partial results stored in java ds to c++ column
-//        for (int i = 0; i < vertexLabelNum; ++i) {
-//            VertexRange<Long> innerVertices = fragment.innerVertices(i);
-//            Column<ArrowFragment<Long, Long>, Double> column = ctx.getColumnDouble(i, ctx.columnsIndices.get(i));
-//            for (Vertex<Long> vertex : innerVertices.locals()) {
-//                column.set(vertex, ctx.partialResults.get(i).get(vertex));
-//            }
-//        }
+        // update partial results stored in java ds to c++ column
+        // for (int i = 0; i < vertexLabelNum; ++i) {
+        // VertexRange<Long> innerVertices = fragment.innerVertices(i);
+        // Column<ArrowFragment<Long, Long>, Double> column = ctx.getColumnDouble(i, ctx.columnsIndices.get(i));
+        // for (Vertex<Long> vertex : innerVertices.locals()) {
+        // column.set(vertex, ctx.partialResults.get(i).get(vertex));
+        // }
+        // }
     }
 }

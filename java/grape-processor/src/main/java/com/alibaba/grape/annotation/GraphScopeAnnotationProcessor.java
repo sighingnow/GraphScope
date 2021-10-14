@@ -16,7 +16,6 @@
 
 package com.alibaba.grape.annotation;
 
-
 import com.alibaba.fastffi.*;
 import com.alibaba.fastffi.annotation.AnnotationProcessorUtils;
 import com.alibaba.grape.fragment.ArrowProjectedFragment;
@@ -54,8 +53,8 @@ import java.util.*;
 import static com.alibaba.grape.utils.CppClassName.ARROW_PROJECTED_FRAGMENT;
 import static io.graphscope.utils.CppClassName.*;
 
-@SupportedAnnotationTypes({"com.alibaba.fastffi.FFIMirror", "com.alibaba.fastffi.FFIMirrorDefinition",
-        "com.alibaba.grape.annotation.GraphType"})
+@SupportedAnnotationTypes({ "com.alibaba.fastffi.FFIMirror", "com.alibaba.fastffi.FFIMirrorDefinition",
+        "com.alibaba.grape.annotation.GraphType" })
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class GraphScopeAnnotationProcessor extends javax.annotation.processing.AbstractProcessor {
     public static final String GraphTypeWrapperSuffix = "$$GraphTypeDefinitions";
@@ -104,20 +103,20 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
      * Use : to separate types
      *
      * @param messageTypes
+     * 
      * @return
      */
     private String[] parseMessageTypes(String messageTypes) {
-        String[] results =
-                Arrays.stream(messageTypes.split(",")).map(m -> m.trim()).toArray(String[]::new);
+        String[] results = Arrays.stream(messageTypes.split(",")).map(m -> m.trim()).toArray(String[]::new);
         return results;
     }
 
     /**
-     * Given one FFIMirror class name, we need to get the foreign type too.
-     * Currently don't support primitive types
-     * if message is ffi, we use the foreign type.
+     * Given one FFIMirror class name, we need to get the foreign type too. Currently don't support primitive types if
+     * message is ffi, we use the foreign type.
      *
      * @param messageType
+     * 
      * @return String [0] cxx type, String [1] java type
      */
     public String[] parseMessageType(String messageType) {
@@ -126,8 +125,8 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
 
     boolean isGraphType(AnnotationMirror annotationMirror) {
         DeclaredType declaredType = annotationMirror.getAnnotationType();
-        TypeMirror graphTypeAnnotationType =
-                processingEnv.getElementUtils().getTypeElement(GraphType.class.getName()).asType();
+        TypeMirror graphTypeAnnotationType = processingEnv.getElementUtils().getTypeElement(GraphType.class.getName())
+                .asType();
         return processingEnv.getTypeUtils().isSameType(declaredType, graphTypeAnnotationType);
     }
 
@@ -163,8 +162,7 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
                 if (isGraphType(annotationMirror)) {
                     if (this.graphType != null) {
                         throw new IllegalStateException("Oops: An project can only have one @GraphType, "
-                                + "already have " + this.graphType + ", but got "
-                                + annotationMirror);
+                                + "already have " + this.graphType + ", but got " + annotationMirror);
                     }
                     this.graphType = annotationMirror;
                     this.graphTypeElementName = typeElement.getQualifiedName().toString();
@@ -179,8 +177,7 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
             String javaType = typeElement.getQualifiedName().toString();
             String check = foreignTypeNameToJavaTypeName.put(foreignType, javaType);
             if (check != null) {
-                processingEnv.getMessager().printMessage(
-                        Diagnostic.Kind.ERROR,
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
                         "Duplicalte FFIMirror on " + foreignType + ", expected " + check + ", got " + javaType);
             }
             return;
@@ -188,14 +185,15 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
     }
 
     /**
-     * @param typeElement: the generated implementation of the FFIMirror
+     * @param typeElement:
+     *            the generated implementation of the FFIMirror
+     * 
      * @return
      */
     private String getFFIMirrorJavaTypeName(TypeElement typeElement) {
         List<? extends TypeMirror> interfaces = typeElement.getInterfaces();
         if (interfaces.size() != 1) {
-            throw new IllegalArgumentException("A generated class must only have one super interface: "
-                    + typeElement);
+            throw new IllegalArgumentException("A generated class must only have one super interface: " + typeElement);
         }
         return AnnotationProcessorUtils.typeToTypeName(interfaces.get(0));
     }
@@ -204,6 +202,7 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
      * Return the package element of the type element.
      *
      * @param typeElement
+     * 
      * @return
      */
     private PackageElement getPackageElement(TypeElement typeElement) {
@@ -227,13 +226,13 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
      */
     private void addGrapeWrapper(TypeSpec.Builder classBuilder) {
         DeclaredType edataType = getEdataType();
-//        String foreignEdataType = getForeignTypeName(edataType);
+        // String foreignEdataType = getForeignTypeName(edataType);
         String javaEdataType = getTypeName(edataType);
         DeclaredType oidType = getOidType();
-//        String foreignOidType = getForeignTypeName(oidType);
+        // String foreignOidType = getForeignTypeName(oidType);
         String javaOidType = getTypeName(oidType);
         DeclaredType vdataType = getVdataType();
-//        String foreignVdataType = getForeignTypeName(vdataType);
+        // String foreignVdataType = getForeignTypeName(vdataType);
         String javaVdataType = getTypeName(vdataType);
         String foreignVidType = getGraphTypeMemberForeign("cppVidType");
         String foreignOidType = getGraphTypeMemberForeign("cppOidType");
@@ -245,121 +244,119 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
         logger.info("foreign oid type " + foreignOidType);
         logger.info("foreign edata type " + foreignEdataType);
         logger.info("foriegn frag type :" + foreignFragType);
-        String foreignArrowProjectedTempalteNameConcat = makeParameterizedType(foreignArrowProjectedTempalteName, foreignOidType, "uint64_t", foreignVdataType, foreignEdataType);
-        String JavaArrowProjectedTemplateNameConcat = makeParameterizedType(JavaArrowProjectedTemplateName, javaOidType, "java.lang.Long", javaVdataType, javaEdataType);
-        logger.info("fragment " + foreignArrowProjectedTempalteNameConcat + ", " + JavaArrowProjectedTemplateNameConcat);
+        String foreignArrowProjectedTempalteNameConcat = makeParameterizedType(foreignArrowProjectedTempalteName,
+                foreignOidType, "uint64_t", foreignVdataType, foreignEdataType);
+        String JavaArrowProjectedTemplateNameConcat = makeParameterizedType(JavaArrowProjectedTemplateName, javaOidType,
+                "java.lang.Long", javaVdataType, javaEdataType);
+        logger.info(
+                "fragment " + foreignArrowProjectedTempalteNameConcat + ", " + JavaArrowProjectedTemplateNameConcat);
 
         AnnotationSpec.Builder ffiGenBatchBuilder = AnnotationSpec.builder(FFIGenBatch.class);
         if (foreignFragType.equals("vineyard::ArrowFragment")) {
             logger.info("Codegen for arrowFragment");
             {
-                //PropertyMessageManager
+                // PropertyMessageManager
                 AnnotationSpec.Builder ffiGenBuildPropertyMM = AnnotationSpec.builder(FFIGen.class);
-                ffiGenBuildPropertyMM
-                        .addMember("type", "$S", PropertyMessageManager.class.getName());
+                ffiGenBuildPropertyMM.addMember("type", "$S", PropertyMessageManager.class.getName());
                 propertyMMAddMessages(ffiGenBuildPropertyMM);
                 ffiGenBatchBuilder.addMember("value", "$L", ffiGenBuildPropertyMM.build());
             }
         } else if (foreignFragType.equals("gs::ArrowProjectedFragment")) {
             logger.info("Codegen for arrowProjectedFragment");
-            //generate for ArrowProjectedFragment
+            // generate for ArrowProjectedFragment
             {
                 AnnotationSpec.Builder arrowProjectedFragmentBuilder = AnnotationSpec.builder(FFIGen.class);
                 arrowProjectedFragmentBuilder.addMember("type", "$S", JavaArrowProjectedTemplateName)
-                        .addMember("templates", "$L",
-                                AnnotationSpec.builder(CXXTemplate.class)
-                                        .addMember("cxx", "$S", foreignOidType)
-                                        .addMember("cxx", "$S", "uint64_t")
-                                        .addMember("cxx", "$S", foreignVdataType)
-                                        .addMember("cxx", "$S", foreignEdataType)
-                                        .addMember("java", "$S", javaOidType)
-                                        .addMember("java", "$S", Long.class.getName())
-                                        .addMember("java", "$S", javaVdataType)
-                                        .addMember("java", "$S", javaEdataType)
-                                        .build());
+                        .addMember("templates", "$L", AnnotationSpec.builder(CXXTemplate.class)
+                                .addMember("cxx", "$S", foreignOidType).addMember("cxx", "$S", "uint64_t")
+                                .addMember("cxx", "$S", foreignVdataType).addMember("cxx", "$S", foreignEdataType)
+                                .addMember("java", "$S", javaOidType).addMember("java", "$S", Long.class.getName())
+                                .addMember("java", "$S", javaVdataType).addMember("java", "$S", javaEdataType).build());
                 ffiGenBatchBuilder.addMember("value", "$L", arrowProjectedFragmentBuilder.build());
             }
-            //generate for default message manager
+            // generate for default message manager
             {
                 AnnotationSpec.Builder ffiGenBuilderdefault = AnnotationSpec.builder(FFIGen.class);
-                ffiGenBuilderdefault
-                        .addMember("type", "$S",
-                                DefaultMessageManager.class.getName());
-                defaultMessageManagerAddMessages(ffiGenBuilderdefault, foreignArrowProjectedTempalteNameConcat, JavaArrowProjectedTemplateNameConcat);
+                ffiGenBuilderdefault.addMember("type", "$S", DefaultMessageManager.class.getName());
+                defaultMessageManagerAddMessages(ffiGenBuilderdefault, foreignArrowProjectedTempalteNameConcat,
+                        JavaArrowProjectedTemplateNameConcat);
                 ffiGenBatchBuilder.addMember("value", "$L", ffiGenBuilderdefault.build());
             }
-            //ProjectedNbr
+            // ProjectedNbr
             {
-//            AnnotationSpec.Builder arrowProjectedFragmentBuilder = AnnotationSpec.builder(FFIGen.class);
-//            arrowProjectedFragmentBuilder.addMember("type", "$S", JavaArrowProjectedTemplateName)
+                // AnnotationSpec.Builder arrowProjectedFragmentBuilder = AnnotationSpec.builder(FFIGen.class);
+                // arrowProjectedFragmentBuilder.addMember("type", "$S", JavaArrowProjectedTemplateName)
             }
-            //ProjectedAdjList
-            //VertexDataContext
+            // ProjectedAdjList
+            // VertexDataContext
             {
                 AnnotationSpec.Builder ffiGenVertexDataContext = AnnotationSpec.builder(FFIGen.class);
                 ffiGenVertexDataContext.addMember("type", "$S", FFIVertexDataContext.class.getName());
-                vertexDataContextAddTemplate(ffiGenVertexDataContext, foreignArrowProjectedTempalteNameConcat, JavaArrowProjectedTemplateNameConcat);
+                vertexDataContextAddTemplate(ffiGenVertexDataContext, foreignArrowProjectedTempalteNameConcat,
+                        JavaArrowProjectedTemplateNameConcat);
                 ffiGenBatchBuilder.addMember("value", "$L", ffiGenVertexDataContext.build());
             }
-            //vertexPropertyContext
+            // vertexPropertyContext
             {
                 AnnotationSpec.Builder ffiGenVertexPropertyContext = AnnotationSpec.builder(FFIGen.class);
                 ffiGenVertexPropertyContext.addMember("type", "$S", FFIVertexPropertyContext.class.getName());
-                vertexPropertyContextAddTemplate(ffiGenVertexPropertyContext, foreignArrowProjectedTempalteNameConcat, JavaArrowProjectedTemplateNameConcat);
+                vertexPropertyContextAddTemplate(ffiGenVertexPropertyContext, foreignArrowProjectedTempalteNameConcat,
+                        JavaArrowProjectedTemplateNameConcat);
                 ffiGenBatchBuilder.addMember("value", "$L", ffiGenVertexPropertyContext.build());
             }
-            //DoubleColumn
+            // DoubleColumn
             {
                 AnnotationSpec.Builder ffiGenDoubleColumn = AnnotationSpec.builder(FFIGen.class);
                 ffiGenDoubleColumn.addMember("type", "$S", DoubleColumn.class.getName());
                 ffiGenDoubleColumn.addMember("templates", "$L",
                         AnnotationSpec.builder(CXXTemplate.class)
                                 .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                                .addMember("java", "$S", JavaArrowProjectedTemplateNameConcat)
-                                .build());
+                                .addMember("java", "$S", JavaArrowProjectedTemplateNameConcat).build());
                 ffiGenBatchBuilder.addMember("value", "$L", ffiGenDoubleColumn.build());
             }
-            //LongColumn
+            // LongColumn
             {
                 AnnotationSpec.Builder ffiGenLongColumn = AnnotationSpec.builder(FFIGen.class);
                 ffiGenLongColumn.addMember("type", "$S", LongColumn.class.getName());
                 ffiGenLongColumn.addMember("templates", "$L",
                         AnnotationSpec.builder(CXXTemplate.class)
                                 .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                                .addMember("java", "$S", JavaArrowProjectedTemplateNameConcat)
-                                .build());
+                                .addMember("java", "$S", JavaArrowProjectedTemplateNameConcat).build());
                 ffiGenBatchBuilder.addMember("value", "$L", ffiGenLongColumn.build());
             }
-            //IntColumn
+            // IntColumn
             {
                 AnnotationSpec.Builder ffiGenIntColumn = AnnotationSpec.builder(FFIGen.class);
                 ffiGenIntColumn.addMember("type", "$S", IntColumn.class.getName());
                 ffiGenIntColumn.addMember("templates", "$L",
                         AnnotationSpec.builder(CXXTemplate.class)
                                 .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                                .addMember("java", "$S", JavaArrowProjectedTemplateNameConcat)
-                                .build());
+                                .addMember("java", "$S", JavaArrowProjectedTemplateNameConcat).build());
                 ffiGenBatchBuilder.addMember("value", "$L", ffiGenIntColumn.build());
             }
-            //SharedPtr
+            // SharedPtr
             {
                 AnnotationSpec.Builder ffiGenSharedPtr = AnnotationSpec.builder(FFIGen.class);
                 ffiGenSharedPtr.addMember("type", "$S", StdSharedPtr.class.getName());
                 ffiGenSharedPtr.addMember("templates", "$L",
                         AnnotationSpec.builder(CXXTemplate.class)
-                                .addMember("cxx", "$S", makeParameterizedType(DOUBLE_COLUMN, foreignArrowProjectedTempalteNameConcat))
-                                .addMember("java", "$S", makeParameterizedType(DoubleColumn.class.getName(), JavaArrowProjectedTemplateNameConcat))
+                                .addMember("cxx", "$S",
+                                        makeParameterizedType(DOUBLE_COLUMN, foreignArrowProjectedTempalteNameConcat))
+                                .addMember("java", "$S", makeParameterizedType(DoubleColumn.class.getName(),
+                                        JavaArrowProjectedTemplateNameConcat))
                                 .build());
-                ffiGenSharedPtr.addMember("templates", "$L",
-                        AnnotationSpec.builder(CXXTemplate.class)
-                                .addMember("cxx", "$S", makeParameterizedType(LONG_COLUMN, foreignArrowProjectedTempalteNameConcat))
-                                .addMember("java", "$S", makeParameterizedType(LongColumn.class.getName(), JavaArrowProjectedTemplateNameConcat))
-                                .build());
-                ffiGenSharedPtr.addMember("templates", "$L",
-                        AnnotationSpec.builder(CXXTemplate.class)
-                                .addMember("cxx", "$S", makeParameterizedType(INT_COLUMN, foreignArrowProjectedTempalteNameConcat))
-                                .addMember("java", "$S", makeParameterizedType(IntColumn.class.getName(), JavaArrowProjectedTemplateNameConcat))
-                                .build());
+                ffiGenSharedPtr.addMember("templates", "$L", AnnotationSpec.builder(CXXTemplate.class)
+                        .addMember("cxx", "$S",
+                                makeParameterizedType(LONG_COLUMN, foreignArrowProjectedTempalteNameConcat))
+                        .addMember("java", "$S",
+                                makeParameterizedType(LongColumn.class.getName(), JavaArrowProjectedTemplateNameConcat))
+                        .build());
+                ffiGenSharedPtr.addMember("templates", "$L", AnnotationSpec.builder(CXXTemplate.class)
+                        .addMember("cxx", "$S",
+                                makeParameterizedType(INT_COLUMN, foreignArrowProjectedTempalteNameConcat))
+                        .addMember("java", "$S",
+                                makeParameterizedType(IntColumn.class.getName(), JavaArrowProjectedTemplateNameConcat))
+                        .build());
                 ffiGenBatchBuilder.addMember("value", "$L", ffiGenSharedPtr.build());
             }
         } else {
@@ -368,102 +365,84 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
         classBuilder.addAnnotation(ffiGenBatchBuilder.build());
     }
 
-    private void defaultMessageManagerAddMessages(AnnotationSpec.Builder defaultMessagerBuilder, String foreignArrowProjectedTempalteNameConcat, String javaArrowProjectedTemplateNameConcat) {
+    private void defaultMessageManagerAddMessages(AnnotationSpec.Builder defaultMessagerBuilder,
+            String foreignArrowProjectedTempalteNameConcat, String javaArrowProjectedTemplateNameConcat) {
         List<String> messageTypes = getMessageTypes();
         logger.info("In DefaultMessageManager, received message types are: " + String.join(",", messageTypes));
         if (messageTypes.isEmpty()) {
             return;
         }
         {
-            //sendMsgThroughIEdges
+            // sendMsgThroughIEdges
             AnnotationSpec.Builder sendIEdgesBuilder = AnnotationSpec.builder(FFIFunGen.class)
-                    .addMember("name", "$S", "sendMsgThroughIEdges")
-                    .addMember("returnType", "$S", "void")
-                    .addMember("parameterTypes", "$S", "FRAG_T")
-                    .addMember("parameterTypes", "$S", "MSG_T");
+                    .addMember("name", "$S", "sendMsgThroughIEdges").addMember("returnType", "$S", "void")
+                    .addMember("parameterTypes", "$S", "FRAG_T").addMember("parameterTypes", "$S", "MSG_T");
             for (String messageType : messageTypes) {
                 String[] types = parseMessageType(messageType);
-                AnnotationSpec.Builder templateBuilder =
-                        AnnotationSpec.builder(CXXTemplate.class)
-                                .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                                .addMember("cxx", "$S", types[0])
-                                .addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
-                                .addMember("java", "$S", types[1]);
+                AnnotationSpec.Builder templateBuilder = AnnotationSpec.builder(CXXTemplate.class)
+                        .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
+                        .addMember("cxx", "$S", types[0]).addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
+                        .addMember("java", "$S", types[1]);
                 sendIEdgesBuilder.addMember("templates", "$L", templateBuilder.build());
             }
             defaultMessagerBuilder.addMember("functionTemplates", "$L", sendIEdgesBuilder.build());
         }
         {
-            //sendMsgThroughOEdges
+            // sendMsgThroughOEdges
             AnnotationSpec.Builder sendOEdgesBuilder = AnnotationSpec.builder(FFIFunGen.class)
-                    .addMember("name", "$S", "sendMsgThroughOEdges")
-                    .addMember("returnType", "$S", "void")
-                    .addMember("parameterTypes", "$S", "FRAG_T")
-                    .addMember("parameterTypes", "$S", "MSG_T");
+                    .addMember("name", "$S", "sendMsgThroughOEdges").addMember("returnType", "$S", "void")
+                    .addMember("parameterTypes", "$S", "FRAG_T").addMember("parameterTypes", "$S", "MSG_T");
             for (String messageType : messageTypes) {
                 String[] types = parseMessageType(messageType);
-                AnnotationSpec.Builder templateBuilder =
-                        AnnotationSpec.builder(CXXTemplate.class)
-                                .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                                .addMember("cxx", "$S", types[0])
-                                .addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
-                                .addMember("java", "$S", types[1]);
+                AnnotationSpec.Builder templateBuilder = AnnotationSpec.builder(CXXTemplate.class)
+                        .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
+                        .addMember("cxx", "$S", types[0]).addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
+                        .addMember("java", "$S", types[1]);
                 sendOEdgesBuilder.addMember("templates", "$L", templateBuilder.build());
             }
             defaultMessagerBuilder.addMember("functionTemplates", "$L", sendOEdgesBuilder.build());
         }
         {
-            //sendMsgThroughEdges
+            // sendMsgThroughEdges
             AnnotationSpec.Builder sendEdgesBuilder = AnnotationSpec.builder(FFIFunGen.class)
-                    .addMember("name", "$S", "sendMsgThroughEdges")
-                    .addMember("returnType", "$S", "void")
-                    .addMember("parameterTypes", "$S", "FRAG_T")
-                    .addMember("parameterTypes", "$S", "MSG_T");
+                    .addMember("name", "$S", "sendMsgThroughEdges").addMember("returnType", "$S", "void")
+                    .addMember("parameterTypes", "$S", "FRAG_T").addMember("parameterTypes", "$S", "MSG_T");
             for (String messageType : messageTypes) {
                 String[] types = parseMessageType(messageType);
-                AnnotationSpec.Builder templateBuilder =
-                        AnnotationSpec.builder(CXXTemplate.class)
-                                .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                                .addMember("cxx", "$S", types[0])
-                                .addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
-                                .addMember("java", "$S", types[1]);
+                AnnotationSpec.Builder templateBuilder = AnnotationSpec.builder(CXXTemplate.class)
+                        .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
+                        .addMember("cxx", "$S", types[0]).addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
+                        .addMember("java", "$S", types[1]);
                 sendEdgesBuilder.addMember("templates", "$L", templateBuilder.build());
             }
             defaultMessagerBuilder.addMember("functionTemplates", "$L", sendEdgesBuilder.build());
         }
         {
-            //syncStateOnOuterVertex
+            // syncStateOnOuterVertex
             AnnotationSpec.Builder sendEdgesBuilder = AnnotationSpec.builder(FFIFunGen.class)
-                    .addMember("name", "$S", "syncStateOnOuterVertex")
-                    .addMember("returnType", "$S", "void")
+                    .addMember("name", "$S", "syncStateOnOuterVertex").addMember("returnType", "$S", "void")
                     .addMember("parameterTypes", "$S", "MSG_T");
             for (String messageType : messageTypes) {
                 String[] types = parseMessageType(messageType);
-                AnnotationSpec.Builder templateBuilder =
-                        AnnotationSpec.builder(CXXTemplate.class)
-                                .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                                .addMember("cxx", "$S", types[0])
-                                .addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
-                                .addMember("java", "$S", types[1]);
+                AnnotationSpec.Builder templateBuilder = AnnotationSpec.builder(CXXTemplate.class)
+                        .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
+                        .addMember("cxx", "$S", types[0]).addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
+                        .addMember("java", "$S", types[1]);
                 sendEdgesBuilder.addMember("templates", "$L", templateBuilder.build());
             }
             defaultMessagerBuilder.addMember("functionTemplates", "$L", sendEdgesBuilder.build());
         }
         {
-            //getMessage
+            // getMessage
             AnnotationSpec.Builder sendEdgesBuilder = AnnotationSpec.builder(FFIFunGen.class)
-                    .addMember("name", "$S", "getMessage")
-                    .addMember("returnType", "$S", "boolean")
-                    .addMember("parameterTypes", "$S", "FRAG_T")
-                    .addMember("parameterTypes", "$S", "MSG_T");
+                    .addMember("name", "$S", "getMessage").addMember("returnType", "$S", "boolean")
+                    .addMember("parameterTypes", "$S", "FRAG_T").addMember("parameterTypes", "$S", "MSG_T");
             for (String messageType : messageTypes) {
                 String[] types = parseMessageType(messageType);
-                AnnotationSpec.Builder templateBuilder =
-                        AnnotationSpec.builder(CXXTemplate.class)
-                                .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                                .addMember("cxx", "$S", types[0])
-                                .addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
-                                .addMember("java", "$S", types[1]);
+                AnnotationSpec.Builder templateBuilder = AnnotationSpec.builder(CXXTemplate.class)
+                        .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
+                        .addMember("cxx", "$S", types[0]).addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
+                        .addMember("java", "$S", types[1]);
                 sendEdgesBuilder.addMember("templates", "$L", templateBuilder.build());
             }
             defaultMessagerBuilder.addMember("functionTemplates", "$L", sendEdgesBuilder.build());
@@ -477,151 +456,125 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
             return;
         }
         {
-            //sendMsgThroughIEdges
+            // sendMsgThroughIEdges
             AnnotationSpec.Builder sendIEdgesBuilder = AnnotationSpec.builder(FFIFunGen.class)
-                    .addMember("name", "$S", "sendMsgThroughIEdges")
-                    .addMember("returnType", "$S", "void")
-                    .addMember("parameterTypes", "$S", "FRAG_T")
-                    .addMember("parameterTypes", "$S", "MSG_T");
+                    .addMember("name", "$S", "sendMsgThroughIEdges").addMember("returnType", "$S", "void")
+                    .addMember("parameterTypes", "$S", "FRAG_T").addMember("parameterTypes", "$S", "MSG_T");
             for (String messageType : messageTypes) {
                 String[] types = parseMessageType(messageType);
-                AnnotationSpec.Builder templateBuilder =
-                        AnnotationSpec.builder(CXXTemplate.class)
-                                .addMember("cxx", "$S", makeParameterizedType(ARROW_FRAGMENT, "int64_t"))
-                                .addMember("cxx", "$S", types[0])
-                                .addMember(
-                                        "java", "$S",
-                                        makeParameterizedType(JavaArrowFragmentTemplateName, Long.class.getName()))
-                                .addMember("java", "$S", types[1]);
+                AnnotationSpec.Builder templateBuilder = AnnotationSpec.builder(CXXTemplate.class)
+                        .addMember("cxx", "$S", makeParameterizedType(ARROW_FRAGMENT, "int64_t"))
+                        .addMember("cxx", "$S", types[0])
+                        .addMember("java", "$S",
+                                makeParameterizedType(JavaArrowFragmentTemplateName, Long.class.getName()))
+                        .addMember("java", "$S", types[1]);
                 sendIEdgesBuilder.addMember("templates", "$L", templateBuilder.build());
             }
             propertyMMBuilder.addMember("functionTemplates", "$L", sendIEdgesBuilder.build());
         }
         {
-            //sendMsgThroughOEdges
+            // sendMsgThroughOEdges
             AnnotationSpec.Builder sendOEdgesBuilder = AnnotationSpec.builder(FFIFunGen.class)
-                    .addMember("name", "$S", "sendMsgThroughOEdges")
-                    .addMember("returnType", "$S", "void")
-                    .addMember("parameterTypes", "$S", "FRAG_T")
-                    .addMember("parameterTypes", "$S", "MSG_T");
+                    .addMember("name", "$S", "sendMsgThroughOEdges").addMember("returnType", "$S", "void")
+                    .addMember("parameterTypes", "$S", "FRAG_T").addMember("parameterTypes", "$S", "MSG_T");
             for (String messageType : messageTypes) {
                 String[] types = parseMessageType(messageType);
-                AnnotationSpec.Builder templateBuilder =
-                        AnnotationSpec.builder(CXXTemplate.class)
-                                .addMember("cxx", "$S", makeParameterizedType(ARROW_FRAGMENT, "int64_t"))
-                                .addMember("cxx", "$S", types[0])
-                                .addMember(
-                                        "java", "$S",
-                                        makeParameterizedType(JavaArrowFragmentTemplateName, Long.class.getName()))
-                                .addMember("java", "$S", types[1]);
+                AnnotationSpec.Builder templateBuilder = AnnotationSpec.builder(CXXTemplate.class)
+                        .addMember("cxx", "$S", makeParameterizedType(ARROW_FRAGMENT, "int64_t"))
+                        .addMember("cxx", "$S", types[0])
+                        .addMember("java", "$S",
+                                makeParameterizedType(JavaArrowFragmentTemplateName, Long.class.getName()))
+                        .addMember("java", "$S", types[1]);
                 sendOEdgesBuilder.addMember("templates", "$L", templateBuilder.build());
             }
             propertyMMBuilder.addMember("functionTemplates", "$L", sendOEdgesBuilder.build());
         }
         {
-            //sendMsgThroughEdges
+            // sendMsgThroughEdges
             AnnotationSpec.Builder sendEdgesBuilder = AnnotationSpec.builder(FFIFunGen.class)
-                    .addMember("name", "$S", "sendMsgThroughEdges")
-                    .addMember("returnType", "$S", "void")
-                    .addMember("parameterTypes", "$S", "FRAG_T")
-                    .addMember("parameterTypes", "$S", "MSG_T");
+                    .addMember("name", "$S", "sendMsgThroughEdges").addMember("returnType", "$S", "void")
+                    .addMember("parameterTypes", "$S", "FRAG_T").addMember("parameterTypes", "$S", "MSG_T");
             for (String messageType : messageTypes) {
                 String[] types = parseMessageType(messageType);
-                AnnotationSpec.Builder templateBuilder =
-                        AnnotationSpec.builder(CXXTemplate.class)
-                                .addMember("cxx", "$S", makeParameterizedType(ARROW_FRAGMENT, "int64_t"))
-                                .addMember("cxx", "$S", types[0])
-                                .addMember(
-                                        "java", "$S",
-                                        makeParameterizedType(JavaArrowFragmentTemplateName, Long.class.getName()))
-                                .addMember("java", "$S", types[1]);
+                AnnotationSpec.Builder templateBuilder = AnnotationSpec.builder(CXXTemplate.class)
+                        .addMember("cxx", "$S", makeParameterizedType(ARROW_FRAGMENT, "int64_t"))
+                        .addMember("cxx", "$S", types[0])
+                        .addMember("java", "$S",
+                                makeParameterizedType(JavaArrowFragmentTemplateName, Long.class.getName()))
+                        .addMember("java", "$S", types[1]);
                 sendEdgesBuilder.addMember("templates", "$L", templateBuilder.build());
             }
             propertyMMBuilder.addMember("functionTemplates", "$L", sendEdgesBuilder.build());
         }
         {
-            //syncStateOnOuterVertex
+            // syncStateOnOuterVertex
             AnnotationSpec.Builder sendEdgesBuilder = AnnotationSpec.builder(FFIFunGen.class)
-                    .addMember("name", "$S", "syncStateOnOuterVertex")
-                    .addMember("returnType", "$S", "void")
+                    .addMember("name", "$S", "syncStateOnOuterVertex").addMember("returnType", "$S", "void")
                     .addMember("parameterTypes", "$S", "MSG_T");
             for (String messageType : messageTypes) {
                 String[] types = parseMessageType(messageType);
-                AnnotationSpec.Builder templateBuilder =
-                        AnnotationSpec.builder(CXXTemplate.class)
-                                .addMember("cxx", "$S", makeParameterizedType(ARROW_FRAGMENT, "int64_t"))
-                                .addMember("cxx", "$S", types[0])
-                                .addMember(
-                                        "java", "$S",
-                                        makeParameterizedType(JavaArrowFragmentTemplateName, Long.class.getName()))
-                                .addMember("java", "$S", types[1]);
+                AnnotationSpec.Builder templateBuilder = AnnotationSpec.builder(CXXTemplate.class)
+                        .addMember("cxx", "$S", makeParameterizedType(ARROW_FRAGMENT, "int64_t"))
+                        .addMember("cxx", "$S", types[0])
+                        .addMember("java", "$S",
+                                makeParameterizedType(JavaArrowFragmentTemplateName, Long.class.getName()))
+                        .addMember("java", "$S", types[1]);
                 sendEdgesBuilder.addMember("templates", "$L", templateBuilder.build());
             }
             propertyMMBuilder.addMember("functionTemplates", "$L", sendEdgesBuilder.build());
         }
         {
-            //getMessage
+            // getMessage
             AnnotationSpec.Builder sendEdgesBuilder = AnnotationSpec.builder(FFIFunGen.class)
-                    .addMember("name", "$S", "getMessage")
-                    .addMember("returnType", "$S", "boolean")
-                    .addMember("parameterTypes", "$S", "FRAG_T")
-                    .addMember("parameterTypes", "$S", "MSG_T");
+                    .addMember("name", "$S", "getMessage").addMember("returnType", "$S", "boolean")
+                    .addMember("parameterTypes", "$S", "FRAG_T").addMember("parameterTypes", "$S", "MSG_T");
             for (String messageType : messageTypes) {
                 String[] types = parseMessageType(messageType);
-                AnnotationSpec.Builder templateBuilder =
-                        AnnotationSpec.builder(CXXTemplate.class)
-                                .addMember("cxx", "$S", makeParameterizedType(ARROW_FRAGMENT, "int64_t"))
-                                .addMember("cxx", "$S", types[0])
-                                .addMember(
-                                        "java", "$S",
-                                        makeParameterizedType(JavaArrowFragmentTemplateName, Long.class.getName()))
-                                .addMember("java", "$S", types[1]);
+                AnnotationSpec.Builder templateBuilder = AnnotationSpec.builder(CXXTemplate.class)
+                        .addMember("cxx", "$S", makeParameterizedType(ARROW_FRAGMENT, "int64_t"))
+                        .addMember("cxx", "$S", types[0])
+                        .addMember("java", "$S",
+                                makeParameterizedType(JavaArrowFragmentTemplateName, Long.class.getName()))
+                        .addMember("java", "$S", types[1]);
                 sendEdgesBuilder.addMember("templates", "$L", templateBuilder.build());
             }
             propertyMMBuilder.addMember("functionTemplates", "$L", sendEdgesBuilder.build());
         }
     }
 
-    private void vertexDataContextAddTemplate(AnnotationSpec.Builder vertexDataContextBuilder, String foreignArrowProjectedTempalteNameConcat, String javaArrowProjectedTemplateNameConcat) {
+    private void vertexDataContextAddTemplate(AnnotationSpec.Builder vertexDataContextBuilder,
+            String foreignArrowProjectedTempalteNameConcat, String javaArrowProjectedTemplateNameConcat) {
         vertexDataContextBuilder.addMember("templates", "$L",
                 AnnotationSpec.builder(CXXTemplate.class)
                         .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                        .addMember("cxx", "$S", "int64_t")
-                        .addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
-                        .addMember("java", "$S", Long.class.getName())
-                        .build());
+                        .addMember("cxx", "$S", "int64_t").addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
+                        .addMember("java", "$S", Long.class.getName()).build());
         vertexDataContextBuilder.addMember("templates", "$L",
                 AnnotationSpec.builder(CXXTemplate.class)
                         .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                        .addMember("cxx", "$S", "int32_t")
-                        .addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
-                        .addMember("java", "$S", Integer.class.getName())
-                        .build());
+                        .addMember("cxx", "$S", "int32_t").addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
+                        .addMember("java", "$S", Integer.class.getName()).build());
         vertexDataContextBuilder.addMember("templates", "$L",
                 AnnotationSpec.builder(CXXTemplate.class)
                         .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                        .addMember("cxx", "$S", "double")
-                        .addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
-                        .addMember("java", "$S", Double.class.getName())
-                        .build());
+                        .addMember("cxx", "$S", "double").addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
+                        .addMember("java", "$S", Double.class.getName()).build());
     }
 
-    private void vertexPropertyContextAddTemplate(AnnotationSpec.Builder vertexDataContextBuilder, String foreignArrowProjectedTempalteNameConcat, String javaArrowProjectedTemplateNameConcat) {
+    private void vertexPropertyContextAddTemplate(AnnotationSpec.Builder vertexDataContextBuilder,
+            String foreignArrowProjectedTempalteNameConcat, String javaArrowProjectedTemplateNameConcat) {
         vertexDataContextBuilder.addMember("templates", "$L",
                 AnnotationSpec.builder(CXXTemplate.class)
                         .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                        .addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
-                        .build());
+                        .addMember("java", "$S", javaArrowProjectedTemplateNameConcat).build());
         vertexDataContextBuilder.addMember("templates", "$L",
                 AnnotationSpec.builder(CXXTemplate.class)
                         .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                        .addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
-                        .build());
+                        .addMember("java", "$S", javaArrowProjectedTemplateNameConcat).build());
         vertexDataContextBuilder.addMember("templates", "$L",
                 AnnotationSpec.builder(CXXTemplate.class)
                         .addMember("cxx", "$S", foreignArrowProjectedTempalteNameConcat)
-                        .addMember("java", "$S", javaArrowProjectedTemplateNameConcat)
-                        .build());
+                        .addMember("java", "$S", javaArrowProjectedTemplateNameConcat).build());
     }
 
     private String makeParameterizedType(String base, String... types) {
@@ -635,8 +588,7 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
         Random random = new Random();
         String packageName = "grape" + random.nextInt(Integer.MAX_VALUE);
         String classSimpleName = "GrapeWrapper" + random.nextInt(Integer.MAX_VALUE);
-        TypeSpec.Builder classBuilder =
-                TypeSpec.interfaceBuilder(classSimpleName).addModifiers(Modifier.PUBLIC);
+        TypeSpec.Builder classBuilder = TypeSpec.interfaceBuilder(classSimpleName).addModifiers(Modifier.PUBLIC);
         addGrapeWrapper(classBuilder);
         writeTypeSpec(packageName, classBuilder.build());
     }
@@ -658,12 +610,11 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
         if (libraryName == null || libraryName.isEmpty()) {
             classBuilder.addAnnotation(FFIGen.class);
         } else {
-            classBuilder.addAnnotation(
-                    AnnotationSpec.builder(FFIGen.class).addMember("value", "$S", libraryName).build());
+            classBuilder
+                    .addAnnotation(AnnotationSpec.builder(FFIGen.class).addMember("value", "$S", libraryName).build());
         }
         classBuilder.addAnnotation(FFIMirror.class);
-        classBuilder.addAnnotation(
-                AnnotationSpec.builder(FFITypeAlias.class).addMember("value", "$S", name).build());
+        classBuilder.addAnnotation(AnnotationSpec.builder(FFITypeAlias.class).addMember("value", "$S", name).build());
 
         Set<String> headers = getGraphTypeHeaders();
         for (String header : headers) {
@@ -699,14 +650,13 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
             javaFile.writeTo(filter);
         } catch (IOException e) {
             throw new IllegalStateException(
-                    "Cannot write Java file " + javaFile.typeSpec.name + ". Please clean the build first.",
-                    e);
+                    "Cannot write Java file " + javaFile.typeSpec.name + ". Please clean the build first.", e);
         }
     }
 
     private void addGraphTypeWrapper(TypeSpec.Builder classBuilder, String name, TypeMirror type) {
-        MethodSpec.Builder methodBuilder =
-                MethodSpec.methodBuilder(name).addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC);
+        MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(name).addModifiers(Modifier.ABSTRACT,
+                Modifier.PUBLIC);
         methodBuilder.addAnnotation(FFIGetter.class);
         if (!isBoxedPrimitive(type)) {
             methodBuilder.addAnnotation(CXXReference.class);
@@ -716,11 +666,9 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
     }
 
     private TypeMirror makeGraphWrapper(TypeMirror type) {
-        TypeElement vectorElement =
-                processingEnv.getElementUtils().getTypeElement(FFIVector.class.getName());
+        TypeElement vectorElement = processingEnv.getElementUtils().getTypeElement(FFIVector.class.getName());
         TypeMirror typeVector = processingEnv.getTypeUtils().getDeclaredType(vectorElement, type);
-        TypeMirror typeVectorVector =
-                processingEnv.getTypeUtils().getDeclaredType(vectorElement, typeVector);
+        TypeMirror typeVectorVector = processingEnv.getTypeUtils().getDeclaredType(vectorElement, typeVector);
         return typeVectorVector;
     }
 
@@ -795,8 +743,7 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
         if (isFFIMirror(typeMirror)) {
             DeclaredType declaredType = (DeclaredType) typeMirror;
             String foreignType = getForeignTypeNameByFFITypeAlias(declaredType);
-            FFIMirrorDefinition mirrorDefinition =
-                    foreignTypeNameToFFIMirrorDefinitionMap.get(foreignType);
+            FFIMirrorDefinition mirrorDefinition = foreignTypeNameToFFIMirrorDefinitionMap.get(foreignType);
             if (mirrorDefinition == null) {
                 // this may happen if FFIMirror is not processed by ffi-annotation-processor yet.
                 return false;
@@ -807,10 +754,8 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
     }
 
     private String getAnnotationMember(AnnotationMirror annotationMirror, String name) {
-        Map<? extends ExecutableElement, ? extends AnnotationValue> values =
-                annotationMirror.getElementValues();
-        for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
-                values.entrySet()) {
+        Map<? extends ExecutableElement, ? extends AnnotationValue> values = annotationMirror.getElementValues();
+        for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : values.entrySet()) {
             ExecutableElement executableElement = entry.getKey();
             if (executableElement.getSimpleName().toString().equals(name)) {
                 AnnotationValue value = entry.getValue();
@@ -892,8 +837,7 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
         writer.format("using VDATA_T = %s;\n", getForeignTypeName(getVdataType()));
         writer.format("using EDATA_T = %s;\n", getForeignTypeName(getEdataType()));
         writer.append("\n\n");
-        writer.format("char const* OID_T_str = \"std::vector<std::vector<%s>>\";\n",
-                getForeignTypeName(getOidType()));
+        writer.format("char const* OID_T_str = \"std::vector<std::vector<%s>>\";\n", getForeignTypeName(getOidType()));
         writer.format("char const* VID_T_str = \"std::vector<std::vector<%s>>\";\n",
                 getVidForeignTypeName(getVidType()));
         writer.format("char const* VDATA_T_str = \"std::vector<std::vector<%s>>\";\n",
@@ -919,8 +863,8 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
 
     private void writeFile(String fileName, String fileContent) {
         try {
-            FileObject fileObject =
-                    processingEnv.getFiler().createResource(StandardLocation.SOURCE_OUTPUT, "", fileName);
+            FileObject fileObject = processingEnv.getFiler().createResource(StandardLocation.SOURCE_OUTPUT, "",
+                    fileName);
             try (Writer headerWriter = fileObject.openWriter()) {
                 headerWriter.write(fileContent);
                 headerWriter.flush();
@@ -1010,19 +954,15 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
             }
             String foreignTypeName = getForeignTypeNameByFFITypeAlias(declaredType);
 
-            FFIMirrorDefinition mirrorDefinition =
-                    foreignTypeNameToFFIMirrorDefinitionMap.get(foreignTypeName);
+            FFIMirrorDefinition mirrorDefinition = foreignTypeNameToFFIMirrorDefinitionMap.get(foreignTypeName);
             if (mirrorDefinition == null) {
-                throw new IllegalStateException("Cannot find FFIMirror implementation for " + typeMirror
-                        + "/" + declaredType.asElement() + " via foreign type "
-                        + foreignTypeName);
+                throw new IllegalStateException("Cannot find FFIMirror implementation for " + typeMirror + "/"
+                        + declaredType.asElement() + " via foreign type " + foreignTypeName);
             }
             if (!getFFIMirrorForeignTypeName(mirrorDefinition).equals(foreignTypeName)) {
-                throw new IllegalStateException("Oops, expect " + foreignTypeName + ", got "
-                        + mirrorDefinition.name());
+                throw new IllegalStateException("Oops, expect " + foreignTypeName + ", got " + mirrorDefinition.name());
             }
-            return name ? getFFIMirrorForeignTypeName(mirrorDefinition)
-                    : "\"" + mirrorDefinition.header() + "\"";
+            return name ? getFFIMirrorForeignTypeName(mirrorDefinition) : "\"" + mirrorDefinition.header() + "\"";
         }
         throw new IllegalStateException("Unsupported type: " + typeMirror);
     }
@@ -1060,8 +1000,8 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
         writer.append("#include \"grape/serialization/in_archive.h\"\n");
         writer.append("#include \"grape/serialization/out_archive.h\"\n");
 
-        List<FFIMirrorDefinition> mirrorDefinitionList =
-                new ArrayList<>(foreignTypeNameToFFIMirrorDefinitionMap.values());
+        List<FFIMirrorDefinition> mirrorDefinitionList = new ArrayList<>(
+                foreignTypeNameToFFIMirrorDefinitionMap.values());
         Collections.sort(mirrorDefinitionList, Comparator.comparing(FFIMirrorDefinition::name));
         mirrorDefinitionList.forEach(m -> writer.format("#include \"%s\"\n", m.header()));
         mirrorDefinitionList.forEach(m -> {
@@ -1078,8 +1018,7 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
                 writer.format("namespace %s {\n", m.namespace());
             }
             // outarchive
-            writer.format(
-                    "inline grape::OutArchive& operator>>(grape::OutArchive& out_archive, %s& data) {\n",
+            writer.format("inline grape::OutArchive& operator>>(grape::OutArchive& out_archive, %s& data) {\n",
                     m.name());
             List<FFIMirrorFieldDefinition> fields = sortedFields(m);
             fields.forEach(f -> {
@@ -1087,8 +1026,7 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
             });
             writer.format("\treturn out_archive;\n}\n");
             // inarchive
-            writer.format(
-                    "inline grape::InArchive& operator<<(grape::InArchive& in_archive, const %s& data) {\n",
+            writer.format("inline grape::InArchive& operator<<(grape::InArchive& in_archive, const %s& data) {\n",
                     m.name());
             fields.forEach(f -> {
                 writer.format("\tin_archive << data.%s;\n", f.name());
@@ -1096,10 +1034,9 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
             writer.format("\treturn in_archive;\n}\n");
             // equal operator
             writer.format("inline bool operator==(const %s& a, const %s& b) {\n", m.name(), m.name());
-            fields.forEach(
-                    f -> {
-                        writer.format("\tif (a.%s != b.%s) return false;\n", f.name(), f.name());
-                    });
+            fields.forEach(f -> {
+                writer.format("\tif (a.%s != b.%s) return false;\n", f.name(), f.name());
+            });
             writer.format("\treturn true;\n}\n");
 
             if (!namespace.isEmpty()) {
@@ -1113,8 +1050,8 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
                 if (javaTypeName.endsWith(GraphTypeWrapperSuffix)) {
                     return;
                 }
-                TypeMirror javaType = AnnotationProcessorUtils.typeNameToDeclaredType(
-                        processingEnv, javaTypeName, (TypeElement) null);
+                TypeMirror javaType = AnnotationProcessorUtils.typeNameToDeclaredType(processingEnv, javaTypeName,
+                        (TypeElement) null);
                 if (javaType instanceof DeclaredType) {
                     DeclaredType declaredType = (DeclaredType) javaType;
                     if (!declaredType.getTypeArguments().isEmpty()) {
@@ -1124,10 +1061,10 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
                     writer.format("template<> struct hash<%s> {\n", foreignType);
                     writer.format("\tstd::size_t operator()(%s const& s) const noexcept {\n", foreignType);
                     writer.append("\t\tstd::size_t h = 17;\n");
-                    List<FFIMirrorFieldDefinition> fields =
-                            sortedFields(foreignTypeNameToFFIMirrorDefinitionMap.get(foreignType));
+                    List<FFIMirrorFieldDefinition> fields = sortedFields(
+                            foreignTypeNameToFFIMirrorDefinitionMap.get(foreignType));
                     for (FFIMirrorFieldDefinition field : fields) {
-                        //llvm has no default std::hash impl for std::vector.
+                        // llvm has no default std::hash impl for std::vector.
                         if (field.foreignType().indexOf("std::vector") == -1) {
                             writer.format("\t\th = h * 31 + std::hash<%s>()(s.%s);\n", field.foreignType(),
                                     field.name());
@@ -1146,33 +1083,32 @@ public class GraphScopeAnnotationProcessor extends javax.annotation.processing.A
         writeFile(grapeHeader, outputStream.toString());
     }
 
-    private void checkedRegisterType(ProcessingEnvironment processingEnv, String foreignType,
-                                     String javaType, Map<String, String> mapping) {
+    private void checkedRegisterType(ProcessingEnvironment processingEnv, String foreignType, String javaType,
+            Map<String, String> mapping) {
         String check = mapping.put(foreignType, javaType);
         if (check != null && !check.equals(javaType)) {
-            throw new IllegalStateException("Inconsistent type registered on " + foreignType
-                    + ", expected " + check + ", got " + javaType);
+            throw new IllegalStateException(
+                    "Inconsistent type registered on " + foreignType + ", expected " + check + ", got " + javaType);
         }
     }
 
     private Map<String, String> collectFFIMirrorTypeMapping(ProcessingEnvironment processingEnv) {
         Map<String, String> map = new HashMap<>();
-        for (Map.Entry<String, FFIMirrorDefinition> entry :
-                javaTypeNameToFFIMirrorDefinitionMap.entrySet()) {
+        for (Map.Entry<String, FFIMirrorDefinition> entry : javaTypeNameToFFIMirrorDefinitionMap.entrySet()) {
             {
                 String javaTypeName = entry.getKey();
                 String foreignType = getFFIMirrorForeignTypeName(entry.getValue());
                 checkedRegisterType(processingEnv, foreignType, javaTypeName, map);
             }
-            //            for (FFIMirrorFieldDefinition mirrorFieldDefinition : entry.getValue().fields())
-            //            {
-            //                String javaTypeName = mirrorFieldDefinition.javaType();
-            //                String foreignType = mirrorFieldDefinition.foreignType();
-            //                TypeMirror javaType =
-            //                AnnotationProcessorUtils.typeNameToDeclaredType(processingEnv, javaTypeName,
-            //                (TypeElement) null); checkedRegisterType(processingEnv, foreignType,
-            //                javaType, map);
-            //            }
+            // for (FFIMirrorFieldDefinition mirrorFieldDefinition : entry.getValue().fields())
+            // {
+            // String javaTypeName = mirrorFieldDefinition.javaType();
+            // String foreignType = mirrorFieldDefinition.foreignType();
+            // TypeMirror javaType =
+            // AnnotationProcessorUtils.typeNameToDeclaredType(processingEnv, javaTypeName,
+            // (TypeElement) null); checkedRegisterType(processingEnv, foreignType,
+            // javaType, map);
+            // }
         }
         return map;
     }

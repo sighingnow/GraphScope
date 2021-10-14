@@ -25,11 +25,11 @@ import static com.alibaba.grape.utils.JNILibraryName.JAVA_APP_JNI_LIBRARY;
 @FFINameSpace("sample")
 @FFITypeAlias("Message")
 public interface Message extends CXXPointer {
-    //    @FFIGetter double data();
-//    @FFISetter void data(double value);
-//
-//    @FFIGetter @CXXReference FFIByteString label();
-//    @FFISetter void label(@CXXReference FFIByteString str);
+    // @FFIGetter double data();
+    // @FFISetter void data(double value);
+    //
+    // @FFIGetter @CXXReference FFIByteString label();
+    // @FFISetter void label(@CXXReference FFIByteString str);
     @FFIGetter
     long data();
 
@@ -47,4 +47,3 @@ public interface Message extends CXXPointer {
         Message create();
     }
 }
-

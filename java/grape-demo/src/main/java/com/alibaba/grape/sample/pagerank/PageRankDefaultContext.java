@@ -41,8 +41,8 @@ public class PageRankDefaultContext implements DefaultContextBase<Long, Long, Lo
     public IntArrayWrapper degree;
 
     @Override
-    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag,
-                     DefaultMessageManager messageManager, StdVector<FFIByteString> args) {
+    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultMessageManager messageManager,
+            StdVector<FFIByteString> args) {
         alpha = Double.parseDouble(args.get(0).toString());
         maxIteration = Integer.parseInt(args.get(1).toString());
         System.out.println("alpha: [" + alpha + "], max iteration: [" + maxIteration + "]");

@@ -29,9 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 /**
- * Paralle app should implement this class. This class contains the implementation of mutli threads
- * implementation for vertices traversal, while the message multi-threading should be handled by
- * cpp.
+ * All Paralle app should implement this class. This class contains the implementation of mutli threads implementation
+ * for vertices traversal, while the message multi-threading should be handled by cpp.
  * <p>
  * The behavior should be consistent with cpp.
  *
@@ -42,16 +41,38 @@ import java.util.function.BiConsumer;
  * @param <C>
  */
 @SuppressWarnings("rawtypes")
-public interface ParallelAppBase<OID_T, VID_T, VDATA_T, EDATA_T, C
-        extends ParallelContextBase<OID_T, VID_T, VDATA_T, EDATA_T>> extends AppBase<OID_T, VID_T, VDATA_T, EDATA_T, C> {
+public interface ParallelAppBase<OID_T, VID_T, VDATA_T, EDATA_T, C extends ParallelContextBase<OID_T, VID_T, VDATA_T, EDATA_T>>
+        extends AppBase<OID_T, VID_T, VDATA_T, EDATA_T, C> {
+    /**
+     * Partial evaluation procedure to be implemented.
+     * 
+     * @param graph
+     * @param context
+     * @param messageManager
+     */
     void PEval(ImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> graph, ParallelContextBase context,
-               ParallelMessageManager messageManager);
+            ParallelMessageManager messageManager);
 
+    /**
+     * Incremental Evaluation procedure to be implemented.
+     * 
+     * @param graph
+     * @param context
+     * @param messageManager
+     */
     void IncEval(ImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> graph, ParallelContextBase context,
-                 ParallelMessageManager messageManager);
+            ParallelMessageManager messageManager);
 
-
-    default void forEachVertex(VertexRange<Long> vertices, int threadNum, ExecutorService executor, BiConsumer<Vertex<Long>, Integer> consumer) {
+    /**
+     * Iterate over vertexs in VertexRange, applying lambda functions on each vertex.
+     * 
+     * @param vertices
+     * @param threadNum
+     * @param executor
+     * @param consumer
+     */
+    default void forEachVertex(VertexRange<Long> vertices, int threadNum, ExecutorService executor,
+            BiConsumer<Vertex<Long>, Integer> consumer) {
         CountDownLatch countDownLatch = new CountDownLatch(threadNum);
         AtomicInteger atomicInteger = new AtomicInteger(vertices.begin().GetValue().intValue());
         int chunkSize = 1024;
@@ -61,7 +82,7 @@ public interface ParallelAppBase<OID_T, VID_T, VDATA_T, EDATA_T, C
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
-//          Vertex<Long> vertex = vertices.begin();
+                    // Vertex<Long> vertex = vertices.begin();
                     Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
                     while (true) {
                         int curBegin = Math.min(atomicInteger.getAndAdd(chunkSize), originEnd);
@@ -76,8 +97,8 @@ public interface ParallelAppBase<OID_T, VID_T, VDATA_T, EDATA_T, C
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
-                            System.err.println("origin end " + originEnd + " verteics " +
-                                    curBegin + " " + curEnd + " vertex " + vertex.GetValue().intValue() + " thread " + finalTid);
+                            System.err.println("origin end " + originEnd + " verteics " + curBegin + " " + curEnd
+                                    + " vertex " + vertex.GetValue().intValue() + " thread " + finalTid);
                         }
                     }
                     countDownLatch.countDown();
@@ -98,11 +119,12 @@ public interface ParallelAppBase<OID_T, VID_T, VDATA_T, EDATA_T, C
      * @param vertices
      * @param threadNum
      * @param executor
-     * @param vertexSet A vertex set contains flags
+     * @param vertexSet
+     *            A vertex set contains flags
      * @param consumer
      */
-    default void forEachVertex(VertexRange<Long> vertices, int threadNum, ExecutorService executor,
-                               VertexSet vertexSet, BiConsumer<Vertex<Long>, Integer> consumer) {
+    default void forEachVertex(VertexRange<Long> vertices, int threadNum, ExecutorService executor, VertexSet vertexSet,
+            BiConsumer<Vertex<Long>, Integer> consumer) {
         CountDownLatch countDownLatch = new CountDownLatch(threadNum);
         AtomicInteger atomicInteger = new AtomicInteger(vertices.begin().GetValue().intValue());
         int chunkSize = 1024;
@@ -112,7 +134,7 @@ public interface ParallelAppBase<OID_T, VID_T, VDATA_T, EDATA_T, C
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
-//          Vertex<Long> vertex = vertices.begin();
+                    // Vertex<Long> vertex = vertices.begin();
                     Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
                     while (true) {
                         int curBegin = Math.min(atomicInteger.getAndAdd(chunkSize), originEnd);

@@ -27,24 +27,25 @@ import java.util.Objects;
 import static com.alibaba.grape.utils.CppClassName.GRAPE_COMMUNICATOR;
 
 /**
- * Let c++ detect whether the app class is instance of Communicator.
- * if yes, we call init communicator.
+ * Communicator providing useful distributed aggregation methods such as min/min/sum.
  */
 public abstract class Communicator {
     private FFICommunicator communicatorImpl;
     private static Logger logger = LoggerFactory.getLogger(Communicator.class.getName());
 
     /**
-     * This function is set private, mean to only be called by jni, and let the exceptions accepted by cpp,
-     * so they can be obviously displayed.
+     * This function is set private, not intended to be invokede by user. It is meat to only be called by jni, and let
+     * the exceptions accepted by cpp, so they can be obviously displayed.
      *
      * @param appAddr
+     * 
      * @throws ClassNotFoundException
      * @throws InvocationTargetException
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
-    private void initCommunicator(long appAddr) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    private void initCommunicator(long appAddr)
+            throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         Class<FFICommunicator> communicatorClass = (Class<FFICommunicator>) FFITypeFactory.getType(GRAPE_COMMUNICATOR);
         Constructor[] constructors = communicatorClass.getConstructors();
 
@@ -56,6 +57,16 @@ public abstract class Communicator {
         }
     }
 
+    /**
+     * Obtain the sum of msgIn among all distributed app instances, and put the result in msgOut. MSG_T should be a sub
+     * class of FFIMirror.
+     * 
+     * @param msgIn
+     * @param msgOut
+     * @param <MSG_T>
+     * 
+     * @return the sum of msgA and msgB
+     */
     public <MSG_T> void sum(MSG_T msgIn, MSG_T msgOut) {
         if (Objects.isNull(communicatorImpl)) {
             logger.error("Communicator null ");
@@ -64,6 +75,16 @@ public abstract class Communicator {
         communicatorImpl.sum(msgIn, msgOut);
     }
 
+    /**
+     * Obtain the min of msgIn among all distributed app instances, and put the result in msgOut. MSG_T should be a sub
+     * class of FFIMirror.
+     * 
+     * @param msgIn
+     * @param msgOut
+     * @param <MSG_T>
+     * 
+     * @return the minimum of msgA and msgB
+     */
     public <MSG_T> void min(MSG_T msgIn, MSG_T msgOut) {
         if (Objects.isNull(communicatorImpl)) {
             logger.error("Communicator null ");
@@ -72,6 +93,16 @@ public abstract class Communicator {
         communicatorImpl.min(msgIn, msgOut);
     }
 
+    /**
+     * Obtain the max of msgIn among all distributed app instances, and put the result in msgOut. MSG_T should be a sub
+     * class of FFIMirror.
+     * 
+     * @param msgIn
+     * @param msgOut
+     * @param <MSG_T>
+     * 
+     * @return the maximum of msgA and msgB
+     */
     public <MSG_T> void max(MSG_T msgIn, MSG_T msgOut) {
         if (Objects.isNull(communicatorImpl)) {
             logger.error("Communicator null ");

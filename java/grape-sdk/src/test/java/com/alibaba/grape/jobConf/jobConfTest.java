@@ -24,19 +24,19 @@ import java.io.IOException;
 
 public class jobConfTest {
     private JobConf jobConf;
+
     @Before
-    public void setEnv(){
+    public void setEnv() {
         jobConf = new JobConf();
     }
 
     @Test
-    public void test1(){
+    public void test1() {
         jobConf.setEfilePath("efilePath");
         jobConf.setVfilePath("vfilePath");
         try {
             Assert.assertTrue(jobConf.submit());
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
 

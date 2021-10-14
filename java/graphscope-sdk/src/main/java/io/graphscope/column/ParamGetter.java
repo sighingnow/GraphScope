@@ -36,7 +36,8 @@ public class ParamGetter {
 
     public String getOrDefault(String str, String defaultValue) {
         String res = jsonObject.getString(str);
-        if (res == null) return defaultValue;
+        if (res == null)
+            return defaultValue;
         return res;
     }
 

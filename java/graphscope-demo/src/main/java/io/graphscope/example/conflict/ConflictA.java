@@ -36,13 +36,14 @@ public class ConflictA implements PropertyDefaultAppBase<Long, ConflictContextA>
     public static Logger logger = LoggerFactory.getLogger(ConflictA.class.getName());
 
     @Override
-    public void PEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context, PropertyMessageManager messageManager) {
+    public void PEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context,
+            PropertyMessageManager messageManager) {
         logger.info("Static flag: " + flag);
     }
 
     @Override
-    public void IncEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context, PropertyMessageManager messageManager) {
+    public void IncEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context,
+            PropertyMessageManager messageManager) {
 
     }
 }
-

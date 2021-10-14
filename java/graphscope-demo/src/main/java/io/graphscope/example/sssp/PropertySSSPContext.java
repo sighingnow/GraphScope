@@ -43,11 +43,12 @@ public class PropertySSSPContext extends LabeledVertexPropertyContext<Long> {
     /**
      * @param fragment
      * @param messageManager
-     * @param jsonObject     contains the user-defined parameters in json manner
+     * @param jsonObject
+     *            contains the user-defined parameters in json manner
      */
     @Override
     public void init(ArrowFragment<Long> fragment, PropertyMessageManager messageManager, JSONObject jsonObject) {
-        //must be called
+        // must be called
         createFFIContext(fragment);
         logger.info("params size " + jsonObject.size() + ", " + jsonObject.toJSONString());
         int labelNum = fragment.vertexLabelNum();
@@ -63,8 +64,8 @@ public class PropertySSSPContext extends LabeledVertexPropertyContext<Long> {
             partialResults.add(FFITypeFactoryhelper.newGSVertexArray(Double.class));
             partialResults.get(i).Init(fragment.vertices(i), Double.MAX_VALUE);
             distColumnIndices.add(addColumn(i, "dist_" + i, ContextDataType.kDouble));
-            logger.info("range " + partialResults.get(i).GetVertexRange().begin().GetValue() +
-                    ", " + partialResults.get(i).GetVertexRange().end().GetValue());
+            logger.info("range " + partialResults.get(i).GetVertexRange().begin().GetValue() + ", "
+                    + partialResults.get(i).GetVertexRange().end().GetValue());
         }
         sourceOid = jsonObject.getLong("src");
         if (Objects.isNull(sourceOid)) {

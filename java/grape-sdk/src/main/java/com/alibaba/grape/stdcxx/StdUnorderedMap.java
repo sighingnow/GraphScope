@@ -20,11 +20,10 @@ import com.alibaba.fastffi.*;
 
 import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
-
 @FFIGen(library = GRAPE_JNI_LIBRARY)
-@CXXHead(value = {"stdint.h"}, system = {"unordered_map"})
+@CXXHead(value = { "stdint.h" }, system = { "unordered_map" })
 @FFITypeAlias("std::unordered_map")
-@CXXTemplate(cxx = {"unsigned", "uint64_t"}, java = {"java.lang.Integer", "java.lang.Long"})
+@CXXTemplate(cxx = { "unsigned", "uint64_t" }, java = { "java.lang.Integer", "java.lang.Long" })
 public interface StdUnorderedMap<KEY_T, VALUE_T> extends CXXPointer {
     @FFIFactory
     interface Factory<KEY_T, VALUE_T> {

@@ -47,6 +47,7 @@
         <!--        <maven-assemly-plugin.version>3.3.0</maven-assemly-plugin.version>-->
         <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
         <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
+        <net.revelc.code.formatter.version>2.16.0</net.revelc.code.formatter.version>
     </properties>
 
     <modules>
@@ -156,6 +157,18 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>net.revelc.code.formatter</groupId>
+                    <artifactId>formatter-maven-plugin</artifactId>
+                    <version>${net.revelc.code.formatter.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>format</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>

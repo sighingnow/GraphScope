@@ -25,8 +25,8 @@ import static com.alibaba.grape.utils.JNILibraryName.JAVA_APP_JNI_LIBRARY;
 @FFINameSpace("sample")
 @FFITypeAlias("Vdata")
 public interface Vdata extends CXXPointer {
-    //    @FFIGetter int intValue();
-//    @FFISetter void intValue(int value);
+    // @FFIGetter int intValue();
+    // @FFISetter void intValue(int value);
     @FFIGetter
     long data();
 

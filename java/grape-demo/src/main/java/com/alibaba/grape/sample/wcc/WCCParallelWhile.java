@@ -33,7 +33,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 public class WCCParallelWhile implements ParallelAppBase<Long, Long, Long, Double, WCCParallelContext> {
-    private void PropagateLabelPush(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, WCCParallelContext ctx, ParallelMessageManager mm) {
+    private void PropagateLabelPush(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, WCCParallelContext ctx,
+            ParallelMessageManager mm) {
         VertexRange<Long> innerVertices = frag.innerVertices();
         VertexRange<Long> outerVertices = frag.outerVertices();
         {
@@ -103,7 +104,7 @@ public class WCCParallelWhile implements ParallelAppBase<Long, Long, Long, Doubl
                             for (int i = curBegin; i < curEnd; ++i) {
                                 if (ctx.nextModified.get(i)) {
                                     vertex.SetValue((long) i);
-//                                    consumer.accept(vertex, finalTid);
+                                    // consumer.accept(vertex, finalTid);
                                     msg.setData(ctx.comp_id.get(vertex));
                                     mm.syncStateOnOuterVertex(frag, vertex, msg, finalTid);
                                 }
@@ -120,11 +121,12 @@ public class WCCParallelWhile implements ParallelAppBase<Long, Long, Long, Doubl
                 ctx.executor.shutdown();
             }
         }
-//        forEachVertex(outerVertices, ctx.threadNum, ctx.executor, ctx.nextModified, consumer2);
-//        mm.ParallelSyncStateOnOuterVertex(outerVertices, ctx.nextModified, ctx.threadNum, ctx.executor, filler);
+        // forEachVertex(outerVertices, ctx.threadNum, ctx.executor, ctx.nextModified, consumer2);
+        // mm.ParallelSyncStateOnOuterVertex(outerVertices, ctx.nextModified, ctx.threadNum, ctx.executor, filler);
     }
 
-    private void PropagateLabelPull(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, WCCParallelContext ctx, ParallelMessageManager mm) {
+    private void PropagateLabelPull(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, WCCParallelContext ctx,
+            ParallelMessageManager mm) {
         VertexRange<Long> innerVertices = frag.innerVertices();
         VertexRange<Long> outerVertices = frag.outerVertices();
         {
@@ -229,7 +231,8 @@ public class WCCParallelWhile implements ParallelAppBase<Long, Long, Long, Doubl
     }
 
     @Override
-    public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase context, ParallelMessageManager messageManager) {
+    public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase context,
+            ParallelMessageManager messageManager) {
         WCCParallelContext ctx = (WCCParallelContext) context;
         VertexRange<Long> innerVertices = frag.innerVertices();
         VertexRange<Long> outerVertices = frag.outerVertices();
@@ -253,7 +256,8 @@ public class WCCParallelWhile implements ParallelAppBase<Long, Long, Long, Doubl
     }
 
     @Override
-    public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase context, ParallelMessageManager messageManager) {
+    public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase context,
+            ParallelMessageManager messageManager) {
         WCCParallelContext ctx = (WCCParallelContext) context;
         ctx.nextModified.clear();
         {
@@ -309,5 +313,3 @@ public class WCCParallelWhile implements ParallelAppBase<Long, Long, Long, Doubl
         ctx.currModified.assign(ctx.nextModified);
     }
 }
-
-

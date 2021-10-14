@@ -25,23 +25,22 @@ import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 @FFIGen(library = GRAPE_JNI_LIBRARY)
 @CXXHead(GRAPE_ADJ_LIST_H)
 @FFITypeAlias(GRAPE_NBR)
-@CXXTemplate(cxx = {"uint64_t", "std::string"},
-        java = {"java.lang.Long", "com.alibaba.grape.stdcxx.StdString"})
-@CXXTemplate(cxx = {"uint64_t", "jdouble"},
-        java = {"Long", "Double"})
-@CXXTemplate(cxx = {"uint64_t", "int64_t"},
-        java = {"Long", "Long"})
-@CXXTemplate(cxx = {"uint64_t", "double"},
-        java = {"Long", "Double"})
+@CXXTemplate(cxx = { "uint64_t", "std::string" }, java = { "java.lang.Long", "com.alibaba.grape.stdcxx.StdString" })
+@CXXTemplate(cxx = { "uint64_t", "jdouble" }, java = { "Long", "Double" })
+@CXXTemplate(cxx = { "uint64_t", "int64_t" }, java = { "Long", "Long" })
+@CXXTemplate(cxx = { "uint64_t", "double" }, java = { "Long", "Double" })
 public interface Nbr<VID, EDATA> extends FFIPointer, CXXPointerRangeElement<Nbr<VID, EDATA>> {
     @CXXOperator("*&")
-    @CXXValue Nbr<VID, EDATA> copy();
+    @CXXValue
+    Nbr<VID, EDATA> copy();
 
     @FFIGetter
-    @CXXReference Vertex<VID> neighbor();
+    @CXXReference
+    Vertex<VID> neighbor();
 
     @FFIGetter
-    @CXXReference EDATA data();
+    @CXXReference
+    EDATA data();
 
     @FFIFactory
     interface Factory<VID, EDATA> {

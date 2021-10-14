@@ -20,13 +20,6 @@ import com.alibaba.grape.jobConf.JobConf;
 
 import java.io.IOException;
 
-/**
- * MutationContext 定义了支持图拓扑变化的接口，包括增加/删除点或边.
- *
- * @param <OID_T>   Vertex ID 类型
- * @param <VDATA_T> Vertex Value 类型
- * @param <EDATA_T> Edge Value 类型
- */
 @SuppressWarnings("rawtypes")
 public interface MutationContext<OID_T, VDATA_T, EDATA_T> {
     public JobConf getConfiguration();
@@ -35,7 +28,6 @@ public interface MutationContext<OID_T, VDATA_T, EDATA_T> {
 
     public void addVertexSimple(OID_T oid, VDATA_T vdata);
 
-    public void addEdgeRequest(OID_T sourceVertexId, OID_T dstVertexId, EDATA_T edge)
-            throws IOException;
+    public void addEdgeRequest(OID_T sourceVertexId, OID_T dstVertexId, EDATA_T edge) throws IOException;
 
 }

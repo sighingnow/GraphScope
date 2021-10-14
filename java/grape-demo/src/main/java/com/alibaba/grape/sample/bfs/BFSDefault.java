@@ -30,7 +30,8 @@ public class BFSDefault implements DefaultAppBase<Long, Long, Long, Double, BFSD
     private EmptyType emptyType = EmptyType.factory.create();
 
     @Override
-    public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase context, DefaultMessageManager messageManager) {
+    public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase context,
+            DefaultMessageManager messageManager) {
         BFSDefaultContext ctx = (BFSDefaultContext) context;
         Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
         boolean inThisFrag = frag.getInnerVertex(ctx.sourceOid, vertex);
@@ -55,7 +56,8 @@ public class BFSDefault implements DefaultAppBase<Long, Long, Long, Double, BFSD
     }
 
     @Override
-    public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase context, DefaultMessageManager messageManager) {
+    public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase context,
+            DefaultMessageManager messageManager) {
         BFSDefaultContext ctx = (BFSDefaultContext) context;
         VertexRange<Long> innerVertices = frag.innerVertices();
         int nextDepth = ctx.currentDepth + 1;
@@ -93,5 +95,3 @@ public class BFSDefault implements DefaultAppBase<Long, Long, Long, Double, BFSD
         ctx.currentInnerUpdated.assign(ctx.nextInnerUpdated);
     }
 }
-
-

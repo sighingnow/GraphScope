@@ -49,7 +49,7 @@ public class FFITypeFactoryhelper {
 
     public static String javaType2CppType(Class<?> clz) {
         if (clz.getName() == Long.class.getName()) {
-            //signed returned
+            // signed returned
             return "int64_t";
         } else if (clz.getName() == Integer.class.getName()) {
             return "uint32_t";
@@ -98,7 +98,8 @@ public class FFITypeFactoryhelper {
         if (!vertexArrayFactoryMap.containsKey(foreignTypeName)) {
             synchronized (vertexArrayFactoryMap) {
                 if (!vertexArrayFactoryMap.containsKey(foreignTypeName)) {
-                    vertexArrayFactoryMap.put(foreignTypeName, FFITypeFactory.getFactory(VertexArray.class, foreignTypeName));
+                    vertexArrayFactoryMap.put(foreignTypeName,
+                            FFITypeFactory.getFactory(VertexArray.class, foreignTypeName));
                 }
             }
         }
@@ -109,7 +110,8 @@ public class FFITypeFactoryhelper {
         if (!gsVertexArrayFactoryMap.containsKey(foreignTypeName)) {
             synchronized (gsVertexArrayFactoryMap) {
                 if (!gsVertexArrayFactoryMap.containsKey(foreignTypeName)) {
-                    gsVertexArrayFactoryMap.put(foreignTypeName, FFITypeFactory.getFactory(GSVertexArray.class, foreignTypeName));
+                    gsVertexArrayFactoryMap.put(foreignTypeName,
+                            FFITypeFactory.getFactory(GSVertexArray.class, foreignTypeName));
                 }
             }
         }
@@ -120,7 +122,8 @@ public class FFITypeFactoryhelper {
         if (denseVertexSetFactory == null) {
             synchronized (DenseVertexSet.Factory.class) {
                 if (denseVertexSetFactory == null) {
-                    denseVertexSetFactory = FFITypeFactory.getFactory(DenseVertexSet.class, "grape::DenseVertexSet<uint64_t>");
+                    denseVertexSetFactory = FFITypeFactory.getFactory(DenseVertexSet.class,
+                            "grape::DenseVertexSet<uint64_t>");
                 }
             }
         }
@@ -128,17 +131,18 @@ public class FFITypeFactoryhelper {
     }
 
     /**
-     * get the ffiVectorFactor which can produce std::vector,
-     * here foreignType can be netsted
+     * get the ffiVectorFactor which can produce std::vector, here foreignType can be netsted
      *
      * @param foreignTypeName
+     * 
      * @return
      */
     public static FFIVector.Factory getFFIVectorFactory(String foreignTypeName) {
         if (!ffiVectorFactoryMap.containsKey(foreignTypeName)) {
             synchronized (ffiVectorFactoryMap) {
                 if (!ffiVectorFactoryMap.containsKey(foreignTypeName)) {
-                    ffiVectorFactoryMap.put(foreignTypeName, FFITypeFactory.getFactory(CXXStdVector.class, foreignTypeName));
+                    ffiVectorFactoryMap.put(foreignTypeName,
+                            FFITypeFactory.getFactory(CXXStdVector.class, foreignTypeName));
                 }
             }
         }
@@ -154,27 +158,23 @@ public class FFITypeFactoryhelper {
     }
 
     public static <T> VertexArray<T, Long> newVertexArray(Class<T> clz) {
-        //NOTE: in this way the returned FFIType name is jni type like jint, jdouble
-        String tmp = "grape::VertexArray<" +
-                FFITypeFactory.getFFITypeName(clz, true) +
-                ",uint64_t>";
+        // NOTE: in this way the returned FFIType name is jni type like jint, jdouble
+        String tmp = "grape::VertexArray<" + FFITypeFactory.getFFITypeName(clz, true) + ",uint64_t>";
         return getVertexArrayFactory(tmp).create();
     }
 
     public static <T> GSVertexArray<T> newGSVertexArray(Class<T> clz) {
-        String tmp = GS_VERTEX_ARRAY + "<" +
-                javaType2CppType(clz) +
-                ">";
+        String tmp = GS_VERTEX_ARRAY + "<" + javaType2CppType(clz) + ">";
         return getGSVertexArrayFactory(tmp).create();
     }
 
     /**
-     * In case user want to create a nested std::vector instance.
-     * the foreign name translation relies on ffi method.
+     * In case user want to create a nested std::vector instance. the foreign name translation relies on ffi method.
      *
      * @param clz
      * @param types
      * @param <T>
+     * 
      * @return
      */
     public static <T> FFIVector newComplicateFFIVector(Class<T> clz, Class<?>... types) {
@@ -209,14 +209,12 @@ public class FFITypeFactoryhelper {
         if (javaMsgInBufFactory == null) {
             synchronized (MessageInBuffer.Factory.class) {
                 if (javaMsgInBufFactory == null) {
-                    javaMsgInBufFactory = (MessageInBuffer.Factory) FFITypeFactory.getFactory(
-                            GRAPE_MESSAGE_IN_BUFFER);
+                    javaMsgInBufFactory = (MessageInBuffer.Factory) FFITypeFactory.getFactory(GRAPE_MESSAGE_IN_BUFFER);
                 }
             }
         }
         return javaMsgInBufFactory;
     }
-
 
     public static String makeParameterize(String base, String... fields) {
         if (fields.length == 0) {
@@ -231,7 +229,7 @@ public class FFITypeFactoryhelper {
     }
 
     public static String[] getTypeParams(Class<?> clz, int expectedNum) {
-//        TypeVariable[] typeVariables = (TypeVariable[]) clz.getTypeParameters();
+        // TypeVariable[] typeVariables = (TypeVariable[]) clz.getTypeParameters();
         Type clzz = (Type) clz;
         System.out.println(clzz.getTypeName());
         if (clzz instanceof ParameterizedType) {
@@ -271,13 +269,15 @@ public class FFITypeFactoryhelper {
      * For Any ffi-gened class, we can get the typealias via annotation
      *
      * @param ffiPointer
+     * 
      * @return foreignName
      */
     public static String getForeignName(FFIPointer ffiPointer) {
         Class<?> clz = ffiPointer.getClass();
-        Annotation [] annotations = clz.getDeclaredAnnotations();
-        for (Annotation annotation: annotations){
-            logger.info("Annotation: " + annotation.toString() + ", " + annotation.annotationType().getName() + "," + clz.getAnnotation(annotation.annotationType()));
+        Annotation[] annotations = clz.getDeclaredAnnotations();
+        for (Annotation annotation : annotations) {
+            logger.info("Annotation: " + annotation.toString() + ", " + annotation.annotationType().getName() + ","
+                    + clz.getAnnotation(annotation.annotationType()));
         }
         FFIForeignType ffiForeignType = clz.getAnnotation(FFIForeignType.class);
         if (ffiForeignType == null) {

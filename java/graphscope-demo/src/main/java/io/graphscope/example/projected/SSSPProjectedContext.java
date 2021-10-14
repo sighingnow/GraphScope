@@ -34,7 +34,8 @@ public class SSSPProjectedContext extends VertexDataContext<ArrowProjectedFragme
     public static Logger logger = LoggerFactory.getLogger(SSSPProjectedContext.class.getName());
 
     @Override
-    public void init(ArrowProjectedFragment<Long, Long, Double, Long> fragment, DefaultMessageManager messageManager, JSONObject jsonObject) {
+    public void init(ArrowProjectedFragment<Long, Long, Double, Long> fragment, DefaultMessageManager messageManager,
+            JSONObject jsonObject) {
         createFFIContext(fragment, Long.class, true);
         partialResults = data();
         VertexRange<Long> vertices = fragment.vertices();

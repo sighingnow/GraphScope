@@ -67,8 +67,8 @@ public class SSSPMirrorDefaultContext implements DefaultContextBase<SSSPOid, Lon
     }
 
     @Override
-    public void Init(ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> frag,
-                     DefaultMessageManager mm, StdVector<FFIByteString> args) {
+    public void Init(ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> frag, DefaultMessageManager mm,
+            StdVector<FFIByteString> args) {
         Long allVertexNum = frag.getVerticesNum();
         partialResults = new DoubleArrayWrapper(allVertexNum.intValue(), Double.MAX_VALUE);
         curModified = new VertexSet(0, allVertexNum.intValue());
@@ -83,8 +83,7 @@ public class SSSPMirrorDefaultContext implements DefaultContextBase<SSSPOid, Lon
     public void Output(ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> frag) {
         String prefix = "/tmp/sssp_output";
         System.out.println("frag: " + frag.fid() + " sendMessageTime: " + sendMessageTime / 1000000000);
-        System.out.println("frag: " + frag.fid()
-                + " receiveMessageTime: " + receiveMessageTIme / 1000000000);
+        System.out.println("frag: " + frag.fid() + " receiveMessageTime: " + receiveMessageTIme / 1000000000);
         System.out.println("frag: " + frag.fid() + " execTime: " + execTime / 1000000000);
         System.out.println("frag: " + frag.fid() + " postProcessTime: " + postProcessTime / 1000000000);
         System.out.println("frag: " + frag.fid() + " number of neighbor: " + numOfNbrs);
@@ -97,9 +96,9 @@ public class SSSPMirrorDefaultContext implements DefaultContextBase<SSSPOid, Lon
 
             // ArrayListWrapper<Long> partialResults = this.getPartialResults();
             // System.out.println(frag.GetInnerVerticesNum() + " " + innerNodes.begin().GetValue() + " "
-            //                    + innerNodes.end().GetValue());
+            // + innerNodes.end().GetValue());
             // for (Vertex<Long> cur = innerNodes.begin(); cur.GetValue() != innerNodes.end().GetValue();
-            //      cur.inc()) {
+            // cur.inc()) {
             Vertex<Long> cur = innerNodes.begin();
             for (long index = 0; index < frag.getInnerVerticesNum(); ++index) {
                 cur.SetValue(index);

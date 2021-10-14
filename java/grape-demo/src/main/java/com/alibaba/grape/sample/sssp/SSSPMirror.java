@@ -42,7 +42,8 @@ public class SSSPMirror implements DefaultAppBase<SSSPOid, Long, SSSPVdata, SSSP
         public SSSPEdata edata = SSSPEdata.create();
 
         @Override
-        public void loadVertexLine(String s, MutationContext<SSSPOid, SSSPVdata, SSSPEdata> mutationContext) throws IOException {
+        public void loadVertexLine(String s, MutationContext<SSSPOid, SSSPVdata, SSSPEdata> mutationContext)
+                throws IOException {
             String[] splited = s.split("\\s+");
             oid.value(Long.valueOf(splited[0]));
             vdata.value(0L);
@@ -50,7 +51,8 @@ public class SSSPMirror implements DefaultAppBase<SSSPOid, Long, SSSPVdata, SSSP
         }
 
         @Override
-        public void loadEdgeLine(String s, MutationContext<SSSPOid, SSSPVdata, SSSPEdata> mutationContext) throws IOException {
+        public void loadEdgeLine(String s, MutationContext<SSSPOid, SSSPVdata, SSSPEdata> mutationContext)
+                throws IOException {
             String[] splited = s.split("\\s+");
             from.value(Long.valueOf(splited[0]));
             to.value(Long.valueOf(splited[1]));
@@ -60,10 +62,9 @@ public class SSSPMirror implements DefaultAppBase<SSSPOid, Long, SSSPVdata, SSSP
         }
     }
 
-
     @Override
-    public void PEval(ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> frag, DefaultContextBase defaultContextBase,
-                      DefaultMessageManager mm) {
+    public void PEval(ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> frag,
+            DefaultContextBase defaultContextBase, DefaultMessageManager mm) {
         SSSPMirrorDefaultContext ctx = (SSSPMirrorDefaultContext) defaultContextBase;
 
         ctx.execTime -= System.nanoTime();
@@ -75,8 +76,8 @@ public class SSSPMirror implements DefaultAppBase<SSSPOid, Long, SSSPVdata, SSSP
         nextModified.clear();
         Vertex<Long> source = frag.innerVertices().begin();
         boolean sourceInThisFrag = frag.getInnerVertex(ctx.getSourceOid(), source);
-        System.out.println("source in this frag?" + frag.fid() + ", " + sourceInThisFrag
-                + ", lid: " + source.GetValue());
+        System.out
+                .println("source in this frag?" + frag.fid() + ", " + sourceInThisFrag + ", lid: " + source.GetValue());
         DoubleMsg msg = FFITypeFactoryhelper.newDoubleMsg();
         if (sourceInThisFrag) {
             partialResults.set(source.GetValue(), 0.0);
@@ -85,7 +86,6 @@ public class SSSPMirror implements DefaultAppBase<SSSPOid, Long, SSSPVdata, SSSP
                 Vertex<Long> neigbor = nbr.neighbor();
                 partialResults.set(neigbor, Math.min(partialResults.get(neigbor), nbr.data().value()));
                 if (frag.isOuterVertex(neigbor)) {
-                    //TODO: test template function
                     msg.setData(partialResults.get(neigbor));
                     mm.syncStateOnOuterVertex(frag, neigbor, msg);
                 } else {
@@ -103,7 +103,7 @@ public class SSSPMirror implements DefaultAppBase<SSSPOid, Long, SSSPVdata, SSSP
 
     @Override
     public void IncEval(ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> frag, DefaultContextBase context,
-                        DefaultMessageManager messageManager) {
+            DefaultMessageManager messageManager) {
         SSSPMirrorDefaultContext ctx = (SSSPMirrorDefaultContext) context;
 
         ctx.receiveMessageTIme -= System.nanoTime();
@@ -127,7 +127,8 @@ public class SSSPMirror implements DefaultAppBase<SSSPOid, Long, SSSPVdata, SSSP
         ctx.postProcessTime += System.nanoTime();
     }
 
-    private void receiveMessage(SSSPMirrorDefaultContext ctx, ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> frag, DefaultMessageManager messageManager) {
+    private void receiveMessage(SSSPMirrorDefaultContext ctx,
+            ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> frag, DefaultMessageManager messageManager) {
         ctx.nextModified.clear();
         Vertex<Long> curVertex = frag.innerVertices().begin();
         DoubleMsg msg = DoubleMsg.factory.create();
@@ -142,8 +143,9 @@ public class SSSPMirror implements DefaultAppBase<SSSPOid, Long, SSSPVdata, SSSP
         }
     }
 
-    private void execute(SSSPMirrorDefaultContext ctx, ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> frag) {
-//        BitSet curModifyBS = ctx.curModified.getBitSet();
+    private void execute(SSSPMirrorDefaultContext ctx,
+            ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> frag) {
+        // BitSet curModifyBS = ctx.curModified.getBitSet();
         VertexRange<Long> innerVertices = frag.innerVertices();
         for (Vertex<Long> vertex : innerVertices.locals()) {
             int vertexLid = vertex.GetValue().intValue();
@@ -162,8 +164,9 @@ public class SSSPMirror implements DefaultAppBase<SSSPOid, Long, SSSPVdata, SSSP
         }
     }
 
-    private void sendMessage(SSSPMirrorDefaultContext ctx, ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> frag, DefaultMessageManager messageManager) {
-//        BitSet nextModifyBS = ctx.nextModified.getBitSet();
+    private void sendMessage(SSSPMirrorDefaultContext ctx,
+            ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> frag, DefaultMessageManager messageManager) {
+        // BitSet nextModifyBS = ctx.nextModified.getBitSet();
         VertexRange<Long> outerVertices = frag.outerVertices();
         DoubleMsg msg = FFITypeFactoryhelper.newDoubleMsg();
         for (Vertex<Long> vertex : outerVertices.locals()) {

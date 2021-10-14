@@ -25,7 +25,7 @@ import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 @FFINameSpace("sample")
 @FFITypeAlias("FFIMirrorSample")
 public interface FFISample extends CXXPointer, FFIJava {
-    //Avoid incurring hashcode gen for vector<vector<>>
+    // Avoid incurring hashcode gen for vector<vector<>>
     default int javaHashCode() {
         return intField() + intProperty();
     }
@@ -44,7 +44,8 @@ public interface FFISample extends CXXPointer, FFIJava {
     interface Factory {
         FFISample create();
 
-        @CXXValue FFISample createStack();
+        @CXXValue
+        FFISample createStack();
     }
 
     @FFIGetter

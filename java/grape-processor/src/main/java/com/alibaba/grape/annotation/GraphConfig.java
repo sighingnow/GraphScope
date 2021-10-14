@@ -29,7 +29,8 @@ public class GraphConfig {
     final String cppVdataType;
     final String cppEdataType;
 
-    public GraphConfig(String oidType, String vidType, String vdataType, String edataType, String messageTypes, String fragmentType, String cppOidType, String cppVidType, String cppVdataType, String cppEdataType) {
+    public GraphConfig(String oidType, String vidType, String vdataType, String edataType, String messageTypes,
+            String fragmentType, String cppOidType, String cppVidType, String cppVdataType, String cppEdataType) {
         this.vidType = vidType;
         this.oidType = oidType;
         this.vdataType = vdataType;
@@ -40,7 +41,9 @@ public class GraphConfig {
         this.cppOidType = cppOidType;
         this.cppVdataType = cppVdataType;
         this.cppEdataType = cppEdataType;
-        System.out.println("init graph config with: " + this.oidType + " " + this.vidType + " " + this.vdataType + " " + this.edataType + " " + this.cppOidType + " " + this.cppVidType + " " + this.cppVdataType + " " + this.cppEdataType + " ");
+        System.out.println("init graph config with: " + this.oidType + " " + this.vidType + " " + this.vdataType + " "
+                + this.edataType + " " + this.cppOidType + " " + this.cppVidType + " " + this.cppVdataType + " "
+                + this.cppEdataType + " ");
     }
 
 }

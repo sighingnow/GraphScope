@@ -24,19 +24,22 @@ import com.alibaba.grape.ds.DestList;
 import com.alibaba.grape.ds.Vertex;
 import com.alibaba.grape.ds.VertexRange;
 
-public interface EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T>
-        extends FragmentBase<OID_T, VID_T, VDATA_T, EDATA_T> {
+public interface EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> extends FragmentBase<OID_T, VID_T, VDATA_T, EDATA_T> {
     @FFINameAlias("GetInnerVerticesNum")
-    @CXXValue VID_T getInnerVerticesNum();
+    @CXXValue
+    VID_T getInnerVerticesNum();
 
     @FFINameAlias("GetOuterVerticesNum")
-    @CXXValue VID_T getOuterVerticesNum();
+    @CXXValue
+    VID_T getOuterVerticesNum();
 
     @FFINameAlias("InnerVertices")
-    @CXXValue VertexRange<VID_T> innerVertices();
+    @CXXValue
+    VertexRange<VID_T> innerVertices();
 
     @FFINameAlias("OuterVertices")
-    @CXXValue VertexRange<VID_T> outerVertices();
+    @CXXValue
+    VertexRange<VID_T> outerVertices();
 
     @FFINameAlias("IsInnerVertex")
     boolean isInnerVertex(@CXXReference Vertex<VID_T> v);
@@ -51,10 +54,12 @@ public interface EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T>
     boolean getOuterVertex(@CXXReference OID_T oid, @CXXReference Vertex<VID_T> v);
 
     @FFINameAlias("GetInnerVertexId")
-    @CXXValue OID_T getInnerVertexId(@CXXReference Vertex<VID_T> v);
+    @CXXValue
+    OID_T getInnerVertexId(@CXXReference Vertex<VID_T> v);
 
     @FFINameAlias("GetOuterVertexId")
-    @CXXValue OID_T getOuterVertexId(@CXXReference Vertex<VID_T> v);
+    @CXXValue
+    OID_T getOuterVertexId(@CXXReference Vertex<VID_T> v);
 
     @FFINameAlias("InnerVertexGid2Vertex")
     boolean innerVertexGid2Vertex(@CXXReference VID_T gid, @CXXReference Vertex<VID_T> v);
@@ -63,23 +68,30 @@ public interface EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T>
     boolean outerVertexGid2Vertex(@CXXReference VID_T gid, @CXXReference Vertex<VID_T> v);
 
     @FFINameAlias("GetOuterVertexGid")
-    @CXXValue VID_T getOuterVertexGid(@CXXReference Vertex<VID_T> v);
+    @CXXValue
+    VID_T getOuterVertexGid(@CXXReference Vertex<VID_T> v);
 
     @FFINameAlias("GetInnerVertexGid")
-    @CXXValue VID_T getInnerVertexGid(@CXXReference Vertex<VID_T> v);
+    @CXXValue
+    VID_T getInnerVertexGid(@CXXReference Vertex<VID_T> v);
 
     @FFINameAlias("IEDests")
-    @CXXValue DestList inEdgeDests(@CXXReference Vertex<VID_T> v);
+    @CXXValue
+    DestList inEdgeDests(@CXXReference Vertex<VID_T> v);
 
     @FFINameAlias("OEDests")
-    @CXXValue DestList outEdgeDests(@CXXReference Vertex<VID_T> v);
+    @CXXValue
+    DestList outEdgeDests(@CXXReference Vertex<VID_T> v);
 
     @FFINameAlias("IOEDests")
-    @CXXValue DestList inOutEdgeDests(@CXXReference Vertex<VID_T> v);
+    @CXXValue
+    DestList inOutEdgeDests(@CXXReference Vertex<VID_T> v);
 
     @FFINameAlias("GetIncomingInnerVertexAdjList")
-    @CXXValue AdjList<VID_T, EDATA_T> getIncomingInnerVertexAdjList(@CXXReference Vertex<VID_T> v);
+    @CXXValue
+    AdjList<VID_T, EDATA_T> getIncomingInnerVertexAdjList(@CXXReference Vertex<VID_T> v);
 
     @FFINameAlias("GetOutgoingInnerVertexAdjList")
-    @CXXValue AdjList<VID_T, EDATA_T> getOutgoingInnerVertexAdjList(@CXXReference Vertex<VID_T> v);
+    @CXXValue
+    AdjList<VID_T, EDATA_T> getOutgoingInnerVertexAdjList(@CXXReference Vertex<VID_T> v);
 }

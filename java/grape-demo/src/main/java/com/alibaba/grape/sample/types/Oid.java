@@ -20,7 +20,6 @@ import com.alibaba.fastffi.*;
 
 import static com.alibaba.grape.utils.JNILibraryName.JAVA_APP_JNI_LIBRARY;
 
-
 //@FFIGen(library = "pie-user")
 //@FFIMirror
 //@FFINameSpace("sample")
@@ -72,5 +71,3 @@ public interface Oid extends CXXPointer, FFIJava {
         return (int) id();
     }
 }
-
-

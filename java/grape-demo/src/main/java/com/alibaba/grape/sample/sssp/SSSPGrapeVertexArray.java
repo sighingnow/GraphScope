@@ -26,7 +26,7 @@ import com.alibaba.grape.parallel.DefaultMessageManager;
 public class SSSPGrapeVertexArray implements DefaultAppBase<Long, Long, Long, Double, SSSPGrapeVertexDefaultContext> {
     @Override
     public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase defaultContextBase,
-                      DefaultMessageManager mm) {
+            DefaultMessageManager mm) {
         SSSPGrapeVertexArrayDefaultContext ctx = (SSSPGrapeVertexArrayDefaultContext) defaultContextBase;
 
         ctx.execTime -= System.nanoTime();
@@ -38,8 +38,8 @@ public class SSSPGrapeVertexArray implements DefaultAppBase<Long, Long, Long, Do
         nextModified.clear();
         Vertex<Long> source = frag.innerVertices().begin();
         boolean sourceInThisFrag = frag.getInnerVertex(ctx.getSourceOid(), source);
-        System.out.println("source in this frag?" + frag.fid() + ", " + sourceInThisFrag
-                + ", lid: " + source.GetValue());
+        System.out
+                .println("source in this frag?" + frag.fid() + ", " + sourceInThisFrag + ", lid: " + source.GetValue());
         if (sourceInThisFrag) {
             partialResults.set(source, 0.0);
             AdjList<Long, Double> adjList = frag.getOutgoingAdjList(source);
@@ -63,7 +63,7 @@ public class SSSPGrapeVertexArray implements DefaultAppBase<Long, Long, Long, Do
 
     @Override
     public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase context,
-                        DefaultMessageManager messageManager) {
+            DefaultMessageManager messageManager) {
         SSSPGrapeVertexArrayDefaultContext ctx = (SSSPGrapeVertexArrayDefaultContext) context;
 
         ctx.receiveMessageTIme -= System.nanoTime();
@@ -87,10 +87,11 @@ public class SSSPGrapeVertexArray implements DefaultAppBase<Long, Long, Long, Do
         ctx.postProcessTime += System.nanoTime();
     }
 
-    private void receiveMessage(SSSPGrapeVertexArrayDefaultContext ctx, ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultMessageManager messageManager) {
+    private void receiveMessage(SSSPGrapeVertexArrayDefaultContext ctx,
+            ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultMessageManager messageManager) {
         ctx.nextModified.clear();
         Vertex<Long> curVertex = frag.innerVertices().begin();
-//        DoubleMsg msg = DoubleMsg.factory.create();
+        // DoubleMsg msg = DoubleMsg.factory.create();
         double msg = 0.0;
         try (CXXValueScope scope = new CXXValueScope()) {
             while (messageManager.getMessage(frag, curVertex, msg)) {
@@ -103,24 +104,25 @@ public class SSSPGrapeVertexArray implements DefaultAppBase<Long, Long, Long, Do
         }
     }
 
-    private void execute(SSSPGrapeVertexArrayDefaultContext ctx, ImmutableEdgecutFragment<Long, Long, Long, Double> frag) {
-//        BitSet curModifyBS = ctx.curModified.getBitSet();
-//        Bitset curModifyBS = ctx.curModified.GetBitset();
+    private void execute(SSSPGrapeVertexArrayDefaultContext ctx,
+            ImmutableEdgecutFragment<Long, Long, Long, Double> frag) {
+        // BitSet curModifyBS = ctx.curModified.getBitSet();
+        // Bitset curModifyBS = ctx.curModified.GetBitset();
         VertexRange<Long> innerVertices = frag.innerVertices();
         for (Vertex<Long> vertex : innerVertices.locals()) {
-//    int innerVerteicesEnd = innerVertices.end().GetValue().intValue();
-//    for (Vertex<Long> vertex = innerVertices.begin();
-//         vertex.GetValue().intValue() != innerVerteicesEnd; vertex.inc()) {
+            // int innerVerteicesEnd = innerVertices.end().GetValue().intValue();
+            // for (Vertex<Long> vertex = innerVertices.begin();
+            // vertex.GetValue().intValue() != innerVerteicesEnd; vertex.inc()) {
             int vertexLid = vertex.GetValue().intValue();
             if (ctx.curModified.get(vertexLid)) {
                 double curDist = ctx.partialResults.get(vertex);
                 AdjList<Long, Double> adjList = frag.getOutgoingAdjList(vertex);
-//        AdjList<Long,Double> adjList = frag.GetOutgoingAdjList(vertex);
+                // AdjList<Long,Double> adjList = frag.GetOutgoingAdjList(vertex);
                 for (Nbr<Long, Double> nbr : adjList) {
-//        long endPointerAddr = adjList.end().getAddress();
-//        long nbrSize = adjList.begin().elementSize();
-//        for (Nbr<Long, Double> nbr = adjList.begin(); nbr.getAddress() != endPointerAddr;
-//             nbr.addV(nbrSize)) {
+                    // long endPointerAddr = adjList.end().getAddress();
+                    // long nbrSize = adjList.begin().elementSize();
+                    // for (Nbr<Long, Double> nbr = adjList.begin(); nbr.getAddress() != endPointerAddr;
+                    // nbr.addV(nbrSize)) {
                     long curLid = nbr.neighbor().GetValue();
                     Vertex<Long> nbrVertex = nbr.neighbor();
                     double nextDist = curDist + nbr.data();
@@ -133,14 +135,15 @@ public class SSSPGrapeVertexArray implements DefaultAppBase<Long, Long, Long, Do
         }
     }
 
-    private void sendMessage(SSSPGrapeVertexArrayDefaultContext ctx, ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultMessageManager messageManager) {
-//        BitSet nextModifyBS = ctx.nextModified.getBitSet();
-//        Bitset nextModifyBS = ctx.nextModified.GetBitset();
+    private void sendMessage(SSSPGrapeVertexArrayDefaultContext ctx,
+            ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultMessageManager messageManager) {
+        // BitSet nextModifyBS = ctx.nextModified.getBitSet();
+        // Bitset nextModifyBS = ctx.nextModified.GetBitset();
         VertexRange<Long> outerVertices = frag.outerVertices();
         for (Vertex<Long> vertex : outerVertices.locals()) {
-//    int outerVerticesEnd = outerVertices.end().GetValue().intValue();
-//      for (Vertex<Long> vertex = outerVertices.begin();
-//           vertex.GetValue().intValue() != outerVerticesEnd; vertex.inc()) {
+            // int outerVerticesEnd = outerVertices.end().GetValue().intValue();
+            // for (Vertex<Long> vertex = outerVertices.begin();
+            // vertex.GetValue().intValue() != outerVerticesEnd; vertex.inc()) {
             if (ctx.nextModified.get(vertex.GetValue().intValue())) {
                 messageManager.syncStateOnOuterVertex(frag, vertex, ctx.partialResults.get(vertex));
             }

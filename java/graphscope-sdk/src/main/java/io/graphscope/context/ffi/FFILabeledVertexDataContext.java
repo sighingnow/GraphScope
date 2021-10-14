@@ -32,14 +32,15 @@ import static io.graphscope.utils.CppClassName.LABELED_VERTEX_DATA_CONTEXT;
 @CXXHead(CppHeaderName.ARROW_FRAGMENT_H)
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(LABELED_VERTEX_DATA_CONTEXT)
-@CXXTemplate(cxx = {ARROW_FRAGMENT + "<int64_t>", "double"},
-        java = {"io.graphscope.fragment.ArrowFragment<java.lang.Long>", "java.lang.Double"})
+@CXXTemplate(cxx = { ARROW_FRAGMENT + "<int64_t>", "double" }, java = {
+        "io.graphscope.fragment.ArrowFragment<java.lang.Long>", "java.lang.Double" })
 public interface FFILabeledVertexDataContext<FRAG_T, DATA_T> extends FFIPointer {
     @FFINameAlias("GetValue")
-    @CXXValue DATA_T getValue(@CXXReference @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") Vertex<Long> vertex);
+    @CXXValue
+    DATA_T getValue(@CXXReference @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") Vertex<Long> vertex);
 
-
-    @CXXReference StdVector<GSVertexArray<DATA_T>> data();
+    @CXXReference
+    StdVector<GSVertexArray<DATA_T>> data();
 
     @FFIFactory
     interface Factory<FRAG_T, DATA_T> {

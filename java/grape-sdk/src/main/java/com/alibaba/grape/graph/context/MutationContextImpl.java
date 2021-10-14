@@ -23,8 +23,7 @@ import com.alibaba.grape.jobConf.JobConf;
 
 import java.io.IOException;
 
-public class MutationContextImpl<OID_T, VDATA_T, EDATA_T>
-        implements MutationContext<OID_T, VDATA_T, EDATA_T> {
+public class MutationContextImpl<OID_T, VDATA_T, EDATA_T> implements MutationContext<OID_T, VDATA_T, EDATA_T> {
     private FFIVector<FFIVector<OID_T>> vidBuffers;
     private FFIVector<FFIVector<VDATA_T>> vdataBuffers;
     private FFIVector<FFIVector<OID_T>> esrcBuffers;
@@ -36,12 +35,9 @@ public class MutationContextImpl<OID_T, VDATA_T, EDATA_T>
     private JobConf jobConf;
     private PartitionerBase<OID_T> partitioner;
 
-    public MutationContextImpl(JobConf jobConf, int workerId, int workerNum,
-                               FFIVector<FFIVector<OID_T>> vidBuffers,
-                               FFIVector<FFIVector<VDATA_T>> vdataBuffers,
-                               FFIVector<FFIVector<OID_T>> esrcBuffers,
-                               FFIVector<FFIVector<OID_T>> edstBuffers,
-                               FFIVector<FFIVector<EDATA_T>> edataBuffers) {
+    public MutationContextImpl(JobConf jobConf, int workerId, int workerNum, FFIVector<FFIVector<OID_T>> vidBuffers,
+            FFIVector<FFIVector<VDATA_T>> vdataBuffers, FFIVector<FFIVector<OID_T>> esrcBuffers,
+            FFIVector<FFIVector<OID_T>> edstBuffers, FFIVector<FFIVector<EDATA_T>> edataBuffers) {
         this.jobConf = jobConf;
         this.workerId = workerId;
         this.workerNum = workerNum;
@@ -71,8 +67,7 @@ public class MutationContextImpl<OID_T, VDATA_T, EDATA_T>
     }
 
     @Override
-    public void addEdgeRequest(OID_T sourceVertexId, OID_T dstVertexId, EDATA_T edata)
-            throws IOException {
+    public void addEdgeRequest(OID_T sourceVertexId, OID_T dstVertexId, EDATA_T edata) throws IOException {
         int fid = partitioner.GetPartitionId(sourceVertexId);
         // int fid = workerId;
         esrcBuffers.get(fid).push_back(sourceVertexId);
@@ -87,8 +82,4 @@ public class MutationContextImpl<OID_T, VDATA_T, EDATA_T>
             edataBuffers.get(fid).push_back(edata);
         }
     }
-    // @Override
-    // public StdVector<StdVector<EDATA_T>> getEdataBuffers() {
-    //   return edataBuffers;
-    // }
 }

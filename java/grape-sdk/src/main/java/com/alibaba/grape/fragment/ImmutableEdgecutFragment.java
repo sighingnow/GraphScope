@@ -33,11 +33,9 @@ import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 @FFIGen(library = GRAPE_JNI_LIBRARY)
 @CXXHead(GRAPE_FRAGMENT_IMMUTABLE_EDGECUT_FRAGMENT_H)
 @FFITypeAlias(GRAPE_IMMUTABLE_FRAGMENT)
-@CXXTemplate(cxx = {"uint64_t", "uint64_t", "uint64_t", "double"},
-        cxxFull = "uint64_t,uint64_t,uint64_t,double",
-        java = {"Long", "Long", "Long", "Double"})
-@CXXTemplate(cxx = {"jlong", "uint64_t", "jlong", "jdouble"},
-        java = {"Long", "Long", "Long", "Double"})
+@CXXTemplate(cxx = { "uint64_t", "uint64_t", "uint64_t",
+        "double" }, cxxFull = "uint64_t,uint64_t,uint64_t,double", java = { "Long", "Long", "Long", "Double" })
+@CXXTemplate(cxx = { "jlong", "uint64_t", "jlong", "jdouble" }, java = { "Long", "Long", "Long", "Double" })
 public interface ImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T>
         extends EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
 
@@ -45,42 +43,11 @@ public interface ImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T>
 
     VID_T id_mask();
 
-//    @FFINameAlias("GetOutgoingEdgeNum")
-//    long GetOutgoingEdgeNum();
-//
-//    @FFINameAlias("GetIncomingEdgeNum")
-//    long GetIncomingEdgeNum();
-
-//    @FFINameAlias("GetOutgoingAdjListBegin")
-//    Nbr<VID_T, EDATA_T> getOutgoingAdjListBegin(@CXXReference Vertex<VID_T> v);
-//
-//    @FFINameAlias("GetOutgoingAdjListEnd")
-//    Nbr<VID_T, EDATA_T> getOutgoingAdjListEnd(@CXXReference Vertex<VID_T> v);
-//
-//    @FFINameAlias("GetIncomingAdjListBegin")
-//    Nbr<VID_T, EDATA_T> getIncomingAdjListBegin(@CXXReference Vertex<VID_T> v);
-//
-//    @FFINameAlias("GetIncomingAdjListEnd")
-//    Nbr<VID_T, EDATA_T> getIncomingAdjListEnd(@CXXReference Vertex<VID_T> v);
-//
-//    @FFINameAlias("GetOutgoingInnerVertexAdjListBegin")
-//    Nbr<VID_T, EDATA_T> getOutgoingInnerVertexAdjListBegin(@CXXReference Vertex<VID_T> v);
-//
-//    @FFINameAlias("GetOutgoingInnerVertexAdjListEnd")
-//    Nbr<VID_T, EDATA_T> getOutgoingInnerVertexAdjListEnd(@CXXReference Vertex<VID_T> v);
-
-//    default AdjListv2<VID_T, EDATA_T> GetOutgoingInnerVertexAdjListV2(Vertex<VID_T> v) {
-//        return new AdjListv2<>(getOutgoingInnerVertexAdjListBegin(v), getOutgoingInnerVertexAdjListEnd(v));
-//    }
-//
-//    default AdjListv2<VID_T, EDATA_T> GetOutgoingAdjListV2(Vertex<VID_T> vertex) {
-//        return new AdjListv2<VID_T, EDATA_T>(getOutgoingAdjListBegin(vertex), getOutgoingAdjListEnd(vertex));
-//    }
-//
-//    default AdjListv2<VID_T, EDATA_T> GetIncomingAdjListV2(Vertex<VID_T> vertex) {
-//        return new AdjListv2<VID_T, EDATA_T>(getIncomingAdjListBegin(vertex), getIncomingAdjListEnd(vertex));
-//    }
-
+    // @FFINameAlias("GetOutgoingEdgeNum")
+    // long GetOutgoingEdgeNum();
+    //
+    // @FFINameAlias("GetIncomingEdgeNum")
+    // long GetIncomingEdgeNum();
 
     @FFIFactory
     interface Factory<OID_T, VID_T, VDATA_T, EDATA_T> {

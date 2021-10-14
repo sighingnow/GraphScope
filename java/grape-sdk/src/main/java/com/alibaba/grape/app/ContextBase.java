@@ -16,5 +16,13 @@
 
 package com.alibaba.grape.app;
 
+/**
+ * Root interface for DefaultContextBase and ParallelContextBase.
+ * 
+ * @param <OID_T>
+ * @param <VID_T>
+ * @param <VDATA_T>
+ * @param <EDATA_T>
+ */
 public interface ContextBase<OID_T, VID_T, VDATA_T, EDATA_T> {
 }

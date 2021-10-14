@@ -25,11 +25,11 @@ import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 @FFIGen(library = GRAPE_JNI_LIBRARY)
 @CXXHead(GRAPE_VERTEX_ARRAY_H)
 @FFITypeAlias(GRAPE_VERTEX_ARRAY)
-@CXXTemplate(cxx = {"jboolean", "uint32_t"}, java = {"java.lang.Boolean", "java.lang.Integer"})
-@CXXTemplate(cxx = {"jdouble", "uint32_t"}, java = {"java.lang.Double", "java.lang.Integer"})
-@CXXTemplate(cxx = {"jdouble", "uint64_t"}, java = {"java.lang.Double", "java.lang.Long"})
-@CXXTemplate(cxx = {"double", "uint64_t"}, java = {"java.lang.Double", "java.lang.Long"})
-@CXXTemplate(cxx = {"jlong", "uint64_t"}, java = {"java.lang.Long", "java.lang.Long"})
+@CXXTemplate(cxx = { "jboolean", "uint32_t" }, java = { "java.lang.Boolean", "java.lang.Integer" })
+@CXXTemplate(cxx = { "jdouble", "uint32_t" }, java = { "java.lang.Double", "java.lang.Integer" })
+@CXXTemplate(cxx = { "jdouble", "uint64_t" }, java = { "java.lang.Double", "java.lang.Long" })
+@CXXTemplate(cxx = { "double", "uint64_t" }, java = { "java.lang.Double", "java.lang.Long" })
+@CXXTemplate(cxx = { "jlong", "uint64_t" }, java = { "java.lang.Long", "java.lang.Long" })
 public interface VertexArray<T, VID> extends FFIPointer, CXXPointer {
     @FFIFactory
     interface Factory<T, VID> {
@@ -49,8 +49,10 @@ public interface VertexArray<T, VID> extends FFIPointer, CXXPointer {
 
     @FFINameAlias("GetValue")
     @CXXOperator("[]")
-    @CXXReference T get(@CXXReference Vertex<VID> v);
+    @CXXReference
+    T get(@CXXReference Vertex<VID> v);
 
-    @CXXReference VertexRange<VID> GetVertexRange();
+    @CXXReference
+    VertexRange<VID> GetVertexRange();
     // void Clear();
 }

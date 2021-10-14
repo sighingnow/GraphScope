@@ -33,8 +33,11 @@ public class SSSPProjected implements ProjectedDefaultAppBase<Long, Long, Double
     public static Logger logger = LoggerFactory.getLogger(SSSPProjected.class.getName());
 
     @Override
-    public void PEval(ArrowProjectedFragment<Long, Long, Double, Long> fragment, ProjectedDefaultContextBase<ArrowProjectedFragment<Long, Long, Double, Long>> context, DefaultMessageManager messageManager) {
-        logger.info("innervertices: " + fragment.innerVertices().begin().GetValue() + "," + fragment.innerVertices().end().GetValue());
+    public void PEval(ArrowProjectedFragment<Long, Long, Double, Long> fragment,
+            ProjectedDefaultContextBase<ArrowProjectedFragment<Long, Long, Double, Long>> context,
+            DefaultMessageManager messageManager) {
+        logger.info("innervertices: " + fragment.innerVertices().begin().GetValue() + ","
+                + fragment.innerVertices().end().GetValue());
         logger.info("edgenum : " + fragment.getEdgeNum() + " vertices num: " + fragment.getVerticesNum());
         logger.info("gid for oid 4: " + fragment.oid2Gid(4L));
         logger.info("inner v num: " + fragment.getInnerVerticesNum());
@@ -51,7 +54,8 @@ public class SSSPProjected implements ProjectedDefaultAppBase<Long, Long, Double
         }
 
         ProjectedAdjList<Long, Long> adjList = fragment.getOutgoingAdjList(source);
-        logger.info("outgoing adjlist " + adjList.begin().neighbor().GetValue() + ", " + adjList.end().neighbor().GetValue() + ", size " + adjList.size());
+        logger.info("outgoing adjlist " + adjList.begin().neighbor().GetValue() + ", "
+                + adjList.end().neighbor().GetValue() + ", size " + adjList.size());
         long iterTime = 0;
         for (ProjectedNbr<Long, Long> nbr : adjList.iterator()) {
             Vertex<Long> vertex = nbr.neighbor();
@@ -62,7 +66,8 @@ public class SSSPProjected implements ProjectedDefaultAppBase<Long, Long, Double
                 ctx.nextModified.set(vertex);
             }
             iterTime += 1;
-            //logger.info("vertex<" + vertex.GetValue() + ">nbrdata :" + curDist + ", prev: " + prev + " after: " + ctx.partialResults.get(vertex));
+            // logger.info("vertex<" + vertex.GetValue() + ">nbrdata :" + curDist + ", prev: " + prev + " after: " +
+            // ctx.partialResults.get(vertex));
         }
         logger.info("peval iteration " + iterTime);
 
@@ -88,7 +93,9 @@ public class SSSPProjected implements ProjectedDefaultAppBase<Long, Long, Double
     }
 
     @Override
-    public void IncEval(ArrowProjectedFragment<Long, Long, Double, Long> fragment, ProjectedDefaultContextBase<ArrowProjectedFragment<Long, Long, Double, Long>> context, DefaultMessageManager messageManager) {
+    public void IncEval(ArrowProjectedFragment<Long, Long, Double, Long> fragment,
+            ProjectedDefaultContextBase<ArrowProjectedFragment<Long, Long, Double, Long>> context,
+            DefaultMessageManager messageManager) {
         SSSPProjectedContext ctx = (SSSPProjectedContext) context;
         {
             Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
@@ -127,7 +134,7 @@ public class SSSPProjected implements ProjectedDefaultAppBase<Long, Long, Double
         }
         logger.info("IncEval " + data_sum);
 
-        //sync out vertices
+        // sync out vertices
         LongMsg msg = LongMsg.factory.create();
         VertexRange<Long> outerVertices = fragment.outerVertices();
         for (Vertex<Long> vertex : outerVertices.locals()) {
@@ -138,7 +145,7 @@ public class SSSPProjected implements ProjectedDefaultAppBase<Long, Long, Double
             }
         }
 
-        //check condition to move forward
+        // check condition to move forward
         for (Vertex<Long> vertex : innerVertices.locals()) {
             if (ctx.nextModified.get(vertex)) {
                 messageManager.ForceContinue();

@@ -22,10 +22,6 @@ import com.alibaba.grape.fragment.ImmutableEdgecutFragment;
 import com.alibaba.grape.parallel.DefaultMessageManager;
 import com.alibaba.grape.stdcxx.StdVector;
 
-/**
- * @author xiaolei.zl
- * @date 2021/06/14
- */
 public class TraverseDefaultContext implements DefaultContextBase<Long, Long, Long, Double> {
 
     public int step;
@@ -35,7 +31,7 @@ public class TraverseDefaultContext implements DefaultContextBase<Long, Long, Lo
 
     @Override
     public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> immutableEdgecutFragment,
-                     DefaultMessageManager javaDefaultMessageManager, StdVector<FFIByteString> args) {
+            DefaultMessageManager javaDefaultMessageManager, StdVector<FFIByteString> args) {
         maxStep = Integer.parseInt(args.get(0).toString());
         step = 0;
     }

@@ -22,7 +22,6 @@ import static com.alibaba.grape.utils.CppClassName.DOUBLE_MSG;
 import static com.alibaba.grape.utils.CppHeaderName.CORE_JAVA_JAVA_MESSAGES_H;
 import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
-
 @FFIGen(library = GRAPE_JNI_LIBRARY)
 @CXXHead(value = CORE_JAVA_JAVA_MESSAGES_H)
 @FFITypeAlias(value = DOUBLE_MSG)

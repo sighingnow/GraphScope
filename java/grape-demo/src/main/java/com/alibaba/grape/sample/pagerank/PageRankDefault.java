@@ -29,11 +29,12 @@ import com.alibaba.grape.parallel.message.DoubleMsg;
 import com.alibaba.grape.utils.DoubleArrayWrapper;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;
 
-public class PageRankDefault extends Communicator implements DefaultAppBase<Long, Long, Long, Double, PageRankDefaultContext> {
+public class PageRankDefault extends Communicator
+        implements DefaultAppBase<Long, Long, Long, Double, PageRankDefaultContext> {
 
     @Override
     public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase ctx,
-                      DefaultMessageManager messageManager) {
+            DefaultMessageManager messageManager) {
         PageRankDefaultContext context = (PageRankDefaultContext) ctx;
 
         VertexRange<Long> innerVertices = frag.innerVertices();
@@ -65,7 +66,7 @@ public class PageRankDefault extends Communicator implements DefaultAppBase<Long
 
     @Override
     public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultContextBase ctx,
-                        DefaultMessageManager messageManager) {
+            DefaultMessageManager messageManager) {
         PageRankDefaultContext context = (PageRankDefaultContext) ctx;
         int innerVertexNum = frag.getInnerVerticesNum().intValue();
 
@@ -80,13 +81,12 @@ public class PageRankDefault extends Communicator implements DefaultAppBase<Long
         }
         int graphVertexNum = frag.getVerticesNum().intValue();
         int totalVertexNum = (int) frag.getTotalVerticesNum();
-        double base = (1.0 - context.alpha) / totalVertexNum
-                + context.alpha * context.danglingSum / totalVertexNum;
+        double base = (1.0 - context.alpha) / totalVertexNum + context.alpha * context.danglingSum / totalVertexNum;
 
         double local_dangling_sum = 0.0;
 
         DoubleArrayWrapper nextResult = new DoubleArrayWrapper(innerVertexNum, 0.0);
-        //System.out.println("dangling sum: " + context.danglingSum);
+        // System.out.println("dangling sum: " + context.danglingSum);
         // msgs are all out vertex in this frag, and has incoming edges to the vertex in this frag
         {
             Vertex<Long> vertex = frag.innerVertices().begin();

@@ -20,10 +20,10 @@ import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 
 public class LoadLibrary {
     static {
-        //load grape jni library
+        // load grape jni library
         try {
-//            NativeLoader.loadLibrary(GRAPE_JNI_LIBRARY);
-//            System.out.println(GRAPE_JNI_LIBRARY);
+            // NativeLoader.loadLibrary(GRAPE_JNI_LIBRARY);
+            // System.out.println(GRAPE_JNI_LIBRARY);
             System.loadLibrary(GRAPE_JNI_LIBRARY);
         } catch (Exception e) {
             e.printStackTrace();
@@ -31,8 +31,7 @@ public class LoadLibrary {
     }
 
     /**
-     * Used by c++ to load compiled user app
-     * Load the full path library
+     * Used by c++ to load compiled user app Load the full path library
      *
      * @param userLibrary
      */

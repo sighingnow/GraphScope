@@ -22,14 +22,33 @@ import com.alibaba.grape.parallel.ParallelMessageManager;
 import com.alibaba.grape.stdcxx.StdVector;
 
 /**
- * @param <OID_T>   original id type
- * @param <VID_T>   vertex id type
- * @param <VDATA_T> vertex data type
- * @param <EDATA_T> edge data type
+ * ParallelContextBase is the base class for user-defined contexts for parallel apps. A context manages data through the
+ * whole computation. The data won't be cleared during supersteps.
+ * 
+ * @param <OID_T>
+ *            original id type
+ * @param <VID_T>
+ *            vertex id type
+ * @param <VDATA_T>
+ *            vertex data type
+ * @param <EDATA_T>
+ *            edge data type
  */
-public interface ParallelContextBase<OID_T, VID_T, VDATA_T, EDATA_T> extends ContextBase<OID_T, VID_T, VDATA_T, EDATA_T> {
-    void Init(ImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> frag,
-              ParallelMessageManager messageManager, StdVector<FFIByteString> args);
+public interface ParallelContextBase<OID_T, VID_T, VDATA_T, EDATA_T>
+        extends ContextBase<OID_T, VID_T, VDATA_T, EDATA_T> {
+    /**
+     * Called by grape framework, before any PEval. You can initiating data structures need during super steps here.
+     * 
+     * @param frag
+     * @param messageManager
+     * @param args
+     */
+    void Init(ImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> frag, ParallelMessageManager messageManager,
+            StdVector<FFIByteString> args);
 
+    /**
+     * @code Output will be executed when the computations finalizes. Data maintained in this context shall be outputted
+     *       here. @param frag
+     */
     void Output(ImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> frag);
 }

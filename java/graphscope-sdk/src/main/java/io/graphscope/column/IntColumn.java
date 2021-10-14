@@ -36,13 +36,15 @@ import static io.graphscope.utils.JNILibraryName.VINEYARD_JNI_LIBRARY;
 @CXXHead(ARROW_PROJECTED_FRAGMENT_H)
 @CXXHead(GRAPE_TYPES_H)
 @FFITypeAlias(INT_COLUMN)
-@CXXTemplate(cxx = {ARROW_FRAGMENT + "<int64_t>"}, java = {"io.graphscope.fragment.ArrowFragment<java.lang.Long>"})
-@CXXTemplate(cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,grape::EmptyType,int64_t>"},
-        java = {"com.alibaba.grape.fragment.ArrowProjectedFragment<Long,Long,com.alibaba.grape.ds.EmptyType,Long>"})
+@CXXTemplate(cxx = { ARROW_FRAGMENT + "<int64_t>" }, java = { "io.graphscope.fragment.ArrowFragment<java.lang.Long>" })
+@CXXTemplate(cxx = { ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,grape::EmptyType,int64_t>" }, java = {
+        "com.alibaba.grape.fragment.ArrowProjectedFragment<Long,Long,com.alibaba.grape.ds.EmptyType,Long>" })
 public interface IntColumn<FRAG_T> extends FFIPointer {
     double at(@CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex);
 
     void set(@CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex, int value);
 
-    @CXXReference @FFITypeAlias(GS_VERTEX_ARRAY + "<uint32_t>") GSVertexArray<Integer> data();
+    @CXXReference
+    @FFITypeAlias(GS_VERTEX_ARRAY + "<uint32_t>")
+    GSVertexArray<Integer> data();
 }

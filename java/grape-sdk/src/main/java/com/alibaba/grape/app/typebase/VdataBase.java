@@ -16,4 +16,5 @@
 
 package com.alibaba.grape.app.typebase;
 
-public interface VdataBase {}
+public interface VdataBase {
+}

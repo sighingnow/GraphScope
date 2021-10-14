@@ -20,9 +20,7 @@ import com.alibaba.fastffi.FFITypeFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
-
 public class NbrTest {
-
 
     private Nbr.Factory<Long, Long> factory = FFITypeFactory.getFactory(Nbr.class, "grape::Nbr<uint64_t,int64_t>");
 

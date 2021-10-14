@@ -28,18 +28,15 @@ import com.alibaba.grape.sample.sssp.mirror.SSSPEdata;
 import com.alibaba.grape.sample.sssp.mirror.SSSPOid;
 import com.alibaba.grape.sample.sssp.mirror.SSSPVdata;
 
-/**
- * @author xiaolei.zl
- * @date 2021/06/14
- */
-public class TraverseMirror implements DefaultAppBase<SSSPOid, Long, SSSPVdata, SSSPEdata, TraverseMirrorDefaultContext> {
+public class TraverseMirror
+        implements DefaultAppBase<SSSPOid, Long, SSSPVdata, SSSPEdata, TraverseMirrorDefaultContext> {
     @Override
     public void PEval(ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> fragment,
-                      DefaultContextBase defaultContextBase, DefaultMessageManager messageManager) {
+            DefaultContextBase defaultContextBase, DefaultMessageManager messageManager) {
         TraverseMirrorDefaultContext ctx = (TraverseMirrorDefaultContext) defaultContextBase;
         int innerVerteicesEnd = fragment.getInnerVerticesNum().intValue();
-//        for (Vertex<Long> vertex = innerVertices.begin();
-//             vertex.GetValue().intValue() != innerVerteicesEnd; vertex.inc()){
+        // for (Vertex<Long> vertex = innerVertices.begin();
+        // vertex.GetValue().intValue() != innerVerteicesEnd; vertex.inc()){
         VertexRange<Long> innerVertices = fragment.innerVertices();
         for (Vertex<Long> vertex : innerVertices.locals()) {
             AdjList<Long, SSSPEdata> adjList = fragment.getOutgoingAdjList(vertex);
@@ -55,7 +52,7 @@ public class TraverseMirror implements DefaultAppBase<SSSPOid, Long, SSSPVdata, 
 
     @Override
     public void IncEval(ImmutableEdgecutFragment<SSSPOid, Long, SSSPVdata, SSSPEdata> fragment,
-                        DefaultContextBase defaultContextBase, DefaultMessageManager messageManager) {
+            DefaultContextBase defaultContextBase, DefaultMessageManager messageManager) {
         TraverseMirrorDefaultContext ctx = (TraverseMirrorDefaultContext) defaultContextBase;
         if (ctx.step >= ctx.maxStep) {
             return;

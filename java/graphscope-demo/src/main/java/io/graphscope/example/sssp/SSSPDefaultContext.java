@@ -41,11 +41,12 @@ public class SSSPDefaultContext extends LabeledVertexDataContext<Long, Double> {
     /**
      * @param fragment
      * @param messageManager
-     * @param jsonObject     contains the user-defined parameters in json manner
+     * @param jsonObject
+     *            contains the user-defined parameters in json manner
      */
     @Override
     public void init(ArrowFragment<Long> fragment, PropertyMessageManager messageManager, JSONObject jsonObject) {
-        //must be called
+        // must be called
         createFFIContext(fragment, Long.class, Double.class);
         logger.info("params size " + jsonObject.size() + ", " + jsonObject.toJSONString());
         int labelNum = fragment.vertexLabelNum();
@@ -58,8 +59,8 @@ public class SSSPDefaultContext extends LabeledVertexDataContext<Long, Double> {
             VertexRange<Long> vertices = fragment.vertices(i);
             curModified.add(new VertexSet(vertices));
             nextModified.add(new VertexSet(vertices));
-            logger.info("range " + partialResults.get(i).GetVertexRange().begin().GetValue() +
-                    ", " + partialResults.get(i).GetVertexRange().end().GetValue());
+            logger.info("range " + partialResults.get(i).GetVertexRange().begin().GetValue() + ", "
+                    + partialResults.get(i).GetVertexRange().end().GetValue());
             partialResults.get(i).SetValue(Double.MAX_VALUE);
         }
         sourceOid = jsonObject.getLong("src");

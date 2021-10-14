@@ -19,6 +19,7 @@ package com.alibaba.grape.ds;
 import com.alibaba.grape.utils.FFITypeFactoryhelper;
 import org.junit.Assert;
 import org.junit.Test;
+
 public class VertexTest {
 
     @Test

@@ -53,7 +53,8 @@ public class PageRankParallelContext implements ParallelContextBase<Long, Long, 
     public int danglingVNum;
 
     @Override
-    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelMessageManager javaParallelMessageManager, StdVector<FFIByteString> args) {
+    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag,
+            ParallelMessageManager javaParallelMessageManager, StdVector<FFIByteString> args) {
         bufferFactory = FFITypeFactoryhelper.newMessageInBuffer();
         alpha = Double.parseDouble(args.get(0).toString());
         maxIteration = Integer.parseInt(args.get(1).toString());

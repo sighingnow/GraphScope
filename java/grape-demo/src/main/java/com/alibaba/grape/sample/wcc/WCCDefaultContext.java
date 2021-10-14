@@ -36,7 +36,8 @@ public class WCCDefaultContext implements DefaultContextBase<Long, Long, Long, D
     public int innerVerticesNum;
 
     @Override
-    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultMessageManager messageManager, StdVector<FFIByteString> args) {
+    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultMessageManager messageManager,
+            StdVector<FFIByteString> args) {
         comp_id = new LongArrayWrapper(frag.vertices(), Long.MAX_VALUE);
         currModified = new VertexSet(frag.vertices());
         nextModified = new VertexSet(frag.vertices());

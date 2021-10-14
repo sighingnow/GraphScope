@@ -35,7 +35,8 @@ import java.util.Objects;
  *
  * @FRAG_T
  */
-public abstract class VertexPropertyContext<FRAG_T extends ArrowProjectedFragment> implements ProjectedDefaultContextBase<FRAG_T> {
+public abstract class VertexPropertyContext<FRAG_T extends ArrowProjectedFragment>
+        implements ProjectedDefaultContextBase<FRAG_T> {
     private long ffiContextAddress;
     private FFIVertexPropertyContext<FRAG_T> ffiVertexPropertyContext;
     private FFIVertexPropertyContext.Factory factory;
@@ -49,7 +50,8 @@ public abstract class VertexPropertyContext<FRAG_T extends ArrowProjectedFragmen
     protected void createFFIContext(FRAG_T fragment) {
         String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment);
         System.out.println("fragment str: " + fragmentTemplateStr);
-        String contextName = FFITypeFactoryhelper.makeParameterize(CppClassName.VERTEX_PROPERTY_CONTEXT, fragmentTemplateStr);
+        String contextName = FFITypeFactoryhelper.makeParameterize(CppClassName.VERTEX_PROPERTY_CONTEXT,
+                fragmentTemplateStr);
         System.out.println("context name: " + contextName);
         factory = FFITypeFactory.getFactory(FFIVertexPropertyContext.class, contextName);
         ffiVertexPropertyContext = factory.create(fragment);

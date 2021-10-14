@@ -31,11 +31,10 @@ import com.alibaba.grape.utils.FFITypeFactoryhelper;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-public class SSSPParallel
-        implements ParallelAppBase<Long, Long, Long, Double, SSSPParallelContext> {
+public class SSSPParallel implements ParallelAppBase<Long, Long, Long, Double, SSSPParallelContext> {
     @Override
     public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase contextBase,
-                      ParallelMessageManager mm) {
+            ParallelMessageManager mm) {
         SSSPParallelContext context = (SSSPParallelContext) contextBase;
         mm.initChannels(context.thread_num());
         context.nextModified.clear();
@@ -43,8 +42,8 @@ public class SSSPParallel
         Vertex<Long> source = FFITypeFactoryhelper.newVertexLong();
 
         boolean sourceInThisFrag = frag.getInnerVertex(context.sourceOid, source);
-        System.out.println("source in this frag?" + frag.fid() + ", " + sourceInThisFrag
-                + ", lid: " + source.GetValue());
+        System.out
+                .println("source in this frag?" + frag.fid() + ", " + sourceInThisFrag + ", lid: " + source.GetValue());
 
         AtomicDoubleArrayWrapper partialResults = context.partialResults;
         VertexSet curModified = context.curModified;
@@ -71,10 +70,9 @@ public class SSSPParallel
     @Override
     @SuppressWarnings("rawtypes")
     public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase contextBase,
-                        ParallelMessageManager messageManager) {
+            ParallelMessageManager messageManager) {
         SSSPParallelContext context = (SSSPParallelContext) contextBase;
         context.nextModified.clear();
-
 
         // Parallel process the message with the support of JavaMessageInBuffer.
         context.receiveMessageTime -= System.nanoTime();
@@ -96,9 +94,8 @@ public class SSSPParallel
         context.curModified.assign(context.nextModified);
     }
 
-    private void receiveMessage(SSSPParallelContext context,
-                                ImmutableEdgecutFragment<Long, Long, Long, Double> frag,
-                                ParallelMessageManager messageManager) {
+    private void receiveMessage(SSSPParallelContext context, ImmutableEdgecutFragment<Long, Long, Long, Double> frag,
+            ParallelMessageManager messageManager) {
 
         Supplier<DoubleMsg> msgSupplier = () -> DoubleMsg.factory.create();
         BiConsumer<Vertex<Long>, DoubleMsg> messageConsumer = (vertex, msg) -> {
@@ -111,8 +108,7 @@ public class SSSPParallel
         messageManager.parallelProcess(frag, context.threadNum, context.executor, msgSupplier, messageConsumer);
     }
 
-    private void execute(SSSPParallelContext context,
-                         ImmutableEdgecutFragment<Long, Long, Long, Double> frag) {
+    private void execute(SSSPParallelContext context, ImmutableEdgecutFragment<Long, Long, Long, Double> frag) {
         int innerVerticesNum = frag.getInnerVerticesNum().intValue();
 
         BiConsumer<Vertex<Long>, Integer> consumer = (vertex, finalTid) -> {
@@ -130,9 +126,8 @@ public class SSSPParallel
         forEachVertex(frag.innerVertices(), context.threadNum, context.executor, context.curModified, consumer);
     }
 
-    private void sendMessage(SSSPParallelContext context,
-                             ImmutableEdgecutFragment<Long, Long, Long, Double> frag,
-                             ParallelMessageManager messageManager) {
+    private void sendMessage(SSSPParallelContext context, ImmutableEdgecutFragment<Long, Long, Long, Double> frag,
+            ParallelMessageManager messageManager) {
         // for outer vertices sync data
         BiConsumer<Vertex<Long>, Integer> msgSender = (vertex, finalTid) -> {
             DoubleMsg msg = FFITypeFactoryhelper.newDoubleMsg(context.partialResults.get(vertex));

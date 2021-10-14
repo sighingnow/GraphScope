@@ -25,7 +25,8 @@ import io.graphscope.utils.CppClassName;
 
 import java.util.Objects;
 
-public abstract class VertexDataContext<FRAG_T extends ArrowProjectedFragment, DATA_T> implements ProjectedDefaultContextBase<FRAG_T> {
+public abstract class VertexDataContext<FRAG_T extends ArrowProjectedFragment, DATA_T>
+        implements ProjectedDefaultContextBase<FRAG_T> {
     private long ffiContextAddress;
     private FFIVertexDataContext<FRAG_T, DATA_T> ffiVertexDataContext;
     private FFIVertexDataContext.Factory factory;
@@ -37,19 +38,17 @@ public abstract class VertexDataContext<FRAG_T extends ArrowProjectedFragment, D
      * @param dataClass
      */
     protected void createFFIContext(FRAG_T fragment, Class<?> dataClass, boolean includeOuter) {
-//        String fragmentTemplateStr = FFITypeFactory.getFFITypeName(fragment.getClass(), true);
+        // String fragmentTemplateStr = FFITypeFactory.getFFITypeName(fragment.getClass(), true);
         String fragmentTemplateStr = FFITypeFactoryhelper.getForeignName(fragment);
         System.out.println("fragment: " + fragmentTemplateStr);
         String contextName = FFITypeFactoryhelper.makeParameterize(CppClassName.VERTEX_DATA_CONTEXT,
-                fragmentTemplateStr,
-                FFITypeFactoryhelper.javaType2CppType(dataClass));
+                fragmentTemplateStr, FFITypeFactoryhelper.javaType2CppType(dataClass));
         System.out.println("context name: " + contextName);
         factory = FFITypeFactory.getFactory(FFIVertexDataContext.class, contextName);
         ffiVertexDataContext = factory.create(fragment, includeOuter);
         ffiContextAddress = ffiVertexDataContext.getAddress();
         System.out.println(contextName + ", " + ffiContextAddress);
     }
-
 
     public GSVertexArray<DATA_T> data() {
         if (Objects.isNull(ffiVertexDataContext)) {

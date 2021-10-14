@@ -16,7 +16,6 @@
 
 package io.graphscope.context;
 
-
 import com.alibaba.fastjson.JSONObject;
 import io.graphscope.fragment.ArrowFragment;
 import io.graphscope.parallel.PropertyMessageManager;

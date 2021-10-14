@@ -21,7 +21,6 @@ import com.alibaba.grape.graph.loader.EVFileLoaderTest;
 import org.junit.Before;
 import org.junit.Test;
 
-
 public class ImmutableEdgecutFragmentTest {
 
     private EVFileLoaderTest evFileLoaderTest;
@@ -45,6 +44,5 @@ public class ImmutableEdgecutFragmentTest {
 
     @Test
     public void loadInCpp() {
-        //FIXME: To load in cpp requires mpi_comm, how to get rid of this?
     }
 }

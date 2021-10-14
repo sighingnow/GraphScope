@@ -30,15 +30,18 @@ import static io.graphscope.utils.JNILibraryName.VINEYARD_JNI_LIBRARY;
 @CXXHead(CppHeaderName.VERTEX_DATA_CONTEXT_H)
 @CXXHead(ARROW_PROJECTED_FRAGMENT_H)
 @FFITypeAlias(VERTEX_DATA_CONTEXT)
-@CXXTemplate(cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t," + GRAPE_EMPTY_TYPE + ",int64_t>", "double"},
-        java = {"com.alibaba.grape.fragment.ArrowProjectedFragment<Long,Long,com.alibaba.grape.ds.EmptyType,Long>", "java.lang.Double"})
-@CXXTemplate(cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,int64_t>", "double"},
-        java = {"com.alibaba.grape.fragment.ArrowProjectedFragment<Long,Long,Double,Long>", "java.lang.Double"})
-@CXXTemplate(cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,int64_t>", "int64_t"},
-        java = {"com.alibaba.grape.fragment.ArrowProjectedFragment<Long,Long,Double,Long>", "java.lang.Long"})
+@CXXTemplate(cxx = { ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t," + GRAPE_EMPTY_TYPE + ",int64_t>",
+        "double" }, java = {
+                "com.alibaba.grape.fragment.ArrowProjectedFragment<Long,Long,com.alibaba.grape.ds.EmptyType,Long>",
+                "java.lang.Double" })
+@CXXTemplate(cxx = { ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,int64_t>", "double" }, java = {
+        "com.alibaba.grape.fragment.ArrowProjectedFragment<Long,Long,Double,Long>", "java.lang.Double" })
+@CXXTemplate(cxx = { ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,int64_t>", "int64_t" }, java = {
+        "com.alibaba.grape.fragment.ArrowProjectedFragment<Long,Long,Double,Long>", "java.lang.Long" })
 public interface FFIVertexDataContext<FRAG_T, DATA_T> extends FFIPointer {
 
-    @CXXReference GSVertexArray<DATA_T> data();
+    @CXXReference
+    GSVertexArray<DATA_T> data();
 
     @FFIFactory
     interface Factory<FRAG_T, DATA_T> {

@@ -25,8 +25,8 @@ import static com.alibaba.grape.utils.JNILibraryName.GRAPE_JNI_LIBRARY;
 @FFIGen(library = GRAPE_JNI_LIBRARY)
 @CXXHead(GRAPE_VERTEX_ARRAY_H)
 @FFITypeAlias(GRAPE_VERTEX)
-@CXXTemplate(cxx = {"uint32_t"}, java = {"Integer"})
-@CXXTemplate(cxx = {"uint64_t"}, java = {"Long"})
+@CXXTemplate(cxx = { "uint32_t" }, java = { "Integer" })
+@CXXTemplate(cxx = { "uint64_t" }, java = { "Long" })
 public interface Vertex<VID_T> extends FFIPointer, CXXPointer, CXXValueRangeElement<Vertex<VID_T>> {
     @FFIFactory
     interface Factory<VID_T> {
@@ -37,7 +37,8 @@ public interface Vertex<VID_T> extends FFIPointer, CXXPointer, CXXValueRangeElem
      * @return
      */
     @CXXOperator("*&")
-    @CXXValue Vertex<VID_T> copy();
+    @CXXValue
+    Vertex<VID_T> copy();
 
     /**
      * Note this is not necessary to be a prefix increment
@@ -45,7 +46,8 @@ public interface Vertex<VID_T> extends FFIPointer, CXXPointer, CXXValueRangeElem
      * @return
      */
     @CXXOperator("++")
-    @CXXReference Vertex<VID_T> inc();
+    @CXXReference
+    Vertex<VID_T> inc();
 
     /**
      * @return

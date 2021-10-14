@@ -34,7 +34,8 @@ public class PropertySSSP implements PropertyDefaultAppBase<Long, PropertySSSPCo
     public static Logger logger = LoggerFactory.getLogger(PropertySSSP.class.getName());
 
     @Override
-    public void PEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context, PropertyMessageManager messageManager) {
+    public void PEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context,
+            PropertyMessageManager messageManager) {
         PropertySSSPContext ctx = (PropertySSSPContext) context;
         int vertexLabelNum = fragment.vertexLabelNum();
         int edgeLabelNum = fragment.edgeLabelNum();
@@ -56,7 +57,8 @@ public class PropertySSSP implements PropertyDefaultAppBase<Long, PropertySSSPCo
 
         for (int j = 0; j < edgeLabelNum; ++j) {
             PropertyAdjList<Long> adjList = fragment.getOutgoingAdjList(source, j);
-            logger.info("outgoing adjlist " + adjList.begin().neighbor().GetValue() + ", " + adjList.end().neighbor().GetValue() + ", size " + adjList.size());
+            logger.info("outgoing adjlist " + adjList.begin().neighbor().GetValue() + ", "
+                    + adjList.end().neighbor().GetValue() + ", size " + adjList.size());
             for (PropertyNbr<Long> nbr : adjList.iterator()) {
                 Vertex<Long> vertex = nbr.neighbor();
                 double curDist = nbr.getInt(0);
@@ -98,7 +100,7 @@ public class PropertySSSP implements PropertyDefaultAppBase<Long, PropertySSSPCo
             ctx.curModified.get(i).assign(ctx.nextModified.get(i));
             ctx.nextModified.get(i).clear();
         }
-        //update changes to dist column
+        // update changes to dist column
         for (int i = 0; i < vertexLabelNum; ++i) {
             VertexRange<Long> innerVertices = fragment.innerVertices(i);
             DoubleColumn column = ctx.getDoubleColumn(i, ctx.distColumnIndices.get(i));
@@ -109,7 +111,8 @@ public class PropertySSSP implements PropertyDefaultAppBase<Long, PropertySSSPCo
     }
 
     @Override
-    public void IncEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context, PropertyMessageManager messageManager) {
+    public void IncEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context,
+            PropertyMessageManager messageManager) {
         PropertySSSPContext ctx = (PropertySSSPContext) context;
         {
             Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
@@ -122,7 +125,6 @@ public class PropertySSSP implements PropertyDefaultAppBase<Long, PropertySSSPCo
                 }
             }
         }
-
 
         int vertexLabelNum = fragment.vertexLabelNum();
         int edgeLabelNum = fragment.edgeLabelNum();
@@ -151,7 +153,7 @@ public class PropertySSSP implements PropertyDefaultAppBase<Long, PropertySSSPCo
             }
         }
         logger.info("IncEval " + data_sum);
-        //sync out vertices
+        // sync out vertices
 
         DoubleMsg msg = DoubleMsg.factory.create();
         for (int i = 0; i < vertexLabelNum; ++i) {
@@ -165,7 +167,7 @@ public class PropertySSSP implements PropertyDefaultAppBase<Long, PropertySSSPCo
             }
         }
 
-        //check condition to move forward
+        // check condition to move forward
         for (int i = 0; i < vertexLabelNum; ++i) {
             VertexRange<Long> innerVertices = fragment.innerVertices(i);
             boolean ok = false;
@@ -185,7 +187,7 @@ public class PropertySSSP implements PropertyDefaultAppBase<Long, PropertySSSPCo
             ctx.curModified.get(i).assign(ctx.nextModified.get(i));
             ctx.nextModified.get(i).clear();
         }
-        //update changes to dist column
+        // update changes to dist column
         for (int i = 0; i < vertexLabelNum; ++i) {
             VertexRange<Long> innerVertices = fragment.innerVertices(i);
             DoubleColumn column = ctx.getDoubleColumn(i, ctx.distColumnIndices.get(i));

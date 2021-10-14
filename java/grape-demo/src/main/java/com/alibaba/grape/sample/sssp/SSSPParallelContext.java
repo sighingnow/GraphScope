@@ -52,8 +52,8 @@ public class SSSPParallelContext implements ParallelContextBase<Long, Long, Long
     }
 
     @Override
-    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag,
-                     ParallelMessageManager mm, StdVector<FFIByteString> args) {
+    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelMessageManager mm,
+            StdVector<FFIByteString> args) {
         Long allVertexNum = frag.getVerticesNum();
         // partialResults = new AtomicDouble(allVertexNum.intValue(), Double.MAX_VALUE);
         partialResults = new AtomicDoubleArrayWrapper(allVertexNum.intValue(), Double.MAX_VALUE);
@@ -72,8 +72,7 @@ public class SSSPParallelContext implements ParallelContextBase<Long, Long, Long
         executor.shutdown();
 
         System.out.println("frag: " + frag.fid() + " sendMessageTime: " + sendMessageTime / 1000000000);
-        System.out.println("frag: " + frag.fid()
-                + " receiveMessageTime: " + receiveMessageTime / 1000000000);
+        System.out.println("frag: " + frag.fid() + " receiveMessageTime: " + receiveMessageTime / 1000000000);
         System.out.println("frag: " + frag.fid() + " execTime: " + execTime / 1000000000);
         String prefix = "/tmp/sssp_parallel_output_threadNum_" + threadNum + "_";
         String filePath = prefix + "_frag_" + String.valueOf(frag.fid());
@@ -86,7 +85,7 @@ public class SSSPParallelContext implements ParallelContextBase<Long, Long, Long
             System.out.println(frag.getInnerVerticesNum() + " " + innerNodes.begin().GetValue() + " "
                     + innerNodes.end().GetValue());
             // for (Vertex<Long> cur = innerNodes.begin(); cur.GetValue() != innerNodes.end().GetValue();
-            //      cur.inc()) {
+            // cur.inc()) {
             Vertex<Long> cur = innerNodes.begin();
             for (long index = 0; index < frag.getInnerVerticesNum(); ++index) {
                 cur.SetValue(index);

@@ -47,8 +47,8 @@ public class WCCDefaultContext extends LabeledVertexDataContext<Long, Long> {
             VertexRange<Long> vertices = fragment.vertices(i);
             curModified.add(new VertexSet(vertices));
             nextModified.add(new VertexSet(vertices));
-            logger.info("range " + compId.get(i).GetVertexRange().begin().GetValue() +
-                    ", " + compId.get(i).GetVertexRange().end().GetValue());
+            logger.info("range " + compId.get(i).GetVertexRange().begin().GetValue() + ", "
+                    + compId.get(i).GetVertexRange().end().GetValue());
             compId.get(i).SetValue(0L);
         }
     }

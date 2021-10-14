@@ -27,14 +27,10 @@ import com.alibaba.grape.parallel.ParallelMessageManager;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author xiaolei.zl
- * @date 2021/06/14
- */
 public class TraverseParallel implements ParallelAppBase<Long, Long, Long, Double, TraverseParallelContext> {
     @Override
-    public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> fragment,
-                      ParallelContextBase contextBase, ParallelMessageManager messageManager) {
+    public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> fragment, ParallelContextBase contextBase,
+            ParallelMessageManager messageManager) {
         TraverseParallelContext ctx = (TraverseParallelContext) contextBase;
         CountDownLatch latch = new CountDownLatch(ctx.threadNum);
         int innerVerteicesEnd = fragment.getInnerVerticesNum().intValue();
@@ -69,8 +65,8 @@ public class TraverseParallel implements ParallelAppBase<Long, Long, Long, Doubl
     }
 
     @Override
-    public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> fragment,
-                        ParallelContextBase contextBase, ParallelMessageManager messageManager) {
+    public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> fragment, ParallelContextBase contextBase,
+            ParallelMessageManager messageManager) {
         TraverseParallelContext ctx = (TraverseParallelContext) contextBase;
         if (ctx.step >= ctx.maxStep) {
             ctx.executor.shutdown();

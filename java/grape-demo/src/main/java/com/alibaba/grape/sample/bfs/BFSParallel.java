@@ -32,7 +32,8 @@ public class BFSParallel implements ParallelAppBase<Long, Long, Long, Double, BF
     private static Logger logger = LoggerFactory.getLogger(BFSParallel.class);
 
     @Override
-    public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase context, ParallelMessageManager messageManager) {
+    public void PEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase context,
+            ParallelMessageManager messageManager) {
         BFSParallelContext ctx = (BFSParallelContext) context;
         Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
         boolean inThisFrag = frag.getInnerVertex(ctx.sourceOid, vertex);
@@ -58,7 +59,8 @@ public class BFSParallel implements ParallelAppBase<Long, Long, Long, Double, BF
     }
 
     @Override
-    public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase context, ParallelMessageManager messageManager) {
+    public void IncEval(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelContextBase context,
+            ParallelMessageManager messageManager) {
         BFSParallelContext ctx = (BFSParallelContext) context;
         VertexRange<Long> innerVertices = frag.innerVertices();
         int nextDepth = ctx.currentDepth + 1;
@@ -96,5 +98,3 @@ public class BFSParallel implements ParallelAppBase<Long, Long, Long, Double, BF
         ctx.currentInnerUpdated.assign(ctx.nextInnerUpdated);
     }
 }
-
-

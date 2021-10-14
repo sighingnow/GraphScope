@@ -46,25 +46,26 @@ import static com.google.testing.compile.Compiler.javac;
 public class GrapeAppScanner {
     private static Logger logger = LoggerFactory.getLogger(GrapeAppScanner.class.getName());
 
-
     /**
-     * We define the same interface for the generation of graphScope of grape.
-     * For graphScope, config path is not used, which means we don't need the configuration file,
-     * messageTypes are all from FFIMirror,(later we should scan the jar to find all usage of the message send function)
-     * For Grape, we still run the main method to generate the configuration file.
+     * We define the same interface for the generation of graphScope of grape. For graphScope, config path is not used,
+     * which means we don't need the configuration file, messageTypes are all from FFIMirror,(later we should scan the
+     * jar to find all usage of the message send function) For Grape, we still run the main method to generate the
+     * configuration file.
      *
      * @param classpath
      * @param outputDirectory
      * @param graphScope
+     * 
      * @return
      */
-    public static String scanAppAndGenerate(String classpath, String outputDirectory, String graphTemplateString, boolean graphScope) {
-        return new GrapeAppScanner(classpath, "empty", outputDirectory, graphScope, graphTemplateString).scanAppAndGenerate();
+    public static String scanAppAndGenerate(String classpath, String outputDirectory, String graphTemplateString,
+            boolean graphScope) {
+        return new GrapeAppScanner(classpath, "empty", outputDirectory, graphScope, graphTemplateString)
+                .scanAppAndGenerate();
     }
 
     static List<File> parseClassPath(String classpath) {
-        return Arrays.stream(classpath.split(File.pathSeparator))
-                .map(c -> Paths.get(c).toFile())
+        return Arrays.stream(classpath.split(File.pathSeparator)).map(c -> Paths.get(c).toFile())
                 .collect(Collectors.toList());
     }
 
@@ -76,25 +77,22 @@ public class GrapeAppScanner {
     private GraphConfig graphConfig;
     private List<File> classPathList;
     private URLClassLoader appClassLoader;
-    //java name to foreign name
+    // java name to foreign name
     private Map<String, String> ffiMirrors = new HashMap<>();
 
-    private GrapeAppScanner(String classpath, String configPath, String outputDirectory, boolean graphScope, String graphTemplateStr) {
+    private GrapeAppScanner(String classpath, String configPath, String outputDirectory, boolean graphScope,
+            String graphTemplateStr) {
         this.classpath = classpath;
         this.configPath = configPath;
         this.outputDirectory = outputDirectory;
         this.classPathList = parseClassPath(classpath);
-        this.appClassLoader =
-                new URLClassLoader(classPathList.stream()
-                        .map(cp -> {
-                            try {
-                                return cp.toURI().toURL();
-                            } catch (MalformedURLException e) {
-                                throw new IllegalArgumentException("Not a valid path: " + cp);
-                            }
-                        })
-                        .toArray(URL[]::new),
-                        ClassLoader.getSystemClassLoader());
+        this.appClassLoader = new URLClassLoader(classPathList.stream().map(cp -> {
+            try {
+                return cp.toURI().toURL();
+            } catch (MalformedURLException e) {
+                throw new IllegalArgumentException("Not a valid path: " + cp);
+            }
+        }).toArray(URL[]::new), ClassLoader.getSystemClassLoader());
         this.graphScope = graphScope;
         this.graphTemplateStr = graphTemplateStr;
     }
@@ -112,22 +110,22 @@ public class GrapeAppScanner {
      *
      * @return
      */
-//    private void readConfig() {
-//        try (InputStream inputStream = new FileInputStream(configPath)) {
-//            Properties properties = new Properties();
-//            properties.load(inputStream);
-//            String vidType = readProperty(properties, "vidType");
-//            String oidType = readProperty(properties, "oidType");
-//            String vdataType = readProperty(properties, "vdataType");
-//            String edataType = readProperty(properties, "edataType");
-//            String messageTypes = properties.getProperty("msgTypes");
-//            graphConfig = new GraphConfig(vidType, oidType, vdataType, edataType, messageTypes);
-//        } catch (FileNotFoundException e) {
-//            throw new IllegalArgumentException("File " + configPath + " does not exist.", e);
-//        } catch (IOException e) {
-//            throw new IllegalStateException("Cannot read file " + configPath, e);
-//        }
-//    }
+    // private void readConfig() {
+    // try (InputStream inputStream = new FileInputStream(configPath)) {
+    // Properties properties = new Properties();
+    // properties.load(inputStream);
+    // String vidType = readProperty(properties, "vidType");
+    // String oidType = readProperty(properties, "oidType");
+    // String vdataType = readProperty(properties, "vdataType");
+    // String edataType = readProperty(properties, "edataType");
+    // String messageTypes = properties.getProperty("msgTypes");
+    // graphConfig = new GraphConfig(vidType, oidType, vdataType, edataType, messageTypes);
+    // } catch (FileNotFoundException e) {
+    // throw new IllegalArgumentException("File " + configPath + " does not exist.", e);
+    // } catch (IOException e) {
+    // throw new IllegalStateException("Cannot read file " + configPath, e);
+    // }
+    // }
     private void readJobConf() {
         JobConf job = new JobConf(configPath);
         job.readConfig();
@@ -140,8 +138,8 @@ public class GrapeAppScanner {
     }
 
     private String scanAppAndGenerate() {
-        //readConfig();
-        //for all ffiMirror we suppose they are all possible to appear in messageManager
+        // readConfig();
+        // for all ffiMirror we suppose they are all possible to appear in messageManager
         collectFFIMirror();
         StringBuilder sb = new StringBuilder();
         for (String str : ffiMirrors.keySet()) {
@@ -149,7 +147,7 @@ public class GrapeAppScanner {
         }
         String temp = sb.toString();
         String messageTypes = temp.substring(0, temp.length() - 1);
-        //create a dummy graphConfig, oid type should never be used.
+        // create a dummy graphConfig, oid type should never be used.
         logger.info("message types:" + messageTypes);
 
         if (!graphScope) {
@@ -162,9 +160,11 @@ public class GrapeAppScanner {
                 return this.outputDirectory;
             }
             if (Objects.nonNull(parsed) && parsed.length == 5) {
-                graphConfig = new GraphConfig(cpp2Java(parsed[1]), cpp2Java(parsed[2]), cpp2Java(parsed[3]), cpp2Java(parsed[4]), messageTypes, parsed[0], parsed[1], parsed[2], parsed[3], parsed[4]);
+                graphConfig = new GraphConfig(cpp2Java(parsed[1]), cpp2Java(parsed[2]), cpp2Java(parsed[3]),
+                        cpp2Java(parsed[4]), messageTypes, parsed[0], parsed[1], parsed[2], parsed[3], parsed[4]);
             } else {
-                graphConfig = new GraphConfig(Long.class.getName(), Long.class.getName(), Long.class.getName(), Double.class.getName(), messageTypes, "empty", "", "", "", "");
+                graphConfig = new GraphConfig(Long.class.getName(), Long.class.getName(), Long.class.getName(),
+                        Double.class.getName(), messageTypes, "empty", "", "", "", "");
             }
         }
 
@@ -182,7 +182,7 @@ public class GrapeAppScanner {
         return null;
     }
 
-    //gs::ArrowProjectedFragment
+    // gs::ArrowProjectedFragment
     private String[] parseGraphTemplateStr(String graphTemplateStr) {
         String[] first = graphTemplateStr.split("<");
         if (first.length != 2) {
@@ -194,14 +194,14 @@ public class GrapeAppScanner {
             if (second.length != 4) {
                 logger.error("Inproper num of type params" + typeParams);
             }
-            return new String[]{first[0], second[0], second[1], second[2], second[3]};
+            return new String[] { first[0], second[0], second[1], second[2], second[3] };
         } else if (first[0].equals("vineyard::ArrowFragment")) {
             String typeParams = first[1].substring(0, first[1].length() - 1);
             String[] second = typeParams.split(",");
             if (second.length != 2) {
                 logger.error("Inproper num of type params" + typeParams);
             }
-            return new String[]{first[0], second[0], second[1], "int64_t", "int64_t"};
+            return new String[] { first[0], second[0], second[1], "int64_t", "int64_t" };
         } else {
             logger.error("unrecognized " + graphTemplateStr);
             return null;
@@ -235,8 +235,8 @@ public class GrapeAppScanner {
     }
 
     /**
-     * Generate graphScope or grape. For graphScope, we only generate messageManagers functions.
-     * Other classes and functions are provided in sdk
+     * Generate graphScope or grape. For graphScope, we only generate messageManagers functions. Other classes and
+     * functions are provided in sdk
      *
      * @return
      */
@@ -245,10 +245,9 @@ public class GrapeAppScanner {
         String packageName = "grape" + random.nextInt(Integer.MAX_VALUE);
         String classSimpleName = "GraphType" + random.nextInt(Integer.MAX_VALUE);
         String className = packageName + "." + classSimpleName;
-        JavaFileObject file = JavaFileObjects.forSourceLines(
-                className, String.format("package %s;", packageName), "import com.alibaba.fastffi.*;",
-                "import com.alibaba.grape.annotation.*;", getFFIGenBatch(), "@GraphType(",
-                String.format("  oidType = %s.class,", graphConfig.oidType),
+        JavaFileObject file = JavaFileObjects.forSourceLines(className, String.format("package %s;", packageName),
+                "import com.alibaba.fastffi.*;", "import com.alibaba.grape.annotation.*;", getFFIGenBatch(),
+                "@GraphType(", String.format("  oidType = %s.class,", graphConfig.oidType),
                 String.format("  vidType = %s.class,", graphConfig.vidType),
                 String.format("  vdataType = %s.class,", graphConfig.vdataType),
                 String.format("  edataType = %s.class,", graphConfig.edataType),
@@ -256,8 +255,7 @@ public class GrapeAppScanner {
                 String.format("  cppVidType = \"%s\",", graphConfig.cppVidType),
                 String.format("  cppVdataType = \"%s\",", graphConfig.cppVdataType),
                 String.format("  cppEdataType = \"%s\",", graphConfig.cppEdataType),
-                String.format("  fragType = \"%s\"", graphConfig.fragmentType),
-                ")",
+                String.format("  fragType = \"%s\"", graphConfig.fragmentType), ")",
                 String.format("public class %s {}", classSimpleName));
 
         List<File> classpath = getClassPath();
@@ -268,18 +266,13 @@ public class GrapeAppScanner {
         Compilation compilation;
         if (graphScope) {
             logger.info("Generate for graphScope");
-            compilation = javac()
-                    .withClasspath(classpath)
-                    .withProcessors(new GraphScopeAnnotationProcessor(), new AnnotationProcessor())
-                    .compile(file);
+            compilation = javac().withClasspath(classpath)
+                    .withProcessors(new GraphScopeAnnotationProcessor(), new AnnotationProcessor()).compile(file);
         } else {
             logger.info("Generate for grape");
-            compilation = javac()
-                    .withClasspath(classpath)
-                    .withProcessors(new GrapeAnnotationProcessor(), new AnnotationProcessor())
-                    .compile(file);
+            compilation = javac().withClasspath(classpath)
+                    .withProcessors(new GrapeAnnotationProcessor(), new AnnotationProcessor()).compile(file);
         }
-
 
         Compilation.Status status = compilation.status();
         if (status == Compilation.Status.SUCCESS) {
@@ -297,7 +290,7 @@ public class GrapeAppScanner {
     }
 
     private String writeFiles(Compilation compilation) throws IOException {
-//        Path outputRoot = Files.createTempDirectory("grape-ffi");
+        // Path outputRoot = Files.createTempDirectory("grape-ffi");
         File outputRootDir = new File(this.outputDirectory);
         if (!outputRootDir.exists()) {
             outputRootDir.mkdirs();
@@ -322,7 +315,7 @@ public class GrapeAppScanner {
 
     private void writeTo(JavaFileObject fileObject, Path dst) throws IOException {
         try (FileOutputStream fileOutputStream = new FileOutputStream(dst.toFile());
-             InputStream inputStream = fileObject.openInputStream()) {
+                InputStream inputStream = fileObject.openInputStream()) {
             byte[] buf = new byte[1024];
             int length;
             while ((length = inputStream.read(buf)) > 0) {
@@ -349,7 +342,7 @@ public class GrapeAppScanner {
                     Path relative = root.relativize(file);
                     String className = relative.toString();
                     className = className.substring(0, className.length() - 6).replace('/', '.');
-                    //For FFIMirror found in grape-sdk, we don't count it in codegeneration
+                    // For FFIMirror found in grape-sdk, we don't count it in codegeneration
                     if (className.contains("com.alibaba.grape.stdcxx.FFISample")) {
                         logger.info("catch ffi mirror FFISample, skip generation" + className);
                         return FileVisitResult.CONTINUE;

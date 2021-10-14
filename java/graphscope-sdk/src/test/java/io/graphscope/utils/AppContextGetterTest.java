@@ -40,11 +40,13 @@ public class AppContextGetterTest {
 
     public static class SampleApp implements PropertyDefaultAppBase<Long, SampleContext> {
         @Override
-        public void PEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context, PropertyMessageManager messageManager) {
+        public void PEval(ArrowFragment<Long> fragment, PropertyDefaultContextBase<Long> context,
+                PropertyMessageManager messageManager) {
         }
 
         @Override
-        public void IncEval(ArrowFragment<Long> graph, PropertyDefaultContextBase<Long> context, PropertyMessageManager messageManager) {
+        public void IncEval(ArrowFragment<Long> graph, PropertyDefaultContextBase<Long> context,
+                PropertyMessageManager messageManager) {
         }
     }
 
@@ -53,9 +55,9 @@ public class AppContextGetterTest {
         Class<? extends PropertyDefaultAppBase> appClass = SampleApp.class;
         SampleApp sampleApp = new SampleApp();
 
-//        Class<?> ctxClass = AppContextGetter.getPropertyDefaultContext(appClass);
+        // Class<?> ctxClass = AppContextGetter.getPropertyDefaultContext(appClass);
         try {
-//            Assert.assertTrue(ctxClass.newInstance() instanceof PropertyDefaultContextBase);
+            // Assert.assertTrue(ctxClass.newInstance() instanceof PropertyDefaultContextBase);
             System.out.println(AppContextGetter.getContextName(sampleApp));
         } catch (Exception e) {
             e.printStackTrace();

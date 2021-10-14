@@ -25,7 +25,7 @@ import io.graphscope.utils.JNILibraryName;
 @FFIGen(library = JNILibraryName.VINEYARD_JNI_LIBRARY)
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.PROPERTY_NBR_UNIT)
-@CXXTemplate(cxx = {"uint64_t"}, java = {"java.lang.Long"})
+@CXXTemplate(cxx = { "uint64_t" }, java = { "java.lang.Long" })
 public interface PropertyNbrUnit<VID_T> extends FFIPointer, CXXPointerRangeElement<PropertyNbrUnit<VID_T>> {
     @FFIGetter
     VID_T vid();
@@ -34,5 +34,6 @@ public interface PropertyNbrUnit<VID_T> extends FFIPointer, CXXPointerRangeEleme
     long eid();
 
     @FFINameAlias("get_neighbor")
-    @CXXValue Vertex<VID_T> getNeighbor();
+    @CXXValue
+    Vertex<VID_T> getNeighbor();
 }

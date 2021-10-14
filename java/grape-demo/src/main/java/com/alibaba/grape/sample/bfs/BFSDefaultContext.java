@@ -33,12 +33,13 @@ import java.io.IOException;
 public class BFSDefaultContext implements DefaultContextBase<Long, Long, Long, Double> {
     public long sourceOid;
     public IntArrayWrapper partialResults;
-    //    public BooleanArrayWrapper currendInnerUpdated;
+    // public BooleanArrayWrapper currendInnerUpdated;
     public VertexSet currentInnerUpdated, nextInnerUpdated;
     public int currentDepth;
 
     @Override
-    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultMessageManager messageManager, StdVector<FFIByteString> args) {
+    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, DefaultMessageManager messageManager,
+            StdVector<FFIByteString> args) {
         sourceOid = Long.valueOf(args.get(0).toString());
         partialResults = new IntArrayWrapper(frag.getVerticesNum().intValue(), Integer.MAX_VALUE);
         currentInnerUpdated = new VertexSet(frag.innerVertices());

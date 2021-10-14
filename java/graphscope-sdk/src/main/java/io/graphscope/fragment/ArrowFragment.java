@@ -36,12 +36,9 @@ import static com.alibaba.grape.utils.CppClassName.GRAPE_VERTEX_RANGE;
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @CXXHead(system = "stdint.h")
 @FFITypeAlias(CppClassName.ARROW_FRAGMENT)
-@CXXTemplate(cxx = {"int64_t"},
-        java = {"java.lang.Long"})
+@CXXTemplate(cxx = { "int64_t" }, java = { "java.lang.Long" })
 /**
- * LABEL_ID_TYPE=int,
- * PROP_ID_TYPE=int
- * EID_TYPE=uint64_t
+ * LABEL_ID_TYPE=int, PROP_ID_TYPE=int EID_TYPE=uint64_t
  */
 public interface ArrowFragment<OID_T> extends FFIPointer {
     int fid();
@@ -63,37 +60,44 @@ public interface ArrowFragment<OID_T> extends FFIPointer {
     @FFINameAlias("vertex_property_num")
     int vertexPropertyNum(int label);
 
-    //@FFINameAlias("vertex_property_type")
+    // @FFINameAlias("vertex_property_type")
 
     @FFINameAlias("edge_property_num")
     int edgePropertyNum(int label);
-    //@FFINameAlias("edge_property_type")
+    // @FFINameAlias("edge_property_type")
 
-//    @FFINameAlias("vertex_property_type")
-//    @CXXValue SharedPtr<ArrowDataType> vertexPropertyType(int labelId, int propertyId);
+    // @FFINameAlias("vertex_property_type")
+    // @CXXValue SharedPtr<ArrowDataType> vertexPropertyType(int labelId, int propertyId);
 
-//    @FFINameAlias("edge_property_type")
-//    @CXXValue SharedPtr<ArrowDataType> edgePropertyType(int labelId, int propertyId);
+    // @FFINameAlias("edge_property_type")
+    // @CXXValue SharedPtr<ArrowDataType> edgePropertyType(int labelId, int propertyId);
 
-//    @FFINameAlias("vertex_data_table")
-//    @CXXValue SharedPtr<ArrowTable> vertexDataTable(int labelId);
-//
-//    @FFINameAlias("edge_data_table")
-//    @CXXValue SharedPtr<ArrowTable> EdgeDataTable(int labelId);
+    // @FFINameAlias("vertex_data_table")
+    // @CXXValue SharedPtr<ArrowTable> vertexDataTable(int labelId);
+    //
+    // @FFINameAlias("edge_data_table")
+    // @CXXValue SharedPtr<ArrowTable> EdgeDataTable(int labelId);
 
     @FFINameAlias("Vertices")
-    @CXXValue @FFITypeAlias(GRAPE_VERTEX_RANGE + "<uint64_t>") VertexRange<Long> vertices(int labelId);
+    @CXXValue
+    @FFITypeAlias(GRAPE_VERTEX_RANGE + "<uint64_t>")
+    VertexRange<Long> vertices(int labelId);
 
     @FFINameAlias("InnerVertices")
-    @CXXValue @FFITypeAlias(GRAPE_VERTEX_RANGE + "<uint64_t>") VertexRange<Long> innerVertices(int labelId);
+    @CXXValue
+    @FFITypeAlias(GRAPE_VERTEX_RANGE + "<uint64_t>")
+    VertexRange<Long> innerVertices(int labelId);
 
     @FFINameAlias("OuterVertices")
-    @CXXValue @FFITypeAlias(GRAPE_VERTEX_RANGE + "<uint64_t>") VertexRange<Long> outerVertices(int labelId);
+    @CXXValue
+    @FFITypeAlias(GRAPE_VERTEX_RANGE + "<uint64_t>")
+    VertexRange<Long> outerVertices(int labelId);
 
     /**
      * Get the number of vertices in this fragment, i.e. ivnum + ovnum.
      *
      * @param labelId
+     * 
      * @return
      */
     @FFINameAlias("GetVerticesNum")
@@ -118,10 +122,12 @@ public interface ArrowFragment<OID_T> extends FFIPointer {
      * Get vertex's oid with lid.
      *
      * @param vertex
+     * 
      * @return
      */
     @FFINameAlias("GetId")
-    @CXXValue OID_T getOid(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
+    @CXXValue
+    OID_T getOid(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
 
     /**
      * Get vertex's lid with oid provided, set int vertex.
@@ -129,10 +135,12 @@ public interface ArrowFragment<OID_T> extends FFIPointer {
      * @param labelId
      * @param oid
      * @param vertex
+     * 
      * @return
      */
     @FFINameAlias("GetVertex")
-    boolean getVertex(int labelId, OID_T oid, @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
+    boolean getVertex(int labelId, OID_T oid,
+            @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
 
     @FFINameAlias("GetFragId")
     int getFragId(@FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
@@ -146,51 +154,64 @@ public interface ArrowFragment<OID_T> extends FFIPointer {
     /**
      * @param vertex
      * @param edgeLabelId
+     * 
      * @return
      */
 
     @FFINameAlias("GetOutgoingAdjList")
-    @CXXValue @FFITypeAlias(CppClassName.PROPERTY_ADJ_LIST + "<uint64_t>") PropertyAdjList<Long> getOutgoingAdjList(@FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
-
+    @CXXValue
+    @FFITypeAlias(CppClassName.PROPERTY_ADJ_LIST + "<uint64_t>")
+    PropertyAdjList<Long> getOutgoingAdjList(
+            @FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
 
     @FFINameAlias("GetIncomingAdjList")
-    @CXXValue @FFITypeAlias(CppClassName.PROPERTY_ADJ_LIST + "<uint64_t>") PropertyAdjList<Long> getIncomingAdjList(@FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
+    @CXXValue
+    @FFITypeAlias(CppClassName.PROPERTY_ADJ_LIST + "<uint64_t>")
+    PropertyAdjList<Long> getIncomingAdjList(
+            @FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
 
     @FFINameAlias("GetOutgoingRawAdjList")
-    @CXXValue @FFITypeAlias(CppClassName.PROPERTY_RAW_ADJ_LIST + "<uint64_t>") PropertyRawAdjList<Long> getOutgoingRawAdjList(@FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
+    @CXXValue
+    @FFITypeAlias(CppClassName.PROPERTY_RAW_ADJ_LIST + "<uint64_t>")
+    PropertyRawAdjList<Long> getOutgoingRawAdjList(
+            @FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
 
     @FFINameAlias("GetIncomingRawAdjList")
-    @CXXValue @FFITypeAlias(CppClassName.PROPERTY_RAW_ADJ_LIST + "<uint64_t>") PropertyRawAdjList<Long> getIncomingRawAdjList(@FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
+    @CXXValue
+    @FFITypeAlias(CppClassName.PROPERTY_RAW_ADJ_LIST + "<uint64_t>")
+    PropertyRawAdjList<Long> getIncomingRawAdjList(
+            @FFIConst @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
 
-//    @FFINameAlias("edge_data_column<uint64_t>")
-//    @CXXValue EdgeDataColumnLong<PropertyNbrUnit<Long>> edgeDataColumnLong(int edgeLabelId, int propertyId);
-//
-//    @FFINameAlias("edge_data_column<double>")
-//    @CXXValue EdgeDataColumnDouble<PropertyNbrUnit<Long>> edgeDataColumnDouble(int edgeLabelId, int propertyId);
-//
-//    @FFINameAlias("edge_data_column<uint32_t>")
-//    @CXXValue EdgeDataColumnInt<PropertyNbrUnit<Long>> edgeDataColumnInt(int edgeLabelId, int propertyId);
+    // @FFINameAlias("edge_data_column<uint64_t>")
+    // @CXXValue EdgeDataColumnLong<PropertyNbrUnit<Long>> edgeDataColumnLong(int edgeLabelId, int propertyId);
+    //
+    // @FFINameAlias("edge_data_column<double>")
+    // @CXXValue EdgeDataColumnDouble<PropertyNbrUnit<Long>> edgeDataColumnDouble(int edgeLabelId, int propertyId);
+    //
+    // @FFINameAlias("edge_data_column<uint32_t>")
+    // @CXXValue EdgeDataColumnInt<PropertyNbrUnit<Long>> edgeDataColumnInt(int edgeLabelId, int propertyId);
 
-    @CXXTemplate(cxx = {"uint64_t"}, java = {"Long"})
-    @CXXTemplate(cxx = {"double"}, java = {"Double"})
-    @CXXTemplate(cxx = {"uint32_t"}, java = {"Integer"})
+    @CXXTemplate(cxx = { "uint64_t" }, java = { "Long" })
+    @CXXTemplate(cxx = { "double" }, java = { "Double" })
+    @CXXTemplate(cxx = { "uint32_t" }, java = { "Integer" })
     @FFINameAlias("edge_data_column")
-    @CXXValue <DATA_T>
-    EdgeDataColumn<DATA_T> edgeDataColumn(int vertexLabelId, int propertyId, @FFISkip DATA_T unused);
+    @CXXValue
+    <DATA_T> EdgeDataColumn<DATA_T> edgeDataColumn(int vertexLabelId, int propertyId, @FFISkip DATA_T unused);
 
-    @CXXTemplate(cxx = {"uint64_t"}, java = {"Long"})
-    @CXXTemplate(cxx = {"double"}, java = {"Double"})
-    @CXXTemplate(cxx = {"uint32_t"}, java = {"Integer"})
+    @CXXTemplate(cxx = { "uint64_t" }, java = { "Long" })
+    @CXXTemplate(cxx = { "double" }, java = { "Double" })
+    @CXXTemplate(cxx = { "uint32_t" }, java = { "Integer" })
     @FFINameAlias("vertex_data_column")
-    @CXXValue <DATA_T>
-    VertexDataColumn<DATA_T> vertexDataColumn(int vertexLabelId, int propertyId, @FFISkip DATA_T unused);
+    @CXXValue
+    <DATA_T> VertexDataColumn<DATA_T> vertexDataColumn(int vertexLabelId, int propertyId, @FFISkip DATA_T unused);
 
-//    @CXXTemplate(cxx = {"uint64_t"}, java = {"Long"})
-//    @CXXTemplate(cxx = {"double"}, java = {"Double"})
-//    @CXXTemplate(cxx = {"uint32_t"}, java = {"Integer"})
-//    @FFINameAlias("GetData")
-//    @CXXValue <DATA_T>
-//    DATA_T getData(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int propertyId, @FFISkip DATA_T unused);
+    // @CXXTemplate(cxx = {"uint64_t"}, java = {"Long"})
+    // @CXXTemplate(cxx = {"double"}, java = {"Double"})
+    // @CXXTemplate(cxx = {"uint32_t"}, java = {"Integer"})
+    // @FFINameAlias("GetData")
+    // @CXXValue <DATA_T>
+    // DATA_T getData(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int propertyId,
+    // @FFISkip DATA_T unused);
 
     @FFINameAlias("GetData<uint64_t>")
     long getLongData(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int propertyId);
@@ -208,7 +229,8 @@ public interface ArrowFragment<OID_T> extends FFIPointer {
     boolean hasParent(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
 
     @FFINameAlias("GetLocalOutDegree")
-    int getLocalOutDegree(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
+    int getLocalOutDegree(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex,
+            int edgeLabelId);
 
     @FFINameAlias("GetLocalInDegree")
     int getLocalInDegree(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
@@ -225,13 +247,16 @@ public interface ArrowFragment<OID_T> extends FFIPointer {
      * @param vertexLabelId
      * @param oid
      * @param vertex
+     * 
      * @return
      */
     @FFINameAlias("GetInnerVertex")
-    boolean getInnerVertex(int vertexLabelId, OID_T oid, @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
+    boolean getInnerVertex(int vertexLabelId, OID_T oid,
+            @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
 
     @FFINameAlias("GetOuterVertex")
-    boolean getOuterVertex(int vertexLabelId, OID_T oid, @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
+    boolean getOuterVertex(int vertexLabelId, OID_T oid,
+            @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
 
     @FFINameAlias("GetInnerVertexId")
     OID_T getInnerVertexOid(@CXXReference @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") Vertex<Long> vertex);
@@ -242,17 +267,20 @@ public interface ArrowFragment<OID_T> extends FFIPointer {
     @FFINameAlias("Gid2Oid")
     OID_T gid2Oid(Long gid);
 
-    //Oid2Gid can not be made in java, since java pass primitives, even long in value.
-    //@FFINameAlias("Oid2Gid")
-    //boolean oid2Gid(int vertexLabelId, OID_T oid, Long gid);
+    // Oid2Gid can not be made in java, since java pass primitives, even long in value.
+    // @FFINameAlias("Oid2Gid")
+    // boolean oid2Gid(int vertexLabelId, OID_T oid, Long gid);
     @FFINameAlias("Oid2Gid")
-    boolean oid2Gid(int vertexLabelId, OID_T oid, @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> gid);
+    boolean oid2Gid(int vertexLabelId, OID_T oid,
+            @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> gid);
 
     @FFINameAlias("InnerVertexGid2Vertex")
-    boolean innerVertexGid2Vertex(Long gid, @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
+    boolean innerVertexGid2Vertex(Long gid,
+            @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
 
     @FFINameAlias("OuterVertexGid2Vertex")
-    boolean outerVertexGid2Vertex(Long gid, @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
+    boolean outerVertexGid2Vertex(Long gid,
+            @FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
 
     @FFINameAlias("GetOuterVertexGid")
     Long getOuterVertexGid(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
@@ -261,13 +289,16 @@ public interface ArrowFragment<OID_T> extends FFIPointer {
     Long getInnerVertexGid(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex);
 
     @FFINameAlias("IEDests")
-    @CXXValue DestList ieDests(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
+    @CXXValue
+    DestList ieDests(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
 
     @FFINameAlias("OEDests")
-    @CXXValue DestList oeDests(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
+    @CXXValue
+    DestList oeDests(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
 
     @FFINameAlias("IOEDests")
-    @CXXValue DestList ioeDests(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
+    @CXXValue
+    DestList ioeDests(@FFITypeAlias(GRAPE_VERTEX + "<uint64_t>") @CXXReference Vertex<Long> vertex, int edgeLabelId);
 
     @FFINameAlias("directed")
     boolean directed();

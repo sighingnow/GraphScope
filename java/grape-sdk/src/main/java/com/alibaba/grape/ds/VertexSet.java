@@ -19,9 +19,8 @@ package com.alibaba.grape.ds;
 import java.util.BitSet;
 
 /**
- * Right index is exclusive
- * We don't want to introduce synchronization cost, so the underlying backend is
- * a no-thread-safe bitset.
+ * Right index is exclusive We don't want to introduce synchronization cost, so the underlying backend is a
+ * no-thread-safe bitset.
  * <p>
  * bitSize must be specified in concurrent situations. since expansion has no concurrency control.
  */
@@ -82,9 +81,9 @@ public class VertexSet {
     }
 
     /**
-     * This function is not thread safe, even you are assigning threads with segmented partition.
-     * Because java {@code Bitset} init the {@code wordinUse = 0} and adaptively increases it, {@code ensureCapcity}
-     * is to be invoked, causing problem. So we access the highest bit in initializing.
+     * This function is not thread safe, even you are assigning threads with segmented partition. Because java
+     * {@code Bitset} init the {@code wordinUse = 0} and adaptively increases it, {@code ensureCapcity} is to be
+     * invoked, causing problem. So we access the highest bit in initializing.
      *
      * @param vertex
      */
@@ -117,6 +116,7 @@ public class VertexSet {
      *
      * @param l
      * @param r
+     * 
      * @return
      */
     public boolean partialEmpty(int l, int r) {
@@ -129,14 +129,15 @@ public class VertexSet {
 
     public void clear() {
         bs.clear();
-        //expand the bitset to expected range.
+        // expand the bitset to expected range.
         bs.set(right - left, false);
     }
 
     /**
      * Set this vertex set with bits from another.
      *
-     * @param other Another vertex set
+     * @param other
+     *            Another vertex set
      */
     public void assign(VertexSet other) {
         this.left = other.getLeft();

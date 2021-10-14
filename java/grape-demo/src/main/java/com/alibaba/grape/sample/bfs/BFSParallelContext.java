@@ -35,14 +35,15 @@ import java.util.concurrent.Executors;
 class BFSParallelContext implements ParallelContextBase<Long, Long, Long, Double> {
     public long sourceOid;
     public IntArrayWrapper partialResults;
-    //    public BooleanArrayWrapper currendInnerUpdated;
+    // public BooleanArrayWrapper currendInnerUpdated;
     public VertexSet currentInnerUpdated, nextInnerUpdated;
     public int currentDepth;
     public int threadNum;
     public ExecutorService executor;
 
     @Override
-    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelMessageManager messageManager, StdVector<FFIByteString> args) {
+    public void Init(ImmutableEdgecutFragment<Long, Long, Long, Double> frag, ParallelMessageManager messageManager,
+            StdVector<FFIByteString> args) {
         sourceOid = Long.valueOf(args.get(0).toString());
         threadNum = Integer.valueOf(args.get(1).toString());
         partialResults = new IntArrayWrapper(frag.getVerticesNum().intValue(), Integer.MAX_VALUE);

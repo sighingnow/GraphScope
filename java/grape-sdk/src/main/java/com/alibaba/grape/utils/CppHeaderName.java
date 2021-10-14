@@ -27,10 +27,10 @@ public class CppHeaderName {
     public static final String GRAPE_PARALLEL_MESSAGE_IN_BUFFER_H = "grape/parallel/message_in_buffer.h";
     public static final String GRAPE_PARALLEL_DEFAULT_MESSAGE_MANAGER_H = "grape/parallel/default_message_manager.h";
     public static final String GRAPE_PARALLEL_PARALLEL_MESSAGE_MANAGER_H = "grape/parallel/parallel_message_manager.h";
-    //    public static final String GRAPE_MESSAGE_IN_BUFFER_H = "core/parallel/java_message_in_buffer.h";
+    // public static final String GRAPE_MESSAGE_IN_BUFFER_H = "core/parallel/java_message_in_buffer.h";
     public static final String GRAPE_LONG_VECTOR_H = "core/utils/long_vector.h";
-    //this header contains the self-defined-ds generate ffi cpp files,
-    //this header should be include in message managers
+    // this header contains the self-defined-ds generate ffi cpp files,
+    // this header should be include in message managers
     public static final String JAVA_APP_JNI_FFI_H = "java-app-jni-ffi.h";
     public static final String GS_CORE_CONFIG_H = "core/config.h";
     public static final String GRAPE_COMMUNICATOR_H = "grape/communication/communicator.h";

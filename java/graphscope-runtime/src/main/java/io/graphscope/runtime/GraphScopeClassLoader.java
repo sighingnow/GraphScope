@@ -40,91 +40,105 @@ public class GraphScopeClassLoader {
             }
             LIBRARIES.setAccessible(true);
         }
+
         public static String[] getLoadedLibraries(final ClassLoader loader) throws IllegalAccessException {
             final Vector<String> libraries = (Vector<String>) LIBRARIES.get(loader);
             return libraries.toArray(new String[] {});
         }
     }
+
     private static String FFI_TYPE_FACTORY_CLASS = "com.alibaba.fastffi.FFITypeFactory";
-//    public static Class<?> ffiTypeFactoryClass = null;
+
+    // public static Class<?> ffiTypeFactoryClass = null;
     public static URLClassLoader newGraphScopeClassLoader(String classPath) throws IllegalAccessException {
-        String [] libraries = ClassScope.getLoadedLibraries(ClassLoader.getSystemClassLoader());
+        String[] libraries = ClassScope.getLoadedLibraries(ClassLoader.getSystemClassLoader());
         log("Loaded lib: " + String.join(" ", libraries));
-        return new URLClassLoader(classPath2URLArray(classPath),
-                Thread.currentThread().getContextClassLoader());
+        return new URLClassLoader(classPath2URLArray(classPath), Thread.currentThread().getContextClassLoader());
 
     }
 
     /**
      * Return a URL class loader which has no extra class path compared to its parent.
+     * 
      * @return
+     * 
      * @throws IllegalAccessException
      */
     public static URLClassLoader newGraphScopeClassLoader() throws IllegalAccessException {
-        String [] libraries = ClassScope.getLoadedLibraries(ClassLoader.getSystemClassLoader());
+        String[] libraries = ClassScope.getLoadedLibraries(ClassLoader.getSystemClassLoader());
         log("Loaded lib: " + String.join(" ", libraries));
-        //CAUTION: add '.' to avoid empty url.
-        return new URLClassLoader(classPath2URLArray("."),
-                Thread.currentThread().getContextClassLoader());
+        // CAUTION: add '.' to avoid empty url.
+        return new URLClassLoader(classPath2URLArray("."), Thread.currentThread().getContextClassLoader());
     }
 
     /**
      * Invoke the non-param constructor
      *
      * @param classLoader
-     * @param className a/b/c/ or a.b.c
+     * @param className
+     *            a/b/c/ or a.b.c
+     * 
      * @return
+     * 
      * @throws ClassNotFoundException
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
-    public static Object loadAndCreate(URLClassLoader classLoader,
-                                             String className)
-            throws ClassNotFoundException, InstantiationException,
-            IllegalAccessException {
+    public static Object loadAndCreate(URLClassLoader classLoader, String className)
+            throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         Class<?> clz = classLoader.loadClass(formatting(className));
         return clz.newInstance();
     }
 
     /**
-     * Create FFIPointer with the helper of FFITypeFactory class. FFITupeFactoryClass should be able to load in classLoader.
+     * Create FFIPointer with the helper of FFITypeFactory class. FFITupeFactoryClass should be able to load in
+     * classLoader.
+     * 
      * @param classLoader
      * @param foreignName
      * @param address
+     * 
      * @return
+     * 
      * @throws ClassNotFoundException
      * @throws NoSuchMethodException
      * @throws InvocationTargetException
      * @throws IllegalAccessException
      * @throws InstantiationException
      */
-    public static Object createFFIPointer(URLClassLoader classLoader, String foreignName, long address) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, InstantiationException {
-//        synchronized (FFI_TYPE_FACTORY_CLASS){
-//            if (Objects.isNull(ffiTypeFactoryClass)){
+    public static Object createFFIPointer(URLClassLoader classLoader, String foreignName, long address)
+            throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException,
+            InstantiationException {
+        // synchronized (FFI_TYPE_FACTORY_CLASS){
+        // if (Objects.isNull(ffiTypeFactoryClass)){
         Class<?> ffiTypeFactoryClass = classLoader.loadClass(FFI_TYPE_FACTORY_CLASS);
-//            }
-//        }
-        log("Creating FFIPointer, typename [" + foreignName + "], address [" + address + "]" + ", ffi type factor [" + ffiTypeFactoryClass);
-        //a new classLoader contains new class path, we load the ffi.properties here.
+        // }
+        // }
+        log("Creating FFIPointer, typename [" + foreignName + "], address [" + address + "]" + ", ffi type factor ["
+                + ffiTypeFactoryClass);
+        // a new classLoader contains new class path, we load the ffi.properties here.
         Method loadClassLoaderMethod = ffiTypeFactoryClass.getDeclaredMethod("loadClassLoader", ClassLoader.class);
         loadClassLoaderMethod.invoke(null, classLoader);
 
-        //To make FFITypeFactor use our classLoader to find desired type matching, we load FFIType with our classLoader.
+        // To make FFITypeFactor use our classLoader to find desired type matching, we load FFIType with our
+        // classLoader.
         Class<?> ffiTypeClass = classLoader.loadClass("com.alibaba.fastffi.FFIType");
         System.out.println("ffitype cl :" + ffiTypeClass.getClassLoader() + ", url cl: " + classLoader);
 
-        //First load class by FFITypeFactor
+        // First load class by FFITypeFactor
         Method getTypeMethod = ffiTypeFactoryClass.getDeclaredMethod("getType", Class.class, String.class);
         Class<?> ffiJavaClass = (Class<?>) getTypeMethod.invoke(null, ffiTypeClass, foreignName);
-        //The class loaded by FFITypeFactor's classLoader can not be directly used by us. We load again with our class loader.
+        // The class loaded by FFITypeFactor's classLoader can not be directly used by us. We load again with our class
+        // loader.
         Class<?> javaClass = classLoader.loadClass(ffiJavaClass.getName());
-        if (Objects.nonNull(javaClass)){
+        if (Objects.nonNull(javaClass)) {
             Constructor[] constructors = javaClass.getDeclaredConstructors();
-            for (Constructor constructor : constructors){
-                if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].getName().equals("long")){
+            for (Constructor constructor : constructors) {
+                if (constructor.getParameterCount() == 1
+                        && constructor.getParameterTypes()[0].getName().equals("long")) {
                     log("Desired constructor exists for " + javaClass.getName());
                     Object obj = constructor.newInstance(address);
-                    log("Successfully Construct "+ obj);
+                    log("Successfully Construct " + obj);
                     return obj;
                 }
             }
@@ -135,16 +149,19 @@ public class GraphScopeClassLoader {
     }
 
     /**
-     * We now accept two kind of className, a/b/c or a.b.c are both ok.
-     * Special case: for 'Communicator'
+     * We now accept two kind of className, a/b/c or a.b.c are both ok. Special case: for 'Communicator'
+     * 
      * @param classLoader
      * @param className
+     * 
      * @return
+     * 
      * @throws ClassNotFoundException
      */
     public static Class<?> loadClass(URLClassLoader classLoader, String className) throws ClassNotFoundException {
-        if (className.equals("Communicator")){
-            Class<?> clz = classLoader.loadClass(formatting(new String("com.alibaba.grape.communication.Communicator")));
+        if (className.equals("Communicator")) {
+            Class<?> clz = classLoader
+                    .loadClass(formatting(new String("com.alibaba.grape.communication.Communicator")));
             log("Loaded communicator class");
             return clz;
         }
@@ -152,38 +169,37 @@ public class GraphScopeClassLoader {
         log("Loaded class " + className);
         return clz;
     }
-    private static String formatting(String className){
-        if (className.indexOf("/") == -1) return className;
+
+    private static String formatting(String className) {
+        if (className.indexOf("/") == -1)
+            return className;
         return className.replace("/", ".");
     }
 
     private static URL[] classPath2URLArray(String classPath) {
         if (Objects.isNull(classPath) || classPath.length() == 0) {
             System.err.println("Empty class Path!");
-            return new URL[]{};
+            return new URL[] {};
         }
         String[] splited = classPath.split(":");
-        List<URL> res= Arrays.stream(splited)
-                .map(File::new)
-                .map(file -> {
-                    try {
-                        return file.toURL();
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    }
-                    return null;
-                })
-                .collect(Collectors.toList());
-        System.out.println("Extracted URL" + String.join(
-                ":",
-                res.stream().map(URL::toString).collect(Collectors.toList())));
-        URL [] ret = new URL[splited.length];
-        for (int i = 0; i < splited.length; ++i){
+        List<URL> res = Arrays.stream(splited).map(File::new).map(file -> {
+            try {
+                return file.toURL();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }).collect(Collectors.toList());
+        System.out.println(
+                "Extracted URL" + String.join(":", res.stream().map(URL::toString).collect(Collectors.toList())));
+        URL[] ret = new URL[splited.length];
+        for (int i = 0; i < splited.length; ++i) {
             ret[i] = res.get(i);
         }
         return ret;
     }
-    private static void log(String info){
+
+    private static void log(String info) {
         System.out.print("[GS Class Loader]: ");
         System.out.println(info);
     }
