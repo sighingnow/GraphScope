@@ -58,7 +58,7 @@ RUN cd /home/graphscope/gs && \
         python3 -m pip install --no-cache-dir graphscope; \
     fi && \
     sudo rm -fr /home/graphscope/gs && cd ${HOME} && \
-    python3 -m pip install --no-cache-dir git+https://github.com/mars-project/mars.git@d09e1e4c3e32ceb05f42d0b5b79775b1ebd299fb#egg=pymars
+    python3 -m pip install --no-cache-dir git+https://github.com/mars-project/mars.git#egg=pymars
 
 # init log directory
 RUN sudo mkdir /var/log/graphscope \
