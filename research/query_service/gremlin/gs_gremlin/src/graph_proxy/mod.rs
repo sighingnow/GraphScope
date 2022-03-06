@@ -13,8 +13,8 @@
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
 
-mod global_storage;
-mod partitioner;
+pub mod global_storage;
+pub mod partitioner;
 
 use global_storage::create_gs_store;
 use gremlin_core::compiler::GremlinJobCompiler;

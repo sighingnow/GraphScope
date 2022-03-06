@@ -16,3 +16,4 @@
 extern crate log;
 mod graph_proxy;
 pub use graph_proxy::{InitializeJobCompiler, QueryMaxGraph, QueryVineyard};
+pub use graph_proxy::global_storage::create_gs_store;
