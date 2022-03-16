@@ -88,16 +88,15 @@ fn main() {
         util::get_build_info();
         return;
     }
-    init_log4rs();
+    // init_log4rs();
 
-    let worker_num: i32 = 2;
-    initialize_pegasus(worker_num);
-    evaluate_query_plan(worker_num);
+    initialize_pegasus();
+    evaluate_query_plan();
 }
 
-pub fn initialize_pegasus(worker_num: i32) {
+pub fn initialize_pegasus() {
+    let worker_num = 1;
     let mut store_config = StoreConfig::init();
-    // let worker_num = store_config.timely_worker_per_process;
     info!("{:?}", store_config);
     let store_config = Arc::new(store_config);
     if store_config.graph_type.to_lowercase().eq(VINEYARD_GRAPH) {
@@ -124,10 +123,14 @@ pub fn initialize_pegasus(worker_num: i32) {
     }
 }
 
-pub fn evaluate_query_plan(worker_num: i32) {
+pub fn evaluate_query_plan() {
+    let worker_num = 1;
+    let query_plan = env::var("QUERY_PLAN").unwrap();
+
     // run request
-    let pb_request = read_pb_request("group_step_test_02")
+    let pb_request = read_pb_request(query_plan)
         .expect("read pb failed");
+    println!("executing query plan: {:?}", pb_request);
     let test_job_factory = &TestJobFactory::new();
     submit_query(test_job_factory, pb_request, worker_num as u32);
 }
@@ -239,4 +242,5 @@ pub fn submit_query(factory: &TestJobFactory, job_req: JobRequest, num_workers: 
             }
         }
     }
+    println!("query result: {:?}", trav_results);
 }

@@ -76,11 +76,12 @@ where
     ) -> DynResult<Box<dyn Iterator<Item = Vertex> + Send>> {
         if let Some(partitions) = params.partitions.as_ref() {
             let store = self.store.clone();
-            let si = params
-                .get_extra_param(SNAPSHOT_ID)
-                .ok_or(str_to_dyn_error("get snapshot_id failed"))?
-                .as_i64()
-                .map_err(|e| str_to_dyn_error(&e.to_string()))? as SnapshotId;
+            // let si = params
+            //     .get_extra_param(SNAPSHOT_ID)
+            //     .ok_or(str_to_dyn_error("get snapshot_id failed"))?
+            //     .as_i64()
+            //     .map_err(|e| str_to_dyn_error(&e.to_string()))? as SnapshotId;
+            let si = 0 as SnapshotId;
             let schema = store
                 .get_schema(si)
                 .ok_or(str_to_dyn_error("get schema failed"))?;
@@ -117,11 +118,12 @@ where
     ) -> DynResult<Box<dyn Iterator<Item = Edge> + Send>> {
         if let Some(partitions) = params.partitions.as_ref() {
             let store = self.store.clone();
-            let si = params
-                .get_extra_param(SNAPSHOT_ID)
-                .ok_or(str_to_dyn_error("get snapshot_id failed"))?
-                .as_i64()
-                .map_err(|e| str_to_dyn_error(&e.to_string()))? as SnapshotId;
+            // let si = params
+            //     .get_extra_param(SNAPSHOT_ID)
+            //     .ok_or(str_to_dyn_error("get snapshot_id failed"))?
+            //     .as_i64()
+            //     .map_err(|e| str_to_dyn_error(&e.to_string()))? as SnapshotId;
+            let si = 0 as SnapshotId;
             let schema = store
                 .get_schema(si)
                 .ok_or(str_to_dyn_error("get schema failed"))?;
@@ -154,11 +156,12 @@ where
         params: &QueryParams<Vertex>,
     ) -> DynResult<Box<dyn Iterator<Item = Vertex> + Send>> {
         let store = self.store.clone();
-        let si = params
-            .get_extra_param(SNAPSHOT_ID)
-            .ok_or(str_to_dyn_error("get snapshot_id failed"))?
-            .as_i64()
-            .map_err(|e| str_to_dyn_error(&e.to_string()))? as SnapshotId;
+        // let si = params
+        //     .get_extra_param(SNAPSHOT_ID)
+        //     .ok_or(str_to_dyn_error("get snapshot_id failed"))?
+        //     .as_i64()
+        //     .map_err(|e| str_to_dyn_error(&e.to_string()))? as SnapshotId;
+        let si = 0 as SnapshotId;
         let schema = store
             .get_schema(si)
             .ok_or(str_to_dyn_error("get schema failed"))?;
@@ -193,11 +196,12 @@ where
         let limit = params.limit.clone();
         let store = self.store.clone();
         let partition_manager = self.partition_manager.clone();
-        let si = params
-            .get_extra_param(SNAPSHOT_ID)
-            .ok_or(str_to_dyn_error("get snapshot_id failed"))?
-            .as_i64()
-            .map_err(|e| str_to_dyn_error(&e.to_string()))? as SnapshotId;
+        // let si = params
+        //     .get_extra_param(SNAPSHOT_ID)
+        //     .ok_or(str_to_dyn_error("get snapshot_id failed"))?
+        //     .as_i64()
+        //     .map_err(|e| str_to_dyn_error(&e.to_string()))? as SnapshotId;
+        let si = 0 as SnapshotId;
         let schema = store
             .get_schema(si)
             .ok_or(str_to_dyn_error("get schema failed"))?;
@@ -258,11 +262,12 @@ where
         params: &QueryParams<Edge>,
     ) -> DynResult<Box<dyn Statement<ID, Edge>>> {
         let store = self.store.clone();
-        let si = params
-            .get_extra_param(SNAPSHOT_ID)
-            .ok_or(str_to_dyn_error("get snapshot_id failed"))?
-            .as_i64()
-            .map_err(|e| str_to_dyn_error(&e.to_string()))? as SnapshotId;
+        // let si = params
+        //     .get_extra_param(SNAPSHOT_ID)
+        //     .ok_or(str_to_dyn_error("get snapshot_id failed"))?
+        //     .as_i64()
+        //     .map_err(|e| str_to_dyn_error(&e.to_string()))? as SnapshotId;
+        let si = 0 as SnapshotId;
         let partition_manager = self.partition_manager.clone();
         let schema = store
             .get_schema(si)
