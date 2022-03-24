@@ -1,9 +1,13 @@
 package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.graph.IdManager
+import com.alibaba.graphscope.graph.impl.IdManagerImpl
 import org.apache.spark.SparkContext
+import org.junit.runner.RunWith
 import org.scalatest._
+import org.scalatest.junit.JUnitRunner
 
+@RunWith(classOf[JUnitRunner])
 class VertexRDDTest extends FunSuite {
   val sc : SparkContext = new SparkContext()
   val oids  = Array(1, 2, 3)

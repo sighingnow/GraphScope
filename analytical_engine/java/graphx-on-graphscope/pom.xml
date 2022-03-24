@@ -34,57 +34,67 @@
       <artifactId>grape-jdk</artifactId>
       <version>0.1</version>
     </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 
   <repositories>
   </repositories>
   <build>
-<!--    <sourceDirectory>src/main/scala</sourceDirectory>
-    <testSourceDirectory>src/test/scala</testSourceDirectory>
---> 
-   <plugins>
+    <!--    <sourceDirectory>src/main/scala</sourceDirectory>
+        <testSourceDirectory>src/test/scala</testSourceDirectory>
+    -->
+    <plugins>
       <plugin>
-      <groupId>net.alchim31.maven</groupId>
-      <artifactId>scala-maven-plugin</artifactId>
-      <executions>
-        <execution>
-          <goals>
-            <goal>compile</goal>
-	    <goal>testCompile</goal>
-          </goals>
-        </execution>
-      </executions>
-      <configuration>
-        <scalaVersion>${scala.version}</scalaVersion>
-      </configuration>
-    </plugin>
-      <plugin>
-        <groupId>org.scalatest</groupId>
-        <artifactId>scalatest-maven-plugin</artifactId>
-        <version>1.0</version>
-        <configuration>
-          <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-          <junitxml>.</junitxml>
-          <filereports>WDF TestSuite.txt</filereports>
-          <suites>org.apache.spark.graphx.impl.VertexRDDTest</suites>
-          <skipTests>${skipTests}</skipTests>
-        </configuration>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
         <executions>
           <execution>
-            <id>test</id>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <scalaVersion>${scala.version}</scalaVersion>
+        </configuration>
+      </plugin>
+<!--      <plugin>-->
+<!--        <groupId>org.scalatest</groupId>-->
+<!--        <artifactId>scalatest-maven-plugin</artifactId>-->
+<!--        <version>1.0</version>-->
+<!--        <configuration>-->
+<!--          <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>-->
+<!--          <junitxml>.</junitxml>-->
+<!--          <filereports>WDF TestSuite.txt</filereports>-->
+<!--          <suites>org.apache.spark.graphx.impl.VertexRDDTest</suites>-->
+<!--          <skipTests>${skipTests}</skipTests>-->
+<!--        </configuration>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <id>test</id>-->
+<!--            <goals>-->
+<!--              <goal>test</goal>-->
+<!--            </goals>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>test</phase>
             <goals>
               <goal>test</goal>
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <skipTests>true</skipTests>
-        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
@@ -111,22 +121,11 @@
                   </excludes>
                 </filter>
               </filters>
-
-              <relocations>
-                <relocation>
-                  <pattern>org.codehaus.plexus.util</pattern>
-                  <shadedPattern>org.shaded.plexus.util</shadedPattern>
-                  <excludes>
-                    <exclude>org.apache.spark.graphx.impl.VertexRDDImpl</exclude>
-                  </excludes>
-                </relocation>
-              </relocations>
               <finalName>${uberjar.name}</finalName>
             </configuration>
           </execution>
         </executions>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.2.4</version>
       </plugin>
     </plugins>
   </build>
