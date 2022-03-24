@@ -1,12 +1,10 @@
-package org.apache.spark.graphx
+package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.graph.IdManager
-import com.alibaba.graphscope.graph.impl.IdManagerImpl
 import org.apache.spark.SparkContext
-import org.apache.spark.graphx.impl.VertexRDDImpl
 import org.scalatest._
 
-class GraphTest extends FunSuite {
+class VertexRDDTest extends FunSuite {
   val sc : SparkContext = new SparkContext()
   val oids  = Array(1, 2, 3)
   val vdata = Array(2, 4, 6)
