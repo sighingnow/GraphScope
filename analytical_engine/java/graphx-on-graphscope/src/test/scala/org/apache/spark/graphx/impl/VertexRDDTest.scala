@@ -16,6 +16,7 @@ class VertexRDDTest extends FunSuite {
   val vertices = new VertexRDDImpl[Int](sc, oids.length, idManager, vdata)
   test("test size"){
     assert(vertices.count() == 3)
+
   }
 
   test("test map"){
