@@ -30,9 +30,10 @@ limitations under the License.
 #include "grape/config.h"
 
 DEFINE_string(user_class, "", "graphx user app");
-DEFINE_string(gs::EFILE, "", "edge file");
-DEFINE_string(gs::VFILE, "", "vertex file");
-DEFINE_bool(gs::DIRECTED, true, "directed or not");
+DEFINE_string(efile, "", "edge file");
+DEFINE_string(vfile, "", "vertex file");
+DEFINE_bool(directed, true, "directed or not");
+DEFINE_string(user_lib_path, "", "user jni lib");
 
 // put all flags in a json str
 std::string flags2JsonStr() {

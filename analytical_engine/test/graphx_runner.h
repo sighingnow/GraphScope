@@ -46,6 +46,7 @@ static constexpr const char* IPC_SOCKET = "ipc_socket";
 static constexpr const char* EFILE = "efile";
 static constexpr const char* VFILE = "vfile";
 static constexpr const char* DIRECTED = "ipc_socket";
+static constexpr const char* USER_LIB_PATH = "user_lib_path";
 using FragmentType =
     vineyard::ArrowFragment<int64_t, vineyard::property_graph_types::VID_TYPE>;
 using ProjectedFragmentType =
@@ -70,8 +71,11 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
                                 vineyard::Client& client, bool directed) {
   vineyard::ObjectID fragment_id;
   {
-    auto loader = std::make_unique<FragmentLoaderType>(client, comm_spec, efile,
-                                                       vfile, directed != 0);
+    std::vector<std::string> vfiles, efiles;
+    vfiles.push_back(vfile);
+    efiles.push_back(efile);
+    auto loader = std::make_unique<FragmentLoaderType>(client, comm_spec, efiles,
+                                                       vfiles, directed != 0);
     fragment_id = boost::leaf::try_handle_all(
         [&loader]() { return loader->LoadFragment(); },
         [](const vineyard::GSError& e) {
@@ -88,8 +92,7 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
 
 template <typename FRAG_T>
 void Query(grape::CommSpec& comm_spec, std::shared_ptr<FRAG_T> fragment,
-           const std::string& params_str) {
-  for (auto i = 0; i < query_times; ++i) {
+           const std::string& params_str, const std::string& user_lib_path) {
     auto app = std::make_shared<APP_TYPE>();
     auto worker = APP_TYPE::CreateWorker(app, fragment);
     auto spec = grape::DefaultParallelEngineSpec();
@@ -109,7 +112,6 @@ void Query(grape::CommSpec& comm_spec, std::shared_ptr<FRAG_T> fragment,
     unused_stream.open("empty");
     worker->Output(unused_stream);
     unused_stream.close();
-  }
 }
 
 void CreateAndQuery(std::string params) {
@@ -123,6 +125,7 @@ void CreateAndQuery(std::string params) {
   std::string efile = getFromPtree<std::string>(pt, EFILE);
   std::string vfile = getFromPtree<std::string>(pt, VFILE);
   bool directed = getFromPtree<bool>(pt, DIRECTED);
+  std::string user_lib_path = getFromPtree<std::string>(pt, USER_LIB_PATH);
 
   vineyard::Client client;
   vineyard::ObjectID fragment_id;
@@ -137,7 +140,6 @@ void CreateAndQuery(std::string params) {
   fragment_id = LoadFragment(comm_spec, vfile, efile, client, directed);
   VLOG(10) << "[worker " << comm_spec.worker_id()
            << "] loaded frag id: " << fragment_id;
-}
 
 std::shared_ptr<FragmentType> fragment =
     std::dynamic_pointer_cast<FragmentType>(client.GetObject(fragment_id));
@@ -167,7 +169,7 @@ std::string new_params = ss.str();
 std::shared_ptr<ProjectedFragmentType> projected_fragment =
     ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
 
-Query<ProjectedFragmentType>(comm_spec, projected_fragment, new_params);
+Query<ProjectedFragmentType>(comm_spec, projected_fragment, new_params,user_lib_path);
 }  // namespace gs
 void Finalize() {
   grape::FinalizeMPIComm();
