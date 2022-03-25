@@ -34,6 +34,7 @@ DEFINE_string(efile, "", "edge file");
 DEFINE_string(vfile, "", "vertex file");
 DEFINE_bool(directed, true, "directed or not");
 DEFINE_string(user_lib_path, "", "user jni lib");
+DEFINE_string(app_class, "com.alibaba.graphscope.app.GraphxAdaptor", "graphx driver class"); //graphx_driver_class
 
 // put all flags in a json str
 std::string flags2JsonStr() {
@@ -42,15 +43,20 @@ std::string flags2JsonStr() {
       LOG(ERROR) << "user class not set";
   }
   pt.put("user_class", FLAGS_user_class);
-    if (FLAGS_efile.empty()){
+  if (FLAGS_efile.empty()){
       LOG(ERROR) << "efile not set";
   }
   pt.put("efile", FLAGS_efile);
-      if (FLAGS_vfile.empty()){
-      LOG(ERROR) << "efile not set";
+  if (FLAGS_vfile.empty()){
+      LOG(ERROR) << "vfile not set";
   }
   pt.put("vfile", FLAGS_vfile);
   pt.put("directed", FLAGS_directed);
+  if (FLAGS_user_lib_path.empty()){
+      LOG(ERROR) << "user jni lib not set";
+  }
+  pt.put("user_lib_path", FLAGS_user_lib_path);
+  pt.put("app_class", FLAGS_app_class);
 
   std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);
