@@ -101,6 +101,9 @@ public class AppContextGetter {
         if (appClass.getName().equals("com.alibaba.graphscope.app.GiraphComputationAdaptor")) {
             return "com.alibaba.graphscope.context.GiraphComputationAdaptorContext";
         }
+        if (appClass.getName().equals("com.alibaba.graphscope.app.GraphXAdaptor")){
+            return "com.alibaba.graphscope.context.GraphXAdaptorContext";
+        }
         Class<? extends DefaultContextBase> clz =
                 (Class<? extends DefaultContextBase>) getInterfaceTemplateType(appClass, 4);
         logger.info("app class {}, context class {}", appClass.getName(), clz.getName());
