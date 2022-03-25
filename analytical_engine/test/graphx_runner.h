@@ -45,7 +45,7 @@ namespace gs {
 static constexpr const char* IPC_SOCKET = "ipc_socket";
 static constexpr const char* EFILE = "efile";
 static constexpr const char* VFILE = "vfile";
-static constexpr const char* DIRECTED = "ipc_socket";
+static constexpr const char* DIRECTED = "directed";
 static constexpr const char* USER_LIB_PATH = "user_lib_path";
 using FragmentType =
     vineyard::ArrowFragment<int64_t, vineyard::property_graph_types::VID_TYPE>;
@@ -127,13 +127,14 @@ void CreateAndQuery(std::string params) {
   bool directed = getFromPtree<bool>(pt, DIRECTED);
   std::string user_lib_path = getFromPtree<std::string>(pt, USER_LIB_PATH);
 
+  VLOG(10) << "efile: " << efile << ", vfile: " << vfile
+           << "directed: " << directed;
   vineyard::Client client;
   vineyard::ObjectID fragment_id;
   VINEYARD_CHECK_OK(client.Connect(ipc_socket));
   VLOG(1) << "Connected to IPCServer: " << ipc_socket;
 
-  VLOG(10) << "efile: " << efile << ", vfile: " << vfile
-           << "directed: " << directed;
+
   if (efile.empty() || vfile.empty()) {
     LOG(FATAL) << "Make sure efile and vfile are avalibale";
   }

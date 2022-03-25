@@ -29,12 +29,13 @@ limitations under the License.
 
 #include "grape/config.h"
 
+DEFINE_string(ipc_socket, "/tmp/vineyard.sock", "vineyard socket addr");
 DEFINE_string(user_class, "", "graphx user app");
 DEFINE_string(efile, "", "edge file");
 DEFINE_string(vfile, "", "vertex file");
 DEFINE_bool(directed, true, "directed or not");
 DEFINE_string(user_lib_path, "", "user jni lib");
-DEFINE_string(app_class, "com.alibaba.graphscope.app.GraphxAdaptor", "graphx driver class"); //graphx_driver_class
+DEFINE_string(app_class, "com.alibaba.graphscope.app.GraphXAdaptor", "graphx driver class"); //graphx_driver_class
 
 // put all flags in a json str
 std::string flags2JsonStr() {
@@ -57,6 +58,7 @@ std::string flags2JsonStr() {
   }
   pt.put("user_lib_path", FLAGS_user_lib_path);
   pt.put("app_class", FLAGS_app_class);
+  pt.put("ipc_socket", FLAGS_ipc_socket);
 
   std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);
