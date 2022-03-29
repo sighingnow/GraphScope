@@ -14,7 +14,9 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import org.apache.spark.graphx.EdgeTriplet;
+import org.apache.spark.launcher.InProcessLauncher;
 import org.apache.spark.launcher.SparkAppHandle;
+import org.apache.spark.launcher.SparkAppHandle.Listener;
 import org.apache.spark.launcher.SparkLauncher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,20 +84,27 @@ public class GraphXProxy<VD, ED, MSG_T> {
             logger.error("USER_JAR_PATH not set");
         }
         logger.info("user app class: " + conf.getUserAppClass().get().getName());
-        Process process = new SparkLauncher()
+        SparkAppHandle appHandle = new InProcessLauncher()
             .setAppResource(user_jar_path)
             .setMainClass(conf.getUserAppClass().get().getName())
-            .setMaster("local")
+            .setMaster("local[2]")
             .setConf(SparkLauncher.EXECUTOR_EXTRA_CLASSPATH, user_jar_path)
             .setConf(SparkLauncher.DRIVER_EXTRA_CLASSPATH, user_jar_path)
             .setConf(SparkLauncher.DRIVER_MEMORY, "2g")
-            .redirectOutput(new File(SPARK_LAUNCHER_OUTPUT))
-            .redirectError()
-            .launch();
+                .setVerbose(true).startApplication();
         // Use handle API to monitor / control application.
-        logger.info("Start waiting for process {}", process);
-        int res= process.waitFor();
-        logger.info("waiting res: {}", res);
+        appHandle.addListener(new Listener() {
+            @Override
+            public void stateChanged(SparkAppHandle sparkAppHandle) {
+                logger.info("{} staged changed to {}", sparkAppHandle.getAppId(), sparkAppHandle.getState());
+            }
+
+            @Override
+            public void infoChanged(SparkAppHandle sparkAppHandle) {
+                logger.info("info changed");
+            }
+        });
+        logger.info("waiting finished");
     }
 
     public GraphXProxy(GraphXConf conf) {
