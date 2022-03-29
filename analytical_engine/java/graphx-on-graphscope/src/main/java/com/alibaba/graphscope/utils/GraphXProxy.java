@@ -9,10 +9,8 @@ import com.alibaba.graphscope.graph.EdgeManager;
 import com.alibaba.graphscope.graph.IdManager;
 import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.mm.MessageStore;
-import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.time.Duration;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.apache.spark.launcher.InProcessLauncher;
 import org.apache.spark.launcher.SparkAppHandle;
@@ -48,6 +46,25 @@ public class GraphXProxy<VD, ED, MSG_T> {
     private EdgeContextImpl<VD, ED, MSG_T> edgeContext;
     private GraphXConf conf;
     private EdgeManager<ED> edgeManager;
+
+    public GraphXProxy(GraphXConf conf) {
+        this.conf = conf;
+        Class<? extends GraphXAppBase> clz = conf.getUserAppClass().get();
+        GraphXAppBase app;
+        try {
+            app = clz.newInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new IllegalStateException("Exception in creating graphx App obj");
+        }
+        vprog = app.vprog();
+        sendMsg = app.sendMsg();
+        mergeMsg = app.mergeMsg();
+        logger.info("Got graphx app instatnce : {}", app);
+        logger.info("           vprog: {}", vprog);
+        logger.info("           sendMsg: {}", sendMsg);
+        logger.info("           mergeMsg: {}", mergeMsg);
+    }
 
     public GraphXProxy(GraphXConf conf, IdManager manager,
         VertexDataManager<VD> vertexDataManager) {
@@ -104,29 +121,55 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 logger.info("info changed");
             }
         });
+        logger.info("Start waiting app handle");
+        try {
+            waitFor(appHandle);
+        } catch (Exception e) {
+            logger.error("Exception when waiting apphanle to finish");
+            e.printStackTrace();
+        }
         logger.info("waiting finished");
     }
 
-    public GraphXProxy(GraphXConf conf) {
-        this.conf = conf;
-        Class<? extends GraphXAppBase> clz = conf.getUserAppClass().get();
-        GraphXAppBase app;
-        try {
-            app = clz.newInstance();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new IllegalStateException("Exception in creating graphx App obj");
+
+    /**
+     * Call a closure that performs a check every "period" until it succeeds, or the timeout
+     * elapses.
+     */
+    protected void eventually(Duration timeout, Duration period, Runnable check)
+        throws InterruptedException {
+        if (timeout.compareTo(period) > 0){
+            throw new IllegalStateException("Timeout needs to be larger than period.");
         }
-        vprog = app.vprog();
-        sendMsg = app.sendMsg();
-        mergeMsg = app.mergeMsg();
-        logger.info("Got graphx app instatnce : {}", app);
-        logger.info("           vprog: {}", vprog);
-        logger.info("           sendMsg: {}", sendMsg);
-        logger.info("           mergeMsg: {}", mergeMsg);
-
-        //get the main function
-
+        long deadline = System.nanoTime() + timeout.toNanos();
+        int count = 0;
+        while (true) {
+            try {
+                count++;
+                check.run();
+                return;
+            } catch (Throwable t) {
+                if (System.nanoTime() >= deadline) {
+                    String msg = String.format("Failed check after %d tries: %s.", count, t.getMessage());
+                    throw new IllegalStateException(msg, t);
+                }
+                logger.info("Error catch, continue waiting: " + t.getMessage());
+                Thread.sleep(period.toMillis());
+            }
+        }
     }
 
+    private void waitFor(SparkAppHandle handle)throws Exception{
+        try {
+            eventually(Duration.ofSeconds(10), Duration.ofMillis(10), () -> {
+                if (!handle.getState().isFinal()){
+                    throw new AssertionError("Handle is not in the final state");
+                }
+            });
+        } finally {
+            if (!handle.getState().isFinal()) {
+                handle.kill();
+            }
+        }
+    }
 }
