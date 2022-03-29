@@ -31,56 +31,22 @@ public class GraphConverter<VD, ED> {
     private long[] srcOid, dstOid;
     private ED[] edArray;
     private Graph<VD,ED> graph;
-    public GraphConverter() {
-
+    private Class<? extends VD> vdClass;
+    private Class<? extends ED> edClass;
+    public GraphConverter(Class<?> vdClass, Class<?> edClass) {
+        //ArrowFragmentLoader loader = Factor.createLoader(protocol = "graphx)
+        //also pass in the type info , vd type, ed type
+        //JavaLoaderInvoker invoker = loader.getInvoker();
+        //
+        this.vdClass = (Class<? extends VD>) vdClass;
+        this.edClass = (Class<? extends ED>) edClass;
     }
 
     public void init(Graph<VD, ED> graph){
         this.graph = graph;
-        RDD<ShippableVertexPartition<VD>> rdd = graph.vertices().partitionsRDD();
-        ShippableVertexPartition<VD>[] shippableVertexPartitions = (ShippableVertexPartition<VD>[]) rdd.collect();
-        int totalNumVertices = 0;
-        for (ShippableVertexPartition<VD>partition : shippableVertexPartitions) {
-            logger.info("parition [{}] size: {}",partition,  partition.size());
-            totalNumVertices += partition.size();
-        }
-        vdArray = (VD[]) new Object[totalNumVertices];
-        oidArray = new long[totalNumVertices];
-        int index = 0;
-        for (ShippableVertexPartition<VD>partition : shippableVertexPartitions) {
-            Iterator<Tuple2<Object, VD>> iterator = partition.iterator();
-            while (iterator.hasNext()){
-                Tuple2<Object, VD> tuple2 = iterator.next();
-                vdArray[index] = tuple2._2;
-                oidArray[index++] = (long) tuple2._1;
-                logger.info("vid [{}], data [{}], stored as [{}] [{}]", tuple2._1, tuple2._2, oidArray[index-1], vdArray[index-1]);
-            }
-        }
+        fillVertices();
         logger.info("Finish processing vertices, now edges");
-
-        index = 0;
-        RDD<Tuple2<Object, EdgePartition<ED, Object>>> edges = graph.edges().partitionsRDD();
-        Tuple2<Object, EdgePartition<ED,Object>>[] edgePartitions = (Tuple2<Object, EdgePartition<ED,Object>>[])edges.collect();
-        int totalEdgeNum = 0;
-        for (Tuple2<Object,EdgePartition<ED,Object>> tuple : edgePartitions) {
-            totalEdgeNum += tuple._2.size();
-        }
-        srcOid = new long[totalEdgeNum];
-        dstOid = new long[totalEdgeNum];
-        edArray = (ED[]) new Object[totalEdgeNum];
-        for (Tuple2<Object,EdgePartition<ED,Object>> tuple : edgePartitions){
-            Integer paritionId = (Integer) tuple._1;
-            EdgePartition<ED,Object> edgePartition = tuple._2;
-            logger.info("edge partition ind {} size {}", paritionId, edgePartition.size()); //index
-            Iterator<Edge<ED>> iterator = edgePartition.iterator();
-            while (iterator.hasNext()){
-                Edge<ED> edge = iterator.next();
-                srcOid[index] = edge.srcId();
-                dstOid[index] = edge.dstId();
-                edArray[index++] = edge.attr();
-                logger.info("adding edge: {} -> {} : {}", edge.srcId(), edge.dstId(), edge.attr());
-            }
-        }
+        fillEdges();
         logger.info("Finish processing edges");
         logger.info("Totally add vertices [{}], edges [{}]", vdArray.length, edArray.length);
     }
@@ -103,6 +69,53 @@ public class GraphConverter<VD, ED> {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private void fillVertices(){
+        RDD<ShippableVertexPartition<VD>> rdd = graph.vertices().partitionsRDD();
+        ShippableVertexPartition<VD>[] shippableVertexPartitions = (ShippableVertexPartition<VD>[]) rdd.collect();
+        int totalNumVertices = 0;
+        for (ShippableVertexPartition<VD>partition : shippableVertexPartitions) {
+            logger.info("parition [{}] size: {}",partition,  partition.size());
+            totalNumVertices += partition.size();
+        }
+        vdArray = (VD[]) new Object[totalNumVertices];
+        oidArray = new long[totalNumVertices];
+        int index = 0;
+        for (ShippableVertexPartition<VD>partition : shippableVertexPartitions) {
+            Iterator<Tuple2<Object, VD>> iterator = partition.iterator();
+            while (iterator.hasNext()){
+                Tuple2<Object, VD> tuple2 = iterator.next();
+                vdArray[index] = tuple2._2;
+                oidArray[index++] = (long) tuple2._1;
+                logger.info("vid [{}], data [{}], stored as [{}] [{}]", tuple2._1, tuple2._2, oidArray[index-1], vdArray[index-1]);
+            }
+        }
+    }
+    private void fillEdges(){
+        RDD<Tuple2<Object, EdgePartition<ED, Object>>> edges = graph.edges().partitionsRDD();
+        Tuple2<Object, EdgePartition<ED,Object>>[] edgePartitions = (Tuple2<Object, EdgePartition<ED,Object>>[])edges.collect();
+        int totalEdgeNum = 0;
+        for (Tuple2<Object,EdgePartition<ED,Object>> tuple : edgePartitions) {
+            totalEdgeNum += tuple._2.size();
+        }
+        srcOid = new long[totalEdgeNum];
+        dstOid = new long[totalEdgeNum];
+        edArray = (ED[]) new Object[totalEdgeNum];
+        int index = 0;
+        for (Tuple2<Object,EdgePartition<ED,Object>> tuple : edgePartitions){
+            Integer paritionId = (Integer) tuple._1;
+            EdgePartition<ED,Object> edgePartition = tuple._2;
+            logger.info("edge partition ind {} size {}", paritionId, edgePartition.size()); //index
+            Iterator<Edge<ED>> iterator = edgePartition.iterator();
+            while (iterator.hasNext()){
+                Edge<ED> edge = iterator.next();
+                srcOid[index] = edge.srcId();
+                dstOid[index] = edge.dstId();
+                edArray[index++] = edge.attr();
+                logger.info("adding edge: {} -> {} : {}", edge.srcId(), edge.dstId(), edge.attr());
+            }
+        }
     }
 
     private boolean check(int[] a, int[] b, long [] c){
