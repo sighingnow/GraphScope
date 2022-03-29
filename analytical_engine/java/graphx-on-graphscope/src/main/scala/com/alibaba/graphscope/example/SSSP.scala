@@ -3,7 +3,7 @@ package com.alibaba.graphscope.example
 import com.alibaba.graphscope.app.GraphXAppBase
 import org.apache.spark.SparkContext
 import org.apache.spark.graphx.util.GraphGenerators
-import org.apache.spark.graphx.{EdgeTriplet, Graph, VertexId}
+import org.apache.spark.graphx.{EdgeTriplet, Graph, GraphLoader, VertexId}
 import org.apache.spark.sql.SparkSession
 
 /**
@@ -42,8 +42,9 @@ object SSSP{
     // $example on$
     // A graph with edge attributes containing distances
     val graph: Graph[Long, Double] =
-    GraphGenerators.logNormalGraph(sc, numVertices = 100).mapEdges(e => e.attr.toDouble)
-    val sourceId: VertexId = 42 // The ultimate source
+     GraphLoader.edgeListFile(sc, "/home/graphscope/data/followers.txt")
+       .mapEdges(e => e.attr.toDouble).mapVertices((vid, _) => vid)
+    val sourceId: VertexId = 2 // The ultimate source
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, _) =>
       if (id == sourceId) 0.0 else Double.PositiveInfinity)
