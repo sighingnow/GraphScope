@@ -61,6 +61,13 @@ public class GraphConverter<VD, ED> {
         index = 0;
         RDD<Tuple2<Object, EdgePartition<ED, Object>>> edges = graph.edges().partitionsRDD();
         Tuple2<Object, EdgePartition<ED,Object>>[] edgePartitions = (Tuple2<Object, EdgePartition<ED,Object>>[])edges.collect();
+        int totalEdgeNum = 0;
+        for (Tuple2<Object,EdgePartition<ED,Object>> tuple : edgePartitions) {
+            totalEdgeNum += tuple._2.size();
+        }
+        srcOid = new long[totalEdgeNum];
+        dstOid = new long[totalEdgeNum];
+        edArray = (ED[]) new Object[totalEdgeNum];
         for (Tuple2<Object,EdgePartition<ED,Object>> tuple : edgePartitions){
             Integer paritionId = (Integer) tuple._1;
             EdgePartition<ED,Object> edgePartition = tuple._2;
@@ -79,6 +86,8 @@ public class GraphConverter<VD, ED> {
     }
 
     public ArrowProjectedFragment<Long, Long, VD, ED> convert() {
+        //Call In memory ArrowFragmentLoader to load vertices and edges(which are already loaded offheap)
+
         return new ArrowProjectedEmpty();
     }
 
