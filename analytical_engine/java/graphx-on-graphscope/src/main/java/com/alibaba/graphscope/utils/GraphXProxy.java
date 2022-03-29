@@ -9,6 +9,7 @@ import com.alibaba.graphscope.graph.EdgeManager;
 import com.alibaba.graphscope.graph.IdManager;
 import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.mm.MessageStore;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -26,6 +27,7 @@ import scala.collection.Iterator;
 public class GraphXProxy<VD, ED, MSG_T> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphXProxy.class.getName());
+    private static String SPARK_LAUNCHER_OUTPUT = "spark_laucher_output";
     /**
      * User vertex program: vprog: (VertexId, VD, A) => VD
      */
@@ -84,6 +86,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
             .setMainClass(conf.getUserAppClass().get().getName())
             .setMaster("local")
             .setConf(SparkLauncher.DRIVER_MEMORY, "2g")
+            .redirectOutput(new File(SPARK_LAUNCHER_OUTPUT))
             .redirectError()
             .launch();
         // Use handle API to monitor / control application.
