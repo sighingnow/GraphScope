@@ -30,16 +30,19 @@ public class GraphConverter<VD, ED> {
 
     public ArrowProjectedFragment<Long, Long, VD, ED> convert(Graph<VD, ED> graph) {
         RDD<ShippableVertexPartition<VD>> rdds = graph.vertices().partitionsRDD();
-        for (Partition partition : rdds.partitions()) {
+        ShippableVertexPartition<VD>[] shippableVertexPartitions = (ShippableVertexPartition<VD>[]) rdds.collect();
+        for (ShippableVertexPartition<VD>partition : shippableVertexPartitions) {
             logger.info("partition {}: {}", partition.index(), partition.toString());
-            ShippableVertexPartition<VD> shippableVertexPartition = (ShippableVertexPartition<VD>) partition;
-            logger.info("parition size: {}", shippableVertexPartition.size());
-            logger.info("vd array: {}", arrayToString((VD[]) shippableVertexPartition.values()));
+            logger.info("parition size: {}", partition.size());
+            logger.info("vd array: {}", arrayToString((VD[]) partition.values()));
         }
+
         RDD<Tuple2<Object, EdgePartition<ED, Object>>> edges = graph.edges().partitionsRDD();
-        for (Partition partition : edges.partitions()){
-            EdgePartition<ED,VD> edgePartition = (EdgePartition<ED, VD>) partition;
-            logger.info("edge partition ind {} size {}", partition.index(), edgePartition.size()); //index
+        Tuple2<Object, EdgePartition<ED,Object>>[] edgePartitions = (Tuple2<Object, EdgePartition<ED,Object>>[])edges.collect();
+        for (Tuple2<Object,EdgePartition<ED,Object>> tuple : edgePartitions){
+            Integer paritionId = (Integer) tuple._1;
+            EdgePartition<ED,Object> edgePartition = tuple._2;
+            logger.info("edge partition ind {} size {}", paritionId, edgePartition.size()); //index
             int[] localSrcIds = getFieldWithReflection(edgePartition, "localSrcIds", int[].class);
             int[] localDstIds = getFieldWithReflection(edgePartition, "localDstIds", int[].class);
             long[] globalIds = getFieldWithReflection(edgePartition, "local2global", long[].class);
@@ -51,7 +54,7 @@ public class GraphConverter<VD, ED> {
         return new ArrowProjectedEmpty();
     }
 
-    private <ARRAY_TYPE> ARRAY_TYPE getFieldWithReflection(EdgePartition<ED,VD> edgePartition, String fieldName, Class<? extends ARRAY_TYPE> clz){
+    private <ARRAY_TYPE> ARRAY_TYPE getFieldWithReflection(EdgePartition<ED,Object> edgePartition, String fieldName, Class<? extends ARRAY_TYPE> clz){
         try {
             Field field = edgePartition.getClass().getDeclaredField(fieldName);
             field.setAccessible(true);
