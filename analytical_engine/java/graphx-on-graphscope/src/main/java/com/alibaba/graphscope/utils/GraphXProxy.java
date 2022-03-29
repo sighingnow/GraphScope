@@ -79,6 +79,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
         if (user_jar_path == null || user_jar_path.isEmpty()){
             logger.error("USER_JAR_PATH not set");
         }
+        logger.info("user app class: " + conf.getUserAppClass().get().getName());
         Process process = new SparkLauncher()
             .setAppResource(user_jar_path)
             .setMainClass(conf.getUserAppClass().get().getName())
@@ -93,6 +94,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
     }
 
     public GraphXProxy(GraphXConf conf) {
+        this.conf = conf;
         Class<? extends GraphXAppBase> clz = conf.getUserAppClass().get();
         GraphXAppBase app;
         try {
