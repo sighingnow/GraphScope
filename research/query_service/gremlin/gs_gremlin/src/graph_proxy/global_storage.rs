@@ -87,6 +87,9 @@ where
                 .ok_or(str_to_dyn_error("get schema failed"))?;
             let label_ids = encode_storage_label(params.labels.as_ref(), schema.clone());
             let prop_ids = encode_storage_prop_key(params.props.as_ref(), schema.clone());
+            let mut prop_names: HashMap<PropId, PropKey> = HashMap::new();
+            let schema_cloned = schema.clone();
+
             let filter = params.filter.clone();
             let partitions: Vec<PartitionId> =
                 partitions.iter().map(|pid| *pid as PartitionId).collect();
@@ -104,7 +107,7 @@ where
                     // Each worker will scan the partitions pre-allocated in source operator. Same as follows.
                     partitions.as_ref(),
                 )
-                .map(move |v| to_runtime_vertex(&v));
+                .map(move |v| to_runtime_vertex(&v, &schema_cloned, &mut prop_names));
 
             Ok(filter_limit!(result, filter, None))
         } else {
@@ -129,6 +132,9 @@ where
                 .ok_or(str_to_dyn_error("get schema failed"))?;
             let label_ids = encode_storage_label(params.labels.as_ref(), schema.clone());
             let prop_ids = encode_storage_prop_key(params.props.as_ref(), schema.clone());
+            let mut prop_names: HashMap<PropId, PropKey> = HashMap::new();
+            let schema_cloned = schema.clone();
+
             let filter = params.filter.clone();
             let partitions: Vec<PartitionId> =
                 partitions.iter().map(|pid| *pid as PartitionId).collect();
@@ -142,7 +148,7 @@ where
                     params.limit.unwrap_or(0),
                     partitions.as_ref(),
                 )
-                .map(move |e| to_runtime_edge(&e));
+                .map(move |e| to_runtime_edge(&e, &schema_cloned, &mut prop_names));
 
             Ok(filter_limit!(result, filter, None))
         } else {
@@ -166,12 +172,15 @@ where
             .get_schema(si)
             .ok_or(str_to_dyn_error("get schema failed"))?;
         let prop_ids = encode_storage_prop_key(params.props.as_ref(), schema.clone());
+        let mut prop_names: HashMap<PropId, PropKey> = HashMap::new();
+        let schema_cloned = schema.clone();
+
         let filter = params.filter.clone();
         let partition_label_vertex_ids =
             get_partition_label_vertex_ids(ids, self.partition_manager.clone());
         let result = store
             .get_vertex_properties(si, partition_label_vertex_ids, prop_ids.as_ref())
-            .map(move |v| to_runtime_vertex(&v));
+            .map(move |v| to_runtime_vertex(&v, &schema_cloned, &mut prop_names));
 
         Ok(filter_limit!(result, filter, None))
     }
@@ -249,8 +258,12 @@ where
                     Box::new(IterList::new(iters))
                 }
             };
+
+            let mut prop_names: HashMap<PropId, PropKey> = HashMap::new();
+            let schema_cloned = schema.clone();
+
             let iters = iter.map(|(_src, vi)| vi).collect();
-            let iter_list = IterList::new(iters).map(move |v| to_runtime_vertex(&v));
+            let iter_list = IterList::new(iters).map(move |v| to_runtime_vertex(&v, &schema_cloned, &mut prop_names));
             Ok(filter_limit!(iter_list, filter, None))
         });
         Ok(stmt)
@@ -323,8 +336,12 @@ where
                     Box::new(IterList::new(iter))
                 }
             };
+
+            let mut prop_names: HashMap<PropId, PropKey> = HashMap::new();
+            let schema_cloned = schema.clone();
+
             let iters = iter.map(|(_src, ei)| ei).collect();
-            let iter_list = IterList::new(iters).map(move |e| to_runtime_edge(&e));
+            let iter_list = IterList::new(iters).map(move |e| to_runtime_edge(&e, &schema_cloned, &mut prop_names));
             Ok(filter_limit!(iter_list, filter, None))
         });
         Ok(stmt)
@@ -332,24 +349,30 @@ where
 }
 
 #[inline]
-fn to_runtime_vertex<V: StoreVertex>(v: &V) -> Vertex {
+fn to_runtime_vertex<V: StoreVertex>(
+        v: &V,
+        schema: &Arc<dyn Schema>,
+        prop_names: &mut HashMap<PropId, PropKey>) -> Vertex {
     let id = v.get_id() as ID;
     let label = Some(Label::Id(v.get_label_id() as RuntimeLabelId));
     let properties = v
         .get_properties()
-        .map(|(prop_id, prop_val)| encode_runtime_property(prop_id, prop_val))
+        .map(|(prop_id, prop_val)| encode_runtime_property_with_name(prop_id, prop_val, &schema, prop_names))
         .collect();
     let details = DefaultDetails::new_with_prop(id, label.clone().unwrap(), properties);
     Vertex::new(id, label, details)
 }
 
 #[inline]
-fn to_runtime_edge<E: StoreEdge>(e: &E) -> Edge {
+fn to_runtime_edge<E: StoreEdge>(
+        e: &E,
+        schema: &Arc<dyn Schema>,
+        prop_names: &mut HashMap<PropId, PropKey>) -> Edge {
     let id = e.get_edge_id() as ID;
     let label = Some(Label::Id(e.get_label_id() as RuntimeLabelId));
     let properties = e
         .get_properties()
-        .map(|(prop_id, prop_val)| encode_runtime_property(prop_id, prop_val))
+        .map(|(prop_id, prop_val)| encode_runtime_property_with_name(prop_id, prop_val, &schema, prop_names))
         .collect();
     let mut edge = Edge::new(
         id,
@@ -365,6 +388,15 @@ fn to_runtime_edge<E: StoreEdge>(e: &E) -> Edge {
     edge.set_src_label(Label::Id(e.get_src_label_id() as RuntimeLabelId));
     edge.set_dst_label(Label::Id(e.get_dst_label_id() as RuntimeLabelId));
     edge
+}
+
+#[inline]
+fn collect_property_names(prop_names: Option<&Vec<PropKey>>) -> Option<Vec<PropKey>> {
+    if let Some(prop_names) = prop_names {
+        Some(prop_names.iter().map(|prop_key| prop_key.clone()).collect())
+    } else {
+        None
+    }
 }
 
 /// in maxgraph store, Option<Vec<PropId>>: None means we need all properties,
@@ -411,6 +443,41 @@ fn encode_storage_label(labels: &Vec<Label>, schema: Arc<dyn Schema>) -> Vec<Lab
 #[inline]
 fn encode_runtime_property(prop_id: PropId, prop_val: Property) -> (PropKey, Object) {
     let prop_key = PropKey::Id(prop_id);
+    let prop_val = match prop_val {
+        Property::Bool(b) => b.into(),
+        Property::Char(c) => {
+            if c <= (i8::MAX as u8) {
+                Object::Primitive(Primitives::Byte(c as i8))
+            } else {
+                Object::Primitive(Primitives::Integer(c as i32))
+            }
+        }
+        Property::Short(s) => Object::Primitive(Primitives::Integer(s as i32)),
+        Property::Int(i) => Object::Primitive(Primitives::Integer(i)),
+        Property::Long(l) => Object::Primitive(Primitives::Long(l)),
+        Property::Float(f) => Object::Primitive(Primitives::Float(f as f64)),
+        Property::Double(d) => Object::Primitive(Primitives::Float(d)),
+        Property::Bytes(v) => Object::Blob(v.into_boxed_slice()),
+        Property::String(s) => Object::String(s),
+        _ => unimplemented!(),
+    };
+    (prop_key, prop_val)
+}
+
+#[inline]
+fn encode_runtime_property_with_name(
+        prop_id: PropId,
+        prop_val: Property,
+        schema: &Arc<dyn Schema>,
+        prop_names: &mut HashMap<PropId, PropKey>) -> (PropKey, Object) {
+    let prop_key = if let Some(prop_key) = prop_names.get(&prop_id) {
+        prop_key.clone()
+    } else {
+        let prop_key = PropKey::Str(schema.get_prop_name(prop_id).unwrap());
+        prop_names.insert(prop_id, prop_key.clone());
+        prop_key
+    };
+    prop_names.get(&prop_id).unwrap().clone();
     let prop_val = match prop_val {
         Property::Bool(b) => b.into(),
         Property::Char(c) => {
