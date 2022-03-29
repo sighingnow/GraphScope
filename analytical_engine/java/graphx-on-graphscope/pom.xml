@@ -132,6 +132,7 @@
                   <artifact>org.apache.spark:spark-graphx_2.12</artifact>
                   <excludes>
                     <exclude>org/apache/spark/graphx/impl/VertexRDDImpl</exclude>
+                    <exclude>org/apache/spark/graphx/Pregel</exclude>
                   </excludes>
                 </filter>
                 <filter>
