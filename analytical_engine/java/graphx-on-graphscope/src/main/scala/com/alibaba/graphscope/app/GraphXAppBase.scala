@@ -3,7 +3,7 @@ package com.alibaba.graphscope.app
 import org.apache.spark.graphx.{EdgeTriplet, VertexId}
 
 /**
- *  * Scala trait acts like java interface. We define three key abstract method, user need to override
+ * [Only for testing]Scala trait acts like java interface. We define three key abstract method, user need to override
  * them to provide core computation logic.
  *
  * @tparam VD vertex data

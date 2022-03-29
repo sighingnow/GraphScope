@@ -14,4 +14,8 @@ public interface IdManager{
     long oid2Gid(long oid);
 
     long[] getOidArray();
+
+    long innerVerticesNum();
+
+    long verticesNum();
 }

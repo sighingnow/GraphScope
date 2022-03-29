@@ -127,6 +127,9 @@ object Pregel extends Logging {
   {
     require(maxIterations > 0, s"Maximum number of iterations must be greater than 0," +
       s" but got ${maxIterations}")
+    log.info("Pregel method invoked")
+    //Convert to a GraphScope graph.
+//    val gsGraph = convertToGSGraph(graph)
 
     graph
   } // end of apply

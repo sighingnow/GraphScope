@@ -29,4 +29,14 @@ public class IdManagerImpl implements IdManager {
     public long[] getOidArray() {
         return new long[0];
     }
+
+    @Override
+    public long innerVerticesNum() {
+        return 0;
+    }
+
+    @Override
+    public long verticesNum() {
+        return 0;
+    }
 }

@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.graphscope.conf.GraphXConf;
 import com.alibaba.graphscope.factory.GraphXFactory;
 import com.alibaba.graphscope.fragment.IFragment;
+import com.alibaba.graphscope.mm.MessageStore;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.utils.GraphXProxy;
 import org.apache.spark.graphx.impl.GraphImpl;
@@ -21,6 +22,10 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     private GraphXProxy graphXProxy;
     private GraphXConf conf;
 
+    public GraphXProxy getGraphXProxy(){
+        return graphXProxy;
+    }
+
     @Override
     public void Init(IFragment<Long, Long, VDATA_T, EDATA_T> frag,
         DefaultMessageManager messageManager, JSONObject jsonObject)  {
@@ -36,11 +41,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
             return ;
         }
         graphXProxy = GraphXFactory.createGraphXProxy(conf);
-
-
         //Fetch graph data from c++, copy to java heap and construct a GraphX graph
-
-        //Find out the app class from jsonObject.(Pregel interface)
 
     }
 
@@ -48,4 +49,6 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     public void Output(IFragment<Long, Long, VDATA_T, EDATA_T> frag) {
 
     }
+
+
 }
