@@ -8,14 +8,19 @@ import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.ds.VertexRange;
 import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
 import java.lang.reflect.Field;
+import org.apache.spark.graphx.Edge;
 import org.apache.spark.graphx.Graph;
 import org.apache.spark.graphx.impl.EdgePartition;
 import org.apache.spark.graphx.impl.ShippableVertexPartition;
+import org.apache.spark.graphx.util.collection.GraphXPrimitiveKeyOpenHashMap;
 import org.apache.spark.rdd.RDD;
+import org.apache.spark.util.collection.OpenHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Option;
 import scala.Tuple2;
 import scala.collection.Iterator;
+import scala.reflect.ClassTag;
 
 public class GraphConverter<VD, ED> {
 
@@ -46,32 +51,34 @@ public class GraphConverter<VD, ED> {
             Iterator<Tuple2<Object, VD>> iterator = partition.iterator();
             while (iterator.hasNext()){
                 Tuple2<Object, VD> tuple2 = iterator.next();
-                logger.info("vid [{}], data [{}]", tuple2._1, tuple2._2);
                 vdArray[index] = tuple2._2;
                 oidArray[index++] = (long) tuple2._1;
+                logger.info("vid [{}], data [{}], stored as [{}] [{}]", tuple2._1, tuple2._2, oidArray[index-1], vdArray[index-1]);
             }
         }
         logger.info("Finish processing vertices, now edges");
 
+        index = 0;
         RDD<Tuple2<Object, EdgePartition<ED, Object>>> edges = graph.edges().partitionsRDD();
         Tuple2<Object, EdgePartition<ED,Object>>[] edgePartitions = (Tuple2<Object, EdgePartition<ED,Object>>[])edges.collect();
         for (Tuple2<Object,EdgePartition<ED,Object>> tuple : edgePartitions){
             Integer paritionId = (Integer) tuple._1;
             EdgePartition<ED,Object> edgePartition = tuple._2;
             logger.info("edge partition ind {} size {}", paritionId, edgePartition.size()); //index
-            int[] localSrcIds = getFieldWithReflection(edgePartition, "localSrcIds", int[].class);
-            int[] localDstIds = getFieldWithReflection(edgePartition, "localDstIds", int[].class);
-            long[] globalIds = getFieldWithReflection(edgePartition, "local2global", long[].class);
-            check(localSrcIds, localDstIds, globalIds);
-            for (int i = 0; i < edgePartition.size(); ++i){
-                logger.info("edge [{}] src [{}] dst [{}]", i, globalIds[localSrcIds[i]], globalIds[localDstIds[i]]);
+            Iterator<Edge<ED>> iterator = edgePartition.iterator();
+            while (iterator.hasNext()){
+                Edge<ED> edge = iterator.next();
+                srcOid[index] = edge.srcId();
+                dstOid[index] = edge.dstId();
+                edArray[index++] = edge.attr();
+                logger.info("adding edge: {} -> {} : {}", edge.srcId(), edge.dstId(), edge.attr());
             }
         }
+        logger.info("Finish processing edges");
+        logger.info("Totally add vertices [{}], edges [{}]", vdArray.length, edArray.length);
     }
 
     public ArrowProjectedFragment<Long, Long, VD, ED> convert() {
-
-
         return new ArrowProjectedEmpty();
     }
 
