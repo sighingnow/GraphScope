@@ -17,8 +17,9 @@
 
 package org.apache.spark.graphx
 
-import scala.reflect.ClassTag
+import com.alibaba.graphscope.utils.GraphConverter
 
+import scala.reflect.ClassTag
 import org.apache.spark.graphx.util.PeriodicGraphCheckpointer
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
@@ -132,6 +133,10 @@ object Pregel extends Logging {
 //    val gsGraph = convertToGSGraph(graph)
     graph.vertices.saveAsTextFile("followers-vertex")
     graph.edges.saveAsTextFile("followers-edge")
+    val converter : GraphConverter[VD,ED] = new GraphConverter[VD,ED]()
+    val frag = converter.convert(graph)
+    log.info("convert res: " + frag)
+
 
     graph
   } // end of apply

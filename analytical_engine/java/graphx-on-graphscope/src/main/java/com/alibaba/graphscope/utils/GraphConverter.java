@@ -1,0 +1,446 @@
+package com.alibaba.graphscope.utils;
+
+import com.alibaba.graphscope.ds.DestList;
+import com.alibaba.graphscope.ds.ProjectedAdjList;
+import com.alibaba.graphscope.ds.PropertyNbrUnit;
+import com.alibaba.graphscope.ds.TypedArray;
+import com.alibaba.graphscope.ds.Vertex;
+import com.alibaba.graphscope.ds.VertexRange;
+import com.alibaba.graphscope.example.SSSP;
+import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
+import java.lang.reflect.Field;
+import jnr.ffi.annotations.In;
+import org.apache.spark.Partition;
+import org.apache.spark.graphx.Graph;
+import org.apache.spark.graphx.impl.EdgePartition;
+import org.apache.spark.graphx.impl.ShippableVertexPartition;
+import org.apache.spark.rdd.RDD;
+import org.checkerframework.checker.units.qual.A;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import scala.Tuple2;
+
+public class GraphConverter<VD, ED> {
+
+    private static Logger logger = LoggerFactory.getLogger(GraphConverter.class.getName());
+
+    public GraphConverter() {
+
+    }
+
+    public ArrowProjectedFragment<Long, Long, VD, ED> convert(Graph<VD, ED> graph) {
+        RDD<ShippableVertexPartition<VD>> rdds = graph.vertices().partitionsRDD();
+        for (Partition partition : rdds.partitions()) {
+            logger.info("partition {}: {}", partition.index(), partition.toString());
+            ShippableVertexPartition<VD> shippableVertexPartition = (ShippableVertexPartition<VD>) partition;
+            logger.info("parition size: {}", shippableVertexPartition.size());
+            logger.info("vd array: {}", arrayToString((VD[]) shippableVertexPartition.values()));
+        }
+        RDD<Tuple2<Object, EdgePartition<ED, Object>>> edges = graph.edges().partitionsRDD();
+        for (Partition partition : edges.partitions()){
+            EdgePartition<ED,VD> edgePartition = (EdgePartition<ED, VD>) partition;
+            logger.info("edge partition ind {} size {}", partition.index(), edgePartition.size()); //index
+            int[] localSrcIds = getFieldWithReflection(edgePartition, "localSrcIds", int[].class);
+            int[] localDstIds = getFieldWithReflection(edgePartition, "localDstIds", int[].class);
+            long[] globalIds = getFieldWithReflection(edgePartition, "local2global", long[].class);
+            check(localSrcIds, localDstIds, globalIds);
+            for (int i = 0; i < edgePartition.size(); ++i){
+                logger.info("edge [{}] src [{}] dst [{}]", i, globalIds[localSrcIds[i]], globalIds[localDstIds[i]]);
+            }
+        }
+        return new ArrowProjectedEmpty();
+    }
+
+    private <ARRAY_TYPE> ARRAY_TYPE getFieldWithReflection(EdgePartition<ED,VD> edgePartition, String fieldName, Class<? extends ARRAY_TYPE> clz){
+        try {
+            Field field = edgePartition.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            ARRAY_TYPE res = (ARRAY_TYPE) field.get(edgePartition);
+            return res;
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private boolean check(int[] a, int[] b, long [] c){
+        if (a.length != b.length){
+            throw new IllegalStateException("src id arr lenght neq to dst id arr length" + a.length + ", " + b.length);
+        }
+        return true;
+    }
+
+    public String arrayToString(VD[] array) {
+        StringBuilder sb = new StringBuilder();
+        for (VD vd : array) {
+            sb.append(vd);
+        }
+        return sb.toString();
+    }
+
+    public class ArrowProjectedEmpty implements ArrowProjectedFragment {
+
+        @Override
+        public ProjectedAdjList getIncomingAdjList(Vertex vertex) {
+            return null;
+        }
+
+        @Override
+        public ProjectedAdjList getOutgoingAdjList(Vertex vertex) {
+            return null;
+        }
+
+        @Override
+        public PropertyNbrUnit getOutEdgesPtr() {
+            return null;
+        }
+
+        @Override
+        public long getOEOffsetsBeginPtr() {
+            return 0;
+        }
+
+        @Override
+        public long getOEOffsetsEndPtr() {
+            return 0;
+        }
+
+        @Override
+        public TypedArray getEdataArrayAccessor() {
+            return null;
+        }
+
+        /**
+         * Get the number of inner vertices.
+         *
+         * @return number of inner vertices.
+         */
+        @Override
+        public long getInnerVerticesNum() {
+            return 0;
+        }
+
+        /**
+         * Get the number of outer vertices.
+         *
+         * @return umber of outer vertices.
+         */
+        @Override
+        public long getOuterVerticesNum() {
+            return 0;
+        }
+
+        /**
+         * Obtain vertex range contains all inner vertices.
+         *
+         * @return vertex range.
+         */
+        @Override
+        public VertexRange innerVertices() {
+            return null;
+        }
+
+        /**
+         * Obtain vertex range contains all outer vertices.
+         *
+         * @return vertex range.
+         */
+        @Override
+        public VertexRange outerVertices() {
+            return null;
+        }
+
+        /**
+         * Check whether a vertex is a inner vertex for a fragment.
+         *
+         * @param vertex querying vertex.
+         * @return true if is inner vertex.
+         */
+        @Override
+        public boolean isInnerVertex(Vertex vertex) {
+            return false;
+        }
+
+        /**
+         * Check whether a vertex is a outer vertex for a fragment.
+         *
+         * @param vertex querying vertex.
+         * @return true if is outer vertex.
+         */
+        @Override
+        public boolean isOuterVertex(Vertex vertex) {
+            return false;
+        }
+
+        /**
+         * Check whether a vertex, represented in OID_T, is a inner vertex. If yes, if true and put
+         * inner representation id in the second param. Else return false.
+         *
+         * @param oid    querying vertex in OID_T.
+         * @param vertex placeholder for VID_T, if oid belongs to this fragment.
+         * @return inner vertex or not.
+         */
+        @Override
+        public boolean getInnerVertex(Object oid, Vertex vertex) {
+            return false;
+        }
+
+        /**
+         * Check whether a vertex, represented in OID_T, is a outer vertex. If yes, if true and put
+         * outer representation id in the second param. Else return false.
+         *
+         * @param oid    querying vertex in OID_T.
+         * @param vertex placeholder for VID_T, if oid doesn't belong to this fragment.
+         * @return outer vertex or not.
+         */
+        @Override
+        public boolean getOuterVertex(Object oid, Vertex vertex) {
+            return false;
+        }
+
+        /**
+         * Obtain vertex id from original id, only for inner vertex.
+         *
+         * @param vertex querying vertex.
+         * @return original id.
+         */
+        @Override
+        public Object getInnerVertexId(Vertex vertex) {
+            return null;
+        }
+
+        /**
+         * Obtain vertex id from original id, only for outer vertex.
+         *
+         * @param vertex querying vertex.
+         * @return original id.
+         */
+        @Override
+        public Object getOuterVertexId(Vertex vertex) {
+            return null;
+        }
+
+        /**
+         * Convert from global id to an inner vertex handle.
+         *
+         * @param gid    Input global id.
+         * @param vertex Output vertex handle.
+         * @return True if exists an inner vertex of this fragment with global id as gid, false
+         * otherwise.
+         */
+        @Override
+        public boolean innerVertexGid2Vertex(Object gid, Vertex vertex) {
+            return false;
+        }
+
+        /**
+         * Convert from global id to an outer vertex handle.
+         *
+         * @param gid    Input global id.
+         * @param vertex Output vertex handle.
+         * @return True if exists an outer vertex of this fragment with global id as gid, false
+         * otherwise.
+         */
+        @Override
+        public boolean outerVertexGid2Vertex(Object gid, Vertex vertex) {
+            return false;
+        }
+
+        /**
+         * Convert from inner vertex handle to its global id.
+         *
+         * @param vertex Input vertex handle.
+         * @return Global id of the vertex.
+         */
+        @Override
+        public Object getOuterVertexGid(Vertex vertex) {
+            return null;
+        }
+
+        /**
+         * Convert from outer vertex handle to its global id.
+         *
+         * @param vertex Input vertex handle.
+         * @return Global id of the vertex.
+         */
+        @Override
+        public Object getInnerVertexGid(Vertex vertex) {
+            return null;
+        }
+
+        /**
+         * Return the incoming edge destination fragment ID list of a inner vertex.
+         *
+         * <p>For inner vertex v of fragment-0, if outer vertex u and w are parents of v. u belongs
+         * to fragment-1 and w belongs to fragment-2, then 1 and 2 are in incoming edge destination
+         * fragment ID list of v.
+         *
+         * <p>This method is encapsulated in the corresponding sending message API,
+         * SendMsgThroughIEdges, so it is not recommended to use this method directly in application
+         * programs.
+         *
+         * @param vertex Input vertex.
+         * @return The incoming edge destination fragment ID list.
+         */
+        @Override
+        public DestList inEdgeDests(Vertex vertex) {
+            return null;
+        }
+
+        /**
+         * Return the outgoing edge destination fragment ID list of a inner vertex.
+         *
+         * <p>For inner vertex v of fragment-0, if outer vertex u and w are children of v. u
+         * belongs
+         * to fragment-1 and w belongs to fragment-2, then 1 and 2 are in outgoing edge destination
+         * fragment ID list of v.
+         *
+         * <p>This method is encapsulated in the corresponding sending message API,
+         * SendMsgThroughOEdges, so it is not recommended to use this method directly in application
+         * programs.
+         *
+         * @param vertex Input vertex.
+         * @return The outgoing edge destination fragment ID list.
+         */
+        @Override
+        public DestList outEdgeDests(Vertex vertex) {
+            return null;
+        }
+
+        /**
+         * Get both the in edges and out edges.
+         *
+         * @param vertex query vertex.
+         * @return The outgoing and incoming edge destination fragment ID list.
+         */
+        @Override
+        public DestList inOutEdgeDests(Vertex vertex) {
+            return null;
+        }
+
+        @Override
+        public Object getData(Vertex vertex) {
+            return null;
+        }
+
+        /**
+         * @return The id of current fragment.
+         */
+        @Override
+        public int fid() {
+            return 0;
+        }
+
+        /**
+         * Number of fragments.
+         *
+         * @return number of fragments.
+         */
+        @Override
+        public int fnum() {
+            return 0;
+        }
+
+        /**
+         * Returns the number of edges in this fragment.
+         *
+         * @return the number of edges in this fragment.
+         */
+        @Override
+        public long getEdgeNum() {
+            return 0;
+        }
+
+        /**
+         * Returns the number of vertices in this fragment.
+         *
+         * @return the number of vertices in this fragment.
+         */
+        @Override
+        public Object getVerticesNum() {
+            return null;
+        }
+
+        /**
+         * Returns the number of vertices in the entire graph.
+         *
+         * @return The number of vertices in the entire graph.
+         */
+        @Override
+        public long getTotalVerticesNum() {
+            return 0;
+        }
+
+        /**
+         * Get all vertices referenced to this fragment.
+         *
+         * @return A vertex set can be iterate on.
+         */
+        @Override
+        public VertexRange vertices() {
+            return null;
+        }
+
+        /**
+         * Get the vertex handle from the original id.
+         *
+         * @param oid    input original id.
+         * @param vertex output vertex handle
+         * @return If find the vertex in this fragment, return true. Otherwise, return false.
+         */
+        @Override
+        public boolean getVertex(Object oid, Vertex vertex) {
+            return false;
+        }
+
+        /**
+         * Get the original Id of a vertex.
+         *
+         * @param vertex querying vertex.
+         * @return original id.
+         */
+        @Override
+        public Object getId(Vertex vertex) {
+            return null;
+        }
+
+        /**
+         * To which fragment the vertex belongs.
+         *
+         * @param vertex querying vertex.
+         * @return frag id.
+         */
+        @Override
+        public int getFragId(Vertex vertex) {
+            return 0;
+        }
+
+        @Override
+        public int getLocalInDegree(Vertex vertex) {
+            return 0;
+        }
+
+        @Override
+        public int getLocalOutDegree(Vertex vertex) {
+            return 0;
+        }
+
+        @Override
+        public boolean gid2Vertex(Object gid, Vertex vertex) {
+            return false;
+        }
+
+        @Override
+        public Object vertex2Gid(Vertex vertex) {
+            return null;
+        }
+
+        @Override
+        public long getAddress() {
+            return 0;
+        }
+    }
+
+}

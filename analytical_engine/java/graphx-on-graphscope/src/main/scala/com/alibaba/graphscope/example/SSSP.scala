@@ -12,6 +12,7 @@ import org.apache.spark.sql.SparkSession
  * msg_t = long
  */
 class SSSP extends GraphXAppBase[Long,Long,Long]{
+  val arr : Array[Int] = null
   override def vprog(): (VertexId, Long, Long) => Long = {
     (id, dist, newDist) => math.min(dist, newDist)
   }
@@ -42,7 +43,7 @@ object SSSP{
     // $example on$
     // A graph with edge attributes containing distances
     val graph: Graph[Long, Double] =
-     GraphLoader.edgeListFile(sc, "/home/graphscope/data/followers.txt")
+     GraphLoader.edgeListFile(sc, "/home/graphscope/data/followers.txt", false, 2)
        .mapEdges(e => e.attr.toDouble).mapVertices((vid, _) => vid)
     val sourceId: VertexId = 2 // The ultimate source
     // Initialize the graph such that all vertices except the root have distance infinity.
