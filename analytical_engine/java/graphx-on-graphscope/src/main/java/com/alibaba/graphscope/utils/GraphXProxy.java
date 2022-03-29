@@ -85,6 +85,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
             .setAppResource(user_jar_path)
             .setMainClass(conf.getUserAppClass().get().getName())
             .setMaster("local")
+            .setConf(SparkLauncher.EXECUTOR_EXTRA_CLASSPATH, user_jar_path)
+            .setConf(SparkLauncher.DRIVER_EXTRA_CLASSPATH, user_jar_path)
             .setConf(SparkLauncher.DRIVER_MEMORY, "2g")
             .redirectOutput(new File(SPARK_LAUNCHER_OUTPUT))
             .redirectError()
