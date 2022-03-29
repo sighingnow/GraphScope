@@ -4,6 +4,7 @@ import com.alibaba.graphscope.app.GraphXAppBase
 import org.apache.spark.SparkContext
 import org.apache.spark.graphx.util.GraphGenerators
 import org.apache.spark.graphx.{EdgeTriplet, Graph, VertexId}
+import org.apache.spark.sql.SparkSession
 
 /**
  * vd = long,
@@ -32,24 +33,16 @@ class SSSP extends GraphXAppBase[Long,Long,Long]{
 object SSSP{
   def main(args: Array[String]): Unit = {
     // Creates a SparkSession.
-    val sparkHome=System.getenv("SPARK_HOME")
-    if (sparkHome == null || sparkHome.isEmpty){
-      System.out.println("SPARK_HOME not available")
-      return ;
-    }
-    val user_jar_path = System.getenv("USER_JAR_PATH")
-    if (user_jar_path == null || user_jar_path.isEmpty){
-      System.out.println("USER_JAR_PATH not set")
-      return ;
-    }
-    val jars = new Array[String](1)
-    jars(0) = user_jar_path
-    var sparkContext = new SparkContext("local","SSSP", sparkHome, jars);
+    val spark = SparkSession
+      .builder
+      .appName(s"${this.getClass.getSimpleName}")
+      .getOrCreate()
+    val sc = spark.sparkContext
 
     // $example on$
     // A graph with edge attributes containing distances
     val graph: Graph[Long, Double] =
-    GraphGenerators.logNormalGraph(sparkContext, numVertices = 100).mapEdges(e => e.attr.toDouble)
+    GraphGenerators.logNormalGraph(sc, numVertices = 100).mapEdges(e => e.attr.toDouble)
     val sourceId: VertexId = 42 // The ultimate source
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, _) =>
@@ -68,6 +61,6 @@ object SSSP{
     println(sssp.vertices.collect.mkString("\n"))
     // $example off$
 
-    sparkContext.stop()
+    sc.stop()
   }
 }

@@ -9,9 +9,12 @@ import com.alibaba.graphscope.graph.EdgeManager;
 import com.alibaba.graphscope.graph.IdManager;
 import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.mm.MessageStore;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import org.apache.spark.graphx.EdgeTriplet;
+import org.apache.spark.launcher.SparkAppHandle;
+import org.apache.spark.launcher.SparkLauncher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Function1;
@@ -70,12 +73,23 @@ public class GraphXProxy<VD, ED, MSG_T> {
         //after send message, flush message in message manager.
     }
 
-    public void invokeMain()
-        throws ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        Class<?> companionClass = Class.forName(conf.getUserAppClass().get().getName() + "$");
-        Object obj = companionClass.newInstance();
-        Method method = companionClass.getDeclaredMethod("main", String[].class);
-        method.invoke(obj,null);
+    public void invokeMain() throws IOException, InterruptedException {
+        //lauch with spark laucher
+        String user_jar_path = System.getenv("USER_JAR_PATH");
+        if (user_jar_path == null || user_jar_path.isEmpty()){
+            logger.error("USER_JAR_PATH not set");
+        }
+        Process process = new SparkLauncher()
+            .setAppResource(user_jar_path)
+            .setMainClass(conf.getUserAppClass().get().getName())
+            .setMaster("local")
+            .setConf(SparkLauncher.DRIVER_MEMORY, "2g")
+            .redirectError()
+            .launch();
+        // Use handle API to monitor / control application.
+        logger.info("Start waiting for process {}", process);
+        int res= process.waitFor();
+        logger.info("waiting res: {}", res);
     }
 
     public GraphXProxy(GraphXConf conf) {

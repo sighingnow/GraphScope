@@ -30,6 +30,11 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-sql_2.12</artifactId>
+      <version>3.2.1</version>
+    </dependency>
+    <dependency>
       <groupId>com.alibaba.graphscope</groupId>
       <artifactId>grape-jdk</artifactId>
       <version>0.1</version>
