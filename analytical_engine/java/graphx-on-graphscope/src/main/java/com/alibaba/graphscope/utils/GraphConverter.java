@@ -6,36 +6,52 @@ import com.alibaba.graphscope.ds.PropertyNbrUnit;
 import com.alibaba.graphscope.ds.TypedArray;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.ds.VertexRange;
-import com.alibaba.graphscope.example.SSSP;
 import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
 import java.lang.reflect.Field;
-import jnr.ffi.annotations.In;
-import org.apache.spark.Partition;
 import org.apache.spark.graphx.Graph;
 import org.apache.spark.graphx.impl.EdgePartition;
 import org.apache.spark.graphx.impl.ShippableVertexPartition;
 import org.apache.spark.rdd.RDD;
-import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
+import scala.collection.Iterator;
 
 public class GraphConverter<VD, ED> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphConverter.class.getName());
 
+    private VD[] vdArray;
+    private long[] oidArray;
+    private long[] srcOid, dstOid;
+    private ED[] edArray;
+    private Graph<VD,ED> graph;
     public GraphConverter() {
 
     }
 
-    public ArrowProjectedFragment<Long, Long, VD, ED> convert(Graph<VD, ED> graph) {
-        RDD<ShippableVertexPartition<VD>> rdds = graph.vertices().partitionsRDD();
-        ShippableVertexPartition<VD>[] shippableVertexPartitions = (ShippableVertexPartition<VD>[]) rdds.collect();
+    public void init(Graph<VD, ED> graph){
+        this.graph = graph;
+        RDD<ShippableVertexPartition<VD>> rdd = graph.vertices().partitionsRDD();
+        ShippableVertexPartition<VD>[] shippableVertexPartitions = (ShippableVertexPartition<VD>[]) rdd.collect();
+        int totalNumVertices = 0;
         for (ShippableVertexPartition<VD>partition : shippableVertexPartitions) {
-            logger.info("partition {}: {}", partition.index(), partition.toString());
-            logger.info("parition size: {}", partition.size());
-            logger.info("vd array: {}", arrayToString((VD[]) partition.values()));
+            logger.info("parition [{}] size: {}",partition,  partition.size());
+            totalNumVertices += partition.size();
         }
+        vdArray = (VD[]) new Object[totalNumVertices];
+        oidArray = new long[totalNumVertices];
+        int index = 0;
+        for (ShippableVertexPartition<VD>partition : shippableVertexPartitions) {
+            Iterator<Tuple2<Object, VD>> iterator = partition.iterator();
+            while (iterator.hasNext()){
+                Tuple2<Object, VD> tuple2 = iterator.next();
+                logger.info("vid [{}], data [{}]", tuple2._1, tuple2._2);
+                vdArray[index] = tuple2._2;
+                oidArray[index++] = (long) tuple2._1;
+            }
+        }
+        logger.info("Finish processing vertices, now edges");
 
         RDD<Tuple2<Object, EdgePartition<ED, Object>>> edges = graph.edges().partitionsRDD();
         Tuple2<Object, EdgePartition<ED,Object>>[] edgePartitions = (Tuple2<Object, EdgePartition<ED,Object>>[])edges.collect();
@@ -51,6 +67,11 @@ public class GraphConverter<VD, ED> {
                 logger.info("edge [{}] src [{}] dst [{}]", i, globalIds[localSrcIds[i]], globalIds[localDstIds[i]]);
             }
         }
+    }
+
+    public ArrowProjectedFragment<Long, Long, VD, ED> convert() {
+
+
         return new ArrowProjectedEmpty();
     }
 

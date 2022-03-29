@@ -134,7 +134,8 @@ object Pregel extends Logging {
 //    graph.vertices.saveAsTextFile("followers-vertex")
 //    graph.edges.saveAsTextFile("followers-edge")
     val converter : GraphConverter[VD,ED] = new GraphConverter[VD,ED]()
-    val frag = converter.convert(graph)
+    converter.init(graph)
+    val frag = converter.convert()
     log.info("convert res: " + frag)
 
 
