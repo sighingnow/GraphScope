@@ -131,8 +131,8 @@ object Pregel extends Logging {
     log.info("Pregel method invoked")
     //Convert to a GraphScope graph.
 //    val gsGraph = convertToGSGraph(graph)
-    graph.vertices.saveAsTextFile("followers-vertex")
-    graph.edges.saveAsTextFile("followers-edge")
+//    graph.vertices.saveAsTextFile("followers-vertex")
+//    graph.edges.saveAsTextFile("followers-edge")
     val converter : GraphConverter[VD,ED] = new GraphConverter[VD,ED]()
     val frag = converter.convert(graph)
     log.info("convert res: " + frag)
