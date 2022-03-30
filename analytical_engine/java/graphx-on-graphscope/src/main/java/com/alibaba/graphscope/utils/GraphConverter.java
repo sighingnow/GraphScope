@@ -1,5 +1,6 @@
 package com.alibaba.graphscope.utils;
 
+import com.alibaba.fastffi.FFITypeFactory;
 import com.alibaba.graphscope.ds.DestList;
 import com.alibaba.graphscope.ds.ProjectedAdjList;
 import com.alibaba.graphscope.ds.PropertyNbrUnit;
@@ -11,7 +12,9 @@ import com.alibaba.graphscope.fragment.Loader.ArrowFragmentLoader;
 import com.alibaba.graphscope.graph.GraphDataBuilder;
 import com.alibaba.graphscope.graph.impl.GraphDataBuilderImpl;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import org.apache.spark.graphx.Edge;
 import org.apache.spark.graphx.Graph;
 import org.apache.spark.graphx.impl.EdgePartition;
@@ -46,7 +49,16 @@ public class GraphConverter<VD, ED> {
         //
         this.vdClass = (Class<? extends VD>) vdClass;
         this.edClass = (Class<? extends ED>) edClass;
-        fragmentLoader = createArrowFragmentLoader();
+        try {
+            Class<? extends ArrowFragmentLoader> clz =
+                (Class<? extends ArrowFragmentLoader>) FFITypeFactory.getType(ArrowFragmentLoader.class, CppClassName.ARROW_FRAGMENT_LOADER);
+            logger.info("FragmentLoaderClass found {}", clz.getName());
+            long address = createArrowFragmentLoader();
+            fragmentLoader = createFragmentLoaderInstance(clz, address);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("create fragmentLoader failed");
+        }
         //Set typeinfo to javaLoaderInvoker
         fragmentLoader.getJavaLoaderInvoker().setTypeInfoInt(TypeUtils.generateTypeInt(Long.class, this.vdClass, this.edClass));
         graphDataBuilder = new GraphDataBuilderImpl<VD,ED>(fragmentLoader.getJavaLoaderInvoker(),
@@ -67,7 +79,7 @@ public class GraphConverter<VD, ED> {
 
     public ArrowProjectedFragment<Long, Long, VD, ED> convert() {
         //Call In memory ArrowFragmentLoader to load vertices and edges(which are already loaded offheap)
-
+        constructFragment(fragmentLoader.getAddress(), TypeUtils.classToInt(vdClass), TypeUtils.classToInt(edClass));
         return new ArrowProjectedEmpty();
     }
 
@@ -84,6 +96,18 @@ public class GraphConverter<VD, ED> {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private ArrowFragmentLoader createFragmentLoaderInstance(Class<? extends ArrowFragmentLoader> clz, long addr)
+        throws InvocationTargetException, InstantiationException, IllegalAccessException {
+        Constructor[] constructors = clz.getConstructors();
+        for (Constructor constructor : constructors) {
+            if (constructor.getParameterCount() == 1
+                && constructor.getParameterTypes()[0].getName().equals("long")) {
+                return clz.cast(constructor.newInstance(addr));
+            }
+        }
+        throw new IllegalAccessException("No constructors found");
     }
 
     private void fillVertices() {
@@ -148,7 +172,9 @@ public class GraphConverter<VD, ED> {
         return sb.toString();
     }
 
-    public static native ArrowFragmentLoader createArrowFragmentLoader();
+    public static native long createArrowFragmentLoader();
+
+    public static native void constructFragment(long fragLoaderAddress, int vdType, int edType);
 
     public class ArrowProjectedEmpty implements ArrowProjectedFragment {
 
