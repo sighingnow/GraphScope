@@ -476,10 +476,5 @@ void string2ptree(const std::string& params,
   }
 }
 
-template <typename T>
-T getFromPtree(const boost::property_tree::ptree& pt, const char* key) {
-  return pt.get<T>(key);
-}
-
 }  // namespace gs
 #endif

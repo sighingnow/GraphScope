@@ -38,6 +38,7 @@ limitations under the License.
 #include "core/fragment/arrow_projected_fragment.h"
 #include "core/io/property_parser.h"
 // #include "core/java/utils.h"
+#include "core/java/javasdk.h"
 #include "core/loader/arrow_fragment_loader.h"
 
 namespace gs {
@@ -118,14 +119,14 @@ void CreateAndQuery(std::string params) {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
 
-  ptree pt;
+  boost::property_tree::ptree pt;
   string2ptree(params, pt);
 
-  std::string ipc_socket = getFromPtree<std::string>(pt, IPC_SOCKET);
-  std::string efile = getFromPtree<std::string>(pt, EFILE);
-  std::string vfile = getFromPtree<std::string>(pt, VFILE);
-  bool directed = getFromPtree<bool>(pt, DIRECTED);
-  std::string user_lib_path = getFromPtree<std::string>(pt, USER_LIB_PATH);
+  std::string ipc_socket = pt.get<std::string>(IPC_SOCKET);
+  std::string efile = pt.get<std::string>(EFILE);
+  std::string vfile = pt.get<std::string>(VFILE);
+  bool directed = pt.get<bool>(DIRECTED);
+  std::string user_lib_path = pt.get<std::string>(USER_LIB_PATH);
 
   VLOG(10) << "efile: " << efile << ", vfile: " << vfile
            << ", directed: " << directed;
