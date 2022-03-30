@@ -17,6 +17,7 @@
 #include <jni.h>
 #include <string>
 #include "core/loader/arrow_fragment_loader.h"
+#include "core/fragment/arrow_projected_fragment.h"
 #include "glog/logging.h"
 #include "grape/config.h"
 #include "grape/grape.h"
@@ -41,7 +42,8 @@ Java_com_alibaba_graphscope_utils_GraphConverter_createArrowFragmentLoader(
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
   VLOG(1) << "Created comm_spec";
-  static vineyard::client client;
+  static vineyard::Client client;
+  std::string ipc_socket = "/tmp/vineyard.sock";
   VINEYARD_CHECK_OK(client.Connect(ipc_socket));
 
   auto graph = std::make_shared<gs::detail::Graph>();
@@ -73,8 +75,8 @@ Java_com_alibaba_graphscope_utils_GraphConverter_createArrowFragmentLoader(
 
   // create arrowFragmentLoader and return
   auto loader = std::make_shared<FragmentLoaderType>(client, comm_spec, graph);
-  VLOG(1) << "Sucessfully create load;" return reinterpret_cast<jlong>(
-      loader->get());
+  VLOG(1) << "Sucessfully create load;";
+   return reinterpret_cast<jlong>(loader.get());
 }
 
 JNIEXPORT jlong JNICALL
@@ -87,7 +89,7 @@ Java_com_alibaba_graphscope_utils_GraphConverter_constructFragment(
       vineyard::ArrowFragment<vineyard::property_graph_types::OID_TYPE,
                               vineyard::property_graph_types::VID_TYPE>;
   using ProjectedFragmentType =
-      ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
+      gs::ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
   auto loader = reinterpret_cast<FragmentLoaderType*>(addr);
 
   vineyard::ObjectID fragment_id = boost::leaf::try_handle_all(
@@ -100,6 +102,8 @@ Java_com_alibaba_graphscope_utils_GraphConverter_constructFragment(
         LOG(FATAL) << "Unmatched error " << unmatched;
         return 0;
       });
+  static vineyard::Client client;
+  std::string ipc_socket = "/tmp/vineyard.sock";
   std::shared_ptr<FragmentType> fragment =
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(fragment_id));
 
@@ -112,7 +116,7 @@ Java_com_alibaba_graphscope_utils_GraphConverter_constructFragment(
   std::shared_ptr<ProjectedFragmentType> projected_fragment =
       ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
   // return projected fragment pointer.
-  return reinterpret_cast<jlong>(projected_fragment->get());
+  return reinterpret_cast<jlong>(projected_fragment.get());
 }
 
 #ifdef __cplusplus

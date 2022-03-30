@@ -28,16 +28,16 @@ else()
 endif()
 
 # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g -std=gnu++14 -Wall -Werror")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -g -std=gnu++14 -Wall -Werror")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g -std=gnu++14 -Wall -Werror")
 
-file(GLOB SOURCES "target/generated-sources/annotations/*.cc" "src/main/native/*.cc")
+file(GLOB SOURCES "target/generated-sources/annotations/*.cc" ) #"src/main/native/*.cc"
 
 set(JAVA_AWT_LIBRARY NotNeeded)
 set(JAVA_AWT_INCLUDE_PATH NotNeeded)
 find_package(JNI REQUIRED)
 include_directories(SYSTEM ${JAVA_INCLUDE_PATH})
 include_directories(SYSTEM ${JAVA_INCLUDE_PATH2})
-include_directories("src/main/cpp")
+include_directories("src/main/native")
 
 # find libgrape-lite-------------------------------------------------------------------
 find_package(libgrapelite REQUIRED)
@@ -56,6 +56,6 @@ find_package(Threads REQUIRED)
 
 add_library(grape-jni SHARED ${SOURCES})
 target_compile_definitions(grape-jni PUBLIC ENABLE_JAVA_SDK)
-target_link_libraries(grape-jni ${CMAKE_JNI_LINKER_FLAGS}  ${LIBGRAPELITE_LIBRARIES} ${VINEYARD_LIBRARIES})
+target_link_libraries(grape-jni ${CMAKE_JNI_LINKER_FLAGS}  ${LIBGRAPELITE_LIBRARIES} ${VINEYARD_LIBRARIES} ${GRAPHSCOPE_ANALYTICAL_LIBRARIES} ${Boost_LIBRARIES})
 set_target_properties(grape-jni PROPERTIES LINKER_LANGUAGE CXX)
 target_compile_features(grape-jni PRIVATE cxx_std_14)

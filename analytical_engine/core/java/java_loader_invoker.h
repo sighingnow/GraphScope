@@ -30,10 +30,14 @@
 #include "grape/util.h"
 
 #include "core/java/javasdk.h"
-#include "core/java/utils.h"
+//#include "core/java/utils.h"
 
 namespace gs {
 
+static constexpr const char* OFFSET_VECTOR_VECTOR =
+    "std::vector<std::vector<int>>";
+static constexpr const char* DATA_VECTOR_VECTOR =
+    "std::vector<std::vector<char>>";
 // consistent with vineyard::TypeToInt
 // 2=int32_t
 // 4=int64_t
@@ -193,23 +197,23 @@ class JavaLoaderInvoker {
     }
   }
   // getters use by java
-  std::vector<std::vector<char>>& GetOids() const { return oids; }
-  std::vector<std::vector<char>>& GetVdatas() const { return vdatas; }
-  std::vector<std::vector<char>>& GetEdgeSrcs() const { return esrcs; }
-  std::vector<std::vector<char>>& GetEdgeDsts() const { return edsts; }
-  std::vector<std::vector<char>>& GetEdgeDatas() const { return edatas; }
+  std::vector<std::vector<char>>& GetOids() { return oids; }
+  std::vector<std::vector<char>>& GetVdatas() { return vdatas; }
+  std::vector<std::vector<char>>& GetEdgeSrcs() { return esrcs; }
+  std::vector<std::vector<char>>& GetEdgeDsts()  { return edsts; }
+  std::vector<std::vector<char>>& GetEdgeDatas() { return edatas; }
 
-  std::vector<std::vector<int>>& GetOidOffsets() const { return oid_offsets; }
-  std::vector<std::vector<int>>& GetVdataOffsets() const {
+  std::vector<std::vector<int>>& GetOidOffsets()  { return oid_offsets; }
+  std::vector<std::vector<int>>& GetVdataOffsets() {
     return vdata_offsets;
   }
-  std::vector<std::vector<int>>& GetEdgeSrcOffsets() const {
+  std::vector<std::vector<int>>& GetEdgeSrcOffsets() {
     return esrc_offsets;
   }
-  std::vector<std::vector<int>>& GetEdgeDstOffsets() const {
+  std::vector<std::vector<int>>& GetEdgeDstOffsets() {
     return edst_offsets;
   }
-  std::vector<std::vector<int>>& GetEdgeDataOffsets() const {
+  std::vector<std::vector<int>>& GetEdgeDataOffsets() {
     return edata_offsets;
   }
   int WorkerId() const { return worker_id_; }
