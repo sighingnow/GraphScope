@@ -47,6 +47,8 @@ public class GraphConverter<VD, ED> {
         this.vdClass = (Class<? extends VD>) vdClass;
         this.edClass = (Class<? extends ED>) edClass;
         fragmentLoader = createArrowFragmentLoader();
+        //Set typeinfo to javaLoaderInvoker
+        fragmentLoader.getJavaLoaderInvoker().setTypeInfoInt(TypeUtils.generateTypeInt(Long.class, this.vdClass, this.edClass));
         graphDataBuilder = new GraphDataBuilderImpl<VD,ED>(fragmentLoader.getJavaLoaderInvoker(),
             this.vdClass, this.edClass);
 

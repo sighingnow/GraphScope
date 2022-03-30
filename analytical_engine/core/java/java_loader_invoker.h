@@ -182,39 +182,15 @@ class JavaLoaderInvoker {
     worker_num_ = worker_num;
   }
   // load the class and call init method
-  void InitJavaLoader() {
-    gs::JNIEnvMark m;
-    if (m.env()) {
-      JNIEnv* env = m.env();
-      jclass loader_class =
-          LoadClassWithClassLoader(env, gs_class_loader_obj, JAVA_LOADER_CLASS);
-      CHECK_NOTNULL(loader_class);
-      // construct java loader obj.
-      jmethodID create_method = env->GetStaticMethodID(
-          loader_class, JAVA_LOADER_CREATE_METHOD, JAVA_LOADER_CREATE_SIG);
-      CHECK(create_method);
-
-      java_loader_obj = env->NewGlobalRef(env->CallStaticObjectMethod(
-          loader_class, create_method, gs_class_loader_obj));
-      CHECK(java_loader_obj);
-
-      jmethodID loader_method = env->GetMethodID(
-          loader_class, JAVA_LOADER_INIT_METHOD, JAVA_LOADER_INIT_SIG);
-      CHECK_NOTNULL(loader_method);
-
-      env->CallVoidMethod(java_loader_obj, loader_method, worker_id_,
-                          worker_num_, load_thread_num, oids_jobj, vdatas_jobj,
-                          esrcs_jobj, edsts_jobj, edatas_jobj, oid_offsets_jobj,
-                          vdata_offsets_jobj, esrc_offsets_jobj,
-                          edst_offsets_jobj, edata_offsets_jobj);
-      if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        env->ExceptionClear();
-        LOG(ERROR) << "Exception in Init java loader";
-        return;
-      }
+  // mode = {graphx, giraph}
+  void InitJavaLoader(const std::string& mode) {
+    if (mode == "giraph") {
+      initForGiraph();
+    } else if (mode == "graphx") {
+      initForGraphx();
+    } else {
+      LOG(ERROR) << "Expect graphx or giraph";
     }
-    VLOG(1) << "Successfully init java loader with params ";
   }
   // getters use by java
   std::vector<std::vector<char>>& GetOids() { return oids; }
@@ -239,6 +215,7 @@ class JavaLoaderInvoker {
   int WorkerId() const { return worker_id_; }
   int WorkerNum() const { return worker_num_; }
   int LoadingThreadNum() const { return load_thread_num; }
+  void SetTypeInfoInt(int info_int) { parseGiraphTypeInt(info_int); }
 
   void load_vertices_and_edges(const std::string& vertex_location,
                                const std::string vformatter) {
@@ -381,6 +358,44 @@ class JavaLoaderInvoker {
   }
 
  private:
+  void initForGiraph() {
+    gs::JNIEnvMark m;
+    if (m.env()) {
+      JNIEnv* env = m.env();
+      jclass loader_class =
+          LoadClassWithClassLoader(env, gs_class_loader_obj, JAVA_LOADER_CLASS);
+      CHECK_NOTNULL(loader_class);
+      // construct java loader obj.
+      jmethodID create_method = env->GetStaticMethodID(
+          loader_class, JAVA_LOADER_CREATE_METHOD, JAVA_LOADER_CREATE_SIG);
+      CHECK(create_method);
+
+      java_loader_obj = env->NewGlobalRef(env->CallStaticObjectMethod(
+          loader_class, create_method, gs_class_loader_obj));
+      CHECK(java_loader_obj);
+
+      jmethodID loader_method = env->GetMethodID(
+          loader_class, JAVA_LOADER_INIT_METHOD, JAVA_LOADER_INIT_SIG);
+      CHECK_NOTNULL(loader_method);
+
+      env->CallVoidMethod(java_loader_obj, loader_method, worker_id_,
+                          worker_num_, load_thread_num, oids_jobj, vdatas_jobj,
+                          esrcs_jobj, edsts_jobj, edatas_jobj, oid_offsets_jobj,
+                          vdata_offsets_jobj, esrc_offsets_jobj,
+                          edst_offsets_jobj, edata_offsets_jobj);
+      if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        LOG(ERROR) << "Exception in Init java loader";
+        return;
+      }
+    }
+    VLOG(1) << "Successfully init java loader with params ";
+  }
+
+  // When loading for graphx, we don't need FileLoader in java.
+  void initForGraphx() {}
+
   std::shared_ptr<arrow::DataType> getArrowDataType(int data_type) {
     if (data_type == 2) {
       return vineyard::ConvertToArrowType<int32_t>::TypeValue();
@@ -540,15 +555,16 @@ class JavaLoaderInvoker {
     }
   }
 
-  void parseGiraphTypeInt(int giraph_type_int) {
-    edata_type = (giraph_type_int & 0x000F);
-    giraph_type_int = giraph_type_int >> GIRAPH_TYPE_CODE_LENGTH;
-    vdata_type = (giraph_type_int & 0x000F);
-    giraph_type_int = giraph_type_int >> GIRAPH_TYPE_CODE_LENGTH;
-    oid_type = (giraph_type_int & 0x000F);
-    giraph_type_int = giraph_type_int >> GIRAPH_TYPE_CODE_LENGTH;
-    CHECK_EQ(giraph_type_int, 0);
-    VLOG(1) << "giraph types: " << oid_type << vdata_type << edata_type;
+  void parseGiraphTypeInt(int type_int) {
+    edata_type = (type_int & 0x000F);
+    type_int = type_int >> GIRAPH_TYPE_CODE_LENGTH;
+    vdata_type = (type_int & 0x000F);
+    type_int = type_int >> GIRAPH_TYPE_CODE_LENGTH;
+    oid_type = (type_int & 0x000F);
+    type_int = type_int >> GIRAPH_TYPE_CODE_LENGTH;
+    CHECK_EQ(type_int, 0);
+    VLOG(1) << "giraph types: oid [" << oid_type << "]  vd: [" << vdata_type
+            << "]  ed: [" << edata_type << "]";
   }
 
   int worker_id_, worker_num_, load_thread_num;

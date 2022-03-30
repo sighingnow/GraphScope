@@ -27,6 +27,9 @@ public interface JavaLoaderInvoker extends FFIPointer {
     @FFINameAlias("LoadingThreadNum")
     int loadingThreadNum();
 
+    @FFINameAlias("SetTypeInfoInt")
+    void setTypeInfoInt(int infoInt);
+
     @FFINameAlias("GetOids")
     @CXXReference FFIVector<Byte> getOids();
 

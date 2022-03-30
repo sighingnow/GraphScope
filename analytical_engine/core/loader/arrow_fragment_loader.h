@@ -110,7 +110,18 @@ class ArrowFragmentLoader {
                                        comm_spec_.worker_num());
     VLOG(1) << "workerid: " << comm_spec_.worker_id()
             << ", worker num: " << comm_spec_.worker_num();
-    java_loader_invoker_.InitJavaLoader();
+    // For java loader invoker, there can be two cases
+    // 1. For giraph. The protocol is file, and we truly load data from file
+    // 2. For graphx. The data is from graphx rdd, which is stored in memory, so
+    // we need to copy them to cpp memory.
+    //
+    // We distinguish there two modes according to protocol.
+    std::vector<std::shared_ptr<Vertex>> vertices = graph_info->vertices();
+    if (vertices.size() == 1 && vertices[0]->protocol == "graphx") {
+      java_loader_invoker_.InitJavaLoader("graphx");
+    } else {
+      java_loader_invoker_.InitJavaLoader("giraph");
+    }
 #endif
   }
 
@@ -474,6 +485,16 @@ class ArrowFragmentLoader {
     }
     // once set, we will read.
   }
+  boost::leaf::result<std::shared_ptr<arrow::Table>> readTableFromGraphx(
+      bool load_vertex, int index, int total_parts) {
+    if (load_vertex) {
+      // For graphx loading, the data filling is done from java side, before
+      // constructFragment is called.
+      return java_loader_invoker_.get_vertex_table();
+    } else {
+      return java_loader_invoker_.get_edge_table();
+    }
+  }
 #endif
 
   boost::leaf::result<std::shared_ptr<arrow::Table>> readTableFromPandas(
@@ -627,6 +648,11 @@ class ArrowFragmentLoader {
               table, readTableFromGiraph(
                          true, vertices[i]->values, index, total_parts,
                          vertices[i]->vformat));  // true means to load vertex.
+        } else if (vertices[i]->protocol == "graphx") {
+          BOOST_LEAF_ASSIGN(
+              table,
+              readTableFromGraphx(true, index,
+                                  total_parts));  // true means to load vertex.
 #endif
         } else {
           // Let the IOFactory to parse other protocols.
@@ -829,6 +855,11 @@ class ArrowFragmentLoader {
             BOOST_LEAF_ASSIGN(
                 table, readTableFromGiraph(false, sub_labels[j].values, index,
                                            total_parts, sub_labels[j].eformat));
+          } else if (vertices[i]->protocol == "graphx") {
+            BOOST_LEAF_ASSIGN(
+                table,
+                readTableFromGraphx(
+                    false, index, total_parts));  // true means to load vertex.
 #endif
           } else {
             // Let the IOFactory to parse other protocols.
