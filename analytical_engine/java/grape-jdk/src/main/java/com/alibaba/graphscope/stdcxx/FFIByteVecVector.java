@@ -13,8 +13,8 @@ import com.alibaba.fastffi.FFIPointerImpl;
 import com.alibaba.fastffi.FFISynthetic;
 import com.alibaba.fastffi.llvm4jni.runtime.JavaRuntime;
 
-@FFIForeignType(value = "std::vector<std::vector<char>>", factory = FFIByteVectorFactory.class)
-@FFISynthetic("com.alibaba.graphscope.stdcxx.StdVector")
+//@FFIForeignType(value = "std::vector<std::vector<char>>", factory = FFIByteVectorFactory.class)
+//@FFISynthetic("com.alibaba.graphscope.stdcxx.StdVector")
 public class FFIByteVecVector extends FFIPointerImpl implements StdVector<StdVector<Byte>> {
 
     public static final int SIZE = _elementSize$$$();

@@ -20,6 +20,7 @@ public class CppHeaderName {
     public static final String ARROW_FRAGMENT_H = "vineyard/graph/fragment/arrow_fragment.h";
     public static final String ARROW_FRAGMENT_GROUP_H =
             "vineyard/graph/fragment/arrow_fragment_group.h";
+    public static final String ARROW_FRAGMENT_LOADER_H = "core/loader/arrow_fragment_loader.h";
     public static final String PROPERTY_MESSAGE_MANAGER_H =
             "core/parallel/property_message_manager.h";
     public static final String PROPERTY_GRAPH_UTILS_H =
@@ -64,4 +65,6 @@ public class CppHeaderName {
     public static final String GRAPE_SERIALIZATION_IN_ARCHIVE = "grape/serialization/in_archive.h";
     public static final String GRAPE_SERIALIZATION_OUT_ARCHIVE =
             "grpae/serialization/out_archive.h";
+
+    public static final String JAVA_LOADER_INVOKER_H = "core/java/java_loader_invoker.h";
 }

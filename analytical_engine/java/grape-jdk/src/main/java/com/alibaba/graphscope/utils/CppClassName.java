@@ -19,6 +19,8 @@ package com.alibaba.graphscope.utils;
 public class CppClassName {
     public static final String ARROW_FRAGMENT = "gs::ArrowFragmentDefault";
     public static final String ARROW_FRAGMENT_GROUP = "vineyard::ArrowFragmentGroup";
+    public static final String ARROW_FRAGMENT_LOADER = "gs::ArrowFragmentLoader";
+    public static final String JAVA_LOADER_INVOKER = "gs::JavaLoaderInvoker";
     public static final String PROPERTY_MESSAGE_MANAGER = "gs::PropertyMessageManager";
 
     public static final String EDGE_DATA_COLUMN = "gs::EdgeDataColumnDefault";
