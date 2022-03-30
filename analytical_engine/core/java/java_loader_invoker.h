@@ -216,6 +216,30 @@ class JavaLoaderInvoker {
     }
     VLOG(1) << "Successfully init java loader with params ";
   }
+  // getters use by java
+  std::vector<std::vector<char>>& GetOids() const { return oids; }
+  std::vector<std::vector<char>>& GetVdatas() const { return vdatas; }
+  std::vector<std::vector<char>>& GetEdgeSrcs() const { return esrcs; }
+  std::vector<std::vector<char>>& GetEdgeDsts() const { return edsts; }
+  std::vector<std::vector<char>>& GetEdgeDatas() const { return edatas; }
+
+  std::vector<std::vector<int>>& GetOidOffsets() const { return oid_offsets; }
+  std::vector<std::vector<int>>& GetVdataOffsets() const {
+    return vdata_offsets;
+  }
+  std::vector<std::vector<int>>& GetEdgeSrcOffsets() const {
+    return esrc_offsets;
+  }
+  std::vector<std::vector<int>>& GetEdgeDstOffsets() const {
+    return edst_offsets;
+  }
+  std::vector<std::vector<int>>& GetEdgeDataOffsets() const {
+    return edata_offsets;
+  }
+  int WorkerId() const { return worker_id_; }
+  int WorkerNum() const { return worker_num_; }
+  int LoadingThreadNum() const { return load_thread_num; }
+
   void load_vertices_and_edges(const std::string& vertex_location,
                                const std::string vformatter) {
     VLOG(2) << "vertex file: " << vertex_location

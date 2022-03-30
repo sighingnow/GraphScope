@@ -7,32 +7,38 @@ import com.alibaba.graphscope.ds.TypedArray;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.ds.VertexRange;
 import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
+import com.alibaba.graphscope.fragment.Loader.ArrowFragmentLoader;
+import com.alibaba.graphscope.graph.GraphDataBuilder;
+import com.alibaba.graphscope.graph.impl.GraphDataBuilderImpl;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import org.apache.spark.graphx.Edge;
 import org.apache.spark.graphx.Graph;
 import org.apache.spark.graphx.impl.EdgePartition;
 import org.apache.spark.graphx.impl.ShippableVertexPartition;
-import org.apache.spark.graphx.util.collection.GraphXPrimitiveKeyOpenHashMap;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.util.collection.OpenHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Option;
 import scala.Tuple2;
 import scala.collection.Iterator;
-import scala.reflect.ClassTag;
 
+/**
+ * Convert a graphx graph to c++ fragment. This need copying data out of java heap, so we currently
+ * only support primitives.
+ *
+ * @param <VD> vertex data
+ * @param <ED> edge data
+ */
 public class GraphConverter<VD, ED> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphConverter.class.getName());
 
-    private VD[] vdArray;
-    private long[] oidArray;
-    private long[] srcOid, dstOid;
-    private ED[] edArray;
-    private Graph<VD,ED> graph;
+    private Graph<VD, ED> graph;
     private Class<? extends VD> vdClass;
     private Class<? extends ED> edClass;
+    private ArrowFragmentLoader fragmentLoader;
+    private GraphDataBuilder<VD, ED> graphDataBuilder;
+
     public GraphConverter(Class<?> vdClass, Class<?> edClass) {
         //ArrowFragmentLoader loader = Factor.createLoader(protocol = "graphx)
         //also pass in the type info , vd type, ed type
@@ -40,15 +46,21 @@ public class GraphConverter<VD, ED> {
         //
         this.vdClass = (Class<? extends VD>) vdClass;
         this.edClass = (Class<? extends ED>) edClass;
+        fragmentLoader = createArrowFragmentLoader();
+        graphDataBuilder = new GraphDataBuilderImpl<VD,ED>(fragmentLoader.getJavaLoaderInvoker(),
+            this.vdClass, this.edClass);
+
     }
 
-    public void init(Graph<VD, ED> graph){
+    public void init(Graph<VD, ED> graph) {
         this.graph = graph;
         fillVertices();
         logger.info("Finish processing vertices, now edges");
         fillEdges();
+        graphDataBuilder.finishAdding();
         logger.info("Finish processing edges");
-        logger.info("Totally add vertices [{}], edges [{}]", vdArray.length, edArray.length);
+        logger.info("Totally add vertices [{}], edges [{}]", graphDataBuilder.verticesAdded(),
+            graphDataBuilder.edgeAdded());
     }
 
     public ArrowProjectedFragment<Long, Long, VD, ED> convert() {
@@ -57,7 +69,8 @@ public class GraphConverter<VD, ED> {
         return new ArrowProjectedEmpty();
     }
 
-    private <ARRAY_TYPE> ARRAY_TYPE getFieldWithReflection(EdgePartition<ED,Object> edgePartition, String fieldName, Class<? extends ARRAY_TYPE> clz){
+    private <ARRAY_TYPE> ARRAY_TYPE getFieldWithReflection(EdgePartition<ED, Object> edgePartition,
+        String fieldName, Class<? extends ARRAY_TYPE> clz) {
         try {
             Field field = edgePartition.getClass().getDeclaredField(fieldName);
             field.setAccessible(true);
@@ -71,56 +84,56 @@ public class GraphConverter<VD, ED> {
         return null;
     }
 
-    private void fillVertices(){
+    private void fillVertices() {
         RDD<ShippableVertexPartition<VD>> rdd = graph.vertices().partitionsRDD();
         ShippableVertexPartition<VD>[] shippableVertexPartitions = (ShippableVertexPartition<VD>[]) rdd.collect();
         int totalNumVertices = 0;
-        for (ShippableVertexPartition<VD>partition : shippableVertexPartitions) {
-            logger.info("parition [{}] size: {}",partition,  partition.size());
+        for (ShippableVertexPartition<VD> partition : shippableVertexPartitions) {
+            logger.info("parition [{}] size: {}", partition, partition.size());
             totalNumVertices += partition.size();
         }
-        vdArray = (VD[]) new Object[totalNumVertices];
-        oidArray = new long[totalNumVertices];
-        int index = 0;
-        for (ShippableVertexPartition<VD>partition : shippableVertexPartitions) {
+        graphDataBuilder.reserveVertex(totalNumVertices);
+        for (ShippableVertexPartition<VD> partition : shippableVertexPartitions) {
             Iterator<Tuple2<Object, VD>> iterator = partition.iterator();
-            while (iterator.hasNext()){
-                Tuple2<Object, VD> tuple2 = iterator.next();
-                vdArray[index] = tuple2._2;
-                oidArray[index++] = (long) tuple2._1;
-                logger.info("vid [{}], data [{}], stored as [{}] [{}]", tuple2._1, tuple2._2, oidArray[index-1], vdArray[index-1]);
-            }
-        }
-    }
-    private void fillEdges(){
-        RDD<Tuple2<Object, EdgePartition<ED, Object>>> edges = graph.edges().partitionsRDD();
-        Tuple2<Object, EdgePartition<ED,Object>>[] edgePartitions = (Tuple2<Object, EdgePartition<ED,Object>>[])edges.collect();
-        int totalEdgeNum = 0;
-        for (Tuple2<Object,EdgePartition<ED,Object>> tuple : edgePartitions) {
-            totalEdgeNum += tuple._2.size();
-        }
-        srcOid = new long[totalEdgeNum];
-        dstOid = new long[totalEdgeNum];
-        edArray = (ED[]) new Object[totalEdgeNum];
-        int index = 0;
-        for (Tuple2<Object,EdgePartition<ED,Object>> tuple : edgePartitions){
-            Integer paritionId = (Integer) tuple._1;
-            EdgePartition<ED,Object> edgePartition = tuple._2;
-            logger.info("edge partition ind {} size {}", paritionId, edgePartition.size()); //index
-            Iterator<Edge<ED>> iterator = edgePartition.iterator();
-            while (iterator.hasNext()){
-                Edge<ED> edge = iterator.next();
-                srcOid[index] = edge.srcId();
-                dstOid[index] = edge.dstId();
-                edArray[index++] = edge.attr();
-                logger.info("adding edge: {} -> {} : {}", edge.srcId(), edge.dstId(), edge.attr());
+            try {
+                while (iterator.hasNext()) {
+                    Tuple2<Object, VD> tuple2 = iterator.next();
+                    graphDataBuilder.addVertex((long) tuple2._1, tuple2._2, 0);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
 
-    private boolean check(int[] a, int[] b, long [] c){
-        if (a.length != b.length){
-            throw new IllegalStateException("src id arr lenght neq to dst id arr length" + a.length + ", " + b.length);
+    private void fillEdges() {
+        RDD<Tuple2<Object, EdgePartition<ED, Object>>> edges = graph.edges().partitionsRDD();
+        Tuple2<Object, EdgePartition<ED, Object>>[] edgePartitions = (Tuple2<Object, EdgePartition<ED, Object>>[]) edges.collect();
+        int totalEdgeNum = 0;
+        for (Tuple2<Object, EdgePartition<ED, Object>> tuple : edgePartitions) {
+            totalEdgeNum += tuple._2.size();
+        }
+        graphDataBuilder.reserveEdge(totalEdgeNum);
+        for (Tuple2<Object, EdgePartition<ED, Object>> tuple : edgePartitions) {
+            Integer paritionId = (Integer) tuple._1;
+            EdgePartition<ED, Object> edgePartition = tuple._2;
+            logger.info("edge partition ind {} size {}", paritionId, edgePartition.size()); //index
+            Iterator<Edge<ED>> iterator = edgePartition.iterator();
+            try {
+                while (iterator.hasNext()) {
+                    Edge<ED> edge = iterator.next();
+                    graphDataBuilder.addEdge(edge.srcId(), edge.dstId(), edge.attr(), 0);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private boolean check(int[] a, int[] b, long[] c) {
+        if (a.length != b.length) {
+            throw new IllegalStateException(
+                "src id arr lenght neq to dst id arr length" + a.length + ", " + b.length);
         }
         return true;
     }
@@ -132,6 +145,8 @@ public class GraphConverter<VD, ED> {
         }
         return sb.toString();
     }
+
+    public static native ArrowFragmentLoader createArrowFragmentLoader();
 
     public class ArrowProjectedEmpty implements ArrowProjectedFragment {
 
@@ -346,9 +361,8 @@ public class GraphConverter<VD, ED> {
          * Return the outgoing edge destination fragment ID list of a inner vertex.
          *
          * <p>For inner vertex v of fragment-0, if outer vertex u and w are children of v. u
-         * belongs
-         * to fragment-1 and w belongs to fragment-2, then 1 and 2 are in outgoing edge destination
-         * fragment ID list of v.
+         * belongs to fragment-1 and w belongs to fragment-2, then 1 and 2 are in outgoing edge
+         * destination fragment ID list of v.
          *
          * <p>This method is encapsulated in the corresponding sending message API,
          * SendMsgThroughOEdges, so it is not recommended to use this method directly in application

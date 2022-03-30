@@ -25,9 +25,14 @@
 
 #include "core/context/column.h"
 #include "core/fragment/arrow_projected_fragment.h"
+#include "core/loader/arrow_fragment_loader.h"
 
 // Type alias for ease of use of some template types in Java.
 namespace gs {
+
+using ArrowFragmentLoaderDefault =
+    ArrowFragmentLoader<vineyard::property_graph_types::OID_TYPE,
+                        vineyard::property_graph_types::VID_TYPE>;
 
 namespace arrow_projected_fragment_impl {
 

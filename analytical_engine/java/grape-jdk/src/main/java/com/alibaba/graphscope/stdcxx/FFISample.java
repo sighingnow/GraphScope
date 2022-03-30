@@ -94,6 +94,10 @@ public interface FFISample extends CXXPointer, FFIJava {
     @CXXReference
     FFIVector<FFIVector<Long>> longVectorVectorField();
 
+    @FFIGetter
+    @CXXReference
+    FFIVector<Byte> vectorBytes();
+
     @FFIFactory
     interface Factory {
         FFISample create();

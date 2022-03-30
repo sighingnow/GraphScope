@@ -138,7 +138,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
      */
     protected void eventually(Duration timeout, Duration period, Runnable check)
         throws InterruptedException {
-        if (timeout.compareTo(period) > 0){
+        if (timeout.compareTo(period) < 0){
             throw new IllegalStateException("Timeout needs to be larger than period.");
         }
         long deadline = System.nanoTime() + timeout.toNanos();
@@ -153,7 +153,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
                     String msg = String.format("Failed check after %d tries: %s.", count, t.getMessage());
                     throw new IllegalStateException(msg, t);
                 }
-                logger.info("Error catch, continue waiting: " + t.getMessage());
+                logger.debug("Error catch, continue waiting: " + t.getMessage());
                 Thread.sleep(period.toMillis());
             }
         }

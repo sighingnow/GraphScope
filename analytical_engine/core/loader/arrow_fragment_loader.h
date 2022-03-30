@@ -116,6 +116,10 @@ class ArrowFragmentLoader {
 
   ~ArrowFragmentLoader() = default;
 
+#ifdef ENABLE_JAVA_SDK
+  JavaLoaderInvoker& GetJavaLoaderInvoker() { return java_loader_invoker; }
+#endif
+
   boost::leaf::result<std::pair<table_vec_t, std::vector<table_vec_t>>>
   LoadVertexEdgeTables() {
     if (graph_info_) {
