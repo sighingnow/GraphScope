@@ -116,7 +116,7 @@ class ArrowFragmentLoader {
     // we need to copy them to cpp memory.
     //
     // We distinguish there two modes according to protocol.
-    std::vector<std::shared_ptr<Vertex>> vertices = graph_info->vertices();
+    std::vector<std::shared_ptr<gs::detail::Vertex>> vertices = graph_info->vertices;
     if (vertices.size() == 1 && vertices[0]->protocol == "graphx") {
       java_loader_invoker_.InitJavaLoader("graphx");
     } else {
@@ -855,7 +855,7 @@ class ArrowFragmentLoader {
             BOOST_LEAF_ASSIGN(
                 table, readTableFromGiraph(false, sub_labels[j].values, index,
                                            total_parts, sub_labels[j].eformat));
-          } else if (vertices[i]->protocol == "graphx") {
+          } else if (sub_labels[i].protocol == "graphx") {
             BOOST_LEAF_ASSIGN(
                 table,
                 readTableFromGraphx(

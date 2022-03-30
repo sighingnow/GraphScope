@@ -30,10 +30,14 @@
 #include "grape/util.h"
 
 #include "core/java/javasdk.h"
-#include "core/java/utils.h"
+//#include "core/java/utils.h"
 
 namespace gs {
 
+static constexpr const char* OFFSET_VECTOR_VECTOR =
+    "std::vector<std::vector<int>>";
+static constexpr const char* DATA_VECTOR_VECTOR =
+    "std::vector<std::vector<char>>";
 // consistent with vineyard::TypeToInt
 // 2=int32_t
 // 4=int64_t

@@ -34,11 +34,6 @@ using byte_vector = std::vector<char>;
 // offset vector contains offsets to deserialize data vector.
 using offset_vector = std::vector<int>;
 
-static constexpr const char* OFFSET_VECTOR_VECTOR =
-    "std::vector<std::vector<int>>";
-static constexpr const char* DATA_VECTOR_VECTOR =
-    "std::vector<std::vector<char>>";
-
 static constexpr const char* GIRAPH_PARAMS_CHECK_CLASS =
     "org/apache/giraph/utils/GiraphParamsChecker";
 static constexpr const char* VERIFY_CLASSES_SIGN =
@@ -69,7 +64,7 @@ static constexpr const char* OPTION_FRAG_IDS = "frag_ids";
 
 using ptree = boost::property_tree::ptree;
 
-void string2ptree(const std::string& params, ptree& pt) {
+static void string2ptree(const std::string& params, ptree& pt) {
   std::stringstream ss;
   {
     ss << params;
