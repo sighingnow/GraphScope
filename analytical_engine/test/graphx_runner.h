@@ -37,7 +37,7 @@ limitations under the License.
 #include "apps/java_pie/java_pie_projected_default_app.h"
 #include "core/fragment/arrow_projected_fragment.h"
 #include "core/io/property_parser.h"
-#include "core/java/utils.h"
+// #include "core/java/utils.h"
 #include "core/loader/arrow_fragment_loader.h"
 
 namespace gs {
@@ -74,8 +74,8 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
     std::vector<std::string> vfiles, efiles;
     vfiles.push_back(vfile);
     efiles.push_back(efile);
-    auto loader = std::make_unique<FragmentLoaderType>(client, comm_spec, efiles,
-                                                       vfiles, directed != 0);
+    auto loader = std::make_unique<FragmentLoaderType>(
+        client, comm_spec, efiles, vfiles, directed != 0);
     fragment_id = boost::leaf::try_handle_all(
         [&loader]() { return loader->LoadFragment(); },
         [](const vineyard::GSError& e) {
@@ -93,25 +93,25 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
 template <typename FRAG_T>
 void Query(grape::CommSpec& comm_spec, std::shared_ptr<FRAG_T> fragment,
            const std::string& params_str, const std::string& user_lib_path) {
-    auto app = std::make_shared<APP_TYPE>();
-    auto worker = APP_TYPE::CreateWorker(app, fragment);
-    auto spec = grape::DefaultParallelEngineSpec();
+  auto app = std::make_shared<APP_TYPE>();
+  auto worker = APP_TYPE::CreateWorker(app, fragment);
+  auto spec = grape::DefaultParallelEngineSpec();
 
-    worker->Init(comm_spec, spec);
+  worker->Init(comm_spec, spec);
 
-    MPI_Barrier(comm_spec.comm());
-    double t = -grape::GetCurrentTime();
-    worker->Query(params_str, user_lib_path);
-    t += grape::GetCurrentTime();
-    MPI_Barrier(comm_spec.comm());
-    if (comm_spec.worker_id() == grape::kCoordinatorRank) {
-      VLOG(1) << "Query time cost: " << t;
-    }
+  MPI_Barrier(comm_spec.comm());
+  double t = -grape::GetCurrentTime();
+  worker->Query(params_str, user_lib_path);
+  t += grape::GetCurrentTime();
+  MPI_Barrier(comm_spec.comm());
+  if (comm_spec.worker_id() == grape::kCoordinatorRank) {
+    VLOG(1) << "Query time cost: " << t;
+  }
 
-    std::ofstream unused_stream;
-    unused_stream.open("empty");
-    worker->Output(unused_stream);
-    unused_stream.close();
+  std::ofstream unused_stream;
+  unused_stream.open("empty");
+  worker->Output(unused_stream);
+  unused_stream.close();
 }
 
 void CreateAndQuery(std::string params) {
@@ -134,7 +134,6 @@ void CreateAndQuery(std::string params) {
   VINEYARD_CHECK_OK(client.Connect(ipc_socket));
   VLOG(1) << "Connected to IPCServer: " << ipc_socket;
 
-
   if (efile.empty() || vfile.empty()) {
     LOG(FATAL) << "Make sure efile and vfile are avalibale";
   }
@@ -142,35 +141,36 @@ void CreateAndQuery(std::string params) {
   VLOG(10) << "[worker " << comm_spec.worker_id()
            << "] loaded frag id: " << fragment_id;
 
-std::shared_ptr<FragmentType> fragment =
-    std::dynamic_pointer_cast<FragmentType>(client.GetObject(fragment_id));
+  std::shared_ptr<FragmentType> fragment =
+      std::dynamic_pointer_cast<FragmentType>(client.GetObject(fragment_id));
 
-VLOG(10) << "fid: " << fragment->fid() << "fnum: " << fragment->fnum()
-         << "v label num: " << fragment->vertex_label_num()
-         << "e label num: " << fragment->edge_label_num()
-         << "total v num: " << fragment->GetTotalVerticesNum();
-VLOG(1) << "inner vertices: " << fragment->GetInnerVerticesNum(0);
+  VLOG(10) << "fid: " << fragment->fid() << "fnum: " << fragment->fnum()
+           << "v label num: " << fragment->vertex_label_num()
+           << "e label num: " << fragment->edge_label_num()
+           << "total v num: " << fragment->GetTotalVerticesNum();
+  VLOG(1) << "inner vertices: " << fragment->GetInnerVerticesNum(0);
 
-std::string frag_name =
-    "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>";
-pt.put("frag_name", frag_name);
+  std::string frag_name =
+      "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>";
+  pt.put("frag_name", frag_name);
 
-if (getenv("USER_JAR_PATH")) {
-  pt.put("jar_name", getenv("USER_JAR_PATH"));
-} else {
-  LOG(ERROR) << "USER_JAR_PATH not set";
-  return;
-}
+  if (getenv("USER_JAR_PATH")) {
+    pt.put("jar_name", getenv("USER_JAR_PATH"));
+  } else {
+    LOG(ERROR) << "USER_JAR_PATH not set";
+    return;
+  }
 
-std::stringstream ss;
-boost::property_tree::json_parser::write_json(ss, pt);
-std::string new_params = ss.str();
+  std::stringstream ss;
+  boost::property_tree::json_parser::write_json(ss, pt);
+  std::string new_params = ss.str();
 
-// Project
-std::shared_ptr<ProjectedFragmentType> projected_fragment =
-    ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
+  // Project
+  std::shared_ptr<ProjectedFragmentType> projected_fragment =
+      ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
 
-Query<ProjectedFragmentType>(comm_spec, projected_fragment, new_params,user_lib_path);
+  Query<ProjectedFragmentType>(comm_spec, projected_fragment, new_params,
+                               user_lib_path);
 }  // namespace gs
 void Finalize() {
   grape::FinalizeMPIComm();

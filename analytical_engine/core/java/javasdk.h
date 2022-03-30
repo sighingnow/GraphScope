@@ -90,6 +90,10 @@ jobject CreateGiraphAdaptor(JNIEnv* env, const char* app_class_name,
 jobject CreateGiraphAdaptorContext(JNIEnv* env, const char* context_class_name,
                                    const jobject& fragment_obj);
 
+void string2ptree(const std::string& params, boost::property_tree::ptree& pt);
+
+template <typename T>
+T getFromPtree(const boost::property_tree::ptree& pt, const char* key);
 }  // namespace gs
 #endif
 #endif  // ANALYTICAL_ENGINE_CORE_JAVA_JAVASDK_H_

@@ -37,10 +37,34 @@ limitations under the License.
 #include "apps/java_pie/java_pie_projected_default_app.h"
 #include "core/fragment/arrow_projected_fragment.h"
 #include "core/io/property_parser.h"
-#include "core/java/utils.h"
+// #include "core/java/utils.h"
 #include "core/loader/arrow_fragment_loader.h"
 
 namespace gs {
+
+static constexpr const char* OPTION_LOADING_THREAD_NUM = "loading_thread_num";
+static constexpr const char* OPTION_VERTEX_INPUT_FORMAT_CLASS =
+    "vertex_input_format_class";
+static constexpr const char* OPTION_EDGE_INPUT_FORMAT_CLASS =
+    "edge_input_format_class";
+static constexpr const char* OPTION_VERTEX_OUTPUT_FORMAT_CLASS =
+    "vertex_output_format_class";
+static constexpr const char* OPTION_EFILE = "efile";
+static constexpr const char* OPTION_VFILE = "vfile";
+static constexpr const char* OPTION_QUERY_TIMES = "query_times";
+static constexpr const char* OPTION_SERIALIZE = "serialize";
+static constexpr const char* OPTION_DESERIALIZE = "deserialize";
+static constexpr const char* OPTION_SERIALIZE_PREFIX = "serialize_prefix";
+static constexpr const char* OPTION_USER_APP_CLASS = "user_app_class";
+static constexpr const char* OPTION_DRIVER_APP_CLASS = "java_driver_app";
+static constexpr const char* OPTION_DRIVER_CONTEXT_CLASS =
+    "java_driver_context";
+static constexpr const char* OPTION_LIB_PATH = "lib_path";
+static constexpr const char* OPTION_GRAPE_LOADER = "grape_loader";
+static constexpr const char* OPTION_DIRECTED = "directed";
+static constexpr const char* OPTION_IPC_SOCKET = "ipc_socket";
+static constexpr const char* OPTION_FRAG_IDS = "frag_ids";
+
 using FragmentType =
     vineyard::ArrowFragment<int64_t, vineyard::property_graph_types::VID_TYPE>;
 using ProjectedFragmentType =

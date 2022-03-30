@@ -463,6 +463,23 @@ jobject CreateGiraphAdaptorContext(JNIEnv* env, const char* context_class_name,
   CHECK_NOTNULL(res);
   return env->NewGlobalRef(res);
 }
+void string2ptree(const std::string& params,
+                         boost::property_tree::ptree& pt) {
+  std::stringstream ss;
+  {
+    ss << params;
+    try {
+      boost::property_tree::read_json(ss, pt);
+    } catch (boost::property_tree::ptree_error& r) {
+      LOG(ERROR) << "Parsing json failed: " << params;
+    }
+  }
+}
+
+template <typename T>
+T getFromPtree(const boost::property_tree::ptree& pt, const char* key) {
+  return pt.get<T>(key);
+}
 
 }  // namespace gs
 #endif
