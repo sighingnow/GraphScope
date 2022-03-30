@@ -128,7 +128,7 @@ void CreateAndQuery(std::string params) {
   std::string user_lib_path = getFromPtree<std::string>(pt, USER_LIB_PATH);
 
   VLOG(10) << "efile: " << efile << ", vfile: " << vfile
-           << "directed: " << directed;
+           << ", directed: " << directed;
   vineyard::Client client;
   vineyard::ObjectID fragment_id;
   VINEYARD_CHECK_OK(client.Connect(ipc_socket));

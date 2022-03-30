@@ -38,6 +38,8 @@ import com.alibaba.graphscope.utils.CppClassName;
  */
 @FFIGenBatch(
         value = {
+            @FFIGen(type = "com.alibaba.graphscope.fragment.Loader.JavaLoaderInvoker"),
+            @FFIGen(type = "com.alibaba.graphscope.fragment.Loader.ArrowFragmentLoader"),
             @FFIGen(type = "com.alibaba.graphscope.ds.EmptyType"),
             @FFIGen(type = "com.alibaba.graphscope.parallel.message.DoubleMsg"),
             @FFIGen(type = "com.alibaba.graphscope.parallel.message.LongMsg"),

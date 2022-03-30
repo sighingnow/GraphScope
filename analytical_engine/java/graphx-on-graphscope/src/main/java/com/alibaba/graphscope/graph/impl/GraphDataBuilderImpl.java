@@ -4,7 +4,6 @@ import com.alibaba.graphscope.fragment.Loader.JavaLoaderInvoker;
 import com.alibaba.graphscope.graph.GraphDataBuilder;
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream;
 import com.alibaba.graphscope.stdcxx.FFIByteVecVector;
-import com.alibaba.graphscope.stdcxx.FFIByteVecVectorFactory;
 import com.alibaba.graphscope.stdcxx.FFIByteVector;
 import com.alibaba.graphscope.stdcxx.FFIIntVecVector;
 import com.alibaba.graphscope.stdcxx.FFIIntVector;

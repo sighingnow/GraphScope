@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.Vector;
 import org.apache.spark.graphx.Edge;
 import org.apache.spark.graphx.Graph;
 import org.apache.spark.graphx.impl.EdgePartition;
@@ -49,7 +51,12 @@ public class GraphConverter<VD, ED> {
         //
         this.vdClass = (Class<? extends VD>) vdClass;
         this.edClass = (Class<? extends ED>) edClass;
+        //check libraries loaded in this thread
+        System.loadLibrary("grape-jni");
+
         try {
+            String[] libs = ClassScope.getLoadedLibraries(this.getClass().getClassLoader());
+            logger.info("libs: " + Arrays.toString(libs));
             Class<? extends ArrowFragmentLoader> clz =
                 (Class<? extends ArrowFragmentLoader>) FFITypeFactory.getType(ArrowFragmentLoader.class, CppClassName.ARROW_FRAGMENT_LOADER);
             logger.info("FragmentLoaderClass found {}", clz.getName());
@@ -535,6 +542,28 @@ public class GraphConverter<VD, ED> {
         @Override
         public long getAddress() {
             return 0;
+        }
+    }
+
+    public static class ClassScope {
+        private static java.lang.reflect.Field LIBRARIES = null;
+        static {
+            try {
+                LIBRARIES = ClassLoader.class.getDeclaredField("loadedLibraryNames");
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            }
+            if (LIBRARIES != null){
+                LIBRARIES.setAccessible(true);
+            }
+            else {
+                logger.error("fail to get field");
+            }
+        }
+        public static String[] getLoadedLibraries(final ClassLoader loader)
+            throws IllegalAccessException {
+            final Vector<String> libraries = (Vector<String>) LIBRARIES.get(loader);
+            return libraries.toArray(new String[] {});
         }
     }
 
