@@ -40,7 +40,8 @@
     </exec>
 
     <exec dir="${project.build.directory}/native" executable="make" failonerror="true">
-      <arg line="VERBOSE=1 -j4"/>
+      <arg line="VERBOSE=1 -j"/>
+      <!-- make -j could cause ci machine down-->
     </exec>
   </target>
 </project>
