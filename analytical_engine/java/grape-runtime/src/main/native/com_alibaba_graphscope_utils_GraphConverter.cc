@@ -77,6 +77,44 @@ Java_com_alibaba_graphscope_utils_GraphConverter_createArrowFragmentLoader(
       loader->get());
 }
 
+JNIEXPORT jlong JNICALL
+Java_com_alibaba_graphscope_utils_GraphConverter_constructFragment(
+    JNIEnv* env, jclass clz, jlong addr, jint vd_type, jint ed_type) {
+  using FragmentLoaderType =
+      gs::ArrowFragmentLoader<vineyard::property_graph_types::OID_TYPE,
+                              vineyard::property_graph_types::VID_TYPE>;
+  using FragmentType =
+      vineyard::ArrowFragment<vineyard::property_graph_types::OID_TYPE,
+                              vineyard::property_graph_types::VID_TYPE>;
+  using ProjectedFragmentType =
+      ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
+  auto loader = reinterpret_cast<FragmentLoaderType*>(addr);
+
+  vineyard::ObjectID fragment_id = boost::leaf::try_handle_all(
+      [&loader]() { return loader->LoadFragment(); },
+      [](const vineyard::GSError& e) {
+        LOG(FATAL) << e.error_msg;
+        return 0;
+      },
+      [](const boost::leaf::error_info& unmatched) {
+        LOG(FATAL) << "Unmatched error " << unmatched;
+        return 0;
+      });
+  std::shared_ptr<FragmentType> fragment =
+      std::dynamic_pointer_cast<FragmentType>(client.GetObject(fragment_id));
+
+  VLOG(10) << "fid: " << fragment->fid() << "fnum: " << fragment->fnum()
+           << "v label num: " << fragment->vertex_label_num()
+           << "e label num: " << fragment->edge_label_num()
+           << "total v num: " << fragment->GetTotalVerticesNum();
+  VLOG(1) << "inner vertices: " << fragment->GetInnerVerticesNum(0);
+  // project
+  std::shared_ptr<ProjectedFragmentType> projected_fragment =
+      ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
+  // return projected fragment pointer.
+  return reinterpret_cast<jlong>(projected_fragment->get());
+}
+
 #ifdef __cplusplus
 }
 #endif
