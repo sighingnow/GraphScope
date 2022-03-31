@@ -100,13 +100,14 @@ public class GraphXProxy<VD, ED, MSG_T> {
         if (user_jar_path == null || user_jar_path.isEmpty()){
             logger.error("USER_JAR_PATH not set");
         }
+	String gsRuntimeJar = "/opt/graphscope/lib/grape-runtime-0.1-shaded.jar";
         logger.info("user app class: " + conf.getUserAppClass().get().getName());
         SparkAppHandle appHandle = new InProcessLauncher()
             .setAppResource(user_jar_path)
             .setMainClass(conf.getUserAppClass().get().getName())
             .setMaster("local[2]")
-            .setConf(SparkLauncher.EXECUTOR_EXTRA_CLASSPATH, user_jar_path)
-            .setConf(SparkLauncher.DRIVER_EXTRA_CLASSPATH, user_jar_path)
+            .setConf(SparkLauncher.EXECUTOR_EXTRA_CLASSPATH, user_jar_path + ":" + gsRuntimeJar)
+            .setConf(SparkLauncher.DRIVER_EXTRA_CLASSPATH, user_jar_path + ":" + gsRuntimeJar)
             .setConf(SparkLauncher.DRIVER_MEMORY, "2g")
                 .setVerbose(true).startApplication();
         // Use handle API to monitor / control application.

@@ -84,7 +84,7 @@ public class GraphConverter<VD, ED> {
     public ArrowProjectedFragment<Long, Long, VD, ED> convert() {
         //Call In memory ArrowFragmentLoader to load vertices and edges(which are already loaded offheap)
 //        constructFragment(fragmentLoader.getAddress(), TypeUtils.classToInt(vdClass), TypeUtils.classToInt(edClass));
-        ArrowProjectedFragment<Long,Long,VD,ED> fragment = invokeLoadingAndProjection();
+        ArrowProjectedFragment<Long,Long,VD,ED> fragment = (ArrowProjectedFragment<Long,Long,VD,ED>) invokeLoadingAndProjection(fragmentLoader, vdClass, edClass);
         return fragment;
     }
 
@@ -114,7 +114,17 @@ public class GraphConverter<VD, ED> {
         }
         throw new IllegalAccessException("No constructors found");
     }
-
+    private static ArrowProjectedFragment createArrowProjectedFragmentInstance(Class<? extends ArrowProjectedFragment> clz, long addr)
+        throws InvocationTargetException, InstantiationException, IllegalAccessException {
+        Constructor[] constructors = clz.getConstructors();
+        for (Constructor constructor : constructors) {
+            if (constructor.getParameterCount() == 1
+                && constructor.getParameterTypes()[0].getName().equals("long")) {
+                return clz.cast(constructor.newInstance(addr));
+            }
+        }
+        throw new IllegalAccessException("No constructors found");
+    }
     private void fillVertices() {
         RDD<ShippableVertexPartition<VD>> rdd = graph.vertices().partitionsRDD();
         ShippableVertexPartition<VD>[] shippableVertexPartitions = (ShippableVertexPartition<VD>[]) rdd.collect();
@@ -209,11 +219,18 @@ public class GraphConverter<VD, ED> {
             if (method == null){
                 throw new IllegalStateException("No such method");
             }
-            method.invoke(null, loader, TypeUtils.classToInt(vdClass), TypeUtils.classToInt(edClass));
+            long addr = (long) method.invoke(null, loader, TypeUtils.classToInt(vdClass), TypeUtils.classToInt(edClass));
+  
+            Class<? extends ArrowProjectedFragment> fragClz =
+              (Class<? extends ArrowProjectedFragment>) FFITypeFactory.getType(ArrowProjectedFragment.class, CppClassName.ARROW_PROJECTED_FRAGMENT);
+	    if (fragClz == null){
+		throw new IllegalStateException("No projected clz found");
+	    }
+            return createArrowProjectedFragmentInstance(fragClz, addr);
         } catch (Exception e) {
             e.printStackTrace();
         }
-
+	throw new IllegalStateException("existing since exception ocurred");
     }
 
 //    public static native long createArrowFragmentLoader();

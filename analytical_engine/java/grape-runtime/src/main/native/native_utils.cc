@@ -10,6 +10,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+static vineyard::Client client;
 /*
  * Class:     com_alibaba_graphscope_runtime_NativeUtils
  * Method:    createLoader
@@ -24,7 +26,6 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_createLoader(JNIEnv*, jclass) {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
   VLOG(1) << "Created comm_spec";
-  static vineyard::Client client;
   std::string ipc_socket = "/tmp/vineyard.sock.lei";
   VINEYARD_CHECK_OK(client.Connect(ipc_socket));
 
@@ -85,6 +86,7 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_invokeLoadingAndProjection(
         return 0;
       });
   VLOG(1) << "frag id: "<< fragment_id;
+  
   std::shared_ptr<FragmentType> fragment =
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(fragment_id));
 
