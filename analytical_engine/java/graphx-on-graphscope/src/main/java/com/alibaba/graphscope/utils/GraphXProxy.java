@@ -100,21 +100,24 @@ public class GraphXProxy<VD, ED, MSG_T> {
         if (user_jar_path == null || user_jar_path.isEmpty()) {
             logger.error("USER_JAR_PATH not set");
         }
-        String gsRuntimeJar = "/opt/graphscope/lib/grape-runtime-0.1-shaded.jar";
+        String gsRuntimeJar = "local:/opt/graphscope/lib/grape-runtime-0.1-shaded.jar";
         String gsLibPath = "/opt/graphscope/lib";
         String javaLibraryPath = System.getProperty("java.library.path");
         String javaClassPath = System.getProperty("java.class.path");
         logger.info("java.library.path {}, java.class.path {}", javaLibraryPath, javaClassPath);
         logger.info("user app class: " + conf.getUserAppClass().get().getName());
+        String jars = System.getenv("EXTRA_JARS");
+        if (jars == null) jars = gsRuntimeJar;
         SparkAppHandle appHandle = new InProcessLauncher()
             .setAppResource(user_jar_path)
             .setMainClass(conf.getUserAppClass().get().getName())
             .setMaster("local[2]")
-            .setConf(SparkLauncher.EXECUTOR_EXTRA_CLASSPATH, user_jar_path + ":" + gsRuntimeJar)
-            .setConf(SparkLauncher.DRIVER_EXTRA_CLASSPATH, user_jar_path + ":" + gsRuntimeJar)
+            .setConf(SparkLauncher.EXECUTOR_EXTRA_CLASSPATH, gsRuntimeJar)
+            .setConf(SparkLauncher.DRIVER_EXTRA_CLASSPATH, gsRuntimeJar)
             .setConf(SparkLauncher.EXECUTOR_EXTRA_LIBRARY_PATH, gsLibPath)
             .setConf(SparkLauncher.DRIVER_EXTRA_LIBRARY_PATH, gsLibPath)
             .setConf(SparkLauncher.DRIVER_MEMORY, "2g")
+	    .addJar(jars)
             .setVerbose(true).startApplication();
         // Use handle API to monitor / control application.
         appHandle.addListener(new Listener() {

@@ -20,6 +20,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Vector;
+import org.apache.spark.util.MutableURLClassLoader;
 import org.apache.spark.graphx.Edge;
 import org.apache.spark.graphx.Graph;
 import org.apache.spark.graphx.impl.EdgePartition;
@@ -41,6 +42,9 @@ public class GraphConverter<VD, ED> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphConverter.class.getName());
     private static String NATIVE_UTILS = "com.alibaba.graphscope.runtime.NativeUtils";
+    static {
+        System.loadLibrary("grape-jni-2");
+    }
 
     private Graph<VD, ED> graph;
     private Class<? extends VD> vdClass;
@@ -197,10 +201,15 @@ public class GraphConverter<VD, ED> {
             (Class<? extends ArrowFragmentLoader>) FFITypeFactory.getType(ArrowFragmentLoader.class, CppClassName.ARROW_FRAGMENT_LOADER);
         logger.info("FragmentLoaderClass found {}", loaderClz.getName());
         try {
-            logger.info("current class loader: " + GraphConverter.class.getClassLoader());
-            logger.info("search path: " + urlsToString( ((URLClassLoader)GraphConverter.class.getClassLoader()).getURLs()));
+	    //Thread.currentThread().setContextClassLoader(GraphConverter.class.getClassLoader());
+	    //MutableURLClassLoader classLoader = (MutableURLClassLoader) GraphConverter.class.getClassLoader();
+	    URLClassLoader classLoader = (URLClassLoader) GraphConverter.class.getClassLoader();
+            logger.info("current class loader: " + classLoader);
+	    logger.info("fragment loader cl: " + loaderClz.getClassLoader());
+            logger.info("search path 1: " + urlsToString(classLoader.getURLs()));
+            logger.info("search path 2:: " + urlsToString(((URLClassLoader) loaderClz.getClassLoader()).getURLs()));
             //Native functions can not be placed in this jar. must be in runtime jar.!!!!
-            Class<?> nativeClz = Class.forName(NATIVE_UTILS);
+            Class<?> nativeClz = classLoader.loadClass(NATIVE_UTILS);
             Method method = nativeClz.getDeclaredMethod("createLoader");
             if (method == null){
                 throw new IllegalStateException("No such method");

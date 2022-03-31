@@ -57,7 +57,7 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_createLoader(JNIEnv*, jclass) {
   graph->edges.push_back(edge);
 
   // create arrowFragmentLoader and return
-  auto loader = std::make_shared<FragmentLoaderType>(client, comm_spec, graph);
+  static auto loader = std::make_shared<FragmentLoaderType>(client, comm_spec, graph);
   VLOG(1) << "Sucessfully create load;";
   return reinterpret_cast<jlong>(loader.get());
 }
@@ -87,7 +87,7 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_invokeLoadingAndProjection(
       });
   VLOG(1) << "frag id: "<< fragment_id;
   
-  std::shared_ptr<FragmentType> fragment =
+static std::shared_ptr<FragmentType> fragment =
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(fragment_id));
 
   VLOG(10) << "fid: " << fragment->fid() << "fnum: " << fragment->fnum()
@@ -96,7 +96,7 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_invokeLoadingAndProjection(
            << "total v num: " << fragment->GetTotalVerticesNum();
   VLOG(1) << "inner vertices: " << fragment->GetInnerVerticesNum(0);
   // project
-  std::shared_ptr<ProjectedFragmentType> projected_fragment =
+static  std::shared_ptr<ProjectedFragmentType> projected_fragment =
       ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
   // return projected fragment pointer.
   return reinterpret_cast<jlong>(projected_fragment.get());
