@@ -130,13 +130,13 @@ public class GraphDataBuilderImpl<VD, ED> implements GraphDataBuilder<VD, ED> {
 
         int bytes2 = (int) -vdatasOutputStream[threadId].bytesWriten();
         if (vdClass.equals(double.class) || vdClass.equals(Double.class)){
-            edgeDataOutStream[threadId].writeDouble((Double) vdata);
+            vdatasOutputStream[threadId].writeDouble((Double) vdata);
         }
         else if (vdClass.equals(long.class) || vdClass.equals(Long.class)){
-            edgeDataOutStream[threadId].writeLong((Long) vdata);
+            vdatasOutputStream[threadId].writeLong((Long) vdata);
         }
         else if (vdClass.equals(int.class) || vdClass.equals(Integer.class)){
-            edgeDataOutStream[threadId].writeInt((Integer) vdata);
+            vdatasOutputStream[threadId].writeInt((Integer) vdata);
         }
         else {
             throw new IllegalStateException("Vdclass not supported " + vdClass.getName());
