@@ -97,10 +97,14 @@ public class GraphXProxy<VD, ED, MSG_T> {
     public void invokeMain() throws IOException, InterruptedException {
         //lauch with spark laucher
         String user_jar_path = System.getenv("USER_JAR_PATH");
-        if (user_jar_path == null || user_jar_path.isEmpty()){
+        if (user_jar_path == null || user_jar_path.isEmpty()) {
             logger.error("USER_JAR_PATH not set");
         }
-	String gsRuntimeJar = "/opt/graphscope/lib/grape-runtime-0.1-shaded.jar";
+        String gsRuntimeJar = "/opt/graphscope/lib/grape-runtime-0.1-shaded.jar";
+        String gsLibPath = "/opt/graphscope/lib";
+        String javaLibraryPath = System.getProperty("java.library.path");
+        String javaClassPath = System.getProperty("java.class.path");
+        logger.info("java.library.path {}, java.class.path {}", javaLibraryPath, javaClassPath);
         logger.info("user app class: " + conf.getUserAppClass().get().getName());
         SparkAppHandle appHandle = new InProcessLauncher()
             .setAppResource(user_jar_path)
@@ -108,13 +112,16 @@ public class GraphXProxy<VD, ED, MSG_T> {
             .setMaster("local[2]")
             .setConf(SparkLauncher.EXECUTOR_EXTRA_CLASSPATH, user_jar_path + ":" + gsRuntimeJar)
             .setConf(SparkLauncher.DRIVER_EXTRA_CLASSPATH, user_jar_path + ":" + gsRuntimeJar)
+            .setConf(SparkLauncher.EXECUTOR_EXTRA_LIBRARY_PATH, gsLibPath)
+            .setConf(SparkLauncher.DRIVER_EXTRA_LIBRARY_PATH, gsLibPath)
             .setConf(SparkLauncher.DRIVER_MEMORY, "2g")
-                .setVerbose(true).startApplication();
+            .setVerbose(true).startApplication();
         // Use handle API to monitor / control application.
         appHandle.addListener(new Listener() {
             @Override
             public void stateChanged(SparkAppHandle sparkAppHandle) {
-                logger.info("{} staged changed to {}", sparkAppHandle.getAppId(), sparkAppHandle.getState());
+                logger.info("{} staged changed to {}", sparkAppHandle.getAppId(),
+                    sparkAppHandle.getState());
             }
 
             @Override
@@ -139,7 +146,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
      */
     protected void eventually(Duration timeout, Duration period, Runnable check)
         throws InterruptedException {
-        if (timeout.compareTo(period) < 0){
+        if (timeout.compareTo(period) < 0) {
             throw new IllegalStateException("Timeout needs to be larger than period.");
         }
         long deadline = System.nanoTime() + timeout.toNanos();
@@ -151,7 +158,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 return;
             } catch (Throwable t) {
                 if (System.nanoTime() >= deadline) {
-                    String msg = String.format("Failed check after %d tries: %s.", count, t.getMessage());
+                    String msg = String.format("Failed check after %d tries: %s.", count,
+                        t.getMessage());
                     throw new IllegalStateException(msg, t);
                 }
                 logger.debug("Error catch, continue waiting: " + t.getMessage());
@@ -160,10 +168,10 @@ public class GraphXProxy<VD, ED, MSG_T> {
         }
     }
 
-    private void waitFor(SparkAppHandle handle)throws Exception{
+    private void waitFor(SparkAppHandle handle) throws Exception {
         try {
             eventually(Duration.ofSeconds(10), Duration.ofMillis(10), () -> {
-                if (!handle.getState().isFinal()){
+                if (!handle.getState().isFinal()) {
                     throw new AssertionError("Handle is not in the final state");
                 }
             });

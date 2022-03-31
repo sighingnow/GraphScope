@@ -16,6 +16,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Vector;
 import org.apache.spark.graphx.Edge;
@@ -195,6 +197,8 @@ public class GraphConverter<VD, ED> {
             (Class<? extends ArrowFragmentLoader>) FFITypeFactory.getType(ArrowFragmentLoader.class, CppClassName.ARROW_FRAGMENT_LOADER);
         logger.info("FragmentLoaderClass found {}", loaderClz.getName());
         try {
+            logger.info("current class loader: " + GraphConverter.class.getClassLoader());
+            logger.info("search path: " + urlsToString( ((URLClassLoader)GraphConverter.class.getClassLoader()).getURLs()));
             //Native functions can not be placed in this jar. must be in runtime jar.!!!!
             Class<?> nativeClz = Class.forName(NATIVE_UTILS);
             Method method = nativeClz.getDeclaredMethod("createLoader");
@@ -619,6 +623,14 @@ public class GraphConverter<VD, ED> {
             final Vector<String> libraries = (Vector<String>) LIBRARIES.get(loader);
             return libraries.toArray(new String[] {});
         }
+    }
+    private static String urlsToString(URL[] urls) {
+        StringBuilder sb = new StringBuilder();
+        for (URL url : urls) {
+            sb.append(url);
+            sb.append(",");
+        }
+        return sb.toString();
     }
 
 }
