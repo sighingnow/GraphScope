@@ -16,8 +16,8 @@
 
 #include <jni.h>
 #include <string>
-#include "core/loader/arrow_fragment_loader.h"
 #include "core/fragment/arrow_projected_fragment.h"
+#include "core/loader/arrow_fragment_loader.h"
 #include "glog/logging.h"
 #include "grape/config.h"
 #include "grape/grape.h"
@@ -76,7 +76,7 @@ Java_com_alibaba_graphscope_utils_GraphConverter_createArrowFragmentLoader(
   // create arrowFragmentLoader and return
   auto loader = std::make_shared<FragmentLoaderType>(client, comm_spec, graph);
   VLOG(1) << "Sucessfully create load;";
-   return reinterpret_cast<jlong>(loader.get());
+  return reinterpret_cast<jlong>(loader.get());
 }
 
 JNIEXPORT jlong JNICALL

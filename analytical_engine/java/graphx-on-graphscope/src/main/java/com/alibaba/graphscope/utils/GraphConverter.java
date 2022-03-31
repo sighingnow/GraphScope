@@ -60,7 +60,8 @@ public class GraphConverter<VD, ED> {
             Class<? extends ArrowFragmentLoader> clz =
                 (Class<? extends ArrowFragmentLoader>) FFITypeFactory.getType(ArrowFragmentLoader.class, CppClassName.ARROW_FRAGMENT_LOADER);
             logger.info("FragmentLoaderClass found {}", clz.getName());
-            long address = createArrowFragmentLoader();
+            long address = NativeUtils.createLoader();
+//            long address = createArrowFragmentLoader();
             fragmentLoader = createFragmentLoaderInstance(clz, address);
         } catch (Exception e) {
             e.printStackTrace();
@@ -86,7 +87,7 @@ public class GraphConverter<VD, ED> {
 
     public ArrowProjectedFragment<Long, Long, VD, ED> convert() {
         //Call In memory ArrowFragmentLoader to load vertices and edges(which are already loaded offheap)
-        constructFragment(fragmentLoader.getAddress(), TypeUtils.classToInt(vdClass), TypeUtils.classToInt(edClass));
+//        constructFragment(fragmentLoader.getAddress(), TypeUtils.classToInt(vdClass), TypeUtils.classToInt(edClass));
         return new ArrowProjectedEmpty();
     }
 
@@ -179,9 +180,9 @@ public class GraphConverter<VD, ED> {
         return sb.toString();
     }
 
-    public static native long createArrowFragmentLoader();
+//    public static native long createArrowFragmentLoader();
 
-    public static native long constructFragment(long fragLoaderAddress, int vdType, int edType);
+//    public static native long constructFragment(long fragLoaderAddress, int vdType, int edType);
 
     public class ArrowProjectedEmpty implements ArrowProjectedFragment {
 

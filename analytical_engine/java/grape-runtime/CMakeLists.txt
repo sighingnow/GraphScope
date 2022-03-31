@@ -44,7 +44,7 @@ find_package(libgrapelite REQUIRED)
 include_directories(SYSTEM ${LIBGRAPELITE_INCLUDE_DIRS})
 
 # find vineyard ---------------------------------------------
-find_package(vineyard 0.2.6 REQUIRED)
+find_package(vineyard 0.3.21 REQUIRED)
 include_directories(${VINEYARD_INCLUDE_DIRS})
 
 # find graphscope analytical engine---------------------------------------------

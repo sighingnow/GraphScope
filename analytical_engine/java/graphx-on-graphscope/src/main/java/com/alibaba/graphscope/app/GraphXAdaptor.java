@@ -6,6 +6,7 @@ import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.utils.GraphConverter;
 import com.alibaba.graphscope.utils.GraphXProxy;
+import com.alibaba.graphscope.utils.NativeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,7 @@ public class GraphXAdaptor<VDATA_T,EDATA_T> implements DefaultAppBase<Long,Long,
         //do the computation and message sending
         //flush messages.
 //        graphXProxy.compute(graph.innerVertices());
-        long tmp = GraphConverter.createArrowFragmentLoader();
+        long tmp = NativeUtils.createLoader();
         logger.info("created fragment loader: {}", tmp);
 
         try{
