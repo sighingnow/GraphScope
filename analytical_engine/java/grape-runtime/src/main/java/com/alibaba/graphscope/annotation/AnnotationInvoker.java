@@ -367,6 +367,15 @@ import com.alibaba.graphscope.utils.CppClassName;
                                     "Double"
                                 }),
                         @CXXTemplate(
+                            cxx = {
+                                ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
+                                "int64_t"
+                            },
+                            java = {
+                                "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                                "Long"
+                            }),
+                        @CXXTemplate(
                                 cxx = {
                                     ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,double>",
                                     "int64_t"
