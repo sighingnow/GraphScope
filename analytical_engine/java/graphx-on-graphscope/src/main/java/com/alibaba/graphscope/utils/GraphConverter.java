@@ -246,7 +246,7 @@ public class GraphConverter<VD, ED> {
 
             Class<? extends ArrowProjectedFragment> fragClz =
                 (Class<? extends ArrowProjectedFragment>) FFITypeFactory.getType(
-                    ArrowProjectedFragment.class, CppClassName.ARROW_PROJECTED_FRAGMENT);
+                    ArrowProjectedFragment.class, CppClassName.ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,double>");
             if (fragClz == null) {
                 throw new IllegalStateException("No projected clz found");
             }

@@ -72,7 +72,7 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_invokeLoadingAndProjection(
       vineyard::ArrowFragment<vineyard::property_graph_types::OID_TYPE,
                               vineyard::property_graph_types::VID_TYPE>;
   using ProjectedFragmentType =
-      gs::ArrowProjectedFragment<int64_t, uint64_t, int64_t, double>;
+      gs::ArrowProjectedFragment<int64_t, uint64_t, double, double>;
   auto loader = reinterpret_cast<FragmentLoaderType*>(addr);
 
   vineyard::ObjectID fragment_id = boost::leaf::try_handle_all(

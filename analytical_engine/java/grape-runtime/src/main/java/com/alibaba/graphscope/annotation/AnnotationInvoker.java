@@ -163,6 +163,9 @@ import com.alibaba.graphscope.utils.CppClassName;
                                 cxx = {"int64_t", "uint64_t", "int64_t", "double"},
                                 java = {"Long", "Long", "Long", "Double"}),
                         @CXXTemplate(
+                                cxx = {"int64_t", "uint64_t", "double", "double"},
+                                java = {"Long", "Long", "Double", "Double"}),
+                        @CXXTemplate(
                             cxx = {"int64_t", "uint64_t", "int64_t", "int64_t"},
                             java = {"Long", "Long", "Long", "Long"}),
 //                        @CXXTemplate(
