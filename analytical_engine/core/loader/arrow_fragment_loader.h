@@ -855,7 +855,8 @@ class ArrowFragmentLoader {
             BOOST_LEAF_ASSIGN(
                 table, readTableFromGiraph(false, sub_labels[j].values, index,
                                            total_parts, sub_labels[j].eformat));
-          } else if (sub_labels[i].protocol == "graphx") {
+          } else if (sub_labels[j].protocol == "graphx") {
+            LOG(INFO) << "Reading edges from graphx";
             BOOST_LEAF_ASSIGN(
                 table,
                 readTableFromGraphx(
