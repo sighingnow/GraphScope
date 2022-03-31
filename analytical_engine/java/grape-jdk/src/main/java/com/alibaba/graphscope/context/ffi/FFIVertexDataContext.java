@@ -29,7 +29,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.ds.GSVertexArray;
 import com.alibaba.graphscope.utils.CppHeaderName;
 
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(CppHeaderName.VERTEX_DATA_CONTEXT_H)
 @CXXHead(ARROW_PROJECTED_FRAGMENT_H)
 @FFITypeAlias(VERTEX_DATA_CONTEXT)

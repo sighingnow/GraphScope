@@ -42,7 +42,7 @@ import com.alibaba.graphscope.fragment.adaptor.ImmutableEdgecutFragmentAdaptor;
  * The default message manager, used in serial apps {@link DefaultAppBase} and {@link
  * DefaultAppBase}.
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @FFITypeAlias(GRAPE_DEFAULT_MESSAGE_MANAGER)
 @CXXHead({
     GRAPE_ADJ_LIST_H,

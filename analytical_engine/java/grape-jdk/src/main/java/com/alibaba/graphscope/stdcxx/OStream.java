@@ -25,7 +25,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 
 import java.io.OutputStream;
 
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(
         value = {},
         system = {"ostream"})

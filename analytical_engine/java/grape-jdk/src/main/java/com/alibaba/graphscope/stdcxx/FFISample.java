@@ -34,7 +34,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.fastffi.FFITypeFactory;
 import com.alibaba.fastffi.FFIVector;
 
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @FFIMirror
 @FFINameSpace("sample")
 @FFITypeAlias("FFIMirrorSample")

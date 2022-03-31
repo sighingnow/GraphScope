@@ -48,7 +48,7 @@ import java.util.function.Supplier;
  * The parallel message manager, used in serial apps {@link
  * com.alibaba.graphscope.app.ParallelAppBase}.
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @FFITypeAlias(GRAPE_PARALLEL_MESSAGE_MANAGER)
 @CXXHead({
     GRAPE_PARALLEL_PARALLEL_MESSAGE_MANAGER_H,

@@ -36,7 +36,7 @@ import com.alibaba.fastffi.FFITypeAlias;
  * href="https://github.com/alibaba/libgrape-lite/blob/master/grape/utils/vertex_set.h">DenseVertexSet</a>.
  * DenseVertexSet is able to maintain the indicator information for a vertex range.
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(value = {GRAPE_WORKER_COMM_SPEC_H, GRAPE_DENSE_VERTEX_SET_H})
 @FFITypeAlias(GRAPE_DENSE_VERTEX_SET)
 public interface DenseVertexSet<VID_T> extends FFIPointer, CXXPointer {

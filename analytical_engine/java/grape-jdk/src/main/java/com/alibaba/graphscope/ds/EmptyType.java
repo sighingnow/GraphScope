@@ -32,7 +32,7 @@ import com.alibaba.fastffi.FFITypeFactory;
  * for <a
  * href="https://github.com/alibaba/libgrape-lite/blob/master/grape/types.h">grape::EmptyType</a>.
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(GRAPE_TYPES_H)
 @FFITypeAlias(GRAPE_EMPTY_TYPE)
 public interface EmptyType extends FFIPointer {

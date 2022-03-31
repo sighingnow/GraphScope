@@ -29,7 +29,7 @@ import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
 import com.alibaba.graphscope.utils.JNILibraryName;
 
-@FFIGen(library = JNILibraryName.JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead({
     CppHeaderName.PROPERTY_MESSAGE_MANAGER_H,
     CppHeaderName.ARROW_FRAGMENT_H,

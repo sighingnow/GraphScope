@@ -42,7 +42,7 @@ import com.alibaba.fastffi.FFITypeAlias;
  *
  * @param <T> vertex data type.
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(GS_CORE_CONFIG_H)
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @CXXHead(GRAPE_VERTEX_ARRAY_H)

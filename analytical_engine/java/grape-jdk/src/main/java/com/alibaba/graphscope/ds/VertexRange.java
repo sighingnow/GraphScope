@@ -38,7 +38,7 @@ import java.util.Iterator;
  *
  * @param <VID_T> vertex id type.
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(GRAPE_VERTEX_ARRAY_H)
 @FFITypeAlias(GRAPE_VERTEX_RANGE)
 public interface VertexRange<VID_T> extends FFIPointer, CXXPointer {

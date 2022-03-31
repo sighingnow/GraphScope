@@ -71,7 +71,7 @@ import com.alibaba.graphscope.ds.Vertex;
  * @see com.alibaba.graphscope.fragment.EdgecutFragment
  * @see com.alibaba.graphscope.fragment.FragmentBase
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(GRAPE_FRAGMENT_IMMUTABLE_EDGECUT_FRAGMENT_H)
 @FFITypeAlias(GRAPE_IMMUTABLE_FRAGMENT)
 public interface ImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T>

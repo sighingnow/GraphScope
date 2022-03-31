@@ -33,7 +33,7 @@ import com.alibaba.graphscope.utils.JNILibraryName;
  *
  * @param <DATA_T> edge data type.
  */
-@FFIGen(library = JNILibraryName.JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.EDGE_DATA_COLUMN)
 public interface EdgeDataColumn<DATA_T> extends FFIPointer {

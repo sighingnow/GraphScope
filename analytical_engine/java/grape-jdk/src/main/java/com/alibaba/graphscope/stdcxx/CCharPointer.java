@@ -23,7 +23,7 @@ import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
 
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @FFITypeAlias("char")
 public interface CCharPointer extends FFIPointer {
     @CXXOperator("*&")

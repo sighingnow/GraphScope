@@ -38,7 +38,7 @@ import com.alibaba.fastffi.FFITypeAlias;
  * @param <VID_T> vertex id type.
  * @param <EDATA_T> edge data type.
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(GRAPE_ADJ_LIST_H)
 @FFITypeAlias(GRAPE_NBR)
 public interface GrapeNbr<VID_T, EDATA_T>

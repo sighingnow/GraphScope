@@ -24,6 +24,6 @@ import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
 
 /** A pointer to an unsigned pointer */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @FFITypeAlias("unsigned")
 public interface FidPointer extends FFIPointer, CXXPointerRangeElement<FidPointer> {}

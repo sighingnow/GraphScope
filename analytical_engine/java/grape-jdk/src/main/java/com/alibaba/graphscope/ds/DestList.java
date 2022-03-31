@@ -33,7 +33,7 @@ import com.alibaba.fastffi.FFITypeAlias;
  * href="https://github.com/alibaba/libgrape-lite/blob/master/grape/graph/adj_list.h">grape::DestList
  * </a>, contains two fid pointer, the begin and the end.
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(GRAPE_ADJ_LIST_H)
 @FFITypeAlias(GRAPE_DEST_LIST)
 public interface DestList extends FFIPointer, CXXPointer, CXXPointerRange<FidPointer> {

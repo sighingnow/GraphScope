@@ -31,7 +31,7 @@ import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.fastffi.FFITypeFactory;
 
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(value = {GRAPE_WORKER_COMM_SPEC_H, GRAPE_BIT_SET_H})
 @FFITypeAlias(GRAPE_BIT_SET)
 /**

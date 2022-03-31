@@ -38,7 +38,7 @@ import com.alibaba.fastffi.FFITypeAlias;
  *
  * @param <VID_T> vertex id type. Long recommended.
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(GRAPE_VERTEX_ARRAY_H)
 @FFITypeAlias(GRAPE_VERTEX)
 @CXXTemplate(

@@ -35,7 +35,7 @@ import com.alibaba.fastffi.FFITypeFactory;
  * Boxing types in value. So to enabling user passing Long,Double,Int as messages, we provide
  * Wrappers for these primitive types. Feel free to use them in messageManger.
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(CORE_JAVA_JAVA_MESSAGES_H)
 @FFITypeAlias(LONG_MSG)
 public interface LongMsg extends FFIPointer {

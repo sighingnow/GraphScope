@@ -27,7 +27,7 @@ import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFITypeAlias;
 
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(
         value = {"stdint.h"},
         system = {"unordered_map"})

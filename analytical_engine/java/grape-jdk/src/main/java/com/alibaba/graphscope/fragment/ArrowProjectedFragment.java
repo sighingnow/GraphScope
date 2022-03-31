@@ -41,7 +41,7 @@ import com.alibaba.graphscope.ds.Vertex;
  * @param <VDATA_T> vertex data type
  * @param <EDATA_T> edge data type
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(ARROW_PROJECTED_FRAGMENT_H)
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @CXXHead(system = "stdint.h")

@@ -37,7 +37,7 @@ import com.alibaba.fastffi.FFITypeAlias;
  * href="https://github.com/alibaba/libgrape-lite/blob/master/grape/graph/adj_list.h">C++ AdjList
  * class</a>
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead({GRAPE_ADJ_LIST_H, GRAPE_TYPES_H})
 @FFITypeAlias(GRAPE_ADJ_LIST)
 public interface GrapeAdjList<VID_T, EDATA_T>

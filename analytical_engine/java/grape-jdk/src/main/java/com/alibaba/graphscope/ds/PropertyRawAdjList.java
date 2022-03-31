@@ -28,7 +28,7 @@ import com.alibaba.graphscope.utils.JNILibraryName;
 
 import java.util.Iterator;
 
-@FFIGen(library = JNILibraryName.JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.PROPERTY_RAW_ADJ_LIST)
 public interface PropertyRawAdjList<VID_T> extends FFIPointer, CXXPointer {

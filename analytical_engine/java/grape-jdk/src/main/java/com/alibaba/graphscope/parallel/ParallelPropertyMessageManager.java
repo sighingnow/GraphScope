@@ -43,7 +43,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /** As PropertyParalleMessager.h has not much difference from ParallelMessageManager. */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @FFITypeAlias(GS_PARALLEL_PROPERTY_MESSAGE_MANAGER)
 @CXXHead({
     CORE_PARALLEL_PARALLEL_PROPERTY_MESSAGE_MANAGER_H,

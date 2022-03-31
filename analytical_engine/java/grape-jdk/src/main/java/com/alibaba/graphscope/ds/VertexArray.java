@@ -41,7 +41,7 @@ import com.alibaba.fastffi.FFITypeAlias;
  * @param <T> vertex data type.
  * @param <VID> vertex id type.
  */
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(GRAPE_VERTEX_ARRAY)
 public interface VertexArray<VID, T> extends FFIPointer, CXXPointer {

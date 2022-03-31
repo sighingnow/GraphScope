@@ -32,7 +32,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.ds.GSVertexArray;
 import com.alibaba.graphscope.ds.Vertex;
 
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @CXXHead(system = "cstdint")
 @CXXHead(GRAPE_TYPES_H)

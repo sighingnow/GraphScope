@@ -35,7 +35,7 @@ import com.alibaba.graphscope.stdcxx.StdSharedPtr;
 import com.alibaba.graphscope.utils.CppHeaderName;
 import com.alibaba.graphscope.utils.JNILibraryName;
 
-@FFIGen(library = JNILibraryName.JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @CXXHead(CppHeaderName.LABELED_VERTEX_PROPERTY_CONTEXT_H)
 @CXXHead(CppHeaderName.ARROW_FRAGMENT_H)

@@ -25,7 +25,7 @@ import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
 
-@FFIGen(library = JNI_LIBRARY_NAME)
+@FFIGen
 @CXXHead(CORE_JAVA_JAVA_MESSAGES_H)
 @FFITypeAlias(GS_PRIMITIVE_MESSAGE)
 public interface PrimitiveMessage<T> extends FFIPointer {
