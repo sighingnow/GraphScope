@@ -52,7 +52,7 @@ public class GraphConverter<VD, ED> {
         this.vdClass = (Class<? extends VD>) vdClass;
         this.edClass = (Class<? extends ED>) edClass;
         //check libraries loaded in this thread
-        System.loadLibrary("grape-jni");
+//        System.loadLibrary("grape-jni");
 
         try {
             String[] libs = ClassScope.getLoadedLibraries(this.getClass().getClassLoader());
@@ -181,7 +181,7 @@ public class GraphConverter<VD, ED> {
 
     public static native long createArrowFragmentLoader();
 
-    public static native void constructFragment(long fragLoaderAddress, int vdType, int edType);
+    public static native long constructFragment(long fragLoaderAddress, int vdType, int edType);
 
     public class ArrowProjectedEmpty implements ArrowProjectedFragment {
 

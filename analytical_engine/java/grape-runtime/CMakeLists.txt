@@ -30,7 +30,7 @@ endif()
 # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g -std=gnu++14 -Wall -Werror")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g -std=gnu++14 -Wall -Werror")
 
-file(GLOB SOURCES "target/generated-sources/annotations/*.cc" ) #"src/main/native/*.cc"
+file(GLOB SOURCES "target/generated-sources/annotations/*.cc" "src/main/native/*.cc") #"src/main/native/*.cc"
 
 set(JAVA_AWT_LIBRARY NotNeeded)
 set(JAVA_AWT_INCLUDE_PATH NotNeeded)

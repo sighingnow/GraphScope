@@ -1,5 +1,0 @@
-#include "com_alibaba_graphscope_utils_GraphConverter.h"
-#include "ffi_byte_vector.h"
-#include "ffi_byte_vec_vector.h"
-#include "ffi_int_vector.h"
-#include "ffi_int_vec_vector.h"

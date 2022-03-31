@@ -5,6 +5,7 @@ import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
+import com.alibaba.fastffi.CXXReference;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
 import com.alibaba.graphscope.utils.JNILibraryName;
@@ -18,6 +19,6 @@ import com.alibaba.graphscope.utils.JNILibraryName;
 public interface ArrowFragmentLoader extends FFIPointer {
 
     @FFINameAlias("GetJavaLoaderInvoker")
-    JavaLoaderInvoker getJavaLoaderInvoker();
+    @CXXReference JavaLoaderInvoker getJavaLoaderInvoker();
 
 }
