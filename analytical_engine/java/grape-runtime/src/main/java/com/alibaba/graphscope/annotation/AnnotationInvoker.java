@@ -377,12 +377,12 @@ import com.alibaba.graphscope.utils.CppClassName;
                             }),
                         @CXXTemplate(
                                 cxx = {
-                                    ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,double>",
-                                    "int64_t"
+                                    ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,double>",
+                                    "double"
                                 },
                                 java = {
-                                    "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Double>",
-                                    "Long"
+                                    "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Double>",
+                                    "Double"
                                 },
                                 include = @CXXHead(ARROW_PROJECTED_FRAGMENT_H)),
                     }),

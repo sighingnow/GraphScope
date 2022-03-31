@@ -30,7 +30,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     public void Init(IFragment<Long, Long, VDATA_T, EDATA_T> frag,
         DefaultMessageManager messageManager, JSONObject jsonObject)  {
         //TODO: get vdata class from conf
-        createFFIContext(frag, (Class<? extends VDATA_T>)Long.class, false);
+        createFFIContext(frag, (Class<? extends VDATA_T>)Double.class, false);
         //First check validity of graphx user algorithms
         try {
             conf = GraphXConf.parseFromJson(jsonObject, GraphXAdaptorContext.class.getClassLoader());
