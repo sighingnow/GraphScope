@@ -162,6 +162,9 @@ import com.alibaba.graphscope.utils.CppClassName;
                         @CXXTemplate(
                                 cxx = {"int64_t", "uint64_t", "int64_t", "double"},
                                 java = {"Long", "Long", "Long", "Double"}),
+                        @CXXTemplate(
+                            cxx = {"int64_t", "uint64_t", "int64_t", "int64_t"},
+                            java = {"Long", "Long", "Long", "Long"}),
 //                        @CXXTemplate(
 //                                cxx = {"int64_t", "uint64_t", "double", "int64_t"},
 //                                java = {"Long", "Long", "Double", "Long"})
@@ -185,6 +188,9 @@ import com.alibaba.graphscope.utils.CppClassName;
                         @CXXTemplate(
                                 cxx = {"uint64_t", "double"},
                                 java = {"Long", "Double"}),
+                        @CXXTemplate(
+                            cxx = {"uint64_t", "int64_t"},
+                            java = {"Long", "Long"}),
                     }),
 //            @FFIGen(type = "com.alibaba.graphscope.column.IColumn"),
 //            @FFIGen(
@@ -353,24 +359,6 @@ import com.alibaba.graphscope.utils.CppClassName;
                     templates = {
                         @CXXTemplate(
                                 cxx = {
-                                    ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,int64_t>",
-                                    "double"
-                                },
-                                java = {
-                                    "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Long>",
-                                    "Double"
-                                }),
-                        @CXXTemplate(
-                                cxx = {
-                                    ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,int64_t>",
-                                    "int64_t"
-                                },
-                                java = {
-                                    "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Long>",
-                                    "Long"
-                                }),
-                        @CXXTemplate(
-                                cxx = {
                                     ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
                                     "double"
                                 },
@@ -380,11 +368,11 @@ import com.alibaba.graphscope.utils.CppClassName;
                                 }),
                         @CXXTemplate(
                                 cxx = {
-                                    ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
+                                    ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,double>",
                                     "int64_t"
                                 },
                                 java = {
-                                    "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                                    "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Double>",
                                     "Long"
                                 },
                                 include = @CXXHead(ARROW_PROJECTED_FRAGMENT_H)),
