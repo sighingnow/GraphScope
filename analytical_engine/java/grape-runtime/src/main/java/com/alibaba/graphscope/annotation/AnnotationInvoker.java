@@ -160,11 +160,11 @@ import com.alibaba.graphscope.utils.CppClassName;
                     type = "com.alibaba.graphscope.fragment.ArrowProjectedFragment",
                     templates = {
                         @CXXTemplate(
-                                cxx = {"int64_t", "uint64_t", "int64_t", "int64_t"},
-                                java = {"Long", "Long", "Long", "Long"}),
-                        @CXXTemplate(
-                                cxx = {"int64_t", "uint64_t", "double", "int64_t"},
-                                java = {"Long", "Long", "Double", "Long"})
+                                cxx = {"int64_t", "uint64_t", "int64_t", "double"},
+                                java = {"Long", "Long", "Long", "Double"}),
+//                        @CXXTemplate(
+//                                cxx = {"int64_t", "uint64_t", "double", "int64_t"},
+//                                java = {"Long", "Long", "Double", "Long"})
                     }),
             @FFIGen(
                     type = "com.alibaba.graphscope.ds.ProjectedNbr",
@@ -185,12 +185,6 @@ import com.alibaba.graphscope.utils.CppClassName;
                         @CXXTemplate(
                                 cxx = {"uint64_t", "double"},
                                 java = {"Long", "Double"}),
-                        @CXXTemplate(
-                                cxx = {"uint64_t", "int32_t"},
-                                java = {"Long", "Integer"}),
-                        @CXXTemplate(
-                                cxx = {"uint64_t", "int64_t"},
-                                java = {"Long", "Long"}),
                     }),
 //            @FFIGen(type = "com.alibaba.graphscope.column.IColumn"),
 //            @FFIGen(
