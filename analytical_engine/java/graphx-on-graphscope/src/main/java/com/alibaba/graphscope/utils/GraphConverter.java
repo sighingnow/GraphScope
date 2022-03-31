@@ -60,7 +60,8 @@ public class GraphConverter<VD, ED> {
             Class<? extends ArrowFragmentLoader> clz =
                 (Class<? extends ArrowFragmentLoader>) FFITypeFactory.getType(ArrowFragmentLoader.class, CppClassName.ARROW_FRAGMENT_LOADER);
             logger.info("FragmentLoaderClass found {}", clz.getName());
-            long address = NativeUtils.createLoader();
+//            long address = NativeUtils.createLoader();
+            long address = 0;
 //            long address = createArrowFragmentLoader();
             fragmentLoader = createFragmentLoaderInstance(clz, address);
         } catch (Exception e) {
