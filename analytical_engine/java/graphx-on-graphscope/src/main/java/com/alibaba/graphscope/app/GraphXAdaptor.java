@@ -24,17 +24,7 @@ public class GraphXAdaptor<VDATA_T,EDATA_T> implements DefaultAppBase<Long,Long,
         //flush messages.
 //        graphXProxy.compute(graph.innerVertices());
         {
-            try {
-                Class<?> clz = Class.forName("com.alibaba.graphscope.runtime.NativeUtils");
-                Method method = clz.getDeclaredMethod("createLoader");
-                if (method == null){
-                    throw new IllegalStateException("No such method");
-                }
-                long tmp = (long) method.invoke(null);
-                logger.info("created fragment loader: {}", tmp);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+
         }
 
 

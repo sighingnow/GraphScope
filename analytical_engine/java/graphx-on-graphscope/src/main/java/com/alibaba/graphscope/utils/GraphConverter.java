@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Vector;
 import org.apache.spark.graphx.Edge;
@@ -37,6 +38,7 @@ import scala.collection.Iterator;
 public class GraphConverter<VD, ED> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphConverter.class.getName());
+    private static String NATIVE_UTILS = "com.alibaba.graphscope.runtime.NativeUtils";
 
     private Graph<VD, ED> graph;
     private Class<? extends VD> vdClass;
@@ -55,15 +57,8 @@ public class GraphConverter<VD, ED> {
 //        System.loadLibrary("grape-jni");
 
         try {
-            String[] libs = ClassScope.getLoadedLibraries(this.getClass().getClassLoader());
-            logger.info("libs: " + Arrays.toString(libs));
-            Class<? extends ArrowFragmentLoader> clz =
-                (Class<? extends ArrowFragmentLoader>) FFITypeFactory.getType(ArrowFragmentLoader.class, CppClassName.ARROW_FRAGMENT_LOADER);
-            logger.info("FragmentLoaderClass found {}", clz.getName());
-//            long address = NativeUtils.createLoader();
-            long address = 0;
-//            long address = createArrowFragmentLoader();
-            fragmentLoader = createFragmentLoaderInstance(clz, address);
+            fragmentLoader = loadNativeUtilsClzAndCreateLoader();
+
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("create fragmentLoader failed");
@@ -89,7 +84,8 @@ public class GraphConverter<VD, ED> {
     public ArrowProjectedFragment<Long, Long, VD, ED> convert() {
         //Call In memory ArrowFragmentLoader to load vertices and edges(which are already loaded offheap)
 //        constructFragment(fragmentLoader.getAddress(), TypeUtils.classToInt(vdClass), TypeUtils.classToInt(edClass));
-        return new ArrowProjectedEmpty();
+        ArrowProjectedFragment<Long,Long,VD,ED> fragment = invokeLoadingAndProjection();
+        return fragment;
     }
 
     private <ARRAY_TYPE> ARRAY_TYPE getFieldWithReflection(EdgePartition<ED, Object> edgePartition,
@@ -107,7 +103,7 @@ public class GraphConverter<VD, ED> {
         return null;
     }
 
-    private ArrowFragmentLoader createFragmentLoaderInstance(Class<? extends ArrowFragmentLoader> clz, long addr)
+    private static ArrowFragmentLoader createFragmentLoaderInstance(Class<? extends ArrowFragmentLoader> clz, long addr)
         throws InvocationTargetException, InstantiationException, IllegalAccessException {
         Constructor[] constructors = clz.getConstructors();
         for (Constructor constructor : constructors) {
@@ -179,6 +175,45 @@ public class GraphConverter<VD, ED> {
             sb.append(vd);
         }
         return sb.toString();
+    }
+
+    private static ArrowFragmentLoader loadNativeUtilsClzAndCreateLoader()
+        throws ClassNotFoundException, IllegalAccessException {
+        String[] libs = ClassScope.getLoadedLibraries(GraphConverter.class.getClassLoader());
+        logger.info("libs: " + Arrays.toString(libs));
+        Class<? extends ArrowFragmentLoader> loaderClz =
+            (Class<? extends ArrowFragmentLoader>) FFITypeFactory.getType(ArrowFragmentLoader.class, CppClassName.ARROW_FRAGMENT_LOADER);
+        logger.info("FragmentLoaderClass found {}", loaderClz.getName());
+        try {
+            //Native functions can not be placed in this jar. must be in runtime jar.!!!!
+            Class<?> nativeClz = Class.forName(NATIVE_UTILS);
+            Method method = nativeClz.getDeclaredMethod("createLoader");
+            if (method == null){
+                throw new IllegalStateException("No such method");
+            }
+            long address = (long) method.invoke(null);
+            ArrowFragmentLoader fragmentLoader = createFragmentLoaderInstance(loaderClz, address);
+            logger.info("created fragment loader: {}", fragmentLoader);
+            return fragmentLoader;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new IllegalStateException("fail to load native utils and create loader");
+        }
+    }
+
+    private static ArrowProjectedFragment invokeLoadingAndProjection(ArrowFragmentLoader loader, Class<?> vdClass, Class<?> edClass){
+        Class<?> nativeClz = null;
+        try {
+            nativeClz = Class.forName(NATIVE_UTILS);
+            Method method = nativeClz.getDeclaredMethod("invokeLoadingAndProjection",long.class,int.class,int.class);
+            if (method == null){
+                throw new IllegalStateException("No such method");
+            }
+            method.invoke(null, loader, TypeUtils.classToInt(vdClass), TypeUtils.classToInt(edClass));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
 //    public static native long createArrowFragmentLoader();
