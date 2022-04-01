@@ -43,6 +43,7 @@ public class GraphConverter<VD, ED> {
     private static Logger logger = LoggerFactory.getLogger(GraphConverter.class.getName());
     private static String NATIVE_UTILS = "com.alibaba.graphscope.runtime.NativeUtils";
     static {
+        //FIXME: too hacky !!!
         System.loadLibrary("grape-jni-2");
     }
 

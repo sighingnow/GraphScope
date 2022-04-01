@@ -1,40 +1,69 @@
 package com.alibaba.graphscope.conf;
 
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.graphscope.app.GraphXAppBase;
-import java.net.URLClassLoader;
-import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GraphXConf {
+public class GraphXConf<VD, ED, MSG_T> {
+
     private static Logger logger = LoggerFactory.getLogger(GraphXConf.class.getName());
 
-    private static String USER_CLASS = "user_class";
-    private Optional<Class<? extends GraphXAppBase>> user_class = Optional.empty();
-    private Optional<String> user_args = Optional.empty();
+    private Class<? extends VD> vdataClass;
+    private Class<? extends ED> edataClass;
+    private Class<? extends MSG_T> msgClass;
 
-    public Optional<Class<? extends GraphXAppBase>> getUserAppClass() {
-        return user_class;
+    public GraphXConf(Class<? extends VD> vdataClass, Class<? extends ED> edataClass, Class<? extends MSG_T> msgClass){
+        this.vdataClass = vdataClass;
+        this.edataClass = edataClass;
+        this.msgClass = msgClass;
     }
 
-    public void setUserAppClass(Class<? extends GraphXAppBase> clz) {
-        if (user_class.isPresent()) {
-            throw new IllegalStateException("You can not set user app class twice");
-        }
-        user_class = Optional.of(clz);
+    public Class<? extends VD> getVdataClass() {
+        return vdataClass;
     }
 
-    public static GraphXConf parseFromJson(JSONObject jsonObject, ClassLoader classLoader)
-        throws ClassNotFoundException {
-        GraphXConf conf = new GraphXConf();
-        if (jsonObject.containsKey(USER_CLASS) && !jsonObject.getString(USER_CLASS).isEmpty()) {
-            logger.info("Parse user app class {} from json str", jsonObject.getString(USER_CLASS));
-            conf.setUserAppClass(
-                (Class<? extends GraphXAppBase>) classLoader.loadClass(
-                    jsonObject.getString(USER_CLASS)));
+    public Class<? extends ED> getEdataClass() {
+        return edataClass;
+    }
+
+    public Class<? extends MSG_T> getMsgClass() {
+        return msgClass;
+    }
+
+    public void setVdataClass(Class<? extends VD> clz) {
+        vdataClass = clz;
+    }
+
+    public void setVdataClass(String className) {
+        this.vdataClass = loadClass(className);
+    }
+
+    public void setEdataClass(Class<? extends ED> clz) {
+        edataClass = clz;
+    }
+
+    public void setEdataClass(String className) {
+        this.edataClass = loadClass(className);
+    }
+
+    public void setMessageClass(Class<? extends MSG_T> clz) {
+        msgClass = clz;
+    }
+
+    public void setMessageClass(String className) {
+        this.msgClass = loadClass(className);
+    }
+
+    private <T> Class<T> loadClass(String vdataClass) {
+        Class<T> res = null;
+        try {
+            res = (Class<T>) getClass().getClassLoader().loadClass(vdataClass);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
-        return conf;
+        if (res == null) {
+            throw new IllegalStateException("try to load class " + vdataClass + " failed");
+        }
+        return res;
     }
 
 }

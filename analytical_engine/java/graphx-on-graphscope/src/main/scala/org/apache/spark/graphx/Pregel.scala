@@ -17,7 +17,11 @@
 
 package org.apache.spark.graphx
 
-import com.alibaba.graphscope.utils.GraphConverter
+import com.alibaba.graphscope.communication.Communicator
+import com.alibaba.graphscope.conf.GraphXConf
+import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, IFragment}
+import com.alibaba.graphscope.parallel.DefaultMessageManager
+import com.alibaba.graphscope.utils.{GraphConverter, GraphXProxy}
 
 import scala.reflect.{ClassTag, classTag}
 import org.apache.spark.graphx.util.PeriodicGraphCheckpointer
@@ -61,8 +65,11 @@ import org.apache.spark.rdd.util.PeriodicRDDCheckpointer
  *
  */
 object Pregel extends Logging {
+  var comm :Communicator = null
+  var messageManager : DefaultMessageManager = null
   def myClassOf[T:ClassTag] = implicitly[ClassTag[T]].runtimeClass
-
+  def setCommunicator(communicator: Communicator) = comm = communicator
+  def setMessageManager(msger : DefaultMessageManager) = messageManager = msger
   /**
    * Execute a Pregel-like iterative vertex-parallel abstraction.  The
    * user-defined vertex-program `vprog` is executed in parallel on
@@ -129,15 +136,28 @@ object Pregel extends Logging {
   {
     require(maxIterations > 0, s"Maximum number of iterations must be greater than 0," +
       s" but got ${maxIterations}")
+    require(messageManager != null, s"messager null")
+    require(comm != null, s"comm null")
     log.info("Pregel method invoked")
-    //Convert to a GraphScope graph.
-//    val gsGraph = convertToGSGraph(graph)
-//    graph.vertices.saveAsTextFile("followers-vertex")
-//    graph.edges.saveAsTextFile("followers-edge")
-    val converter : GraphConverter[VD,ED] = new GraphConverter[VD,ED](classTag[VD].runtimeClass, classTag[ED].runtimeClass)
+
+    val graphXConf : GraphXConf[VD,ED,A]= new GraphXConf(classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]],
+      classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]],
+      classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]])
+    val converter = new GraphConverter[VD,ED](classTag[VD].runtimeClass, classTag[ED].runtimeClass)
     converter.init(graph)
-    val frag = converter.convert()
+    val frag =  converter.convert()
     log.info("convert res: " + frag)
+    val graphxProxy = new GraphXProxy[VD,ED,A](graphXConf,messageManager,comm)
+
+    //Preparations before do all super steps.
+    graphxProxy.beforeApp(vprog.asInstanceOf[(java.lang.Long, VD,A) => VD],
+      sendMsg.asInstanceOf[EdgeTriplet[VD, ED] => Iterator[(java.lang.Long, A)]], mergeMsg, frag, initialMsg)
+
+    //do super steps until converge.
+    graphxProxy.compute()
+
+    //post running stuffs
+    graphxProxy.postApp()
 
 
     graph

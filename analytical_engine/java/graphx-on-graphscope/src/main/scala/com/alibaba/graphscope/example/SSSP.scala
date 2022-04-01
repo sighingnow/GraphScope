@@ -1,37 +1,9 @@
 package com.alibaba.graphscope.example
 
-import com.alibaba.graphscope.app.GraphXAppBase
-import org.apache.spark.SparkContext
-import org.apache.spark.graphx.util.GraphGenerators
-import org.apache.spark.graphx.{EdgeTriplet, Graph, GraphLoader, VertexId}
+import org.apache.spark.graphx.{Graph, GraphLoader, VertexId}
 import org.apache.spark.sql.SparkSession
 
-/**
- * vd = long,
- * ed = long,
- * msg_t = long
- */
-class SSSP extends GraphXAppBase[Long,Long,Long]{
-  val arr : Array[Int] = null
-  override def vprog(): (VertexId, Long, Long) => Long = {
-    (id, dist, newDist) => math.min(dist, newDist)
-  }
-
-  override def sendMsg(): EdgeTriplet[Long, Long] => Iterator[(VertexId, Long)] = {
-    triplet => {  // Send Message
-      if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
-        Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
-      } else {
-        Iterator.empty
-      }
-    }
-  }
-
-  override def mergeMsg(): (Long, Long) => Long = {
-    (a, b) => math.min(a, b)
-  }
-}
-object SSSP{
+object SSSP {
   def main(args: Array[String]): Unit = {
     // Creates a SparkSession.
     val spark = SparkSession
@@ -43,15 +15,15 @@ object SSSP{
     // $example on$
     // A graph with edge attributes containing distances
     val graph: Graph[Long, Double] =
-     GraphLoader.edgeListFile(sc, "/home/graphscope/data/followers.txt", false, 2)
-       .mapEdges(e => e.attr.toDouble).mapVertices((vid, _) => vid)
+    GraphLoader.edgeListFile(sc, "/home/graphscope/data/followers.txt", false, 2)
+      .mapEdges(e => e.attr.toDouble).mapVertices((vid, _) => vid)
     val sourceId: VertexId = 2 // The ultimate source
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, _) =>
       if (id == sourceId) 0.0 else Double.PositiveInfinity)
     val sssp = initialGraph.pregel(Double.PositiveInfinity)(
       (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
-      triplet => {  // Send Message
+      triplet => { // Send Message
         if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
           Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
         } else {

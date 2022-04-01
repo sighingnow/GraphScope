@@ -15,32 +15,37 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     VertexDataContext<IFragment<Long, Long, VDATA_T, EDATA_T>, VDATA_T> implements
     DefaultContextBase<Long, Long, VDATA_T, EDATA_T> {
     private static Logger logger = LoggerFactory.getLogger(GraphXAdaptorContext.class.getName());
-
+        private static String USER_CLASS = "user_class";
+    private String userClassName;
+    public String getUserClassName(){return userClassName;}
     /**
      * GraphXProxy manages function objects
      */
-    private GraphXProxy graphXProxy;
-    private GraphXConf conf;
+//    private GraphXProxy graphXProxy;
+//    private GraphXConf conf;
+//    public GraphXConf getConf(){
+//        return conf;
+//    }
 
-    public GraphXProxy getGraphXProxy(){
-        return graphXProxy;
-    }
+//    public GraphXProxy getGraphXProxy(){
+//        return graphXProxy;
+//    }
 
     @Override
     public void Init(IFragment<Long, Long, VDATA_T, EDATA_T> frag,
         DefaultMessageManager messageManager, JSONObject jsonObject)  {
         //TODO: get vdata class from conf
         createFFIContext(frag, (Class<? extends VDATA_T>)Double.class, false);
-        //First check validity of graphx user algorithms
-        try {
-            conf = GraphXConf.parseFromJson(jsonObject, GraphXAdaptorContext.class.getClassLoader());
+
+        if (jsonObject.containsKey(USER_CLASS) && !jsonObject.getString(USER_CLASS).isEmpty()) {
+            logger.info("Parse user app class {} from json str", jsonObject.getString(USER_CLASS));
+            userClassName = jsonObject.getString(USER_CLASS);
+//        }
         }
-        catch (Exception e){
-            logger.error("Exception occured in parse from json");
-            e.printStackTrace();
-            return ;
+        else {
+            throw new IllegalStateException("user class required");
         }
-        graphXProxy = GraphXFactory.createGraphXProxy(conf);
+//        graphXProxy = GraphXFactory.createGraphXProxy(conf, messageManager);
         //Fetch graph data from c++, copy to java heap and construct a GraphX graph
 
     }

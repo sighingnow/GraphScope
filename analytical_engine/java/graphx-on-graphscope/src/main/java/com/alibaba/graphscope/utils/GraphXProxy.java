@@ -1,21 +1,19 @@
 package com.alibaba.graphscope.utils;
 
-import com.alibaba.graphscope.app.GraphXAppBase;
+import com.alibaba.graphscope.communication.Communicator;
 import com.alibaba.graphscope.conf.GraphXConf;
-import com.alibaba.graphscope.ds.VertexRange;
+import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.factory.GraphXFactory;
+import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
+import com.alibaba.graphscope.fragment.IFragment;
+import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor;
 import com.alibaba.graphscope.graph.EdgeContextImpl;
-import com.alibaba.graphscope.graph.EdgeManager;
-import com.alibaba.graphscope.graph.IdManager;
+import com.alibaba.graphscope.graph.GraphXVertexIdManager;
+import com.alibaba.graphscope.graph.GraphxEdgeManager;
 import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.mm.MessageStore;
-import java.io.IOException;
-import java.time.Duration;
+import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import org.apache.spark.graphx.EdgeTriplet;
-import org.apache.spark.launcher.InProcessLauncher;
-import org.apache.spark.launcher.SparkAppHandle;
-import org.apache.spark.launcher.SparkAppHandle.Listener;
-import org.apache.spark.launcher.SparkLauncher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Function1;
@@ -40,148 +38,126 @@ public class GraphXProxy<VD, ED, MSG_T> {
      * (A, A) => A)
      */
     private Function2<MSG_T, MSG_T, MSG_T> mergeMsg;
-    private IdManager idManager;
+    private GraphXVertexIdManager idManager;
     private VertexDataManager<VD> vertexDataManager;
     private MessageStore<MSG_T> inComingMessageStore, outgoingMessageStore;
     private EdgeContextImpl<VD, ED, MSG_T> edgeContext;
-    private GraphXConf conf;
-    private EdgeManager<ED> edgeManager;
+    private GraphXConf<VD, ED, MSG_T> conf;
+    private Communicator communicator;
+    private GraphxEdgeManager<VD, ED, MSG_T> edgeManager;
+    private DefaultMessageManager messageManager;
+    private IFragment<Long, Long, VD, ED> graphxFragment; // different from c++ frag
+    private MSG_T initialMessage;
 
-    public GraphXProxy(GraphXConf conf) {
+    public GraphXProxy(GraphXConf<VD, ED, MSG_T> conf, DefaultMessageManager messageManager,
+        Communicator communicator) {
         this.conf = conf;
-        Class<? extends GraphXAppBase> clz = conf.getUserAppClass().get();
-        GraphXAppBase app;
-        try {
-            app = clz.newInstance();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new IllegalStateException("Exception in creating graphx App obj");
-        }
-        vprog = app.vprog();
-        sendMsg = app.sendMsg();
-        mergeMsg = app.mergeMsg();
-        logger.info("Got graphx app instatnce : {}", app);
-        logger.info("           vprog: {}", vprog);
-        logger.info("           sendMsg: {}", sendMsg);
-        logger.info("           mergeMsg: {}", mergeMsg);
+        this.messageManager = messageManager;
+        this.communicator = communicator;
+        //create all objects here, but not initialized, initialize after main invoke and graph got.
+        this.idManager = GraphXFactory.createIdManager(conf);
+        this.vertexDataManager = GraphXFactory.createVertexDataManager(conf);
+        this.inComingMessageStore = GraphXFactory.createMessageStore(conf);
+        this.outgoingMessageStore = GraphXFactory.createMessageStore(conf);
+        this.edgeContext = GraphXFactory.createEdgeContext(conf);
+        this.edgeManager = GraphXFactory.createEdgeManager(conf, idManager, vertexDataManager);
     }
 
-    public GraphXProxy(GraphXConf conf, IdManager manager,
-        VertexDataManager<VD> vertexDataManager) {
-        this.conf = conf;
-        this.idManager = manager;
-        this.vertexDataManager = vertexDataManager;
-        inComingMessageStore = GraphXFactory.createMessageStore(conf, idManager.innerVerticesNum());
-        outgoingMessageStore = GraphXFactory.createMessageStore(conf, idManager.verticesNum());
-        edgeContext = GraphXFactory.createEdgeContext(conf, outgoingMessageStore);
-        edgeManager = GraphXFactory.createEdgeManager(conf);
+    public void beforeApp(Function3<Long, VD, MSG_T, VD> vprog,
+        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> sendMsg,
+        Function2<MSG_T, MSG_T, MSG_T> mergeMsg, ArrowProjectedFragment<Long, Long, VD, ED> frag,
+        MSG_T initialMessage) {
+        this.vprog = vprog;
+        this.sendMsg = sendMsg;
+        this.mergeMsg = mergeMsg;
+        this.graphxFragment = new ArrowProjectedAdaptor<Long, Long, VD, ED>(frag);
+        this.initialMessage = initialMessage;
+
+        idManager.init(graphxFragment);
+        vertexDataManager.init(graphxFragment);
+        inComingMessageStore.init(graphxFragment, idManager, mergeMsg);
+        outgoingMessageStore.init(graphxFragment,idManager, mergeMsg);
+        edgeContext.init(outgoingMessageStore);
+        edgeManager.init(graphxFragment);
     }
 
-    public void compute(VertexRange<Long> vertices) {
-        long rightMost = vertices.endValue();
-        for (long lid = 0; lid < rightMost; ++lid) {
-            if (inComingMessageStore.messageAvailable(lid)) {
-                vprog.apply(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid),
-                    inComingMessageStore.getMessage(lid));
-            }
+    public void compute() {
+
+        Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
+        long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
+        long totalTime = -System.nanoTime();
+        long t = -System.nanoTime();
+        for (long lid = 0; lid < innerVerticesNum; ++lid) {
+            vertexDataManager.setVertexData(lid,vprog.apply(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid),
+                initialMessage));
         }
-        //after running vprog, we now send msg and merge msg
-        for (long lid = 0; lid < rightMost; ++lid) {
+
+        for (long lid = 0; lid < innerVerticesNum; ++lid) {
             edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
                 vertexDataManager.getVertexData(lid));
-            edgeManager.iterateOnEdges(lid, edgeContext, sendMsg, mergeMsg);
+            edgeManager.iterateOnEdges(lid, edgeContext, sendMsg, outgoingMessageStore);
         }
-        //after send message, flush message in message manager.
-    }
+        //FIXME: flush message
+        outgoingMessageStore.flushMessage(messageManager);
 
-    public void invokeMain() throws IOException, InterruptedException {
-        //lauch with spark laucher
-        String user_jar_path = System.getenv("USER_JAR_PATH");
-        if (user_jar_path == null || user_jar_path.isEmpty()) {
-            logger.error("USER_JAR_PATH not set");
-        }
-        String gsRuntimeJar = "local:/opt/graphscope/lib/grape-runtime-0.1-shaded.jar";
-        String gsLibPath = "/opt/graphscope/lib";
-        String javaLibraryPath = System.getProperty("java.library.path");
-        String javaClassPath = System.getProperty("java.class.path");
-        logger.info("java.library.path {}, java.class.path {}", javaLibraryPath, javaClassPath);
-        logger.info("user app class: " + conf.getUserAppClass().get().getName());
-        String jars = System.getenv("EXTRA_JARS");
-        if (jars == null) jars = gsRuntimeJar;
-        SparkAppHandle appHandle = new InProcessLauncher()
-            .setAppResource(user_jar_path)
-            .setMainClass(conf.getUserAppClass().get().getName())
-            .setMaster("local[2]")
-            .setConf(SparkLauncher.EXECUTOR_EXTRA_CLASSPATH, gsRuntimeJar)
-            .setConf(SparkLauncher.DRIVER_EXTRA_CLASSPATH, gsRuntimeJar)
-            .setConf(SparkLauncher.EXECUTOR_EXTRA_LIBRARY_PATH, gsLibPath)
-            .setConf(SparkLauncher.DRIVER_EXTRA_LIBRARY_PATH, gsLibPath)
-            .setConf(SparkLauncher.DRIVER_MEMORY, "2g")
-	    .addJar(jars)
-            .setVerbose(true).startApplication();
-        // Use handle API to monitor / control application.
-        appHandle.addListener(new Listener() {
-            @Override
-            public void stateChanged(SparkAppHandle sparkAppHandle) {
-                logger.info("{} staged changed to {}", sparkAppHandle.getAppId(),
-                    sparkAppHandle.getState());
-            }
+        t += System.nanoTime();
+        logger.info("PEval Finished: [{}]", t / 10e9);
+        //IN default_worker.h, Already enter PEval,
+        messageManager.FinishARound();
 
-            @Override
-            public void infoChanged(SparkAppHandle sparkAppHandle) {
-                logger.info("info changed");
-            }
-        });
-        logger.info("Start waiting app handle");
-        try {
-            waitFor(appHandle);
-        } catch (Exception e) {
-            logger.error("Exception when waiting apphanle to finish");
-            e.printStackTrace();
-        }
-        logger.info("waiting finished");
-    }
+        Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
 
-
-    /**
-     * Call a closure that performs a check every "period" until it succeeds, or the timeout
-     * elapses.
-     */
-    protected void eventually(Duration timeout, Duration period, Runnable check)
-        throws InterruptedException {
-        if (timeout.compareTo(period) < 0) {
-            throw new IllegalStateException("Timeout needs to be larger than period.");
-        }
-        long deadline = System.nanoTime() + timeout.toNanos();
-        int count = 0;
+        int round = 1;
         while (true) {
+            messageManager.StartARound();
+            t = -System.nanoTime();
+            //receive message
+            MSG_T msg = null;
             try {
-                count++;
-                check.run();
-                return;
-            } catch (Throwable t) {
-                if (System.nanoTime() >= deadline) {
-                    String msg = String.format("Failed check after %d tries: %s.", count,
-                        t.getMessage());
-                    throw new IllegalStateException(msg, t);
+                msg = conf.getMsgClass().newInstance();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            inComingMessageStore.beforeSuperStep();
+            outgoingMessageStore.beforeSuperStep();
+
+            boolean msgReceived = false;
+            while (messageManager.getMessage(graphxFragment, receiveVertex, msg)) {
+                logger.info("get message: {}, {}", receiveVertex.GetValue(), msg);
+                inComingMessageStore.addLidMessage(receiveVertex.GetValue(), msg);
+                msgReceived = true;
+            }
+            if (msgReceived) {
+                for (long lid = 0; lid < innerVerticesNum; ++lid) {
+                    if (inComingMessageStore.messageAvailable(lid)) {
+                        vprog.apply(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid),
+                            inComingMessageStore.getMessage(lid));
+                    }
                 }
-                logger.debug("Error catch, continue waiting: " + t.getMessage());
-                Thread.sleep(period.toMillis());
+                //after running vprog, we now send msg and merge msg
+                for (long lid = 0; lid < innerVerticesNum; ++lid) {
+                    edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
+                        vertexDataManager.getVertexData(lid));
+                    edgeManager.iterateOnEdges(lid, edgeContext, sendMsg, outgoingMessageStore);
+                }
+                //FIXME: flush message
+                outgoingMessageStore.flushMessage(messageManager);
+
+                //after send message, flush message in message manager.
+                t += System.nanoTime();
+                logger.info("IncEval [{}], query time [{}]:", round, t / 10e9);
+                messageManager.FinishARound();
+            } else {
+                logger.info("Frag {} No message received in round {}", graphxFragment.fid(), round);
+                break;
             }
         }
+        totalTime += System.nanoTime();
+        logger.info("Total time: [{}]", totalTime);
     }
 
-    private void waitFor(SparkAppHandle handle) throws Exception {
-        try {
-            eventually(Duration.ofSeconds(10), Duration.ofMillis(10), () -> {
-                if (!handle.getState().isFinal()) {
-                    throw new AssertionError("Handle is not in the final state");
-                }
-            });
-        } finally {
-            if (!handle.getState().isFinal()) {
-                handle.kill();
-            }
-        }
+    public void postApp() {
+        logger.info("Post app");
     }
+
 }

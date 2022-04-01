@@ -52,6 +52,10 @@
       <groupId>com.alibaba.fastffi</groupId>
       <artifactId>llvm4jni-runtime</artifactId>
     </dependency>
+    <dependency>
+      <artifactId>fastutil</artifactId>
+      <groupId>it.unimi.dsi</groupId>
+    </dependency>
   </dependencies>
 
 
