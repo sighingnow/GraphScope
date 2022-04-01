@@ -30,7 +30,8 @@ public class GraphXAdaptor<VDATA_T,EDATA_T> extends Communicator implements Defa
         GraphXAdaptorContext<VDATA_T,EDATA_T> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T>) context;
         try {
             //Set communicator to Pregel Class static field.
-            setCommunicator((Communicator) this);
+            Pregel.setCommunicator((Communicator) this);
+            Pregel.setMessageManager(messageManager);
             invokeMain(ctx.getUserClassName());
         } catch (IOException e) {
             e.printStackTrace();
@@ -46,10 +47,6 @@ public class GraphXAdaptor<VDATA_T,EDATA_T> extends Communicator implements Defa
         GraphXAdaptorContext<VDATA_T,EDATA_T> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T>) context;
 //        GraphXProxy graphXProxy = ctx.getGraphXProxy();
         //There will be no incEval.
-    }
-
-    public static void setCommunicator(Communicator communicator){
-        Pregel.setCommunicator(communicator);
     }
 
     /**
