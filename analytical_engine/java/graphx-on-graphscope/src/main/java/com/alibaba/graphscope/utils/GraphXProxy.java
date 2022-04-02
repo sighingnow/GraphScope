@@ -115,17 +115,17 @@ public class GraphXProxy<VD, ED, MSG_T> {
             messageManager.StartARound();
             t = -System.nanoTime();
 
-            boolean msgReceived = receiveMessage(receiveVertex);
+            boolean outerMsgReceived = receiveMessage(receiveVertex);
 
-            inComingMessageStore.clear();
             outgoingMessageStore.clear();
-            if (msgReceived) {
+            if (outerMsgReceived || inComingMessageStore.hasMessages()) {
                 for (long lid = 0; lid < innerVerticesNum; ++lid) {
                     if (inComingMessageStore.messageAvailable(lid)) {
                         vertexDataManager.setVertexData(lid, vprog.apply(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid),
                             inComingMessageStore.getMessage(lid)));
                     }
                 }
+                inComingMessageStore.clear();
                 //after running vprog, we now send msg and merge msg
                 for (long lid = 0; lid < innerVerticesNum; ++lid) {
                     edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
@@ -146,7 +146,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
             }
         }
         totalTime += System.nanoTime();
-        logger.info("Total time: [{}]", totalTime);
+        logger.info("Total time: [{}]", totalTime / 10e9);
     }
 
     public void postApp() {
