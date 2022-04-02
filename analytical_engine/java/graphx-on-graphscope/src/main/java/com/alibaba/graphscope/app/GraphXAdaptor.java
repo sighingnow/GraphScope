@@ -1,15 +1,11 @@
 package com.alibaba.graphscope.app;
 
 import com.alibaba.graphscope.communication.Communicator;
-import com.alibaba.graphscope.conf.GraphXConf;
 import com.alibaba.graphscope.context.DefaultContextBase;
 import com.alibaba.graphscope.context.GraphXAdaptorContext;
 import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
-import com.alibaba.graphscope.utils.GraphConverter;
-import com.alibaba.graphscope.utils.GraphXProxy;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.time.Duration;
 import org.apache.spark.graphx.Pregel;
 import org.apache.spark.launcher.InProcessLauncher;
@@ -19,20 +15,25 @@ import org.apache.spark.launcher.SparkLauncher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GraphXAdaptor<VDATA_T,EDATA_T> extends Communicator implements DefaultAppBase<Long,Long,VDATA_T,EDATA_T, GraphXAdaptorContext<VDATA_T,EDATA_T>>{
+public class GraphXAdaptor<VDATA_T, EDATA_T> extends Communicator implements
+    DefaultAppBase<Long, Long, VDATA_T, EDATA_T, GraphXAdaptorContext<VDATA_T, EDATA_T>> {
+
     private static Logger logger = LoggerFactory.getLogger(GraphXAdaptor.class.getName());
     private static String gsRuntimeJar = "local:/opt/graphscope/lib/grape-runtime-0.1-shaded.jar";
     private static String gsLibPath = "/opt/graphscope/lib";
+
     @Override
     public void PEval(IFragment<Long, Long, VDATA_T, EDATA_T> graph,
         DefaultContextBase<Long, Long, VDATA_T, EDATA_T> context,
         DefaultMessageManager messageManager) {
-        GraphXAdaptorContext<VDATA_T,EDATA_T> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T>) context;
+        GraphXAdaptorContext<VDATA_T, EDATA_T> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T>) context;
         try {
             //Set communicator to Pregel Class static field.
             Pregel.setCommunicator((Communicator) this);
             Pregel.setMessageManager(messageManager);
-            Thread.currentThread().setContextClassLoader();
+            logger.info("ctx" + Thread.currentThread().getContextClassLoader() + ", class: "
+                + getClass().getClassLoader());
+            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
             invokeMain(ctx.getUserClassName());
         } catch (IOException e) {
             e.printStackTrace();
@@ -45,17 +46,16 @@ public class GraphXAdaptor<VDATA_T,EDATA_T> extends Communicator implements Defa
     public void IncEval(IFragment<Long, Long, VDATA_T, EDATA_T> graph,
         DefaultContextBase<Long, Long, VDATA_T, EDATA_T> context,
         DefaultMessageManager messageManager) {
-        GraphXAdaptorContext<VDATA_T,EDATA_T> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T>) context;
+        GraphXAdaptorContext<VDATA_T, EDATA_T> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T>) context;
 //        GraphXProxy graphXProxy = ctx.getGraphXProxy();
         //There will be no incEval.
     }
 
     /**
-     * Invoking main function of user scala app. This will do
-     *     1) Start spark inprocess
-     *     2) create graphxProxy in scala
-     *     3) create graphConverter in scala
-     *     4) convert graphx-Graph to fragment, and kick-off computation in graphx proxy.
+     * Invoking main function of user scala app. This will do 1) Start spark inprocess 2) create
+     * graphxProxy in scala 3) create graphConverter in scala 4) convert graphx-Graph to fragment,
+     * and kick-off computation in graphx proxy.
+     *
      * @param userClassName userClassName
      * @throws IOException
      * @throws InterruptedException
@@ -107,6 +107,7 @@ public class GraphXAdaptor<VDATA_T,EDATA_T> extends Communicator implements Defa
         }
         logger.info("waiting finished");
     }
+
     private void waitFor(SparkAppHandle handle) throws Exception {
         try {
             eventually(Duration.ofSeconds(10), Duration.ofMillis(10), () -> {
@@ -120,6 +121,7 @@ public class GraphXAdaptor<VDATA_T,EDATA_T> extends Communicator implements Defa
             }
         }
     }
+
     /**
      * Call a closure that performs a check every "period" until it succeeds, or the timeout
      * elapses.
