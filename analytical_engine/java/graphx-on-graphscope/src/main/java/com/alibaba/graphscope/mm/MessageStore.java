@@ -11,6 +11,8 @@ public interface MessageStore<MSG_T> {
 
     boolean messageAvailable(long lid);
 
+    boolean hasMessages();
+
     MSG_T getMessage(long lid);
 
     void addLidMessage(long lid, MSG_T msg);

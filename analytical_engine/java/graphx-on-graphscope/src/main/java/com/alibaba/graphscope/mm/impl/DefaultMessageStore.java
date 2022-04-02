@@ -51,6 +51,11 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
     }
 
     @Override
+    public boolean hasMessages() {
+        return !flags.isEmpty();
+    }
+
+    @Override
     public MSG_T getMessage(long lid) {
         return values[(int) lid];
     }
