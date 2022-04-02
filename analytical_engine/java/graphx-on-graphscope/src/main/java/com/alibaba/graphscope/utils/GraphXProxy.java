@@ -97,8 +97,9 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 vertexDataManager.getVertexData(lid));
             edgeManager.iterateOnEdges(lid, edgeContext, sendMsg, outgoingMessageStore);
         }
-        //FIXME: flush message
         outgoingMessageStore.flushMessage(messageManager);
+        //messages to self are cached locally.
+        outgoingMessageStore.swap(inComingMessageStore);
 
         t += System.nanoTime();
         logger.info("PEval Finished: [{}]", t / 10e9);
@@ -118,8 +119,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            inComingMessageStore.beforeSuperStep();
-            outgoingMessageStore.beforeSuperStep();
+//            inComingMessageStore.clear();
 
             boolean msgReceived = false;
             while (messageManager.getMessage(graphxFragment, receiveVertex, msg)) {
@@ -127,11 +127,13 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 inComingMessageStore.addLidMessage(receiveVertex.GetValue(), msg);
                 msgReceived = true;
             }
+            inComingMessageStore.clear();
+            outgoingMessageStore.clear();
             if (msgReceived) {
                 for (long lid = 0; lid < innerVerticesNum; ++lid) {
                     if (inComingMessageStore.messageAvailable(lid)) {
-                        vprog.apply(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid),
-                            inComingMessageStore.getMessage(lid));
+                        vertexDataManager.setVertexData(lid, vprog.apply(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid),
+                            inComingMessageStore.getMessage(lid)));
                     }
                 }
                 //after running vprog, we now send msg and merge msg
@@ -142,6 +144,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 }
                 //FIXME: flush message
                 outgoingMessageStore.flushMessage(messageManager);
+                outgoingMessageStore.swap(inComingMessageStore);
 
                 //after send message, flush message in message manager.
                 t += System.nanoTime();

@@ -17,7 +17,9 @@ public interface MessageStore<MSG_T> {
 
     void addOidMessage(long oid, MSG_T msg);
 
-    void beforeSuperStep();
+    void clear();
+
+    void swap(MessageStore<MSG_T> messageStore);
 
     void flushMessage(DefaultMessageManager messageManager);
 }
