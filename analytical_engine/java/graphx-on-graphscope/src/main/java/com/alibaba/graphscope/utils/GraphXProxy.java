@@ -163,7 +163,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
     private boolean receiveMessage(Vertex<Long> receiveVertex){
         boolean msgReceived = false;
         //receive message
-        if (conf.getEdataClass().equals(Double.class)){
+        if (conf.getEdataClass().equals(Double.class) || conf.getEdataClass().equals(double.class)){
             DoubleMsg msg = FFITypeFactoryhelper.newDoubleMsg();
             while (messageManager.getMessage(graphxFragment, receiveVertex, msg)) {
                 logger.info("get message: {}, {}", receiveVertex.GetValue(), msg.getData());
@@ -171,7 +171,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 msgReceived = true;
             }
         }
-        else if (conf.getEdataClass().equals(Long.class)){
+        else if (conf.getEdataClass().equals(Long.class) || conf.getEdataClass().equals(long.class)){
             LongMsg msg = FFITypeFactoryhelper.newLongMsg();
             while (messageManager.getMessage(graphxFragment, receiveVertex, msg)) {
                 logger.info("get message: {}, {}", receiveVertex.GetValue(), msg.getData());
