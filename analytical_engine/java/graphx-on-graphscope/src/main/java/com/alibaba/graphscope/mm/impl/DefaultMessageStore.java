@@ -69,14 +69,31 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
     }
 
     @Override
-    public void beforeSuperStep() {
+    public void clear() {
         flags.clear();
+    }
+
+    @Override
+    public void swap(MessageStore<MSG_T> messageStore) {
+        if (messageStore instanceof DefaultMessageStore){
+            DefaultMessageStore<MSG_T> other = (DefaultMessageStore<MSG_T>) messageStore;
+            //only swap flags and values are ok
+            logger.info("Before message store swap {} vs {}", this.flags.cardinality(), other.flags.cardinality());
+            BitSet tmp = other.flags;
+            other.flags = this.flags;
+            this.flags = tmp;
+            logger.info("After message store swap {} vs {}", this.flags.cardinality(), other.flags.cardinality());
+
+            MSG_T[] tmpValues = other.values;
+            other.values = this.values;
+            this.values = tmpValues;
+        }
     }
 
     @Override
     public void flushMessage(DefaultMessageManager messageManager) {
         int index = flags.nextSetBit(innerVerticesNum);
-        while (index < verticesNum){
+        while (index >= innerVerticesNum && index < verticesNum){
             index = flags.nextSetBit(index);
             vertex.SetValue((long) index);
             messageManager.syncStateOnOuterVertex(fragment, vertex, values[index]);
