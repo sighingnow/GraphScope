@@ -16,10 +16,8 @@
 
 package com.alibaba.graphscope.annotation;
 
-import static com.alibaba.graphscope.utils.CppClassName.ARROW_FRAGMENT;
 import static com.alibaba.graphscope.utils.CppClassName.ARROW_PROJECTED_FRAGMENT;
 import static com.alibaba.graphscope.utils.CppClassName.DOUBLE_MSG;
-import static com.alibaba.graphscope.utils.CppClassName.GS_PRIMITIVE_MESSAGE;
 import static com.alibaba.graphscope.utils.CppClassName.GS_VERTEX_ARRAY;
 import static com.alibaba.graphscope.utils.CppClassName.LONG_MSG;
 import static com.alibaba.graphscope.utils.CppHeaderName.ARROW_PROJECTED_FRAGMENT_H;
@@ -29,7 +27,6 @@ import com.alibaba.fastffi.CXXTemplate;
 import com.alibaba.fastffi.FFIFunGen;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFIGenBatch;
-import com.alibaba.graphscope.utils.CppClassName;
 
 /**
  * In <em>GRAPE-jdk</em>, we split programming interfaces from actual implementation. As the
@@ -428,6 +425,38 @@ import com.alibaba.graphscope.utils.CppClassName;
                                             cxx = {"std::vector<char>"},
                                             java = {"com.alibaba.graphscope.stdcxx.FFIByteVector"})
                                 }),
+                        @FFIFunGen(
+                            name = "getMessageArrowProjected",
+                            returnType = "boolean",
+                            parameterTypes = {"FRAG_T","com.alibaba.graphscope.ds.Vertex", "MSG_T"},
+                            templates = {
+                                @CXXTemplate(
+                                    cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,double>",
+                                            DOUBLE_MSG
+                                    },
+                                    java = {
+                                            "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Double>",
+                                            "com.alibaba.graphscope.parallel.message.DoubleMsg"
+                                    }
+                                )
+                            }
+                        ),
+                        @FFIFunGen(
+                            name = "syncStateOnOuterVertexArrowProjected",
+                            returnType = "boolean",
+                            parameterTypes = {"FRAG_T","com.alibaba.graphscope.ds.Vertex", "MSG_T"},
+                            templates = {
+                                @CXXTemplate(
+                                    cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,double>",
+                                        DOUBLE_MSG
+                                    },
+                                    java = {
+                                        "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Double>",
+                                        "com.alibaba.graphscope.parallel.message.DoubleMsg"
+                                    }
+                                )
+                            }
+                        )
                     }),
 //            @FFIGen(
 //                    type = "com.alibaba.graphscope.parallel.ParallelMessageManager",

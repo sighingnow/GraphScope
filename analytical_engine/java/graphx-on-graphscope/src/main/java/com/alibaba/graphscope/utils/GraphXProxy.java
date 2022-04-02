@@ -13,6 +13,8 @@ import com.alibaba.graphscope.graph.GraphxEdgeManager;
 import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.mm.MessageStore;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
+import com.alibaba.graphscope.parallel.message.DoubleMsg;
+import com.alibaba.graphscope.parallel.message.LongMsg;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,21 +114,9 @@ public class GraphXProxy<VD, ED, MSG_T> {
         while (true) {
             messageManager.StartARound();
             t = -System.nanoTime();
-            //receive message
-            MSG_T msg = null;
-            try {
-                msg = conf.getMsgClass().newInstance();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-//            inComingMessageStore.clear();
 
-            boolean msgReceived = false;
-            while (messageManager.getMessage(graphxFragment, receiveVertex, msg)) {
-                logger.info("get message: {}, {}", receiveVertex.GetValue(), msg);
-                inComingMessageStore.addLidMessage(receiveVertex.GetValue(), msg);
-                msgReceived = true;
-            }
+            boolean msgReceived = receiveMessage(receiveVertex);
+
             inComingMessageStore.clear();
             outgoingMessageStore.clear();
             if (msgReceived) {
@@ -163,4 +153,35 @@ public class GraphXProxy<VD, ED, MSG_T> {
         logger.info("Post app");
     }
 
+    /**
+     * To receive message from grape, we need some wrappers.
+     * double -> DoubleMessage.
+     * long -> LongMessage
+     * @param receiveVertex vertex
+     * @return true if message received.
+     */
+    private boolean receiveMessage(Vertex<Long> receiveVertex){
+        boolean msgReceived = false;
+        //receive message
+        if (conf.getEdataClass().equals(Double.class)){
+            DoubleMsg msg = FFITypeFactoryhelper.newDoubleMsg();
+            while (messageManager.getMessage(graphxFragment, receiveVertex, msg)) {
+                logger.info("get message: {}, {}", receiveVertex.GetValue(), msg.getData());
+                inComingMessageStore.addLidMessage(receiveVertex.GetValue(), (MSG_T) (Double) msg.getData());
+                msgReceived = true;
+            }
+        }
+        else if (conf.getEdataClass().equals(Long.class)){
+            LongMsg msg = FFITypeFactoryhelper.newLongMsg();
+            while (messageManager.getMessage(graphxFragment, receiveVertex, msg)) {
+                logger.info("get message: {}, {}", receiveVertex.GetValue(), msg.getData());
+                inComingMessageStore.addLidMessage(receiveVertex.GetValue(), (MSG_T) (Long) msg.getData());
+                msgReceived = true;
+            }
+        }
+        else {
+            logger.info("Not supported msg type");
+        }
+        return msgReceived;
+    }
 }
