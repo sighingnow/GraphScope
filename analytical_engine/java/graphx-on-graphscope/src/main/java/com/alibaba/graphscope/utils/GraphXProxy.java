@@ -125,13 +125,16 @@ public class GraphXProxy<VD, ED, MSG_T> {
                             inComingMessageStore.getMessage(lid)));
                     }
                 }
-                inComingMessageStore.clear();
+
                 //after running vprog, we now send msg and merge msg
                 for (long lid = 0; lid < innerVerticesNum; ++lid) {
-                    edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
-                        vertexDataManager.getVertexData(lid));
-                    edgeManager.iterateOnEdges(lid, edgeContext, sendMsg, outgoingMessageStore);
+                    if (inComingMessageStore.messageAvailable(lid)) {
+                        edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
+                            vertexDataManager.getVertexData(lid));
+                        edgeManager.iterateOnEdges(lid, edgeContext, sendMsg, outgoingMessageStore);
+                    }
                 }
+                inComingMessageStore.clear();
                 //FIXME: flush message
                 outgoingMessageStore.flushMessage(messageManager);
                 outgoingMessageStore.swap(inComingMessageStore);
