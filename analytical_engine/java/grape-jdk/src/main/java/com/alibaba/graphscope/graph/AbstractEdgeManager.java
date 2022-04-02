@@ -199,7 +199,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                 logger.info("biz edata == grape edata, try to read direct");
                 if (edata_t == 0) {
                     for (int lid = 0; lid < innerVerticesNum; ++lid) {
-                        long curAddrr = nbrUnitAddrs[lid];
+                        long curAddrr = nbrUnitAddrs[lid] + VID_SIZE_IN_BYTE;
                         for (int j = 0; j < numOfEdges[lid]; ++j) {
                             edatas[index++] = (BIZ_EDATA_T) (Long) unsafe.getLong(curAddrr);
                             curAddrr += nbrUnitEleSize;
@@ -207,7 +207,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                     }
                 } else if (edata_t == 1) {
                     for (int lid = 0; lid < innerVerticesNum; ++lid) {
-                        long curAddrr = nbrUnitAddrs[lid];
+                        long curAddrr = nbrUnitAddrs[lid] + VID_SIZE_IN_BYTE;
                         for (int j = 0; j < numOfEdges[lid]; ++j) {
                             edatas[index++] = (BIZ_EDATA_T) (Integer) unsafe.getInt(curAddrr);
                             curAddrr += nbrUnitEleSize;
@@ -215,7 +215,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                     }
                 } else if (edata_t == 2) {
                     for (int lid = 0; lid < innerVerticesNum; ++lid) {
-                        long curAddrr = nbrUnitAddrs[lid];
+                        long curAddrr = nbrUnitAddrs[lid] + + VID_SIZE_IN_BYTE;
                         for (int j = 0; j < numOfEdges[lid]; ++j) {
                             edatas[index++] = (BIZ_EDATA_T) (Double) unsafe.getDouble(curAddrr);
                             curAddrr += nbrUnitEleSize;
@@ -223,7 +223,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                     }
                 } else if (edata_t == 3) {
                     for (int lid = 0; lid < innerVerticesNum; ++lid) {
-                        long curAddrr = nbrUnitAddrs[lid];
+                        long curAddrr = nbrUnitAddrs[lid] + + VID_SIZE_IN_BYTE;
                         for (int j = 0; j < numOfEdges[lid]; ++j) {
                             edatas[index++] = (BIZ_EDATA_T) (Float) unsafe.getFloat(curAddrr);
                             curAddrr += nbrUnitEleSize;
@@ -244,6 +244,13 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                 logger.info("Finish creating edata array");
                 inputStream.getVector().delete();
             }
+            StringBuilder sb = new StringBuilder();
+            sb.append("[");
+            for (int i = 0; i < edatas.length; ++i){
+                sb.append(edatas[i] + ",");
+            }
+            sb.append("]");
+            logger.info("edata array:" + sb.toString());
         }
         //By default, we check whether BIZ_EDATA_T is the same as GRAPE_EDATA_T, if so, we just convert and set.
         //If not we turn for this function.

@@ -54,7 +54,7 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
         MessageStore<MSG_T> outMessageStore) {
         edgeIterable.setLid(srcLid);
         for (GrapeEdge<Long, Long,ED> edge : edgeIterable){
-            logger.info("Edge ctx: dstLid {}, dstOid {}, dstVdata {}, edge value{}", edge.dstLid, edge.dstOid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
+            logger.info("Edge ctx: srcLid{}, srcOid {}, dstLid {}, dstOid {}, dstVdata {}, edge value{}", srcLid, context.srcId(), edge.dstLid, edge.dstOid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
             context.setDstValues(edge.dstLid, edge.dstOid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
             Iterator<Tuple2<Long,MSG_T>> iterator = msgSender.apply(context.toEdgeTriplet());
             while (iterator.hasNext()){
