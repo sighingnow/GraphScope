@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiConsumer;
+import jnr.ffi.annotations.In;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.misc.Unsafe;
@@ -201,7 +202,9 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                     for (int lid = 0; lid < innerVerticesNum; ++lid) {
                         long curAddrr = nbrUnitAddrs[lid] + VID_SIZE_IN_BYTE;
                         for (int j = 0; j < numOfEdges[lid]; ++j) {
-                            edatas[index++] = (BIZ_EDATA_T) (Long) unsafe.getLong(curAddrr);
+                            long eid = unsafe.getLong(curAddrr);
+                            Long edata = (Long) edataArray.get(eid);
+                            edatas[index++] = (BIZ_EDATA_T) edata ;
                             curAddrr += nbrUnitEleSize;
                         }
                     }
@@ -209,7 +212,9 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                     for (int lid = 0; lid < innerVerticesNum; ++lid) {
                         long curAddrr = nbrUnitAddrs[lid] + VID_SIZE_IN_BYTE;
                         for (int j = 0; j < numOfEdges[lid]; ++j) {
-                            edatas[index++] = (BIZ_EDATA_T) (Integer) unsafe.getInt(curAddrr);
+                            long eid = unsafe.getLong(curAddrr);
+                            Integer edata = (Integer) edataArray.get(eid);
+                            edatas[index++] = (BIZ_EDATA_T) edata;
                             curAddrr += nbrUnitEleSize;
                         }
                     }
@@ -217,7 +222,9 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                     for (int lid = 0; lid < innerVerticesNum; ++lid) {
                         long curAddrr = nbrUnitAddrs[lid] + + VID_SIZE_IN_BYTE;
                         for (int j = 0; j < numOfEdges[lid]; ++j) {
-                            edatas[index++] = (BIZ_EDATA_T) (Double) unsafe.getDouble(curAddrr);
+                            long eid = unsafe.getLong(curAddrr);
+                            Double edata = (Double) edataArray.get(eid);
+                            edatas[index++] = (BIZ_EDATA_T) edata;
                             curAddrr += nbrUnitEleSize;
                         }
                     }
@@ -225,7 +232,9 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                     for (int lid = 0; lid < innerVerticesNum; ++lid) {
                         long curAddrr = nbrUnitAddrs[lid] + + VID_SIZE_IN_BYTE;
                         for (int j = 0; j < numOfEdges[lid]; ++j) {
-                            edatas[index++] = (BIZ_EDATA_T) (Float) unsafe.getFloat(curAddrr);
+                            long eid = unsafe.getLong(curAddrr);
+                            Float edata = (Float) edataArray.get(eid);
+                            edatas[index++] = (BIZ_EDATA_T) edata;
                             curAddrr += nbrUnitEleSize;
                         }
                     }
