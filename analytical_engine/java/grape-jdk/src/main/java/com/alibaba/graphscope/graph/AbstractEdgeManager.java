@@ -284,16 +284,16 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
     }
 
     private int grapeEdata2Int() {
-        if (edataClass.equals(Long.class)) {
+        if (edataClass.equals(Long.class) || edataClass.equals(long.class)) {
             logger.info("edata: Long");
             return 0;
-        } else if (edataClass.equals(Integer.class)) {
+        } else if (edataClass.equals(Integer.class) || edataClass.equals(int.class)) {
             logger.info("edata: Int");
             return 1;
-        } else if (edataClass.equals(Double.class)) {
+        } else if (edataClass.equals(Double.class) || edataClass.equals(double.class)) {
             logger.info("edata: Double");
             return 2;
-        } else if (edataClass.equals(Float.class)) {
+        } else if (edataClass.equals(Float.class) || edataClass.equals(float.class)) {
             logger.info("edata: Float");
             return 3;
         } else if (edataClass.equals(String.class)) {
