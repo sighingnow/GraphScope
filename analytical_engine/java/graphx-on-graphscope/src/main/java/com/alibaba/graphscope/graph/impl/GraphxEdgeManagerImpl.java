@@ -54,13 +54,14 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
         MessageStore<MSG_T> outMessageStore) {
         edgeIterable.setLid(srcLid);
         for (GrapeEdge<Long, Long,ED> edge : edgeIterable){
-            logger.info("Edge ctx: srcLid{}, srcOid {}, dstLid {}, dstOid {}, dstVdata {}, edge value{}", srcLid, context.srcId(), edge.dstLid, edge.dstOid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
-            context.setDstValues(edge.dstLid, edge.dstOid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
+            context.setDstValues(edge.dstOid,edge.dstLid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
             Iterator<Tuple2<Long,MSG_T>> iterator = msgSender.apply(context.toEdgeTriplet());
+            logger.info("Edge ctx: srcLid{}, srcOid {}, dstLid {}, dstOid {}, dstVdata {}, edge value{}, iter size {}", srcLid, context.srcId(), edge.dstLid, edge.dstOid, vertexDataManager.getVertexData(edge.dstLid), edge.value, iterator.length());
             while (iterator.hasNext()){
                 Tuple2<Long,MSG_T> tuple2 = iterator.next();
-                logger.info("srclid {}(oid {}) send {} to {} when visiting edge ({},{})",srcLid, idManager.lid2Oid(srcLid), tuple2._2, tuple2._1, edge.dstOid, edge.value);
-                outMessageStore.addOidMessage(tuple2._1, tuple2._2);
+                logger.info("cur tuple: {}", tuple2);
+                logger.info("srclid {}(oid {}) send {} to {} when visiting edge ({},{})",srcLid, idManager.lid2Oid(srcLid), tuple2._2(), tuple2._1(), edge.dstOid, edge.value);
+                outMessageStore.addOidMessage(tuple2._1(), tuple2._2());
             }
         }
     }

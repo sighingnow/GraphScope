@@ -78,6 +78,6 @@ public class EdgeContextImpl<VD,ED,MSG_T> extends EdgeContext<VD,ED,MSG_T> {
 
     @Override
     public void sendToDst(MSG_T msg) {
-        this.outgoingMessageStore.addLidMessage(localSrcId, msg);
+        this.outgoingMessageStore.addLidMessage(localDstId, msg);
     }
 }
