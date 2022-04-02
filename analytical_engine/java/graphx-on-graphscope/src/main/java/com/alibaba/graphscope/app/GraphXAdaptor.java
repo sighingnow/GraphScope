@@ -32,6 +32,7 @@ public class GraphXAdaptor<VDATA_T,EDATA_T> extends Communicator implements Defa
             //Set communicator to Pregel Class static field.
             Pregel.setCommunicator((Communicator) this);
             Pregel.setMessageManager(messageManager);
+            Thread.currentThread().setContextClassLoader();
             invokeMain(ctx.getUserClassName());
         } catch (IOException e) {
             e.printStackTrace();
