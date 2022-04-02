@@ -26,7 +26,10 @@ object SSSP {
       (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
         if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
-          Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
+          println(triplet.srcAttr + ", " + (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
+          val iterator = Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
+	  println(iterator)
+          iterator
         } else {
           Iterator.empty
         }
