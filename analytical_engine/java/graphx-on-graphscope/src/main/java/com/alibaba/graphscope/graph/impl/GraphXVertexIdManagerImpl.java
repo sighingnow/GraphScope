@@ -24,6 +24,10 @@ public class GraphXVertexIdManagerImpl implements GraphXVertexIdManager {
 
     @Override
     public void init(IFragment<Long, Long, ?, ?> fragment) {
+        this.innerVerticesNum = fragment.getInnerVerticesNum();
+        this.fragVerticesNum = fragment.getVerticesNum();
+     	this.oids = new Long[(int) fragVerticesNum];
+        this.oid2Lid = new Long2LongOpenHashMap();
         //all frag vertices;
         Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
         for (long lid = 0; lid < fragment.getVerticesNum(); ++lid) {
@@ -33,8 +37,6 @@ public class GraphXVertexIdManagerImpl implements GraphXVertexIdManager {
             oid2Lid.put(oid, lid);
         }
         logger.info("Finish VertexId manager construction: fragId [{}], vertices [{}]", fragment.fid(), fragment.getVerticesNum());
-        innerVerticesNum = fragment.getInnerVerticesNum();
-        fragVerticesNum = fragment.getVerticesNum();
     }
 
     @Override

@@ -197,7 +197,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
             //first try to set directly.
             int index = 0;
             if (bizEdataClass.equals(edataClass)) {
-                logger.info("biz edata == grape edata, try to read direct");
+                logger.info("biz edata {} == grape edata, try to read direct", edata_t);
                 if (edata_t == 0) {
                     for (int lid = 0; lid < innerVerticesNum; ++lid) {
                         long curAddrr = nbrUnitAddrs[lid] + VID_SIZE_IN_BYTE;
@@ -221,10 +221,12 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                 } else if (edata_t == 2) {
                     for (int lid = 0; lid < innerVerticesNum; ++lid) {
                         long curAddrr = nbrUnitAddrs[lid] + + VID_SIZE_IN_BYTE;
+			logger.info("lid {} numEdges {}", lid, numOfEdges[lid]);
                         for (int j = 0; j < numOfEdges[lid]; ++j) {
                             long eid = unsafe.getLong(curAddrr);
                             Double edata = (Double) edataArray.get(eid);
                             edatas[index++] = (BIZ_EDATA_T) edata;
+			    logger.info("lid {} j {} eid {} edata {}", lid, j, eid, edata);
                             curAddrr += nbrUnitEleSize;
                         }
                     }
@@ -300,16 +302,16 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
     }
 
     private int grapeEdata2Int() {
-        if (edataClass.equals(Long.class)) {
+        if (edataClass.equals(Long.class) || edataClass.equals(long.class)) {
             logger.info("edata: Long");
             return 0;
-        } else if (edataClass.equals(Integer.class)) {
+        } else if (edataClass.equals(Integer.class) || edataClass.equals(int.class)) {
             logger.info("edata: Int");
             return 1;
-        } else if (edataClass.equals(Double.class)) {
+        } else if (edataClass.equals(Double.class) || edataClass.equals(double.class)) {
             logger.info("edata: Double");
             return 2;
-        } else if (edataClass.equals(Float.class)) {
+        } else if (edataClass.equals(Float.class) || edataClass.equals(float.class)) {
             logger.info("edata: Float");
             return 3;
         } else if (edataClass.equals(String.class)) {
