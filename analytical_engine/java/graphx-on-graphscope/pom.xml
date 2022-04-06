@@ -145,6 +145,10 @@
                   <exclude>
                     org.apache.spark:spark-sql_2.12
                   </exclude>
+                  <!-- exclude due to userClassPathFirst conflict -->
+                  <exclude>
+                    org.apache.hadoop:hadoop*
+                  </exclude>
                 </excludes>
               </artifactSet>
               <filters>
