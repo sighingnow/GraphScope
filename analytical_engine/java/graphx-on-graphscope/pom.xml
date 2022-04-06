@@ -42,10 +42,10 @@
       <version>0.1</version>
       <classifier>shaded</classifier>
     </dependency>
-    <dependency>
-      <artifactId>logback-classic</artifactId>
-      <groupId>ch.qos.logback</groupId>
-    </dependency>
+<!--    <dependency>-->
+<!--      <artifactId>logback-classic</artifactId>-->
+<!--      <groupId>ch.qos.logback</groupId>-->
+<!--    </dependency>-->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
