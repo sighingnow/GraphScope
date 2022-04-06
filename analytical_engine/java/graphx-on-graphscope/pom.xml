@@ -23,6 +23,8 @@
       <version>3.0.2</version>
       <scope>test</scope>
     </dependency>
+    <!--spark jars are available in class path -->
+    <!-- do not include in the fat jar -->
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-graphx_2.12</artifactId>
@@ -135,14 +137,24 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <artifactSet>
+                <excludes>
+                  <exclude>
+                    org.apache.spark:spark-graphx_2.12
+                  </exclude>
+                  <exclude>
+                    org.apache.spark:spark-sql_2.12
+                  </exclude>
+                </excludes>
+              </artifactSet>
               <filters>
-                <filter>
-                  <artifact>org.apache.spark:spark-graphx_2.12</artifact>
-                  <excludes>
-                    <exclude>org/apache/spark/graphx/impl/VertexRDDImpl</exclude>
-                    <exclude>org/apache/spark/graphx/Pregel</exclude>
-                  </excludes>
-                </filter>
+<!--                <filter>-->
+<!--                  <artifact>org.apache.spark:spark-graphx_2.12</artifact>-->
+<!--                  <excludes>-->
+<!--                    <exclude>org/apache/spark/graphx/impl/VertexRDDImpl</exclude>-->
+<!--                    <exclude>org/apache/spark/graphx/Pregel</exclude>-->
+<!--                  </excludes>-->
+<!--                </filter>-->
                 <filter>
                   <artifact>*:*</artifact>
                   <excludes>
