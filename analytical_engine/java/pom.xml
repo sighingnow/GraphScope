@@ -55,7 +55,7 @@
     <maven-surefire-plugin.version>3.0.0-M4</maven-surefire-plugin.version>
     <odps.sdk.version>0.36.4</odps.sdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <slf4j-api.version>1.7.25</slf4j-api.version>
+    <slf4j-api.version>1.7.30</slf4j-api.version>
     <dep.netty.version>4.1.36.Final</dep.netty.version>
     <dep.fastutil.version>6.5.4</dep.fastutil.version>
     <dep.kryo.version>4.0.0</dep.kryo.version>
