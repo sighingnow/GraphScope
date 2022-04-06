@@ -42,6 +42,12 @@
       <version>0.1</version>
     </dependency>
     <dependency>
+      <groupId>com.alibaba.graphscope</groupId>
+      <artifactId>grape-runtime</artifactId>
+      <version>0.1</version>
+      <classifier>shaded</classifier>
+    </dependency>
+    <dependency>
       <artifactId>logback-classic</artifactId>
       <groupId>ch.qos.logback</groupId>
     </dependency>
@@ -53,6 +59,8 @@
     <dependency>
       <groupId>com.alibaba.fastffi</groupId>
       <artifactId>llvm4jni-runtime</artifactId>
+      <version>0.1</version>
+      <classifier>jar-with-dependencies</classifier>
     </dependency>
     <dependency>
       <artifactId>fastutil</artifactId>
@@ -138,18 +146,45 @@
             </goals>
             <configuration>
               <artifactSet>
-                <excludes>
-                  <exclude>
-                    org.apache.spark:spark-graphx_2.12
-                  </exclude>
-                  <exclude>
-                    org.apache.spark:spark-sql_2.12
-                  </exclude>
-                  <!-- exclude due to userClassPathFirst conflict -->
-                  <exclude>
-                    org.apache.hadoop:hadoop*
-                  </exclude>
-                </excludes>
+                <includes>
+                  <include>
+                    com.alibaba.graphscope:grape-runtime-0.1-shaded
+                  </include>
+                  <include>
+                    com.alibaba.fastffi:llvm4jni-0.1-jar-with-dependencies
+                  </include>
+                </includes>
+<!--                <include-->
+<!--                <excludes>-->
+<!--                  &lt;!&ndash; exclude due to userClassPathFirst conflict &ndash;&gt;-->
+<!--                  <exclude>-->
+<!--                    org.apache.hadoop:hadoop*-->
+<!--                  </exclude>-->
+<!--                  <exclude>-->
+<!--                    org.apache.spark:*-->
+<!--                  </exclude>-->
+<!--                  <exclude>-->
+<!--                    org.scala-lang:*-->
+<!--                  </exclude>-->
+<!--                  <exclude>-->
+<!--                    org.apache.avro:*-->
+<!--                  </exclude>-->
+<!--                  <exclude>-->
+<!--                    org.apache.arrow:*-->
+<!--                  </exclude>-->
+<!--                  <exclude>-->
+<!--                    org.apache.commons:*-->
+<!--                  </exclude>-->
+<!--                  <exclude>-->
+<!--                    com.google.crypto.tink:*-->
+<!--                  </exclude>-->
+<!--                  <exclude>-->
+<!--                    org.apache.curator:*-->
+<!--                  </exclude>-->
+<!--                  <exclude>-->
+
+<!--                  </exclude>-->
+<!--                </excludes>-->
               </artifactSet>
               <filters>
 <!--                <filter>-->
