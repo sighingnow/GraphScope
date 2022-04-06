@@ -18,17 +18,17 @@
 package org.apache.spark.graphx
 
 import com.alibaba.graphscope.communication.Communicator
-import com.alibaba.graphscope.conf.GraphXConf
-import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, IFragment}
 import com.alibaba.graphscope.parallel.DefaultMessageManager
-import com.alibaba.graphscope.utils.{GraphConverter, GraphXProxy}
-
-import scala.reflect.{ClassTag, classTag}
-import org.apache.spark.graphx.util.PeriodicGraphCheckpointer
+import org.apache.spark.graphx
 import org.apache.spark.internal.Logging
-import org.apache.spark.rdd.RDD
-import org.apache.spark.rdd.util.PeriodicRDDCheckpointer
 
+import java.io.{File, RandomAccessFile}
+import scala.reflect.{ClassTag, classTag}
+import java.nio.CharBuffer
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
+import java.nio.channels.FileChannel.MapMode
+import java.nio.file.StandardOpenOption
 /**
  * Implements a Pregel-like bulk-synchronous message-passing API.
  *
@@ -60,16 +60,21 @@ import org.apache.spark.rdd.util.PeriodicRDDCheckpointer
  *   vertexProgram, sendMessage, messageCombiner)
  * }}}
  *
- * User use this entry class to provide three essential function object, and we shall use them to do
- * the query and message sending. The GraphXAdaptor will drive the computation
+ *          User use this entry class to provide three essential function object, and we shall use them to do
+ *          the query and message sending. The GraphXAdaptor will drive the computation
  *
  */
 object Pregel extends Logging {
-  var comm :Communicator = null
-  var messageManager : DefaultMessageManager = null
-  def myClassOf[T:ClassTag] = implicitly[ClassTag[T]].runtimeClass
+  val MAPPED_SIZE = 500 * 1024 * 1024; //500 MB.
+  var comm: Communicator = null
+  var messageManager: DefaultMessageManager = null
+
+  def myClassOf[T: ClassTag] = implicitly[ClassTag[T]].runtimeClass
+
   def setCommunicator(communicator: Communicator) = comm = communicator
-  def setMessageManager(msger : DefaultMessageManager) = messageManager = msger
+
+  def setMessageManager(msger: DefaultMessageManager) = messageManager = msger
+
   /**
    * Execute a Pregel-like iterative vertex-parallel abstraction.  The
    * user-defined vertex-program `vprog` is executed in parallel on
@@ -89,38 +94,30 @@ object Pregel extends Logging {
    *
    * @tparam VD the vertex data type
    * @tparam ED the edge data type
-   * @tparam A the Pregel message type
-   *
-   * @param graph the input graph.
-   *
-   * @param initialMsg the message each vertex will receive at the first
-   * iteration
-   *
-   * @param maxIterations the maximum number of iterations to run for
-   *
+   * @tparam A  the Pregel message type
+   * @param graph           the input graph.
+   * @param initialMsg      the message each vertex will receive at the first
+   *                        iteration
+   * @param maxIterations   the maximum number of iterations to run for
    * @param activeDirection the direction of edges incident to a vertex that received a message in
-   * the previous round on which to run `sendMsg`. For example, if this is `EdgeDirection.Out`, only
-   * out-edges of vertices that received a message in the previous round will run. The default is
-   * `EdgeDirection.Either`, which will run `sendMsg` on edges where either side received a message
-   * in the previous round. If this is `EdgeDirection.Both`, `sendMsg` will only run on edges where
-   * *both* vertices received a message.
-   *
-   * @param vprog the user-defined vertex program which runs on each
-   * vertex and receives the inbound message and computes a new vertex
-   * value.  On the first iteration the vertex program is invoked on
-   * all vertices and is passed the default message.  On subsequent
-   * iterations the vertex program is only invoked on those vertices
-   * that receive messages.
-   *
-   * @param sendMsg a user supplied function that is applied to out
-   * edges of vertices that received messages in the current
-   * iteration
-   *
-   * @param mergeMsg a user supplied function that takes two incoming
-   * messages of type A and merges them into a single message of type
-   * A.  ''This function must be commutative and associative and
-   * ideally the size of A should not increase.''
-   *
+   *                        the previous round on which to run `sendMsg`. For example, if this is `EdgeDirection.Out`, only
+   *                        out-edges of vertices that received a message in the previous round will run. The default is
+   *                        `EdgeDirection.Either`, which will run `sendMsg` on edges where either side received a message
+   *                        in the previous round. If this is `EdgeDirection.Both`, `sendMsg` will only run on edges where
+   *                        *both* vertices received a message.
+   * @param vprog           the user-defined vertex program which runs on each
+   *                        vertex and receives the inbound message and computes a new vertex
+   *                        value.  On the first iteration the vertex program is invoked on
+   *                        all vertices and is passed the default message.  On subsequent
+   *                        iterations the vertex program is only invoked on those vertices
+   *                        that receive messages.
+   * @param sendMsg         a user supplied function that is applied to out
+   *                        edges of vertices that received messages in the current
+   *                        iteration
+   * @param mergeMsg        a user supplied function that takes two incoming
+   *                        messages of type A and merges them into a single message of type
+   *                        A.  ''This function must be commutative and associative and
+   *                        ideally the size of A should not increase.''
    * @return the resulting graph at the end of the computation
    *
    */
@@ -132,35 +129,106 @@ object Pregel extends Logging {
   (vprog: (VertexId, VD, A) => VD,
    sendMsg: EdgeTriplet[VD, ED] => Iterator[(VertexId, A)],
    mergeMsg: (A, A) => A)
-  : Graph[VD, ED] =
-  {
+  : Graph[VD, ED] = {
     require(maxIterations > 0, s"Maximum number of iterations must be greater than 0," +
       s" but got ${maxIterations}")
     require(messageManager != null, s"messager null")
     require(comm != null, s"comm null")
     log.info("Pregel method invoked")
 
-    val graphXConf : GraphXConf[VD,ED,A]= new GraphXConf(classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]],
-      classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]],
-      classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]])
-    val converter = new GraphConverter[VD,ED](classTag[VD].runtimeClass, classTag[ED].runtimeClass)
-    converter.init(graph)
-    val frag =  converter.convert()
-    log.info("convert res: " + frag)
-    val graphxProxy = new GraphXProxy[VD,ED,A](graphXConf,messageManager,comm)
-
-    //Preparations before do all super steps.
-    graphxProxy.beforeApp(vprog.asInstanceOf[(java.lang.Long, VD,A) => VD],
-      sendMsg.asInstanceOf[EdgeTriplet[VD, ED] => Iterator[(java.lang.Long, A)]], mergeMsg, frag, initialMsg)
-
-    //do super steps until converge.
-    graphxProxy.compute()
-
-    //post running stuffs
-    graphxProxy.postApp()
+    graph.vertices.mapPartitionsWithIndex((pid, iterator) => {
+      val strName = s"/tmp/graphx-${pid}"
+      val randomAccessFile = new File(strName, "rw")
+      val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+      val buffer = channel.map(MapMode.READ_WRITE, 0, MAPPED_SIZE)
+      //To put vd and ed in the header.
+      putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
+      log.info("successfully put header")
+      putVertices(buffer, iterator,classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]])
+      log.info("successfully put data")
+      buffer.compact()
+      iterator
+    },
+      true
+    )
 
 
     graph
   } // end of apply
 
+  def putHeader[VD: ClassTag, ED : ClassTag, A: ClassTag](buffer: MappedByteBuffer, vdClass: Class[VD], edClass: Class[ED], msgClass: Class[A]): Unit ={
+    require(buffer.remaining() > 4, s"not enough space in buffer")
+    buffer.putInt(class2Int(vdClass))
+    require(buffer.remaining() > 4, s"not enough space in buffer")
+    buffer.putInt(class2Int(edClass))
+    require(buffer.remaining() > 4, s"not enough space in buffer")
+    buffer.putInt(class2Int(msgClass))
+  }
+
+  def putVertices[VD: ClassTag](buffer: MappedByteBuffer, tuples: Iterator[(graphx.VertexId, VD)], vdClass : Class[VD]): Unit ={
+    if (vdClass.equals(classOf[java.lang.Long])){
+      tuples.foreach(tuple => {
+        val vid = tuple._1
+        val vdata = tuple._2
+        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+        buffer.putLong(vid)
+        buffer.putLong(vdata.asInstanceOf[java.lang.Long])
+        log.info(s"Writing vid [${vid}] vdata [${vdata}]")
+      })
+    }
+    else if (vdClass.equals(classOf[java.lang.Double])){
+      tuples.foreach(tuple => {
+        val vid = tuple._1
+        val vdata = tuple._2
+        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+        buffer.putLong(vid)
+        buffer.putDouble(vdata.asInstanceOf[java.lang.Double])
+        log.info(s"Writing vid [${vid}] vdata [${vdata}]")
+      })
+    }
+    else if (vdClass.equals(classOf[java.lang.Integer])){
+      tuples.foreach(tuple => {
+        val vid = tuple._1
+        val vdata = tuple._2
+        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+        buffer.putLong(vid)
+        buffer.putInt(vdata.asInstanceOf[java.lang.Integer])
+        log.info(s"Writing vid [${vid}] vdata [${vdata}]")
+      })
+    }
+    else throw new IllegalStateException("expected vdata class")
+  }
+
+  def class2Int(value: Class[_]) : Int = {
+    if (value.equals(classOf[java.lang.Long])){
+      0
+    }
+    else if (value.equals(classOf[java.lang.Integer])){
+      1
+    }
+    else if (value.equals(classOf[java.lang.Double])){
+      2
+    }
+    else throw new IllegalArgumentException(s"unexpected class ${value}")
+  }
+
 } // end of class Pregel
+
+//    val graphXConf : GraphXConf[VD,ED,A]= new GraphXConf(classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]],
+//      classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]],
+//      classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]])
+//    val converter = new GraphConverter[VD,ED](classTag[VD].runtimeClass, classTag[ED].runtimeClass)
+//    converter.init(graph)
+//    val frag =  converter.convert()
+//    log.info("convert res: " + frag)
+//    val graphxProxy = new GraphXProxy[VD,ED,A](graphXConf,messageManager,comm)
+//
+//    //Preparations before do all super steps.
+//    graphxProxy.beforeApp(vprog.asInstanceOf[(java.lang.Long, VD,A) => VD],
+//      sendMsg.asInstanceOf[EdgeTriplet[VD, ED] => Iterator[(java.lang.Long, A)]], mergeMsg, frag, initialMsg)
+//
+//    //do super steps until converge.
+//    graphxProxy.compute()
+//
+//    //post running stuffs
+//    graphxProxy.postApp()
