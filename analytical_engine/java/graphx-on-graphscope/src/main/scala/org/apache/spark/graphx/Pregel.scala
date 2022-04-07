@@ -142,7 +142,7 @@ object Pregel extends Logging {
     log.info("Pregel method invoked")
 
     val res = graph.vertices.mapPartitionsWithIndex((pid, iterator) => {
-      val innerLogger = LoggerFactory.getLogger(getClass.getName)
+      @transient lazy val innerLogger = LoggerFactory.getLogger(getClass.getName)
       val strName = s"/tmp/graphx-${pid}"
       val randomAccessFile = new File(strName, "rw")
       val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
