@@ -252,10 +252,10 @@ class JavaLoaderInvoker {
     while (partition_id < 10) {
       std::string file_path = location_prefix + std::to_string(partition_id);
       VLOG(1) << "try for parition " << partition_id << ": " << file_path;
-      size_t file_size = get_file_size(location_prefix);
+      size_t file_size = get_file_size(file_path.c_str());
       if (file_size > 0) {
         VLOG(1) << "opening file " << file_path << ", size " << file_size;
-        int fd = open(file_path, O_RDONLY, 0);
+        int fd = open(file_path.c_str(), O_RDONLY, 0);
         if (fd == -1) {
           LOG(ERROR) << "Error open file for read " << file_path;
           return;
@@ -305,7 +305,7 @@ class JavaLoaderInvoker {
     callJavaLoaderEdges(edge_location_prune.c_str(), eformatter_class.c_str());
   }
 
-  void load_edges(cosnt std::string& location_prefix) {}
+  void load_edges(const std::string& location_prefix) {}
 
   std::shared_ptr<arrow::Table> get_edge_table() {
     CHECK(oid_type > 0 && edata_type > 0);
@@ -409,8 +409,8 @@ class JavaLoaderInvoker {
  private:
   size_t get_file_size(const char* file_name) {
     struct stat st;
-    stat(file_name, &st);
-    if (st == NULL) {
+
+    if (stat(file_name, &st) == 0) {
       LOG(ERROR) << "file " << file_name << "doesn't exist";
       return 0;
     }

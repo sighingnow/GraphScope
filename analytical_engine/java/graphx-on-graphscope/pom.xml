@@ -40,11 +40,6 @@
       <groupId>com.alibaba.graphscope</groupId>
       <artifactId>grape-jdk</artifactId>
       <version>0.1</version>
-    </dependency>
-    <dependency>
-      <groupId>com.alibaba.graphscope</groupId>
-      <artifactId>grape-runtime</artifactId>
-      <version>0.1</version>
       <classifier>shaded</classifier>
     </dependency>
 <!--    <dependency>-->
@@ -148,10 +143,10 @@
               <artifactSet>
                 <includes>
                   <include>
-                    com.alibaba.graphscope:grape-runtime-0.1-shaded
+                    com.alibaba.graphscope:*
                   </include>
                   <include>
-                    com.alibaba.fastffi:llvm4jni-0.1-jar-with-dependencies
+                    com.alibaba.fastffi:*
                   </include>
                 </includes>
 <!--                <include-->
