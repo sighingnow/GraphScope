@@ -20,9 +20,12 @@ package org.apache.spark.graphx
 import com.alibaba.graphscope.communication.Communicator
 import com.alibaba.graphscope.parallel.DefaultMessageManager
 import com.alibaba.graphscope.utils.{CallUtils, MPIProcessLauncher}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.apache.spark.{SparkContext, graphx}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.Utils
+import org.slf4j.Logger
 
 import java.io.{File, RandomAccessFile}
 import scala.reflect.{ClassTag, classTag}
@@ -138,22 +141,24 @@ object Pregel extends Logging {
 //    require(comm != null, s"comm null")
     log.info("Pregel method invoked")
 
-    graph.vertices.mapPartitionsWithIndex((pid, iterator) => {
+    val res = graph.vertices.mapPartitionsWithIndex((pid, iterator) => {
+      val innerLogger = LoggerFactory.getLogger(getClass.getName)
       val strName = s"/tmp/graphx-${pid}"
       val randomAccessFile = new File(strName, "rw")
       val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
       val buffer = channel.map(MapMode.READ_WRITE, 0, MAPPED_SIZE)
       //To put vd and ed in the header.
       putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
-      log.info("successfully put header")
+      innerLogger.info("successfully put header")
       putVertices(buffer, iterator,classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]])
-      log.info("successfully put data")
+      innerLogger.info("successfully put data")
       buffer.compact()
-      iterator
+//      iterator
+      Iterator(buffer)
     },
       true
     )
-    log.info("after writing to memory mapped file, launch mpi processes")
+    log.info(s"after writing to memory mapped file, launch mpi processes ${res}")
 
 //    graph.vertices.sparkContext.getCallSite()
 //    val sc = SparkContext.getOrCreate()
