@@ -51,7 +51,7 @@ static constexpr const char* USER_LIB_PATH = "user_lib_path";
 using FragmentType =
     vineyard::ArrowFragment<int64_t, vineyard::property_graph_types::VID_TYPE>;
 using ProjectedFragmentType =
-    ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
+    ArrowProjectedFragment<int64_t, uint64_t, double, double>;
 
 using FragmentLoaderType =
     ArrowFragmentLoader<int64_t, vineyard::property_graph_types::VID_TYPE>;
@@ -67,16 +67,36 @@ void Init(const std::string& params) {
 }
 
 vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
-                                const std::string& vfile,
-                                const std::string& efile,
                                 vineyard::Client& client, bool directed) {
   vineyard::ObjectID fragment_id;
   {
-    std::vector<std::string> vfiles, efiles;
-    vfiles.push_back(vfile);
-    efiles.push_back(efile);
-    auto loader = std::make_unique<FragmentLoaderType>(
-        client, comm_spec, efiles, vfiles, directed != 0);
+    auto graph = std::make_shared<gs::detail::Graph>();
+    graph->directed = directed;
+    graph->generate_eid = false;
+
+    auto vertex = std::make_shared<gs::detail::Vertex>();
+    vertex->label = "label1";
+    vertex->vid = "0";
+    vertex->protocol = "graphx";
+    graph->vertices.push_back(vertex);
+
+    auto edge = std::make_shared<gs::detail::Edge>();
+    edge->label = "label2";
+    auto subLabel = std::make_shared<gs::detail::Edge::SubLabel>();
+    subLabel->src_label = "label1";
+    subLabel->src_vid = "0";
+    subLabel->dst_label = "label1";
+    subLabel->dst_vid = "0";
+    subLabel->protocol = "graphx";
+    // subLabel->values = efile;
+    // subLabel->eformat += edge_input_format_class;  // eif
+    edge->sub_labels.push_back(*subLabel.get());
+
+    graph->edges.push_back(edge);
+
+    // create arrowFragmentLoader and return
+    auto loader =
+        std::make_unique<FragmentLoaderType>(client, comm_spec, graph);
     fragment_id = boost::leaf::try_handle_all(
         [&loader]() { return loader->LoadFragment(); },
         [](const vineyard::GSError& e) {
@@ -123,22 +143,15 @@ void CreateAndQuery(std::string params) {
   string2ptree(params, pt);
 
   std::string ipc_socket = pt.get<std::string>(IPC_SOCKET);
-  std::string efile = pt.get<std::string>(EFILE);
-  std::string vfile = pt.get<std::string>(VFILE);
   bool directed = pt.get<bool>(DIRECTED);
   std::string user_lib_path = pt.get<std::string>(USER_LIB_PATH);
 
-  VLOG(10) << "efile: " << efile << ", vfile: " << vfile
-           << ", directed: " << directed;
+  VLOG(10) << "user_lib_path: " << user_lib_path << ", directed: " << directed;
   vineyard::Client client;
-  vineyard::ObjectID fragment_id;
   VINEYARD_CHECK_OK(client.Connect(ipc_socket));
   VLOG(1) << "Connected to IPCServer: " << ipc_socket;
 
-  if (efile.empty() || vfile.empty()) {
-    LOG(FATAL) << "Make sure efile and vfile are avalibale";
-  }
-  fragment_id = LoadFragment(comm_spec, vfile, efile, client, directed);
+  vineyard::ObjectID fragment_id = LoadFragment(comm_spec, client, directed);
   VLOG(10) << "[worker " << comm_spec.worker_id()
            << "] loaded frag id: " << fragment_id;
 
