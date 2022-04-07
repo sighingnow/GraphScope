@@ -22,6 +22,7 @@ import com.alibaba.graphscope.parallel.DefaultMessageManager
 import com.alibaba.graphscope.utils.MPIProcessLauncher
 import org.apache.spark.{SparkContext, graphx}
 import org.apache.spark.internal.Logging
+import org.apache.spark.util.Utils
 
 import java.io.{File, RandomAccessFile}
 import scala.reflect.{ClassTag, classTag}
@@ -154,10 +155,12 @@ object Pregel extends Logging {
     )
     log.info("after writing to memory mapped file, launch mpi processes")
 
-    val sc = SparkContext.getOrCreate()
-    val callSite = sc.getCallSite
-    log.info(s"call site ${callSite.longForm}")
-    val mpiLauncher = new MPIProcessLauncher("/tmp/graphx-", callSite.longForm)
+//    graph.vertices.sparkContext.getCallSite()
+//    val sc = SparkContext.getOrCreate()
+//    val callSite = sc.getCallSite
+    val callsite = Utils.getCallSite()
+    log.info(s"call site ${callsite.longForm}")
+    val mpiLauncher = new MPIProcessLauncher("/tmp/graphx-", callsite.longForm)
     mpiLauncher.run()
 
     graph

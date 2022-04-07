@@ -17,6 +17,9 @@ echo "User class:    "${USER_CLASS}
 DEFAULT_SPARK_HOME=~/spark/spark-3.2.1-bin-hadoop2.7
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+echo "Script dir:"${SCRIPT_DIR}
+export GRAPHSCOPE_CODE_HOME=${SCRIPT_DIR}/../../
+echo "GS_CODEHOME: "${GRAPHSCOPE_CODE_HOME}
 
 source  ${SCRIPT_DIR}/grape_jvm_opts
 export USER_JAR_PATH=${SCRIPT_DIR}/graphx-on-graphscope/target/graphx-on-graphscope-0.1-shaded.jar
@@ -44,6 +47,6 @@ if [ -z "${SPARK_HOME}" ];then
 fi
 
 
-cmd="GLOG_v=10 mpirun -n 2 -hostfile ${SPARK_CONF_WORKER} -x GLOG_v -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} --user_class ${USER_CLASS} --vertex_mm_file_prefix ${V_FILE_PREFIX} --edge_mm_file_prefix ${E_FILE_PREFIX}"
+cmd="GLOG_v=10 mpirun -n 2 -hostfile ${SPARK_CONF_WORKER} -x GLOG_v -x GRAPHSCOPE_CODE_HOME -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} --user_class ${USER_CLASS} --vertex_mm_file_prefix ${V_FILE_PREFIX} --edge_mm_file_prefix ${E_FILE_PREFIX}"
 echo "running cmd: "$cmd
 eval $cmd

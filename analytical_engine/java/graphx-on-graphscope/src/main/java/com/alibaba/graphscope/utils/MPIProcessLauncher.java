@@ -17,7 +17,7 @@ public class MPIProcessLauncher {
     private String vertexFilePrefix;
     private String edgeFilePrefix;
     private ProcessBuilder processBuilder;
-    private static String GRAPHSCOPE_HOME, SPARK_HOME, GAE_HOME, SPARK_CONF_WORKERS;
+    private static String GRAPHSCOPE_CODE_HOME, SPARK_HOME, GAE_HOME, SPARK_CONF_WORKERS;
     private static String MPI_EXEC = "mpirun";
     private static String SHELL_SCRIPT;
     private String userClass;
@@ -29,14 +29,14 @@ public class MPIProcessLauncher {
         }
         SPARK_CONF_WORKERS = SPARK_HOME + "/conf/workers";
 
-        GRAPHSCOPE_HOME = System.getenv("GRAPHSCOPE_HOME");
-        if (GRAPHSCOPE_HOME != null && fileExists(GRAPHSCOPE_HOME)) {
-            GAE_HOME = GRAPHSCOPE_HOME + "/analytical_engine";
+        GRAPHSCOPE_CODE_HOME = System.getenv("GRAPHSCOPE_CODE_HOME");
+        if (GRAPHSCOPE_CODE_HOME != null && fileExists(GRAPHSCOPE_CODE_HOME)) {
+            GAE_HOME = GRAPHSCOPE_CODE_HOME + "/analytical_engine";
             if (!fileExists(GAE_HOME)) {
                 throw new IllegalStateException("GAE HOME wrong" + GAE_HOME);
             }
         } else {
-            throw new IllegalStateException("GraphScope home wrong");
+            throw new IllegalStateException("GraphScope code home wrong");
         }
         SHELL_SCRIPT = GAE_HOME + "/java/launch_mpi.sh";
         if (!fileExists(SHELL_SCRIPT)) {
