@@ -57,7 +57,8 @@ public class MPIProcessLauncher {
 //            {"GLOG_v=10", MPI_EXEC, "-n", numWorker.toString(), "-hostfile",
 //            SPARK_CONF_WORKERS, GAE_HOME + "/build/graphx_runner", "--mm_file_prefix",
 //            mmFilePrefix};
-        String [] commands = {"bash", "-c", SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix, userClass};
+        String [] mpiCommand = {SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix,userClass};
+        String [] commands = {"bash", "-c", "\"" + String.join(" ", mpiCommand) +"\"" };
         logger.info("Running command: " + String.join(" ", commands));
         processBuilder.command(commands);
         processBuilder.inheritIO();
