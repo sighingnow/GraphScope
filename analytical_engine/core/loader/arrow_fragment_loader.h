@@ -112,11 +112,12 @@ class ArrowFragmentLoader {
             << ", worker num: " << comm_spec_.worker_num();
     // For java loader invoker, there can be two cases
     // 1. For giraph. The protocol is file, and we truly load data from file
-    // 2. For graphx. The data is from graphx rdd, which is stored in memory, so
-    // we need to copy them to cpp memory.
+    // 2. For graphx. The data is stored in memory mapped file, we need to open
+    // these files with prefixes.
     //
     // We distinguish there two modes according to protocol.
-    std::vector<std::shared_ptr<gs::detail::Vertex>> vertices = graph_info->vertices;
+    std::vector<std::shared_ptr<gs::detail::Vertex>> vertices =
+        graph_info->vertices;
     if (vertices.size() == 1 && vertices[0]->protocol == "graphx") {
       java_loader_invoker_.InitJavaLoader("graphx");
     } else {
@@ -486,12 +487,14 @@ class ArrowFragmentLoader {
     // once set, we will read.
   }
   boost::leaf::result<std::shared_ptr<arrow::Table>> readTableFromGraphx(
-      bool load_vertex, int index, int total_parts) {
+      bool load_vertex, const std::string& loc, int index, int total_parts) {
     if (load_vertex) {
       // For graphx loading, the data filling is done from java side, before
       // constructFragment is called.
+      java_loader_invoker.load_vertices(loc);
       return java_loader_invoker_.get_vertex_table();
     } else {
+      java_loader_invoker.load_edges(loc);
       return java_loader_invoker_.get_edge_table();
     }
   }
@@ -651,7 +654,7 @@ class ArrowFragmentLoader {
         } else if (vertices[i]->protocol == "graphx") {
           BOOST_LEAF_ASSIGN(
               table,
-              readTableFromGraphx(true, index,
+              readTableFromGraphx(true, vertices[i]->values, index,
                                   total_parts));  // true means to load vertex.
 #endif
         } else {
@@ -857,10 +860,10 @@ class ArrowFragmentLoader {
                                            total_parts, sub_labels[j].eformat));
           } else if (sub_labels[j].protocol == "graphx") {
             LOG(INFO) << "Reading edges from graphx";
-            BOOST_LEAF_ASSIGN(
-                table,
-                readTableFromGraphx(
-                    false, index, total_parts));  // true means to load vertex.
+            BOOST_LEAF_ASSIGN(table,
+                              readTableFromGraphx(
+                                  false, sub_labels[j].values, index,
+                                  total_parts));  // true means to load vertex.
 #endif
           } else {
             // Let the IOFactory to parse other protocols.

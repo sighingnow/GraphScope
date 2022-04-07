@@ -32,7 +32,8 @@ limitations under the License.
 DEFINE_string(ipc_socket, "/tmp/vineyard.sock", "vineyard socket addr");
 DEFINE_string(user_class, "", "graphx user app");
 DEFINE_bool(directed, true, "directed or not");
-DEFINE_string(mm_file_prefix, "/tmp/graphx-", "memory mapped file prefix");//graphx-${partitionId}
+DEFINE_string(vertex_mm_file_prefix, "/tmp/graphx-vertex-", "memory mapped file prefix");//graphx-${partitionId}
+DEFINE_string(edge_mm_file_prefix, "/tmp/graphx-edge-", "memory mapped file prefix");
 DEFINE_string(user_lib_path, "/opt/graphscope/lib/libgrape-jni.so", "user jni lib");
 DEFINE_string(app_class, "com.alibaba.graphscope.app.GraphXAdaptor", "graphx driver class"); //graphx_driver_class
 
@@ -43,9 +44,6 @@ std::string flags2JsonStr() {
       LOG(ERROR) << "user class not set";
   }
   pt.put("user_class", FLAGS_user_class);
-  if (FLAGS_efile.empty()){
-      LOG(ERROR) << "efile not set";
-  }
   pt.put("directed", FLAGS_directed);
   if (FLAGS_user_lib_path.empty()){
       LOG(ERROR) << "user jni lib not set";
@@ -53,7 +51,8 @@ std::string flags2JsonStr() {
   pt.put("user_lib_path", FLAGS_user_lib_path);
   pt.put("app_class", FLAGS_app_class);
   pt.put("ipc_socket", FLAGS_ipc_socket);
-  pt.put("mm_file_prefix", FLAGS_mm_file_prefix);
+  pt.put("vertex_mm_file_prefix", FLAGS_vertex_mm_file_prefix);
+  pt.put("edge_mm_file_prefix", FLAGS_edge_mm_file_prefix);
 
   std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);

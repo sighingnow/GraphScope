@@ -48,6 +48,8 @@ static constexpr const char* EFILE = "efile";
 static constexpr const char* VFILE = "vfile";
 static constexpr const char* DIRECTED = "directed";
 static constexpr const char* USER_LIB_PATH = "user_lib_path";
+static constexpr const char* VERTEX_MM_FILE_PREFIX = "vertex_mm_file_prefix";
+static constexpr const char* EDGE_MM_FILE_PREFIX = "edge_mm_file_prefix";
 using FragmentType =
     vineyard::ArrowFragment<int64_t, vineyard::property_graph_types::VID_TYPE>;
 using ProjectedFragmentType =
@@ -67,7 +69,9 @@ void Init(const std::string& params) {
 }
 
 vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
-                                vineyard::Client& client, bool directed) {
+                                vineyard::Client& client, bool directed,
+                                const std::string& vertex_mm_file_prefix,
+                                const std::string& edge_mm_file_prefix) {
   vineyard::ObjectID fragment_id;
   {
     auto graph = std::make_shared<gs::detail::Graph>();
@@ -78,6 +82,7 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
     vertex->label = "label1";
     vertex->vid = "0";
     vertex->protocol = "graphx";
+    vertex->values = vertex_mm_file_prefix;
     graph->vertices.push_back(vertex);
 
     auto edge = std::make_shared<gs::detail::Edge>();
@@ -88,6 +93,7 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
     subLabel->dst_label = "label1";
     subLabel->dst_vid = "0";
     subLabel->protocol = "graphx";
+    subLabel->values = edge_mm_file_prefix;
     // subLabel->values = efile;
     // subLabel->eformat += edge_input_format_class;  // eif
     edge->sub_labels.push_back(*subLabel.get());
@@ -145,13 +151,17 @@ void CreateAndQuery(std::string params) {
   std::string ipc_socket = pt.get<std::string>(IPC_SOCKET);
   bool directed = pt.get<bool>(DIRECTED);
   std::string user_lib_path = pt.get<std::string>(USER_LIB_PATH);
+  std::string vertex_mm_file_prefix =
+      pt.get<std::string>(VERTEX_MM_FILE_PREFIX);
+  std::string edge_mm_file_prefix = pt.get<std::string>(EDGE_MM_FILE_PREFIX);
 
   VLOG(10) << "user_lib_path: " << user_lib_path << ", directed: " << directed;
   vineyard::Client client;
   VINEYARD_CHECK_OK(client.Connect(ipc_socket));
   VLOG(1) << "Connected to IPCServer: " << ipc_socket;
 
-  vineyard::ObjectID fragment_id = LoadFragment(comm_spec, client, directed);
+  vineyard::ObjectID fragment_id = LoadFragment(
+      comm_spec, client, directed, vertex_mm_file_prefix, edge_mm_file_prefix);
   VLOG(10) << "[worker " << comm_spec.worker_id()
            << "] loaded frag id: " << fragment_id;
 
