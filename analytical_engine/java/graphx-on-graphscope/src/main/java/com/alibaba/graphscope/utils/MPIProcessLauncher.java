@@ -14,10 +14,13 @@ public class MPIProcessLauncher {
     private static Logger logger = LoggerFactory.getLogger(MPIProcessLauncher.class.getName());
 
     private Integer numWorker = 1;
-    private String mmFilePrefix;
+    private String vertexFilePrefix;
+    private String edgeFilePrefix;
     private ProcessBuilder processBuilder;
     private static String GRAPHSCOPE_HOME, SPARK_HOME, GAE_HOME, SPARK_CONF_WORKERS;
     private static String MPI_EXEC = "mpirun";
+    private static String SHELL_SCRIPT;
+    private String userClass;
 
     static {
         SPARK_HOME = System.getenv("SPARK_HOME");
@@ -35,19 +38,26 @@ public class MPIProcessLauncher {
         } else {
             throw new IllegalStateException("GraphScope home wrong");
         }
+        SHELL_SCRIPT = GAE_HOME + "/java/launch_mpi.sh";
+        if (!fileExists(SHELL_SCRIPT)) {
+            throw new IllegalStateException("script " + GAE_HOME + "doesn't exist");
+        }
     }
 
-    public MPIProcessLauncher(String memoryMappedFilePrefix) {
-        this.mmFilePrefix = memoryMappedFilePrefix;
+    public MPIProcessLauncher(String memoryMappedFilePrefix, String userClass) {
+        this.vertexFilePrefix = memoryMappedFilePrefix + "vertex-";
+        this.edgeFilePrefix = memoryMappedFilePrefix + "edge-";
         processBuilder = new ProcessBuilder();
         this.numWorker = getNumWorker();
+        this.userClass = userClass;
     }
 
     public void run() {
-        String[] commands =
-            {MPI_EXEC, "-n", numWorker.toString(), "-hostfile",
-            SPARK_CONF_WORKERS, GAE_HOME + "/build/graphx_runner", "--mm_file_prefix",
-            mmFilePrefix};
+//        String[] commands =
+//            {"GLOG_v=10", MPI_EXEC, "-n", numWorker.toString(), "-hostfile",
+//            SPARK_CONF_WORKERS, GAE_HOME + "/build/graphx_runner", "--mm_file_prefix",
+//            mmFilePrefix};
+        String [] commands = {"bash", "-c", SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix, userClass};
         logger.info("Running command: " + String.join(" ", commands));
         processBuilder.command(commands);
         processBuilder.inheritIO();
