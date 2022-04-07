@@ -148,9 +148,6 @@
                   <include>
                     com.alibaba.fastffi:*
                   </include>
-                  <include>
-		    ch.qos.logback:*
-                  </include>
                 </includes>
 <!--                <include-->
 <!--                <excludes>-->

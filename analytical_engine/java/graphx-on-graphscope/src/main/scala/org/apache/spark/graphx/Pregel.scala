@@ -132,8 +132,8 @@ object Pregel extends Logging {
   : Graph[VD, ED] = {
     require(maxIterations > 0, s"Maximum number of iterations must be greater than 0," +
       s" but got ${maxIterations}")
-    require(messageManager != null, s"messager null")
-    require(comm != null, s"comm null")
+//    require(messageManager != null, s"messager null")
+//    require(comm != null, s"comm null")
     log.info("Pregel method invoked")
 
     graph.vertices.mapPartitionsWithIndex((pid, iterator) => {
