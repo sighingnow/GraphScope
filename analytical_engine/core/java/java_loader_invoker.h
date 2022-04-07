@@ -257,8 +257,8 @@ class JavaLoaderInvoker {
         VLOG(1) << "opening file " << file_path << ", size " << file_size;
         int fd = open(file_path, O_RDONLY, 0);
         if (fd == -1) {
-          LOG(ERRO) << "Error open file for read " << file_path;
-          continue;
+          LOG(ERROR) << "Error open file for read " << file_path;
+          return;
         }
 
         void* mmapped_data =
@@ -266,7 +266,7 @@ class JavaLoaderInvoker {
         if (mmapped_data == MAP_FAILED) {
           close(fd);
           VLOG(1) << "Error mmapping the file " << file_path;
-          continue;
+          return;
         }
 
         char* ret = new char[file_size];
