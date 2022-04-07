@@ -27,7 +27,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.util.Utils
 import org.slf4j.Logger
 
-import java.io.{File, RandomAccessFile}
+import java.io.{BufferedWriter, File, FileWriter, RandomAccessFile}
 import scala.reflect.{ClassTag, classTag}
 import java.nio.CharBuffer
 import java.nio.MappedByteBuffer
@@ -142,18 +142,20 @@ object Pregel extends Logging {
     log.info("Pregel method invoked")
 
     val res = graph.vertices.mapPartitionsWithIndex((pid, iterator) => {
-      @transient lazy val innerLogger = LoggerFactory.getLogger(getClass.getName)
+      val loggerFileName = "/tmp/graphx-log-" + pid
+      val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
       val strName = s"/tmp/graphx-${pid}"
       val randomAccessFile = new File(strName, "rw")
       val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
       val buffer = channel.map(MapMode.READ_WRITE, 0, MAPPED_SIZE)
       //To put vd and ed in the header.
       putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
-      innerLogger.info("successfully put header")
+      bufferedWriter.write("successfully put header + \n")
       putVertices(buffer, iterator,classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]])
-      innerLogger.info("successfully put data")
+      bufferedWriter.write("successfully put data " + buffer.limit() + ", " + buffer.position());
       buffer.compact()
 //      iterator
+      bufferedWriter.close()
       Iterator(buffer)
     },
       true
