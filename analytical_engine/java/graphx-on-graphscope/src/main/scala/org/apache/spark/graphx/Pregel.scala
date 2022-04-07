@@ -160,7 +160,10 @@ object Pregel extends Logging {
 //    val callSite = sc.getCallSite
 
 //    val callsite = Utils.getCallSite()
-    val userClass = CallUtils.getCallerCallerClassName
+    var userClass = CallUtils.getCallerCallerClassName
+    if (userClass.endsWith("$")){
+      userClass = userClass.substring(0, userClass.length - 1)
+    }
     log.info(s"call site ${userClass}")
     val mpiLauncher = new MPIProcessLauncher("/tmp/graphx-", userClass)
     mpiLauncher.run()

@@ -42,10 +42,10 @@ fi
 if [ -z "${SPARK_HOME}" ];then
     echo "using default spark home "${DEFAULT_SPARK_HOME}
     export SPARK_HOME=${DEFAULT_SPARK_HOME}
-    SPARK_CONF_WORKER=${SPARK_HOME}/conf/workers
-    echo "conf workers: "${SPARK_CONF_WORKER}
 fi
 
+SPARK_CONF_WORKER=${SPARK_HOME}/conf/workers
+echo "conf workers: "${SPARK_CONF_WORKER}
 
 cmd="GLOG_v=10 mpirun -n 2 -hostfile ${SPARK_CONF_WORKER} -x GLOG_v -x GRAPHSCOPE_CODE_HOME -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} --user_class ${USER_CLASS} --vertex_mm_file_prefix ${V_FILE_PREFIX} --edge_mm_file_prefix ${E_FILE_PREFIX}"
 echo "running cmd: "$cmd
