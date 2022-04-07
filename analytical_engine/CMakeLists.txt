@@ -33,6 +33,7 @@ if (ENABLE_JAVA_SDK)
     endif()
 endif()
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fmax-errors=5")
 if (NETWORKX)
     add_definitions(-DNETWORKX)
     add_definitions(-DRAPIDJSON_HAS_CXX11=1)
