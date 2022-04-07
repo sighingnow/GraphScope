@@ -156,10 +156,12 @@ object Pregel extends Logging {
       buffer.compact()
 //      iterator
       bufferedWriter.close()
-      Iterator(buffer)
+      iterator
     },
       true
     )
+    res.count() //force running
+
     log.info(s"after writing to memory mapped file, launch mpi processes ${res}")
 
 //    graph.vertices.sparkContext.getCallSite()
