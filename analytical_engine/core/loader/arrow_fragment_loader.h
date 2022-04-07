@@ -491,10 +491,10 @@ class ArrowFragmentLoader {
     if (load_vertex) {
       // For graphx loading, the data filling is done from java side, before
       // constructFragment is called.
-      java_loader_invoker.load_vertices(loc);
+      java_loader_invoker_.load_vertices(loc);
       return java_loader_invoker_.get_vertex_table();
     } else {
-      java_loader_invoker.load_edges(loc);
+      java_loader_invoker_.load_edges(loc);
       return java_loader_invoker_.get_edge_table();
     }
   }
