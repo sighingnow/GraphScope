@@ -198,6 +198,16 @@ object Pregel extends Logging {
         log.info(s"Writing vid [${vid}] vdata [${vdata}]")
       })
     }
+    else if (vdClass.equals(classOf[Long])){
+      tuples.foreach(tuple => {
+        val vid = tuple._1
+        val vdata = tuple._2
+        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+        buffer.putLong(vid)
+        buffer.putLong(vdata.asInstanceOf[Long])
+        log.info(s"Writing vid [${vid}] vdata [${vdata}]")
+      })
+    }
     else if (vdClass.equals(classOf[java.lang.Double])){
       tuples.foreach(tuple => {
         val vid = tuple._1
@@ -205,6 +215,16 @@ object Pregel extends Logging {
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.putLong(vid)
         buffer.putDouble(vdata.asInstanceOf[java.lang.Double])
+        log.info(s"Writing vid [${vid}] vdata [${vdata}]")
+      })
+    }
+    else if (vdClass.equals(classOf[Double])){
+      tuples.foreach(tuple => {
+        val vid = tuple._1
+        val vdata = tuple._2
+        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+        buffer.putLong(vid)
+        buffer.putDouble(vdata.asInstanceOf[Double])
         log.info(s"Writing vid [${vid}] vdata [${vdata}]")
       })
     }
@@ -218,17 +238,27 @@ object Pregel extends Logging {
         log.info(s"Writing vid [${vid}] vdata [${vdata}]")
       })
     }
+    else if (vdClass.equals(classOf[Int])){
+      tuples.foreach(tuple => {
+        val vid = tuple._1
+        val vdata = tuple._2
+        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+        buffer.putLong(vid)
+        buffer.putInt(vdata.asInstanceOf[Int])
+        log.info(s"Writing vid [${vid}] vdata [${vdata}]")
+      })
+    }
     else throw new IllegalStateException("expected vdata class")
   }
 
   def class2Int(value: Class[_]) : Int = {
-    if (value.equals(classOf[java.lang.Long])){
+    if (value.equals(classOf[java.lang.Long]) || value.equals(classOf[Long])){
       0
     }
-    else if (value.equals(classOf[java.lang.Integer])){
+    else if (value.equals(classOf[java.lang.Integer]) || value.equals(classOf[Int])){
       1
     }
-    else if (value.equals(classOf[java.lang.Double])){
+    else if (value.equals(classOf[java.lang.Double]) || value.eq(classOf[Double])){
       2
     }
     else throw new IllegalArgumentException(s"unexpected class ${value}")
