@@ -145,8 +145,9 @@ object Pregel extends Logging {
       val loggerFileName = "/tmp/graphx-log-" + pid
       val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
       val strName = s"/tmp/graphx-${pid}"
-      val randomAccessFile = new File(strName, "rw")
-      val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+      val randomAccessFile = new RandomAccessFile(strName, "rw")
+//      val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+      val channel = randomAccessFile.getChannel
       val buffer = channel.map(MapMode.READ_WRITE, 0, MAPPED_SIZE)
       //To put vd and ed in the header.
       putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
