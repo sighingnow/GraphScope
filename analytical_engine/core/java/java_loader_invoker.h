@@ -280,7 +280,9 @@ class JavaLoaderInvoker {
           return;
         }
       } else {
-        VLOG(1) << "file: " << file_path << "size " << file_size;
+        VLOG(1) << "file: " << file_path << "size " << file_size
+                << " doesn't exist";
+        return;
       }
       partition_id += 1;
     }
