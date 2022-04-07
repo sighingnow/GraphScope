@@ -19,13 +19,19 @@
 
 #ifdef ENABLE_JAVA_SDK
 
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "arrow/array.h"
-#include "arrow/builder.h"
 #include "arrow/array/builder_binary.h"
+#include "arrow/builder.h"
 
 #include "grape/grape.h"
 #include "grape/util.h"
@@ -202,22 +208,14 @@ class JavaLoaderInvoker {
   std::vector<std::vector<char>>& GetOids() { return oids; }
   std::vector<std::vector<char>>& GetVdatas() { return vdatas; }
   std::vector<std::vector<char>>& GetEdgeSrcs() { return esrcs; }
-  std::vector<std::vector<char>>& GetEdgeDsts()  { return edsts; }
+  std::vector<std::vector<char>>& GetEdgeDsts() { return edsts; }
   std::vector<std::vector<char>>& GetEdgeDatas() { return edatas; }
 
-  std::vector<std::vector<int>>& GetOidOffsets()  { return oid_offsets; }
-  std::vector<std::vector<int>>& GetVdataOffsets() {
-    return vdata_offsets;
-  }
-  std::vector<std::vector<int>>& GetEdgeSrcOffsets() {
-    return esrc_offsets;
-  }
-  std::vector<std::vector<int>>& GetEdgeDstOffsets() {
-    return edst_offsets;
-  }
-  std::vector<std::vector<int>>& GetEdgeDataOffsets() {
-    return edata_offsets;
-  }
+  std::vector<std::vector<int>>& GetOidOffsets() { return oid_offsets; }
+  std::vector<std::vector<int>>& GetVdataOffsets() { return vdata_offsets; }
+  std::vector<std::vector<int>>& GetEdgeSrcOffsets() { return esrc_offsets; }
+  std::vector<std::vector<int>>& GetEdgeDstOffsets() { return edst_offsets; }
+  std::vector<std::vector<int>>& GetEdgeDataOffsets() { return edata_offsets; }
   int WorkerId() const { return worker_id_; }
   int WorkerNum() const { return worker_num_; }
   int LoadingThreadNum() const { return load_thread_num; }
@@ -246,6 +244,49 @@ class JavaLoaderInvoker {
     parseGiraphTypeInt(giraph_type_int);
   }
 
+  // Work for graphx graph loading, the input is the prefix for memory mapped
+  // file.
+  void load_vertices(const std::string& location_prefix) {
+    int partition_id = 0;
+    // FIXME
+    while (partition_id < 10) {
+      std::string file_path = location_prefix + std::to_string(partition_id);
+      VLOG(1) << "try for parition " << partition_id << ": " << file_path;
+      size_t file_size = get_file_size(location_prefix);
+      if (file_size > 0) {
+        VLOG(1) << "opening file " << file_path << ", size " << file_size;
+        int fd = open(file_path, O_RDONLY, 0);
+        if (fd == -1) {
+          LOG(ERRO) << "Error open file for read " << file_path;
+          continue;
+        }
+
+        void* mmapped_data =
+            mmap(NULL, file_size, PROT_READ, MAP_PRIVATE | MAP_POPULATE, fd, 0);
+        if (mmapped_data == MAP_FAILED) {
+          close(fd);
+          VLOG(1) << "Error mmapping the file " << file_path;
+          continue;
+        }
+
+        char* ret = new char[file_size];
+        memcpy(ret, mmapped_data, file_size);
+
+        // Cleanup
+        int rc = munmap(mmapped_data, file_size);
+        if (rc != 0) {
+          close(fd);
+          LOG(ERROR) << "Error un-mmapping the file";
+          return;
+        }
+      } else {
+        VLOG(1) << "file: " << file_path << "size " << file_size;
+      }
+      partition_id += 1;
+    }
+    VLOG(1) << "finish loading vertices";
+  }
+
   // load vertices must be called before load edge, since we assume giraph type
   // int has been calculated.
   void load_edges(const std::string& edge_location,
@@ -263,6 +304,8 @@ class JavaLoaderInvoker {
 
     callJavaLoaderEdges(edge_location_prune.c_str(), eformatter_class.c_str());
   }
+
+  void load_edges(cosnt std::string& location_prefix) {}
 
   std::shared_ptr<arrow::Table> get_edge_table() {
     CHECK(oid_type > 0 && edata_type > 0);
@@ -364,6 +407,15 @@ class JavaLoaderInvoker {
   }
 
  private:
+  size_t get_file_size(const char* file_name) {
+    struct stat st;
+    stat(file_name, &st);
+    if (st == NULL) {
+      LOG(ERROR) << "file " << file_name << "doesn't exist";
+      return 0;
+    }
+    return st.st_size;
+  }
   void initForGiraph() {
     gs::JNIEnvMark m;
     if (m.env()) {
