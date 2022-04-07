@@ -412,7 +412,7 @@ class JavaLoaderInvoker {
   size_t get_file_size(const char* file_name) {
     struct stat st;
 
-    if (stat(file_name, &st) == 0) {
+    if (stat(file_name, &st) != 0) {
       LOG(ERROR) << "file " << file_name << "doesn't exist";
       return 0;
     }

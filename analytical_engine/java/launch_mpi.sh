@@ -1,6 +1,6 @@
 #!/bin/bash
 
-
+echo $1$2$3
 #vertex mm file
 V_FILE_PREFIX=$1
 shift
@@ -8,8 +8,8 @@ E_FILE_PREFIX=$1
 shift
 USER_CLASS=$1
 
-echo "User class:    "${V_FILE_PREFIX}
-echo "User class:    "${E_FILE_PREFIX}
+echo "vfile prefix:    "${V_FILE_PREFIX}
+echo "efile preifx:    "${E_FILE_PREFIX}
 echo "User class:    "${USER_CLASS}
 
 
