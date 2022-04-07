@@ -19,7 +19,7 @@ package org.apache.spark.graphx
 
 import com.alibaba.graphscope.communication.Communicator
 import com.alibaba.graphscope.parallel.DefaultMessageManager
-import com.alibaba.graphscope.utils.MPIProcessLauncher
+import com.alibaba.graphscope.utils.{CallUtils, MPIProcessLauncher}
 import org.apache.spark.{SparkContext, graphx}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.Utils
@@ -158,9 +158,11 @@ object Pregel extends Logging {
 //    graph.vertices.sparkContext.getCallSite()
 //    val sc = SparkContext.getOrCreate()
 //    val callSite = sc.getCallSite
-    val callsite = Utils.getCallSite()
-    log.info(s"call site ${callsite.longForm}")
-    val mpiLauncher = new MPIProcessLauncher("/tmp/graphx-", callsite.longForm)
+
+//    val callsite = Utils.getCallSite()
+    val userClass = CallUtils.getCallerCallerClassName
+    log.info(s"call site ${userClass}")
+    val mpiLauncher = new MPIProcessLauncher("/tmp/graphx-", userClass)
     mpiLauncher.run()
 
     graph
