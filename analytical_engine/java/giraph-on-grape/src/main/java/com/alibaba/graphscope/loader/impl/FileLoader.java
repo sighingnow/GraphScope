@@ -16,8 +16,8 @@
 package com.alibaba.graphscope.loader.impl;
 
 import static com.alibaba.graphscope.loader.LoaderUtils.generateTypeInt;
-import static com.alibaba.graphscope.loader.LoaderUtils.getNumLinesOfFile;
 
+import static com.alibaba.graphscope.utils.FileUtils.getNumLinesOfFile;
 import static org.apache.giraph.utils.ReflectionUtils.getTypeArguments;
 
 import com.alibaba.graphscope.graph.impl.VertexImpl;
@@ -25,6 +25,7 @@ import com.alibaba.graphscope.loader.GraphDataBufferManager;
 import com.alibaba.graphscope.loader.LoaderBase;
 import com.alibaba.graphscope.stdcxx.FFIByteVecVector;
 import com.alibaba.graphscope.stdcxx.FFIIntVecVector;
+import com.alibaba.graphscope.utils.FileUtils;
 import com.alibaba.graphscope.utils.LoadLibrary;
 import com.google.common.base.Preconditions;
 

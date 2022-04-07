@@ -31,10 +31,9 @@ limitations under the License.
 
 DEFINE_string(ipc_socket, "/tmp/vineyard.sock", "vineyard socket addr");
 DEFINE_string(user_class, "", "graphx user app");
-DEFINE_string(efile, "", "edge file");
-DEFINE_string(vfile, "", "vertex file");
 DEFINE_bool(directed, true, "directed or not");
-DEFINE_string(user_lib_path, "", "user jni lib");
+DEFINE_string(mm_file_prefix, "/tmp/graphx-", "memory mapped file prefix");//graphx-${partitionId}
+DEFINE_string(user_lib_path, "/opt/graphscope/lib/libgrape-jni.so", "user jni lib");
 DEFINE_string(app_class, "com.alibaba.graphscope.app.GraphXAdaptor", "graphx driver class"); //graphx_driver_class
 
 // put all flags in a json str
@@ -47,11 +46,6 @@ std::string flags2JsonStr() {
   if (FLAGS_efile.empty()){
       LOG(ERROR) << "efile not set";
   }
-  pt.put("efile", FLAGS_efile);
-  if (FLAGS_vfile.empty()){
-      LOG(ERROR) << "vfile not set";
-  }
-  pt.put("vfile", FLAGS_vfile);
   pt.put("directed", FLAGS_directed);
   if (FLAGS_user_lib_path.empty()){
       LOG(ERROR) << "user jni lib not set";
@@ -59,6 +53,7 @@ std::string flags2JsonStr() {
   pt.put("user_lib_path", FLAGS_user_lib_path);
   pt.put("app_class", FLAGS_app_class);
   pt.put("ipc_socket", FLAGS_ipc_socket);
+  pt.put("mm_file_prefix", FLAGS_mm_file_prefix);
 
   std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);
