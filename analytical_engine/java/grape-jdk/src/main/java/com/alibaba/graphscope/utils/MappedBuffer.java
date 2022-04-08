@@ -96,6 +96,9 @@ public class MappedBuffer {
             return null;
         }
         long address = create(path, size);
+	if (address <= 0){
+	    throw new IllegalStateException("map failed");
+        }
         return new MappedBuffer(path, address, size);
     }
 }

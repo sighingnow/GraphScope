@@ -38,8 +38,8 @@ JNIEXPORT jlong JNICALL Java_com_alibaba_graphscope_utils_MappedBuffer_create(
       LOG(ERROR) << "Failed to mmap file-[" << mmap_file_path << "], "
                  << mapped_size;
       perror("mmap");
-      return reinterpret_cast<jlong>(addr);
     }
+    return reinterpret_cast<jlong>(addr);
   }
   return 0;
 }

@@ -10,7 +10,7 @@ class Serialization extends FunSuite{
     val vprog : (Long,Long,Long) => Long = {
       (a,b,c) => a
     }
-    SerializationUtils.write(vprog, "vprog-tmp")
+    SerializationUtils.write(vprog, "/tmp/vprog-tmp")
     println("success in serialization")
   }
 }

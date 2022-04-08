@@ -71,14 +71,14 @@ import java.nio.file.StandardOpenOption
  *
  */
 object Pregel extends Logging {
-  val MAPPED_SIZE = 500 * 1024 * 1024; //500 MB.
+  val MAPPED_SIZE = 500 * 1024; //500 KB.
   var comm: Communicator = null
   var messageManager: DefaultMessageManager = null
-  val MMAP_FILE_PREFIX = "/tmp/graphx-"
+  val MMAP_FILE_PREFIX = "/graphx-"
   val MMAP_V_FILE_PREFIX = MMAP_FILE_PREFIX + "vertex-"
   val MMAP_E_FILE_PREFIX = MMAP_FILE_PREFIX + "edge-"
-  val V_FILE_LOG_PREFIX = MMAP_FILE_PREFIX + "vertex-log-"
-  val E_FILE_LOG_PREFIX = MMAP_FILE_PREFIX + "edge-log-"
+  val V_FILE_LOG_PREFIX = "/tmp/graphx-vertex-log-"
+  val E_FILE_LOG_PREFIX = "/tmp/graphx-edge-log-"
   val VPROG_SERIALIZATION_PATH = "/tmp/graphx-vprog"
   val SEND_MSG_SERIALIZATION_PATH = "/tmp/graphx-sendMsg"
   val MERGE_MSG_SERIALIZATION_PATH = "/tmp/graphx-mergeMsg"
@@ -154,7 +154,7 @@ object Pregel extends Logging {
     val verticesRes = graph.vertices.mapPartitionsWithIndex((pid, iterator) => {
       val loggerFileName = V_FILE_LOG_PREFIX + pid
       val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
-      val strName = s"${MMAP_V_FILE_PREFIX}-${pid}"
+      val strName = s"${MMAP_V_FILE_PREFIX}${pid}"
       val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
       bufferedWriter.write(buffer.toString);
       bufferedWriter.newLine();
@@ -172,11 +172,10 @@ object Pregel extends Logging {
       true
     )
 
-
     val edgesRes = graph.edges.mapPartitionsWithIndex((pid, iterator) => {
       val loggerFileName = E_FILE_LOG_PREFIX + pid
       val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
-      val strName = s"${MMAP_E_FILE_PREFIX}-${pid}"
+      val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
       val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
       bufferedWriter.write(buffer.toString);
       bufferedWriter.newLine();
@@ -204,7 +203,10 @@ object Pregel extends Logging {
 
     log.info(s"after writing to memory mapped file, launch mpi processes ${verticesRes}, ${edgesRes}")
 
-    val userClass = CallUtils.getCallerCallerClassName
+    var userClass = CallUtils.getCallerCallerClassName
+    if (userClass.endsWith("$")){
+      userClass = userClass.substring(0, userClass.length - 1)
+    }
     log.info(s"call site ${userClass}")
     val mpiLauncher = new MPIProcessLauncher(MMAP_V_FILE_PREFIX,MMAP_E_FILE_PREFIX, VPROG_SERIALIZATION_PATH,SEND_MSG_SERIALIZATION_PATH,MERGE_MSG_SERIALIZATION_PATH, userClass)
     mpiLauncher.run()
