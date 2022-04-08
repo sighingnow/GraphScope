@@ -20,7 +20,7 @@ package org.apache.spark.graphx
 import com.alibaba.graphscope.communication.Communicator
 import com.alibaba.graphscope.graphx.SerializationUtils
 import com.alibaba.graphscope.parallel.DefaultMessageManager
-import com.alibaba.graphscope.utils.{CallUtils, MPIProcessLauncher}
+import com.alibaba.graphscope.utils.{CallUtils, MPIProcessLauncher, MappedBuffer}
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.apache.spark.{SparkContext, graphx}
@@ -155,17 +155,16 @@ object Pregel extends Logging {
       val loggerFileName = V_FILE_LOG_PREFIX + pid
       val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
       val strName = s"${MMAP_V_FILE_PREFIX}${pid}"
-      val randomAccessFile = new RandomAccessFile(strName, "rw")
-//      val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
-      val channel = randomAccessFile.getChannel
-      val buffer = channel.map(MapMode.READ_WRITE, 0, MAPPED_SIZE)
+      val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
+      bufferedWriter.write(buffer.toString);
+      bufferedWriter.newLine();
       buffer.position(8) // reserve place to write total length
       //To put vd and ed in the header.
       putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]], bufferedWriter);
       bufferedWriter.write("successfully put header + \n")
       putVertices(buffer, iterator,classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], bufferedWriter)
       bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
-      buffer.putLong(0, buffer.position() - 8)
+      buffer.writeLong(0, buffer.position() - 8)
 //      iterator
       bufferedWriter.close()
       iterator
@@ -177,17 +176,16 @@ object Pregel extends Logging {
       val loggerFileName = E_FILE_LOG_PREFIX + pid
       val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
       val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
-      val randomAccessFile = new RandomAccessFile(strName, "rw")
-      //      val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
-      val channel = randomAccessFile.getChannel
-      val buffer = channel.map(MapMode.READ_WRITE, 0, MAPPED_SIZE)
+      val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
+      bufferedWriter.write(buffer.toString);
+      bufferedWriter.newLine();
       buffer.position(8) // reserve place to write total length
       //To put vd and ed in the header.
 //      putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
 //      bufferedWriter.write("successfully put header + \n")
       putEdges(buffer, iterator,classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], bufferedWriter)
       bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
-      buffer.putLong(0, buffer.position() - 8)
+      buffer.writeLong(0, buffer.position() - 8)
       //      iterator
       bufferedWriter.close()
       iterator
@@ -216,29 +214,29 @@ object Pregel extends Logging {
     graph
   } // end of apply
 
-  def putHeader[VD: ClassTag, ED : ClassTag, A: ClassTag](buffer: MappedByteBuffer, vdClass: Class[VD], edClass: Class[ED], msgClass: Class[A], writer: BufferedWriter): Unit ={
+  def putHeader[VD: ClassTag, ED : ClassTag, A: ClassTag](buffer: MappedBuffer, vdClass: Class[VD], edClass: Class[ED], msgClass: Class[A], writer: BufferedWriter): Unit ={
     require(buffer.remaining() > 4, s"not enough space in buffer")
     writer.write("put vd class int " + class2Int(vdClass))
     writer.newLine()
-    buffer.putInt(class2Int(vdClass))
+    buffer.writeInt(class2Int(vdClass))
     require(buffer.remaining() > 4, s"not enough space in buffer")
     writer.write("put ed class int " + class2Int(edClass))
     writer.newLine()
-    buffer.putInt(class2Int(edClass))
+    buffer.writeInt(class2Int(edClass))
     require(buffer.remaining() > 4, s"not enough space in buffer")
     writer.write("put msg class int " + class2Int(msgClass))
     writer.newLine()
-    buffer.putInt(class2Int(msgClass))
+    buffer.writeInt(class2Int(msgClass))
   }
 
-  def putVertices[VD: ClassTag](buffer: MappedByteBuffer, tuples: Iterator[(graphx.VertexId, VD)], vdClass : Class[VD], writer: BufferedWriter): Unit ={
+  def putVertices[VD: ClassTag](buffer: MappedBuffer, tuples: Iterator[(graphx.VertexId, VD)], vdClass : Class[VD], writer: BufferedWriter): Unit ={
     if (vdClass.equals(classOf[java.lang.Long])){
       tuples.foreach(tuple => {
         val vid = tuple._1
         val vdata = tuple._2
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
-        buffer.putLong(vid)
-        buffer.putLong(vdata.asInstanceOf[java.lang.Long])
+        buffer.writeLong(vid)
+        buffer.writeLong(vdata.asInstanceOf[java.lang.Long])
         writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
         writer.newLine()
       })
@@ -248,8 +246,8 @@ object Pregel extends Logging {
         val vid = tuple._1
         val vdata = tuple._2
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
-        buffer.putLong(vid)
-        buffer.putLong(vdata.asInstanceOf[Long])
+        buffer.writeLong(vid)
+        buffer.writeLong(vdata.asInstanceOf[Long])
         writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
         writer.newLine()
       })
@@ -259,8 +257,8 @@ object Pregel extends Logging {
         val vid = tuple._1
         val vdata = tuple._2
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
-        buffer.putLong(vid)
-        buffer.putDouble(vdata.asInstanceOf[java.lang.Double])
+        buffer.writeLong(vid)
+        buffer.writeDouble(vdata.asInstanceOf[java.lang.Double])
         writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
         writer.newLine()
       })
@@ -270,8 +268,8 @@ object Pregel extends Logging {
         val vid = tuple._1
         val vdata = tuple._2
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
-        buffer.putLong(vid)
-        buffer.putDouble(vdata.asInstanceOf[Double])
+        buffer.writeLong(vid)
+        buffer.writeDouble(vdata.asInstanceOf[Double])
         writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
         writer.newLine()
       })
@@ -281,8 +279,8 @@ object Pregel extends Logging {
         val vid = tuple._1
         val vdata = tuple._2
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
-        buffer.putLong(vid)
-        buffer.putInt(vdata.asInstanceOf[java.lang.Integer])
+        buffer.writeLong(vid)
+        buffer.writeInt(vdata.asInstanceOf[java.lang.Integer])
         writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
         writer.newLine()
       })
@@ -292,8 +290,8 @@ object Pregel extends Logging {
         val vid = tuple._1
         val vdata = tuple._2
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
-        buffer.putLong(vid)
-        buffer.putInt(vdata.asInstanceOf[Int])
+        buffer.writeLong(vid)
+        buffer.writeInt(vdata.asInstanceOf[Int])
         writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
         writer.newLine()
       })
@@ -301,16 +299,16 @@ object Pregel extends Logging {
     else throw new IllegalStateException("unexpected vdata class " + vdClass.getName)
   }
 
-  def putEdges[ED: ClassTag](buffer: MappedByteBuffer, tuples: Iterator[Edge[ED]], edClass : Class[ED], writer: BufferedWriter): Unit = {
+  def putEdges[ED: ClassTag](buffer: MappedBuffer, tuples: Iterator[Edge[ED]], edClass : Class[ED], writer: BufferedWriter): Unit = {
     if (edClass.equals(classOf[java.lang.Long])) {
       tuples.foreach(edge => {
         val srcId = edge.srcId
         val dstId = edge.dstId
         val edgeAttr = edge.attr
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
-        buffer.putLong(srcId)
-        buffer.putLong(dstId)
-        buffer.putLong(edgeAttr.asInstanceOf[java.lang.Long])
+        buffer.writeLong(srcId)
+        buffer.writeLong(dstId)
+        buffer.writeLong(edgeAttr.asInstanceOf[java.lang.Long])
         writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
         writer.newLine()
       })
@@ -321,9 +319,9 @@ object Pregel extends Logging {
         val dstId = edge.dstId
         val edgeAttr = edge.attr
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
-        buffer.putLong(srcId)
-        buffer.putLong(dstId)
-        buffer.putLong(edgeAttr.asInstanceOf[Long])
+        buffer.writeLong(srcId)
+        buffer.writeLong(dstId)
+        buffer.writeLong(edgeAttr.asInstanceOf[Long])
         writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
         writer.newLine()
       })
@@ -334,9 +332,9 @@ object Pregel extends Logging {
         val dstId = edge.dstId
         val edgeAttr = edge.attr
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
-        buffer.putLong(srcId)
-        buffer.putLong(dstId)
-        buffer.putDouble(edgeAttr.asInstanceOf[java.lang.Double])
+        buffer.writeLong(srcId)
+        buffer.writeLong(dstId)
+        buffer.writeDouble(edgeAttr.asInstanceOf[java.lang.Double])
         writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
         writer.newLine()
       })
@@ -347,9 +345,9 @@ object Pregel extends Logging {
         val dstId = edge.dstId
         val edgeAttr = edge.attr
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
-        buffer.putLong(srcId)
-        buffer.putLong(dstId)
-        buffer.putDouble(edgeAttr.asInstanceOf[Double])
+        buffer.writeLong(srcId)
+        buffer.writeLong(dstId)
+        buffer.writeDouble(edgeAttr.asInstanceOf[Double])
         writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
         writer.newLine()
       })
@@ -360,9 +358,9 @@ object Pregel extends Logging {
         val dstId = edge.dstId
         val edgeAttr = edge.attr
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
-        buffer.putLong(srcId)
-        buffer.putLong(dstId)
-        buffer.putInt(edgeAttr.asInstanceOf[java.lang.Integer])
+        buffer.writeLong(srcId)
+        buffer.writeLong(dstId)
+        buffer.writeInt(edgeAttr.asInstanceOf[java.lang.Integer])
         writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
         writer.newLine()
       })
@@ -373,9 +371,9 @@ object Pregel extends Logging {
         val dstId = edge.dstId
         val edgeAttr = edge.attr
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
-        buffer.putLong(srcId)
-        buffer.putLong(dstId)
-        buffer.putInt(edgeAttr.asInstanceOf[Int])
+        buffer.writeLong(srcId)
+        buffer.writeLong(dstId)
+        buffer.writeInt(edgeAttr.asInstanceOf[Int])
         writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
         writer.newLine()
       })
@@ -416,3 +414,7 @@ object Pregel extends Logging {
 //
 //    //post running stuffs
 //    graphxProxy.postApp()
+//val randomAccessFile = new RandomAccessFile(strName, "rw")
+////      val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+//val channel = randomAccessFile.getChannel
+//val buffer = channel.map(MapMode.READ_WRITE, 0, MAPPED_SIZE)
