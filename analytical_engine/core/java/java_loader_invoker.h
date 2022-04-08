@@ -254,7 +254,8 @@ class JavaLoaderInvoker {
       size_t file_size = get_file_size(file_path.c_str());
       if (file_size > 0) {
         VLOG(1) << "opening file " << file_path << ", size " << file_size;
-        int fd = open(file_path.c_str(), O_RDONLY, 0);
+        int fd =
+            shm_open(file_path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
         if (fd == -1) {
           LOG(ERROR) << "Error open file for read " << file_path;
           continue;
