@@ -20,7 +20,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Vector;
-import org.apache.spark.util.MutableURLClassLoader;
 import org.apache.spark.graphx.Edge;
 import org.apache.spark.graphx.Graph;
 import org.apache.spark.graphx.impl.EdgePartition;
@@ -42,9 +41,9 @@ public class GraphConverter<VD, ED> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphConverter.class.getName());
     private static String NATIVE_UTILS = "com.alibaba.graphscope.runtime.NativeUtils";
+
     static {
-        //FIXME: too hacky !!!
-        System.loadLibrary("grape-jni-2");
+        System.loadLibrary("grape-jni");
     }
 
     private Graph<VD, ED> graph;
@@ -209,13 +208,14 @@ public class GraphConverter<VD, ED> {
                 CppClassName.ARROW_FRAGMENT_LOADER);
         logger.info("FragmentLoaderClass found {}", loaderClz.getName());
         try {
-	    //Thread.currentThread().setContextClassLoader(GraphConverter.class.getClassLoader());
-	    //MutableURLClassLoader classLoader = (MutableURLClassLoader) GraphConverter.class.getClassLoader();
-	    URLClassLoader classLoader = (URLClassLoader) GraphConverter.class.getClassLoader();
+            //Thread.currentThread().setContextClassLoader(GraphConverter.class.getClassLoader());
+            //MutableURLClassLoader classLoader = (MutableURLClassLoader) GraphConverter.class.getClassLoader();
+            URLClassLoader classLoader = (URLClassLoader) GraphConverter.class.getClassLoader();
             logger.info("current class loader: " + classLoader);
-	    logger.info("fragment loader cl: " + loaderClz.getClassLoader());
+            logger.info("fragment loader cl: " + loaderClz.getClassLoader());
             logger.info("search path 1: " + urlsToString(classLoader.getURLs()));
-            logger.info("search path 2:: " + urlsToString(((URLClassLoader) loaderClz.getClassLoader()).getURLs()));
+            logger.info("search path 2:: " + urlsToString(
+                ((URLClassLoader) loaderClz.getClassLoader()).getURLs()));
             //Native functions can not be placed in this jar. must be in runtime jar.!!!!
             Class<?> nativeClz = classLoader.loadClass(NATIVE_UTILS);
             Method method = nativeClz.getDeclaredMethod("createLoader");
@@ -242,12 +242,14 @@ public class GraphConverter<VD, ED> {
             if (method == null) {
                 throw new IllegalStateException("No such method");
             }
-            long addr = (long) method.invoke(null, loader.getAddress(), TypeUtils.classToInt(vdClass),
+            long addr = (long) method.invoke(null, loader.getAddress(),
+                TypeUtils.classToInt(vdClass),
                 TypeUtils.classToInt(edClass));
 
             Class<? extends ArrowProjectedFragment> fragClz =
                 (Class<? extends ArrowProjectedFragment>) FFITypeFactory.getType(
-                    ArrowProjectedFragment.class, CppClassName.ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,double>");
+                    ArrowProjectedFragment.class,
+                    CppClassName.ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,double>");
             if (fragClz == null) {
                 throw new IllegalStateException("No projected clz found");
             }
