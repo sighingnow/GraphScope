@@ -193,13 +193,15 @@ object Pregel extends Logging {
       true
     )
 
-    graph.vertices.mapPartitionsWithIndex((index, iterator) => {
+    val vprogRes = graph.vertices.mapPartitionsWithIndex((index, iterator) => {
       SerializationUtils.write(vprog, VPROG_SERIALIZATION_PATH)
       SerializationUtils.write(sendMsg, SEND_MSG_SERIALIZATION_PATH)
       SerializationUtils.write(mergeMsg, MERGE_MSG_SERIALIZATION_PATH)
       iterator
     })
     verticesRes.count() //force running
+    edgesRes.count()
+    vprogRes.count()
 
     log.info(s"after writing to memory mapped file, launch mpi processes ${verticesRes}, ${edgesRes}")
 
