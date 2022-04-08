@@ -7,6 +7,10 @@ import org.slf4j.LoggerFactory;
 
 public class MappedBuffer {
     private static Logger logger = LoggerFactory.getLogger(MappedBuffer.class.getName());
+    static{
+        System.loadLibrary("grape-jni");
+        logger.info("load grape-jni success");
+    }
 
     private long startAddress, size;
     private long limit;
