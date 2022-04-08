@@ -262,7 +262,7 @@ class JavaLoaderInvoker {
         }
 
         void* mmapped_data =
-            mmap(NULL, file_size, PROT_READ, MAP_SHARED , fd, 0);
+            mmap(NULL, file_size, PROT_READ, MAP_SHARED, fd, 0);
         if (mmapped_data == MAP_FAILED) {
           close(fd);
           VLOG(1) << "Error mmapping the file " << file_path;
@@ -279,13 +279,13 @@ class JavaLoaderInvoker {
         if (forVertex) {
           int numVertices =
               digestVerticesFromMapedFile(data_start, data_len, partition_id);
-          VLOG(1) << "Finish reading mmaped v file, got " << numVertices <<
-              " vertices";
+          VLOG(1) << "Finish reading mmaped v file, got " << numVertices
+                  << " vertices";
         } else {
           int numEdges =
               digestEdgesFromMapedFile(data_start, data_len, partition_id);
-          VLOG(1) << "Finish reading mmaped e file, got " << numEdges <<
-              " edges";
+          VLOG(1) << "Finish reading mmaped e file, got " << numEdges
+                  << " edges";
         }
 
         // Cleanup
@@ -542,18 +542,18 @@ class JavaLoaderInvoker {
     VLOG(1) << "Total vertices in partition " << partition_id << ": "
             << total_vertices;
 
+    std::vector<char>& dst_oids0 = oids[0];
+    std::vector<char>& dst_vdatas0 = vdatas[0];
+    std::vector<int>& dst_oids_offsets0 = oid_offsets[0];
+    std::vector<int>& dst_vdata_offsets0 = vdata_offsets[0];
     // read acutal data
     // when we start put data in vector<char>, there may be already bytes there.
     // it is safe to start from size. But first of all, we need to resize.
-    size_t dst_oid_previous_size = oids.size();
-    size_t dst_vdata_previous_size = vdatas.size();
-    oids[0].resize(dst_oid_previous_size + 8 * total_vertices);
-    vdatas[0].resize(dst_vdata_previous_size +
-                     (bytes_gap - 8) * total_vertices);
-    std::vector<char> dst_oids0 = oids[0];
-    std::vector<char> dst_vdatas0 = vdatas[0];
-    std::vector<int> dst_oids_offsets0 = oid_offsets[0];
-    std::vector<int> dst_vdata_offsets0 = vdata_offsets[0];
+    size_t dst_oid_previous_size = dst_oids0.size();
+    size_t dst_vdata_previous_size = dst_vdatas0.size();
+    dst_oids0.resize(dst_oid_previous_size + 8 * total_vertices);
+    dst_vdatas0.resize(dst_vdata_previous_size +
+                       (bytes_gap - 8) * total_vertices);
 
     VLOG(1) << "bytes_gap: " << bytes_gap
             << "dst oids prev size: " << dst_oid_previous_size
@@ -618,25 +618,23 @@ class JavaLoaderInvoker {
     } else {
       LOG(ERROR) << "unexpected " << edata_type;
     }
-    VLOG(1) << "Total edges in partition " << partition_id << ": "
-            << edges_num;
+    VLOG(1) << "Total edges in partition " << partition_id << ": " << edges_num;
 
+    std::vector<char>& dst_esrc0 = esrcs[0];
+    std::vector<char>& dst_edst0 = edsts[0];
+    std::vector<char>& dst_edata0 = edatas[0];
+    std::vector<int>& dst_esrc_offset0 = oid_offsets[0];
+    std::vector<int>& dst_edst_offset0 = vdata_offsets[0];
+    std::vector<int>& dst_edata_offset0 = edata_offsets[0];
     // read acutal data
     // when we start put data in vector<char>, there may be already bytes there.
     // it is safe to start from size. But first of all, we need to resize.
-    size_t dst_esrc_previous_size = esrcs.size();
-    size_t dst_edst_previous_size = edsts.size();
-    size_t dst_edata_previous_size = edatas.size();
+    size_t dst_esrc_previous_size = dst_esrc0.size();
+    size_t dst_edst_previous_size = dst_edst0.size();
+    size_t dst_edata_previous_size = dst_edata0.size();
     esrcs[0].resize(dst_esrc_previous_size + 8 * edges_num);
     edsts[0].resize(dst_edst_previous_size + 8 * edges_num);
     edsts[0].resize(dst_edata_previous_size + (bytes_gap - 16) * edges_num);
-
-    std::vector<char> dst_esrc0 = esrcs[0];
-    std::vector<char> dst_edst0 = edsts[0];
-    std::vector<char> dst_edata0 = edatas[0];
-    std::vector<int> dst_esrc_offset0 = oid_offsets[0];
-    std::vector<int> dst_edst_offset0 = vdata_offsets[0];
-    std::vector<int> dst_edata_offset0 = edata_offsets[0];
 
     VLOG(1) << "bytes_gap: " << bytes_gap
             << "dst esrc prev size: " << dst_esrc_previous_size
