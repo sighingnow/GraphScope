@@ -70,7 +70,7 @@ import java.nio.file.StandardOpenOption
  *
  */
 object Pregel extends Logging {
-  val MAPPED_SIZE = 500 * 1024 * 1024; //500 MB.
+  val MAPPED_SIZE = 500 * 1024; //500 KB.
   var comm: Communicator = null
   var messageManager: DefaultMessageManager = null
 
@@ -144,7 +144,7 @@ object Pregel extends Logging {
     val res = graph.vertices.mapPartitionsWithIndex((pid, iterator) => {
       val loggerFileName = "/tmp/graphx-log-" + pid
       val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
-      val strName = s"/tmp/graphx-${pid}"
+      val strName = s"/tmp/graphx-vertex-${pid}"
       val randomAccessFile = new RandomAccessFile(strName, "rw")
 //      val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
       val channel = randomAccessFile.getChannel
@@ -161,7 +161,7 @@ object Pregel extends Logging {
     },
       true
     )
-    res.count() //force running
+    log.info(res.count()) //force running
 
     log.info(s"after writing to memory mapped file, launch mpi processes ${res}")
 
