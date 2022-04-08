@@ -251,13 +251,16 @@ class JavaLoaderInvoker {
     int cnt = 0;
     while (partition_id < max_partition_id) {
       std::string file_path = location_prefix + std::to_string(partition_id);
-      size_t file_size = get_file_size(file_path.c_str());
-      if (file_size > 0) {
-        VLOG(1) << "opening file " << file_path << ", size " << file_size;
+//      size_t file_size = get_file_size(file_path.c_str());
+//      if (file_size > 0) {
+        //VLOG(1) << "opening file " << file_path << ", size " << file_size;
+        VLOG(1) << "reading from " << file_path;
+        int file_size = 500 * 1024;
         int fd =
-            shm_open(file_path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-        if (fd == -1) {
-          LOG(ERROR) << "Error open file for read " << file_path;
+            shm_open(file_path.c_str(), O_RDWR, S_IRUSR | S_IWUSR); //no O_CREAT
+        if (fd < 0) {
+          LOG(ERROR) << "Not exists " << file_path;
+          partition_id += 1;
           continue;
         }
 
@@ -288,17 +291,10 @@ class JavaLoaderInvoker {
               " edges";
         }
 
-        // Cleanup
-        int rc = munmap(mmapped_data, file_size);
-        if (rc != 0) {
-          close(fd);
-          LOG(ERROR) << "Error un-mmapping the file";
-          return;
-        }
-      } else {
-        VLOG(1) << "file: " << file_path << "size " << file_size
-                << " doesn't exist";
-      }
+//      } else {
+//        VLOG(1) << "file: " << file_path << "size " << file_size
+//                << " doesn't exist";
+//      }
       partition_id += 1;
     }
     if (forVertex) {
@@ -516,10 +512,10 @@ class JavaLoaderInvoker {
     VLOG(1) << "vdClass " << _vdata_type;
     data += 4;
     int _edata_type = *reinterpret_cast<int*>(data);
-    VLOG(1) << "edClass " << edata_type;
+    VLOG(1) << "edClass " << _edata_type;
     data += 4;
     int _msg_type = *reinterpret_cast<int*>(data);
-    VLOG(1) << "msgClass " << msg_type;
+    VLOG(1) << "msgClass " << _msg_type;
     data += 4;
     // check consistency.
     updateTypeInfo(_vdata_type, _edata_type, _msg_type);
