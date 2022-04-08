@@ -196,16 +196,10 @@ object Pregel extends Logging {
       true
     )
 
-    object LazyClass{
-      //evaluated in class loading.
-      lazy val data = {
-        SerializationUtils.write(vprog, VPROG_SERIALIZATION_PATH)
-        SerializationUtils.write(sendMsg, SEND_MSG_SERIALIZATION_PATH)
-        SerializationUtils.write(mergeMsg, MERGE_MSG_SERIALIZATION_PATH)
-      }
-    }
     graph.vertices.mapPartitionsWithIndex((index, iterator) => {
-      LazyClass.data
+      SerializationUtils.write(vprog, VPROG_SERIALIZATION_PATH)
+      SerializationUtils.write(sendMsg, SEND_MSG_SERIALIZATION_PATH)
+      SerializationUtils.write(mergeMsg, MERGE_MSG_SERIALIZATION_PATH)
       iterator
     })
     verticesRes.count() //force running
