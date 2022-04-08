@@ -74,11 +74,11 @@ object Pregel extends Logging {
   val MAPPED_SIZE = 500 * 1024; //500 KB.
   var comm: Communicator = null
   var messageManager: DefaultMessageManager = null
-  val MMAP_FILE_PREFIX = "/tmp/graphx-"
+  val MMAP_FILE_PREFIX = "/graphx-"
   val MMAP_V_FILE_PREFIX = MMAP_FILE_PREFIX + "vertex-"
   val MMAP_E_FILE_PREFIX = MMAP_FILE_PREFIX + "edge-"
-  val V_FILE_LOG_PREFIX = MMAP_FILE_PREFIX + "vertex-log-"
-  val E_FILE_LOG_PREFIX = MMAP_FILE_PREFIX + "edge-log-"
+  val V_FILE_LOG_PREFIX = "/tmp/graphx-vertex-log-"
+  val E_FILE_LOG_PREFIX = "/tmp/graphx-edge-log-"
   val VPROG_SERIALIZATION_PATH = "/tmp/graphx-vprog"
   val SEND_MSG_SERIALIZATION_PATH = "/tmp/graphx-sendMsg"
   val MERGE_MSG_SERIALIZATION_PATH = "/tmp/graphx-mergeMsg"
