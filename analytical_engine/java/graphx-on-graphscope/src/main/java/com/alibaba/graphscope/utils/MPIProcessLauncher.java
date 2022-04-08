@@ -14,8 +14,7 @@ public class MPIProcessLauncher {
     private static Logger logger = LoggerFactory.getLogger(MPIProcessLauncher.class.getName());
 
     private Integer numWorker = 1;
-    private String vertexFilePrefix;
-    private String edgeFilePrefix;
+    private String vertexFilePrefix, edgeFilePrefix, vprogPrefix, sendMsgPrefix, mergeMsgPrefix;
     private ProcessBuilder processBuilder;
     private static String GRAPHSCOPE_CODE_HOME, SPARK_HOME, GAE_HOME, SPARK_CONF_WORKERS;
     private static String MPI_EXEC = "mpirun";
@@ -44,9 +43,13 @@ public class MPIProcessLauncher {
         }
     }
 
-    public MPIProcessLauncher(String memoryMappedFilePrefix, String userClass) {
-        this.vertexFilePrefix = memoryMappedFilePrefix + "vertex-";
-        this.edgeFilePrefix = memoryMappedFilePrefix + "edge-";
+    public MPIProcessLauncher(String vertexFilePrefix, String edgeFilePrefix, String vprogPrefix,
+        String sendMsgPrefix, String mergeMsgPrefix, String userClass) {
+        this.vertexFilePrefix = vertexFilePrefix;
+        this.edgeFilePrefix = edgeFilePrefix;
+        this.vprogPrefix = vprogPrefix;
+        this.sendMsgPrefix = sendMsgPrefix;
+        this.mergeMsgPrefix = mergeMsgPrefix;
         processBuilder = new ProcessBuilder();
         this.numWorker = getNumWorker();
         this.userClass = userClass;
@@ -57,8 +60,8 @@ public class MPIProcessLauncher {
 //            {"GLOG_v=10", MPI_EXEC, "-n", numWorker.toString(), "-hostfile",
 //            SPARK_CONF_WORKERS, GAE_HOME + "/build/graphx_runner", "--mm_file_prefix",
 //            mmFilePrefix};
-        String [] mpiCommand = {SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix,userClass};
-        String [] commands = {"bash", "-c", "\"" + String.join(" ", mpiCommand) +"\"" };
+        String[] mpiCommand = {SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix, userClass};
+        String[] commands = {"bash", "-c", "\"" + String.join(" ", mpiCommand) + "\""};
         logger.info("Running command: " + String.join(" ", commands));
         processBuilder.command(commands);
         processBuilder.inheritIO();
