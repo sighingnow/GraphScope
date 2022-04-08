@@ -18,6 +18,7 @@
 package org.apache.spark.graphx
 
 import com.alibaba.graphscope.communication.Communicator
+import com.alibaba.graphscope.graphx.SerializationUtils
 import com.alibaba.graphscope.parallel.DefaultMessageManager
 import com.alibaba.graphscope.utils.{CallUtils, MPIProcessLauncher}
 import org.slf4j.Logger
@@ -73,6 +74,14 @@ object Pregel extends Logging {
   val MAPPED_SIZE = 500 * 1024; //500 KB.
   var comm: Communicator = null
   var messageManager: DefaultMessageManager = null
+  val MMAP_FILE_PREFIX = "/tmp/graphx-"
+  val MMAP_V_FILE_PREFIX = MMAP_FILE_PREFIX + "vertex-"
+  val MMAP_E_FILE_PREFIX = MMAP_FILE_PREFIX + "edge-"
+  val V_FILE_LOG_PREFIX = MMAP_FILE_PREFIX + "vertex-log-"
+  val E_FILE_LOG_PREFIX = MMAP_FILE_PREFIX + "edge-log-"
+  val VPROG_SERIALIZATION_PATH = "/tmp/graphx-vprog"
+  val SEND_MSG_SERIALIZATION_PATH = "/tmp/graphx-sendMsg"
+  val MERGE_MSG_SERIALIZATION_PATH = "/tmp/graphx-mergeMsg"
 
   def myClassOf[T: ClassTag] = implicitly[ClassTag[T]].runtimeClass
 
@@ -140,57 +149,92 @@ object Pregel extends Logging {
 //    require(messageManager != null, s"messager null")
 //    require(comm != null, s"comm null")
     log.info("Pregel method invoked")
+    SparkContext.getOrCreate().broadcast()
 
-    val res = graph.vertices.mapPartitionsWithIndex((pid, iterator) => {
-      val loggerFileName = "/tmp/graphx-log-" + pid
+    val verticesRes = graph.vertices.mapPartitionsWithIndex((pid, iterator) => {
+      val loggerFileName = V_FILE_LOG_PREFIX + pid
       val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
-      val strName = s"/tmp/graphx-vertex-${pid}"
+      val strName = s"${MMAP_V_FILE_PREFIX}-${pid}"
       val randomAccessFile = new RandomAccessFile(strName, "rw")
 //      val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
       val channel = randomAccessFile.getChannel
       val buffer = channel.map(MapMode.READ_WRITE, 0, MAPPED_SIZE)
+      buffer.position(8) // reserve place to write total length
       //To put vd and ed in the header.
-      putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
+      putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]], bufferedWriter);
       bufferedWriter.write("successfully put header + \n")
-      putVertices(buffer, iterator,classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]])
-      bufferedWriter.write("successfully put data " + buffer.limit() + ", " + buffer.position());
-      buffer.compact()
+      putVertices(buffer, iterator,classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], bufferedWriter)
+      bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
+      buffer.putLong(0, buffer.position() - 8)
 //      iterator
       bufferedWriter.close()
       iterator
     },
       true
     )
-    log.info(res.count()) //force running
 
-    log.info(s"after writing to memory mapped file, launch mpi processes ${res}")
+    val edgesRes = graph.edges.mapPartitionsWithIndex((pid, iterator) => {
+      val loggerFileName = E_FILE_LOG_PREFIX + pid
+      val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
+      val strName = s"${MMAP_E_FILE_PREFIX}-${pid}"
+      val randomAccessFile = new RandomAccessFile(strName, "rw")
+      //      val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+      val channel = randomAccessFile.getChannel
+      val buffer = channel.map(MapMode.READ_WRITE, 0, MAPPED_SIZE)
+      buffer.position(8) // reserve place to write total length
+      //To put vd and ed in the header.
+//      putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
+//      bufferedWriter.write("successfully put header + \n")
+      putEdges(buffer, iterator,classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], bufferedWriter)
+      bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
+      buffer.putLong(0, buffer.position() - 8)
+      //      iterator
+      bufferedWriter.close()
+      iterator
+    },
+      true
+    )
 
-//    graph.vertices.sparkContext.getCallSite()
-//    val sc = SparkContext.getOrCreate()
-//    val callSite = sc.getCallSite
+    object LazyClass{
+      //evaluated in class loading.
+      lazy val data = {
+        SerializationUtils.write(vprog, VPROG_SERIALIZATION_PATH)
+        SerializationUtils.write(sendMsg, SEND_MSG_SERIALIZATION_PATH)
+        SerializationUtils.write(mergeMsg, MERGE_MSG_SERIALIZATION_PATH)
+      }
+    }
+    graph.vertices.foreachPartition(_ => LazyClass.data)
+    verticesRes.count() //force running
 
-//    val callsite = Utils.getCallSite()
+    log.info(s"after writing to memory mapped file, launch mpi processes ${verticesRes}, ${edgesRes}")
+
     var userClass = CallUtils.getCallerCallerClassName
     if (userClass.endsWith("$")){
       userClass = userClass.substring(0, userClass.length - 1)
     }
     log.info(s"call site ${userClass}")
-    val mpiLauncher = new MPIProcessLauncher("/tmp/graphx-", userClass)
+    val mpiLauncher = new MPIProcessLauncher(MMAP_V_FILE_PREFIX,MMAP_E_FILE_PREFIX, VPROG_SERIALIZATION_PATH,SEND_MSG_SERIALIZATION_PATH,MERGE_MSG_SERIALIZATION_PATH, userClass)
     mpiLauncher.run()
 
     graph
   } // end of apply
 
-  def putHeader[VD: ClassTag, ED : ClassTag, A: ClassTag](buffer: MappedByteBuffer, vdClass: Class[VD], edClass: Class[ED], msgClass: Class[A]): Unit ={
+  def putHeader[VD: ClassTag, ED : ClassTag, A: ClassTag](buffer: MappedByteBuffer, vdClass: Class[VD], edClass: Class[ED], msgClass: Class[A], writer: BufferedWriter): Unit ={
     require(buffer.remaining() > 4, s"not enough space in buffer")
+    writer.write("put vd class int " + class2Int(vdClass))
+    writer.newLine()
     buffer.putInt(class2Int(vdClass))
     require(buffer.remaining() > 4, s"not enough space in buffer")
+    writer.write("put ed class int " + class2Int(edClass))
+    writer.newLine()
     buffer.putInt(class2Int(edClass))
     require(buffer.remaining() > 4, s"not enough space in buffer")
+    writer.write("put msg class int " + class2Int(msgClass))
+    writer.newLine()
     buffer.putInt(class2Int(msgClass))
   }
 
-  def putVertices[VD: ClassTag](buffer: MappedByteBuffer, tuples: Iterator[(graphx.VertexId, VD)], vdClass : Class[VD]): Unit ={
+  def putVertices[VD: ClassTag](buffer: MappedByteBuffer, tuples: Iterator[(graphx.VertexId, VD)], vdClass : Class[VD], writer: BufferedWriter): Unit ={
     if (vdClass.equals(classOf[java.lang.Long])){
       tuples.foreach(tuple => {
         val vid = tuple._1
@@ -198,7 +242,8 @@ object Pregel extends Logging {
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.putLong(vid)
         buffer.putLong(vdata.asInstanceOf[java.lang.Long])
-        log.info(s"Writing vid [${vid}] vdata [${vdata}]")
+        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
+        writer.newLine()
       })
     }
     else if (vdClass.equals(classOf[Long])){
@@ -208,7 +253,8 @@ object Pregel extends Logging {
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.putLong(vid)
         buffer.putLong(vdata.asInstanceOf[Long])
-        log.info(s"Writing vid [${vid}] vdata [${vdata}]")
+        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
+        writer.newLine()
       })
     }
     else if (vdClass.equals(classOf[java.lang.Double])){
@@ -218,7 +264,8 @@ object Pregel extends Logging {
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.putLong(vid)
         buffer.putDouble(vdata.asInstanceOf[java.lang.Double])
-        log.info(s"Writing vid [${vid}] vdata [${vdata}]")
+        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
+        writer.newLine()
       })
     }
     else if (vdClass.equals(classOf[Double])){
@@ -228,7 +275,8 @@ object Pregel extends Logging {
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.putLong(vid)
         buffer.putDouble(vdata.asInstanceOf[Double])
-        log.info(s"Writing vid [${vid}] vdata [${vdata}]")
+        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
+        writer.newLine()
       })
     }
     else if (vdClass.equals(classOf[java.lang.Integer])){
@@ -238,7 +286,8 @@ object Pregel extends Logging {
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.putLong(vid)
         buffer.putInt(vdata.asInstanceOf[java.lang.Integer])
-        log.info(s"Writing vid [${vid}] vdata [${vdata}]")
+        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
+        writer.newLine()
       })
     }
     else if (vdClass.equals(classOf[Int])){
@@ -248,21 +297,104 @@ object Pregel extends Logging {
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.putLong(vid)
         buffer.putInt(vdata.asInstanceOf[Int])
-        log.info(s"Writing vid [${vid}] vdata [${vdata}]")
+        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
+        writer.newLine()
       })
     }
-    else throw new IllegalStateException("expected vdata class")
+    else throw new IllegalStateException("unexpected vdata class " + vdClass.getName)
+  }
+
+  def putEdges[ED: ClassTag](buffer: MappedByteBuffer, tuples: Iterator[Edge[ED]], edClass : Class[ED], writer: BufferedWriter): Unit = {
+    if (edClass.equals(classOf[java.lang.Long])) {
+      tuples.foreach(edge => {
+        val srcId = edge.srcId
+        val dstId = edge.dstId
+        val edgeAttr = edge.attr
+        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+        buffer.putLong(srcId)
+        buffer.putLong(dstId)
+        buffer.putLong(edgeAttr.asInstanceOf[java.lang.Long])
+        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
+        writer.newLine()
+      })
+    }
+  else if  (edClass.equals(classOf[Long])) {
+      tuples.foreach(edge => {
+        val srcId = edge.srcId
+        val dstId = edge.dstId
+        val edgeAttr = edge.attr
+        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+        buffer.putLong(srcId)
+        buffer.putLong(dstId)
+        buffer.putLong(edgeAttr.asInstanceOf[Long])
+        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
+        writer.newLine()
+      })
+    }
+    else if (edClass.equals(classOf[java.lang.Double])) {
+      tuples.foreach(edge => {
+        val srcId = edge.srcId
+        val dstId = edge.dstId
+        val edgeAttr = edge.attr
+        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+        buffer.putLong(srcId)
+        buffer.putLong(dstId)
+        buffer.putDouble(edgeAttr.asInstanceOf[java.lang.Double])
+        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
+        writer.newLine()
+      })
+    }
+    else if (edClass.equals(classOf[Double])) {
+      tuples.foreach(edge => {
+        val srcId = edge.srcId
+        val dstId = edge.dstId
+        val edgeAttr = edge.attr
+        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+        buffer.putLong(srcId)
+        buffer.putLong(dstId)
+        buffer.putDouble(edgeAttr.asInstanceOf[Double])
+        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
+        writer.newLine()
+      })
+    }
+    else if (edClass.equals(classOf[java.lang.Integer])) {
+      tuples.foreach(edge => {
+        val srcId = edge.srcId
+        val dstId = edge.dstId
+        val edgeAttr = edge.attr
+        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+        buffer.putLong(srcId)
+        buffer.putLong(dstId)
+        buffer.putInt(edgeAttr.asInstanceOf[java.lang.Integer])
+        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
+        writer.newLine()
+      })
+    }
+    else if (edClass.equals(classOf[Int])) {
+      tuples.foreach(edge => {
+        val srcId = edge.srcId
+        val dstId = edge.dstId
+        val edgeAttr = edge.attr
+        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+        buffer.putLong(srcId)
+        buffer.putLong(dstId)
+        buffer.putInt(edgeAttr.asInstanceOf[Int])
+        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
+        writer.newLine()
+      })
+    }
+    else throw new IllegalStateException("Unexpected ed class " + edClass.getName)
   }
 
   def class2Int(value: Class[_]) : Int = {
     if (value.equals(classOf[java.lang.Long]) || value.equals(classOf[Long])){
-      0
+      4
     }
     else if (value.equals(classOf[java.lang.Integer]) || value.equals(classOf[Int])){
-      1
+      2
     }
     else if (value.equals(classOf[java.lang.Double]) || value.eq(classOf[Double])){
-      2
+      7
     }
     else throw new IllegalArgumentException(s"unexpected class ${value}")
   }
