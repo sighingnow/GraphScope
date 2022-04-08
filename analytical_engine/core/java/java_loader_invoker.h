@@ -261,7 +261,7 @@ class JavaLoaderInvoker {
         }
 
         void* mmapped_data =
-            mmap(NULL, file_size, PROT_READ, MAP_PRIVATE | MAP_POPULATE, fd, 0);
+            mmap(NULL, file_size, PROT_READ, MAP_SHARED , fd, 0);
         if (mmapped_data == MAP_FAILED) {
           close(fd);
           VLOG(1) << "Error mmapping the file " << file_path;
@@ -297,7 +297,6 @@ class JavaLoaderInvoker {
       } else {
         VLOG(1) << "file: " << file_path << "size " << file_size
                 << " doesn't exist";
-        continue;
       }
       partition_id += 1;
     }

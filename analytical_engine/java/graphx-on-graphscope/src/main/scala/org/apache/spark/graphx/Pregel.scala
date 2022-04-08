@@ -154,7 +154,7 @@ object Pregel extends Logging {
     val verticesRes = graph.vertices.mapPartitionsWithIndex((pid, iterator) => {
       val loggerFileName = V_FILE_LOG_PREFIX + pid
       val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
-      val strName = s"${MMAP_V_FILE_PREFIX}-${pid}"
+      val strName = s"${MMAP_V_FILE_PREFIX}${pid}"
       val randomAccessFile = new RandomAccessFile(strName, "rw")
 //      val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
       val channel = randomAccessFile.getChannel
@@ -176,7 +176,7 @@ object Pregel extends Logging {
     val edgesRes = graph.edges.mapPartitionsWithIndex((pid, iterator) => {
       val loggerFileName = E_FILE_LOG_PREFIX + pid
       val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
-      val strName = s"${MMAP_E_FILE_PREFIX}-${pid}"
+      val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
       val randomAccessFile = new RandomAccessFile(strName, "rw")
       //      val channel = FileChannel.open(randomAccessFile.toPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
       val channel = randomAccessFile.getChannel
