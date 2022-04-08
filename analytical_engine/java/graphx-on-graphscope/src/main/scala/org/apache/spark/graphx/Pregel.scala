@@ -203,7 +203,10 @@ object Pregel extends Logging {
         SerializationUtils.write(mergeMsg, MERGE_MSG_SERIALIZATION_PATH)
       }
     }
-    graph.vertices.foreachPartition(_ => LazyClass.data)
+    graph.vertices.mapPartitionsWithIndex((index, iterator) => {
+      LazyClass.data
+      iterator
+    })
     verticesRes.count() //force running
 
     log.info(s"after writing to memory mapped file, launch mpi processes ${verticesRes}, ${edgesRes}")
