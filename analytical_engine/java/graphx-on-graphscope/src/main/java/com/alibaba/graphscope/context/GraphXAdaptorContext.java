@@ -86,7 +86,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
         this.mergeMsgFilePath == null || this.mergeMsgFilePath.isEmpty()){
             throw new IllegalStateException("file path empty " + vprogFilePath + ", " + sendMsgFilePath + "," + mergeMsgFilePath);
         }
-        if (vdClassStr == "long" && edClassStr == "long" && msgClassStr == "long"){
+        if (vdClassStr.equals("long") && edClassStr.equals("long") && msgClassStr.equals("long")){
             Function3<Long, Long, Long, Long> vprog = deserializeVprog(vprogFilePath, conf);
             Function1<EdgeTriplet<Long, Long>, Iterator<Tuple2<Long, Long>>> sendMsg = deserializeSendMsg(sendMsgFilePath, conf);
             Function2<Long, Long, Long> mergeMsg = deserializeMergeMsg(mergeMsgFilePath, conf);
