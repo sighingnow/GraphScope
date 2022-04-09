@@ -61,17 +61,6 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     @Override
     public void Init(IFragment<Long, Long, VDATA_T, EDATA_T> frag,
         DefaultMessageManager messageManager, JSONObject jsonObject) {
-        //TODO: get vdata class from conf
-        createFFIContext(frag, (Class<? extends VDATA_T>) Long.class, false);
-
-        if (jsonObject.containsKey(USER_CLASS) && !jsonObject.getString(USER_CLASS).isEmpty()) {
-            logger.info("Parse user app class {} from json str", jsonObject.getString(USER_CLASS));
-            userClassName = jsonObject.getString(USER_CLASS);
-//        }
-        } else {
-            throw new IllegalStateException("user class required");
-        }
-
         String vdClassStr = jsonObject.getString(VD_CLASS);
         String edClassStr = jsonObject.getString(ED_CLASS);
         String msgClassStr = jsonObject.getString(MSG_CLASS);
@@ -81,8 +70,16 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
         msgClass = loadClassWithName(this.getClass().getClassLoader(), msgClassStr);
         conf = GraphXFactory.createGraphXConf(vdClass,edClass,msgClass);
 
-        //Not initialized here, initialize in peval.
+        //TODO: get vdata class from conf
+        createFFIContext(frag, (Class<? extends VDATA_T>) conf.getVdataClass(), false);
 
+        if (jsonObject.containsKey(USER_CLASS) && !jsonObject.getString(USER_CLASS).isEmpty()) {
+            logger.info("Parse user app class {} from json str", jsonObject.getString(USER_CLASS));
+            userClassName = jsonObject.getString(USER_CLASS);
+//        }
+        } else {
+            throw new IllegalStateException("user class required");
+        }
 
         this.vprogFilePath = jsonObject.getString(VPROG_SERIALIZATION);
         this.sendMsgFilePath = jsonObject.getString(SEND_MSG_SERIALIZATION);
