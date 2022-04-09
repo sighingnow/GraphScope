@@ -50,6 +50,8 @@ static constexpr const char* DIRECTED = "directed";
 static constexpr const char* USER_LIB_PATH = "user_lib_path";
 static constexpr const char* VERTEX_MM_FILE_PREFIX = "vertex_mm_file_prefix";
 static constexpr const char* EDGE_MM_FILE_PREFIX = "edge_mm_file_prefix";
+static constexpr const char* MAX_PARTITION_ID = "max_partition_id";
+static constexpr const char* MAPPED_SIZE = "mapped_size";
 using FragmentType =
     vineyard::ArrowFragment<int64_t, vineyard::property_graph_types::VID_TYPE>;
 using ProjectedFragmentType =
@@ -71,7 +73,8 @@ void Init(const std::string& params) {
 vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
                                 vineyard::Client& client, bool directed,
                                 const std::string& vertex_mm_file_prefix,
-                                const std::string& edge_mm_file_prefix) {
+                                const std::string& edge_mm_file_prefix,
+				int max_parition_id, int mapped_size) {
   vineyard::ObjectID fragment_id;
   {
     auto graph = std::make_shared<gs::detail::Graph>();
@@ -82,7 +85,9 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
     vertex->label = "label1";
     vertex->vid = "0";
     vertex->protocol = "graphx";
-    vertex->values = vertex_mm_file_prefix;
+    std::stringstream ss1;
+    ss1 << vertex_mm_file_prefix <<"&" <<max_parition_id << "&" <<mapped_size;
+    vertex->values = ss1.str();
     graph->vertices.push_back(vertex);
 
     auto edge = std::make_shared<gs::detail::Edge>();
@@ -93,7 +98,9 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
     subLabel->dst_label = "label1";
     subLabel->dst_vid = "0";
     subLabel->protocol = "graphx";
-    subLabel->values = edge_mm_file_prefix;
+    std::stringstream ss2;
+    ss2 << edge_mm_file_prefix<<"&" <<max_parition_id << "&" <<mapped_size;
+    subLabel->values = ss2.str();
     // subLabel->values = efile;
     // subLabel->eformat += edge_input_format_class;  // eif
     edge->sub_labels.push_back(*subLabel.get());
@@ -154,14 +161,16 @@ void CreateAndQuery(std::string params) {
   std::string vertex_mm_file_prefix =
       pt.get<std::string>(VERTEX_MM_FILE_PREFIX);
   std::string edge_mm_file_prefix = pt.get<std::string>(EDGE_MM_FILE_PREFIX);
+  int max_partition_id = pt.get<int>(MAX_PARTITION_ID);
+  int mapped_size = pt.get<int>(MAPPED_SIZE);
 
-  VLOG(10) << "user_lib_path: " << user_lib_path << ", directed: " << directed;
+  VLOG(10) << "user_lib_path: " << user_lib_path << ", directed: " << directed << ", max partition id: " << max_partition_id << ", mapped size" << mapped_size;
   vineyard::Client client;
   VINEYARD_CHECK_OK(client.Connect(ipc_socket));
   VLOG(1) << "Connected to IPCServer: " << ipc_socket;
 
   vineyard::ObjectID fragment_id = LoadFragment(
-      comm_spec, client, directed, vertex_mm_file_prefix, edge_mm_file_prefix);
+      comm_spec, client, directed, vertex_mm_file_prefix, edge_mm_file_prefix, max_partition_id, mapped_size);
   VLOG(10) << "[worker " << comm_spec.worker_id()
            << "] loaded frag id: " << fragment_id;
 

@@ -63,7 +63,7 @@ import scala.reflect.{ClassTag, classTag}
  *
  */
 object Pregel extends Logging {
-  val MAPPED_SIZE = 500 * 1024; //500 KB.
+  val MAPPED_SIZE = 50 * 1024 * 1024; //500 KB.
   var comm: Communicator = null
   var messageManager: DefaultMessageManager = null
   val MMAP_FILE_PREFIX = "/graphx-"
@@ -206,7 +206,7 @@ object Pregel extends Logging {
     }
     log.info(s"call site ${userClass}")
     val mpiLauncher = new MPIProcessLauncher(MMAP_V_FILE_PREFIX, MMAP_E_FILE_PREFIX,
-      VPROG_SERIALIZATION_PATH, SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, userClass, vdClass,edClass, msgClass, initialMsg)
+      VPROG_SERIALIZATION_PATH, SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, userClass, vdClass,edClass, msgClass, initialMsg, graph.vertices.getNumPartitions, MAPPED_SIZE)
     mpiLauncher.run()
 
     graph

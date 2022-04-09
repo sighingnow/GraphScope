@@ -21,6 +21,10 @@ shift
 msgClass=$1
 shift
 initialMsg=$1
+shift
+max_partition_id=$1
+shift
+mapped_size=$1
 
 echo "vfile prefix:    "${V_FILE_PREFIX}
 echo "efile preifx:    "${E_FILE_PREFIX}
@@ -32,6 +36,8 @@ echo "vd class         "${vdClass}
 echo "edClass          "${edClass}
 echo "msgClass         "${msgClass}
 echo "initial msg      "${initialMsg}
+echo "max partition_id "${max_partition_id}
+echo "mapped isze      "${mapped_size}
 
 
 DEFAULT_SPARK_HOME=~/spark/spark-3.2.1-bin-hadoop2.7
@@ -68,6 +74,6 @@ SPARK_CONF_WORKER=${SPARK_HOME}/conf/workers
 echo "conf workers: "${SPARK_CONF_WORKER}
 
 #cmd="GLOG_v=10 mpirun -n 1 -hostfile ${SPARK_CONF_WORKER} -x GLOG_v -x GRAPHSCOPE_CODE_HOME -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} --user_class ${USER_CLASS} --vertex_mm_file_prefix ${V_FILE_PREFIX} --edge_mm_file_prefix ${E_FILE_PREFIX}"
-cmd="GLOG_v=10 mpirun -n 1 -host s3 -x GLOG_v -x GRAPHSCOPE_CODE_HOME -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} --user_class ${USER_CLASS} --vertex_mm_file_prefix ${V_FILE_PREFIX} --edge_mm_file_prefix ${E_FILE_PREFIX} --vprog_serialization ${VPROG_SERIALIZATION} --send_msg_serialization ${SEND_MSG_SERIALIZATION} --merge_msg_serialization ${MERGE_MSG_SERIALIZATION} --vd_class ${vdClass} --ed_class ${edClass} --msg_class ${msgClass} --initial_msg ${initialMsg}"
+cmd="GLOG_v=10 mpirun -n 1 -host s3 -x GLOG_v -x GRAPHSCOPE_CODE_HOME -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} --user_class ${USER_CLASS} --vertex_mm_file_prefix ${V_FILE_PREFIX} --edge_mm_file_prefix ${E_FILE_PREFIX} --vprog_serialization ${VPROG_SERIALIZATION} --send_msg_serialization ${SEND_MSG_SERIALIZATION} --merge_msg_serialization ${MERGE_MSG_SERIALIZATION} --vd_class ${vdClass} --ed_class ${edClass} --msg_class ${msgClass} --initial_msg ${initialMsg} --max_partition_id ${max_partition_id} --mapped_size ${mapped_size}"
 echo "running cmd: "$cmd
 eval $cmd

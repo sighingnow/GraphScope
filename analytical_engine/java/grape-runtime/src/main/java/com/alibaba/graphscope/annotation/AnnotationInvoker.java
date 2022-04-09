@@ -364,7 +364,7 @@ import com.alibaba.fastffi.FFIGenBatch;
                                 },
                                 java = {
                                     "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
-                                    "int64_t"
+                                    "Long"
                                 }),
                         @CXXTemplate(
                             cxx = {

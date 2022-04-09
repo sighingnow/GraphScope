@@ -245,7 +245,7 @@ class JavaLoaderInvoker {
   }
 
   void readDataFromMMapedFile(const std::string& location_prefix,
-                              bool forVertex, int max_partition_id) {
+                              bool forVertex, int max_partition_id, int mapped_size) {
     int partition_id = 0;
     // FIXME
     int cnt = 0;
@@ -255,7 +255,6 @@ class JavaLoaderInvoker {
       //      if (file_size > 0) {
       // VLOG(1) << "opening file " << file_path << ", size " << file_size;
       VLOG(1) << "reading from " << file_path;
-      int file_size = 500 * 1024;
       int fd =
           shm_open(file_path.c_str(), O_RDWR, S_IRUSR | S_IWUSR);  // no O_CREAT
       if (fd < 0) {
@@ -264,7 +263,7 @@ class JavaLoaderInvoker {
         continue;
       }
 
-      void* mmapped_data = mmap(NULL, file_size, PROT_READ, MAP_SHARED, fd, 0);
+      void* mmapped_data = mmap(NULL, mapped_size, PROT_READ, MAP_SHARED, fd, 0);
       if (mmapped_data == MAP_FAILED) {
         close(fd);
         VLOG(1) << "Error mmapping the file " << file_path;
@@ -308,8 +307,8 @@ class JavaLoaderInvoker {
 
   // Work for graphx graph loading, the input is the prefix for memory mapped
   // file.
-  void load_vertices(const std::string& location_prefix) {
-    readDataFromMMapedFile(location_prefix, true, 4);
+  void load_vertices(const std::string& location_prefix, int max_parition_id, int mapped_size) {
+    readDataFromMMapedFile(location_prefix, true, max_parition_id, mapped_size);
   }
 
   // load vertices must be called before load edge, since we assume giraph type
@@ -330,8 +329,8 @@ class JavaLoaderInvoker {
     callJavaLoaderEdges(edge_location_prune.c_str(), eformatter_class.c_str());
   }
 
-  void load_edges(const std::string& location_prefix) {
-    readDataFromMMapedFile(location_prefix, false, 4);
+  void load_edges(const std::string& location_prefix, int max_parition_id, int mapped_size) {
+    readDataFromMMapedFile(location_prefix, false, max_parition_id, mapped_size);
   }
 
   std::shared_ptr<arrow::Table> get_edge_table() {

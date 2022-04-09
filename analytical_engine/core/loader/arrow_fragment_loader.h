@@ -488,13 +488,25 @@ class ArrowFragmentLoader {
   }
   boost::leaf::result<std::shared_ptr<arrow::Table>> readTableFromGraphx(
       bool load_vertex, const std::string& loc, int index, int total_parts) {
+    //splite location for max_parition_id and mapped_size;
+
+    size_t first_occur = loc.find("&");
+    size_t second_occur = loc.find("&", first_occur + 1);
+    if (first_occur == std::string::npos || second_occur == std::string::npos){
+      LOG(ERROR) << "No & found in graphx location string" << first_occur << ", " << second_occur;
+      return nullptr;
+    }
+    std::string prefix = loc.substr(0, first_occur);
+    int max_partition_id = std::stoi(loc.substr(first_occur + 1, second_occur));
+    int mapped_size = std::stoi(loc.substr(second_occur + 1, std::string::npos));
+    VLOG(1) << "parsed: " << prefix << ", " << max_partition_id << ", " << mapped_size;
     if (load_vertex) {
       // For graphx loading, the data filling is done from java side, before
       // constructFragment is called.
-      java_loader_invoker_.load_vertices(loc);
+      java_loader_invoker_.load_vertices(prefix, max_partition_id, mapped_size);
       return java_loader_invoker_.get_vertex_table();
     } else {
-      java_loader_invoker_.load_edges(loc);
+      java_loader_invoker_.load_edges(prefix, max_partition_id, mapped_size);
       return java_loader_invoker_.get_edge_table();
     }
   }
