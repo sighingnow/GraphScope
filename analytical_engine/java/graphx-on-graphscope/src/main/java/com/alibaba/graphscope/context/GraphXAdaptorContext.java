@@ -89,26 +89,22 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
         this.mergeMsgFilePath == null || this.mergeMsgFilePath.isEmpty()){
             throw new IllegalStateException("file path empty " + vprogFilePath + ", " + sendMsgFilePath + "," + mergeMsgFilePath);
         }
-        if (vdClassStr.equals("long") && edClassStr.equals("long") && msgClassStr.equals("long")){
-            Function3<Long, Long, Long, Long> vprog = deserializeVprog(vprogFilePath, conf);
-            Function1<EdgeTriplet<Long, Long>, Iterator<Tuple2<Long, Long>>> sendMsg = deserializeSendMsg(sendMsgFilePath, conf);
-            Function2<Long, Long, Long> mergeMsg = deserializeMergeMsg(mergeMsgFilePath, conf);
-            logger.info("deserialization success: {}, {}, {}", vprog, sendMsg, mergeMsg);
 
-            graphXProxy = GraphXFactory.createGraphXProxy(conf, vprog, sendMsg, mergeMsg);
-            logger.info("Construct graphx proxy: " + graphXProxy);
-        }
+        graphXProxy = GraphXFactory.createGraphXProxy(conf, vprogFilePath, sendMsgFilePath, mergeMsgFilePath);
         String msgStr = jsonObject.getString(INITIAL_MSG);
         logger.info("Initial msg in str: " + msgStr);
         //get initial msg
         if (msgClass.equals(Long.class)){
-            initialMsg = Long.valueOf(msgStr);
+            this.initialMsg = Long.valueOf(msgStr);
         }
         else if (msgClass.equals(Double.class)){
-            initialMsg = Double.valueOf(msgStr);
+            this.initialMsg = Double.valueOf(msgStr);
         }
         else if (msgClass.equals(Integer.class)){
-            initialMsg = Integer.valueOf(msgStr);
+            this.initialMsg = Integer.valueOf(msgStr);
+        }
+        else {
+            throw new IllegalStateException("unmatched msg class " + msgClass.getName());
         }
 
     }
@@ -116,36 +112,6 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     @Override
     public void Output(IFragment<Long, Long, VDATA_T, EDATA_T> frag) {
 
-    }
-
-    private static <VD,ED,MSG> Function3<Long, VD, ED, MSG> deserializeVprog(String vprogFilePath, GraphXConf<VD,ED,MSG> conf){
-        try {
-            Function3<Long,VD,ED,MSG> res = (Function3<Long, VD, ED, MSG>) SerializationUtils.read(vprogFilePath);
-            return res;
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            throw new IllegalStateException("deserialization vprog failed");
-        }
-    }
-
-    private static <VD,ED,MSG> Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG>>> deserializeSendMsg(String sendMsgFilePath, GraphXConf<VD,ED,MSG> conf){
-        try {
-            Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG>>> res = (Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG>>>) SerializationUtils.read(sendMsgFilePath);
-            return res;
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            throw new IllegalStateException("deserialization send msg failed");
-        }
-    }
-
-    private static <VD,ED,MSG> Function2<MSG, MSG, MSG> deserializeMergeMsg(String mergeMsgFilePath, GraphXConf<VD,ED,MSG> conf){
-        try {
-            Function2<MSG, MSG, MSG> res = (Function2<MSG, MSG, MSG>) SerializationUtils.read(mergeMsgFilePath);
-            return res;
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            throw new IllegalStateException("deserialization merge msg failed");
-        }
     }
 
 

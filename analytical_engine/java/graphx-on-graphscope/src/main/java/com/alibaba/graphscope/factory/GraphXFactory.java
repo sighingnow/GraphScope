@@ -9,10 +9,13 @@ import com.alibaba.graphscope.graph.VertexIdManager;
 import com.alibaba.graphscope.graph.impl.GraphXVertexIdManagerImpl;
 import com.alibaba.graphscope.graph.impl.GraphxEdgeManagerImpl;
 import com.alibaba.graphscope.graph.impl.VertexDataManagerImpl;
+import com.alibaba.graphscope.graphx.SerializationUtils;
 import com.alibaba.graphscope.mm.MessageStore;
 import com.alibaba.graphscope.mm.impl.DefaultMessageStore;
 import com.alibaba.graphscope.utils.GraphXProxy;
 import org.apache.spark.graphx.EdgeTriplet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scala.Function1;
 import scala.Function2;
 import scala.Function3;
@@ -24,15 +27,31 @@ import scala.collection.Iterator;
  */
 public class GraphXFactory {
 
+    private static Logger logger = LoggerFactory.getLogger(GraphXFactory.class.getName());
+
     public static <VD, ED, MSG> GraphXConf<VD, ED, MSG> createGraphXConf(
         Class<? extends VD> vdClass, Class<? extends ED> edClass, Class<? extends MSG> msgClass) {
         return new GraphXConf<VD, ED, MSG>(vdClass, edClass, msgClass);
     }
 
-    public static <VD, ED, MSG> GraphXProxy<VD, ED, MSG> createGraphXProxy(
+    private static <VD, ED, MSG> GraphXProxy<VD, ED, MSG> createGraphXProxy(
         GraphXConf<VD, ED, MSG> conf, Function3<Long, VD, MSG, VD> vprog,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG>>> sendMsg,
         Function2<MSG, MSG, MSG> mergeMsg) {
+        return new GraphXProxy<VD, ED, MSG>(conf, vprog, sendMsg, mergeMsg);
+    }
+
+    public static <VD, ED, MSG> GraphXProxy<VD, ED, MSG> createGraphXProxy(
+        GraphXConf<VD, ED, MSG> conf, String vprogFilePath, String sendMsgFilePath,
+        String mergeMsgFilePath) {
+        Function3<Long, VD, MSG, VD> vprog = deserializeVprog(vprogFilePath, conf);
+        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG>>> sendMsg = deserializeSendMsg(
+            sendMsgFilePath, conf);
+        Function2<MSG, MSG, MSG> mergeMsg = deserializeMergeMsg(mergeMsgFilePath, conf);
+        logger.info("deserialization success: {}, {}, {}", vprog, sendMsg, mergeMsg);
+
+        GraphXProxy<VD, ED, MSG> graphXProxy = createGraphXProxy(conf, vprog, sendMsg, mergeMsg);
+        logger.info("Construct graphx proxy: " + graphXProxy);
         return new GraphXProxy<VD, ED, MSG>(conf, vprog, sendMsg, mergeMsg);
     }
 
@@ -59,4 +78,39 @@ public class GraphXFactory {
         return new GraphxEdgeManagerImpl<>(conf, idManager, vertexDataManager);
     }
 
+    private static <VD, ED, MSG> Function3<Long, VD, MSG, VD> deserializeVprog(String vprogFilePath,
+        GraphXConf<VD, ED, MSG> conf) {
+        try {
+            Function3<Long, VD, MSG, VD> res = (Function3<Long, VD, MSG, VD>) SerializationUtils.read(
+                vprogFilePath);
+            return res;
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            throw new IllegalStateException("deserialization vprog failed");
+        }
+    }
+
+    private static <VD, ED, MSG> Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG>>> deserializeSendMsg(
+        String sendMsgFilePath, GraphXConf<VD, ED, MSG> conf) {
+        try {
+            Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG>>> res = (Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG>>>) SerializationUtils.read(
+                sendMsgFilePath);
+            return res;
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            throw new IllegalStateException("deserialization send msg failed");
+        }
+    }
+
+    private static <VD, ED, MSG> Function2<MSG, MSG, MSG> deserializeMergeMsg(
+        String mergeMsgFilePath, GraphXConf<VD, ED, MSG> conf) {
+        try {
+            Function2<MSG, MSG, MSG> res = (Function2<MSG, MSG, MSG>) SerializationUtils.read(
+                mergeMsgFilePath);
+            return res;
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            throw new IllegalStateException("deserialization merge msg failed");
+        }
+    }
 }
