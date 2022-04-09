@@ -155,7 +155,7 @@ object Pregel extends Logging {
       bufferedWriter.newLine();
       buffer.position(8) // reserve place to write total length
       //To put vd and ed in the header.
-      putHeader(buffer,vdClass , edClass, msgClass, bufferedWriter);
+      putHeader(buffer,vdClass, edClass, msgClass, bufferedWriter)
       bufferedWriter.write("successfully put header + \n")
       putVertices(buffer, iterator, vdClass, bufferedWriter)
       bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
@@ -206,7 +206,7 @@ object Pregel extends Logging {
     }
     log.info(s"call site ${userClass}")
     val mpiLauncher = new MPIProcessLauncher(MMAP_V_FILE_PREFIX, MMAP_E_FILE_PREFIX,
-      VPROG_SERIALIZATION_PATH, SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, userClass, vdClass,edClass, msgClass)
+      VPROG_SERIALIZATION_PATH, SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, userClass, vdClass,edClass, msgClass, initialMsg)
     mpiLauncher.run()
 
     graph

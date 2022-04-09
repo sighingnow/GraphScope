@@ -28,11 +28,13 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     private static String VD_CLASS = "vd_class";
     private static String ED_CLASS = "ed_class";
     private static String MSG_CLASS = "msg_class";
+    private static String INITIAL_MSG = "initial_msg";
     private String userClassName;
     private String vprogFilePath, sendMsgFilePath, mergeMsgFilePath;
     private Class<?> vdClass, edClass, msgClass;
     private GraphXConf conf;
     private GraphXProxy graphXProxy;
+    private Object initialMsg;
 
     public String getUserClassName() {
         return userClassName;
@@ -43,6 +45,10 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
 
     public GraphXProxy getGraphXProxy(){
         return graphXProxy;
+    }
+
+    public Object getInitialMsg(){
+        return initialMsg;
     }
 
     /**
@@ -94,6 +100,18 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
 
             graphXProxy = GraphXFactory.createGraphXProxy(conf, vprog, sendMsg, mergeMsg);
             logger.info("Construct graphx proxy: " + graphXProxy);
+        }
+        String msgStr = jsonObject.getString(INITIAL_MSG);
+        logger.info("Initial msg in str: " + msgStr);
+        //get initial msg
+        if (msgClass.equals(Long.class)){
+            initialMsg = Long.valueOf(msgStr);
+        }
+        else if (msgClass.equals(Double.class)){
+            initialMsg = Double.valueOf(msgStr);
+        }
+        else if (msgClass.equals(Integer.class)){
+            initialMsg = Integer.valueOf(msgStr);
         }
 
     }

@@ -42,6 +42,8 @@ DEFINE_string(merge_msg_serialization, "/tmp/graphx-mergeMsg", "path to the seri
 DEFINE_string(vd_class, "", "int,long,double");
 DEFINE_string(ed_class, "", "int,long,double");
 DEFINE_string(msg_class, "", "int,long,double");
+DEFINE_string(initial_msg, "", "the initial msg");
+
 // put all flags in a json str
 std::string flags2JsonStr() {
   boost::property_tree::ptree pt;
@@ -64,6 +66,7 @@ std::string flags2JsonStr() {
   pt.put("vd_class", FLAGS_vd_class);
   pt.put("ed_class", FLAGS_ed_class);
   pt.put("msg_class", FLAGS_msg_class);
+  pt.put("initial_msg", FLAGS_initial_msg);
 
   std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);

@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Executed on driver node, create several mpi processes.
  */
-public class MPIProcessLauncher<VD,ED,MSG> {
+public class MPIProcessLauncher<VD, ED, MSG> {
 
     private static Logger logger = LoggerFactory.getLogger(MPIProcessLauncher.class.getName());
 
@@ -23,6 +23,7 @@ public class MPIProcessLauncher<VD,ED,MSG> {
     private Class<? extends VD> vdClass;
     private Class<? extends ED> edClass;
     private Class<? extends MSG> msgClass;
+    private MSG initialMsg;
 
     static {
         SPARK_HOME = System.getenv("SPARK_HOME");
@@ -47,7 +48,8 @@ public class MPIProcessLauncher<VD,ED,MSG> {
     }
 
     public MPIProcessLauncher(String vertexFilePrefix, String edgeFilePrefix, String vprogPrefix,
-        String sendMsgPrefix, String mergeMsgPrefix, String userClass, Class<? extends VD> vdClass, Class<? extends ED> edClass, Class<? extends MSG> msgClass) {
+        String sendMsgPrefix, String mergeMsgPrefix, String userClass, Class<? extends VD> vdClass,
+        Class<? extends ED> edClass, Class<? extends MSG> msgClass, MSG initialMsg) {
         this.vertexFilePrefix = vertexFilePrefix;
         this.edgeFilePrefix = edgeFilePrefix;
         this.vprogPrefix = vprogPrefix;
@@ -59,6 +61,7 @@ public class MPIProcessLauncher<VD,ED,MSG> {
         this.vdClass = vdClass;
         this.edClass = edClass;
         this.msgClass = msgClass;
+        this.initialMsg = initialMsg;
     }
 
     public void run() {
@@ -67,7 +70,9 @@ public class MPIProcessLauncher<VD,ED,MSG> {
 //            SPARK_CONF_WORKERS, GAE_HOME + "/build/graphx_runner", "--mm_file_prefix",
 //            mmFilePrefix};
 //        String [] mpiCommand = {SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix,userClass};
-        String [] commands = {"/bin/bash", SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix, vprogPrefix, sendMsgPrefix, mergeMsgPrefix, userClass, clzToStr(vdClass), clzToStr(edClass), clzToStr(msgClass)};
+        String[] commands = {"/bin/bash", SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix,
+            vprogPrefix, sendMsgPrefix, mergeMsgPrefix, userClass, clzToStr(vdClass),
+            clzToStr(edClass), clzToStr(msgClass), initialMsg.toString()};
         logger.info("Running command: " + String.join(" ", commands));
         processBuilder.command(commands);
         processBuilder.inheritIO();
@@ -97,14 +102,12 @@ public class MPIProcessLauncher<VD,ED,MSG> {
         return numLines;
     }
 
-    private String clzToStr(Class<?> clz){
-        if (clz.equals(Integer.class) || clz.equals(int.class)){
+    private String clzToStr(Class<?> clz) {
+        if (clz.equals(Integer.class) || clz.equals(int.class)) {
             return "int";
-        }
-        else if(clz.equals(Long.class) || clz.equals(long.class)){
+        } else if (clz.equals(Long.class) || clz.equals(long.class)) {
             return "long";
-        }
-        else if (clz.equals(Double.class) || clz.equals(double.class)){
+        } else if (clz.equals(Double.class) || clz.equals(double.class)) {
             return "double";
         }
         throw new IllegalStateException("Unexpected clz : " + clz.getName());
