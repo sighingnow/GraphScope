@@ -40,8 +40,8 @@ DEFINE_string(vprog_serialization, "/tmp/graphx-vprog", "path to the serializati
 DEFINE_string(send_msg_serialization, "/tmp/graphx-sendMsg", "path to the serialization file for sendMsg");
 DEFINE_string(merge_msg_serialization, "/tmp/graphx-mergeMsg", "path to the serialization file for Merge msg");
 DEFINE_string(vd_class, "", "int,long,double");
-DEINFE_string(ed_class, "", "int,long,double");
-DEFINE_string(msg_class, "", "int,long,double")
+DEFINE_string(ed_class, "", "int,long,double");
+DEFINE_string(msg_class, "", "int,long,double");
 // put all flags in a json str
 std::string flags2JsonStr() {
   boost::property_tree::ptree pt;
@@ -63,7 +63,7 @@ std::string flags2JsonStr() {
   pt.put("send_msg_serialization", FLAGS_send_msg_serialization);
   pt.put("vd_class", FLAGS_vd_class);
   pt.put("ed_class", FLAGS_ed_class);
-  pt.put("msg_class", FLAG_msg_class);
+  pt.put("msg_class", FLAGS_msg_class);
 
   std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);
