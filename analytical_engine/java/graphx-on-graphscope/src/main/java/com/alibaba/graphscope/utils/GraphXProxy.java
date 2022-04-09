@@ -1,12 +1,9 @@
 package com.alibaba.graphscope.utils;
 
-import com.alibaba.graphscope.communication.Communicator;
 import com.alibaba.graphscope.conf.GraphXConf;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.factory.GraphXFactory;
-import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
 import com.alibaba.graphscope.fragment.IFragment;
-import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor;
 import com.alibaba.graphscope.graph.EdgeContextImpl;
 import com.alibaba.graphscope.graph.GraphXVertexIdManager;
 import com.alibaba.graphscope.graph.GraphxEdgeManager;
@@ -45,17 +42,18 @@ public class GraphXProxy<VD, ED, MSG_T> {
     private MessageStore<MSG_T> inComingMessageStore, outgoingMessageStore;
     private EdgeContextImpl<VD, ED, MSG_T> edgeContext;
     private GraphXConf<VD, ED, MSG_T> conf;
-    private Communicator communicator;
     private GraphxEdgeManager<VD, ED, MSG_T> edgeManager;
     private DefaultMessageManager messageManager;
     private IFragment<Long, Long, VD, ED> graphxFragment; // different from c++ frag
     private MSG_T initialMessage;
 
-    public GraphXProxy(GraphXConf<VD, ED, MSG_T> conf, DefaultMessageManager messageManager,
-        Communicator communicator) {
+    public GraphXProxy(GraphXConf<VD, ED, MSG_T> conf, Function3<Long, VD, MSG_T, VD> vprog,
+        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> sendMsg,
+        Function2<MSG_T, MSG_T, MSG_T> mergeMsg) {
         this.conf = conf;
-        this.messageManager = messageManager;
-        this.communicator = communicator;
+        this.vprog = vprog;
+        this.sendMsg = sendMsg;
+        this.mergeMsg = mergeMsg;
         //create all objects here, but not initialized, initialize after main invoke and graph got.
         this.idManager = GraphXFactory.createIdManager(conf);
         this.vertexDataManager = GraphXFactory.createVertexDataManager(conf);
@@ -65,33 +63,29 @@ public class GraphXProxy<VD, ED, MSG_T> {
         this.edgeManager = GraphXFactory.createEdgeManager(conf, idManager, vertexDataManager);
     }
 
-    public void beforeApp(Function3<Long, VD, MSG_T, VD> vprog,
-        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> sendMsg,
-        Function2<MSG_T, MSG_T, MSG_T> mergeMsg, ArrowProjectedFragment<Long, Long, VD, ED> frag,
+    public void init(IFragment<Long, Long, VD, ED> fragment, DefaultMessageManager messageManager,
         MSG_T initialMessage) {
-        this.vprog = vprog;
-        this.sendMsg = sendMsg;
-        this.mergeMsg = mergeMsg;
-        this.graphxFragment = new ArrowProjectedAdaptor<Long, Long, VD, ED>(frag);
+        this.graphxFragment = fragment;
+        this.messageManager = messageManager;
         this.initialMessage = initialMessage;
 
         idManager.init(graphxFragment);
         vertexDataManager.init(graphxFragment);
         inComingMessageStore.init(graphxFragment, idManager, mergeMsg);
-        outgoingMessageStore.init(graphxFragment,idManager, mergeMsg);
+        outgoingMessageStore.init(graphxFragment, idManager, mergeMsg);
         edgeContext.init(outgoingMessageStore);
         edgeManager.init(graphxFragment);
     }
 
     public void compute() {
-
         Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
         long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
         long totalTime = -System.nanoTime();
         long t = -System.nanoTime();
         for (long lid = 0; lid < innerVerticesNum; ++lid) {
-            vertexDataManager.setVertexData(lid,vprog.apply(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid),
-                initialMessage));
+            vertexDataManager.setVertexData(lid,
+                vprog.apply(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid),
+                    initialMessage));
         }
 
         for (long lid = 0; lid < innerVerticesNum; ++lid) {
@@ -121,7 +115,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
             if (outerMsgReceived || inComingMessageStore.hasMessages()) {
                 for (long lid = 0; lid < innerVerticesNum; ++lid) {
                     if (inComingMessageStore.messageAvailable(lid)) {
-                        vertexDataManager.setVertexData(lid, vprog.apply(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid),
+                        vertexDataManager.setVertexData(lid, vprog.apply(idManager.lid2Oid(lid),
+                            vertexDataManager.getVertexData(lid),
                             inComingMessageStore.getMessage(lid)));
                     }
                 }
@@ -157,32 +152,34 @@ public class GraphXProxy<VD, ED, MSG_T> {
     }
 
     /**
-     * To receive message from grape, we need some wrappers.
-     * double -> DoubleMessage.
-     * long -> LongMessage
+     * To receive message from grape, we need some wrappers. double -> DoubleMessage. long ->
+     * LongMessage
+     *
      * @param receiveVertex vertex
      * @return true if message received.
      */
-    private boolean receiveMessage(Vertex<Long> receiveVertex){
+    private boolean receiveMessage(Vertex<Long> receiveVertex) {
         boolean msgReceived = false;
         //receive message
-        if (conf.getEdataClass().equals(Double.class) || conf.getEdataClass().equals(double.class)){
+        if (conf.getEdataClass().equals(Double.class) || conf.getEdataClass()
+            .equals(double.class)) {
             DoubleMsg msg = FFITypeFactoryhelper.newDoubleMsg();
             while (messageManager.getMessage(graphxFragment, receiveVertex, msg)) {
                 logger.info("get message: {}, {}", receiveVertex.GetValue(), msg.getData());
-                inComingMessageStore.addLidMessage(receiveVertex.GetValue(), (MSG_T) (Double) msg.getData());
+                inComingMessageStore.addLidMessage(receiveVertex.GetValue(),
+                    (MSG_T) (Double) msg.getData());
                 msgReceived = true;
             }
-        }
-        else if (conf.getEdataClass().equals(Long.class) || conf.getEdataClass().equals(long.class)){
+        } else if (conf.getEdataClass().equals(Long.class) || conf.getEdataClass()
+            .equals(long.class)) {
             LongMsg msg = FFITypeFactoryhelper.newLongMsg();
             while (messageManager.getMessage(graphxFragment, receiveVertex, msg)) {
                 logger.info("get message: {}, {}", receiveVertex.GetValue(), msg.getData());
-                inComingMessageStore.addLidMessage(receiveVertex.GetValue(), (MSG_T) (Long) msg.getData());
+                inComingMessageStore.addLidMessage(receiveVertex.GetValue(),
+                    (MSG_T) (Long) msg.getData());
                 msgReceived = true;
             }
-        }
-        else {
+        } else {
             logger.info("Not supported msg type");
         }
         return msgReceived;

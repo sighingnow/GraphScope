@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Executed on driver node, create several mpi processes.
  */
-public class MPIProcessLauncher {
+public class MPIProcessLauncher<VD,ED,MSG> {
 
     private static Logger logger = LoggerFactory.getLogger(MPIProcessLauncher.class.getName());
 
@@ -20,6 +20,9 @@ public class MPIProcessLauncher {
     private static String MPI_EXEC = "mpirun";
     private static String SHELL_SCRIPT;
     private String userClass;
+    private Class<? extends VD> vdClass;
+    private Class<? extends ED> edClass;
+    private Class<? extends MSG> msgClass;
 
     static {
         SPARK_HOME = System.getenv("SPARK_HOME");
@@ -44,7 +47,7 @@ public class MPIProcessLauncher {
     }
 
     public MPIProcessLauncher(String vertexFilePrefix, String edgeFilePrefix, String vprogPrefix,
-        String sendMsgPrefix, String mergeMsgPrefix, String userClass) {
+        String sendMsgPrefix, String mergeMsgPrefix, String userClass, Class<? extends VD> vdClass, Class<? extends ED> edClass, Class<? extends MSG> msgClass) {
         this.vertexFilePrefix = vertexFilePrefix;
         this.edgeFilePrefix = edgeFilePrefix;
         this.vprogPrefix = vprogPrefix;
@@ -53,6 +56,9 @@ public class MPIProcessLauncher {
         processBuilder = new ProcessBuilder();
         this.numWorker = getNumWorker();
         this.userClass = userClass;
+        this.vdClass = vdClass;
+        this.edClass = edClass;
+        this.msgClass = msgClass;
     }
 
     public void run() {
@@ -61,7 +67,7 @@ public class MPIProcessLauncher {
 //            SPARK_CONF_WORKERS, GAE_HOME + "/build/graphx_runner", "--mm_file_prefix",
 //            mmFilePrefix};
 //        String [] mpiCommand = {SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix,userClass};
-        String [] commands = {"/bin/bash", SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix,userClass};
+        String [] commands = {"/bin/bash", SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix, vprogPrefix, sendMsgPrefix, mergeMsgPrefix, userClass, clzToStr(vdClass), clzToStr(edClass), clzToStr(msgClass)};
         logger.info("Running command: " + String.join(" ", commands));
         processBuilder.command(commands);
         processBuilder.inheritIO();
@@ -89,6 +95,20 @@ public class MPIProcessLauncher {
             throw new IllegalStateException("empty file");
         }
         return numLines;
+    }
+
+    private String clzToStr(Class<?> clz){
+        if (clz.equals(Integer.class) || clz.equals(int.class)){
+            return "int";
+        }
+        else if(clz.equals(Long.class) || clz.equals(long.class)){
+            return "long";
+        }
+        else if (clz.equals(Double.class) || clz.equals(double.class)){
+            return "double";
+        }
+        throw new IllegalStateException("Unexpected clz : " + clz.getName());
+
     }
 
     private static boolean fileExists(String p) {

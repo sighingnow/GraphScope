@@ -19,6 +19,12 @@ then
     export GRAPHSCOPE_HOME=/opt/graphscope
 fi
 
+if [[ "$SPARK_HOME"x == x ]];
+then
+    echo "No SPARK_HOME found, using default /home/graphscope/spark/spark-3.2.1-bin-hadoop2.7"
+    export GRAPHSCOPE_HOME=/home/graphscope/spark/spark-3.2.1-bin-hadoop2.7
+fi
+
 # This env point to the directory where the output for llvm4jni run.sh on Grape-runtime.jar resides
 if [[ "${RUNTIME_LLVM4JNI_OUTPUT}"x != x ]];
 then
@@ -27,6 +33,7 @@ then
 else 
     class_path=${GRAPHSCOPE_HOME}/lib/grape-runtime-0.1-shaded.jar:
 fi
+class_path=${class_path}:${SPARK_HOME}/jars/
 
 export GRAPE_JVM_OPTS="-Dcom.alibaba.fastffi.rvBuffer=2147483648 -XX:+StartAttachListener -XX:+PreserveFramePointer \
 -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps \
