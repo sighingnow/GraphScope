@@ -144,6 +144,7 @@ object Pregel extends Logging {
     val vdClass = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
     val edClass = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
     val msgClass = classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]
+    log.info(s"vd class: ${vdClass} ed : ${edClass} msg ${msgClass}")
 
     val verticesRes = graph.vertices.mapPartitionsWithIndex((pid, iterator) => {
       val loggerFileName = V_FILE_LOG_PREFIX + pid

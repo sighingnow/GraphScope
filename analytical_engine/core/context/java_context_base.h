@@ -292,7 +292,7 @@ class JavaContextBase : public grape::ContextBase {
             if (env->ExceptionCheck()) {
               env->ExceptionDescribe();
               env->ExceptionClear();
-              LOG(ERROR) << "Exception in context Init";
+              LOG(ERROR) << "Exception in set Class loader";
               return;
             }
             VLOG(1) << "Successfully set class loader";

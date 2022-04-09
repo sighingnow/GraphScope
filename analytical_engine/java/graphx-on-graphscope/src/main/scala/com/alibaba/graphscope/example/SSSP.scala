@@ -14,15 +14,15 @@ object SSSP {
 
     // $example on$
     // A graph with edge attributes containing distances
-    val graph: Graph[Long, Double] = {
+    val graph: Graph[Long, Long] = {
     GraphLoader.edgeListFile(sc, "/home/graphscope/data/followers.txt", false, 2)
-      .mapEdges(e => e.attr.toDouble).mapVertices((vid, _) => vid)
+      .mapEdges(e => e.attr.toLong).mapVertices((vid, _) => vid)
     }
     val sourceId: VertexId = 2 // The ultimate source
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, _) =>
-      if (id == sourceId) 0.0 else Double.PositiveInfinity)
-    val sssp = initialGraph.pregel(Double.PositiveInfinity)(
+      if (id == sourceId) 0 else Long.MaxValue)
+    val sssp = initialGraph.pregel(Long.MaxValue)(
       (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
         if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
