@@ -351,8 +351,7 @@ class JavaLoaderInvoker {
       edst_total_bytes += edsts[i].size();
       edata_total_bytes += edatas[i].size();
     }
-    CHECK((esrc_total_length == edst_total_length) &&
-          (edst_total_length == edata_total_length));
+
     VLOG(10) << "worker " << worker_id_ << " Building edge table "
              << " esrc len: [" << esrc_total_length << "] esrc total bytes: ["
              << esrc_total_bytes << "] edst len: [" << edst_total_length
@@ -360,6 +359,8 @@ class JavaLoaderInvoker {
              << edata_total_length << "] edata total bytes: ["
              << edata_total_bytes << "]";
 
+    CHECK((esrc_total_length == edst_total_length) &&
+          (edst_total_length == edata_total_length));
     double edgeTableBuildingTime = -grape::GetCurrentTime();
 
     std::shared_ptr<arrow::Array> esrc_array, edst_array, edata_array;
@@ -619,8 +620,8 @@ class JavaLoaderInvoker {
     std::vector<char>& dst_esrc0 = esrcs[0];
     std::vector<char>& dst_edst0 = edsts[0];
     std::vector<char>& dst_edata0 = edatas[0];
-    std::vector<int>& dst_esrc_offset0 = oid_offsets[0];
-    std::vector<int>& dst_edst_offset0 = vdata_offsets[0];
+    std::vector<int>& dst_esrc_offset0 = esrc_offsets[0];
+    std::vector<int>& dst_edst_offset0 = edst_offsets[0];
     std::vector<int>& dst_edata_offset0 = edata_offsets[0];
     // read acutal data
     // when we start put data in vector<char>, there may be already bytes there.
@@ -628,9 +629,9 @@ class JavaLoaderInvoker {
     size_t dst_esrc_previous_size = dst_esrc0.size();
     size_t dst_edst_previous_size = dst_edst0.size();
     size_t dst_edata_previous_size = dst_edata0.size();
-    esrcs[0].resize(dst_esrc_previous_size + 8 * edges_num);
-    edsts[0].resize(dst_edst_previous_size + 8 * edges_num);
-    edsts[0].resize(dst_edata_previous_size + (bytes_gap - 16) * edges_num);
+    dst_esrc0.resize(dst_esrc_previous_size + 8 * edges_num);
+    dst_edst0.resize(dst_edst_previous_size + 8 * edges_num);
+    dst_edata0.resize(dst_edata_previous_size + (bytes_gap - 16) * edges_num);
 
     VLOG(1) << "bytes_gap: " << bytes_gap
             << "dst esrc prev size: " << dst_esrc_previous_size
