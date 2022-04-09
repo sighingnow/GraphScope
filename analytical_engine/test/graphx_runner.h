@@ -53,7 +53,7 @@ static constexpr const char* EDGE_MM_FILE_PREFIX = "edge_mm_file_prefix";
 using FragmentType =
     vineyard::ArrowFragment<int64_t, vineyard::property_graph_types::VID_TYPE>;
 using ProjectedFragmentType =
-    ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
+    ArrowProjectedFragment<int64_t, uint64_t, double, double>;
 
 using FragmentLoaderType =
     ArrowFragmentLoader<int64_t, vineyard::property_graph_types::VID_TYPE>;
@@ -175,7 +175,7 @@ void CreateAndQuery(std::string params) {
   VLOG(1) << "inner vertices: " << fragment->GetInnerVerticesNum(0);
 
   std::string frag_name =
-      "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>";
+      "gs::ArrowProjectedFragment<int64_t,uint64_t,double,double>";
   pt.put("frag_name", frag_name);
 
   if (getenv("USER_JAR_PATH")) {

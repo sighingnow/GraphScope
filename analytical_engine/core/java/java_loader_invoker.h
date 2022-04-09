@@ -251,50 +251,48 @@ class JavaLoaderInvoker {
     int cnt = 0;
     while (partition_id < max_partition_id) {
       std::string file_path = location_prefix + std::to_string(partition_id);
-//      size_t file_size = get_file_size(file_path.c_str());
-//      if (file_size > 0) {
-        //VLOG(1) << "opening file " << file_path << ", size " << file_size;
-        VLOG(1) << "reading from " << file_path;
-        int file_size = 500 * 1024;
-        int fd =
-            shm_open(file_path.c_str(), O_RDWR, S_IRUSR | S_IWUSR); //no O_CREAT
-        if (fd < 0) {
-          LOG(ERROR) << "Not exists " << file_path;
-          partition_id += 1;
-          continue;
-        }
+      //      size_t file_size = get_file_size(file_path.c_str());
+      //      if (file_size > 0) {
+      // VLOG(1) << "opening file " << file_path << ", size " << file_size;
+      VLOG(1) << "reading from " << file_path;
+      int file_size = 500 * 1024;
+      int fd =
+          shm_open(file_path.c_str(), O_RDWR, S_IRUSR | S_IWUSR);  // no O_CREAT
+      if (fd < 0) {
+        LOG(ERROR) << "Not exists " << file_path;
+        partition_id += 1;
+        continue;
+      }
 
-        void* mmapped_data =
-            mmap(NULL, file_size, PROT_READ, MAP_SHARED, fd, 0);
-        if (mmapped_data == MAP_FAILED) {
-          close(fd);
-          VLOG(1) << "Error mmapping the file " << file_path;
-          return;
-        }
+      void* mmapped_data = mmap(NULL, file_size, PROT_READ, MAP_SHARED, fd, 0);
+      if (mmapped_data == MAP_FAILED) {
+        close(fd);
+        VLOG(1) << "Error mmapping the file " << file_path;
+        return;
+      }
 
-        cnt += 1;
-        // first 8 bytes are size in int64_t;
-        int64_t data_len = *reinterpret_cast<int64_t*>(mmapped_data);
-        CHECK_GT(data_len, 0);
-        VLOG(1) << "Reading first 8 bytes, indicating total len: " << data_len;
-        char* data_start = (reinterpret_cast<char*>(mmapped_data) + 8);
+      cnt += 1;
+      // first 8 bytes are size in int64_t;
+      int64_t data_len = *reinterpret_cast<int64_t*>(mmapped_data);
+      CHECK_GT(data_len, 0);
+      VLOG(1) << "Reading first 8 bytes, indicating total len: " << data_len;
+      char* data_start = (reinterpret_cast<char*>(mmapped_data) + 8);
 
-        if (forVertex) {
-          int numVertices =
-              digestVerticesFromMapedFile(data_start, data_len, partition_id);
-          VLOG(1) << "Finish reading mmaped v file, got " << numVertices
-                  << " vertices";
-        } else {
-          int numEdges =
-              digestEdgesFromMapedFile(data_start, data_len, partition_id);
-          VLOG(1) << "Finish reading mmaped e file, got " << numEdges
-                  << " edges";
-        }
+      if (forVertex) {
+        int numVertices =
+            digestVerticesFromMapedFile(data_start, data_len, partition_id);
+        VLOG(1) << "Finish reading mmaped v file, got " << numVertices
+                << " vertices";
+      } else {
+        int numEdges =
+            digestEdgesFromMapedFile(data_start, data_len, partition_id);
+        VLOG(1) << "Finish reading mmaped e file, got " << numEdges << " edges";
+      }
 
-//      } else {
-//        VLOG(1) << "file: " << file_path << "size " << file_size
-//                << " doesn't exist";
-//      }
+      //      } else {
+      //        VLOG(1) << "file: " << file_path << "size " << file_size
+      //                << " doesn't exist";
+      //      }
       partition_id += 1;
     }
     if (forVertex) {
@@ -491,7 +489,7 @@ class JavaLoaderInvoker {
     for (auto index = 0; index < num_slot; index++) {
       T vdata = *reinterpret_cast<T*>(src_ptr);
       std::memcpy(dst_ptr, &vdata, sizeof(vdata));
-      VLOG(1) << "Reading vdata: " << vdata << " sizeof " << sizeof(vdata);
+      // VLOG(1) << "Reading vdata: " << vdata << " sizeof " << sizeof(vdata);
       dst_ptr += sizeof(vdata);
       src_ptr += src_ptr_step_size;  // move 1 * 8 bytes
       dst_offset.push_back(static_cast<int>(sizeof(vdata)));
@@ -563,7 +561,7 @@ class JavaLoaderInvoker {
       for (auto i = 0; i < total_vertices; ++i) {
         int64_t oid = *reinterpret_cast<int64_t*>(src_oid_ptr);
         std::memcpy(dst_oids_ptr, &oid, sizeof(oid));
-        VLOG(1) << "Reading oid: " << oid << " sizeof " << sizeof(oid);
+        // VLOG(1) << "Reading oid: " << oid << " sizeof " << sizeof(oid);
         dst_oids_ptr += sizeof(oid);
         src_oid_ptr += bytes_gap;  // move 1 * 8 bytes
         dst_oids_offsets0.push_back(8);
@@ -651,8 +649,8 @@ class JavaLoaderInvoker {
         std::memcpy(dst_esrc_oid_ptr, &src_esrc_oid, sizeof(src_esrc_oid));
         std::memcpy(dst_edst_oid_ptr, &src_edst_oid, sizeof(src_edst_oid));
 
-        VLOG(1) << "Reading edge [" << src_esrc_oid << "->" << src_edst_oid
-                << "] size " << sizeof(src_esrc_oid);
+        // VLOG(1) << "Reading edge [" << src_esrc_oid << "->" << src_edst_oid
+        //         << "] size " << sizeof(src_esrc_oid);
         src_esrc_oid_ptr += bytes_gap;
         src_edst_oid_ptr += bytes_gap;
         dst_esrc_oid_ptr += 8;

@@ -431,12 +431,12 @@ import com.alibaba.fastffi.FFIGenBatch;
                             parameterTypes = {"FRAG_T","com.alibaba.graphscope.ds.Vertex", "MSG_T"},
                             templates = {
                                 @CXXTemplate(
-                                    cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
-                                            LONG_MSG
+                                    cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,double>",
+                                            DOUBLE_MSG
                                     },
                                     java = {
-                                            "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
-                                            "com.alibaba.graphscope.parallel.message.LongMsg"
+                                            "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Double>",
+                                            "com.alibaba.graphscope.parallel.message.DoubleMsg"
                                     }
                                 )
                             }
@@ -447,12 +447,12 @@ import com.alibaba.fastffi.FFIGenBatch;
                             parameterTypes = {"FRAG_T","com.alibaba.graphscope.ds.Vertex", "MSG_T"},
                             templates = {
                                 @CXXTemplate(
-                                    cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
-                                        LONG_MSG
+                                    cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,double>",
+                                        DOUBLE_MSG
                                     },
                                     java = {
-                                        "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
-                                        "com.alibaba.graphscope.parallel.message.LongMsg"
+                                        "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Double>",
+                                        "com.alibaba.graphscope.parallel.message.DoubleMsg"
                                     }
                                 )
                             }

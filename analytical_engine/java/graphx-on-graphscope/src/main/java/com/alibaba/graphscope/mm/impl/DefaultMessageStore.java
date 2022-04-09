@@ -62,15 +62,20 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
 
     @Override
     public void addLidMessage(long lid, MSG_T msg) {
-        flags.set((int) lid);
-        values[(int) lid] = msg;
+        int intLid = (int) lid;
+        if (flags.get(intLid)) {
+            values[intLid] = mergeMsg.apply(values[intLid], msg);
+        }
+        else {
+            flags.set(intLid);
+            values[intLid] = msg;
+        }
     }
 
     @Override
     public void addOidMessage(long oid, MSG_T msg) {
         long lid = Math.toIntExact(vertexIdManager.oid2Lid(oid));
-        flags.set((int)lid);
-        values[(int)lid] = msg;
+        addLidMessage(lid, msg);
     }
 
     @Override
