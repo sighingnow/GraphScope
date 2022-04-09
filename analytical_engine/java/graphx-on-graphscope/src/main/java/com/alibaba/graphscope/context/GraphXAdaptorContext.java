@@ -56,7 +56,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     public void Init(IFragment<Long, Long, VDATA_T, EDATA_T> frag,
         DefaultMessageManager messageManager, JSONObject jsonObject) {
         //TODO: get vdata class from conf
-        createFFIContext(frag, (Class<? extends VDATA_T>) Double.class, false);
+        createFFIContext(frag, (Class<? extends VDATA_T>) Long.class, false);
 
         if (jsonObject.containsKey(USER_CLASS) && !jsonObject.getString(USER_CLASS).isEmpty()) {
             logger.info("Parse user app class {} from json str", jsonObject.getString(USER_CLASS));

@@ -53,7 +53,7 @@ static constexpr const char* EDGE_MM_FILE_PREFIX = "edge_mm_file_prefix";
 using FragmentType =
     vineyard::ArrowFragment<int64_t, vineyard::property_graph_types::VID_TYPE>;
 using ProjectedFragmentType =
-    ArrowProjectedFragment<int64_t, uint64_t, double, double>;
+    ArrowProjectedFragment<int64_t, uint64_t, long, long>;
 
 using FragmentLoaderType =
     ArrowFragmentLoader<int64_t, vineyard::property_graph_types::VID_TYPE>;
