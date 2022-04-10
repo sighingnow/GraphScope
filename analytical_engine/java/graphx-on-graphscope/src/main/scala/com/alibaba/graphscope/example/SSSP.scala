@@ -18,7 +18,7 @@ object SSSP {
     GraphLoader.edgeListFile(sc, "/home/graphscope/data/gstest/p2p-31.e", false, 2)
       .mapEdges(e => e.attr.toDouble).mapVertices((vid, _) => vid)
     }
-    val sourceId: VertexId = 2 // The ultimate source
+    val sourceId: VertexId = 6 // The ultimate source
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, _) =>
       if (id == sourceId) 0.0 else Double.PositiveInfinity)
