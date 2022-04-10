@@ -146,47 +146,56 @@ object Pregel extends Logging {
     val msgClass = classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]
     log.info(s"vd class: ${vdClass} ed : ${edClass} msg ${msgClass}")
 
-    val verticesRes = graph.vertices.mapPartitionsWithIndex((pid, iterator) => {
-      val loggerFileName = V_FILE_LOG_PREFIX + pid
-      val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
-      val strName = s"${MMAP_V_FILE_PREFIX}${pid}"
-      val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
-      bufferedWriter.write(buffer.toString);
-      bufferedWriter.newLine();
-      buffer.position(8) // reserve place to write total length
-      //To put vd and ed in the header.
-      putHeader(buffer,vdClass, edClass, msgClass, bufferedWriter)
-      bufferedWriter.write("successfully put header + \n")
-      putVertices(buffer, iterator, vdClass, bufferedWriter)
-      bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
-      buffer.writeLong(0, buffer.position() - 8)
-      //      iterator
-      bufferedWriter.close()
-      iterator
-    },
-      true
-    )
+    val verticesRes  = graph.vertices.partitionsRDD.mapPartitionsWithIndex( (pid, iterator) => {
+      var cnt = 0
+      while (iterator.hasNext){
+        val partition = iterator.next();
 
-    val edgesRes = graph.edges.mapPartitionsWithIndex((pid, iterator) => {
-      val loggerFileName = E_FILE_LOG_PREFIX + pid
-      val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
-      val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
-      val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
-      bufferedWriter.write(buffer.toString);
-      bufferedWriter.newLine();
-      buffer.position(8) // reserve place to write total length
-      //To put vd and ed in the header.
-      //      putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
-      //      bufferedWriter.write("successfully put header + \n")
-      putEdges(buffer, iterator, edClass, bufferedWriter)
-      bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
-      buffer.writeLong(0, buffer.position() - 8)
-      //      iterator
-      bufferedWriter.close()
+        val loggerFileName = V_FILE_LOG_PREFIX + pid
+        val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
+        val strName = s"${MMAP_V_FILE_PREFIX}${pid}"
+        val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
+        bufferedWriter.write(buffer.toString);
+        bufferedWriter.newLine();
+        bufferedWriter.write(s"for iterator in ${pid}, work on ${cnt} vertex partitions")
+        buffer.position(8) // reserve place to write total length
+        //To put vd and ed in the header.
+        putHeader(buffer,vdClass, edClass, msgClass, bufferedWriter)
+        bufferedWriter.write("successfully put header + \n")
+        putVertices(buffer, partition.iterator, vdClass, bufferedWriter)
+        bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
+        buffer.writeLong(0, buffer.position() - 8)
+        //      iterator
+        bufferedWriter.close()
+        cnt += 1
+      }
+
       iterator
-    },
-      true
-    )
+    }, true)
+    log.info(" vertices partition {}, partitions rdd partitions {}",graph.vertices.getNumPartitions, graph.vertices.partitionsRDD.getNumPartitions)
+
+    val edgesRes = graph.edges.partitionsRDD.mapPartitions(_.flatMap {
+      case (pid, edgePartition) => {
+        val loggerFileName = E_FILE_LOG_PREFIX + pid
+        val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
+        val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
+        val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
+        bufferedWriter.write(buffer.toString);
+        bufferedWriter.newLine();
+        buffer.position(8) // reserve place to write total length
+        //To put vd and ed in the header.
+        //      putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
+        //      bufferedWriter.write("successfully put header + \n")
+        putEdges(buffer, edgePartition.iterator, edClass, bufferedWriter)
+        bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
+        buffer.writeLong(0, buffer.position() - 8)
+        //      iterator
+        bufferedWriter.close()
+        Iterator.empty
+      }
+    }, true)
+
+      //graph.edges.mapPartitionsWithIndex
 
 //    val vprogRes = graph.vertices.mapPartitionsWithIndex((index, iterator) => {
 //
