@@ -191,7 +191,7 @@ object Pregel extends Logging {
         buffer.writeLong(0, buffer.position() - 8)
         //      iterator
         bufferedWriter.close()
-        Iterator.empty
+        Iterator(1)
       }
     }, true)
 

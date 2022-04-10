@@ -26,6 +26,7 @@ public class VertexDataManagerImpl<VD> implements VertexDataManager<VD> {
         for (long lid = 0; lid < values.length; ++lid){
             vertex.SetValue(lid);
             values[(int) lid] = fragment.getData(vertex);
+            logger.info("vdata lid [{}] value [{}]", lid, values[(int) lid]);
         }
         logger.info("Create Vertex Data Manager: " + fragment.getVerticesNum());
     }
