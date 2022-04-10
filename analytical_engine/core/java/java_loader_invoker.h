@@ -33,6 +33,7 @@
 #include "arrow/array/builder_binary.h"
 #include "arrow/builder.h"
 
+#include "grape/communication/communicator.h"
 #include "grape/grape.h"
 #include "grape/util.h"
 
@@ -187,11 +188,14 @@ class JavaLoaderInvoker {
 
   ~JavaLoaderInvoker() { VLOG(1) << "Destructing java loader invoker"; }
 
-  void SetWorkerInfo(int worker_id, int worker_num) {
+  void SetWorkerInfo(int worker_id, int worker_num,
+                     const grape::CommSpec& comm_spec) {
     VLOG(2) << "JavaLoaderInvoekr set worker Id, num " << worker_id << ", "
             << worker_num;
     worker_id_ = worker_id;
     worker_num_ = worker_num;
+    comm_spec_ = comm_spec;
+    communicator.InitCommunicator(comm_spec.comm());
   }
   // load the class and call init method
   // mode = {graphx, giraph}
@@ -245,7 +249,8 @@ class JavaLoaderInvoker {
   }
 
   void readDataFromMMapedFile(const std::string& location_prefix,
-                              bool forVertex, int max_partition_id, int mapped_size) {
+                              bool forVertex, int max_partition_id,
+                              int mapped_size) {
     int partition_id = 0;
     // FIXME
     int cnt = 0;
@@ -263,7 +268,8 @@ class JavaLoaderInvoker {
         continue;
       }
 
-      void* mmapped_data = mmap(NULL, mapped_size, PROT_READ, MAP_SHARED, fd, 0);
+      void* mmapped_data =
+          mmap(NULL, mapped_size, PROT_READ, MAP_SHARED, fd, 0);
       if (mmapped_data == MAP_FAILED) {
         close(fd);
         VLOG(1) << "Error mmapping the file " << file_path;
@@ -307,8 +313,29 @@ class JavaLoaderInvoker {
 
   // Work for graphx graph loading, the input is the prefix for memory mapped
   // file.
-  void load_vertices(const std::string& location_prefix, int max_parition_id, int mapped_size) {
+  void load_vertices(const std::string& location_prefix, int max_parition_id,
+                     int mapped_size) {
     readDataFromMMapedFile(location_prefix, true, max_parition_id, mapped_size);
+    // it is possible that on some nodes, there are no graphx data. We broad
+    // cast type int, to allow subsequent move.
+    MPI_Barrier(comm_spec_.comm());
+    int prev_oid_type, prev_vdata_type, prev_edata_type, msg_type;
+    prev_oid_type = oid_type;
+    prev_vdata_type = vdata_type;
+    prev_edata_type = edata_type;
+    prev_msg_type = msg_type;
+    communicator.Max(prev_oid_type, oid_type);
+    communicator.Max(prev_vdata_type, vdata_type);
+    communicator.Max(prev_edata_type, edata_type);
+    communicator.Max(prev_msg_type, msg_type);
+    VLOG(1) << "previous oid: " << prev_oid_type
+            << ", after aggre: " << oid_type;
+    VLOG(1) << "previous edata: " << prev_edata_type
+            << ", after aggre: " << edata_type;
+    VLOG(1) << "previous vdata: " << prev_vdata_type
+            << ", after aggre: " << vdata_type;
+    VLOG(1) << "previous msg: " << prev_msg_type
+            << ", after aggre: " << msg_type;
   }
 
   // load vertices must be called before load edge, since we assume giraph type
@@ -329,8 +356,10 @@ class JavaLoaderInvoker {
     callJavaLoaderEdges(edge_location_prune.c_str(), eformatter_class.c_str());
   }
 
-  void load_edges(const std::string& location_prefix, int max_parition_id, int mapped_size) {
-    readDataFromMMapedFile(location_prefix, false, max_parition_id, mapped_size);
+  void load_edges(const std::string& location_prefix, int max_parition_id,
+                  int mapped_size) {
+    readDataFromMMapedFile(location_prefix, false, max_parition_id,
+                           mapped_size);
   }
 
   std::shared_ptr<arrow::Table> get_edge_table() {
@@ -902,6 +931,9 @@ class JavaLoaderInvoker {
   jobject esrc_offsets_jobj;
   jobject edst_offsets_jobj;
   jobject edata_offsets_jobj;
+
+  grape::CommSpec comm_spec_;
+  grape::Communicator communicator;
 };
 };  // namespace gs
 

@@ -107,7 +107,7 @@ class ArrowFragmentLoader {
         generate_eid_(graph_info->generate_eid) {
 #ifdef ENABLE_JAVA_SDK
     java_loader_invoker_.SetWorkerInfo(comm_spec_.worker_id(),
-                                       comm_spec_.worker_num());
+                                       comm_spec_.worker_num(), comm_spec_);
     VLOG(1) << "workerid: " << comm_spec_.worker_id()
             << ", worker num: " << comm_spec_.worker_num();
     // For java loader invoker, there can be two cases
@@ -488,18 +488,21 @@ class ArrowFragmentLoader {
   }
   boost::leaf::result<std::shared_ptr<arrow::Table>> readTableFromGraphx(
       bool load_vertex, const std::string& loc, int index, int total_parts) {
-    //splite location for max_parition_id and mapped_size;
+    // splite location for max_parition_id and mapped_size;
 
     size_t first_occur = loc.find("&");
     size_t second_occur = loc.find("&", first_occur + 1);
-    if (first_occur == std::string::npos || second_occur == std::string::npos){
-      LOG(ERROR) << "No & found in graphx location string" << first_occur << ", " << second_occur;
+    if (first_occur == std::string::npos || second_occur == std::string::npos) {
+      LOG(ERROR) << "No & found in graphx location string" << first_occur
+                 << ", " << second_occur;
       return nullptr;
     }
     std::string prefix = loc.substr(0, first_occur);
     int max_partition_id = std::stoi(loc.substr(first_occur + 1, second_occur));
-    int mapped_size = std::stoi(loc.substr(second_occur + 1, std::string::npos));
-    VLOG(1) << "parsed: " << prefix << ", " << max_partition_id << ", " << mapped_size;
+    int mapped_size =
+        std::stoi(loc.substr(second_occur + 1, std::string::npos));
+    VLOG(1) << "parsed: " << prefix << ", " << max_partition_id << ", "
+            << mapped_size;
     if (load_vertex) {
       // For graphx loading, the data filling is done from java side, before
       // constructFragment is called.
