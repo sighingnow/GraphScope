@@ -77,11 +77,9 @@ public class GraphXProxy<VD, ED, MSG_T> {
         edgeManager.init(graphxFragment);
     }
 
-    public void compute() {
+    public void PEval() {
         Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
         long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
-        long totalTime = -System.nanoTime();
-        long t = -System.nanoTime();
         for (long lid = 0; lid < innerVerticesNum; ++lid) {
             vertexDataManager.setVertexData(lid,
                 vprog.apply(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid),
@@ -96,55 +94,38 @@ public class GraphXProxy<VD, ED, MSG_T> {
         outgoingMessageStore.flushMessage(messageManager);
         //messages to self are cached locally.
         outgoingMessageStore.swap(inComingMessageStore);
+    }
 
-        t += System.nanoTime();
-        logger.info("PEval Finished: [{}]", t / 10e9);
-        //IN default_worker.h, Already enter PEval,
-        messageManager.FinishARound();
-
+    public void IncEval() {
         Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
+        boolean outerMsgReceived = receiveMessage(receiveVertex);
+        long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
 
-        int round = 1;
-        while (true) {
-            messageManager.StartARound();
-            t = -System.nanoTime();
-
-            boolean outerMsgReceived = receiveMessage(receiveVertex);
-
-            outgoingMessageStore.clear();
-            if (outerMsgReceived || inComingMessageStore.hasMessages()) {
-                for (long lid = 0; lid < innerVerticesNum; ++lid) {
-                    if (inComingMessageStore.messageAvailable(lid)) {
-                        vertexDataManager.setVertexData(lid, vprog.apply(idManager.lid2Oid(lid),
-                            vertexDataManager.getVertexData(lid),
-                            inComingMessageStore.getMessage(lid)));
-                    }
+        outgoingMessageStore.clear();
+        if (outerMsgReceived || inComingMessageStore.hasMessages()) {
+            for (long lid = 0; lid < innerVerticesNum; ++lid) {
+                if (inComingMessageStore.messageAvailable(lid)) {
+                    vertexDataManager.setVertexData(lid, vprog.apply(idManager.lid2Oid(lid),
+                        vertexDataManager.getVertexData(lid),
+                        inComingMessageStore.getMessage(lid)));
                 }
-
-                //after running vprog, we now send msg and merge msg
-                for (long lid = 0; lid < innerVerticesNum; ++lid) {
-                    if (inComingMessageStore.messageAvailable(lid)) {
-                        edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
-                            vertexDataManager.getVertexData(lid));
-                        edgeManager.iterateOnEdges(lid, edgeContext, sendMsg, outgoingMessageStore);
-                    }
-                }
-                inComingMessageStore.clear();
-                //FIXME: flush message
-                outgoingMessageStore.flushMessage(messageManager);
-                outgoingMessageStore.swap(inComingMessageStore);
-
-                //after send message, flush message in message manager.
-                t += System.nanoTime();
-                logger.info("IncEval [{}], query time [{}]:", round, t / 10e9);
-                messageManager.FinishARound();
-            } else {
-                logger.info("Frag {} No message received in round {}", graphxFragment.fid(), round);
-                break;
             }
+
+            //after running vprog, we now send msg and merge msg
+            for (long lid = 0; lid < innerVerticesNum; ++lid) {
+                if (inComingMessageStore.messageAvailable(lid)) {
+                    edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
+                        vertexDataManager.getVertexData(lid));
+                    edgeManager.iterateOnEdges(lid, edgeContext, sendMsg, outgoingMessageStore);
+                }
+            }
+            inComingMessageStore.clear();
+            //FIXME: flush message
+            outgoingMessageStore.flushMessage(messageManager);
+            outgoingMessageStore.swap(inComingMessageStore);
+        } else {
+            logger.info("Frag {} No message received", graphxFragment.fid());
         }
-        totalTime += System.nanoTime();
-        logger.info("Total time: [{}]", totalTime / 10e9);
     }
 
     public void postApp() {
