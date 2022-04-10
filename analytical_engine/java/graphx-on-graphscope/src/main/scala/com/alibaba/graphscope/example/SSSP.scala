@@ -15,7 +15,7 @@ object SSSP {
     // $example on$
     // A graph with edge attributes containing distances
     val graph: Graph[Long, Double] = {
-    GraphLoader.edgeListFile(sc, "/home/graphscope/data/gstest/p2p-31.e", false, 2)
+    GraphLoader.edgeListFile(sc, "/home/graphscope/data/gstest/p2p-31.e", false, 20)
       .mapEdges(e => e.attr.toDouble).mapVertices((vid, _) => vid)
     }
     val sourceId: VertexId = 2 // The ultimate source

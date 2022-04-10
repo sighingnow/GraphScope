@@ -319,7 +319,7 @@ class JavaLoaderInvoker {
     // it is possible that on some nodes, there are no graphx data. We broad
     // cast type int, to allow subsequent move.
     MPI_Barrier(comm_spec_.comm());
-    int prev_oid_type, prev_vdata_type, prev_edata_type, msg_type;
+    int prev_oid_type, prev_vdata_type, prev_edata_type, prev_msg_type;
     prev_oid_type = oid_type;
     prev_vdata_type = vdata_type;
     prev_edata_type = edata_type;
