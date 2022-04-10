@@ -21,13 +21,13 @@ public class VertexDataManagerImpl<VD> implements VertexDataManager<VD> {
 
     @Override
     public void init(IFragment<Long, Long, VD, ?> fragment) {
-        values = (VD[]) new Object[(int)fragment.getInnerVerticesNum()];
+        values = (VD[]) new Object[Math.toIntExact((Long) fragment.getVerticesNum())];
         Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
         for (long lid = 0; lid < values.length; ++lid){
             vertex.SetValue(lid);
             values[(int) lid] = fragment.getData(vertex);
         }
-        logger.info("Create Vertex Data Manager: " + fragment.getInnerVerticesNum());
+        logger.info("Create Vertex Data Manager: " + fragment.getVerticesNum());
     }
 
     @Override
