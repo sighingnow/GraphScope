@@ -60,7 +60,7 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
             while (iterator.hasNext()){
                 Tuple2<Long,MSG_T> tuple2 = iterator.next();
                 //logger.info("cur tuple: {}", tuple2);
-                //logger.info("src lid {}(oid {}) send {} to {} when visiting edge ({},{})",srcLid, idManager.lid2Oid(srcLid), tuple2._2(), tuple2._1(), edge.dstOid, edge.value);
+                logger.info("src lid {}(oid {}) send {} to {} when visiting edge ({},{})",srcLid, idManager.lid2Oid(srcLid), tuple2._2(), tuple2._1(), edge.dstOid, edge.value);
                 outMessageStore.addOidMessage(tuple2._1(), tuple2._2());
             }
         }

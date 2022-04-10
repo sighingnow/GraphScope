@@ -74,6 +74,7 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
 
     @Override
     public void addOidMessage(long oid, MSG_T msg) {
+        logger.info("worker[{}] send msg to oid {}", fragment.fid(), oid);
         long lid = Math.toIntExact(vertexIdManager.oid2Lid(oid));
         addLidMessage(lid, msg);
     }

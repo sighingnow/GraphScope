@@ -24,7 +24,7 @@ public class GraphXAdaptor<VDATA_T, EDATA_T> extends Communicator implements
         GraphXProxy proxy = ctx.getGraphXProxy();
         proxy.init(graph, messageManager, ctx.getInitialMsg());//fix initial msg
         proxy.PEval();
-	 messageManager.ForceContinue();
+        messageManager.ForceContinue();
     }
 
     @Override

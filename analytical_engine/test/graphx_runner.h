@@ -181,7 +181,7 @@ void CreateAndQuery(std::string params) {
            << "v label num: " << fragment->vertex_label_num()
            << "e label num: " << fragment->edge_label_num()
            << "total v num: " << fragment->GetTotalVerticesNum();
-  VLOG(1) << "inner vertices: " << fragment->GetInnerVerticesNum(0);
+  VLOG(1) << "inner vertices: " << fragment->GetInnerVerticesNum(0) << "outer vertices: " <<fragment->GetOuterVerticesNum(0);
 
   std::string frag_name =
       "gs::ArrowProjectedFragment<int64_t,uint64_t,double,double>";
