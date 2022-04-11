@@ -73,6 +73,7 @@ public class MPIProcessLauncher<VD, ED, MSG> {
 //            SPARK_CONF_WORKERS, GAE_HOME + "/build/graphx_runner", "--mm_file_prefix",
 //            mmFilePrefix};
 //        String [] mpiCommand = {SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix,userClass};
+        long startTime = -System.nanoTime();
         String[] commands = {"/bin/bash", SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix,
             vprogPrefix, sendMsgPrefix, mergeMsgPrefix, userClass, clzToStr(vdClass),
             clzToStr(edClass), clzToStr(msgClass), initialMsg.toString(), Integer.toString(maxPartitionId), Integer.toString(mappedSize)};
@@ -92,6 +93,8 @@ public class MPIProcessLauncher<VD, ED, MSG> {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        long endTime = System.nanoTime() - startTime;
+        logger.info("Total time spend on running mpi processes : {}ms", (endTime - startTime) / 1000000);
     }
 
     private int getNumWorker() {

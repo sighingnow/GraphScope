@@ -63,7 +63,7 @@ import scala.reflect.{ClassTag, classTag}
  *
  */
 object Pregel extends Logging {
-  val MAPPED_SIZE = 50 * 1024 * 1024; //500 KB.
+  val MAPPED_SIZE = 8 * 1024 * 1024 * 1024; //8 GB.
   var comm: Communicator = null
   var messageManager: DefaultMessageManager = null
   val MMAP_FILE_PREFIX = "/graphx-"
@@ -146,6 +146,7 @@ object Pregel extends Logging {
     val msgClass = classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]
     log.info(s"vd class: ${vdClass} ed : ${edClass} msg ${msgClass}")
 
+    val startTime = System.nanoTime();
     val verticesRes  = graph.vertices.partitionsRDD.mapPartitionsWithIndex( (pid, iterator) => {
       var cnt = 0
       while (iterator.hasNext){
@@ -208,6 +209,8 @@ object Pregel extends Logging {
     verticesRes.count() //force running
     edgesRes.count()
 //    vprogRes.count()
+    val endTime = System.nanoTime();
+    log.info(s"Time send on memory mapping and serialization: " + (startTime - endTime) / 1000000)
 
     log.info(s"after writing to memory mapped file, launch mpi processes ${verticesRes}, ${edgesRes}")
 
@@ -246,8 +249,8 @@ object Pregel extends Logging {
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(vid)
         buffer.writeLong(vdata.asInstanceOf[java.lang.Long])
-        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
-        writer.newLine()
+//        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
+//        writer.newLine()
       })
     }
     else if (vdClass.equals(classOf[Long])) {
@@ -257,8 +260,8 @@ object Pregel extends Logging {
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(vid)
         buffer.writeLong(vdata.asInstanceOf[Long])
-        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
-        writer.newLine()
+//        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
+//        writer.newLine()
       })
     }
     else if (vdClass.equals(classOf[java.lang.Double])) {
@@ -268,8 +271,8 @@ object Pregel extends Logging {
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(vid)
         buffer.writeDouble(vdata.asInstanceOf[java.lang.Double])
-        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
-        writer.newLine()
+//        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
+//        writer.newLine()
       })
     }
     else if (vdClass.equals(classOf[Double])) {
@@ -279,8 +282,8 @@ object Pregel extends Logging {
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(vid)
         buffer.writeDouble(vdata.asInstanceOf[Double])
-        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
-        writer.newLine()
+//        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
+//        writer.newLine()
       })
     }
     else if (vdClass.equals(classOf[java.lang.Integer])) {
@@ -290,8 +293,8 @@ object Pregel extends Logging {
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(vid)
         buffer.writeInt(vdata.asInstanceOf[java.lang.Integer])
-        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
-        writer.newLine()
+//        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
+//        writer.newLine()
       })
     }
     else if (vdClass.equals(classOf[Int])) {
@@ -301,8 +304,8 @@ object Pregel extends Logging {
         require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(vid)
         buffer.writeInt(vdata.asInstanceOf[Int])
-        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
-        writer.newLine()
+//        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
+//        writer.newLine()
       })
     }
     else throw new IllegalStateException("unexpected vdata class " + vdClass.getName)
@@ -318,8 +321,8 @@ object Pregel extends Logging {
         buffer.writeLong(srcId)
         buffer.writeLong(dstId)
         buffer.writeLong(edgeAttr.asInstanceOf[java.lang.Long])
-        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
-        writer.newLine()
+//        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
+//        writer.newLine()
       })
     }
     else if (edClass.equals(classOf[Long])) {
@@ -331,8 +334,8 @@ object Pregel extends Logging {
         buffer.writeLong(srcId)
         buffer.writeLong(dstId)
         buffer.writeLong(edgeAttr.asInstanceOf[Long])
-        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
-        writer.newLine()
+//        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
+//        writer.newLine()
       })
     }
     else if (edClass.equals(classOf[java.lang.Double])) {
@@ -344,8 +347,8 @@ object Pregel extends Logging {
         buffer.writeLong(srcId)
         buffer.writeLong(dstId)
         buffer.writeDouble(edgeAttr.asInstanceOf[java.lang.Double])
-        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
-        writer.newLine()
+//        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
+//        writer.newLine()
       })
     }
     else if (edClass.equals(classOf[Double])) {
@@ -357,8 +360,8 @@ object Pregel extends Logging {
         buffer.writeLong(srcId)
         buffer.writeLong(dstId)
         buffer.writeDouble(edgeAttr.asInstanceOf[Double])
-        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
-        writer.newLine()
+//        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
+//        writer.newLine()
       })
     }
     else if (edClass.equals(classOf[java.lang.Integer])) {
@@ -370,8 +373,8 @@ object Pregel extends Logging {
         buffer.writeLong(srcId)
         buffer.writeLong(dstId)
         buffer.writeInt(edgeAttr.asInstanceOf[java.lang.Integer])
-        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
-        writer.newLine()
+//        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
+//        writer.newLine()
       })
     }
     else if (edClass.equals(classOf[Int])) {
@@ -383,8 +386,8 @@ object Pregel extends Logging {
         buffer.writeLong(srcId)
         buffer.writeLong(dstId)
         buffer.writeInt(edgeAttr.asInstanceOf[Int])
-        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
-        writer.newLine()
+//        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
+//        writer.newLine()
       })
     }
     else throw new IllegalStateException("Unexpected ed class " + edClass.getName)
