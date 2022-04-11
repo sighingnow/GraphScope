@@ -112,7 +112,6 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
         int index = flags.nextSetBit(innerVerticesNum);
 //        DoubleMsg msg = DoubleMsg.factory.create();
         while (index >= innerVerticesNum && index < verticesNum) {
-            index = flags.nextSetBit(index);
             vertex.SetValue((long) index);
 //            messageManager.syncStateOnOuterVertex(fragment, vertex, values[index]);
 //            msg.setData((Double) values[index]);
@@ -122,6 +121,7 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
             logger.info("frag [{}] Sync state on out vertices {}, msg {}", fragment.fid(),
                 vertex.GetValue(), values[index]);
             flags.clear(index);
+            index = flags.nextSetBit(index);
         }
     }
 }
