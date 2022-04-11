@@ -22,5 +22,5 @@ public interface GraphxEdgeManager<VD,ED,MSG_T> {
      */
      void iterateOnEdges(long srcLid, EdgeContextImpl<VD, ED, MSG_T> context,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,
-         MessageStore<MSG_T> outMessageStore);
+         MessageStore<MSG_T,VD> outMessageStore);
 }

@@ -59,21 +59,21 @@ public class GraphXFactory {
         return new GraphXVertexIdManagerImpl(conf);
     }
 
-    public static <VD> VertexDataManager createVertexDataManager(GraphXConf conf) {
-        return new VertexDataManagerImpl(conf);
+    public static <VD,ED,MSG> VertexDataManager createVertexDataManager(GraphXConf<VD,ED,MSG> conf) {
+        return new VertexDataManagerImpl<VD>(conf);
     }
 
-    public static <MSG_T> MessageStore<MSG_T> createMessageStore(GraphXConf conf) {
-        return new DefaultMessageStore<>(conf);
+    public static <VD,ED,MSG> MessageStore<MSG,VD> createMessageStore(GraphXConf<VD,ED,MSG> conf) {
+        return new DefaultMessageStore<MSG,VD>(conf);
     }
 
     public static <VD, ED, MSG_T> EdgeContextImpl<VD, ED, MSG_T> createEdgeContext(
-        GraphXConf conf) {
+        GraphXConf<VD,ED,MSG_T> conf) {
         return new EdgeContextImpl<>(conf);
     }
 
     public static <VD, ED, MSG_T> GraphxEdgeManager<VD, ED, MSG_T> createEdgeManager(
-        GraphXConf conf, VertexIdManager<Long, Long> idManager,
+        GraphXConf<VD,ED,MSG_T> conf, VertexIdManager<Long, Long> idManager,
         VertexDataManager<VD> vertexDataManager) {
         return new GraphxEdgeManagerImpl<>(conf, idManager, vertexDataManager);
     }

@@ -39,7 +39,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
     private Function2<MSG_T, MSG_T, MSG_T> mergeMsg;
     private GraphXVertexIdManager idManager;
     private VertexDataManager<VD> vertexDataManager;
-    private MessageStore<MSG_T> inComingMessageStore, outgoingMessageStore;
+    private MessageStore<MSG_T,VD> inComingMessageStore, outgoingMessageStore;
     private EdgeContextImpl<VD, ED, MSG_T> edgeContext;
     private GraphXConf<VD, ED, MSG_T> conf;
     private GraphxEdgeManager<VD, ED, MSG_T> edgeManager;
@@ -71,8 +71,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
 
         idManager.init(graphxFragment);
         vertexDataManager.init(graphxFragment);
-        inComingMessageStore.init(graphxFragment, idManager, mergeMsg);
-        outgoingMessageStore.init(graphxFragment, idManager, mergeMsg);
+        inComingMessageStore.init(graphxFragment, idManager,vertexDataManager, mergeMsg);
+        outgoingMessageStore.init(graphxFragment,  idManager, vertexDataManager,mergeMsg);
         edgeContext.init(outgoingMessageStore);
         edgeManager.init(graphxFragment);
     }
@@ -180,7 +180,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
         return vertexDataManager;
     }
 
-    public MessageStore<MSG_T> getOutgoingMessageStore(){
+    public MessageStore<MSG_T,VD> getOutgoingMessageStore(){
         return outgoingMessageStore;
     }
 }
