@@ -27,7 +27,7 @@ public class VertexDataManagerImpl<VD> implements VertexDataManager<VD> {
         for (long lid = 0; lid < innerVerticesNum; ++lid){
             vertex.SetValue(lid);
             values[(int) lid] = fragment.getData(vertex);
-            logger.info("vdata lid [{}] value [{}]", lid, values[(int) lid]);
+//            logger.info("vdata lid [{}] value [{}]", lid, values[(int) lid]);
         }
         //FIXME: ArrowProjectedFragment stores not outer vertex data,
         if (vDataClass.equals(Long.class)){
