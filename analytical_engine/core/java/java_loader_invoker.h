@@ -250,7 +250,7 @@ class JavaLoaderInvoker {
 
   void readDataFromMMapedFile(const std::string& location_prefix,
                               bool forVertex, int max_partition_id,
-                              int mapped_size) {
+                              int64_t mapped_size) {
     int partition_id = 0;
     // FIXME
     int cnt = 0;
@@ -314,7 +314,7 @@ class JavaLoaderInvoker {
   // Work for graphx graph loading, the input is the prefix for memory mapped
   // file.
   void load_vertices(const std::string& location_prefix, int max_parition_id,
-                     int mapped_size) {
+                     int64_t mapped_size) {
     readDataFromMMapedFile(location_prefix, true, max_parition_id, mapped_size);
     // it is possible that on some nodes, there are no graphx data. We broad
     // cast type int, to allow subsequent move.
@@ -357,7 +357,7 @@ class JavaLoaderInvoker {
   }
 
   void load_edges(const std::string& location_prefix, int max_parition_id,
-                  int mapped_size) {
+                  int64_t mapped_size) {
     readDataFromMMapedFile(location_prefix, false, max_parition_id,
                            mapped_size);
   }

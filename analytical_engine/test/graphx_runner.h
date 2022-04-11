@@ -74,7 +74,7 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
                                 vineyard::Client& client, bool directed,
                                 const std::string& vertex_mm_file_prefix,
                                 const std::string& edge_mm_file_prefix,
-				int max_parition_id, int mapped_size) {
+				int max_parition_id, int64_t mapped_size) {
   vineyard::ObjectID fragment_id;
   {
     auto graph = std::make_shared<gs::detail::Graph>();
@@ -162,7 +162,7 @@ void CreateAndQuery(std::string params) {
       pt.get<std::string>(VERTEX_MM_FILE_PREFIX);
   std::string edge_mm_file_prefix = pt.get<std::string>(EDGE_MM_FILE_PREFIX);
   int max_partition_id = pt.get<int>(MAX_PARTITION_ID);
-  int mapped_size = pt.get<int>(MAPPED_SIZE);
+  int64_t mapped_size = pt.get<int64_t>(MAPPED_SIZE);
 
   VLOG(10) << "user_lib_path: " << user_lib_path << ", directed: " << directed << ", max partition id: " << max_partition_id << ", mapped size" << mapped_size;
   vineyard::Client client;

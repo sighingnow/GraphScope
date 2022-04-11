@@ -63,7 +63,7 @@ import scala.reflect.{ClassTag, classTag}
  *
  */
 object Pregel extends Logging {
-  val MAPPED_SIZE = 8 * 1024 * 1024 * 1024; //8 GB.
+  val MAPPED_SIZE : Long  = 2L * 1024 * 1024 * 1024; //8 GB.
   var comm: Communicator = null
   var messageManager: DefaultMessageManager = null
   val MMAP_FILE_PREFIX = "/graphx-"

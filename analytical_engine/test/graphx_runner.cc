@@ -43,7 +43,7 @@ DEFINE_string(vd_class, "", "int,long,double");
 DEFINE_string(ed_class, "", "int,long,double");
 DEFINE_string(msg_class, "", "int,long,double");
 DEFINE_string(initial_msg, "", "the initial msg");
-DEFINE_int32(mapped_size, 10 * 1024 * 1024, "mapped size fo v e shared memroy");
+DEFINE_int64(mapped_size, 10 * 1024 * 1024, "mapped size fo v e shared memroy");
 DEFINE_int32(max_partition_id, 10, "max partition id from graphx");
 
 // put all flags in a json str
