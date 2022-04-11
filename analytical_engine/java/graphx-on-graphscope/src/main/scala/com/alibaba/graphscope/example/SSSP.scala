@@ -15,9 +15,10 @@ object SSSP {
     // $example on$
     // A graph with edge attributes containing distances
     val graph: Graph[Long, Double] = {
-    GraphLoader.edgeListFile(sc, "/home/graphscope/data/gstest/p2p-31.e", false, 2)
+    GraphLoader.edgeListFile(sc, "/home/graphscope/data/livejournal.e", false, 2)
       .mapEdges(e => e.attr.toDouble).mapVertices((vid, _) => vid)
     }
+    ///home/graphscope/data/gstest/p2p-31.e
     val sourceId: VertexId = 1 // The ultimate source
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, _) =>

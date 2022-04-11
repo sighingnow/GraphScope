@@ -78,7 +78,7 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
 
     @Override
     public void addOidMessage(long oid, MSG_T msg) {
-        logger.info("worker[{}] send msg to oid {}", fragment.fid(), oid);
+//        logger.info("worker[{}] send msg to oid {}", fragment.fid(), oid);
         long lid = Math.toIntExact(vertexIdManager.oid2Lid(oid));
         addLidMessage(lid, msg);
     }
@@ -111,6 +111,7 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
     public void flushMessage(DefaultMessageManager messageManager) {
         int index = flags.nextSetBit(innerVerticesNum);
 //        DoubleMsg msg = DoubleMsg.factory.create();
+        int msgCnt = 0;
         while (index >= innerVerticesNum && index < verticesNum) {
             vertex.SetValue((long) index);
 //            messageManager.syncStateOnOuterVertex(fragment, vertex, values[index]);
@@ -118,10 +119,10 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
             messageManager.syncStateOnOuterVertexArrowProjected(
                 (ArrowProjectedFragment<Long, Long, Double, Double>) fragment.getFFIPointer(),
                 vertex, (Double) values[index]);
-            logger.info("frag [{}] Sync state on out vertices {}, msg {}", fragment.fid(),
-                vertex.GetValue(), values[index]);
             flags.clear(index);
             index = flags.nextSetBit(index);
+            msgCnt += 1;
         }
+        logger.info("frag [{}] send msg of size {}", fragment.fid(), msgCnt);
     }
 }
