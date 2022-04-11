@@ -85,18 +85,21 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 vprog.apply(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid),
                     initialMessage));
         }
+        logger.info("[PEval] Finish vprog for frag {}", graphxFragment.fid());
 
         for (long lid = 0; lid < innerVerticesNum; ++lid) {
             edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
                 vertexDataManager.getVertexData(lid));
             edgeManager.iterateOnEdges(lid, edgeContext, sendMsg, outgoingMessageStore);
         }
+        logger.info("[PEval] Finish iterate edges for frag {}", graphxFragment.fid());
         outgoingMessageStore.flushMessage(messageManager);
         //messages to self are cached locally.
         outgoingMessageStore.swap(inComingMessageStore);
     }
 
     public void IncEval() {
+        outgoingMessageStore.swap(inComingMessageStore);
         Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
         boolean outerMsgReceived = receiveMessage(receiveVertex);
         long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
@@ -129,7 +132,6 @@ public class GraphXProxy<VD, ED, MSG_T> {
             inComingMessageStore.clear();
             //FIXME: flush message
             outgoingMessageStore.flushMessage(messageManager);
-            outgoingMessageStore.swap(inComingMessageStore);
         } else {
             logger.info("Frag {} No message received", graphxFragment.fid());
         }

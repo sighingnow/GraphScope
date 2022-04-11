@@ -51,7 +51,7 @@ object SSSP {
           line => {
             if (!line.isEmpty && line(0) != '#') {
               val lineArray = line.split("\\s+")
-              if (lineArray.length < 3) {
+              if (lineArray.length < 2) {
                 throw new IllegalArgumentException("Invalid line: " + line)
               }
               val vid = lineArray(0).toLong
@@ -76,7 +76,7 @@ object SSSP {
       (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
         if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
-//          println(triplet.srcAttr + ", " + (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
+          println(triplet.srcId + ", to  " + triplet.dstId + ", data "+ (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
           Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
         } else {
           Iterator.empty

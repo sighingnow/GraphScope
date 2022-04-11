@@ -112,7 +112,10 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
         int index = flags.nextSetBit(innerVerticesNum);
 //        DoubleMsg msg = DoubleMsg.factory.create();
         int msgCnt = 0;
-        while (index >= innerVerticesNum && index < verticesNum) {
+        while (index >= innerVerticesNum && index < verticesNum && index >= 0) {
+	    if (index == Integer.MAX_VALUE){
+	        throw new IllegalStateException("Overflow is not expected");
+ 	    }
             vertex.SetValue((long) index);
 //            messageManager.syncStateOnOuterVertex(fragment, vertex, values[index]);
 //            msg.setData((Double) values[index]);
@@ -120,7 +123,7 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
                 (ArrowProjectedFragment<Long, Long, Double, Double>) fragment.getFFIPointer(),
                 vertex, (Double) values[index]);
 //            flags.clear(index);
-            index = flags.nextSetBit(index);
+            index = flags.nextSetBit(index + 1);
             msgCnt += 1;
         }
         flags.clear(innerVerticesNum, verticesNum);
