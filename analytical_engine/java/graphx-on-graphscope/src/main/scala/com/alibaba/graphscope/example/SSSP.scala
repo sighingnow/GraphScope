@@ -25,6 +25,7 @@ object SSSP {
       if (id == sourceId) 0.0 else Double.PositiveInfinity)
 //    println(initialGraph.vertices.collect().mkString("Array(", ", ", ")"))
 //    println(initialGraph.edges.collect().mkString("Array(", ", ", ")"))
+    val startTime = System.nanoTime();
     val sssp = initialGraph.pregel(Double.PositiveInfinity)( //avoid overflow
       (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
@@ -37,6 +38,9 @@ object SSSP {
       },
       (a, b) => math.min(a, b) // Merge Message
     )
+    val endTIme = System.nanoTime()
+    println("[Pregel running time ] : " + ((endTIme - startTime) / 1000000) + "ms")
+    sssp.vertices.saveAsTextFile("/tmp/spark-graphx")
 //    println(sssp.vertices.collect.mkString("\n"))
     // $example off$
 
