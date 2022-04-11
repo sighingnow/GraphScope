@@ -23,11 +23,27 @@ public class VertexDataManagerImpl<VD> implements VertexDataManager<VD> {
     public void init(IFragment<Long, Long, VD, ?> fragment) {
         values = (VD[]) new Object[Math.toIntExact((Long) fragment.getVerticesNum())];
         Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
-        for (long lid = 0; lid < values.length; ++lid){
+        long innerVerticesNum = fragment.getInnerVerticesNum();
+        for (long lid = 0; lid < innerVerticesNum; ++lid){
             vertex.SetValue(lid);
             values[(int) lid] = fragment.getData(vertex);
             logger.info("vdata lid [{}] value [{}]", lid, values[(int) lid]);
         }
+        //FIXME: ArrowProjectedFragment stores not outer vertex data,
+        if (vDataClass.equals(Long.class)){
+            for (long lid = innerVerticesNum; lid < values.length; ++lid) {
+                values[(int) lid] = (VD) (Long) Long.MAX_VALUE;
+            }
+        }
+        else if (vDataClass.equals(Double.class)){
+            for (long lid = innerVerticesNum; lid < values.length; ++lid) {
+                values[(int) lid] = (VD) (Double) Double.POSITIVE_INFINITY;
+            }
+        }
+        else {
+            throw new IllegalStateException("unrecoginized vd class");
+        }
+
         logger.info("Create Vertex Data Manager: " + fragment.getVerticesNum());
     }
 

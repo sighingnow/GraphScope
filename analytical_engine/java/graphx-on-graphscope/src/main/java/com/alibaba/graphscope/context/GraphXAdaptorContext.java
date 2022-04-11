@@ -2,11 +2,19 @@ package com.alibaba.graphscope.context;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.graphscope.conf.GraphXConf;
+import com.alibaba.graphscope.ds.Vertex;
+import com.alibaba.graphscope.ds.VertexRange;
 import com.alibaba.graphscope.factory.GraphXFactory;
 import com.alibaba.graphscope.fragment.IFragment;
+import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.graphx.SerializationUtils;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
+import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
 import com.alibaba.graphscope.utils.GraphXProxy;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +119,25 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
 
     @Override
     public void Output(IFragment<Long, Long, VDATA_T, EDATA_T> frag) {
+        String prefix = "/tmp/graphx_output";
+        String filePath = prefix + "_frag_" + String.valueOf(frag.fid());
+        VertexDataManager<VDATA_T> vertexDataManager = graphXProxy.getVertexDataManager();
+        try {
+            FileWriter fileWritter = new FileWriter(new File(filePath));
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWritter);
+            VertexRange<Long> innerNodes = frag.innerVertices();
 
+            Vertex<Long> cur = FFITypeFactoryhelper.newVertexLong();
+            for (long index = 0; index < frag.getInnerVerticesNum(); ++index) {
+                cur.SetValue(index);
+                Long oid = frag.getId(cur);
+                bufferedWriter.write(
+                    cur.GetValue() + "\t" + oid + "\t" + vertexDataManager.getVertexData(index) + "\n");
+            }
+            bufferedWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
