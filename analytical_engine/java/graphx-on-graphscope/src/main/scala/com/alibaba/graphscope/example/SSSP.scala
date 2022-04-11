@@ -1,7 +1,10 @@
 package com.alibaba.graphscope.example
 
-import org.apache.spark.graphx.{Graph, GraphLoader, VertexId}
+import org.apache.spark.graphx.{Edge, Graph, GraphLoader, VertexId}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.util.collection.PrimitiveVector
+
+import scala.collection.mutable.ArrayBuffer
 
 object SSSP {
   def main(args: Array[String]): Unit = {
@@ -11,25 +14,61 @@ object SSSP {
       .appName(s"${this.getClass.getSimpleName}")
       .getOrCreate()
     val sc = spark.sparkContext
-    if (args.length < 2){
+    if (args.length < 4){
       println("Expect 2 args")
       return 0;
     }
-    val filesource = args(0);
-    val source = args(1)
-    //"/home/graphscope/data/livejournal.e"
+    val vfilePath= args(0);
+    val efilePath = args(1)
+    val numParition = args(2)
+    val sourceId: VertexId = args(3).toLong // The ultimate source
+    println("vfile" + vfilePath  + "efile " + efilePath + "source : " + sourceId)
 
-    // A graph with edge attributes containing distances
-    val graph: Graph[Long, Double] = {
-    GraphLoader.edgeListFile(sc, filesource , false, 2)
-      .mapEdges(e => e.attr.toDouble).mapVertices((vid, _) => vid)
-    }
+    val lines = sc.textFile(efilePath, numParition.toInt)
+    val edgesRDD = lines.mapPartitionsWithIndex( (pid, iter) =>{
+      var edges = new ArrayBuffer[Edge[Double]]
+      iter.foreach{
+        line => {
+          if (!line.isEmpty && line(0) != '#') {
+            val lineArray = line.split("\\s+")
+            if (lineArray.length < 3) {
+              throw new IllegalArgumentException("Invalid line: " + line)
+            }
+            val srcId = lineArray(0).toLong
+            val dstId = lineArray(1).toLong
+            val edata = lineArray(2).toDouble
+            edges.+=(new Edge[Double](srcId,dstId,edata))
+          }
+        }
+      }
+      edges.iterator
+    })
+    val verticesLines = sc.textFile(vfilePath, numParition.toInt)
+    val verticesRDD = verticesLines.mapPartitionsWithIndex(
+      (pid, iter) =>{
+        var vertices = new ArrayBuffer[(VertexId, Double)]
+        iter.foreach{
+          line => {
+            if (!line.isEmpty && line(0) != '#') {
+              val lineArray = line.split("\\s+")
+              if (lineArray.length < 3) {
+                throw new IllegalArgumentException("Invalid line: " + line)
+              }
+              val vid = lineArray(0).toLong
+              val vdata = lineArray(1).toDouble
+              vertices.+=((vid,vdata))
+            }
+          }
+        }
+        vertices.iterator
+      }
+    )
     ///home/graphscope/data/gstest/p2p-31.e
-    val sourceId: VertexId = source.toLong // The ultimate source
-    println("input file" + filesource + "source : " + sourceId)
+
+    val graph = Graph.apply(verticesRDD,edgesRDD)
     // Initialize the graph such that all vertices except the root have distance infinity.
-    val initialGraph = graph.mapVertices((id, _) =>
-      if (id == sourceId) 0.0 else Double.PositiveInfinity)
+    val initialGraph = graph.mapVertices((id, vdata) =>
+      if (id == sourceId) 0.0 else vdata.toDouble)
 //    println(initialGraph.vertices.collect().mkString("Array(", ", ", ")"))
 //    println(initialGraph.edges.collect().mkString("Array(", ", ", ")"))
     val startTime = System.nanoTime();
