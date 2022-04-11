@@ -2,10 +2,12 @@ package com.alibaba.graphscope.mm.impl;
 
 import com.alibaba.graphscope.conf.GraphXConf;
 import com.alibaba.graphscope.ds.Vertex;
+import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
 import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.graph.GraphXVertexIdManager;
 import com.alibaba.graphscope.mm.MessageStore;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
+import com.alibaba.graphscope.parallel.message.DoubleMsg;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
 import java.util.BitSet;
 import org.slf4j.Logger;
@@ -14,16 +16,18 @@ import scala.Function2;
 
 /**
  * Can store out messages or in messages.
+ *
  * @param <MSG_T> message type
  */
 public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
+
     private Logger logger = LoggerFactory.getLogger(DefaultMessageStore.class.getName());
 
     private GraphXConf conf;
     private MSG_T[] values;
     private BitSet flags;
     private Function2<MSG_T, MSG_T, MSG_T> mergeMsg;
-    private IFragment<?,?,?,?> fragment;
+    private IFragment<?, ?, ?, ?> fragment;
     private int verticesNum, innerVerticesNum;
     private Vertex<Long> vertex;
     private GraphXVertexIdManager vertexIdManager;
@@ -33,7 +37,8 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
     }
 
     @Override
-    public void init(IFragment<Long,Long,?,?> fragment, GraphXVertexIdManager idManager, Function2<MSG_T, MSG_T, MSG_T> mergeMsg) {
+    public void init(IFragment<Long, Long, ?, ?> fragment, GraphXVertexIdManager idManager,
+        Function2<MSG_T, MSG_T, MSG_T> mergeMsg) {
         this.mergeMsg = mergeMsg;
         this.fragment = fragment;
         this.vertexIdManager = idManager;
@@ -47,7 +52,7 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
 
     @Override
     public boolean messageAvailable(long lid) {
-        return flags.get((int)lid);
+        return flags.get((int) lid);
     }
 
     @Override
@@ -65,8 +70,7 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
         int intLid = (int) lid;
         if (flags.get(intLid)) {
             values[intLid] = mergeMsg.apply(values[intLid], msg);
-        }
-        else {
+        } else {
             flags.set(intLid);
             values[intLid] = msg;
         }
@@ -86,14 +90,16 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
 
     @Override
     public void swap(MessageStore<MSG_T> messageStore) {
-        if (messageStore instanceof DefaultMessageStore){
+        if (messageStore instanceof DefaultMessageStore) {
             DefaultMessageStore<MSG_T> other = (DefaultMessageStore<MSG_T>) messageStore;
             //only swap flags and values are ok
-            logger.info("Before message store swap {} vs {}", this.flags.cardinality(), other.flags.cardinality());
+            logger.info("Before message store swap {} vs {}", this.flags.cardinality(),
+                other.flags.cardinality());
             BitSet tmp = other.flags;
             other.flags = this.flags;
             this.flags = tmp;
-            logger.info("After message store swap {} vs {}", this.flags.cardinality(), other.flags.cardinality());
+            logger.info("After message store swap {} vs {}", this.flags.cardinality(),
+                other.flags.cardinality());
 
             MSG_T[] tmpValues = other.values;
             other.values = this.values;
@@ -104,11 +110,17 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
     @Override
     public void flushMessage(DefaultMessageManager messageManager) {
         int index = flags.nextSetBit(innerVerticesNum);
-        while (index >= innerVerticesNum && index < verticesNum){
+//        DoubleMsg msg = DoubleMsg.factory.create();
+        while (index >= innerVerticesNum && index < verticesNum) {
             index = flags.nextSetBit(index);
             vertex.SetValue((long) index);
-            messageManager.syncStateOnOuterVertex(fragment, vertex, values[index]);
-            logger.info("frag [{}] Sync state on out vertices {}, msg {}", fragment.fid(), vertex.GetValue(), values[index]);
+//            messageManager.syncStateOnOuterVertex(fragment, vertex, values[index]);
+//            msg.setData((Double) values[index]);
+            messageManager.syncStateOnOuterVertexArrowProjected(
+                (ArrowProjectedFragment<Long, Long, Double, Double>) fragment.getFFIPointer(),
+                vertex, (Double) values[index]);
+            logger.info("frag [{}] Sync state on out vertices {}, msg {}", fragment.fid(),
+                vertex.GetValue(), values[index]);
             flags.clear(index);
         }
     }

@@ -22,8 +22,8 @@ object SSSP {
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, _) =>
       if (id == sourceId) 0.0 else Double.PositiveInfinity)
-    println(initialGraph.vertices.collect().mkString("Array(", ", ", ")"))
-    println(initialGraph.edges.collect().mkString("Array(", ", ", ")"))
+//    println(initialGraph.vertices.collect().mkString("Array(", ", ", ")"))
+//    println(initialGraph.edges.collect().mkString("Array(", ", ", ")"))
     val sssp = initialGraph.pregel(Double.PositiveInfinity)( //avoid overflow
       (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message

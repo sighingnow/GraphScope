@@ -443,20 +443,20 @@ import com.alibaba.fastffi.FFIGenBatch;
                         ),
                         @FFIFunGen(
                             name = "syncStateOnOuterVertexArrowProjected",
-                            returnType = "boolean",
-                            parameterTypes = {"FRAG_T","com.alibaba.graphscope.ds.Vertex", "MSG_T"},
+                            returnType = "void",
+                            parameterTypes = {"FRAG_T","com.alibaba.graphscope.ds.Vertex", "MSG_T"}, //
                             templates = {
                                 @CXXTemplate(
                                     cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,double>",
-                                        DOUBLE_MSG
+                                        "double"
                                     },
                                     java = {
                                         "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Double>",
-                                        "com.alibaba.graphscope.parallel.message.DoubleMsg"
+                                        "java.lang.Double",
                                     }
                                 )
                             }
-                        )
+                        ),
                     }),
 //            @FFIGen(
 //                    type = "com.alibaba.graphscope.parallel.ParallelMessageManager",
