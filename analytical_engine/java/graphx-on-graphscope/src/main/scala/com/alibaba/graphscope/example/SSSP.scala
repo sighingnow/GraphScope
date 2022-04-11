@@ -11,15 +11,22 @@ object SSSP {
       .appName(s"${this.getClass.getSimpleName}")
       .getOrCreate()
     val sc = spark.sparkContext
+    if (args.length < 2){
+      println("Expect 2 args")
+      return 0;
+    }
+    val filesource = args(0);
+    val source = args(1)
+    //"/home/graphscope/data/livejournal.e"
 
-    // $example on$
     // A graph with edge attributes containing distances
     val graph: Graph[Long, Double] = {
-    GraphLoader.edgeListFile(sc, "/home/graphscope/data/livejournal.e", false, 2)
+    GraphLoader.edgeListFile(sc, filesource , false, 2)
       .mapEdges(e => e.attr.toDouble).mapVertices((vid, _) => vid)
     }
     ///home/graphscope/data/gstest/p2p-31.e
-    val sourceId: VertexId = 1 // The ultimate source
+    val sourceId: VertexId = source.toLong // The ultimate source
+    println("input file" + filesource + "source : " + sourceId)
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, _) =>
       if (id == sourceId) 0.0 else Double.PositiveInfinity)
