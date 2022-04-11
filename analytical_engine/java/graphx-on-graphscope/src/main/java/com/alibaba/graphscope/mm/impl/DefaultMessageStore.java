@@ -5,9 +5,9 @@ import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
 import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.graph.GraphXVertexIdManager;
+import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.mm.MessageStore;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
-import com.alibaba.graphscope.parallel.message.DoubleMsg;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
 import java.util.BitSet;
 import org.slf4j.Logger;
@@ -19,7 +19,7 @@ import scala.Function2;
  *
  * @param <MSG_T> message type
  */
-public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
+public class DefaultMessageStore<MSG_T,VD> implements MessageStore<MSG_T,VD> {
 
     private Logger logger = LoggerFactory.getLogger(DefaultMessageStore.class.getName());
 
@@ -31,17 +31,19 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
     private int verticesNum, innerVerticesNum;
     private Vertex<Long> vertex;
     private GraphXVertexIdManager vertexIdManager;
+    private VertexDataManager<VD> vertexDataManager;
 
     public DefaultMessageStore(GraphXConf conf) {
         this.conf = conf;
     }
 
     @Override
-    public void init(IFragment<Long, Long, ?, ?> fragment, GraphXVertexIdManager idManager,
+    public void init(IFragment<Long, Long, ?, ?> fragment, GraphXVertexIdManager idManager, VertexDataManager<VD> vertexDataManager,
         Function2<MSG_T, MSG_T, MSG_T> mergeMsg) {
         this.mergeMsg = mergeMsg;
         this.fragment = fragment;
         this.vertexIdManager = idManager;
+        this.vertexDataManager = vertexDataManager;
 
         this.verticesNum = Math.toIntExact(fragment.getVerticesNum());
         this.innerVerticesNum = (int) fragment.getInnerVerticesNum();
@@ -89,9 +91,9 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
     }
 
     @Override
-    public void swap(MessageStore<MSG_T> messageStore) {
+    public void swap(MessageStore<MSG_T,VD> messageStore) {
         if (messageStore instanceof DefaultMessageStore) {
-            DefaultMessageStore<MSG_T> other = (DefaultMessageStore<MSG_T>) messageStore;
+            DefaultMessageStore<MSG_T,VD> other = (DefaultMessageStore<MSG_T,VD>) messageStore;
             //only swap flags and values are ok
             logger.info("Before message store swap {} vs {}", this.flags.cardinality(),
                 other.flags.cardinality());
@@ -118,7 +120,10 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
 //            msg.setData((Double) values[index]);
             messageManager.syncStateOnOuterVertexArrowProjected(
                 (ArrowProjectedFragment<Long, Long, Double, Double>) fragment.getFFIPointer(),
-                vertex, (Double) values[index]);
+                vertex, values[index]);
+            //CAUTION-------------------------------------------------------------
+            //update outer vertices data here, otherwise will cause infinite message sending
+            vertexDataManager.setVertexData(index, (VD) values[index]);
 //            flags.clear(index);
             index = flags.nextSetBit(index);
             msgCnt += 1;

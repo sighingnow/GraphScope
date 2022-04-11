@@ -3,11 +3,12 @@ package com.alibaba.graphscope.mm;
 
 import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.graph.GraphXVertexIdManager;
+import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import scala.Function2;
 
-public interface MessageStore<MSG_T> {
-    void init(IFragment<Long,Long,?,?> fragment, GraphXVertexIdManager idManager,Function2<MSG_T,MSG_T,MSG_T> mergeMessage);
+public interface MessageStore<MSG_T,VD> {
+    void init(IFragment<Long,Long,?,?> fragment, GraphXVertexIdManager idManager, VertexDataManager<VD> vertexDataManager, Function2<MSG_T,MSG_T,MSG_T> mergeMessage);
 
     boolean messageAvailable(long lid);
 
@@ -21,7 +22,7 @@ public interface MessageStore<MSG_T> {
 
     void clear();
 
-    void swap(MessageStore<MSG_T> messageStore);
+    void swap(MessageStore<MSG_T,VD> messageStore);
 
     void flushMessage(DefaultMessageManager messageManager);
 }

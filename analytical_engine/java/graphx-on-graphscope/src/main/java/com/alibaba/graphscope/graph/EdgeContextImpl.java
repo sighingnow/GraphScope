@@ -10,7 +10,7 @@ public class EdgeContextImpl<VD,ED,MSG_T> extends EdgeContext<VD,ED,MSG_T> {
     private long localSrcId, localDstId;
     private VD srcAttr,dstAttr;
     private ED edgeAttr;
-    private MessageStore<MSG_T> outgoingMessageStore;
+    private MessageStore<MSG_T,VD> outgoingMessageStore;
     public EdgeContextImpl(GraphXConf conf){
         this.conf = conf;
         srcId = dstId = localSrcId = localDstId = -1;
@@ -18,7 +18,7 @@ public class EdgeContextImpl<VD,ED,MSG_T> extends EdgeContext<VD,ED,MSG_T> {
         srcAttr = dstAttr = null;
     }
 
-    public void init(MessageStore<MSG_T> messageStore){
+    public void init(MessageStore<MSG_T,VD> messageStore){
         this.outgoingMessageStore = messageStore;
     }
 
