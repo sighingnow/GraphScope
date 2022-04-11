@@ -166,7 +166,7 @@ object Pregel extends Logging {
         //To put vd and ed in the header.
         putHeader(buffer,vdClass, edClass, msgClass, bufferedWriter)
         bufferedWriter.write("successfully put header + \n")
-        putVertices(buffer, partition.iterator, vdClass, bufferedWriter)
+        putVertices(buffer, partition.iterator.toArray, vdClass, bufferedWriter)
         bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
         buffer.writeLong(0, buffer.position() - 8)
         //      iterator
@@ -193,7 +193,7 @@ object Pregel extends Logging {
         //To put vd and ed in the header.
         //      putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
         //      bufferedWriter.write("successfully put header + \n")
-        putEdges(buffer, edgePartition.iterator, edClass, bufferedWriter)
+        putEdges(buffer, edgePartition.iterator.toArray, edClass, bufferedWriter)
         bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
         buffer.writeLong(0, buffer.position() - 8)
         //      iterator
@@ -247,154 +247,134 @@ object Pregel extends Logging {
     buffer.writeInt(class2Int(msgClass))
   }
 
-  def putVertices[VD: ClassTag](buffer: MappedBuffer, tuples: Iterator[(graphx.VertexId, VD)], vdClass: Class[VD], writer: BufferedWriter): Unit = {
+  def putVertices[VD: ClassTag](buffer: MappedBuffer, array: Array[(graphx.VertexId, VD)], vdClass: Class[VD], writer: BufferedWriter): Unit = {
+    /**
+     * FIXME: tune this position cost, copy memory at once.
+     * FIXME: construct arrow array from pointer.
+     */
     if (vdClass.equals(classOf[java.lang.Long])) {
-      tuples.foreach(tuple => {
-        val vid = tuple._1
-        val vdata = tuple._2
-        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+      for (i <- 0 until array.length){
+        val vid = array(i)._1
+        val vdata = array(i)._2
+//        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(vid)
         buffer.writeLong(vdata.asInstanceOf[java.lang.Long])
-//        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
-//        writer.newLine()
-      })
+      }
     }
     else if (vdClass.equals(classOf[Long])) {
-      tuples.foreach(tuple => {
-        val vid = tuple._1
-        val vdata = tuple._2
-        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+      for (i <- 0 until array.length){
+        val vid = array(i)._1
+        val vdata = array(i)._2
+        //        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(vid)
         buffer.writeLong(vdata.asInstanceOf[Long])
-//        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
-//        writer.newLine()
-      })
+      }
     }
     else if (vdClass.equals(classOf[java.lang.Double])) {
-      tuples.foreach(tuple => {
-        val vid = tuple._1
-        val vdata = tuple._2
-        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+      for (i <- 0 until array.length){
+        val vid = array(i)._1
+        val vdata = array(i)._2
+        //        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(vid)
         buffer.writeDouble(vdata.asInstanceOf[java.lang.Double])
-//        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
-//        writer.newLine()
-      })
+      }
     }
     else if (vdClass.equals(classOf[Double])) {
-      tuples.foreach(tuple => {
-        val vid = tuple._1
-        val vdata = tuple._2
-        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+      for (i <- 0 until array.length){
+        val vid = array(i)._1
+        val vdata = array(i)._2
+        //        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(vid)
         buffer.writeDouble(vdata.asInstanceOf[Double])
-//        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
-//        writer.newLine()
-      })
+      }
     }
     else if (vdClass.equals(classOf[java.lang.Integer])) {
-      tuples.foreach(tuple => {
-        val vid = tuple._1
-        val vdata = tuple._2
-        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+      for (i <- 0 until array.length){
+        val vid = array(i)._1
+        val vdata = array(i)._2
+        //        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(vid)
         buffer.writeInt(vdata.asInstanceOf[java.lang.Integer])
-//        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
-//        writer.newLine()
-      })
+      }
     }
     else if (vdClass.equals(classOf[Int])) {
-      tuples.foreach(tuple => {
-        val vid = tuple._1
-        val vdata = tuple._2
-        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+      for (i <- 0 until array.length){
+        val vid = array(i)._1
+        val vdata = array(i)._2
+        //        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(vid)
         buffer.writeInt(vdata.asInstanceOf[Int])
-//        writer.write(s"Writing vid [${vid}] vdata [${vdata}]")
-//        writer.newLine()
-      })
+      }
     }
     else throw new IllegalStateException("unexpected vdata class " + vdClass.getName)
   }
 
-  def putEdges[ED: ClassTag](buffer: MappedBuffer, tuples: Iterator[Edge[ED]], edClass: Class[ED], writer: BufferedWriter): Unit = {
+  def putEdges[ED: ClassTag](buffer: MappedBuffer, array: Array[Edge[ED]], edClass: Class[ED], writer: BufferedWriter): Unit = {
     if (edClass.equals(classOf[java.lang.Long])) {
-      tuples.foreach(edge => {
-        val srcId = edge.srcId
-        val dstId = edge.dstId
-        val edgeAttr = edge.attr
-        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+      for (i <- 0 until array.length){
+        val srcId = array(i).srcId
+        val dstId = array(i).dstId
+        val edgeAttr = array(i).attr
+//        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(srcId)
         buffer.writeLong(dstId)
         buffer.writeLong(edgeAttr.asInstanceOf[java.lang.Long])
-//        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
-//        writer.newLine()
-      })
+      }
     }
     else if (edClass.equals(classOf[Long])) {
-      tuples.foreach(edge => {
-        val srcId = edge.srcId
-        val dstId = edge.dstId
-        val edgeAttr = edge.attr
-        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+      for (i <- 0 until array.length){
+        val srcId = array(i).srcId
+        val dstId = array(i).dstId
+        val edgeAttr = array(i).attr
+        //        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(srcId)
         buffer.writeLong(dstId)
         buffer.writeLong(edgeAttr.asInstanceOf[Long])
-//        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
-//        writer.newLine()
-      })
+      }
     }
     else if (edClass.equals(classOf[java.lang.Double])) {
-      tuples.foreach(edge => {
-        val srcId = edge.srcId
-        val dstId = edge.dstId
-        val edgeAttr = edge.attr
-        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+      for (i <- 0 until array.length){
+        val srcId = array(i).srcId
+        val dstId = array(i).dstId
+        val edgeAttr = array(i).attr
+        //        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(srcId)
         buffer.writeLong(dstId)
         buffer.writeDouble(edgeAttr.asInstanceOf[java.lang.Double])
-//        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
-//        writer.newLine()
-      })
+      }
     }
     else if (edClass.equals(classOf[Double])) {
-      tuples.foreach(edge => {
-        val srcId = edge.srcId
-        val dstId = edge.dstId
-        val edgeAttr = edge.attr
-        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+      for (i <- 0 until array.length){
+        val srcId = array(i).srcId
+        val dstId = array(i).dstId
+        val edgeAttr = array(i).attr
+        //        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(srcId)
         buffer.writeLong(dstId)
         buffer.writeDouble(edgeAttr.asInstanceOf[Double])
-//        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
-//        writer.newLine()
-      })
+      }
     }
     else if (edClass.equals(classOf[java.lang.Integer])) {
-      tuples.foreach(edge => {
-        val srcId = edge.srcId
-        val dstId = edge.dstId
-        val edgeAttr = edge.attr
-        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+      for (i <- 0 until array.length){
+        val srcId = array(i).srcId
+        val dstId = array(i).dstId
+        val edgeAttr = array(i).attr
+        //        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(srcId)
         buffer.writeLong(dstId)
         buffer.writeInt(edgeAttr.asInstanceOf[java.lang.Integer])
-//        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
-//        writer.newLine()
-      })
+      }
     }
     else if (edClass.equals(classOf[Int])) {
-      tuples.foreach(edge => {
-        val srcId = edge.srcId
-        val dstId = edge.dstId
-        val edgeAttr = edge.attr
-        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
+      for (i <- 0 until array.length){
+        val srcId = array(i).srcId
+        val dstId = array(i).dstId
+        val edgeAttr = array(i).attr
+        //        require(buffer.position() > 0 && buffer.position() < buffer.limit(), "buffer position error")
         buffer.writeLong(srcId)
         buffer.writeLong(dstId)
         buffer.writeInt(edgeAttr.asInstanceOf[Int])
-//        writer.write(s"Writing srcId [${srcId}] dstId [${dstId}] edgeAttr [${edgeAttr}]")
-//        writer.newLine()
-      })
+      }
     }
     else throw new IllegalStateException("Unexpected ed class " + edClass.getName)
   }
