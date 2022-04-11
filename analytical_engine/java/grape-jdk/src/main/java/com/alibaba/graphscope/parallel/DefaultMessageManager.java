@@ -61,6 +61,9 @@ public interface DefaultMessageManager extends MessageManagerBase {
         } else if (frag.fragmentType().equals(ImmutableEdgecutFragmentAdaptor.fragmentType)) {
             getMessageImmutable((ImmutableEdgecutFragment) frag.getFFIPointer(), vertex, msg);
         }
+        else {
+            throw new IllegalStateException("unexpected adaptor type: " + frag.fragmentType());
+        }
         return false;
     }
 
