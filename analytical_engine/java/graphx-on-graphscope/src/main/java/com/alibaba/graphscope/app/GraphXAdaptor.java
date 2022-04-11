@@ -31,6 +31,7 @@ public class GraphXAdaptor<VDATA_T, EDATA_T> extends Communicator implements
     public void IncEval(IFragment<Long, Long, VDATA_T, EDATA_T> graph,
         DefaultContextBase<Long, Long, VDATA_T, EDATA_T> context,
         DefaultMessageManager messageManager) {
+        logger.info("IncEval");
         GraphXAdaptorContext<VDATA_T, EDATA_T> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T>) context;
         GraphXProxy proxy = ctx.getGraphXProxy();
         proxy.IncEval();

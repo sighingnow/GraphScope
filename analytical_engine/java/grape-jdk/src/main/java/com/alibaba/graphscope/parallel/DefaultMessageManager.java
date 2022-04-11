@@ -57,14 +57,13 @@ public interface DefaultMessageManager extends MessageManagerBase {
         @CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex,
         @CXXReference MSG_T msg) {
         if (frag.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)) {
-            getMessageArrowProjected((ArrowProjectedFragment) frag.getFFIPointer(), vertex, msg);
+            return getMessageArrowProjected((ArrowProjectedFragment) frag.getFFIPointer(), vertex, msg);
         } else if (frag.fragmentType().equals(ImmutableEdgecutFragmentAdaptor.fragmentType)) {
-            getMessageImmutable((ImmutableEdgecutFragment) frag.getFFIPointer(), vertex, msg);
+            return getMessageImmutable((ImmutableEdgecutFragment) frag.getFFIPointer(), vertex, msg);
         }
         else {
             throw new IllegalStateException("unexpected adaptor type: " + frag.fragmentType());
         }
-        return false;
     }
 
     default <FRAG_T extends IFragment, MSG_T> boolean sendMsgThroughEdges(

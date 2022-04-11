@@ -146,7 +146,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
             .equals(double.class)) {
             DoubleMsg msg = FFITypeFactoryhelper.newDoubleMsg();
             while (messageManager.getMessage(graphxFragment, receiveVertex, msg)) {
-                logger.info("get message: {}, {}", receiveVertex.GetValue(), msg.getData());
+             //   logger.info("get message: {}, {}", receiveVertex.GetValue(), msg.getData());
                 inComingMessageStore.addLidMessage(receiveVertex.GetValue(),
                     (MSG_T) (Double) msg.getData());
                 msgReceived = true;
@@ -155,7 +155,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
             .equals(long.class)) {
             LongMsg msg = FFITypeFactoryhelper.newLongMsg();
             while (messageManager.getMessage(graphxFragment, receiveVertex, msg)) {
-                logger.info("get message: {}, {}", receiveVertex.GetValue(), msg.getData());
+             //   logger.info("get message: {}, {}", receiveVertex.GetValue(), msg.getData());
                 inComingMessageStore.addLidMessage(receiveVertex.GetValue(),
                     (MSG_T) (Long) msg.getData());
                 msgReceived = true;
