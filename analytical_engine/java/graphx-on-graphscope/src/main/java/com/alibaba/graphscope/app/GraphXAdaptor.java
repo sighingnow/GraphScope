@@ -34,5 +34,8 @@ public class GraphXAdaptor<VDATA_T, EDATA_T> extends Communicator implements
         GraphXAdaptorContext<VDATA_T, EDATA_T> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T>) context;
         GraphXProxy proxy = ctx.getGraphXProxy();
         proxy.IncEval();
+        if (proxy.getOutgoingMessageStore().hasMessages()){
+            messageManager.ForceContinue();
+        }
     }
 }

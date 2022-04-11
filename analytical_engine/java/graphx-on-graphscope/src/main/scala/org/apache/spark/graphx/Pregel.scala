@@ -63,7 +63,7 @@ import scala.reflect.{ClassTag, classTag}
  *
  */
 object Pregel extends Logging {
-  val MAPPED_SIZE = 8 * 1024 * 1024 * 1024; //8 GB.
+  val MAPPED_SIZE : Long = 8L * 1024 * 1024 * 1024; //8 GB.
   var comm: Communicator = null
   var messageManager: DefaultMessageManager = null
   val MMAP_FILE_PREFIX = "/graphx-"
@@ -156,6 +156,9 @@ object Pregel extends Logging {
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_V_FILE_PREFIX}${pid}"
         val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
+        if (buffer == null){
+          bufferedWriter.write("Error: mapped faild")
+        }
         bufferedWriter.write(buffer.toString);
         bufferedWriter.newLine();
         bufferedWriter.write(s"for iterator in ${pid}, work on ${cnt} vertex partitions")
@@ -181,6 +184,9 @@ object Pregel extends Logging {
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
         val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
+        if (buffer == null){
+          bufferedWriter.write("Error: mapped faild")
+        }
         bufferedWriter.write(buffer.toString);
         bufferedWriter.newLine();
         buffer.position(8) // reserve place to write total length

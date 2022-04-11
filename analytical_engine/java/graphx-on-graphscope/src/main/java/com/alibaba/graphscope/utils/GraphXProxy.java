@@ -169,4 +169,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
     public VertexDataManager<VD> getVertexDataManager(){
         return vertexDataManager;
     }
+
+    public MessageStore<MSG_T> getOutgoingMessageStore(){
+        return outgoingMessageStore;
+    }
 }
