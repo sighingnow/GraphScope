@@ -103,22 +103,29 @@ public class GraphXProxy<VD, ED, MSG_T> {
 
         outgoingMessageStore.clear();
         if (outerMsgReceived || inComingMessageStore.hasMessages()) {
+            int vprogCnt = 0;
             for (long lid = 0; lid < innerVerticesNum; ++lid) {
                 if (inComingMessageStore.messageAvailable(lid)) {
                     vertexDataManager.setVertexData(lid, vprog.apply(idManager.lid2Oid(lid),
                         vertexDataManager.getVertexData(lid),
                         inComingMessageStore.getMessage(lid)));
+                    vprogCnt += 1;
                 }
             }
+            logger.info("frag {} vprog runned for {} times", graphxFragment.fid(), vprogCnt);
 
+            int sendMsgCnt = 0;
             //after running vprog, we now send msg and merge msg
             for (long lid = 0; lid < innerVerticesNum; ++lid) {
                 if (inComingMessageStore.messageAvailable(lid)) {
                     edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
                         vertexDataManager.getVertexData(lid));
                     edgeManager.iterateOnEdges(lid, edgeContext, sendMsg, outgoingMessageStore);
+                    sendMsgCnt += 1;
                 }
             }
+            logger.info("frag {} vprog runned for {} times", graphxFragment.fid(), sendMsgCnt);
+
             inComingMessageStore.clear();
             //FIXME: flush message
             outgoingMessageStore.flushMessage(messageManager);
@@ -140,7 +147,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
      * @return true if message received.
      */
     private boolean receiveMessage(Vertex<Long> receiveVertex) {
-        boolean msgReceived = false;
+        int msgReceived = 0;
         //receive message
         if (conf.getEdataClass().equals(Double.class) || conf.getEdataClass()
             .equals(double.class)) {
@@ -149,7 +156,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
              //   logger.info("get message: {}, {}", receiveVertex.GetValue(), msg.getData());
                 inComingMessageStore.addLidMessage(receiveVertex.GetValue(),
                     (MSG_T) (Double) msg.getData());
-                msgReceived = true;
+                msgReceived += 1;
             }
         } else if (conf.getEdataClass().equals(Long.class) || conf.getEdataClass()
             .equals(long.class)) {
@@ -158,12 +165,13 @@ public class GraphXProxy<VD, ED, MSG_T> {
              //   logger.info("get message: {}, {}", receiveVertex.GetValue(), msg.getData());
                 inComingMessageStore.addLidMessage(receiveVertex.GetValue(),
                     (MSG_T) (Long) msg.getData());
-                msgReceived = true;
+                msgReceived += 1;
             }
         } else {
             logger.info("Not supported msg type");
         }
-        return msgReceived;
+        logger.info("frag {} received msg from others {}", graphxFragment.fid(), msgReceived);
+        return msgReceived > 0;
     }
 
     public VertexDataManager<VD> getVertexDataManager(){

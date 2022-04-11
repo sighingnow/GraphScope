@@ -121,6 +121,8 @@ void SetupEnv(const int local_num) {
   int systemMemoryPerWorker = std::max(systemMemory / local_num, 1);
   int mnPerWorker = std::max(systemMemoryPerWorker * 7 / 12, 1);
 
+  VLOG(1) << "Xmx: " << systemMemoryPerWorker
+          << "g,Xms: " << systemMemoryPerWorker << "g,-Xmn: " << mnPerWorker << "g";
   char kvPair[32000];
   snprintf(kvPair, sizeof(kvPair), "-Xmx%dg -Xms%dg -Xmn%dg",
            systemMemoryPerWorker, systemMemoryPerWorker, mnPerWorker);
@@ -463,8 +465,7 @@ jobject CreateGiraphAdaptorContext(JNIEnv* env, const char* context_class_name,
   CHECK_NOTNULL(res);
   return env->NewGlobalRef(res);
 }
-void string2ptree(const std::string& params,
-                         boost::property_tree::ptree& pt) {
+void string2ptree(const std::string& params, boost::property_tree::ptree& pt) {
   std::stringstream ss;
   {
     ss << params;

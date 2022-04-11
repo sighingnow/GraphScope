@@ -119,10 +119,11 @@ public class DefaultMessageStore<MSG_T> implements MessageStore<MSG_T> {
             messageManager.syncStateOnOuterVertexArrowProjected(
                 (ArrowProjectedFragment<Long, Long, Double, Double>) fragment.getFFIPointer(),
                 vertex, (Double) values[index]);
-            flags.clear(index);
+//            flags.clear(index);
             index = flags.nextSetBit(index);
             msgCnt += 1;
         }
+        flags.clear(innerVerticesNum, verticesNum);
         logger.info("frag [{}] send msg of size {}", fragment.fid(), msgCnt);
     }
 }
