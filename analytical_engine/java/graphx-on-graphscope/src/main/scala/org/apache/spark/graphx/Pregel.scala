@@ -156,6 +156,9 @@ object Pregel extends Logging {
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_V_FILE_PREFIX}${pid}"
         val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
+        if (buffer == null){
+          bufferedWriter.write("Error: mapped faild")
+        }
         bufferedWriter.write(buffer.toString);
         bufferedWriter.newLine();
         bufferedWriter.write(s"for iterator in ${pid}, work on ${cnt} vertex partitions")
@@ -181,6 +184,9 @@ object Pregel extends Logging {
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
         val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
+        if (buffer == null){
+          bufferedWriter.write("Error: mapped faild")
+        }
         bufferedWriter.write(buffer.toString);
         bufferedWriter.newLine();
         buffer.position(8) // reserve place to write total length
@@ -210,7 +216,7 @@ object Pregel extends Logging {
     edgesRes.count()
 //    vprogRes.count()
     val endTime = System.nanoTime();
-    log.info(s"Time send on memory mapping and serialization: " + (startTime - endTime) / 1000000)
+    log.info(s"Time send on memory mapping and serialization: " + (endTime - startTime) / 1000000 + " ms")
 
     log.info(s"after writing to memory mapped file, launch mpi processes ${verticesRes}, ${edgesRes}")
 
