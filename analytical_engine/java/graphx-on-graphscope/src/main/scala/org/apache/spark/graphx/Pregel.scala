@@ -166,8 +166,11 @@ object Pregel extends Logging {
         //To put vd and ed in the header.
         putHeader(buffer,vdClass, edClass, msgClass, bufferedWriter)
         bufferedWriter.write("successfully put header + \n")
+        val t1 = System.nanoTime()
         putVertices(buffer, partition.iterator.toArray, vdClass, bufferedWriter)
         bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
+        val t2 = System.nanoTime()
+        bufferedWriter.write(" time for writing vertices " + (t2 - t1) / 1000000)
         buffer.writeLong(0, buffer.position() - 8)
         //      iterator
         bufferedWriter.close()
@@ -193,8 +196,11 @@ object Pregel extends Logging {
         //To put vd and ed in the header.
         //      putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
         //      bufferedWriter.write("successfully put header + \n")
+        val t1 = System.nanoTime()
         putEdges(buffer, edgePartition.iterator.toArray, edClass, bufferedWriter)
         bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
+        val t2 = System.nanoTime()
+        bufferedWriter.write("time for write edges " + (t2 - t1) / 1000000)
         buffer.writeLong(0, buffer.position() - 8)
         //      iterator
         bufferedWriter.close()
