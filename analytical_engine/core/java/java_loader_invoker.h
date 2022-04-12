@@ -27,6 +27,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "arrow/array.h"
@@ -391,11 +392,23 @@ class JavaLoaderInvoker {
 
     std::shared_ptr<arrow::Array> esrc_array, edst_array, edata_array;
 
-    buildArray(oid_type, esrc_array, esrcs, esrc_offsets);
-    buildArray(oid_type, edst_array, edsts, edst_offsets);
-    buildArray(edata_type, edata_array, edatas, edata_offsets);
+    std::vector<std::thread> buildArrayThreads(3);
+    buildArrayThreads[0] = std::thread(
+        [&]() { buildArray(oid_type, esrc_array, esrcs, esrc_offsets); });
+    VLOG(1) << "Worker " << worker_id_ << "invoke thread 0";
+    buildArrayThreads[1] = std::thread(
+        [&]() { buildArray(oid_type, edst_array, edsts, edst_offsets); });
+    VLOG(1) << "Worker " << worker_id_ << "invoke thread 1";
+    buildArrayThreads[2] = std::thread(
+        [&]() { buildArray(edata_type, edata_array, edatas, edata_offsets); });
+    VLOG(1) << "Worker " << worker_id_ << "invoke thread 2";
+    for (auto& thrd : buildArrayThreads) {
+      thrd.join();
+    }
+    VLOG(1) << "Worker " << worker_id_ << " all threads joined";
 
-    VLOG(10) << "Finish edge array building esrc: " << esrc_array->ToString()
+    VLOG(10) << "Worker " << worker_id_
+             << " Finish edge array building esrc: " << esrc_array->ToString()
              << " edst: " << edst_array->ToString()
              << " edata: " << edata_array->ToString();
 
@@ -407,12 +420,12 @@ class JavaLoaderInvoker {
     auto res =
         arrow::Table::Make(schema, {esrc_array, edst_array, edata_array});
     VLOG(10) << "worker " << worker_id_
-             << " generated table, rows:" << res->num_rows()
+             << " generated edge table, rows:" << res->num_rows()
              << " cols: " << res->num_columns();
 
     edgeTableBuildingTime += grape::GetCurrentTime();
     VLOG(10) << "worker " << worker_id_
-             << " Building vertex table cost: " << edgeTableBuildingTime;
+             << " Building edge table cost: " << edgeTableBuildingTime;
     return res;
   }
 
@@ -441,10 +454,20 @@ class JavaLoaderInvoker {
     std::shared_ptr<arrow::Array> oid_array;
     std::shared_ptr<arrow::Array> vdata_array;
 
-    buildArray(oid_type, oid_array, oids, oid_offsets);
-    buildArray(vdata_type, vdata_array, vdatas, vdata_offsets);
+    std::vector<std::thread> buildArrayThreads(2);
+    buildArrayThreads[0] = std::thread(
+        [&]() { buildArray(oid_type, oid_array, oids, oid_offsets); });
+    VLOG(1) << "Worker " << worker_id_ << "invoke thread 0";
+    buildArrayThreads[1] = std::thread(
+        [&]() { buildArray(vdata_type, vdata_array, vdatas, vdata_offsets); });
+    VLOG(1) << "Worker " << worker_id_ << "invoke thread 1";
+    for (auto& thrd : buildArrayThreads) {
+      thrd.join();
+    }
+    VLOG(1) << "Worker " << worker_id_ << " all threads joined";
 
-    VLOG(10) << "Finish vertex array building oid array: "
+    VLOG(10) << "Worker " << worker_id_
+             << " Finish vertex array building oid array: "
              << oid_array->ToString() << " vdata: " << vdata_array->ToString();
 
     std::shared_ptr<arrow::Schema> schema =
@@ -453,7 +476,7 @@ class JavaLoaderInvoker {
 
     auto res = arrow::Table::Make(schema, {oid_array, vdata_array});
     VLOG(10) << "worker " << worker_id_
-             << " generated table, rows:" << res->num_rows()
+             << " generated vertex table, rows:" << res->num_rows()
              << " cols: " << res->num_columns();
 
     vertexTableBuildingTime += grape::GetCurrentTime();

@@ -8,6 +8,7 @@ import com.alibaba.graphscope.graph.EdgeContextImpl;
 import com.alibaba.graphscope.graph.GraphXVertexIdManager;
 import com.alibaba.graphscope.graph.GraphxEdgeManager;
 import com.alibaba.graphscope.graph.VertexDataManager;
+import com.alibaba.graphscope.graphx.GSEdgeTriplet;
 import com.alibaba.graphscope.mm.MessageStore;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.parallel.message.DoubleMsg;
@@ -40,7 +41,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
     private GraphXVertexIdManager idManager;
     private VertexDataManager<VD> vertexDataManager;
     private MessageStore<MSG_T,VD> inComingMessageStore, outgoingMessageStore;
-    private EdgeContextImpl<VD, ED, MSG_T> edgeContext;
+//    private EdgeContextImpl<VD, ED, MSG_T> edgeContext;
+    private GSEdgeTriplet<VD,ED> edgeTriplet;
     private GraphXConf<VD, ED, MSG_T> conf;
     private GraphxEdgeManager<VD, ED, MSG_T> edgeManager;
     private DefaultMessageManager messageManager;
@@ -59,7 +61,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
         this.vertexDataManager = GraphXFactory.createVertexDataManager(conf);
         this.inComingMessageStore = GraphXFactory.createMessageStore(conf);
         this.outgoingMessageStore = GraphXFactory.createMessageStore(conf);
-        this.edgeContext = GraphXFactory.createEdgeContext(conf);
+//        this.edgeContext = GraphXFactory.createEdgeContext(conf);
+        this.edgeTriplet = GraphXFactory.createEdgeTriplet(conf);
         this.edgeManager = GraphXFactory.createEdgeManager(conf, idManager, vertexDataManager);
     }
 
@@ -73,7 +76,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
         vertexDataManager.init(graphxFragment);
         inComingMessageStore.init(graphxFragment, idManager,vertexDataManager, mergeMsg);
         outgoingMessageStore.init(graphxFragment,  idManager, vertexDataManager,mergeMsg);
-        edgeContext.init(outgoingMessageStore);
+//        edgeContext.init(outgoingMessageStore);
+        //edgeTriplet no initialization
         edgeManager.init(graphxFragment);
     }
 
@@ -87,9 +91,10 @@ public class GraphXProxy<VD, ED, MSG_T> {
         }
 
         for (long lid = 0; lid < innerVerticesNum; ++lid) {
-            edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
-                vertexDataManager.getVertexData(lid));
-            edgeManager.iterateOnEdges(lid, edgeContext, sendMsg, outgoingMessageStore);
+//            edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
+//                vertexDataManager.getVertexData(lid));
+            edgeTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
+            edgeManager.iterateOnEdges(lid, edgeTriplet, sendMsg, outgoingMessageStore);
         }
         outgoingMessageStore.flushMessage(messageManager);
         //messages to self are cached locally.
@@ -118,9 +123,10 @@ public class GraphXProxy<VD, ED, MSG_T> {
             //after running vprog, we now send msg and merge msg
             for (long lid = 0; lid < innerVerticesNum; ++lid) {
                 if (inComingMessageStore.messageAvailable(lid)) {
-                    edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
-                        vertexDataManager.getVertexData(lid));
-                    edgeManager.iterateOnEdges(lid, edgeContext, sendMsg, outgoingMessageStore);
+//                    edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
+//                        vertexDataManager.getVertexData(lid));
+                    edgeTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
+                    edgeManager.iterateOnEdges(lid, edgeTriplet, sendMsg, outgoingMessageStore);
                     sendMsgCnt += 1;
                 }
             }

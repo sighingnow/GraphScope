@@ -1,6 +1,7 @@
 package com.alibaba.graphscope.graph;
 
 import com.alibaba.graphscope.fragment.IFragment;
+import com.alibaba.graphscope.graphx.GSEdgeTriplet;
 import com.alibaba.graphscope.mm.MessageStore;
 import org.apache.spark.graphx.EdgeTriplet;
 import scala.Function1;
@@ -20,7 +21,7 @@ public interface GraphxEdgeManager<VD,ED,MSG_T> {
      * @param context   edge context to use
      * @param msgSender mapping from edge triplet to a iterator for (dstId, msg).
      */
-     void iterateOnEdges(long srcLid, EdgeContextImpl<VD, ED, MSG_T> context,
+     void iterateOnEdges(long srcLid, GSEdgeTriplet<VD, ED> context,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,
          MessageStore<MSG_T,VD> outMessageStore);
 }

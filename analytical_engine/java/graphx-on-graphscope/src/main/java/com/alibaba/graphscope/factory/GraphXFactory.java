@@ -9,6 +9,7 @@ import com.alibaba.graphscope.graph.VertexIdManager;
 import com.alibaba.graphscope.graph.impl.GraphXVertexIdManagerImpl;
 import com.alibaba.graphscope.graph.impl.GraphxEdgeManagerImpl;
 import com.alibaba.graphscope.graph.impl.VertexDataManagerImpl;
+import com.alibaba.graphscope.graphx.GSEdgeTriplet;
 import com.alibaba.graphscope.graphx.SerializationUtils;
 import com.alibaba.graphscope.mm.MessageStore;
 import com.alibaba.graphscope.mm.impl.DefaultMessageStore;
@@ -76,6 +77,10 @@ public class GraphXFactory {
         GraphXConf<VD,ED,MSG_T> conf, VertexIdManager<Long, Long> idManager,
         VertexDataManager<VD> vertexDataManager) {
         return new GraphxEdgeManagerImpl<>(conf, idManager, vertexDataManager);
+    }
+
+    public static <VD,ED>GSEdgeTriplet<VD,ED> createEdgeTriplet(GraphXConf<VD,ED,?> conf){
+        return new GSEdgeTriplet<>();
     }
 
     private static <VD, ED, MSG> Function3<Long, VD, MSG, VD> deserializeVprog(String vprogFilePath,
