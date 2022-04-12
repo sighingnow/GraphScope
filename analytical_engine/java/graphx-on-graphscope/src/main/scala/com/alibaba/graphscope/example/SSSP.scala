@@ -66,7 +66,14 @@ object SSSP {
     ///home/graphscope/data/gstest/p2p-31.e
     println("edge rdd num partitions: " + edgesRDD.getNumPartitions)
     println("edge rdd partitioner: " + edgesRDD.partitioner)
-    val graph = Graph.apply(verticesRDD,edgesRDD)
+    println("vertex rdd num partitions: " + verticesRDD.getNumPartitions)
+    println("vertex rdd partitioner: " + verticesRDD.partitioner)
+    val newEdgesRDD = edgesRDD.repartition(numParition.toInt)
+    val newVerticesRDD = verticesRDD.repartition(numParition.toInt)
+    val graph = Graph.apply(newVerticesRDD,newEdgesRDD)
+    val verticesNum = graph.vertices.count()
+    val edgesSNum = graph.edges.count()
+    println(s"Graph has ${verticesNum} vertices, ${edgesSNum} edges")
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, vdata) =>
       if (id == sourceId) 0.0 else vdata.toDouble)
