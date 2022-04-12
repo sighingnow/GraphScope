@@ -26,6 +26,7 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{HashPartitioner, SparkContext, graphx}
 
 import java.io.{BufferedWriter, File, FileWriter}
+import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.{ClassTag, classTag}
 
 /**
@@ -149,12 +150,14 @@ object Pregel extends Logging {
     val paritioner = graph.vertices.partitioner.getOrElse(new HashPartitioner(graph.vertices.getNumPartitions))
 
     val startTime = System.nanoTime();
+    val atomicInt =  new AtomicInteger(0)
     graph.vertices.foreachPartition(
       iterator => {
-        val verticesArray = iterator.toArray
-        require(verticesArray.length > 0)
+//        val verticesArray = iterator.toArray
+//        require(verticesArray.length > 0)
 //        val pid = graph.vertices.partitioner.get.getPartition(verticesArray(0)._1)
-        val pid = paritioner.getPartition(verticesArray(0)._1)
+        val pid = atomicInt.getAndAdd(1)
+//        val pid = paritioner.getPartition(verticesArray(0)._1)
         val loggerFileName = V_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_V_FILE_PREFIX}${pid}"
@@ -164,7 +167,7 @@ object Pregel extends Logging {
         }
         bufferedWriter.write(buffer.toString);
         bufferedWriter.newLine();
-        bufferedWriter.write(s"for iterator in ${pid}, partition size ${verticesArray.length}")
+        bufferedWriter.write(s"for iterator in ${pid}")
         buffer.position(8) // reserve place to write total length
         //To put vd and ed in the header.
         putHeader(buffer,vdClass, edClass, msgClass, bufferedWriter)
@@ -185,14 +188,16 @@ object Pregel extends Logging {
     log.info(" vertices partition {}, partitions rdd partitions {}",graph.vertices.getNumPartitions, graph.vertices.partitionsRDD.getNumPartitions)
     log.info(" time spend on write vertices: " + (verticesTime - startTime) / 1000000)
 
+    val edgeAtomicInt = new AtomicInteger(0)
     graph.edges.foreachPartition(
       iterator =>{
         val tt0 = System.nanoTime()
-        val edgesArray = iterator.toArray
+//        val edgesArray = iterator.toArray
         val tt1 = System.nanoTime()
-        require(edgesArray.length > 0)
+//        require(edgesArray.length > 0)
         //        val pid = graph.vertices.partitioner.get.getPartition(verticesArray(0)._1)
-        val pid = paritioner.getPartition(edgesArray(0).srcId)
+//        val pid = paritioner.getPartition(edgesArray(0).srcId)
+        val pid = edgeAtomicInt.getAndAdd(1)
         val loggerFileName = E_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
