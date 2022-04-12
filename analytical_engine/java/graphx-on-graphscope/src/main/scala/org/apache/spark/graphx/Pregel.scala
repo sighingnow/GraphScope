@@ -23,7 +23,7 @@ import com.alibaba.graphscope.parallel.DefaultMessageManager
 import com.alibaba.graphscope.utils.{CallUtils, MPIProcessLauncher, MappedBuffer}
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{SparkContext, graphx}
+import org.apache.spark.{HashPartitioner, SparkContext, graphx}
 
 import java.io.{BufferedWriter, File, FileWriter}
 import scala.reflect.{ClassTag, classTag}
@@ -146,13 +146,15 @@ object Pregel extends Logging {
     val edClass = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
     val msgClass = classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]
     log.info(s"vd class: ${vdClass} ed : ${edClass} msg ${msgClass}")
+    val paritioner = graph.vertices.partitioner.getOrElse(new HashPartitioner(graph.vertices.getNumPartitions))
 
     val startTime = System.nanoTime();
     graph.vertices.foreachPartitionAsync(
       iterator => {
         val verticesArray = iterator.toArray
         require(verticesArray.length > 0)
-        val pid = graph.vertices.partitioner.get.getPartition(verticesArray(0)._1)
+//        val pid = graph.vertices.partitioner.get.getPartition(verticesArray(0)._1)
+        val pid =  paritioner.getPartition(verticesArray(0)._1)
         val loggerFileName = V_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_V_FILE_PREFIX}${pid}"
