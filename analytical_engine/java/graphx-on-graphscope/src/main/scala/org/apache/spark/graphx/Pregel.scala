@@ -154,7 +154,7 @@ object Pregel extends Logging {
         val verticesArray = iterator.toArray
         require(verticesArray.length > 0)
 //        val pid = graph.vertices.partitioner.get.getPartition(verticesArray(0)._1)
-        val pid =  paritioner.getPartition(verticesArray(0)._1)
+        val pid = paritioner.getPartition(verticesArray(0)._1)
         val loggerFileName = V_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_V_FILE_PREFIX}${pid}"
@@ -183,10 +183,12 @@ object Pregel extends Logging {
     )
     log.info(" vertices partition {}, partitions rdd partitions {}",graph.vertices.getNumPartitions, graph.vertices.partitionsRDD.getNumPartitions)
 
-    graph.edges.partitionsRDD.foreach(
-      tuple => {
-        val pid = tuple._1
-        val edgePartition = tuple._2
+    graph.edges.foreachPartition(
+      iterator =>{
+        val edgesArray = iterator.toArray
+        require(edgesArray.length > 0)
+        //        val pid = graph.vertices.partitioner.get.getPartition(verticesArray(0)._1)
+        val pid = paritioner.getPartition(edgesArray(0).srcId)
         val loggerFileName = E_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
@@ -204,13 +206,18 @@ object Pregel extends Logging {
         //      putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
         //      bufferedWriter.write("successfully put header + \n")
         val t1 = System.nanoTime()
-        putEdges(buffer, edgePartition.iterator.toArray, edClass, bufferedWriter)
+        putEdges(buffer, edgesArray, edClass, bufferedWriter)
         bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
         val t2 = System.nanoTime()
         bufferedWriter.write("time for write edges " + (t2 - t1) / 1000000)
         buffer.writeLong(0, buffer.position() - 8)
         //      iterator
         bufferedWriter.close()
+      }
+    )
+    graph.edges.foreach(
+      tuple => {
+
       }
     )
 
