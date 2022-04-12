@@ -148,11 +148,11 @@ object Pregel extends Logging {
     log.info(s"vd class: ${vdClass} ed : ${edClass} msg ${msgClass}")
 
     val startTime = System.nanoTime();
-    val verticesRes  = graph.vertices.partitionsRDD.mapPartitionsWithIndex( (pid, iterator) => {
-      var cnt = 0
-      while (iterator.hasNext){
-        val partition = iterator.next();
-
+    graph.vertices.foreachPartitionAsync(
+      iterator => {
+        val verticesArray = iterator.toArray
+        require(verticesArray.length > 0)
+        val pid = graph.vertices.partitioner.get.getPartition(verticesArray(0)._1)
         val loggerFileName = V_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_V_FILE_PREFIX}${pid}"
@@ -162,28 +162,29 @@ object Pregel extends Logging {
         }
         bufferedWriter.write(buffer.toString);
         bufferedWriter.newLine();
-        bufferedWriter.write(s"for iterator in ${pid}, work on ${cnt} vertex partitions")
+        bufferedWriter.write(s"for iterator in ${pid}, partition size ${verticesArray.length}")
         buffer.position(8) // reserve place to write total length
         //To put vd and ed in the header.
         putHeader(buffer,vdClass, edClass, msgClass, bufferedWriter)
         bufferedWriter.write("successfully put header + \n")
         val t1 = System.nanoTime()
-        putVertices(buffer, partition.iterator.toArray, vdClass, bufferedWriter)
+        putVertices(buffer, verticesArray, vdClass, bufferedWriter)
         bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
         val t2 = System.nanoTime()
         bufferedWriter.write(" time for writing vertices " + (t2 - t1) / 1000000)
+        bufferedWriter.newLine()
         buffer.writeLong(0, buffer.position() - 8)
         //      iterator
         bufferedWriter.close()
-        cnt += 1
-      }
 
-      iterator
-    }, true)
+      }
+    )
     log.info(" vertices partition {}, partitions rdd partitions {}",graph.vertices.getNumPartitions, graph.vertices.partitionsRDD.getNumPartitions)
 
-    val edgesRes = graph.edges.partitionsRDD.mapPartitions(_.flatMap {
-      case (pid, edgePartition) => {
+    graph.edges.partitionsRDD.foreach(
+      tuple => {
+        val pid = tuple._1
+        val edgePartition = tuple._2
         val loggerFileName = E_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
@@ -205,9 +206,8 @@ object Pregel extends Logging {
         buffer.writeLong(0, buffer.position() - 8)
         //      iterator
         bufferedWriter.close()
-        Iterator(1)
       }
-    }, true)
+    )
 
       //graph.edges.mapPartitionsWithIndex
 
@@ -219,15 +219,13 @@ object Pregel extends Logging {
     SerializationUtils.write(vprog, VPROG_SERIALIZATION_PATH)
     SerializationUtils.write(sendMsg, SEND_MSG_SERIALIZATION_PATH)
     SerializationUtils.write(mergeMsg, MERGE_MSG_SERIALIZATION_PATH)
-    verticesRes.persist(StorageLevel.MEMORY_ONLY)
-    edgesRes.persist(StorageLevel.MEMORY_ONLY)
-    //verticesRes.count() //force running
-    //edgesRes.count()
+//    verticesRes.count() //force running
+//    edgesRes.count()
 //    vprogRes.count()
     val endTime = System.nanoTime();
     log.info(s"Time send on memory mapping and serialization: " + (endTime - startTime) / 1000000 + " ms")
 
-    log.info(s"after writing to memory mapped file, launch mpi processes ${verticesRes}, ${edgesRes}")
+//    log.info(s"after writing to memory mapped file, launch mpi processes ${verticesRes}, ${edgesRes}")
 
     var userClass = CallUtils.getCallerCallerClassName
     if (userClass.endsWith("$")) {
