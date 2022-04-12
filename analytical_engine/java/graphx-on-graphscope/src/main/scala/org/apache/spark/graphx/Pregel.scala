@@ -150,13 +150,14 @@ object Pregel extends Logging {
     val paritioner = graph.vertices.partitioner.getOrElse(new HashPartitioner(graph.vertices.getNumPartitions))
 
     val startTime = System.nanoTime();
-    val atomicInt =  new AtomicInteger(0)
     graph.vertices.foreachPartition(
       iterator => {
 //        val verticesArray = iterator.toArray
 //        require(verticesArray.length > 0)
-//        val pid = graph.vertices.partitioner.get.getPartition(verticesArray(0)._1)
-        val pid = atomicInt.getAndAdd(1)
+        val firstEle = iterator.next()
+        val firstId = firstEle._1
+        val firstVd = firstEle._2
+        val pid = graph.vertices.partitioner.get.getPartition(firstId)
 //        val pid = paritioner.getPartition(verticesArray(0)._1)
         val loggerFileName = V_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
@@ -173,7 +174,7 @@ object Pregel extends Logging {
         putHeader(buffer,vdClass, edClass, msgClass, bufferedWriter)
         bufferedWriter.write("successfully put header + \n")
         val t1 = System.nanoTime()
-        putVertices(buffer, iterator, vdClass, bufferedWriter)
+        putVertices(buffer, iterator, vdClass, bufferedWriter, firstId, firstVd)
         bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
         val t2 = System.nanoTime()
         bufferedWriter.write(" time for writing vertices " + (t2 - t1) / 1000000)
@@ -188,34 +189,31 @@ object Pregel extends Logging {
     log.info(" vertices partition {}, partitions rdd partitions {}",graph.vertices.getNumPartitions, graph.vertices.partitionsRDD.getNumPartitions)
     log.info(" time spend on write vertices: " + (verticesTime - startTime) / 1000000)
 
-    val edgeAtomicInt = new AtomicInteger(0)
     graph.edges.foreachPartition(
       iterator =>{
         val tt0 = System.nanoTime()
-//        val edgesArray = iterator.toArray
-        val tt1 = System.nanoTime()
-//        require(edgesArray.length > 0)
-        //        val pid = graph.vertices.partitioner.get.getPartition(verticesArray(0)._1)
-//        val pid = paritioner.getPartition(edgesArray(0).srcId)
-        val pid = edgeAtomicInt.getAndAdd(1)
+        val firstEle = iterator.next()
+        val firstSrcId = firstEle.srcId
+        val firstDstId = firstEle.dstId
+        val firstAttr = firstEle.attr
+        val pid = paritioner.getPartition(firstSrcId)
         val loggerFileName = E_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
         val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
-        bufferedWriter.write("time for convert iterator to array " + (tt1 - tt0) / 1000000)
         bufferedWriter.newLine()
         if (buffer == null){
           bufferedWriter.write("Error: mapped faild")
         }
-        bufferedWriter.write(buffer.toString);
-        bufferedWriter.newLine();
+        bufferedWriter.write(buffer.toString)
+        bufferedWriter.newLine()
         buffer.position(8) // reserve place to write total length
         //To put vd and ed in the header.
         //      putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
         //      bufferedWriter.write("successfully put header + \n")
         val t1 = System.nanoTime()
-        putEdges(buffer, iterator, edClass, bufferedWriter)
-        bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
+        putEdges(buffer, iterator, edClass, bufferedWriter, firstSrcId, firstDstId, firstAttr)
+        bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8))
         val t2 = System.nanoTime()
         bufferedWriter.write("time for write edges " + (t2 - t1) / 1000000)
         bufferedWriter.newLine()
@@ -339,12 +337,14 @@ object Pregel extends Logging {
     else throw new IllegalStateException("unexpected vdata class " + vdClass.getName)
   }
 
-  def putVertices[VD: ClassTag](buffer: MappedBuffer, iter: Iterator[(graphx.VertexId, VD)], vdClass: Class[VD], writer: BufferedWriter): Unit = {
+  def putVertices[VD: ClassTag](buffer: MappedBuffer, iter: Iterator[(graphx.VertexId, VD)], vdClass: Class[VD], writer: BufferedWriter, firstId: VertexId, firstVd: VD ): Unit = {
     /**
      * FIXME: tune this position cost, copy memory at once.
      * FIXME: construct arrow array from pointer.
      */
     if (vdClass.equals(classOf[java.lang.Long])) {
+      buffer.writeLong(firstId)
+      buffer.writeLong(firstVd.asInstanceOf[java.lang.Long])
       iter.foreach(
         tuple =>{
           buffer.writeLong(tuple._1)
@@ -353,6 +353,8 @@ object Pregel extends Logging {
       )
     }
     else if (vdClass.equals(classOf[Long])) {
+      buffer.writeLong(firstId)
+      buffer.writeLong(firstVd.asInstanceOf[Long])
       iter.foreach(
         tuple =>{
           buffer.writeLong(tuple._1)
@@ -361,6 +363,8 @@ object Pregel extends Logging {
       )
     }
     else if (vdClass.equals(classOf[java.lang.Double])) {
+      buffer.writeLong(firstId)
+      buffer.writeDouble(firstVd.asInstanceOf[java.lang.Double])
       iter.foreach(
         tuple =>{
           buffer.writeLong(tuple._1)
@@ -369,6 +373,8 @@ object Pregel extends Logging {
       )
     }
     else if (vdClass.equals(classOf[Double])) {
+      buffer.writeLong(firstId)
+      buffer.writeDouble(firstVd.asInstanceOf[Double])
       iter.foreach(
         tuple =>{
           buffer.writeLong(tuple._1)
@@ -377,6 +383,8 @@ object Pregel extends Logging {
       )
     }
     else if (vdClass.equals(classOf[java.lang.Integer])) {
+      buffer.writeLong(firstId)
+      buffer.writeInt(firstVd.asInstanceOf[java.lang.Integer])
       iter.foreach(
         tuple =>{
           buffer.writeLong(tuple._1)
@@ -385,6 +393,8 @@ object Pregel extends Logging {
       )
     }
     else if (vdClass.equals(classOf[Int])) {
+      buffer.writeLong(firstId)
+      buffer.writeInt(firstVd.asInstanceOf[java.lang.Integer])
       iter.foreach(
         tuple =>{
           buffer.writeLong(tuple._1)
@@ -463,8 +473,11 @@ object Pregel extends Logging {
     }
     else throw new IllegalStateException("Unexpected ed class " + edClass.getName)
   }
-  def putEdges[ED: ClassTag](buffer: MappedBuffer, iter: Iterator[Edge[ED]], edClass: Class[ED], writer: BufferedWriter): Unit = {
+  def putEdges[ED: ClassTag](buffer: MappedBuffer, iter: Iterator[Edge[ED]], edClass: Class[ED], writer: BufferedWriter,firstSrcId : VertexId, firstDstid : VertexId, firstAttr: ED): Unit = {
     if (edClass.equals(classOf[java.lang.Long])) {
+      buffer.writeLong(firstSrcId)
+      buffer.writeLong(firstDstid)
+      buffer.writeLong(firstAttr.asInstanceOf[java.lang.Long])
       iter.foreach(
         tuple => {
           buffer.writeLong(tuple.srcId)
@@ -474,6 +487,9 @@ object Pregel extends Logging {
       )
     }
     else if (edClass.equals(classOf[Long])) {
+      buffer.writeLong(firstSrcId)
+      buffer.writeLong(firstDstid)
+      buffer.writeLong(firstAttr.asInstanceOf[Long])
       iter.foreach(
         tuple => {
           buffer.writeLong(tuple.srcId)
@@ -483,6 +499,9 @@ object Pregel extends Logging {
       )
     }
     else if (edClass.equals(classOf[java.lang.Double])) {
+      buffer.writeLong(firstSrcId)
+      buffer.writeLong(firstDstid)
+      buffer.writeDouble(firstAttr.asInstanceOf[java.lang.Double])
       iter.foreach(
         tuple => {
           buffer.writeLong(tuple.srcId)
@@ -492,6 +511,9 @@ object Pregel extends Logging {
       )
     }
     else if (edClass.equals(classOf[Double])) {
+      buffer.writeLong(firstSrcId)
+      buffer.writeLong(firstDstid)
+      buffer.writeDouble(firstAttr.asInstanceOf[Double])
       iter.foreach(
         tuple => {
           buffer.writeLong(tuple.srcId)
@@ -501,6 +523,9 @@ object Pregel extends Logging {
       )
     }
     else if (edClass.equals(classOf[java.lang.Integer])) {
+      buffer.writeLong(firstSrcId)
+      buffer.writeLong(firstDstid)
+      buffer.writeInt(firstAttr.asInstanceOf[java.lang.Integer])
       iter.foreach(
         tuple => {
           buffer.writeLong(tuple.srcId)
@@ -510,6 +535,9 @@ object Pregel extends Logging {
       )
     }
     else if (edClass.equals(classOf[Int])) {
+      buffer.writeLong(firstSrcId)
+      buffer.writeLong(firstDstid)
+      buffer.writeInt(firstAttr.asInstanceOf[Int])
       iter.foreach(
         tuple => {
           buffer.writeLong(tuple.srcId)
