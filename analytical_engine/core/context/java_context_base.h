@@ -87,7 +87,7 @@ class JavaContextBase : public grape::ContextBase {
     JNIEnvMark m;
     if (m.env()) {
       m.env()->DeleteGlobalRef(url_class_loader_object_);
-      InvokeGC(m.env());
+      // InvokeGC(m.env());
       VLOG(1) << "Delete URL class loader";
     } else {
       LOG(ERROR) << "JNI env not available.";

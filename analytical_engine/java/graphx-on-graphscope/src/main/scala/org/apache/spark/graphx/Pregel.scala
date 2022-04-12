@@ -190,7 +190,10 @@ object Pregel extends Logging {
         val loggerFileName = E_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
+        val t00 = System.nanoTime()
         val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
+        val t11 = System.nanoTime()
+        bufferedWriter.write("time for mapping edge file " + (t11 - t00) / 1000000)
         if (buffer == null){
           bufferedWriter.write("Error: mapped faild")
         }
