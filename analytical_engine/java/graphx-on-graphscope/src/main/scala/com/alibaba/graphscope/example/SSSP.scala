@@ -64,7 +64,8 @@ object SSSP {
       }
     )
     ///home/graphscope/data/gstest/p2p-31.e
-
+    println("edge rdd num partitions: " + edgesRDD.getNumPartitions)
+    println("edge rdd partitioner: " + edgesRDD.partitioner)
     val graph = Graph.apply(verticesRDD,edgesRDD)
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, vdata) =>
