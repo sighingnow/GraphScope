@@ -147,7 +147,7 @@ object Pregel extends Logging {
     val edClass = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
     val msgClass = classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]
     log.info(s"vd class: ${vdClass} ed : ${edClass} msg ${msgClass}")
-    val paritioner = graph.vertices.partitioner.getOrElse(new HashPartitioner(graph.vertices.getNumPartitions))
+    val partitioner = graph.vertices.partitioner.getOrElse(new HashPartitioner(graph.vertices.getNumPartitions))
 
     val startTime = System.nanoTime();
     graph.vertices.foreachPartition(
@@ -157,7 +157,7 @@ object Pregel extends Logging {
         val firstEle = iterator.next()
         val firstId = firstEle._1
         val firstVd = firstEle._2
-        val pid = graph.vertices.partitioner.get.getPartition(firstId)
+        val pid = partitioner.getPartition(firstId)
 //        val pid = paritioner.getPartition(verticesArray(0)._1)
         val loggerFileName = V_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
@@ -196,7 +196,7 @@ object Pregel extends Logging {
         val firstSrcId = firstEle.srcId
         val firstDstId = firstEle.dstId
         val firstAttr = firstEle.attr
-        val pid = paritioner.getPartition(firstSrcId)
+        val pid = partitioner.getPartition(firstSrcId)
         val loggerFileName = E_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
