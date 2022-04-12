@@ -47,7 +47,7 @@
 #include "core/java/java_loader_invoker.h"
 #endif
 
-#define HASH_PARTITION
+// #define HASH_PARTITION
 
 namespace gs {
 /**
@@ -499,8 +499,8 @@ class ArrowFragmentLoader {
     }
     std::string prefix = loc.substr(0, first_occur);
     int max_partition_id = std::stoi(loc.substr(first_occur + 1, second_occur));
-    int64_t mapped_size =
-        std::strtoll(loc.substr(second_occur + 1, std::string::npos).c_str(), NULL, 10);
+    int64_t mapped_size = std::strtoll(
+        loc.substr(second_occur + 1, std::string::npos).c_str(), NULL, 10);
     VLOG(1) << "parsed: " << prefix << ", " << max_partition_id << ", "
             << mapped_size;
     if (load_vertex) {
