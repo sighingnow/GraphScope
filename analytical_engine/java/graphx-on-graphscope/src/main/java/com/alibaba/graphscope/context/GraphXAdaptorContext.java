@@ -43,7 +43,6 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     private GraphXConf conf;
     private GraphXProxy graphXProxy;
     private Object initialMsg;
-    public int round;
 
     public String getUserClassName() {
         return userClassName;
@@ -70,7 +69,6 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     @Override
     public void Init(IFragment<Long, Long, VDATA_T, EDATA_T> frag,
         DefaultMessageManager messageManager, JSONObject jsonObject) {
-	round = 0;
         String vdClassStr = jsonObject.getString(VD_CLASS);
         String edClassStr = jsonObject.getString(ED_CLASS);
         String msgClassStr = jsonObject.getString(MSG_CLASS);

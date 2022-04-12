@@ -25,7 +25,6 @@ public class GraphXAdaptor<VDATA_T, EDATA_T> extends Communicator implements
         proxy.init(graph, messageManager, ctx.getInitialMsg());//fix initial msg
         proxy.PEval();
         messageManager.ForceContinue();
-	ctx.round += 1;
     }
 
     @Override
@@ -33,13 +32,11 @@ public class GraphXAdaptor<VDATA_T, EDATA_T> extends Communicator implements
         DefaultContextBase<Long, Long, VDATA_T, EDATA_T> context,
         DefaultMessageManager messageManager) {
         GraphXAdaptorContext<VDATA_T, EDATA_T> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T>) context;
-	if (ctx.round > 5) return ;
-        logger.info("IncEval");
+	//if (ctx.round > 5) return ;
         GraphXProxy proxy = ctx.getGraphXProxy();
         proxy.IncEval();
         if (proxy.getOutgoingMessageStore().hasMessages()){
             messageManager.ForceContinue();
         }
-	ctx.round += 1;
     }
 }

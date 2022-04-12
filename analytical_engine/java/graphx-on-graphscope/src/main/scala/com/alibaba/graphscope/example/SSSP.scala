@@ -76,7 +76,7 @@ object SSSP {
       (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
         if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
-          println(triplet.srcId + ", to  " + triplet.dstId + ", data "+ (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
+          //println(triplet.srcId + ", to  " + triplet.dstId + ", data "+ (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
           Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
         } else {
           Iterator.empty
@@ -86,7 +86,7 @@ object SSSP {
     )
     val endTIme = System.nanoTime()
     println("[Pregel running time ] : " + ((endTIme - startTime) / 1000000) + "ms")
-    sssp.vertices.saveAsTextFile("/tmp/spark-graphx")
+//    sssp.vertices.saveAsTextFile("/tmp/spark-graphx")
 //    println(sssp.vertices.collect.mkString("\n"))
     // $example off$
 

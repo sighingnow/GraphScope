@@ -22,6 +22,7 @@ import com.alibaba.graphscope.graphx.SerializationUtils
 import com.alibaba.graphscope.parallel.DefaultMessageManager
 import com.alibaba.graphscope.utils.{CallUtils, MPIProcessLauncher, MappedBuffer}
 import org.apache.spark.internal.Logging
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkContext, graphx}
 
 import java.io.{BufferedWriter, File, FileWriter}
@@ -218,8 +219,10 @@ object Pregel extends Logging {
     SerializationUtils.write(vprog, VPROG_SERIALIZATION_PATH)
     SerializationUtils.write(sendMsg, SEND_MSG_SERIALIZATION_PATH)
     SerializationUtils.write(mergeMsg, MERGE_MSG_SERIALIZATION_PATH)
-    verticesRes.count() //force running
-    edgesRes.count()
+    verticesRes.persist(StorageLevel.MEMORY_ONLY)
+    edgesRes.persist(StorageLevel.MEMORY_ONLY)
+    //verticesRes.count() //force running
+    //edgesRes.count()
 //    vprogRes.count()
     val endTime = System.nanoTime();
     log.info(s"Time send on memory mapping and serialization: " + (endTime - startTime) / 1000000 + " ms")
