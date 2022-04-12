@@ -154,14 +154,7 @@ object Pregel extends Logging {
     log.info("edge partitions rdd num: " + graph.edges.partitionsRDD.count())
     graph.vertices.foreachPartition(
       iterator => {
-//        val verticesArray = iterator.toArray
-//        require(verticesArray.length > 0)
-        val firstEle = iterator.next()
-        val firstId = firstEle._1
-        val firstVd = firstEle._2
-//        val pid = paritioner.getPartition(firstId)
         val pid = TaskContext.getPartitionId()
-//        val pid = paritioner.getPartition(verticesArray(0)._1)
         val loggerFileName = V_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_V_FILE_PREFIX}${pid}"
@@ -177,7 +170,7 @@ object Pregel extends Logging {
         putHeader(buffer,vdClass, edClass, msgClass, bufferedWriter)
         bufferedWriter.write("successfully put header + \n")
         val t1 = System.nanoTime()
-        putVertices(buffer, iterator, vdClass, bufferedWriter, firstId, firstVd)
+        putVertices(buffer, iterator, vdClass, bufferedWriter)
         bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
         val t2 = System.nanoTime()
         bufferedWriter.write(" time for writing vertices " + (t2 - t1) / 1000000)
@@ -195,28 +188,21 @@ object Pregel extends Logging {
     graph.edges.foreachPartition(
       iterator =>{
         val tt0 = System.nanoTime()
-        val firstEle = iterator.next()
-        val firstSrcId = firstEle.srcId
-        val firstDstId = firstEle.dstId
-        val firstAttr = firstEle.attr
-//        val pid = paritioner.getPartition(firstSrcId)
         val pid = TaskContext.getPartitionId()
         val loggerFileName = E_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
-        val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
+        val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE)
         bufferedWriter.newLine()
         if (buffer == null){
           bufferedWriter.write("Error: mapped faild")
         }
-        bufferedWriter.write(buffer.toString)
-        bufferedWriter.newLine()
         buffer.position(8) // reserve place to write total length
         //To put vd and ed in the header.
         //      putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
         //      bufferedWriter.write("successfully put header + \n")
         val t1 = System.nanoTime()
-        putEdges(buffer, iterator, edClass, bufferedWriter, firstSrcId, firstDstId, firstAttr)
+        putEdges(buffer, iterator, edClass, bufferedWriter)
         bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8))
         val t2 = System.nanoTime()
         bufferedWriter.write("time for write edges " + (t2 - t1) / 1000000)
@@ -341,82 +327,75 @@ object Pregel extends Logging {
     else throw new IllegalStateException("unexpected vdata class " + vdClass.getName)
   }
 
-  def putVertices[VD: ClassTag](buffer: MappedBuffer, iter: Iterator[(graphx.VertexId, VD)], vdClass: Class[VD], writer: BufferedWriter, firstId: VertexId, firstVd: VD ): Unit = {
+  def putVertices[VD: ClassTag](buffer: MappedBuffer, iter: Iterator[(graphx.VertexId, VD)], vdClass: Class[VD], writer: BufferedWriter): Unit = {
     /**
      * FIXME: tune this position cost, copy memory at once.
      * FIXME: construct arrow array from pointer.
      */
     if (vdClass.equals(classOf[java.lang.Long])) {
-      buffer.writeLong(firstId)
-      buffer.writeLong(firstVd.asInstanceOf[java.lang.Long])
-      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
-      iter.foreach(
-        tuple =>{
-          buffer.writeLong(tuple._1)
-          buffer.writeLong(tuple._2.asInstanceOf[java.lang.Long])
-          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
-        }
-      )
+//      buffer.writeLong(firstId)
+//      buffer.writeLong(firstVd.asInstanceOf[java.lang.Long])
+//      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
+      while (iter.hasNext){
+        val tuple = iter.next()
+        buffer.writeLong(tuple._1)
+        buffer.writeLong(tuple._2.asInstanceOf[java.lang.Long])
+      }
     }
     else if (vdClass.equals(classOf[Long])) {
-      buffer.writeLong(firstId)
-      buffer.writeLong(firstVd.asInstanceOf[Long])
-      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
-      iter.foreach(
-        tuple =>{
+//      buffer.writeLong(firstId)
+//      buffer.writeLong(firstVd.asInstanceOf[Long])
+//      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
+      while (iter.hasNext){
+        val tuple = iter.next()
           buffer.writeLong(tuple._1)
           buffer.writeLong(tuple._2.asInstanceOf[Long])
-          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
-        }
-      )
+//          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
+      }
     }
     else if (vdClass.equals(classOf[java.lang.Double])) {
-      buffer.writeLong(firstId)
-      buffer.writeDouble(firstVd.asInstanceOf[java.lang.Double])
-      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
-      iter.foreach(
-        tuple =>{
+//      buffer.writeLong(firstId)
+//      buffer.writeDouble(firstVd.asInstanceOf[java.lang.Double])
+//      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
+      while (iter.hasNext){
+        val tuple = iter.next()
           buffer.writeLong(tuple._1)
           buffer.writeDouble(tuple._2.asInstanceOf[java.lang.Double])
-          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
-        }
-      )
+//          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
+      }
     }
     else if (vdClass.equals(classOf[Double])) {
-      buffer.writeLong(firstId)
-      buffer.writeDouble(firstVd.asInstanceOf[Double])
-      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
-      iter.foreach(
-        tuple =>{
+//      buffer.writeLong(firstId)
+//      buffer.writeDouble(firstVd.asInstanceOf[Double])
+//      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
+      while (iter.hasNext){
+        val tuple = iter.next()
           buffer.writeLong(tuple._1)
           buffer.writeDouble(tuple._2.asInstanceOf[Double])
-          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
-        }
-      )
+//          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
+      }
     }
     else if (vdClass.equals(classOf[java.lang.Integer])) {
-      buffer.writeLong(firstId)
-      buffer.writeInt(firstVd.asInstanceOf[java.lang.Integer])
-      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
-      iter.foreach(
-        tuple =>{
+//      buffer.writeLong(firstId)
+//      buffer.writeInt(firstVd.asInstanceOf[java.lang.Integer])
+//      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
+      while (iter.hasNext){
+        val tuple = iter.next()
           buffer.writeLong(tuple._1)
           buffer.writeInt(tuple._2.asInstanceOf[java.lang.Integer])
-          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
-        }
-      )
+//          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
+      }
     }
     else if (vdClass.equals(classOf[Int])) {
-      buffer.writeLong(firstId)
-      buffer.writeInt(firstVd.asInstanceOf[java.lang.Integer])
-      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
-      iter.foreach(
-        tuple =>{
+//      buffer.writeLong(firstId)
+//      buffer.writeInt(firstVd.asInstanceOf[java.lang.Integer])
+//      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
+      while (iter.hasNext){
+        val tuple = iter.next()
           buffer.writeLong(tuple._1)
           buffer.writeLong(tuple._2.asInstanceOf[Int])
-          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
+//          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
         }
-      )
     }
     else throw new IllegalStateException("unexpected vdata class " + vdClass.getName)
   }
@@ -489,90 +468,84 @@ object Pregel extends Logging {
     }
     else throw new IllegalStateException("Unexpected ed class " + edClass.getName)
   }
-  def putEdges[ED: ClassTag](buffer: MappedBuffer, iter: Iterator[Edge[ED]], edClass: Class[ED], writer: BufferedWriter,firstSrcId : VertexId, firstDstid : VertexId, firstAttr: ED): Unit = {
+  def putEdges[ED: ClassTag](buffer: MappedBuffer, iter: Iterator[Edge[ED]], edClass: Class[ED], writer: BufferedWriter): Unit = {
     if (edClass.equals(classOf[java.lang.Long])) {
-      buffer.writeLong(firstSrcId)
-      buffer.writeLong(firstDstid)
-      buffer.writeLong(firstAttr.asInstanceOf[java.lang.Long])
-      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
-      iter.foreach(
-        tuple => {
+//      buffer.writeLong(firstSrcId)
+//      buffer.writeLong(firstDstid)
+//      buffer.writeLong(firstAttr.asInstanceOf[java.lang.Long])
+//      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
+      while (iter.hasNext){
+        val tuple = iter.next()
           buffer.writeLong(tuple.srcId)
           buffer.writeLong(tuple.dstId)
           buffer.writeLong(tuple.attr.asInstanceOf[java.lang.Long])
-          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
+//          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
         }
-      )
     }
     else if (edClass.equals(classOf[Long])) {
-      buffer.writeLong(firstSrcId)
-      buffer.writeLong(firstDstid)
-      buffer.writeLong(firstAttr.asInstanceOf[Long])
-      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
-      iter.foreach(
-        tuple => {
+//      buffer.writeLong(firstSrcId)
+//      buffer.writeLong(firstDstid)
+//      buffer.writeLong(firstAttr.asInstanceOf[Long])
+//      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
+      while (iter.hasNext){
+        val tuple = iter.next()
           buffer.writeLong(tuple.srcId)
           buffer.writeLong(tuple.dstId)
           buffer.writeLong(tuple.attr.asInstanceOf[Long])
-          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
+//          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
         }
-      )
     }
     else if (edClass.equals(classOf[java.lang.Double])) {
-      buffer.writeLong(firstSrcId)
-      buffer.writeLong(firstDstid)
-      buffer.writeDouble(firstAttr.asInstanceOf[java.lang.Double])
-      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
-      iter.foreach(
-        tuple => {
+//      buffer.writeLong(firstSrcId)
+//      buffer.writeLong(firstDstid)
+//      buffer.writeDouble(firstAttr.asInstanceOf[java.lang.Double])
+//      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
+      while (iter.hasNext){
+        val tuple = iter.next()
           buffer.writeLong(tuple.srcId)
           buffer.writeLong(tuple.dstId)
           buffer.writeDouble(tuple.attr.asInstanceOf[java.lang.Double])
-          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
+//          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
         }
-      )
     }
     else if (edClass.equals(classOf[Double])) {
-      buffer.writeLong(firstSrcId)
-      buffer.writeLong(firstDstid)
-      buffer.writeDouble(firstAttr.asInstanceOf[Double])
-      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
-      iter.foreach(
-        tuple => {
+//      buffer.writeLong(firstSrcId)
+//      buffer.writeLong(firstDstid)
+//      buffer.writeDouble(firstAttr.asInstanceOf[Double])
+//      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
+      while (iter.hasNext){
+        val tuple = iter.next()
           buffer.writeLong(tuple.srcId)
           buffer.writeLong(tuple.dstId)
           buffer.writeDouble(tuple.attr.asInstanceOf[Double])
-          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
+//          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
         }
-      )
     }
     else if (edClass.equals(classOf[java.lang.Integer])) {
-      buffer.writeLong(firstSrcId)
-      buffer.writeLong(firstDstid)
-      buffer.writeInt(firstAttr.asInstanceOf[java.lang.Integer])
-      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
-      iter.foreach(
-        tuple => {
+//      buffer.writeLong(firstSrcId)
+//      buffer.writeLong(firstDstid)
+//      buffer.writeInt(firstAttr.asInstanceOf[java.lang.Integer])
+//      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
+      while (iter.hasNext){
+        val tuple = iter.next()
           buffer.writeLong(tuple.srcId)
           buffer.writeLong(tuple.dstId)
           buffer.writeInt(tuple.attr.asInstanceOf[java.lang.Integer])
-          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
+//          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
         }
-      )
     }
     else if (edClass.equals(classOf[Int])) {
-      buffer.writeLong(firstSrcId)
-      buffer.writeLong(firstDstid)
-      buffer.writeInt(firstAttr.asInstanceOf[Int])
-      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
-      iter.foreach(
-        tuple => {
+//      buffer.writeLong(firstSrcId)
+//      buffer.writeLong(firstDstid)
+//      buffer.writeInt(firstAttr.asInstanceOf[Int])
+//      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
+      while (iter.hasNext){
+        val tuple = iter.next()
           buffer.writeLong(tuple.srcId)
           buffer.writeLong(tuple.dstId)
           buffer.writeInt(tuple.attr.asInstanceOf[Int])
-          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
+//          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
         }
-      )
     }
     else throw new IllegalStateException("Unexpected ed class " + edClass.getName)
   }

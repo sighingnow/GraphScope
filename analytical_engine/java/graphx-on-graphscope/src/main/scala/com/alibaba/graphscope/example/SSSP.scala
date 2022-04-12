@@ -71,14 +71,16 @@ object SSSP {
     val newEdgesRDD = edgesRDD.repartition(numParition.toInt)
     val newVerticesRDD = verticesRDD.repartition(numParition.toInt)
     val graph = Graph.apply(newVerticesRDD,newEdgesRDD)
-    val verticesNum = graph.vertices.count()
-    val edgesSNum = graph.edges.count()
-    println(s"Graph has ${verticesNum} vertices, ${edgesSNum} edges")
+
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, vdata) =>
       if (id == sourceId) 0.0 else vdata.toDouble)
 //    println(initialGraph.vertices.collect().mkString("Array(", ", ", ")"))
 //    println(initialGraph.edges.collect().mkString("Array(", ", ", ")"))
+    val edgesNum = initialGraph.numEdges
+    val verticesNum = initialGraph.numVertices
+    println(s"Graph has ${verticesNum} vertices, ${edgesNum} edges")
+
     val startTime = System.nanoTime();
     val sssp = initialGraph.pregel(Double.PositiveInfinity)( //avoid overflow
       (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
