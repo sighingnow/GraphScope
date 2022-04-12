@@ -150,6 +150,8 @@ object Pregel extends Logging {
     val paritioner = graph.vertices.partitioner.getOrElse(new HashPartitioner(graph.vertices.getNumPartitions))
 
     val startTime = System.nanoTime();
+    log.info("vertex partitions rdd number: " + graph.vertices.partitionsRDD.count())
+    log.info("edge partitions rdd num: " + graph.edges.partitionsRDD.count())
     graph.vertices.foreachPartition(
       iterator => {
 //        val verticesArray = iterator.toArray
@@ -157,7 +159,7 @@ object Pregel extends Logging {
         val firstEle = iterator.next()
         val firstId = firstEle._1
         val firstVd = firstEle._2
-        val pid = graph.vertices.partitioner.get.getPartition(firstId)
+        val pid = paritioner.getPartition(firstId)
 //        val pid = paritioner.getPartition(verticesArray(0)._1)
         val loggerFileName = V_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
@@ -345,60 +347,72 @@ object Pregel extends Logging {
     if (vdClass.equals(classOf[java.lang.Long])) {
       buffer.writeLong(firstId)
       buffer.writeLong(firstVd.asInstanceOf[java.lang.Long])
+      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
       iter.foreach(
         tuple =>{
           buffer.writeLong(tuple._1)
           buffer.writeLong(tuple._2.asInstanceOf[java.lang.Long])
+          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
         }
       )
     }
     else if (vdClass.equals(classOf[Long])) {
       buffer.writeLong(firstId)
       buffer.writeLong(firstVd.asInstanceOf[Long])
+      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
       iter.foreach(
         tuple =>{
           buffer.writeLong(tuple._1)
           buffer.writeLong(tuple._2.asInstanceOf[Long])
+          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
         }
       )
     }
     else if (vdClass.equals(classOf[java.lang.Double])) {
       buffer.writeLong(firstId)
       buffer.writeDouble(firstVd.asInstanceOf[java.lang.Double])
+      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
       iter.foreach(
         tuple =>{
           buffer.writeLong(tuple._1)
           buffer.writeDouble(tuple._2.asInstanceOf[java.lang.Double])
+          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
         }
       )
     }
     else if (vdClass.equals(classOf[Double])) {
       buffer.writeLong(firstId)
       buffer.writeDouble(firstVd.asInstanceOf[Double])
+      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
       iter.foreach(
         tuple =>{
           buffer.writeLong(tuple._1)
           buffer.writeDouble(tuple._2.asInstanceOf[Double])
+          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
         }
       )
     }
     else if (vdClass.equals(classOf[java.lang.Integer])) {
       buffer.writeLong(firstId)
       buffer.writeInt(firstVd.asInstanceOf[java.lang.Integer])
+      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
       iter.foreach(
         tuple =>{
           buffer.writeLong(tuple._1)
           buffer.writeInt(tuple._2.asInstanceOf[java.lang.Integer])
+          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
         }
       )
     }
     else if (vdClass.equals(classOf[Int])) {
       buffer.writeLong(firstId)
       buffer.writeInt(firstVd.asInstanceOf[java.lang.Integer])
+      writer.write("put first vertex [" + firstId + "] -> [" + firstVd + " ] \n")
       iter.foreach(
         tuple =>{
           buffer.writeLong(tuple._1)
           buffer.writeLong(tuple._2.asInstanceOf[Int])
+          writer.write("put first vertex [" + tuple._1 + "] -> [" + tuple._2 + " ] \n")
         }
       )
     }
@@ -478,11 +492,13 @@ object Pregel extends Logging {
       buffer.writeLong(firstSrcId)
       buffer.writeLong(firstDstid)
       buffer.writeLong(firstAttr.asInstanceOf[java.lang.Long])
+      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
       iter.foreach(
         tuple => {
           buffer.writeLong(tuple.srcId)
           buffer.writeLong(tuple.dstId)
           buffer.writeLong(tuple.attr.asInstanceOf[java.lang.Long])
+          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
         }
       )
     }
@@ -490,11 +506,13 @@ object Pregel extends Logging {
       buffer.writeLong(firstSrcId)
       buffer.writeLong(firstDstid)
       buffer.writeLong(firstAttr.asInstanceOf[Long])
+      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
       iter.foreach(
         tuple => {
           buffer.writeLong(tuple.srcId)
           buffer.writeLong(tuple.dstId)
           buffer.writeLong(tuple.attr.asInstanceOf[Long])
+          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
         }
       )
     }
@@ -502,11 +520,13 @@ object Pregel extends Logging {
       buffer.writeLong(firstSrcId)
       buffer.writeLong(firstDstid)
       buffer.writeDouble(firstAttr.asInstanceOf[java.lang.Double])
+      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
       iter.foreach(
         tuple => {
           buffer.writeLong(tuple.srcId)
           buffer.writeLong(tuple.dstId)
           buffer.writeDouble(tuple.attr.asInstanceOf[java.lang.Double])
+          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
         }
       )
     }
@@ -514,11 +534,13 @@ object Pregel extends Logging {
       buffer.writeLong(firstSrcId)
       buffer.writeLong(firstDstid)
       buffer.writeDouble(firstAttr.asInstanceOf[Double])
+      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
       iter.foreach(
         tuple => {
           buffer.writeLong(tuple.srcId)
           buffer.writeLong(tuple.dstId)
           buffer.writeDouble(tuple.attr.asInstanceOf[Double])
+          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
         }
       )
     }
@@ -526,11 +548,13 @@ object Pregel extends Logging {
       buffer.writeLong(firstSrcId)
       buffer.writeLong(firstDstid)
       buffer.writeInt(firstAttr.asInstanceOf[java.lang.Integer])
+      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
       iter.foreach(
         tuple => {
           buffer.writeLong(tuple.srcId)
           buffer.writeLong(tuple.dstId)
           buffer.writeInt(tuple.attr.asInstanceOf[java.lang.Integer])
+          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
         }
       )
     }
@@ -538,11 +562,13 @@ object Pregel extends Logging {
       buffer.writeLong(firstSrcId)
       buffer.writeLong(firstDstid)
       buffer.writeInt(firstAttr.asInstanceOf[Int])
+      writer.write("put first edge [" + firstSrcId + "] -> [" + firstDstid + " ] , " + firstAttr + "\n")
       iter.foreach(
         tuple => {
           buffer.writeLong(tuple.srcId)
           buffer.writeLong(tuple.dstId)
           buffer.writeInt(tuple.attr.asInstanceOf[Int])
+          writer.write("put first edge [" + tuple.srcId + "] -> [" + tuple.dstId + " ] , " + tuple.attr + "\n")
         }
       )
     }
