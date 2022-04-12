@@ -149,7 +149,7 @@ object Pregel extends Logging {
     val paritioner = graph.vertices.partitioner.getOrElse(new HashPartitioner(graph.vertices.getNumPartitions))
 
     val startTime = System.nanoTime();
-    graph.vertices.foreachPartitionAsync(
+    graph.vertices.foreachPartition(
       iterator => {
         val verticesArray = iterator.toArray
         require(verticesArray.length > 0)
@@ -181,21 +181,24 @@ object Pregel extends Logging {
 
       }
     )
+    val verticesTime = System.nanoTime()
     log.info(" vertices partition {}, partitions rdd partitions {}",graph.vertices.getNumPartitions, graph.vertices.partitionsRDD.getNumPartitions)
+    log.info(" time spend on write vertices: " + (verticesTime - startTime) / 1000000)
 
     graph.edges.foreachPartition(
       iterator =>{
+        val tt0 = System.nanoTime()
         val edgesArray = iterator.toArray
+        val tt1 = System.nanoTime()
         require(edgesArray.length > 0)
         //        val pid = graph.vertices.partitioner.get.getPartition(verticesArray(0)._1)
         val pid = paritioner.getPartition(edgesArray(0).srcId)
         val loggerFileName = E_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
-        val t00 = System.nanoTime()
         val buffer = MappedBuffer.mapToFile(strName, MAPPED_SIZE);
-        val t11 = System.nanoTime()
-        bufferedWriter.write("time for mapping edge file " + (t11 - t00) / 1000000)
+        bufferedWriter.write("time for convert iterator to array " + (tt1 - tt0) / 1000000)
+        bufferedWriter.newLine()
         if (buffer == null){
           bufferedWriter.write("Error: mapped faild")
         }
@@ -210,16 +213,16 @@ object Pregel extends Logging {
         bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
         val t2 = System.nanoTime()
         bufferedWriter.write("time for write edges " + (t2 - t1) / 1000000)
+        bufferedWriter.newLine()
         buffer.writeLong(0, buffer.position() - 8)
         //      iterator
+        val endTime = System.nanoTime();
+        bufferedWriter.write("total time spend on converting edges : " + (endTime - tt0) / 1000000 + "ms")
+        bufferedWriter.newLine()
         bufferedWriter.close()
       }
     )
-    graph.edges.foreach(
-      tuple => {
-
-      }
-    )
+    val edgeTime = System.nanoTime()
 
       //graph.edges.mapPartitionsWithIndex
 
@@ -231,11 +234,14 @@ object Pregel extends Logging {
     SerializationUtils.write(vprog, VPROG_SERIALIZATION_PATH)
     SerializationUtils.write(sendMsg, SEND_MSG_SERIALIZATION_PATH)
     SerializationUtils.write(mergeMsg, MERGE_MSG_SERIALIZATION_PATH)
+    val functionsTime = System.nanoTime()
 //    verticesRes.count() //force running
 //    edgesRes.count()
 //    vprogRes.count()
     val endTime = System.nanoTime();
-    log.info(s"Time send on memory mapping and serialization: " + (endTime - startTime) / 1000000 + " ms")
+    log.info(s"Time spend on memory mapping and serialization: " + (endTime - startTime) / 1000000 + " ms")
+    log.info("Time spend on edges " + (edgeTime - verticesTime) / 1000000 + "ms")
+    log.info("Time spend on serializing functions " + (functionsTime - edgeTime) / 1000000 + "ms")
 
 //    log.info(s"after writing to memory mapped file, launch mpi processes ${verticesRes}, ${edgesRes}")
 
