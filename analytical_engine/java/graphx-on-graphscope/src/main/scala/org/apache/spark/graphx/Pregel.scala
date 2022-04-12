@@ -23,7 +23,7 @@ import com.alibaba.graphscope.parallel.DefaultMessageManager
 import com.alibaba.graphscope.utils.{CallUtils, MPIProcessLauncher, MappedBuffer}
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{HashPartitioner, SparkContext, graphx}
+import org.apache.spark.{HashPartitioner, SparkContext, TaskContext, graphx}
 
 import java.io.{BufferedWriter, File, FileWriter}
 import java.util.concurrent.atomic.AtomicInteger
@@ -159,8 +159,8 @@ object Pregel extends Logging {
         val firstEle = iterator.next()
         val firstId = firstEle._1
         val firstVd = firstEle._2
-        val pid = partitioner.getPartition(firstId)
-//        val pid = paritioner.getPartition(verticesArray(0)._1)
+        val pid = TaskContext.getPartitionId()
+
         val loggerFileName = V_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_V_FILE_PREFIX}${pid}"
@@ -198,7 +198,7 @@ object Pregel extends Logging {
         val firstSrcId = firstEle.srcId
         val firstDstId = firstEle.dstId
         val firstAttr = firstEle.attr
-        val pid = partitioner.getPartition(firstSrcId)
+        val pid = TaskContext.getPartitionId()
         val loggerFileName = E_FILE_LOG_PREFIX + pid
         val bufferedWriter = new BufferedWriter(new FileWriter(new File(loggerFileName)))
         val strName = s"${MMAP_E_FILE_PREFIX}${pid}"
