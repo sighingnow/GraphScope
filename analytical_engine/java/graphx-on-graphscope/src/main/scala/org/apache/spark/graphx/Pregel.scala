@@ -170,7 +170,7 @@ object Pregel extends Logging {
         putHeader(buffer,vdClass, edClass, msgClass, bufferedWriter)
         bufferedWriter.write("successfully put header + \n")
         val t1 = System.nanoTime()
-        putVertices(buffer, verticesArray, vdClass, bufferedWriter)
+        putVertices(buffer, iterator, vdClass, bufferedWriter)
         bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
         val t2 = System.nanoTime()
         bufferedWriter.write(" time for writing vertices " + (t2 - t1) / 1000000)
@@ -209,7 +209,7 @@ object Pregel extends Logging {
         //      putHeader(buffer, classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]], classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]], classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]);
         //      bufferedWriter.write("successfully put header + \n")
         val t1 = System.nanoTime()
-        putEdges(buffer, edgesArray, edClass, bufferedWriter)
+        putEdges(buffer, iterator, edClass, bufferedWriter)
         bufferedWriter.write("successfully put data limit, " + buffer.limit() + ", total length: " + buffer.position() + ", data size:" + (buffer.position() - 8));
         val t2 = System.nanoTime()
         bufferedWriter.write("time for write edges " + (t2 - t1) / 1000000)
@@ -334,6 +334,61 @@ object Pregel extends Logging {
     else throw new IllegalStateException("unexpected vdata class " + vdClass.getName)
   }
 
+  def putVertices[VD: ClassTag](buffer: MappedBuffer, iter: Iterator[(graphx.VertexId, VD)], vdClass: Class[VD], writer: BufferedWriter): Unit = {
+    /**
+     * FIXME: tune this position cost, copy memory at once.
+     * FIXME: construct arrow array from pointer.
+     */
+    if (vdClass.equals(classOf[java.lang.Long])) {
+      iter.foreach(
+        tuple =>{
+          buffer.writeLong(tuple._1)
+          buffer.writeLong(tuple._2.asInstanceOf[java.lang.Long])
+        }
+      )
+    }
+    else if (vdClass.equals(classOf[Long])) {
+      iter.foreach(
+        tuple =>{
+          buffer.writeLong(tuple._1)
+          buffer.writeLong(tuple._2.asInstanceOf[Long])
+        }
+      )
+    }
+    else if (vdClass.equals(classOf[java.lang.Double])) {
+      iter.foreach(
+        tuple =>{
+          buffer.writeLong(tuple._1)
+          buffer.writeDouble(tuple._2.asInstanceOf[java.lang.Double])
+        }
+      )
+    }
+    else if (vdClass.equals(classOf[Double])) {
+      iter.foreach(
+        tuple =>{
+          buffer.writeLong(tuple._1)
+          buffer.writeDouble(tuple._2.asInstanceOf[Double])
+        }
+      )
+    }
+    else if (vdClass.equals(classOf[java.lang.Integer])) {
+      iter.foreach(
+        tuple =>{
+          buffer.writeLong(tuple._1)
+          buffer.writeInt(tuple._2.asInstanceOf[java.lang.Integer])
+        }
+      )
+    }
+    else if (vdClass.equals(classOf[Int])) {
+      iter.foreach(
+        tuple =>{
+          buffer.writeLong(tuple._1)
+          buffer.writeLong(tuple._2.asInstanceOf[Int])
+        }
+      )
+    }
+    else throw new IllegalStateException("unexpected vdata class " + vdClass.getName)
+  }
   def putEdges[ED: ClassTag](buffer: MappedBuffer, array: Array[Edge[ED]], edClass: Class[ED], writer: BufferedWriter): Unit = {
     if (edClass.equals(classOf[java.lang.Long])) {
       for (i <- 0 until array.length){
@@ -400,6 +455,63 @@ object Pregel extends Logging {
         buffer.writeLong(dstId)
         buffer.writeInt(edgeAttr.asInstanceOf[Int])
       }
+    }
+    else throw new IllegalStateException("Unexpected ed class " + edClass.getName)
+  }
+  def putEdges[ED: ClassTag](buffer: MappedBuffer, iter: Iterator[Edge[ED]], edClass: Class[ED], writer: BufferedWriter): Unit = {
+    if (edClass.equals(classOf[java.lang.Long])) {
+      iter.foreach(
+        tuple => {
+          buffer.writeLong(tuple.srcId)
+          buffer.writeLong(tuple.dstId)
+          buffer.writeLong(tuple.attr.asInstanceOf[java.lang.Long])
+        }
+      )
+    }
+    else if (edClass.equals(classOf[Long])) {
+      iter.foreach(
+        tuple => {
+          buffer.writeLong(tuple.srcId)
+          buffer.writeLong(tuple.dstId)
+          buffer.writeLong(tuple.attr.asInstanceOf[Long])
+        }
+      )
+    }
+    else if (edClass.equals(classOf[java.lang.Double])) {
+      iter.foreach(
+        tuple => {
+          buffer.writeLong(tuple.srcId)
+          buffer.writeLong(tuple.dstId)
+          buffer.writeDouble(tuple.attr.asInstanceOf[java.lang.Double])
+        }
+      )
+    }
+    else if (edClass.equals(classOf[Double])) {
+      iter.foreach(
+        tuple => {
+          buffer.writeLong(tuple.srcId)
+          buffer.writeLong(tuple.dstId)
+          buffer.writeDouble(tuple.attr.asInstanceOf[Double])
+        }
+      )
+    }
+    else if (edClass.equals(classOf[java.lang.Integer])) {
+      iter.foreach(
+        tuple => {
+          buffer.writeLong(tuple.srcId)
+          buffer.writeLong(tuple.dstId)
+          buffer.writeInt(tuple.attr.asInstanceOf[java.lang.Integer])
+        }
+      )
+    }
+    else if (edClass.equals(classOf[Int])) {
+      iter.foreach(
+        tuple => {
+          buffer.writeLong(tuple.srcId)
+          buffer.writeLong(tuple.dstId)
+          buffer.writeInt(tuple.attr.asInstanceOf[Int])
+        }
+      )
     }
     else throw new IllegalStateException("Unexpected ed class " + edClass.getName)
   }
