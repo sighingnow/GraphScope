@@ -74,7 +74,7 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
                                 vineyard::Client& client, bool directed,
                                 const std::string& vertex_mm_file_prefix,
                                 const std::string& edge_mm_file_prefix,
-				int max_parition_id, int64_t mapped_size) {
+                                int max_parition_id, int64_t mapped_size) {
   vineyard::ObjectID fragment_id;
   {
     auto graph = std::make_shared<gs::detail::Graph>();
@@ -86,7 +86,8 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
     vertex->vid = "0";
     vertex->protocol = "graphx";
     std::stringstream ss1;
-    ss1 << vertex_mm_file_prefix <<"&" <<max_parition_id << "&" <<mapped_size;
+    ss1 << vertex_mm_file_prefix << "&" << max_parition_id << "&"
+        << mapped_size;
     vertex->values = ss1.str();
     graph->vertices.push_back(vertex);
 
@@ -99,7 +100,7 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
     subLabel->dst_vid = "0";
     subLabel->protocol = "graphx";
     std::stringstream ss2;
-    ss2 << edge_mm_file_prefix<<"&" <<max_parition_id << "&" <<mapped_size;
+    ss2 << edge_mm_file_prefix << "&" << max_parition_id << "&" << mapped_size;
     subLabel->values = ss2.str();
     // subLabel->values = efile;
     // subLabel->eformat += edge_input_format_class;  // eif
@@ -164,24 +165,31 @@ void CreateAndQuery(std::string params) {
   int max_partition_id = pt.get<int>(MAX_PARTITION_ID);
   int64_t mapped_size = pt.get<int64_t>(MAPPED_SIZE);
 
-  VLOG(10) << "user_lib_path: " << user_lib_path << ", directed: " << directed << ", max partition id: " << max_partition_id << ", mapped size" << mapped_size;
+  VLOG(10) << "user_lib_path: " << user_lib_path << ", directed: " << directed
+           << ", max partition id: " << max_partition_id << ", mapped size"
+           << mapped_size;
   vineyard::Client client;
   VINEYARD_CHECK_OK(client.Connect(ipc_socket));
   VLOG(1) << "Connected to IPCServer: " << ipc_socket;
 
-  vineyard::ObjectID fragment_id = LoadFragment(
-      comm_spec, client, directed, vertex_mm_file_prefix, edge_mm_file_prefix, max_partition_id, mapped_size);
+  double t0 = grape::GetCurrentTime();
+
+  vineyard::ObjectID fragment_id =
+      LoadFragment(comm_spec, client, directed, vertex_mm_file_prefix,
+                   edge_mm_file_prefix, max_partition_id, mapped_size);
   VLOG(10) << "[worker " << comm_spec.worker_id()
            << "] loaded frag id: " << fragment_id;
 
   std::shared_ptr<FragmentType> fragment =
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(fragment_id));
+  double t1 = grape::GetCurrentTime();
 
   VLOG(10) << "fid: " << fragment->fid() << "fnum: " << fragment->fnum()
            << "v label num: " << fragment->vertex_label_num()
            << "e label num: " << fragment->edge_label_num()
            << "total v num: " << fragment->GetTotalVerticesNum();
-  VLOG(1) << "inner vertices: " << fragment->GetInnerVerticesNum(0) << "outer vertices: " <<fragment->GetOuterVerticesNum(0);
+  VLOG(1) << "inner vertices: " << fragment->GetInnerVerticesNum(0)
+          << "outer vertices: " << fragment->GetOuterVerticesNum(0);
 
   std::string frag_name =
       "gs::ArrowProjectedFragment<int64_t,uint64_t,double,double>";
@@ -202,8 +210,17 @@ void CreateAndQuery(std::string params) {
   std::shared_ptr<ProjectedFragmentType> projected_fragment =
       ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
 
+  double t2 = grape::GetCurrentTime();
+
   Query<ProjectedFragmentType>(comm_spec, projected_fragment, new_params,
                                user_lib_path);
+
+  double t3 = grape::GetCurrentTime();
+  if (comm_spec.worker_id() == grape::kCoordinatorRank) {
+    VLOG(1) << "[Loading fragment time]: " << (t1 - t0);
+    VLOG(1) << "[Projecting fragment time]: " << (t2 - t1);
+    VLOG(1) << "[Total Query time]: " << (t3 - t2);
+  }
 }  // namespace gs
 void Finalize() {
   grape::FinalizeMPIComm();
