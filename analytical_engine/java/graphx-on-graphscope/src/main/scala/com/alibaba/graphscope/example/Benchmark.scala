@@ -96,7 +96,7 @@ object Benchmark {
     )
     val endTIme = System.nanoTime()
     println("[Pregel running time ] : " + ((endTIme - startTime) / 1000000) + "ms")
-    sssp.vertices.saveAsTextFile("/tmp/spark-graphx")
+//    sssp.vertices.saveAsTextFile("/tmp/spark-graphx")
     //    println(sssp.vertices.collect.mkString("\n"))
     // $example off$
 
