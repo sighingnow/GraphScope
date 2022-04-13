@@ -25,7 +25,7 @@ public class MPIProcessLauncher<VD, ED, MSG> {
     private Class<? extends MSG> msgClass;
     private MSG initialMsg;
     private long mappedSize;
-    private int maxPartitionId;
+    private int maxPartitionId,maxIterations;
 
     static {
         SPARK_HOME = System.getenv("SPARK_HOME");
@@ -51,7 +51,7 @@ public class MPIProcessLauncher<VD, ED, MSG> {
 
     public MPIProcessLauncher(String vertexFilePrefix, String edgeFilePrefix, String vprogPrefix,
         String sendMsgPrefix, String mergeMsgPrefix, String userClass, Class<? extends VD> vdClass,
-        Class<? extends ED> edClass, Class<? extends MSG> msgClass, MSG initialMsg, int maxPartitionId, long mappedSize) {
+        Class<? extends ED> edClass, Class<? extends MSG> msgClass, MSG initialMsg, int maxIterations, int maxPartitionId, long mappedSize) {
         this.vertexFilePrefix = vertexFilePrefix;
         this.edgeFilePrefix = edgeFilePrefix;
         this.vprogPrefix = vprogPrefix;
@@ -66,6 +66,7 @@ public class MPIProcessLauncher<VD, ED, MSG> {
         this.initialMsg = initialMsg;
    	this.mappedSize = mappedSize;
 	this.maxPartitionId = maxPartitionId;
+    this.maxIterations = maxIterations;
     }
 
     public void run() {
@@ -77,7 +78,7 @@ public class MPIProcessLauncher<VD, ED, MSG> {
         long startTime = System.nanoTime();
         String[] commands = {"/bin/bash", SHELL_SCRIPT, vertexFilePrefix, edgeFilePrefix,
             vprogPrefix, sendMsgPrefix, mergeMsgPrefix, userClass, clzToStr(vdClass),
-            clzToStr(edClass), clzToStr(msgClass), initialMsg.toString(), Integer.toString(maxPartitionId), Long.toString(mappedSize)};
+            clzToStr(edClass), clzToStr(msgClass), initialMsg.toString(), Integer.toString(maxIterations), Integer.toString(maxPartitionId), Long.toString(mappedSize)};
         logger.info("Running command: " + String.join(" ", commands));
         processBuilder.command(commands);
         processBuilder.inheritIO();

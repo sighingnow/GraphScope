@@ -55,7 +55,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
     private IFragment<Long, Long, VD, ED> graphxFragment; // different from c++ frag
     private MSG_T initialMessage;
     private ExecutorService executorService;
-    private int numCores;
+    private int numCores, maxIterations, round;
 
     public GraphXProxy(GraphXConf<VD, ED, MSG_T> conf, Function3<Long, VD, MSG_T, VD> vprog,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> sendMsg,
@@ -82,10 +82,11 @@ public class GraphXProxy<VD, ED, MSG_T> {
     }
 
     public void init(IFragment<Long, Long, VD, ED> fragment, DefaultMessageManager messageManager,
-        MSG_T initialMessage) {
+        MSG_T initialMessage, int maxIterations) {
         this.graphxFragment = fragment;
         this.messageManager = messageManager;
         this.initialMessage = initialMessage;
+        this.maxIterations = maxIterations;
 
         idManager.init(graphxFragment);
         vertexDataManager.init(graphxFragment);
@@ -94,6 +95,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
 //        edgeContext.init(outgoingMessageStore);
         //edgeTriplet no initialization
         edgeManager.init(graphxFragment, numCores);
+        round = 0;
     }
 
     public void PEval() {
@@ -115,6 +117,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
         logger.info("[PEval] Finish iterate edges for frag {}", graphxFragment.fid());
         outgoingMessageStore.flushMessage(messageManager);
         //messages to self are cached locally.
+        round = 1;
     }
 
     public void ParallelPEval() {
@@ -191,9 +194,13 @@ public class GraphXProxy<VD, ED, MSG_T> {
         }
         outgoingMessageStore.flushMessage(messageManager);
         //messages to self are cached locally.
+        round = 1;
     }
 
     public void IncEval() {
+        if (round >= maxIterations){
+            return ;
+        }
         outgoingMessageStore.swap(inComingMessageStore);
         Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
         boolean outerMsgReceived = receiveMessage(receiveVertex);
@@ -227,9 +234,13 @@ public class GraphXProxy<VD, ED, MSG_T> {
         } else {
             logger.info("Frag {} No message received", graphxFragment.fid());
         }
+        round += 1;
     }
 
     public void ParallelIncEval() {
+        if (round >= maxIterations) {
+            return ;
+        }
         Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
         boolean outerMsgReceived = receiveMessage(receiveVertex);
         long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
@@ -318,6 +329,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
         } else {
             logger.info("Frag {} No message received", graphxFragment.fid());
         }
+        round += 1;
     }
 
     public void postApp() {

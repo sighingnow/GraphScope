@@ -45,7 +45,7 @@ DEFINE_string(msg_class, "", "int,long,double");
 DEFINE_string(initial_msg, "", "the initial msg");
 DEFINE_int64(mapped_size, 10 * 1024 * 1024, "mapped size fo v e shared memroy");
 DEFINE_int32(max_partition_id, 10, "max partition id from graphx");
-
+DEFINE_int32(max_iterations, 100000, "max iterations");
 // put all flags in a json str
 std::string flags2JsonStr() {
   boost::property_tree::ptree pt;
@@ -71,6 +71,7 @@ std::string flags2JsonStr() {
   pt.put("initial_msg", FLAGS_initial_msg);
   pt.put("mapped_size", FLAGS_mapped_size);
   pt.put("max_partition_id", FLAGS_max_partition_id);
+  pt.put("max_iterations", FLAGS_max_iterations);
 
   std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);

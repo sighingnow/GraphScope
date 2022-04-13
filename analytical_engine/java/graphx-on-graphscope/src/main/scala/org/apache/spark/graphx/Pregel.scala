@@ -243,7 +243,7 @@ object Pregel extends Logging {
     }
     log.info(s"call site ${userClass}")
     val mpiLauncher = new MPIProcessLauncher(MMAP_V_FILE_PREFIX, MMAP_E_FILE_PREFIX,
-      VPROG_SERIALIZATION_PATH, SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, userClass, vdClass,edClass, msgClass, initialMsg, Math.max(graph.vertices.getNumPartitions, graph.edges.getNumPartitions), MAPPED_SIZE)
+      VPROG_SERIALIZATION_PATH, SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, userClass, vdClass,edClass, msgClass, initialMsg, maxIterations, Math.max(graph.vertices.getNumPartitions, graph.edges.getNumPartitions), MAPPED_SIZE)
     mpiLauncher.run()
 
     graph

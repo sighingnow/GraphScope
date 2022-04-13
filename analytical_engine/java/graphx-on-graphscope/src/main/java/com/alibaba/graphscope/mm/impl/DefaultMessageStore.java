@@ -95,12 +95,12 @@ public class DefaultMessageStore<MSG_T,VD> implements MessageStore<MSG_T,VD> {
         if (messageStore instanceof DefaultMessageStore) {
             DefaultMessageStore<MSG_T,VD> other = (DefaultMessageStore<MSG_T,VD>) messageStore;
             //only swap flags and values are ok
-            logger.info("Before message store swap {} vs {}", this.flags.cardinality(),
+            logger.info("frag {} Before message store swap {} vs {}", fragment.fid(), this.flags.cardinality(),
                 other.flags.cardinality());
             BitSet tmp = other.flags;
             other.flags = this.flags;
             this.flags = tmp;
-            logger.info("After message store swap {} vs {}", this.flags.cardinality(),
+            logger.info("frag {} After message store swap {} vs {}", fragment.fid(), this.flags.cardinality(),
                 other.flags.cardinality());
 
             MSG_T[] tmpValues = other.values;

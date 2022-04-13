@@ -99,12 +99,12 @@ public class ParallelMessageStore<MSG_T,VD> implements MessageStore<MSG_T,VD> {
         if (messageStore instanceof ParallelMessageStore) {
             ParallelMessageStore<MSG_T,VD> other = (ParallelMessageStore<MSG_T, VD>) messageStore;
             //only swap flags and values are ok
-            logger.info("Before message store swap {} vs {}", this.flags.cardinality(),
+            logger.info("Frag {} Before message store swap {} vs {}", fragment.fid(), this.flags.cardinality(),
                 other.flags.cardinality());
             ThreadSafeBitSet tmp = other.flags;
             other.flags = this.flags;
             this.flags = tmp;
-            logger.info("After message store swap {} vs {}", this.flags.cardinality(),
+            logger.info("Frag {} After message store swap {} vs {}",fragment.fid(), this.flags.cardinality(),
                 other.flags.cardinality());
 
             MSG_T[] tmpValues = other.values;

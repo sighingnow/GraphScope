@@ -46,7 +46,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     private GraphXConf conf;
     private GraphXProxy graphXProxy;
     private Object initialMsg;
-    private int cores;
+    private int cores,maxIterations;
     public ExecutorService executor;
 
     public String getUserClassName() {
@@ -79,6 +79,11 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
         String msgClassStr = jsonObject.getString(MSG_CLASS);
         logger.info("received vd {} ed {} msg {}", vdClassStr, edClassStr, msgClassStr);
         cores = jsonObject.getInteger(TOTAL_CORES) / frag.fnum();
+        logger.info("Parallelism: " + cores);
+
+        maxIterations = jsonObject.getInteger("max_iterations");
+        logger.info("Max iterations: " + maxIterations);
+
         vdClass = loadClassWithName(this.getClass().getClassLoader(), vdClassStr);
         edClass = loadClassWithName(this.getClass().getClassLoader(), edClassStr);
         msgClass = loadClassWithName(this.getClass().getClassLoader(), msgClassStr);
@@ -120,7 +125,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
         else {
             throw new IllegalStateException("unmatched msg class " + msgClass.getName());
         }
-        graphXProxy.init(frag,messageManager,this.initialMsg);
+        graphXProxy.init(frag,messageManager,this.initialMsg, maxIterations);
     }
 
     @Override
