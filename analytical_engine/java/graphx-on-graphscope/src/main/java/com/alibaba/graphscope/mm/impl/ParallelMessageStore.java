@@ -136,4 +136,9 @@ public class ParallelMessageStore<MSG_T,VD> implements MessageStore<MSG_T,VD> {
 //        flags.clear(innerVerticesNum, verticesNum);
         logger.info("frag [{}] send msg of size {}", fragment.fid(), msgCnt);
     }
+
+    @Override
+    public BitSet getFlags() {
+        throw new IllegalStateException("not implemented");
+    }
 }

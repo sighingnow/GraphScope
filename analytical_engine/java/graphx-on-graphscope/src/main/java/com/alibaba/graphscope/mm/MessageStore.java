@@ -5,6 +5,7 @@ import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.graph.GraphXVertexIdManager;
 import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
+import java.util.BitSet;
 import scala.Function2;
 
 public interface MessageStore<MSG_T,VD> {
@@ -25,4 +26,6 @@ public interface MessageStore<MSG_T,VD> {
     void swap(MessageStore<MSG_T,VD> messageStore);
 
     void flushMessage(DefaultMessageManager messageManager);
+
+    BitSet getFlags();
 }

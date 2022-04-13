@@ -53,6 +53,10 @@ public class DefaultMessageStore<MSG_T, VD> implements MessageStore<MSG_T, VD> {
         vertex = FFITypeFactoryhelper.newVertexLong();
     }
 
+    public BitSet getFlags(){
+        return flags;
+    }
+
     @Override
     public boolean messageAvailable(long lid) {
         return flags.get((int) lid);

@@ -13,6 +13,7 @@ import com.alibaba.graphscope.mm.MessageStore;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.parallel.message.DoubleMsg;
 import com.alibaba.graphscope.parallel.message.LongMsg;
+import java.util.BitSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -262,6 +263,21 @@ public class GraphXProxy<VD, ED, MSG_T> {
         outgoingMessageStore.clear();
         receiveTime += System.nanoTime();
 
+        BitSet flags = inComingMessageStore.getFlags();
+        int []activeVertices = new int [flags.cardinality()];
+        int index = 0;
+        int i = flags.nextSetBit(0);
+        for (;i >= 0 && index < activeVertices.length; i = flags.nextSetBit(i + 1)){
+            if (i == Integer.MAX_VALUE){
+                break;
+            }
+            activeVertices[index++] = i;
+        }
+        if (i < 0){
+            throw new IllegalStateException("bit set still available: " + i + " index: " + index + " length: " + activeVertices.length);
+        }
+        logger.info("total vnum: " + innerVerticesNum + " cardinality: " + flags.cardinality() + " active vertices: " + activeVertices.length);
+
         if (outerMsgReceived || inComingMessageStore.hasMessages()) {
             {
                 vprogTime -= System.nanoTime();
@@ -305,14 +321,16 @@ public class GraphXProxy<VD, ED, MSG_T> {
             {
                 msgSendTime -= System.nanoTime();
                 AtomicInteger atomicInteger = new AtomicInteger(0);
-                CountDownLatch countDownLatch = new CountDownLatch(numCores);
-                int originEnd = (int) innerVerticesNum;
-                int edgeChunkSize = 128;
-                for (int tid = 0; tid < numCores; ++tid) {
+                int originEnd = activeVertices.length;
+                int edgeChunkSize = Math.max(256, activeVertices.length / numCores);
+                int curCores = activeVertices.length / edgeChunkSize;
+                CountDownLatch countDownLatch = new CountDownLatch(curCores);
+                for (int tid = 0; tid < curCores; ++tid) {
                     GSEdgeTriplet<VD,ED> threadTriplet = edgeTriplets[tid];
                     int finalTid = tid;
                     executorService.execute(
                         () -> {
+                            if (atomicInteger.get() >= originEnd) return ;
                             while (true) {
                                 int curBegin =
                                     Math.min(atomicInteger.getAndAdd(edgeChunkSize), originEnd);
@@ -321,7 +339,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
                                     break;
                                 }
                                 try {
-                                    for (long lid = curBegin; lid < curEnd; ++lid) {
+                                    for (int j = curBegin; j < curEnd; ++j) {
+                                        long lid = activeVertices[j];
                                         if (inComingMessageStore.messageAvailable(lid)) {
                                             threadTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
                                             edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet, sendMsg, outgoingMessageStore);
