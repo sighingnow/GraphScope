@@ -75,6 +75,7 @@ class ArrowFragmentLoader {
   using partitioner_t = vineyard::HashPartitioner<oid_t>;
 #else
   using partitioner_t = SegmentedPartitioner<oid_t>;
+  VLOG(1) << "Using segmented Partitioner";
 #endif
   using table_vec_t = std::vector<std::shared_ptr<arrow::Table>>;
   using vertex_table_info_t =

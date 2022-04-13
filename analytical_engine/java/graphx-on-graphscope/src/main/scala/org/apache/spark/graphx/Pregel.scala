@@ -147,7 +147,6 @@ object Pregel extends Logging {
     val edClass = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
     val msgClass = classTag[A].runtimeClass.asInstanceOf[java.lang.Class[A]]
     log.info(s"vd class: ${vdClass} ed : ${edClass} msg ${msgClass}")
-    val partitioner = graph.vertices.partitioner.getOrElse(new HashPartitioner(graph.vertices.getNumPartitions))
 
     val startTime = System.nanoTime();
     log.info("vertex partitions rdd number: " + graph.vertices.partitionsRDD.count())
@@ -184,6 +183,7 @@ object Pregel extends Logging {
     val verticesTime = System.nanoTime()
     log.info(" vertices partition {}, partitions rdd partitions {}",graph.vertices.getNumPartitions, graph.vertices.partitionsRDD.getNumPartitions)
     log.info(" time spend on write vertices: " + (verticesTime - startTime) / 1000000)
+    log.info(" edges partition {}, partitions rdd partitions {}",graph.edges.getNumPartitions, graph.edges.partitionsRDD.getNumPartitions)
 
     graph.edges.foreachPartition(
       iterator =>{
@@ -244,7 +244,7 @@ object Pregel extends Logging {
     }
     log.info(s"call site ${userClass}")
     val mpiLauncher = new MPIProcessLauncher(MMAP_V_FILE_PREFIX, MMAP_E_FILE_PREFIX,
-      VPROG_SERIALIZATION_PATH, SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, userClass, vdClass,edClass, msgClass, initialMsg, graph.vertices.getNumPartitions, MAPPED_SIZE)
+      VPROG_SERIALIZATION_PATH, SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, userClass, vdClass,edClass, msgClass, initialMsg, Math.max(graph.vertices.getNumPartitions, graph.edges.getNumPartitions), MAPPED_SIZE)
     mpiLauncher.run()
 
     graph
