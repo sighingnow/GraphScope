@@ -71,8 +71,9 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
     public void iterateOnEdgesParallel(int threadId, long srcLid, GSEdgeTriplet<VD, ED> triplet,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,
         MessageStore<MSG_T, VD> outMessageStore) {
-        edgeIterables.get(threadId).setLid(srcLid);
-        for (GrapeEdge<Long, Long, ED> edge : edgeIterables.get(threadId)) {
+        TupleIterable iterable = edgeIterables.get(threadId);
+        iterable.setLid(srcLid);
+        for (GrapeEdge<Long, Long, ED> edge : iterable) {
             triplet.setDstOid(edge.dstOid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
             Iterator<Tuple2<Long, MSG_T>> iterator = msgSender.apply(triplet);
             while (iterator.hasNext()) {

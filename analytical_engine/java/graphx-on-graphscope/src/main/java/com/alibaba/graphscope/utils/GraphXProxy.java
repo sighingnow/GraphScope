@@ -56,6 +56,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
     private MSG_T initialMessage;
     private ExecutorService executorService;
     private int numCores, maxIterations, round;
+    private long vprogTime, msgSendTime, receiveTime;
 
     public GraphXProxy(GraphXConf<VD, ED, MSG_T> conf, Function3<Long, VD, MSG_T, VD> vprog,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> sendMsg,
@@ -96,6 +97,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
         //edgeTriplet no initialization
         edgeManager.init(graphxFragment, numCores);
         round = 0;
+        msgSendTime = vprogTime = receiveTime = 0;
     }
 
     public void PEval() {
@@ -122,6 +124,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
 
     public void ParallelPEval() {
         {
+            vprogTime -= System.nanoTime();
             int innerVerticesNum = (int) this.graphxFragment.getInnerVerticesNum();
             AtomicInteger atomicInteger = new AtomicInteger(0);
             CountDownLatch countDownLatch = new CountDownLatch(numCores);
@@ -155,8 +158,10 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 e.printStackTrace();
                 executorService.shutdown();
             }
+            vprogTime += System.nanoTime();
         }
         {
+            msgSendTime -= System.nanoTime();
             int innerVerticesNum = (int) this.graphxFragment.getInnerVerticesNum();
             AtomicInteger atomicInteger = new AtomicInteger(0);
             CountDownLatch countDownLatch = new CountDownLatch(numCores);
@@ -195,6 +200,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
         outgoingMessageStore.flushMessage(messageManager);
         //messages to self are cached locally.
         round = 1;
+        msgSendTime += System.nanoTime();
     }
 
     public void IncEval() {
@@ -238,18 +244,22 @@ public class GraphXProxy<VD, ED, MSG_T> {
     }
 
     public boolean ParallelIncEval() {
+        receiveTime -= System.nanoTime();
         if (round >= maxIterations) {
             return true;
         }
         Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
         boolean outerMsgReceived = receiveMessage(receiveVertex);
         long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
+        receiveTime += System.nanoTime();
 
         inComingMessageStore.clear();
         outgoingMessageStore.swap(inComingMessageStore);
         outgoingMessageStore.clear();
+
         if (outerMsgReceived || inComingMessageStore.hasMessages()) {
             {
+                vprogTime -= System.nanoTime();
                 AtomicInteger atomicInteger = new AtomicInteger(0);
                 CountDownLatch countDownLatch = new CountDownLatch(numCores);
                 int originEnd = (int) innerVerticesNum;
@@ -284,9 +294,11 @@ public class GraphXProxy<VD, ED, MSG_T> {
                     e.printStackTrace();
                     executorService.shutdown();
                 }
+                vprogTime += System.nanoTime();
             }
 
             {
+                msgSendTime -= System.nanoTime();
                 AtomicInteger atomicInteger = new AtomicInteger(0);
                 CountDownLatch countDownLatch = new CountDownLatch(numCores);
                 int originEnd = (int) innerVerticesNum;
@@ -322,6 +334,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
                     e.printStackTrace();
                     executorService.shutdown();
                 }
+                msgSendTime += System.nanoTime();
             }
 
             //FIXME: flush message
@@ -330,6 +343,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
             logger.info("Frag {} No message received", graphxFragment.fid());
         }
         round += 1;
+        logger.info("[frag {} Profiling]: end of round {}, receiveMsg cost {}ms, vprog cost {}ms, sendMsg cost {}",graphxFragment.fid(), round, receiveTime/ 1000000, vprogTime /1000000, msgSendTime / 1000000);
         return false;
     }
 
