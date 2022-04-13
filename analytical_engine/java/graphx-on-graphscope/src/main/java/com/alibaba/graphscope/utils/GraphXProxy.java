@@ -56,7 +56,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
     private MSG_T initialMessage;
     private ExecutorService executorService;
     private int numCores, maxIterations, round;
-    private long vprogTime, msgSendTime, receiveTime;
+    private long vprogTime, msgSendTime, receiveTime, flushTime;
 
     public GraphXProxy(GraphXConf<VD, ED, MSG_T> conf, Function3<Long, VD, MSG_T, VD> vprog,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> sendMsg,
@@ -97,7 +97,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
         //edgeTriplet no initialization
         edgeManager.init(graphxFragment, numCores);
         round = 0;
-        msgSendTime = vprogTime = receiveTime = 0;
+        msgSendTime = vprogTime = receiveTime = flushTime = 0;
     }
 
     public void PEval() {
@@ -196,11 +196,15 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 e.printStackTrace();
                 executorService.shutdown();
             }
+            msgSendTime += System.nanoTime();
         }
+
+        flushTime -= System.nanoTime();
         outgoingMessageStore.flushMessage(messageManager);
+        flushTime += System.nanoTime();
         //messages to self are cached locally.
         round = 1;
-        msgSendTime += System.nanoTime();
+
     }
 
     public void IncEval() {
@@ -337,13 +341,15 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 msgSendTime += System.nanoTime();
             }
 
+            flushTime -= System.nanoTime();
             //FIXME: flush message
             outgoingMessageStore.flushMessage(messageManager);
+            flushTime += System.nanoTime();
         } else {
             logger.info("Frag {} No message received", graphxFragment.fid());
         }
         round += 1;
-        logger.info("[frag {} Profiling]: end of round {}, receiveMsg cost {}ms, vprog cost {}ms, sendMsg cost {}",graphxFragment.fid(), round, receiveTime/ 1000000, vprogTime /1000000, msgSendTime / 1000000);
+        logger.info("[frag {} Profiling]: end of round {}, receiveMsg cost {}ms, vprog cost {}ms, sendMsg cost {} flush msg {}",graphxFragment.fid(), round, receiveTime/ 1000000, vprogTime /1000000, msgSendTime / 1000000, flushTime / 1000000);
         return false;
     }
 
