@@ -237,9 +237,9 @@ public class GraphXProxy<VD, ED, MSG_T> {
         round += 1;
     }
 
-    public void ParallelIncEval() {
+    public boolean ParallelIncEval() {
         if (round >= maxIterations) {
-            return ;
+            return true;
         }
         Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
         boolean outerMsgReceived = receiveMessage(receiveVertex);
@@ -330,6 +330,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
             logger.info("Frag {} No message received", graphxFragment.fid());
         }
         round += 1;
+        return false;
     }
 
     public void postApp() {
