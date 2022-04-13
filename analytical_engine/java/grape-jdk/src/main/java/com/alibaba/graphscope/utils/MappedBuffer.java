@@ -8,8 +8,13 @@ import org.slf4j.LoggerFactory;
 public class MappedBuffer {
     private static Logger logger = LoggerFactory.getLogger(MappedBuffer.class.getName());
     static{
-        System.loadLibrary("grape-jni");
-        logger.info("load grape-jni success");
+        try {
+            System.loadLibrary("grape-jni");
+            logger.info("load grape-jni success");
+        }
+        catch (Exception e){
+            throw new IllegalStateException("Fail to load library: grape-jni");
+        }
     }
 
     private long startAddress, size;
