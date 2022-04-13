@@ -115,7 +115,6 @@ public class GraphXProxy<VD, ED, MSG_T> {
         logger.info("[PEval] Finish iterate edges for frag {}", graphxFragment.fid());
         outgoingMessageStore.flushMessage(messageManager);
         //messages to self are cached locally.
-        outgoingMessageStore.swap(inComingMessageStore);
     }
 
     public void ParallelPEval() {
@@ -192,7 +191,6 @@ public class GraphXProxy<VD, ED, MSG_T> {
         }
         outgoingMessageStore.flushMessage(messageManager);
         //messages to self are cached locally.
-        outgoingMessageStore.swap(inComingMessageStore);
     }
 
     public void IncEval() {
@@ -201,6 +199,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
         boolean outerMsgReceived = receiveMessage(receiveVertex);
         long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
 
+        inComingMessageStore.clear();
+        outgoingMessageStore.swap(inComingMessageStore);
         outgoingMessageStore.clear();
         if (outerMsgReceived || inComingMessageStore.hasMessages()) {
             for (long lid = 0; lid < innerVerticesNum; ++lid) {
@@ -222,7 +222,6 @@ public class GraphXProxy<VD, ED, MSG_T> {
             }
             logger.info("frag {} vprog runned for {} times", graphxFragment.fid(), sendMsgCnt);
 
-            inComingMessageStore.clear();
             //FIXME: flush message
             outgoingMessageStore.flushMessage(messageManager);
         } else {
@@ -235,6 +234,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
         boolean outerMsgReceived = receiveMessage(receiveVertex);
         long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
 
+        inComingMessageStore.clear();
+        outgoingMessageStore.swap(inComingMessageStore);
         outgoingMessageStore.clear();
         if (outerMsgReceived || inComingMessageStore.hasMessages()) {
             {
@@ -312,10 +313,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 }
             }
 
-            inComingMessageStore.clear();
             //FIXME: flush message
             outgoingMessageStore.flushMessage(messageManager);
-            outgoingMessageStore.swap(inComingMessageStore);
         } else {
             logger.info("Frag {} No message received", graphxFragment.fid());
         }
@@ -339,7 +338,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
             .equals(double.class)) {
             DoubleMsg msg = FFITypeFactoryhelper.newDoubleMsg();
             while (messageManager.getMessage(graphxFragment, receiveVertex, msg)) {
-                logger.info("frag {} get message: {}, {}", graphxFragment.fid(), receiveVertex.GetValue(), msg.getData());
+                //logger.info("frag {} get message: {}, {}", graphxFragment.fid(), receiveVertex.GetValue(), msg.getData());
                 inComingMessageStore.addLidMessage(receiveVertex.GetValue(),
                     (MSG_T) (Double) msg.getData());
                 msgReceived += 1;
@@ -348,7 +347,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
             .equals(long.class)) {
             LongMsg msg = FFITypeFactoryhelper.newLongMsg();
             while (messageManager.getMessage(graphxFragment, receiveVertex, msg)) {
-                logger.info("frag {} get message: {}, {}", graphxFragment.fid(), receiveVertex.GetValue(), msg.getData());
+                //logger.info("frag {} get message: {}, {}", graphxFragment.fid(), receiveVertex.GetValue(), msg.getData());
                 inComingMessageStore.addLidMessage(receiveVertex.GetValue(),
                     (MSG_T) (Long) msg.getData());
                 msgReceived += 1;

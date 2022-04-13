@@ -69,9 +69,7 @@ object Benchmark {
     println("edge rdd partitioner: " + edgesRDD.partitioner)
     println("vertex rdd num partitions: " + verticesRDD.getNumPartitions)
     println("vertex rdd partitioner: " + verticesRDD.partitioner)
-    val newEdgesRDD = edgesRDD.repartition(numParition.toInt)
-    val newVerticesRDD = verticesRDD.repartition(numParition.toInt)
-    val graph = Graph.apply(newVerticesRDD,newEdgesRDD)
+    val graph = Graph.apply(verticesRDD,edgesRDD)
 
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, vdata) => numIteration.toDouble
@@ -87,8 +85,8 @@ object Benchmark {
       (id, dist, newDist) => Math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
         if (triplet.srcAttr > 0) {
-	  println("src id: " + triplet.srcId + " send " + triplet.srcAttr + " to dst Id" + triplet.dstId);
-          Iterator((triplet.dstId, triplet.srcAttr))
+	  //println("src id: " + triplet.srcId + " send " + triplet.srcAttr + " to dst Id" + triplet.srcId);
+          Iterator((triplet.srcId, triplet.srcAttr - 1))
         }
         else Iterator.empty
       },

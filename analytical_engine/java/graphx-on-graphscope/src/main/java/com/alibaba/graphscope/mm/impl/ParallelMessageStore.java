@@ -96,7 +96,7 @@ public class ParallelMessageStore<MSG_T,VD> implements MessageStore<MSG_T,VD> {
 
     @Override
     public void swap(MessageStore<MSG_T,VD> messageStore) {
-        if (messageStore instanceof ParallelMessageManager) {
+        if (messageStore instanceof ParallelMessageStore) {
             ParallelMessageStore<MSG_T,VD> other = (ParallelMessageStore<MSG_T, VD>) messageStore;
             //only swap flags and values are ok
             logger.info("Before message store swap {} vs {}", this.flags.cardinality(),
