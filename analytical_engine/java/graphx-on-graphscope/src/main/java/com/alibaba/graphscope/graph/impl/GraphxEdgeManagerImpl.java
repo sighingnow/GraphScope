@@ -33,6 +33,10 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
         this.vertexDataManager = vertexDataManager;
     }
 
+    public TupleIterable getTupleIterable(int threadId){
+        return edgeIterables.get(threadId);
+    }
+
     @Override
     public void init(IFragment<Long, Long, VD, ED> fragment, int numCores) {
         super.init(fragment, idManager, Long.class, conf.getEdataClass(), conf.getEdataClass(),

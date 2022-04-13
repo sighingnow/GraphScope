@@ -254,12 +254,13 @@ public class GraphXProxy<VD, ED, MSG_T> {
         }
         Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
         long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
-        receiveTime += System.nanoTime();
+
 
         inComingMessageStore.clear();
         outgoingMessageStore.swap(inComingMessageStore);
         boolean outerMsgReceived = receiveMessage(receiveVertex);
         outgoingMessageStore.clear();
+        receiveTime += System.nanoTime();
 
         if (outerMsgReceived || inComingMessageStore.hasMessages()) {
             {

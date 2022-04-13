@@ -35,7 +35,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
 
     private long offsetBeginPtrFirstAddr, offsetEndPtrFirstAddr;
     private long nbrUnitEleSize, nbrUnitInitAddress;
-    private CSRHolder csrHolder;
+    public CSRHolder csrHolder;
     protected TupleIterable edgeIterable;
     protected List<TupleIterable> edgeIterables;
     private int VID_SHIFT_BITS, VID_SIZE_IN_BYTE;
