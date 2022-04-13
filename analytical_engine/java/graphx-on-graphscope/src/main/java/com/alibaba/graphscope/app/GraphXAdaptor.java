@@ -23,7 +23,7 @@ public class GraphXAdaptor<VDATA_T, EDATA_T> extends Communicator implements
         GraphXAdaptorContext<VDATA_T, EDATA_T> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T>) context;
         GraphXProxy proxy = ctx.getGraphXProxy();
         proxy.init(graph, messageManager, ctx.getInitialMsg());//fix initial msg
-        proxy.PEval();
+        proxy.ParallelPEval();
         messageManager.ForceContinue();
     }
 
@@ -34,7 +34,7 @@ public class GraphXAdaptor<VDATA_T, EDATA_T> extends Communicator implements
         GraphXAdaptorContext<VDATA_T, EDATA_T> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T>) context;
 	//if (ctx.round > 5) return ;
         GraphXProxy proxy = ctx.getGraphXProxy();
-        proxy.IncEval();
+        proxy.ParallelIncEval();
         if (proxy.getOutgoingMessageStore().hasMessages()){
             messageManager.ForceContinue();
         }
