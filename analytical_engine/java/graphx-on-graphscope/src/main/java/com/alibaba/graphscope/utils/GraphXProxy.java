@@ -306,6 +306,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 AtomicInteger atomicInteger = new AtomicInteger(0);
                 CountDownLatch countDownLatch = new CountDownLatch(numCores);
                 int originEnd = (int) innerVerticesNum;
+                int edgeChunkSize = 128;
                 for (int tid = 0; tid < numCores; ++tid) {
                     GSEdgeTriplet<VD,ED> threadTriplet = edgeTriplets[tid];
                     int finalTid = tid;
@@ -313,8 +314,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
                         () -> {
                             while (true) {
                                 int curBegin =
-                                    Math.min(atomicInteger.getAndAdd(chunkSize), originEnd);
-                                int curEnd = Math.min(curBegin + chunkSize, originEnd);
+                                    Math.min(atomicInteger.getAndAdd(edgeChunkSize), originEnd);
+                                int curEnd = Math.min(curBegin + edgeChunkSize, originEnd);
                                 if (curBegin >= originEnd) {
                                     break;
                                 }

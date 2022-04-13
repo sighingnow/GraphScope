@@ -69,7 +69,7 @@ public class DefaultMessageStore<MSG_T, VD> implements MessageStore<MSG_T, VD> {
     }
 
     @Override
-    public void addLidMessage(long lid, MSG_T msg) {
+    public synchronized void addLidMessage(long lid, MSG_T msg) {
         int intLid = (int) lid;
         if (flags.get(intLid)) {
             values[intLid] = mergeMsg.apply(values[intLid], msg);
@@ -81,7 +81,7 @@ public class DefaultMessageStore<MSG_T, VD> implements MessageStore<MSG_T, VD> {
 
     @Override
     public void addOidMessage(long oid, MSG_T msg) {
-        logger.info("worker[{}] send msg to oid {}", fragment.fid(), oid);
+//        logger.info("worker[{}] send msg to oid {}", fragment.fid(), oid);
         long lid = Math.toIntExact(vertexIdManager.oid2Lid(oid));
         addLidMessage(lid, msg);
     }
