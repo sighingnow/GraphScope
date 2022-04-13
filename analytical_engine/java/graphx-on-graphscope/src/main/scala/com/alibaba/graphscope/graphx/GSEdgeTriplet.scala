@@ -9,7 +9,7 @@ class GSEdgeTriplet[VD,ED] extends EdgeTriplet[VD,ED]{
     this.srcAttr = srcAttr
   }
 
-  def setDstOid(dstId : Long,srcAttr : VD, edgeAttr : ED): Unit ={
+  def setDstOid(dstId : Long, dstAttr : VD, edgeAttr : ED): Unit ={
     this.dstId = dstId;
     this.dstAttr = dstAttr
     this.attr = edgeAttr
