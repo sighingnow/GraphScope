@@ -37,6 +37,7 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
     public void init(IFragment<Long, Long, VD, ED> fragment, int numCores) {
         super.init(fragment, idManager, Long.class, conf.getEdataClass(), conf.getEdataClass(),
             null, numCores);
+        logger.info("create EdgeManagerImpl({})", fragment.fid());
     }
 
     /**

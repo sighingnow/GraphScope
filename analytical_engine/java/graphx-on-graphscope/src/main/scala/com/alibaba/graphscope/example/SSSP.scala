@@ -51,7 +51,7 @@ object SSSP {
           line => {
             if (!line.isEmpty && line(0) != '#') {
               val lineArray = line.split("\\s+")
-              if (lineArray.length < 3) {
+              if (lineArray.length < 2) {
                 throw new IllegalArgumentException("Invalid line: " + line)
               }
               val vid = lineArray(0).toLong
@@ -68,9 +68,9 @@ object SSSP {
     println("edge rdd partitioner: " + edgesRDD.partitioner)
     println("vertex rdd num partitions: " + verticesRDD.getNumPartitions)
     println("vertex rdd partitioner: " + verticesRDD.partitioner)
-    val newEdgesRDD = edgesRDD.repartition(numParition.toInt)
-    val newVerticesRDD = verticesRDD.repartition(numParition.toInt)
-    val graph = Graph.apply(newVerticesRDD,newEdgesRDD)
+//    val newEdgesRDD = edgesRDD.repartition(numParition.toInt)
+//    val newVerticesRDD = verticesRDD.repartition(numParition.toInt)
+    val graph = Graph.apply(verticesRDD, edgesRDD)
 
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, vdata) =>
@@ -82,11 +82,12 @@ object SSSP {
     println(s"Graph has ${verticesNum} vertices, ${edgesNum} edges")
 
     val startTime = System.nanoTime();
+    println("[Start pregel]")
     val sssp = initialGraph.pregel(Double.PositiveInfinity)( //avoid overflow
       (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
         if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
-//          println(triplet.srcAttr + ", " + (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
+          //println(triplet.srcId + ", to  " + triplet.dstId + ", data "+ (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
           Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
         } else {
           Iterator.empty
@@ -96,7 +97,7 @@ object SSSP {
     )
     val endTIme = System.nanoTime()
     println("[Pregel running time ] : " + ((endTIme - startTime) / 1000000) + "ms")
-    sssp.vertices.saveAsTextFile("/tmp/spark-graphx")
+//    sssp.vertices.saveAsTextFile("/tmp/spark-graphx")
 //    println(sssp.vertices.collect.mkString("\n"))
     // $example off$
 
