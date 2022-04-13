@@ -71,6 +71,7 @@ public class DefaultMessageStore<MSG_T,VD> implements MessageStore<MSG_T,VD> {
     public void addLidMessage(long lid, MSG_T msg) {
         int intLid = (int) lid;
         if (flags.get(intLid)) {
+            if (msg.equals(values[intLid])) return ;
             values[intLid] = mergeMsg.apply(values[intLid], msg);
         } else {
             flags.set(intLid);

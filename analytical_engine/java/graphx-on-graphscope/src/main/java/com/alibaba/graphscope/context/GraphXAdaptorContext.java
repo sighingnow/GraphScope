@@ -109,7 +109,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
             throw new IllegalStateException("file path empty " + vprogFilePath + ", " + sendMsgFilePath + "," + mergeMsgFilePath);
         }
 
-        graphXProxy = GraphXFactory.createGraphXProxy(conf, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, cores);
+        graphXProxy = GraphXFactory.createGraphXProxy(conf, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, Math.min(16,cores));
         String msgStr = jsonObject.getString(INITIAL_MSG);
         logger.info("Initial msg in str: " + msgStr);
         //get initial msg

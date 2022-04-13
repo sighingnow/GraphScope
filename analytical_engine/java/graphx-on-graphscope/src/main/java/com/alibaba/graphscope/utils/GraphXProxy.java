@@ -30,7 +30,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphXProxy.class.getName());
     private static String SPARK_LAUNCHER_OUTPUT = "spark_laucher_output";
-    private static final int chunkSize = 1024;
+    private static final int chunkSize = 4096;
     /**
      * User vertex program: vprog: (VertexId, VD, A) => VD
      */
