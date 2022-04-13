@@ -120,7 +120,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
         else {
             throw new IllegalStateException("unmatched msg class " + msgClass.getName());
         }
-
+        graphXProxy.init(frag,messageManager,this.initialMsg);
     }
 
     @Override

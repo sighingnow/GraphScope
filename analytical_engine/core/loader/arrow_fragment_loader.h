@@ -47,7 +47,7 @@
 #include "core/java/java_loader_invoker.h"
 #endif
 
-// #define HASH_PARTITION
+#define HASH_PARTITION
 
 namespace gs {
 /**

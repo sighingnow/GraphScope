@@ -22,7 +22,7 @@ public class GraphXAdaptor<VDATA_T, EDATA_T> extends Communicator implements
         DefaultMessageManager messageManager) {
         GraphXAdaptorContext<VDATA_T, EDATA_T> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T>) context;
         GraphXProxy proxy = ctx.getGraphXProxy();
-        proxy.init(graph, messageManager, ctx.getInitialMsg());//fix initial msg
+//        proxy.init(graph, messageManager, ctx.getInitialMsg());//fix initial msg
         proxy.ParallelPEval();
         messageManager.ForceContinue();
     }
