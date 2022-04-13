@@ -19,7 +19,7 @@ import scala.Function2;
  *
  * @param <MSG_T> message type
  */
-public class DefaultMessageStore<MSG_T,VD> implements MessageStore<MSG_T,VD> {
+public class DefaultMessageStore<MSG_T, VD> implements MessageStore<MSG_T, VD> {
 
     private Logger logger = LoggerFactory.getLogger(DefaultMessageStore.class.getName());
 
@@ -38,7 +38,8 @@ public class DefaultMessageStore<MSG_T,VD> implements MessageStore<MSG_T,VD> {
     }
 
     @Override
-    public void init(IFragment<Long, Long, ?, ?> fragment, GraphXVertexIdManager idManager, VertexDataManager<VD> vertexDataManager,
+    public void init(IFragment<Long, Long, ?, ?> fragment, GraphXVertexIdManager idManager,
+        VertexDataManager<VD> vertexDataManager,
         Function2<MSG_T, MSG_T, MSG_T> mergeMsg) {
         this.mergeMsg = mergeMsg;
         this.fragment = fragment;
@@ -71,7 +72,6 @@ public class DefaultMessageStore<MSG_T,VD> implements MessageStore<MSG_T,VD> {
     public void addLidMessage(long lid, MSG_T msg) {
         int intLid = (int) lid;
         if (flags.get(intLid)) {
-            if (msg.equals(values[intLid])) return ;
             values[intLid] = mergeMsg.apply(values[intLid], msg);
         } else {
             flags.set(intLid);
@@ -81,7 +81,7 @@ public class DefaultMessageStore<MSG_T,VD> implements MessageStore<MSG_T,VD> {
 
     @Override
     public void addOidMessage(long oid, MSG_T msg) {
-//        logger.info("worker[{}] send msg to oid {}", fragment.fid(), oid);
+        logger.info("worker[{}] send msg to oid {}", fragment.fid(), oid);
         long lid = Math.toIntExact(vertexIdManager.oid2Lid(oid));
         addLidMessage(lid, msg);
     }
@@ -92,16 +92,18 @@ public class DefaultMessageStore<MSG_T,VD> implements MessageStore<MSG_T,VD> {
     }
 
     @Override
-    public void swap(MessageStore<MSG_T,VD> messageStore) {
+    public void swap(MessageStore<MSG_T, VD> messageStore) {
         if (messageStore instanceof DefaultMessageStore) {
-            DefaultMessageStore<MSG_T,VD> other = (DefaultMessageStore<MSG_T,VD>) messageStore;
+            DefaultMessageStore<MSG_T, VD> other = (DefaultMessageStore<MSG_T, VD>) messageStore;
             //only swap flags and values are ok
-            logger.info("frag {} Before message store swap {} vs {}", fragment.fid(), this.flags.cardinality(),
+            logger.info("frag {} Before message store swap {} vs {}", fragment.fid(),
+                this.flags.cardinality(),
                 other.flags.cardinality());
             BitSet tmp = other.flags;
             other.flags = this.flags;
             this.flags = tmp;
-            logger.info("frag {} After message store swap {} vs {}", fragment.fid(), this.flags.cardinality(),
+            logger.info("frag {} After message store swap {} vs {}", fragment.fid(),
+                this.flags.cardinality(),
                 other.flags.cardinality());
 
             MSG_T[] tmpValues = other.values;
@@ -116,19 +118,16 @@ public class DefaultMessageStore<MSG_T,VD> implements MessageStore<MSG_T,VD> {
 //        DoubleMsg msg = DoubleMsg.factory.create();
         int msgCnt = 0;
         while (index >= innerVerticesNum && index < verticesNum && index >= 0) {
-	    if (index == Integer.MAX_VALUE){
-	        throw new IllegalStateException("Overflow is not expected");
- 	    }
+            if (index == Integer.MAX_VALUE) {
+                throw new IllegalStateException("Overflow is not expected");
+            }
             vertex.SetValue((long) index);
-//            messageManager.syncStateOnOuterVertex(fragment, vertex, values[index]);
-//            msg.setData((Double) values[index]);
             messageManager.syncStateOnOuterVertexArrowProjected(
                 (ArrowProjectedFragment<Long, Long, Double, Double>) fragment.getFFIPointer(),
                 vertex, values[index]);
             //CAUTION-------------------------------------------------------------
             //update outer vertices data here, otherwise will cause infinite message sending
             vertexDataManager.setVertexData(index, (VD) values[index]);
-//            flags.clear(index);
             index = flags.nextSetBit(index + 1);
             msgCnt += 1;
         }

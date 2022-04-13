@@ -213,11 +213,11 @@ public class GraphXProxy<VD, ED, MSG_T> {
         }
         outgoingMessageStore.swap(inComingMessageStore);
         Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
-        boolean outerMsgReceived = receiveMessage(receiveVertex);
         long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
 
         inComingMessageStore.clear();
         outgoingMessageStore.swap(inComingMessageStore);
+        boolean outerMsgReceived = receiveMessage(receiveVertex);
         outgoingMessageStore.clear();
         if (outerMsgReceived || inComingMessageStore.hasMessages()) {
             for (long lid = 0; lid < innerVerticesNum; ++lid) {
@@ -253,12 +253,12 @@ public class GraphXProxy<VD, ED, MSG_T> {
             return true;
         }
         Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
-        boolean outerMsgReceived = receiveMessage(receiveVertex);
         long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
         receiveTime += System.nanoTime();
 
         inComingMessageStore.clear();
         outgoingMessageStore.swap(inComingMessageStore);
+        boolean outerMsgReceived = receiveMessage(receiveVertex);
         outgoingMessageStore.clear();
 
         if (outerMsgReceived || inComingMessageStore.hasMessages()) {
