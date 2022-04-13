@@ -11,7 +11,7 @@ import scala.collection.Iterator;
 
 public interface GraphxEdgeManager<VD,ED,MSG_T> {
 
-    void init(IFragment<Long,Long,VD,ED> fragment);
+    void init(IFragment<Long,Long,VD,ED> fragment, int numCores);
 
     /**
      * Iterator over edges start from srcLid, update dstId info in context, and apply functions to
@@ -24,4 +24,8 @@ public interface GraphxEdgeManager<VD,ED,MSG_T> {
      void iterateOnEdges(long srcLid, GSEdgeTriplet<VD, ED> context,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,
          MessageStore<MSG_T,VD> outMessageStore);
+
+    void iterateOnEdgesParallel(int tid, long srcLid, GSEdgeTriplet<VD, ED> context,
+        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,
+        MessageStore<MSG_T,VD> outMessageStore);
 }

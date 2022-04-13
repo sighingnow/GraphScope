@@ -178,7 +178,6 @@ object Pregel extends Logging {
         buffer.writeLong(0, buffer.position() - 8)
         //      iterator
         bufferedWriter.close()
-
       }
     )
     val verticesTime = System.nanoTime()

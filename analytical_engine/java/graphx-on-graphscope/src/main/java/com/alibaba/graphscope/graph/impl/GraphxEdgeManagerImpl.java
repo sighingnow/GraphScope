@@ -34,9 +34,9 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
     }
 
     @Override
-    public void init(IFragment<Long, Long, VD, ED> fragment) {
+    public void init(IFragment<Long, Long, VD, ED> fragment, int numCores) {
         super.init(fragment, idManager, Long.class, conf.getEdataClass(), conf.getEdataClass(),
-            null);
+            null, numCores);
     }
 
     /**
@@ -66,4 +66,19 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
             }
         }
     }
+    @Override
+    public void iterateOnEdgesParallel(int threadId, long srcLid, GSEdgeTriplet<VD, ED> triplet,
+        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,
+        MessageStore<MSG_T, VD> outMessageStore) {
+        edgeIterables.get(threadId).setLid(srcLid);
+        for (GrapeEdge<Long, Long, ED> edge : edgeIterables.get(threadId)) {
+            triplet.setDstOid(edge.dstOid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
+            Iterator<Tuple2<Long, MSG_T>> iterator = msgSender.apply(triplet);
+            while (iterator.hasNext()) {
+                Tuple2<Long, MSG_T> tuple2 = iterator.next();
+                outMessageStore.addOidMessage(tuple2._1(), tuple2._2());
+            }
+        }
+    }
+
 }

@@ -55,7 +55,7 @@ object SSSP {
                 throw new IllegalArgumentException("Invalid line: " + line)
               }
               val vid = lineArray(0).toLong
-              val vdata = lineArray(1).toDouble
+              val vdata = Double.PositiveInfinity
               vertices.+=((vid,vdata))
             }
           }

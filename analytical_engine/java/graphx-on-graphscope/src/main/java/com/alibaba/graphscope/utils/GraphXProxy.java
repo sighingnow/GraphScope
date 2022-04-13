@@ -13,6 +13,10 @@ import com.alibaba.graphscope.mm.MessageStore;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.parallel.message.DoubleMsg;
 import com.alibaba.graphscope.parallel.message.LongMsg;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +30,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphXProxy.class.getName());
     private static String SPARK_LAUNCHER_OUTPUT = "spark_laucher_output";
+    private static final int chunkSize = 1024;
     /**
      * User vertex program: vprog: (VertexId, VD, A) => VD
      */
@@ -43,15 +48,19 @@ public class GraphXProxy<VD, ED, MSG_T> {
     private MessageStore<MSG_T,VD> inComingMessageStore, outgoingMessageStore;
 //    private EdgeContextImpl<VD, ED, MSG_T> edgeContext;
     private GSEdgeTriplet<VD,ED> edgeTriplet;
+    private GSEdgeTriplet<VD,ED>[] edgeTriplets;
     private GraphXConf<VD, ED, MSG_T> conf;
     private GraphxEdgeManager<VD, ED, MSG_T> edgeManager;
     private DefaultMessageManager messageManager;
     private IFragment<Long, Long, VD, ED> graphxFragment; // different from c++ frag
     private MSG_T initialMessage;
+    private ExecutorService executorService;
+    private int numCores;
 
     public GraphXProxy(GraphXConf<VD, ED, MSG_T> conf, Function3<Long, VD, MSG_T, VD> vprog,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> sendMsg,
-        Function2<MSG_T, MSG_T, MSG_T> mergeMsg) {
+        Function2<MSG_T, MSG_T, MSG_T> mergeMsg, int numCores) {
+        this.numCores = numCores;
         this.conf = conf;
         this.vprog = vprog;
         this.sendMsg = sendMsg;
@@ -59,11 +68,17 @@ public class GraphXProxy<VD, ED, MSG_T> {
         //create all objects here, but not initialized, initialize after main invoke and graph got.
         this.idManager = GraphXFactory.createIdManager(conf);
         this.vertexDataManager = GraphXFactory.createVertexDataManager(conf);
-        this.inComingMessageStore = GraphXFactory.createMessageStore(conf);
-        this.outgoingMessageStore = GraphXFactory.createMessageStore(conf);
+        //fixme: parallel
+        this.inComingMessageStore = GraphXFactory.createParallelMessageStore(conf);
+        this.outgoingMessageStore = GraphXFactory.createParallelMessageStore(conf);
 //        this.edgeContext = GraphXFactory.createEdgeContext(conf);
         this.edgeTriplet = GraphXFactory.createEdgeTriplet(conf);
+        this.edgeTriplets = new GSEdgeTriplet[numCores];
+        for (int i = 0; i < numCores; ++i){
+            this.edgeTriplets[i] = GraphXFactory.createEdgeTriplet(conf);
+        }
         this.edgeManager = GraphXFactory.createEdgeManager(conf, idManager, vertexDataManager);
+        executorService = Executors.newFixedThreadPool(numCores);
     }
 
     public void init(IFragment<Long, Long, VD, ED> fragment, DefaultMessageManager messageManager,
@@ -78,7 +93,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
         outgoingMessageStore.init(graphxFragment,  idManager, vertexDataManager,mergeMsg);
 //        edgeContext.init(outgoingMessageStore);
         //edgeTriplet no initialization
-        edgeManager.init(graphxFragment);
+        edgeManager.init(graphxFragment, numCores);
     }
 
     public void PEval() {
@@ -101,6 +116,83 @@ public class GraphXProxy<VD, ED, MSG_T> {
         outgoingMessageStore.swap(inComingMessageStore);
     }
 
+    public void ParallelPEval() {
+        {
+            int innerVerticesNum = (int) this.graphxFragment.getInnerVerticesNum();
+            AtomicInteger atomicInteger = new AtomicInteger(0);
+            CountDownLatch countDownLatch = new CountDownLatch(numCores);
+            int originEnd = innerVerticesNum;
+            for (int tid = 0; tid < numCores; ++tid) {
+                executorService.execute(
+                    () -> {
+                        while (true) {
+                            int curBegin =
+                                Math.min(atomicInteger.getAndAdd(chunkSize), originEnd);
+                            int curEnd = Math.min(curBegin + chunkSize, originEnd);
+                            if (curBegin >= originEnd) {
+                                break;
+                            }
+                            try {
+                                for (long lid = curBegin; lid < curEnd; ++lid) {
+                                    vertexDataManager.setVertexData(lid,
+                                        vprog.apply(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid),
+                                            initialMessage));
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        countDownLatch.countDown();
+                    });
+            }
+            try {
+                countDownLatch.await();
+            } catch (Exception e) {
+                e.printStackTrace();
+                executorService.shutdown();
+            }
+        }
+        {
+            int innerVerticesNum = (int) this.graphxFragment.getInnerVerticesNum();
+            AtomicInteger atomicInteger = new AtomicInteger(0);
+            CountDownLatch countDownLatch = new CountDownLatch(numCores);
+            int originEnd = innerVerticesNum;
+            for (int tid = 0; tid < numCores; ++tid) {
+                GSEdgeTriplet<VD,ED> threadTriplet = edgeTriplets[tid];
+                int finalTid = tid;
+                executorService.execute(
+                    () -> {
+                        while (true) {
+                            int curBegin =
+                                Math.min(atomicInteger.getAndAdd(chunkSize), originEnd);
+                            int curEnd = Math.min(curBegin + chunkSize, originEnd);
+                            if (curBegin >= originEnd) {
+                                break;
+                            }
+                            try {
+                                for (long lid = curBegin; lid < curEnd; ++lid) {
+                                    threadTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
+                                    edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet, sendMsg, outgoingMessageStore);
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        countDownLatch.countDown();
+                    });
+            }
+            try {
+                countDownLatch.await();
+            } catch (Exception e) {
+                e.printStackTrace();
+                executorService.shutdown();
+            }
+        }
+        outgoingMessageStore.flushMessage(messageManager);
+        //messages to self are cached locally.
+        outgoingMessageStore.swap(inComingMessageStore);
+    }
+
     public void IncEval() {
         Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
         boolean outerMsgReceived = receiveMessage(receiveVertex);
@@ -108,29 +200,115 @@ public class GraphXProxy<VD, ED, MSG_T> {
 
         outgoingMessageStore.clear();
         if (outerMsgReceived || inComingMessageStore.hasMessages()) {
-            int vprogCnt = 0;
             for (long lid = 0; lid < innerVerticesNum; ++lid) {
                 if (inComingMessageStore.messageAvailable(lid)) {
                     vertexDataManager.setVertexData(lid, vprog.apply(idManager.lid2Oid(lid),
                         vertexDataManager.getVertexData(lid),
                         inComingMessageStore.getMessage(lid)));
-                    vprogCnt += 1;
                 }
             }
-            logger.info("frag {} vprog runned for {} times", graphxFragment.fid(), vprogCnt);
 
             int sendMsgCnt = 0;
             //after running vprog, we now send msg and merge msg
             for (long lid = 0; lid < innerVerticesNum; ++lid) {
                 if (inComingMessageStore.messageAvailable(lid)) {
-//                    edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
-//                        vertexDataManager.getVertexData(lid));
                     edgeTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
                     edgeManager.iterateOnEdges(lid, edgeTriplet, sendMsg, outgoingMessageStore);
                     sendMsgCnt += 1;
                 }
             }
             logger.info("frag {} vprog runned for {} times", graphxFragment.fid(), sendMsgCnt);
+
+            inComingMessageStore.clear();
+            //FIXME: flush message
+            outgoingMessageStore.flushMessage(messageManager);
+            outgoingMessageStore.swap(inComingMessageStore);
+        } else {
+            logger.info("Frag {} No message received", graphxFragment.fid());
+        }
+    }
+
+    public void ParallelIncEval() {
+        Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
+        boolean outerMsgReceived = receiveMessage(receiveVertex);
+        long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
+
+        outgoingMessageStore.clear();
+        if (outerMsgReceived || inComingMessageStore.hasMessages()) {
+            {
+                AtomicInteger atomicInteger = new AtomicInteger(0);
+                CountDownLatch countDownLatch = new CountDownLatch(numCores);
+                int originEnd = (int) innerVerticesNum;
+                for (int tid = 0; tid < numCores; ++tid) {
+                    executorService.execute(
+                        () -> {
+                            while (true) {
+                                int curBegin =
+                                    Math.min(atomicInteger.getAndAdd(chunkSize), originEnd);
+                                int curEnd = Math.min(curBegin + chunkSize, originEnd);
+                                if (curBegin >= originEnd) {
+                                    break;
+                                }
+                                try {
+                                    for (long lid = curBegin; lid < curEnd; ++lid) {
+                                        if (inComingMessageStore.messageAvailable(lid)) {
+                                            vertexDataManager.setVertexData(lid, vprog.apply(idManager.lid2Oid(lid),
+                                                vertexDataManager.getVertexData(lid),
+                                                inComingMessageStore.getMessage(lid)));
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            countDownLatch.countDown();
+                        });
+                }
+                try {
+                    countDownLatch.await();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    executorService.shutdown();
+                }
+            }
+
+            {
+                AtomicInteger atomicInteger = new AtomicInteger(0);
+                CountDownLatch countDownLatch = new CountDownLatch(numCores);
+                int originEnd = (int) innerVerticesNum;
+                for (int tid = 0; tid < numCores; ++tid) {
+                    GSEdgeTriplet<VD,ED> threadTriplet = edgeTriplets[tid];
+                    int finalTid = tid;
+                    executorService.execute(
+                        () -> {
+                            while (true) {
+                                int curBegin =
+                                    Math.min(atomicInteger.getAndAdd(chunkSize), originEnd);
+                                int curEnd = Math.min(curBegin + chunkSize, originEnd);
+                                if (curBegin >= originEnd) {
+                                    break;
+                                }
+                                try {
+                                    for (long lid = curBegin; lid < curEnd; ++lid) {
+                                        if (inComingMessageStore.messageAvailable(lid)) {
+                                            threadTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
+                                            edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet, sendMsg, outgoingMessageStore);
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            countDownLatch.countDown();
+                        });
+                }
+                try {
+                    countDownLatch.await();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    executorService.shutdown();
+                }
+            }
 
             inComingMessageStore.clear();
             //FIXME: flush message

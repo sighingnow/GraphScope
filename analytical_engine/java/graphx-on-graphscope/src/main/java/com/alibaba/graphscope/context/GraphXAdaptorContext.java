@@ -15,6 +15,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,12 +39,15 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     private static String ED_CLASS = "ed_class";
     private static String MSG_CLASS = "msg_class";
     private static String INITIAL_MSG = "initial_msg";
+    private static String TOTAL_CORES = "total_cores";//total cores assigned to this cluster.
     private String userClassName;
     private String vprogFilePath, sendMsgFilePath, mergeMsgFilePath;
     private Class<?> vdClass, edClass, msgClass;
     private GraphXConf conf;
     private GraphXProxy graphXProxy;
     private Object initialMsg;
+    private int cores;
+    public ExecutorService executor;
 
     public String getUserClassName() {
         return userClassName;
@@ -73,6 +78,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
         String edClassStr = jsonObject.getString(ED_CLASS);
         String msgClassStr = jsonObject.getString(MSG_CLASS);
         logger.info("received vd {} ed {} msg {}", vdClassStr, edClassStr, msgClassStr);
+        cores = jsonObject.getInteger(TOTAL_CORES) / frag.fnum();
         vdClass = loadClassWithName(this.getClass().getClassLoader(), vdClassStr);
         edClass = loadClassWithName(this.getClass().getClassLoader(), edClassStr);
         msgClass = loadClassWithName(this.getClass().getClassLoader(), msgClassStr);
@@ -98,7 +104,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
             throw new IllegalStateException("file path empty " + vprogFilePath + ", " + sendMsgFilePath + "," + mergeMsgFilePath);
         }
 
-        graphXProxy = GraphXFactory.createGraphXProxy(conf, vprogFilePath, sendMsgFilePath, mergeMsgFilePath);
+        graphXProxy = GraphXFactory.createGraphXProxy(conf, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, cores);
         String msgStr = jsonObject.getString(INITIAL_MSG);
         logger.info("Initial msg in str: " + msgStr);
         //get initial msg

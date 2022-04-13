@@ -13,6 +13,7 @@ import com.alibaba.graphscope.graphx.GSEdgeTriplet;
 import com.alibaba.graphscope.graphx.SerializationUtils;
 import com.alibaba.graphscope.mm.MessageStore;
 import com.alibaba.graphscope.mm.impl.DefaultMessageStore;
+import com.alibaba.graphscope.mm.impl.ParallelMessageStore;
 import com.alibaba.graphscope.utils.GraphXProxy;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
@@ -38,22 +39,22 @@ public class GraphXFactory {
     private static <VD, ED, MSG> GraphXProxy<VD, ED, MSG> createGraphXProxy(
         GraphXConf<VD, ED, MSG> conf, Function3<Long, VD, MSG, VD> vprog,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG>>> sendMsg,
-        Function2<MSG, MSG, MSG> mergeMsg) {
-        return new GraphXProxy<VD, ED, MSG>(conf, vprog, sendMsg, mergeMsg);
+        Function2<MSG, MSG, MSG> mergeMsg, int numCores) {
+        return new GraphXProxy<VD, ED, MSG>(conf, vprog, sendMsg, mergeMsg, numCores);
     }
 
     public static <VD, ED, MSG> GraphXProxy<VD, ED, MSG> createGraphXProxy(
         GraphXConf<VD, ED, MSG> conf, String vprogFilePath, String sendMsgFilePath,
-        String mergeMsgFilePath) {
+        String mergeMsgFilePath, int numCores) {
         Function3<Long, VD, MSG, VD> vprog = deserializeVprog(vprogFilePath, conf);
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG>>> sendMsg = deserializeSendMsg(
             sendMsgFilePath, conf);
         Function2<MSG, MSG, MSG> mergeMsg = deserializeMergeMsg(mergeMsgFilePath, conf);
         logger.info("deserialization success: {}, {}, {}", vprog, sendMsg, mergeMsg);
 
-        GraphXProxy<VD, ED, MSG> graphXProxy = createGraphXProxy(conf, vprog, sendMsg, mergeMsg);
+        GraphXProxy<VD, ED, MSG> graphXProxy = createGraphXProxy(conf, vprog, sendMsg, mergeMsg, numCores);
         logger.info("Construct graphx proxy: " + graphXProxy);
-        return new GraphXProxy<VD, ED, MSG>(conf, vprog, sendMsg, mergeMsg);
+        return graphXProxy;
     }
 
     public static GraphXVertexIdManager createIdManager(GraphXConf conf) {
@@ -64,8 +65,11 @@ public class GraphXFactory {
         return new VertexDataManagerImpl<VD>(conf);
     }
 
-    public static <VD,ED,MSG> MessageStore<MSG,VD> createMessageStore(GraphXConf<VD,ED,MSG> conf) {
+    public static <VD,ED,MSG> MessageStore<MSG,VD> createDefaultMessageStore(GraphXConf<VD,ED,MSG> conf) {
         return new DefaultMessageStore<MSG,VD>(conf);
+    }
+    public static <VD,ED,MSG> MessageStore<MSG,VD> createParallelMessageStore(GraphXConf<VD,ED,MSG> conf) {
+        return new ParallelMessageStore<MSG,VD>(conf);
     }
 
     public static <VD, ED, MSG_T> EdgeContextImpl<VD, ED, MSG_T> createEdgeContext(

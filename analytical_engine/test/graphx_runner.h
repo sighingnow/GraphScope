@@ -194,6 +194,7 @@ void CreateAndQuery(std::string params) {
   std::string frag_name =
       "gs::ArrowProjectedFragment<int64_t,uint64_t,double,double>";
   pt.put("frag_name", frag_name);
+  pt.put("total_cores", max_partition_id);
 
   if (getenv("USER_JAR_PATH")) {
     pt.put("jar_name", getenv("USER_JAR_PATH"));

@@ -10,6 +10,7 @@ import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream;
 import com.alibaba.graphscope.stdcxx.FFIByteVector;
+import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -34,7 +35,9 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
 
     private long offsetBeginPtrFirstAddr, offsetEndPtrFirstAddr;
     private long nbrUnitEleSize, nbrUnitInitAddress;
+    private CSRHolder csrHolder;
     protected TupleIterable edgeIterable;
+    protected List<TupleIterable> edgeIterables;
     private int VID_SHIFT_BITS, VID_SIZE_IN_BYTE;
     private List<GRAPE_OID_T> oids;
     private long innerVerticesNum;
@@ -67,7 +70,22 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
             vid_t = 1;
         }
         edata_t = grapeEdata2Int();
-        edgeIterable = new TupleIterable(this.fragment.getEdataArrayAccessor(), consumer);
+        csrHolder = new CSRHolder(this.fragment.getEdataArrayAccessor(), consumer);
+        edgeIterable = new TupleIterable(csrHolder);
+        edgeIterables = null;
+    }
+
+    public void init(IFragment<GRAPE_OID_T, VID_T, ?, GRAPE_ED_T> fragment,
+        VertexIdManager<VID_T, BIZ_OID_T> vertexIdManager,
+        Class<? extends VID_T> vidClass,
+        Class<? extends GRAPE_ED_T> grapeEdataClass,
+        Class<? extends BIZ_EDATA_T> bizEdataClass,
+        BiConsumer<FFIByteVectorInputStream, BIZ_EDATA_T[]> consumer, int numCores) {
+        init(fragment,vertexIdManager,vidClass,grapeEdataClass,bizEdataClass, consumer);
+        edgeIterables = Lists.newArrayListWithCapacity(numCores);
+        for (int i = 0; i < numCores; ++i){
+            edgeIterables.add(new TupleIterable(csrHolder));
+        }
     }
 
     public int getNumEdgesImpl(long lid) {
@@ -96,19 +114,52 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
 
 
     public class TupleIterator implements Iterator<GrapeEdge<VID_T, BIZ_OID_T, BIZ_EDATA_T>> {
+        private GrapeEdge<VID_T, BIZ_OID_T, BIZ_EDATA_T> grapeEdge = new GrapeEdge<>();
+        private int nbrPos;
+        private long numEdge;
+        private BIZ_OID_T[] dstOids;
+        private VID_T[] dstLids;
+        private BIZ_EDATA_T[] edatas;
+        private int[] nbrPositions;
+        private long[] numOfEdges;
+        public TupleIterator(long[] numOfEdges, int[] nbrPositions, BIZ_OID_T[] dstOids, VID_T[] dstLids, BIZ_EDATA_T[] edatas){
+            this.numOfEdges = numOfEdges;
+            this.nbrPositions = nbrPositions;
+            this.dstOids = dstOids;
+            this.dstLids = dstLids;
+            this.edatas = edatas;
+        }
+        public void setLid(int lid) {
+            numEdge = numOfEdges[lid];
+            nbrPos = nbrPositions[lid];
+        }
+        @Override
+        public boolean hasNext() {
+            return numEdge > 0;
+        }
+
+        @Override
+        public GrapeEdge<VID_T, BIZ_OID_T, BIZ_EDATA_T> next() {
+            grapeEdge.dstLid = dstLids[nbrPos];
+            grapeEdge.dstOid = dstOids[nbrPos];
+            grapeEdge.value = edatas[nbrPos++];
+            numEdge -= 1;
+            return grapeEdge;
+        }
+    }
+    public class CSRHolder{
 
         private sun.misc.Unsafe unsafe = JavaRuntime.UNSAFE;
-        private long numEdge, totalNumOfEdges;
-        private int nbrPos;
+        private long totalNumOfEdges;
+
         private long[] nbrUnitAddrs, numOfEdges;
         private BIZ_OID_T[] dstOids;
         private VID_T[] dstLids;
         private BIZ_EDATA_T[] edatas;
         private int[] nbrPositions;
-        private GrapeEdge<VID_T, BIZ_OID_T, BIZ_EDATA_T> grapeEdge = new GrapeEdge<>();
         private BiConsumer<FFIByteVectorInputStream, BIZ_EDATA_T[]> consumer;
 
-        public TupleIterator(TypedArray<GRAPE_ED_T> edataArray,
+        public CSRHolder(TypedArray<GRAPE_ED_T> edataArray,
             BiConsumer<FFIByteVectorInputStream, BIZ_EDATA_T[]> consumer) {
             this.consumer = consumer;
             totalNumOfEdges = getTotalNumOfEdges();
@@ -133,25 +184,6 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                     offsetEndPtrFirstAddr + ((innerVerticesNum - 1) << VID_SHIFT_BITS));
             long smallest = JavaRuntime.getLong(offsetBeginPtrFirstAddr + (0 << VID_SHIFT_BITS));
             return largest - smallest;
-        }
-
-        public void setLid(int lid) {
-            numEdge = numOfEdges[lid];
-            nbrPos = nbrPositions[lid];
-        }
-
-        @Override
-        public boolean hasNext() {
-            return numEdge > 0;
-        }
-
-        @Override
-        public GrapeEdge<VID_T, BIZ_OID_T, BIZ_EDATA_T> next() {
-            grapeEdge.dstLid = dstLids[nbrPos];
-            grapeEdge.dstOid = dstOids[nbrPos];
-            grapeEdge.value = edatas[nbrPos++];
-            numEdge -= 1;
-            return grapeEdge;
         }
 
         private void initArrays(TypedArray<GRAPE_ED_T> edataArray) throws IOException {
@@ -283,10 +315,12 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
     public class TupleIterable implements Iterable<GrapeEdge<VID_T, BIZ_OID_T, BIZ_EDATA_T>> {
 
         private TupleIterator iterator;
+        private CSRHolder csrHolder;
 
-        public TupleIterable(TypedArray<GRAPE_ED_T> typedArray,
-            BiConsumer<FFIByteVectorInputStream, BIZ_EDATA_T[]> consumer) {
-            iterator = new TupleIterator(typedArray, consumer);
+        public TupleIterable(CSRHolder csrHolder) {
+            this.csrHolder = csrHolder;
+            iterator = new TupleIterator(csrHolder.numOfEdges, csrHolder.nbrPositions,
+                csrHolder.dstOids, csrHolder.dstLids, csrHolder.edatas);
         }
 
         public void setLid(long lid) {
