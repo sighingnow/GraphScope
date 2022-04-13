@@ -69,8 +69,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
         this.idManager = GraphXFactory.createIdManager(conf);
         this.vertexDataManager = GraphXFactory.createVertexDataManager(conf);
         //fixme: parallel
-        this.inComingMessageStore = GraphXFactory.createParallelMessageStore(conf);
-        this.outgoingMessageStore = GraphXFactory.createParallelMessageStore(conf);
+        this.inComingMessageStore = GraphXFactory.createDefaultMessageStore(conf);
+        this.outgoingMessageStore = GraphXFactory.createDefaultMessageStore(conf);
 //        this.edgeContext = GraphXFactory.createEdgeContext(conf);
         this.edgeTriplet = GraphXFactory.createEdgeTriplet(conf);
         this.edgeTriplets = new GSEdgeTriplet[numCores];
