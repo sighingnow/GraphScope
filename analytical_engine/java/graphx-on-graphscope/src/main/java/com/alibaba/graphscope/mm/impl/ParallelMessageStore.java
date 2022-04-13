@@ -129,8 +129,8 @@ public class ParallelMessageStore<MSG_T,VD> implements MessageStore<MSG_T,VD> {
             //update outer vertices data here, otherwise will cause infinite message sending
             vertexDataManager.setVertexData(index, (VD) values[index]);
 //            flags.clear(index);
-            index = flags.nextSetBit(index);
             flags.clear(index);
+            index = flags.nextSetBit(index);
             msgCnt += 1;
         }
 //        flags.clear(innerVerticesNum, verticesNum);

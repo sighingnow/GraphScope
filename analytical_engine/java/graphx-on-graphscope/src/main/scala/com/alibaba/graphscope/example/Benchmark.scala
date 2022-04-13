@@ -6,7 +6,7 @@ import org.apache.spark.util.collection.PrimitiveVector
 
 import scala.collection.mutable.ArrayBuffer
 
-object SSSP {
+object Benchmark {
   def main(args: Array[String]): Unit = {
     // Creates a SparkSession.
     val spark = SparkSession
@@ -52,7 +52,7 @@ object SSSP {
           line => {
             if (!line.isEmpty && line(0) != '#') {
               val lineArray = line.split("\\s+")
-              if (lineArray.length < 3) {
+              if (lineArray.length < 2) {
                 throw new IllegalArgumentException("Invalid line: " + line)
               }
               val vid = lineArray(0).toLong
@@ -87,6 +87,7 @@ object SSSP {
       (id, dist, newDist) => Math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
         if (triplet.srcAttr > 0) {
+	  println("src id: " + triplet.srcId + " send " + triplet.srcAttr + " to dst Id" + triplet.dstId);
           Iterator((triplet.dstId, triplet.srcAttr))
         }
         else Iterator.empty
