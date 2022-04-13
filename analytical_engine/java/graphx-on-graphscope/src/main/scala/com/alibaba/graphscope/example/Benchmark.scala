@@ -84,7 +84,7 @@ object Benchmark {
     val sssp = initialGraph.pregel(numIteration.toDouble, numIteration)( //avoid overflow
       (id, dist, newDist) => Math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
-        if (triplet.srcId.equals(1) && triplet.dstId.equals(2)){
+        if (triplet.srcId.equals(1L) && triplet.dstId.equals(2L)){
           Iterator((1, 1), (2,1))
         }
         else Iterator.empty
