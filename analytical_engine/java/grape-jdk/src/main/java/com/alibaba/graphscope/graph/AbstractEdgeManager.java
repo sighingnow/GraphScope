@@ -12,6 +12,7 @@ import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream;
 import com.alibaba.graphscope.stdcxx.FFIByteVector;
 import com.google.common.collect.Lists;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -44,15 +45,19 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
     private int vid_t, edata_t; // 0 for long ,1 for int
     private Class<? extends GRAPE_ED_T> edataClass;
     private Class<? extends BIZ_EDATA_T> bizEdataClass;
+    private Class<? extends VID_T> vidClass;
+    private Class<? extends BIZ_OID_T> bizOidClass;
 
     public void init(IFragment<GRAPE_OID_T, VID_T, ?, GRAPE_ED_T> fragment,
         VertexIdManager<VID_T, BIZ_OID_T> vertexIdManager,
+        Class<? extends BIZ_OID_T> bizOidClass,
         Class<? extends VID_T> vidClass,
         Class<? extends GRAPE_ED_T> grapeEdataClass,
         Class<? extends BIZ_EDATA_T> bizEdataClass,
         BiConsumer<FFIByteVectorInputStream, BIZ_EDATA_T[]> consumer) {
         this.edataClass = grapeEdataClass;
         this.bizEdataClass = bizEdataClass;
+        this.bizOidClass = bizOidClass;
         this.fragment =
             ((ArrowProjectedAdaptor<GRAPE_OID_T, VID_T, ?, GRAPE_ED_T>)
                 fragment)
@@ -69,6 +74,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
             VID_SIZE_IN_BYTE = 4;
             vid_t = 1;
         }
+        this.vidClass = vidClass;
         edata_t = grapeEdata2Int();
         csrHolder = new CSRHolder(this.fragment.getEdataArrayAccessor(), consumer);
         edgeIterable = new TupleIterable(csrHolder);
@@ -77,11 +83,12 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
 
     public void init(IFragment<GRAPE_OID_T, VID_T, ?, GRAPE_ED_T> fragment,
         VertexIdManager<VID_T, BIZ_OID_T> vertexIdManager,
+        Class<? extends BIZ_OID_T> bizOidClass,
         Class<? extends VID_T> vidClass,
         Class<? extends GRAPE_ED_T> grapeEdataClass,
         Class<? extends BIZ_EDATA_T> bizEdataClass,
         BiConsumer<FFIByteVectorInputStream, BIZ_EDATA_T[]> consumer, int numCores) {
-        init(fragment,vertexIdManager,vidClass,grapeEdataClass,bizEdataClass, consumer);
+        init(fragment,vertexIdManager,bizOidClass, vidClass,grapeEdataClass,bizEdataClass, consumer);
         edgeIterables = Lists.newArrayListWithCapacity(numCores);
         for (int i = 0; i < numCores; ++i){
             edgeIterables.add(new TupleIterable(csrHolder));
@@ -168,9 +175,11 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
             nbrPositions = new int[(int) innerVerticesNum];
             // marks the mapping between lid to start pos of nbr, i.e. offset.
             // the reason why we don't resuse oeBegin Offset is that eid may not sequential.
-            edatas = (BIZ_EDATA_T[]) new Object[(int) totalNumOfEdges];
-            dstOids = (BIZ_OID_T[]) new Object[(int) totalNumOfEdges];
-            dstLids = (VID_T[]) new Object[(int) totalNumOfEdges];
+            edatas = (BIZ_EDATA_T[]) Array.newInstance(bizEdataClass, (int)totalNumOfEdges);
+//            edatas = (BIZ_EDATA_T[]) new Object[(int) totalNumOfEdges];
+            dstOids = (BIZ_OID_T[]) Array.newInstance(bizOidClass, (int) totalNumOfEdges);
+            dstLids = (VID_T[]) Array.newInstance(vidClass, (int) totalNumOfEdges);
+//            dstLids = (VID_T[]) new Object[(int) totalNumOfEdges];
             try {
                 initArrays(edataArray);
             } catch (IOException e) {

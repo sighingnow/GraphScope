@@ -73,7 +73,7 @@ public class DefaultImmutableEdgeManager<
             (ImmutableClassesGiraphConfiguration<
                 ? super GIRAPH_OID_T, ?, ? super GIRAPH_EDATA_T>)
                 configuration;
-        init(fragment, (VertexIdManager<GRAPE_VID_T, GIRAPH_OID_T>) idManager, (Class<? extends GRAPE_VID_T>) conf.getGrapeVidClass(),
+        init(fragment, (VertexIdManager<GRAPE_VID_T, GIRAPH_OID_T>) idManager, (Class<? extends GIRAPH_OID_T>) conf.getGrapeOidClass(), (Class<? extends GRAPE_VID_T>) conf.getGrapeVidClass(),
             (Class<? extends GRAPE_EDATA_T>) conf.getGrapeEdataClass(), (Class<? extends GIRAPH_EDATA_T>) conf.getEdgeValueClass(),
             ((inputStream, edatas) -> {
                 int index2 = 0;

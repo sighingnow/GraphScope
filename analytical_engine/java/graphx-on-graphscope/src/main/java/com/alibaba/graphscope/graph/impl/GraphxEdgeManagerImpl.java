@@ -46,7 +46,7 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
 
     @Override
     public void init(IFragment<Long, Long, VD, ED> fragment, int numCores) {
-        super.init(fragment, idManager, Long.class, conf.getEdataClass(), conf.getEdataClass(),
+        super.init(fragment, idManager, Long.class, Long.class, conf.getEdataClass(), conf.getEdataClass(),
             null, numCores);
         numEdges = new long[numCores];
         nbrPos = new int[numCores];
