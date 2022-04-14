@@ -9,6 +9,7 @@ import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.graph.VertexIdManager;
 import com.alibaba.graphscope.graphx.GSEdgeTriplet;
 import com.alibaba.graphscope.mm.MessageStore;
+import java.lang.reflect.Array;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,7 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
 //    private int[] threadNbrPos;
     private Long[] dstOids;
     private Long[] dstLids;
+    private VD[] dstVdatas;
     private ED[] edatas;
     private int[] nbrPositions;
     private long[] numOfEdges;
@@ -63,6 +65,10 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
         edatas = csrHolder.edatas;
         nbrPositions = csrHolder.nbrPositions;
         numOfEdges = csrHolder.numOfEdges;
+        dstVdatas = (VD[]) Array.newInstance(conf.getVdataClass(), dstOids.length);
+        for (int i = 0; i < dstOids.length; ++i){
+            dstVdatas[i] = vertexDataManager.getVertexData(dstLids[i]);
+        }
         logger.info("create EdgeManagerImpl({})", fragment.fid());
     }
 
@@ -98,9 +104,11 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
         int nbrPos = nbrPositions[(int) srcLid];
         int endPos = (int) (nbrPos + numEdge);
         for (int i = nbrPos; i < endPos; ++i){
-            triplet.setDstOid(dstOids[i], vertexDataManager.getVertexData(dstLids[i]), edatas[i]);
+            triplet.setDstOid(dstOids[i], dstVdatas[i], edatas[i]);
             Iterator<Tuple2<Long, MSG_T>> iterator = msgSender.apply(triplet);
-            iterator.foreach(function1);
+            if (iterator.nonEmpty()){
+                iterator.foreach(function1);
+            }
 //            while (iterator.hasNext()) {
 //                Tuple2<Long, MSG_T> tuple2 = iterator.next();
 //                outMessageStore.addOidMessage(tuple2._1, tuple2._2);
