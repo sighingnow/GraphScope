@@ -85,7 +85,7 @@ object Traverse {
 
     val startTime = System.nanoTime();
     println("[Start pregel]")
-    val sssp = initialGraph.pregel(Double.PositiveInfinity)( //avoid overflow
+    val sssp = initialGraph.pregel(Double.PositiveInfinity, 100)( //avoid overflow
       (id, dist, newDist) => dist, // Vertex Program
       triplet => { // Send Message
         //        println(triplet.srcId + ", to  " + triplet.dstId + ", data "+ (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
