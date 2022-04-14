@@ -79,8 +79,8 @@ public class GraphXFactory {
 
     public static <VD, ED, MSG_T> GraphxEdgeManager<VD, ED, MSG_T> createEdgeManager(
         GraphXConf<VD,ED,MSG_T> conf, VertexIdManager<Long, Long> idManager,
-        VertexDataManager<VD> vertexDataManager) {
-        return new GraphxEdgeManagerImpl<>(conf, idManager, vertexDataManager);
+        VertexDataManager<VD> vertexDataManager, MessageStore<MSG_T,VD> outMessage) {
+        return new GraphxEdgeManagerImpl<>(conf, idManager, vertexDataManager, outMessage);
     }
 
     public static <VD,ED>GSEdgeTriplet<VD,ED> createEdgeTriplet(GraphXConf<VD,ED,?> conf){

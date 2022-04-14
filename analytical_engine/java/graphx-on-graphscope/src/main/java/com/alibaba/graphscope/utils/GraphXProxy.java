@@ -80,7 +80,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
         for (int i = 0; i < numCores; ++i){
             this.edgeTriplets[i] = GraphXFactory.createEdgeTriplet(conf);
         }
-        this.edgeManager = GraphXFactory.createEdgeManager(conf, idManager, vertexDataManager);
+        this.edgeManager = GraphXFactory.createEdgeManager(conf, idManager, vertexDataManager, outgoingMessageStore);
         executorService = Executors.newFixedThreadPool(numCores);
     }
 
@@ -116,7 +116,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
 //            edgeContext.setSrcValues(idManager.lid2Oid(lid), lid,
 //                vertexDataManager.getVertexData(lid));
             edgeTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
-            edgeManager.iterateOnEdges(lid, edgeTriplet, sendMsg, outgoingMessageStore);
+            edgeManager.iterateOnEdges(lid, edgeTriplet, sendMsg);
         }
         logger.info("[PEval] Finish iterate edges for frag {}", graphxFragment.fid());
         outgoingMessageStore.flushMessage(messageManager);
@@ -183,7 +183,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
                             try {
                                 for (long lid = curBegin; lid < curEnd; ++lid) {
                                     threadTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
-                                    edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet, sendMsg, outgoingMessageStore);
+                                    edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet, sendMsg);
                                 }
                             } catch (Exception e) {
                                 e.printStackTrace();
@@ -235,7 +235,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
             for (long lid = 0; lid < innerVerticesNum; ++lid) {
                 if (inComingMessageStore.messageAvailable(lid)) {
                     edgeTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
-                    edgeManager.iterateOnEdges(lid, edgeTriplet, sendMsg, outgoingMessageStore);
+                    edgeManager.iterateOnEdges(lid, edgeTriplet, sendMsg);
                     sendMsgCnt += 1;
                 }
             }
@@ -340,7 +340,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
                                     for (long lid = curBegin; lid < curEnd; ++lid) {
                                         if (inComingMessageStore.messageAvailable(lid)) {
                                             threadTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
-                                            edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet, sendMsg, outgoingMessageStore);
+                                            edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet, sendMsg);
                                         }
                                     }
                                 } catch (Exception e) {
