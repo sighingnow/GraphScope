@@ -213,9 +213,10 @@ void CreateAndQuery(std::string params) {
 
   double t2 = grape::GetCurrentTime();
 
-  Query<ProjectedFragmentType>(comm_spec, projected_fragment, new_params,
+  for (int i = 0; i < 5; ++i){
+    Query<ProjectedFragmentType>(comm_spec, projected_fragment, new_params,
                                user_lib_path);
-
+  }
   double t3 = grape::GetCurrentTime();
   if (comm_spec.worker_id() == grape::kCoordinatorRank) {
     VLOG(1) << "[Loading fragment time]: " << (t1 - t0);

@@ -85,6 +85,8 @@ object Traverse {
 
     val startTime = System.nanoTime();
     println("[Start pregel]")
+    var times = 100
+    while (times > 0){
     val sssp = initialGraph.pregel(Double.PositiveInfinity)( //avoid overflow
       (id, dist, newDist) => dist, // Vertex Program
       triplet => { // Send Message
@@ -99,6 +101,8 @@ object Traverse {
 //      (a, b) => math.min(a, b) // Merge Message
       (a, b) => a
     )
+    times -= 1;
+    }
     val endTIme = System.nanoTime()
     println("[Pregel running time ] : " + ((endTIme - startTime) / 1000000) + "ms")
     //    sssp.vertices.saveAsTextFile("/tmp/spark-graphx")

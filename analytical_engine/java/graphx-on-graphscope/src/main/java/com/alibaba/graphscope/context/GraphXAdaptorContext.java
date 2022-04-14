@@ -126,6 +126,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
             throw new IllegalStateException("unmatched msg class " + msgClass.getName());
         }
         graphXProxy.init(frag,messageManager,this.initialMsg, maxIterations);
+        System.gc();
     }
 
     @Override
