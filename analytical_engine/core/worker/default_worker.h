@@ -90,7 +90,7 @@ class DefaultWorker {
 
     MPI_Barrier(comm_spec_.comm());
     
-    for (int i = 0; i < 5; ++i){
+    for (int i = 0; i < 1; ++i){
     context_->Init(messages_, std::forward<Args>(args)...);
 
     MPI_Barrier(comm_spec_.comm());

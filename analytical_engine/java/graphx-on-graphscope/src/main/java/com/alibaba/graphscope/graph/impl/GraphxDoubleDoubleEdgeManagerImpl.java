@@ -64,7 +64,7 @@ public class GraphxDoubleDoubleEdgeManagerImpl<MSG_T> extends
         edatas = csrHolder.edatas;
         nbrPositions = csrHolder.nbrPositions;
         numOfEdges = csrHolder.numOfEdges;
-        dstVdatas = (double[]) Array.newInstance(conf.getVdataClass(), dstOids.length);
+        dstVdatas = new double[dstOids.length];
         for (int i = 0; i < dstOids.length; ++i){
             dstVdatas[i] = vertexDataManager.getVertexData(dstLids[i]);
         }
@@ -105,13 +105,13 @@ public class GraphxDoubleDoubleEdgeManagerImpl<MSG_T> extends
         for (int i = nbrPos; i < endPos; ++i){
             triplet.setDstOid(dstOids[i], dstVdatas[i], edatas[i]);
             Iterator<Tuple2<Long, MSG_T>> iterator = msgSender.apply(triplet);
-            if (iterator.nonEmpty()){
-                iterator.foreach(function1);
+//            if (iterator.nonEmpty()){
+ //               iterator.foreach(function1);
+ //           }
+            while (iterator.hasNext()) {
+                Tuple2<Long, MSG_T> tuple2 = iterator.next();
+                outMessageCache.addOidMessage(tuple2._1(), tuple2._2());
             }
-//            while (iterator.hasNext()) {
-//                Tuple2<Long, MSG_T> tuple2 = iterator.next();
-//                outMessageStore.addOidMessage(tuple2._1, tuple2._2);
-//            }
         }
 
 //        TupleIterable iterable = edgeIterables.get(threadId);

@@ -83,10 +83,10 @@ object SSSP {
 
     val startTime = System.nanoTime();
     println("[Start pregel]")
-    val sssp = initialGraph.pregel(Double.PositiveInfinity)( //avoid overflow
+    val sssp = initialGraph.pregel(Double.PositiveInfinity, 10)( //avoid overflow
       (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
-//        println(triplet.srcId + ", to  " + triplet.dstId + ", data "+ (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
+        println(triplet.srcId + ", to  " + triplet.dstId + ", data "+ (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
         if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
           Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
         } else {

@@ -32,7 +32,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
     private static Logger logger = LoggerFactory.getLogger(GraphXProxy.class.getName());
     private static String SPARK_LAUNCHER_OUTPUT = "spark_laucher_output";
     private static final int vertexChunkSize = 4096;
-    private static final int edgeChunkSize = 4096;
+    private static final int edgeChunkSize = 1024;
     /**
      * User vertex program: vprog: (VertexId, VD, A) => VD
      */
@@ -279,7 +279,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
 //        }
 //        logger.info("total vnum: " + innerVerticesNum + " cardinality: " + flags.cardinality() + " active vertices: " + activeVertices.length);
 
-        if (true || outerMsgReceived || inComingMessageStore.hasMessages()) {
+        if (outerMsgReceived || inComingMessageStore.hasMessages()) {
             {
                 vprogTime -= System.nanoTime();
                 AtomicInteger atomicInteger = new AtomicInteger(0);
@@ -297,11 +297,12 @@ public class GraphXProxy<VD, ED, MSG_T> {
                                 }
                                 try {
                                     for (long lid = curBegin; lid < curEnd; ++lid) {
-//                                        if (inComingMessageStore.messageAvailable(lid)) {
-                                            vertexDataManager.setVertexData(lid, vprog.apply(idManager.lid2Oid(lid),
-                                                vertexDataManager.getVertexData(lid),
-                                                inComingMessageStore.getMessage(lid)));
-//                                        }
+                                        if (inComingMessageStore.messageAvailable(lid)) {
+					    Long oid = idManager.lid2Oid(lid);
+				            VD vdata = vertexDataManager.getVertexData(lid);
+					    MSG_T msg = inComingMessageStore.getMessage(lid);
+                                            vertexDataManager.setVertexData(lid, vprog.apply(oid,vdata,msg));
+                                        }
                                     }
                                 } catch (Exception e) {
                                     e.printStackTrace();
@@ -338,10 +339,10 @@ public class GraphXProxy<VD, ED, MSG_T> {
                                 }
                                 try {
                                     for (long lid = curBegin; lid < curEnd; ++lid) {
-//                                        if (inComingMessageStore.messageAvailable(lid)) {
-                                            threadTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
-                                            edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet, sendMsg);
-//                                        }
+                                        if (inComingMessageStore.messageAvailable(lid)) {
+                                         threadTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
+                                         edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet, sendMsg);
+                                        }
                                     }
                                 } catch (Exception e) {
                                     e.printStackTrace();
