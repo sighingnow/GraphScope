@@ -25,8 +25,8 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
     private GraphXConf conf;
     private VertexIdManager<Long, Long> idManager;
     private VertexDataManager<VD> vertexDataManager;
-    private long[] numEdges;
-    private int[] nbrPos;
+//    private long[] threadNumEdges;
+//    private int[] threadNbrPos;
     private Long[] dstOids;
     private Long[] dstLids;
     private ED[] edatas;
@@ -48,13 +48,13 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
     public void init(IFragment<Long, Long, VD, ED> fragment, int numCores) {
         super.init(fragment, idManager, Long.class, Long.class, conf.getEdataClass(), conf.getEdataClass(),
             null, numCores);
-        numEdges = new long[numCores];
-        nbrPos = new int[numCores];
+//        threadNumEdges = new long[numCores];
+//        threadNbrPos = new int[numCores];
         dstOids = csrHolder.dstOids;
         dstLids = csrHolder.dstLids;
         edatas = csrHolder.edatas;
         nbrPositions = csrHolder.nbrPositions;
-        numEdges = csrHolder.numOfEdges;
+        numOfEdges = csrHolder.numOfEdges;
         logger.info("create EdgeManagerImpl({})", fragment.fid());
     }
 
