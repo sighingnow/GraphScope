@@ -103,7 +103,7 @@ public class GraphxDoubleDoubleEdgeManagerImpl<MSG_T> extends
         int nbrPos = nbrPositions[(int) srcLid];
         int endPos = (int) (nbrPos + numEdge);
         for (int i = nbrPos; i < endPos; ++i){
-            triplet.setDstOid(dstOids[i], dstVdatas[i], edatas[i]);
+            triplet.setDstOid(dstOids[i], vertexDataManager.getVertexData(i), edatas[i]);
             Iterator<Tuple2<Long, MSG_T>> iterator = msgSender.apply(triplet);
 //            if (iterator.nonEmpty()){
  //               iterator.foreach(function1);
