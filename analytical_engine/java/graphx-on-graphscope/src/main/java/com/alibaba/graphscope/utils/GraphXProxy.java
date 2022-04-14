@@ -279,7 +279,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
 //        }
 //        logger.info("total vnum: " + innerVerticesNum + " cardinality: " + flags.cardinality() + " active vertices: " + activeVertices.length);
 
-        if (outerMsgReceived || inComingMessageStore.hasMessages()) {
+        if (true || outerMsgReceived || inComingMessageStore.hasMessages()) {
             {
                 vprogTime -= System.nanoTime();
                 AtomicInteger atomicInteger = new AtomicInteger(0);
@@ -297,11 +297,11 @@ public class GraphXProxy<VD, ED, MSG_T> {
                                 }
                                 try {
                                     for (long lid = curBegin; lid < curEnd; ++lid) {
-                                        if (inComingMessageStore.messageAvailable(lid)) {
+//                                        if (inComingMessageStore.messageAvailable(lid)) {
                                             vertexDataManager.setVertexData(lid, vprog.apply(idManager.lid2Oid(lid),
                                                 vertexDataManager.getVertexData(lid),
                                                 inComingMessageStore.getMessage(lid)));
-                                        }
+//                                        }
                                     }
                                 } catch (Exception e) {
                                     e.printStackTrace();
@@ -338,10 +338,10 @@ public class GraphXProxy<VD, ED, MSG_T> {
                                 }
                                 try {
                                     for (long lid = curBegin; lid < curEnd; ++lid) {
-                                        if (inComingMessageStore.messageAvailable(lid)) {
+//                                        if (inComingMessageStore.messageAvailable(lid)) {
                                             threadTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
                                             edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet, sendMsg);
-                                        }
+//                                        }
                                     }
                                 } catch (Exception e) {
                                     e.printStackTrace();

@@ -35,8 +35,11 @@ public class GraphXAdaptor<VDATA_T, EDATA_T> extends Communicator implements
 	//if (ctx.round > 5) return ;
         GraphXProxy proxy = ctx.getGraphXProxy();
         boolean maxIterationReached = proxy.ParallelIncEval();
-        if (!maxIterationReached && proxy.getOutgoingMessageStore().hasMessages()){
+        if (!maxIterationReached){
             messageManager.ForceContinue();
         }
+        //if (!maxIterationReached && proxy.getOutgoingMessageStore().hasMessages()){
+        //    messageManager.ForceContinue();
+        //}
     }
 }

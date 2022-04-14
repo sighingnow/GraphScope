@@ -89,7 +89,8 @@ class DefaultWorker {
     auto& graph = context_->fragment();
 
     MPI_Barrier(comm_spec_.comm());
-
+    
+    for (int i = 0; i < 5; ++i){
     context_->Init(messages_, std::forward<Args>(args)...);
 
     MPI_Barrier(comm_spec_.comm());
@@ -124,12 +125,13 @@ class DefaultWorker {
     }
 
     MPI_Barrier(comm_spec_.comm());
-
-    messages_.Finalize();
-    t += grape::GetCurrentTime();
+   t += grape::GetCurrentTime();
     if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
-        VLOG(1) << "[Only query time]: " << t;
+	VLOG(1) << "[Only query time]: " << t;
     } 
+    }
+    messages_.Finalize();
+     
     finishQuery();
   }
 

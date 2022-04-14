@@ -213,7 +213,7 @@ void CreateAndQuery(std::string params) {
 
   double t2 = grape::GetCurrentTime();
 
-  for (int i = 0; i < 5; ++i){
+  for (int i = 0; i < 1; ++i){
     Query<ProjectedFragmentType>(comm_spec, projected_fragment, new_params,
                                user_lib_path);
   }
