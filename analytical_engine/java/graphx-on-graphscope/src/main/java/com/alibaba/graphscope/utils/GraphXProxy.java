@@ -31,7 +31,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphXProxy.class.getName());
     private static String SPARK_LAUNCHER_OUTPUT = "spark_laucher_output";
-    private static final int chunkSize = 4096;
+    private static final int chunkSize = 2048;
     /**
      * User vertex program: vprog: (VertexId, VD, A) => VD
      */
@@ -267,13 +267,13 @@ public class GraphXProxy<VD, ED, MSG_T> {
         int []activeVertices = new int [flags.cardinality()];
         int index = 0;
         int i = flags.nextSetBit(0);
-        for (;i >= 0 && index < activeVertices.length; i = flags.nextSetBit(i + 1)){
+        for (;i >= 0 && index < activeVertices.length && i < innerVerticesNum; i = flags.nextSetBit(i + 1)){
             if (i == Integer.MAX_VALUE){
                 break;
             }
             activeVertices[index++] = i;
         }
-        if (i < 0){
+        if (i >= 0){
             throw new IllegalStateException("bit set still available: " + i + " index: " + index + " length: " + activeVertices.length);
         }
         logger.info("total vnum: " + innerVerticesNum + " cardinality: " + flags.cardinality() + " active vertices: " + activeVertices.length);
@@ -323,7 +323,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 AtomicInteger atomicInteger = new AtomicInteger(0);
                 int originEnd = activeVertices.length;
                 int edgeChunkSize = Math.max(256, activeVertices.length / numCores);
-                int curCores = activeVertices.length / edgeChunkSize;
+                int curCores = Math.min((activeVertices.length + edgeChunkSize - 1) / edgeChunkSize, numCores);
                 CountDownLatch countDownLatch = new CountDownLatch(curCores);
                 for (int tid = 0; tid < curCores; ++tid) {
                     GSEdgeTriplet<VD,ED> threadTriplet = edgeTriplets[tid];

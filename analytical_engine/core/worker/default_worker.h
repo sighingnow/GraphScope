@@ -92,8 +92,9 @@ class DefaultWorker {
 
     context_->Init(messages_, std::forward<Args>(args)...);
 
+    MPI_Barrier(comm_spec_.comm());
     int round = 0;
-
+    double t = -grape::GetCurrentTime();
     messages_.Start();
 
     messages_.StartARound();
@@ -125,6 +126,10 @@ class DefaultWorker {
     MPI_Barrier(comm_spec_.comm());
 
     messages_.Finalize();
+    t += grape::GetCurrentTime();
+    if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
+        VLOG(1) << "[Only query time]: " << t;
+    } 
     finishQuery();
   }
 
