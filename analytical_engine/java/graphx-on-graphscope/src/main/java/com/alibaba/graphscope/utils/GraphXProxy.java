@@ -31,7 +31,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphXProxy.class.getName());
     private static String SPARK_LAUNCHER_OUTPUT = "spark_laucher_output";
-    private static final int chunkSize = 2048;
+    private static final int vertexChunkSize = 4096;
+    private static final int edgeChunkSize = 1024;
     /**
      * User vertex program: vprog: (VertexId, VD, A) => VD
      */
@@ -135,8 +136,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
                     () -> {
                         while (true) {
                             int curBegin =
-                                Math.min(atomicInteger.getAndAdd(chunkSize), originEnd);
-                            int curEnd = Math.min(curBegin + chunkSize, originEnd);
+                                Math.min(atomicInteger.getAndAdd(vertexChunkSize), originEnd);
+                            int curEnd = Math.min(curBegin + vertexChunkSize, originEnd);
                             if (curBegin >= originEnd) {
                                 break;
                             }
@@ -174,8 +175,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
                     () -> {
                         while (true) {
                             int curBegin =
-                                Math.min(atomicInteger.getAndAdd(chunkSize), originEnd);
-                            int curEnd = Math.min(curBegin + chunkSize, originEnd);
+                                Math.min(atomicInteger.getAndAdd(edgeChunkSize), originEnd);
+                            int curEnd = Math.min(curBegin + edgeChunkSize, originEnd);
                             if (curBegin >= originEnd) {
                                 break;
                             }
@@ -289,8 +290,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
                         () -> {
                             while (true) {
                                 int curBegin =
-                                    Math.min(atomicInteger.getAndAdd(chunkSize), originEnd);
-                                int curEnd = Math.min(curBegin + chunkSize, originEnd);
+                                    Math.min(atomicInteger.getAndAdd(vertexChunkSize), originEnd);
+                                int curEnd = Math.min(curBegin + vertexChunkSize, originEnd);
                                 if (curBegin >= originEnd) {
                                     break;
                                 }
@@ -328,11 +329,10 @@ public class GraphXProxy<VD, ED, MSG_T> {
                     int finalTid = tid;
                     executorService.execute(
                         () -> {
-                            if (atomicInteger.get() >= originEnd) return ;
                             while (true) {
                                 int curBegin =
-                                    Math.min(atomicInteger.getAndAdd(chunkSize), originEnd);
-                                int curEnd = Math.min(curBegin + chunkSize, originEnd);
+                                    Math.min(atomicInteger.getAndAdd(edgeChunkSize), originEnd);
+                                int curEnd = Math.min(curBegin + edgeChunkSize, originEnd);
                                 if (curBegin >= originEnd) {
                                     break;
                                 }

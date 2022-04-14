@@ -45,5 +45,4 @@ export GRAPE_JVM_OPTS="-Dcom.alibaba.fastffi.rvBuffer=2147483648 -XX:+StartAttac
 -Djava.class.path=${class_path}"
 # -XX:+TraceClassLoading \
 #-XX:+PrintInlining \
-
 #sudo docker run --shm-size 100960m --name graphx -it  --privileged=true --network=host -v /apsara/xiaolei.zl/:/home/graphscope/data registry.cn-hongkong.aliyuncs.com/graphscope/graphscope-vineyard:v0.3.21 /bin/bash

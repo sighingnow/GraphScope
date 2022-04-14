@@ -115,9 +115,9 @@ inline uint64_t getTotalSystemMemory() {
 }
 
 void SetupEnv(const int local_num) {
-  int systemMemory = getTotalSystemMemory() / 10;
+  int systemMemory = getTotalSystemMemory() / 3;
   int systemMemoryPerWorker = std::max(systemMemory / local_num, 1);
-  int mnPerWorker = std::max(systemMemoryPerWorker * 7 / 12, 1);
+  int mnPerWorker = std::max(systemMemoryPerWorker * 9 / 12, 1);
 
   VLOG(1) << "Xmx: " << systemMemoryPerWorker
           << "g,Xms: " << systemMemoryPerWorker << "g,-Xmn: " << mnPerWorker << "g";
