@@ -4,8 +4,8 @@
     "software": 1
   },
   "edge_type_map": {
-    "knows": 0,
-    "created": 1
+    "knows": 2,
+    "created": 3
   },
   "vertex_prop": {
     "person": [
@@ -40,11 +40,7 @@
   "edge_prop": {
     "knows": [
       [
-        "start_id",
-        "ID"
-      ],
-      [
-        "end_id",
+        "edge_id",
         "ID"
       ],
       [
@@ -54,11 +50,7 @@
     ],
     "created": [
       [
-        "start_id",
-        "ID"
-      ],
-      [
-        "end_id",
+        "edge_id",
         "ID"
       ],
       [

@@ -1,0 +1,2 @@
+g.V().has('person', 'id', 1).as('friends').select('friends')
+
