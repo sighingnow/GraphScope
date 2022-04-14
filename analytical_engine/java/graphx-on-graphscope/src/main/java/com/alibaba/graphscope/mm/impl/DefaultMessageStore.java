@@ -73,7 +73,7 @@ public class DefaultMessageStore<MSG_T, VD> implements MessageStore<MSG_T, VD> {
     }
 
     @Override
-    public synchronized void addLidMessage(long lid, MSG_T msg) {
+    public void addLidMessage(long lid, MSG_T msg) {
         int intLid = (int) lid;
         if (flags.get(intLid)) {
             values[intLid] = mergeMsg.apply(values[intLid], msg);

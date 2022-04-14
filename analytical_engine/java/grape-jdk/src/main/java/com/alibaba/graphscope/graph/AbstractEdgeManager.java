@@ -152,11 +152,11 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
         private sun.misc.Unsafe unsafe = JavaRuntime.UNSAFE;
         private long totalNumOfEdges;
 
-        private long[] nbrUnitAddrs, numOfEdges;
-        private BIZ_OID_T[] dstOids;
-        private VID_T[] dstLids;
-        private BIZ_EDATA_T[] edatas;
-        private int[] nbrPositions;
+        public long[] nbrUnitAddrs, numOfEdges;
+        public BIZ_OID_T[] dstOids;
+        public VID_T[] dstLids;
+        public BIZ_EDATA_T[] edatas;
+        public int[] nbrPositions;
         private BiConsumer<FFIByteVectorInputStream, BIZ_EDATA_T[]> consumer;
 
         public CSRHolder(TypedArray<GRAPE_ED_T> edataArray,

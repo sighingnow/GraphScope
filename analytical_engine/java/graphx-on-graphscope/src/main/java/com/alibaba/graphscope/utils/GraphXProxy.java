@@ -263,20 +263,20 @@ public class GraphXProxy<VD, ED, MSG_T> {
         outgoingMessageStore.clear();
         receiveTime += System.nanoTime();
 
-        BitSet flags = inComingMessageStore.getFlags();
-        int []activeVertices = new int [flags.cardinality()];
-        int index = 0;
-        int i = flags.nextSetBit(0);
-        for (;i >= 0 && index < activeVertices.length && i < innerVerticesNum; i = flags.nextSetBit(i + 1)){
-            if (i == Integer.MAX_VALUE){
-                break;
-            }
-            activeVertices[index++] = i;
-        }
-        if (i >= 0){
-            throw new IllegalStateException("bit set still available: " + i + " index: " + index + " length: " + activeVertices.length);
-        }
-        logger.info("total vnum: " + innerVerticesNum + " cardinality: " + flags.cardinality() + " active vertices: " + activeVertices.length);
+//        BitSet flags = inComingMessageStore.getFlags();
+//        int []activeVertices = new int [flags.cardinality()];
+//        int index = 0;
+//        int i = flags.nextSetBit(0);
+//        for (;i >= 0 && index < activeVertices.length && i < innerVerticesNum; i = flags.nextSetBit(i + 1)){
+//            if (i == Integer.MAX_VALUE){
+//                break;
+//            }
+//            activeVertices[index++] = i;
+//        }
+//        if (i >= 0){
+//            throw new IllegalStateException("bit set still available: " + i + " index: " + index + " length: " + activeVertices.length);
+//        }
+//        logger.info("total vnum: " + innerVerticesNum + " cardinality: " + flags.cardinality() + " active vertices: " + activeVertices.length);
 
         if (outerMsgReceived || inComingMessageStore.hasMessages()) {
             {
@@ -321,11 +321,9 @@ public class GraphXProxy<VD, ED, MSG_T> {
             {
                 msgSendTime -= System.nanoTime();
                 AtomicInteger atomicInteger = new AtomicInteger(0);
-                int originEnd = activeVertices.length;
-                int edgeChunkSize = Math.max(256, activeVertices.length / numCores);
-                int curCores = Math.min((activeVertices.length + edgeChunkSize - 1) / edgeChunkSize, numCores);
-                CountDownLatch countDownLatch = new CountDownLatch(curCores);
-                for (int tid = 0; tid < curCores; ++tid) {
+                int originEnd = (int) innerVerticesNum;
+                CountDownLatch countDownLatch = new CountDownLatch(numCores);
+                for (int tid = 0; tid < numCores; ++tid) {
                     GSEdgeTriplet<VD,ED> threadTriplet = edgeTriplets[tid];
                     int finalTid = tid;
                     executorService.execute(
@@ -333,14 +331,13 @@ public class GraphXProxy<VD, ED, MSG_T> {
                             if (atomicInteger.get() >= originEnd) return ;
                             while (true) {
                                 int curBegin =
-                                    Math.min(atomicInteger.getAndAdd(edgeChunkSize), originEnd);
-                                int curEnd = Math.min(curBegin + edgeChunkSize, originEnd);
+                                    Math.min(atomicInteger.getAndAdd(chunkSize), originEnd);
+                                int curEnd = Math.min(curBegin + chunkSize, originEnd);
                                 if (curBegin >= originEnd) {
                                     break;
                                 }
                                 try {
-                                    for (int j = curBegin; j < curEnd; ++j) {
-                                        long lid = activeVertices[j];
+                                    for (long lid = curBegin; lid < curEnd; ++lid) {
                                         if (inComingMessageStore.messageAvailable(lid)) {
                                             threadTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
                                             edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet, sendMsg, outgoingMessageStore);

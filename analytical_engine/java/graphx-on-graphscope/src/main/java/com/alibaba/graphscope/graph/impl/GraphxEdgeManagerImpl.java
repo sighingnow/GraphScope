@@ -25,6 +25,13 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
     private GraphXConf conf;
     private VertexIdManager<Long, Long> idManager;
     private VertexDataManager<VD> vertexDataManager;
+    private long[] numEdges;
+    private int[] nbrPos;
+    private Long[] dstOids;
+    private Long[] dstLids;
+    private ED[] edatas;
+    private int[] nbrPositions;
+    private long[] numOfEdges;
 
     public GraphxEdgeManagerImpl(GraphXConf conf, VertexIdManager<Long, Long> idManager,
         VertexDataManager<VD> vertexDataManager) {
@@ -41,6 +48,13 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
     public void init(IFragment<Long, Long, VD, ED> fragment, int numCores) {
         super.init(fragment, idManager, Long.class, conf.getEdataClass(), conf.getEdataClass(),
             null, numCores);
+        numEdges = new long[numCores];
+        nbrPos = new int[numCores];
+        dstOids = csrHolder.dstOids;
+        dstLids = csrHolder.dstLids;
+        edatas = csrHolder.edatas;
+        nbrPositions = csrHolder.nbrPositions;
+        numEdges = csrHolder.numOfEdges;
         logger.info("create EdgeManagerImpl({})", fragment.fid());
     }
 
@@ -75,16 +89,28 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
     public void iterateOnEdgesParallel(int threadId, long srcLid, GSEdgeTriplet<VD, ED> triplet,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,
         MessageStore<MSG_T, VD> outMessageStore) {
-        TupleIterable iterable = edgeIterables.get(threadId);
-        iterable.setLid(srcLid);
-        for (GrapeEdge<Long, Long, ED> edge : iterable) {
-            triplet.setDstOid(edge.dstOid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
+        long numEdge = numOfEdges[(int) srcLid];
+        int nbrPos = nbrPositions[(int) srcLid];
+        for (int i = nbrPos; i < nbrPos + numEdge; ++i){
+            triplet.setDstOid(dstOids[i], vertexDataManager.getVertexData(dstLids[i]), edatas[i]);
             Iterator<Tuple2<Long, MSG_T>> iterator = msgSender.apply(triplet);
             while (iterator.hasNext()) {
                 Tuple2<Long, MSG_T> tuple2 = iterator.next();
                 outMessageStore.addOidMessage(tuple2._1(), tuple2._2());
             }
         }
+
+//        TupleIterable iterable = edgeIterables.get(threadId);
+//
+//        iterable.setLid(srcLid);
+//        for (GrapeEdge<Long, Long, ED> edge : iterable) {
+//            triplet.setDstOid(edge.dstOid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
+//            Iterator<Tuple2<Long, MSG_T>> iterator = msgSender.apply(triplet);
+//            while (iterator.hasNext()) {
+//                Tuple2<Long, MSG_T> tuple2 = iterator.next();
+//                outMessageStore.addOidMessage(tuple2._1(), tuple2._2());
+//            }
+//        }
     }
 
 }
