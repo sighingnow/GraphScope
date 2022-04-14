@@ -6,7 +6,9 @@ import com.alibaba.graphscope.graph.GraphXVertexIdManager;
 import com.alibaba.graphscope.graph.GraphxEdgeManager;
 import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.graph.VertexIdManager;
+import com.alibaba.graphscope.graph.impl.DoubleVertexDataManagerImpl;
 import com.alibaba.graphscope.graph.impl.GraphXVertexIdManagerImpl;
+import com.alibaba.graphscope.graph.impl.GraphxDoubleDoubleEdgeManagerImpl;
 import com.alibaba.graphscope.graph.impl.GraphxEdgeManagerImpl;
 import com.alibaba.graphscope.graph.impl.VertexDataManagerImpl;
 import com.alibaba.graphscope.graphx.GSEdgeTriplet;
@@ -62,6 +64,10 @@ public class GraphXFactory {
     }
 
     public static <VD,ED,MSG> VertexDataManager createVertexDataManager(GraphXConf<VD,ED,MSG> conf) {
+        if (conf.getVdataClass().equals(Double.class)){
+            logger.info("creating [DoubleVertexDataManagerImpl]");
+            return new DoubleVertexDataManagerImpl(conf);
+        }
         return new VertexDataManagerImpl<VD>(conf);
     }
 
@@ -80,6 +86,10 @@ public class GraphXFactory {
     public static <VD, ED, MSG_T> GraphxEdgeManager<VD, ED, MSG_T> createEdgeManager(
         GraphXConf<VD,ED,MSG_T> conf, VertexIdManager<Long, Long> idManager,
         VertexDataManager<VD> vertexDataManager, MessageStore<MSG_T,VD> outMessage) {
+        if (conf.getEdataClass().equals(Long.class)){
+            logger.info("Creating double edge manager");
+            return (GraphxEdgeManager<VD, ED, MSG_T>) new GraphxDoubleDoubleEdgeManagerImpl<MSG_T>(conf, idManager, (VertexDataManager<Double>) vertexDataManager, (MessageStore<MSG_T, Double>) outMessage);
+        }
         return new GraphxEdgeManagerImpl<>(conf, idManager, vertexDataManager, outMessage);
     }
 
