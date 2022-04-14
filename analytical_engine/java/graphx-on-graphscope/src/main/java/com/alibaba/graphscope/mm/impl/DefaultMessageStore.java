@@ -12,7 +12,9 @@ import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
 import java.util.BitSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Function1;
 import scala.Function2;
+import scala.Tuple2;
 
 /**
  * Can store out messages or in messages.
@@ -27,6 +29,7 @@ public class DefaultMessageStore<MSG_T, VD> implements MessageStore<MSG_T, VD> {
     private MSG_T[] values;
     private BitSet flags;
     private Function2<MSG_T, MSG_T, MSG_T> mergeMsg;
+    private Function2<MSG_T,MSG_T,MSG_T> mergeMsgWithNull; //wrapper for user provided mergeMsg.
     private IFragment<?, ?, ?, ?> fragment;
     private int verticesNum, innerVerticesNum;
     private Vertex<Long> vertex;
@@ -42,6 +45,12 @@ public class DefaultMessageStore<MSG_T, VD> implements MessageStore<MSG_T, VD> {
         VertexDataManager<VD> vertexDataManager,
         Function2<MSG_T, MSG_T, MSG_T> mergeMsg) {
         this.mergeMsg = mergeMsg;
+        this.mergeMsgWithNull = (v1, v2) -> {
+            if (v1 == null){
+                return v2;
+            }
+            return mergeMsg.apply(v1, v2);
+        };
         this.fragment = fragment;
         this.vertexIdManager = idManager;
         this.vertexDataManager = vertexDataManager;
@@ -75,12 +84,15 @@ public class DefaultMessageStore<MSG_T, VD> implements MessageStore<MSG_T, VD> {
     @Override
     public void addLidMessage(long lid, MSG_T msg) {
         int intLid = (int) lid;
-        if (flags.get(intLid)) {
-            values[intLid] = mergeMsg.apply(values[intLid], msg);
-        } else {
-            flags.set(intLid);
-            values[intLid] = msg;
-        }
+        flags.set(intLid);
+        values[intLid] = mergeMsgWithNull.apply(values[intLid], msg);
+
+//        if (flags.get(intLid)) {
+//            values[intLid] = mergeMsg.apply(values[intLid], msg);
+//        } else {
+//            flags.set(intLid);
+//            values[intLid] = msg;
+//        }
     }
 
     @Override
