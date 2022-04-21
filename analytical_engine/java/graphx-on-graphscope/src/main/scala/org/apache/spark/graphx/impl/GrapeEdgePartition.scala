@@ -60,10 +60,10 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
       val curPid = partitioner.getPartition(dstOidBuffer(ind))
       val curPartitionOidSet = oidSets(curPid)
       curPartitionOidSet += dstOidBuffer(ind)
-      log.info(s"Dst node of edge (${srcOidBuffer(ind)}, ${dstOidBuffer(ind)} belong to ${pid}")
+      log.info(s"Partition ${pid}: Dst node of edge (${srcOidBuffer(ind)}, ${dstOidBuffer(ind)} belong to ${curPid}")
       ind += 1
     }
-    log.info(s"After init innerVertexOids : ${oidSets.mkString("OidSetArray(", ",", ")")}")
+    log.info(s"Partition ${pid}: After init innerVertexOids : ${oidSets.mkString("OidSetArray(", ",", ")")}")
     curPartitionOidSet.foreach(
       id => innerVertexOids += id
     )
@@ -86,6 +86,16 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
       oid2Lid.update(iter.next(), curLid)
       curLid+=1
     }
+    //Add oid<->lid mapping for outer vertices.
+    for (ind <- 0 until oidSets.length){
+      val outerOidSetIter = oidSets(ind).iterator
+      while (outerOidSetIter.hasNext){
+        oid2Lid.update(iter.next(), curLid)
+        curLid += 1
+      }
+    }
+    //FIXME: Global id should be consistent among fragment, so the gid here we can generate should never
+    // be used.
     log.info(toString(oid2Lid))
 
 //    val idParser = new IdParser(pid, partitionNum)
@@ -102,7 +112,7 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
   }
 
   def toString(index : GraphXPrimitiveKeyOpenHashMap[VertexId,Long]) : String = {
-    var res = "oid2Lid: "
+    var res = s"Partition ${pid}: oid2Lid: "
     val iter = index.iterator
     while (iter.hasNext){
       val cur = iter.next()
