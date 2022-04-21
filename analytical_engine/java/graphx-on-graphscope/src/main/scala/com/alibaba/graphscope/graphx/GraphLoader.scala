@@ -1,7 +1,7 @@
 package com.alibaba.graphscope.graphx
 
 import org.apache.spark.graphx.impl.GrapeEdgePartitionBuilder
-import org.apache.spark.graphx.{Edge, Graph}
+import org.apache.spark.graphx.{Edge, GrapeEdgeRDD, Graph}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -36,7 +36,7 @@ object GraphLoader extends Logging {
         val srcId = lineArray(0).toLong //partition on srcId
         val dstId = lineArray(1).toLong
         (srcId, new Edge[ED](srcId, dstId, defaultEdata))
-    }).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
+    })
 
     val shuffledEdges = parsedLines.partitionBy(new HashPartitioner(numEdgePartitions))
     log.info(s"${shuffledEdges.collect().mkString("Array(", ", ", ")")}")
@@ -53,15 +53,17 @@ object GraphLoader extends Logging {
             val item = iter.next()
             builder.add(item._2)
           }
-          Iterator(pid, builder.toGrapeEdgePartition)
+          Iterator((pid, builder.toGrapeEdgePartition))
         }
       }, true
     )
-    log.info("shuffledEdgePartitions: " + shuffledEdgePartitions.count())
+    log.info("shuffledEdgePartitions: " + shuffledEdgePartitions.count()) //FIXME: printed 4 here
+    shuffledEdgePartitions.persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
 
+    val edgeRDD = GrapeEdgeRDD.fromEdgePartitions(shuffledEdgePartitions)
+    log.info("EdgeRDD count: " + edgeRDD.count())
 //    val grapeEdgeRDD = GrapeEdgeRDD.fromRDD(shuffledEdges)
     log.info(s"Load total edges ${totalEdges}, num partitions: ${shuffledEdges.getNumPartitions}, cost ${loadEdgeTime}ms")
-
 
     null
   }

@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.graphscope.graphx.impl
+package org.apache.spark.graphx.impl
 
-import com.alibaba.graphscope.graphx.GrapeEdgeRDD
-import org.apache.spark.graphx._
+import org.apache.spark.graphx.{GrapeEdgeRDD, _}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{HashPartitioner, OneToOneDependency}
@@ -26,27 +25,27 @@ import org.apache.spark.{HashPartitioner, OneToOneDependency}
 import scala.reflect.{ClassTag, classTag}
 
 class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
-          @transient override val partitionsRDD: RDD[(VertexId, Edge[ED])],
-          val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
-  extends GrapeEdgeRDD[ED](partitionsRDD.context, List(new OneToOneDependency(partitionsRDD))) {
+               @transient override val grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartition[ED])],
+               val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
+  extends GrapeEdgeRDD[ED](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
   override def setName(_name: String): this.type = {
-    if (partitionsRDD.name != null) {
-      partitionsRDD.setName(partitionsRDD.name + ", " + _name)
+    if (grapePartitionsRDD.name != null) {
+      grapePartitionsRDD.setName(grapePartitionsRDD.name + ", " + _name)
     } else {
-      partitionsRDD.setName(_name)
+      grapePartitionsRDD.setName(_name)
     }
     this
   }
   setName("GrapeEdgeRDD")
 
   /**
-   * If `partitionsRDD` already has a partitioner, use it. Otherwise assume that the
-   * `PartitionID`s in `partitionsRDD` correspond to the actual partitions and create a new
-   * partitioner that allows co-partitioning with `partitionsRDD`.
+   * If `grapePartitionsRDD` already has a partitioner, use it. Otherwise assume that the
+   * `PartitionID`s in `grapePartitionsRDD` correspond to the actual partitions and create a new
+   * partitioner that allows co-partitioning with `grapePartitionsRDD`.
    */
   override val partitioner = {
-    partitionsRDD.partitioner.orElse(Some(new HashPartitioner(partitions.length)))
+    grapePartitionsRDD.partitioner.orElse(Some(new HashPartitioner(partitions.length)))
   }
   log.info("Partitioner: " + partitioner)
 
@@ -57,12 +56,12 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
    * storage level.
    */
   override def persist(newLevel: StorageLevel): this.type = {
-    partitionsRDD.persist(newLevel)
+    grapePartitionsRDD.persist(newLevel)
     this
   }
 
   override def unpersist(blocking: Boolean = false): this.type = {
-    partitionsRDD.unpersist(blocking)
+    grapePartitionsRDD.unpersist(blocking)
     this
   }
 
@@ -70,14 +69,14 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
    * Persists the edge partitions using `targetStorageLevel`, which defaults to MEMORY_ONLY.
    */
   override def cache(): this.type = {
-    partitionsRDD.persist(targetStorageLevel)
+    grapePartitionsRDD.persist(targetStorageLevel)
     this
   }
 
-  override def getStorageLevel: StorageLevel = partitionsRDD.getStorageLevel
+  override def getStorageLevel: StorageLevel = grapePartitionsRDD.getStorageLevel
 
   override def checkpoint(): Unit = {
-    partitionsRDD.checkpoint()
+    grapePartitionsRDD.checkpoint()
   }
 
   override def isCheckpointed: Boolean = {
@@ -85,13 +84,13 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
   }
 
   override def getCheckpointFile: Option[String] = {
-    partitionsRDD.getCheckpointFile
+    grapePartitionsRDD.getCheckpointFile
   }
 
   /** The number of edges in the RDD. */
   override def count(): Long = {
-//    partitionsRDD.map(_._2.size.toLong).fold(0)(_ + _)
-    partitionsRDD.count()
+//    grapePartitionsRDD.map(_._2.size.toLong).fold(0)(_ + _)
+    grapePartitionsRDD.map(_._2.numEdges.toLong).fold(0)(_ + _)
   }
 
 //  override def mapValues[ED2: ClassTag](f: Edge[ED] => ED2): G[ED2] =
@@ -103,11 +102,6 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
   // d, part) => part.map(f))
 //  }
 
-//  def mapEdges[ED2 : ClassTag](function: Edge[ED] => ED2) : GrapeEdgeRDDImpl[ED2] = {
-//    partitionsRDD.mapPartitions({
-//      iter => iter.
-//    })
-//    new GrapeEdgeRDDImpl[ED](partitionsRDD.map[ED2](tuple => (tuple._1, function.apply(tuple._2))))
 
   /**
    * Map the values in an edge partitioning preserving the structure but changing the values.
@@ -116,8 +110,8 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
    * @param f the function from an edge to a new edge value
    * @return a new EdgeRDD containing the new edge values
    */
-  override def mapValues[ED2: ClassTag](f: Edge[ED] => ED2): EdgeRDD[ED2] = {
-    null
+  override def mapValues[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgeRDDImpl[ED2] = {
+    mapEdgePartitions((pid,part) => part.map(f))
   }
 
   /**
@@ -153,7 +147,25 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
     null
   }
 
-//  override def reverse: GrapeEdgeRDDImpl[ED, VD] = mapEdgePartitions((pid, part) => part.reverse)
+
+  def mapEdgePartitions[ED2: ClassTag](
+      f: (PartitionID, GrapeEdgePartition[ED]) => GrapeEdgePartition[ED2]): GrapeEdgeRDDImpl[ED2] = {
+    this.withPartitionsRDD[ED2](grapePartitionsRDD.mapPartitions({ iter =>
+      if (iter.hasNext) {
+        val (pid, ep) = iter.next()
+        Iterator(Tuple2(pid, f(pid, ep)))
+      } else {
+        Iterator.empty
+      }
+    }, preservesPartitioning = true))
+  }
+
+  private[graphx] def withPartitionsRDD[ED2: ClassTag](
+       grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartition[ED2])]): GrapeEdgeRDDImpl[ED2] = {
+    new GrapeEdgeRDDImpl[ED2](grapePartitionsRDD, this.targetStorageLevel)
+  }
+
+//  override def reverse: GrapeEdgeRDDImpl[ED] = mapEdgePartitions((pid, part) => part.reverse)
 
 //  def filter(
 //              epred: EdgeTriplet[VD, ED] => Boolean,
@@ -161,12 +173,11 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
 //    mapEdgePartitions((pid, part) => part.filter(epred, vpred))
 //  }
 
-//  override def innerJoin[ED2: ClassTag, ED3: ClassTag]
-//  (other: EdgeRDD[ED2])
-//  (f: (VertexId, VertexId, ED, ED2) => ED3): EdgeRDDImpl[ED3, VD] = {
+//  override def innerJoin[ED2: ClassTag, ED3: ClassTag](other: EdgeRDD[ED2])
+//  (f: (VertexId, VertexId, ED, ED2) => ED3): GrapeEdgeRDDImpl[ED3] = {
 //    val ed2Tag = classTag[ED2]
 //    val ed3Tag = classTag[ED3]
-//    this.withPartitionsRDD[ED3, VD](partitionsRDD.zipPartitions(other.partitionsRDD, true) {
+//    this.withPartitionsRDD[ED3](grapePartitionsRDD.zipPartitions(other.grapePartitionsRDD, true) {
 //      (thisIter, otherIter) =>
 //        val (pid, thisEPart) = thisIter.next()
 //        val (_, otherEPart) = otherIter.next()
@@ -176,7 +187,7 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
 
 //  def mapEdgePartitions[ED2: ClassTag, VD2: ClassTag](
 //               f: (VertexId, (VertexId,VertexId,ED)) => EdgePartition[ED2, VD2]): EdgeRDDImpl[ED2, VD2] = {
-//    this.withPartitionsRDD[ED2, VD2](partitionsRDD.mapPartitions({ iter =>
+//    this.withPartitionsRDD[ED2, VD2](grapePartitionsRDD.mapPartitions({ iter =>
 //      if (iter.hasNext) {
 //        val (pid, ep) = iter.next()
 //        Iterator(Tuple2(pid, f(pid, ep)))
@@ -187,13 +198,18 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
 //  }
 
 //  private[graphx] def withPartitionsRDD[ED2: ClassTag, VD2: ClassTag](
-//                                                                       partitionsRDD: RDD[(PartitionID, EdgePartition[ED2, VD2])]): EdgeRDDImpl[ED2, VD2] = {
-//    new EdgeRDDImpl(partitionsRDD, this.targetStorageLevel)
+//                                                                       grapePartitionsRDD: RDD[(PartitionID, EdgePartition[ED2, VD2])]): EdgeRDDImpl[ED2, VD2] = {
+//    new EdgeRDDImpl(grapePartitionsRDD, this.targetStorageLevel)
 //  }
 
 //  override private[graphx] def withTargetStorageLevel(
 //                                                       targetStorageLevel: StorageLevel): EdgeRDDImpl[ED, VD] = {
-//    new EdgeRDDImpl(this.partitionsRDD, targetStorageLevel)
+//    new EdgeRDDImpl(this.grapePartitionsRDD, targetStorageLevel)
 //  }
 
+  /**
+   * Just inherit but don't use.
+   * @return
+   */
+  override private[graphx] def partitionsRDD = null
 }
