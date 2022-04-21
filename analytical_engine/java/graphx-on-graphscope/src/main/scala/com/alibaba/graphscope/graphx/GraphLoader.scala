@@ -57,6 +57,7 @@ object GraphLoader extends Logging {
         }
       }, true
     )
+    log.info("shuffledEdgePartitions: " + shuffledEdgePartitions.count())
 
 //    val grapeEdgeRDD = GrapeEdgeRDD.fromRDD(shuffledEdges)
     log.info(s"Load total edges ${totalEdges}, num partitions: ${shuffledEdges.getNumPartitions}, cost ${loadEdgeTime}ms")

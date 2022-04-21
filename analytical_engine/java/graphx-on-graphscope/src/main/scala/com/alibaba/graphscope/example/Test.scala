@@ -12,13 +12,14 @@ object Test extends Logging{
       .appName(s"${this.getClass.getSimpleName}")
       .getOrCreate()
     val sc = spark.sparkContext
-    if (args.length < 1) {
+    if (args.length < 2) {
       println("Expect 1 args")
       return 0;
     }
     val eFilePath = args(0);
+    val numPartitions = args(1).toInt;
     log.info(s"Running for efile ${eFilePath}")
-    val graph = GraphLoader.edgeListFile[Long, Long](sc, eFilePath, 1L)
+    val graph = GraphLoader.edgeListFile[Long, Long](sc, eFilePath, 1L,false, numPartitions)
 
    log.info("Finish running test")
   }

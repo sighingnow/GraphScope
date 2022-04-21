@@ -88,10 +88,12 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
     }
     //Add oid<->lid mapping for outer vertices.
     for (ind <- 0 until oidSets.length){
-      val outerOidSetIter = oidSets(ind).iterator
-      while (outerOidSetIter.hasNext){
-        oid2Lid.update(iter.next(), curLid)
-        curLid += 1
+      if (ind != pid){
+        val outerOidSetIter = oidSets(ind).iterator
+        while (outerOidSetIter.hasNext){
+          oid2Lid.update(outerOidSetIter.next(), curLid)
+          curLid += 1
+        }
       }
     }
     //FIXME: Global id should be consistent among fragment, so the gid here we can generate should never
