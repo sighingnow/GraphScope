@@ -14,18 +14,24 @@ import scala.reflect.ClassTag
  * shuffle, from this edgepartition
  */
 class GrapeEdgePartition[@specialized(Char, Long, Int, Double) ED: ClassTag]
-(srcOids: Array[Long], dstOids: Array[Long], edatas: Array[ED], vertexMapPartition: GrapeVertexMapPartition) extends Serializable {
+(srcOids: Array[Long], dstOids: Array[Long], edatas: Array[ED], val ivEdgeNum : Long, val ovEdgeNum: Long, vertexMapPartition: GrapeVertexMapPartition) extends Serializable {
+  /**
+   * edges with src id belongs to our partition;
+   * edges with dstId belongs to our partition.
+   */
+  val totalEdgeNum : Long = ivEdgeNum + ovEdgeNum
+  require(totalEdgeNum == ivEdgeNum + ovEdgeNum, s"Inconsistent ${totalEdgeNum}, ${ivEdgeNum}, ${ovEdgeNum}")
+  require(totalEdgeNum == srcOids.length, s"Inconsistent ${totalEdgeNum},${srcOids.length}")
 
-  val numEdges :Int  = srcOids.length
-  val innerVertexNum : Int = vertexMapPartition.innerVertexNum
-  val outerVertexNum: Int = vertexMapPartition.outerVertexNum
+
+
 
   def iterator() : Iterator[Edge[ED]] = {
     new Iterator[Edge[ED]] {
       private[this] val edge = new Edge[ED]
       private[this] var lid = 0
 
-      override def hasNext: Boolean = lid < numEdges
+      override def hasNext: Boolean = lid < totalEdgeNum
 
       override def next(): Edge[ED] = {
         edge.srcId = srcOid(lid)
@@ -86,7 +92,7 @@ class GrapeEdgePartition[@specialized(Char, Long, Int, Double) ED: ClassTag]
    */
   def withData[ED2: ClassTag](newData: Array[ED2]): GrapeEdgePartition[ED2] = {
     new GrapeEdgePartition[ED2](
-      srcOids, dstOids, newData, vertexMapPartition)
+      srcOids, dstOids, newData, ivEdgeNum,ovEdgeNum, vertexMapPartition)
   }
 
   def srcOid(i: Long) : Long = srcOids(i.toInt)
@@ -101,9 +107,10 @@ class GrapeEdgePartition[@specialized(Char, Long, Int, Double) ED: ClassTag]
 }
 
 class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassTag](pid : Int, partitionNum : Int, partitioner : Partitioner) extends Logging{
-  private val srcOidBuffer = new ArrayBuffer[Long]
-  private val dstOidBuffer = new ArrayBuffer[Long]
-  private val edataBuffer = new ArrayBuffer[ED]
+//  private val srcOidBuffer = new ArrayBuffer[Long]
+//  private val dstOidBuffer = new ArrayBuffer[Long]
+//  private val edataBuffer = new ArrayBuffer[ED]
+  private val edgeArray = new ArrayBuffer[Edge[ED]]
   private val innerVertexLid2Oid = new ArrayBuffer[Long]
   private val outerVertexLid2Oid = new ArrayBuffer[Long]
   private val innerVertexOid2Lid = new GraphXPrimitiveKeyOpenHashMap[VertexId, Long]
@@ -112,17 +119,13 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
   private val outerVertexOid2Fid = new GraphXPrimitiveKeyOpenHashMap[VertexId,Int]
 
   def add(src : Long, dst : Long, edata : ED): Unit ={
-    srcOidBuffer += src
-    dstOidBuffer += dst
-    edataBuffer += edata
+    edgeArray += Edge[ED](src,dst,edata)
   }
   def add(edge: Edge[ED]): Unit ={
-    srcOidBuffer += edge.srcId
-    dstOidBuffer += edge.dstId
-    edataBuffer += edge.attr
+    edgeArray += edge
   }
 
-  def size = srcOidBuffer.size
+  def size = edgeArray.size
   def innerVertexNum = innerVertexLid2Oid.size
 
 //  def initInnerVertexOids(): Unit = {
@@ -149,21 +152,32 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
   def myClassOf[T: ClassTag] = implicitly[ClassTag[T]].runtimeClass
 
   def toGrapeEdgePartition : GrapeEdgePartition[ED] = {
-    log.info(s"Start convert to GrapeEdgePartition[${pid}], total num edges: ${srcOidBuffer.size}")
+    log.info(s"Start convert to GrapeEdgePartition[${pid}], total num edges: ${edgeArray.size}")
+    val srcOidArray = new Array[Long](edgeArray.size)
+    val dstOidArray = new Array[Long](edgeArray.size)
+    val edataArray = new Array[ED](edgeArray.size)
     //First generate oid arrays. the first column presents all inner vertices. The vertices that can not be partitioned into
     //pid are outer vertices. and we know where it belongs by hashing.
     var ivCurLid = -1
     var ovCurLid = -1
-    for (ind <- 0 until srcOidBuffer.size){
-      val srcOid = srcOidBuffer(ind)
-      val dstOid = dstOidBuffer(ind)
+    var ivEdgeCnt = 0 //count the number of edges start from iv
+    var ovEdgeCnt = 0//count the number of edges start from ov
+    for (ind <- edgeArray.indices){
+      val edge = edgeArray(ind)
+      val srcOid = edge.srcId
+      val dstOid = edge.dstId
+      srcOidArray(ind) = srcOid
+      dstOidArray(ind) = dstOid
+      edataArray(ind) = edge.attr
       val srcOidPid = partitioner.getPartition(srcOid)
       if (srcOidPid == pid){
         innerVertexOid2Lid.changeValue(srcOid, { ivCurLid += 1 ; innerVertexLid2Oid += srcOid; ivCurLid}, identity)
+        ivEdgeCnt += 1
       }
       else {
-        outerVertexOid2Lid.changeValue(srcOid, {ovCurLid += 1; outerVertexLid2Oid += dstOid; ovCurLid}, identity)
+        outerVertexOid2Lid.changeValue(srcOid, {ovCurLid += 1; outerVertexLid2Oid += srcOid; ovCurLid}, identity)
         outerVertexOid2Fid.changeValue(srcOid, srcOidPid, identity)
+        ovEdgeCnt += 1
       }
       val dstOidPid = partitioner.getPartition(dstOid)
       if (dstOidPid == pid) {
@@ -174,14 +188,12 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
         outerVertexOid2Fid.changeValue(dstOid, dstOidPid, identity)
       }
     }
+    require(ivEdgeCnt + ovEdgeCnt == edgeArray.size, "edge cnt doesn't match")
 
     val innerVertexNum = ivCurLid + 1
     val outerVertexNum = ovCurLid + 1
     log.info(s" ivnum: ${innerVertexNum}, ovnum: ${outerVertexNum}, total ${innerVertexNum + outerVertexNum}")
 
-    val srcOidArray = srcOidBuffer.toArray
-    val dstOidArray = dstOidBuffer.toArray
-    val edataArray = edataBuffer.toArray
     val ivLid2Oid = innerVertexLid2Oid.toArray
     val ovLid2Oid = outerVertexLid2Oid.toArray
     log.info(s"Partition ${pid}: srcOidArray ${srcOidArray.mkString("Array(", ", ", ")")}")
@@ -195,7 +207,7 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
     log.info(s"Partition ${pid}: ovOid2Lid: ${toString(outerVertexOid2Lid)}")
     log.info(s"Partition ${pid}: ovOid2fid: ${toString(outerVertexOid2Fid)}")
 
-    new GrapeEdgePartition[ED](srcOidArray, dstOidArray, edataArray, new GrapeVertexMapPartition(ivLid2Oid, ovLid2Oid,
+    new GrapeEdgePartition[ED](srcOidArray, dstOidArray, edataArray,ivEdgeCnt, ovEdgeCnt, new GrapeVertexMapPartition(ivLid2Oid, ovLid2Oid,
       innerVertexOid2Lid, outerVertexOid2Lid, outerVertexOid2Fid))
   }
 

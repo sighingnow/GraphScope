@@ -90,7 +90,7 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
   /** The number of edges in the RDD. */
   override def count(): Long = {
 //    grapePartitionsRDD.map(_._2.size.toLong).fold(0)(_ + _)
-    grapePartitionsRDD.map(_._2.numEdges.toLong).fold(0)(_ + _)
+    grapePartitionsRDD.map(_._2.ivEdgeNum.toLong).fold(0)(_ + _)
   }
 
 //  override def mapValues[ED2: ClassTag](f: Edge[ED] => ED2): G[ED2] =

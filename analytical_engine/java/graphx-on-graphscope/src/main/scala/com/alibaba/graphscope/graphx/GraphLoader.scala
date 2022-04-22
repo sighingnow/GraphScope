@@ -47,7 +47,7 @@ object GraphLoader extends Logging {
       }
     })
 
-    val shuffledEdges = allEdges.partitionBy(partitioner)
+    val shuffledEdges = allEdges.partitionBy(partitioner).cache()
     log.info(s"${shuffledEdges.collect().mkString("Array(", ", ", ")")}")
     val distributedEdges = shuffledEdges.count()
     log.info(s"Original edges ${linesCount}, after shuffle ${distributedEdges}")
@@ -77,10 +77,10 @@ object GraphLoader extends Logging {
     val edgeRDD = GrapeEdgeRDD.fromEdgePartitions(shuffledEdgePartitions)
     log.info("EdgeRDD count: " + edgeRDD.count())
     log.info(s"Load total edges ${linesCount}, sum of edges in all frag ${distributedEdges} num partitions: ${shuffledEdges.getNumPartitions}, cost ${loadEdgeTime}ms")
-    val graph = GrapeGraphImpl.fromEdgeRDD(edgeRDD, 0L)
-    log.info(s"total vertex count ${graph.numVertices}")
+    val graph = GrapeGraphImpl.fromEdgeRDD(edgeRDD, null.asInstanceOf[VD])
+    log.info(s"total vertex count ${graph.numVertices}, total edges count ${graph.numEdges}")
     log.info("[Now construct graph]")
 
-    null
+    graph
   }
 }

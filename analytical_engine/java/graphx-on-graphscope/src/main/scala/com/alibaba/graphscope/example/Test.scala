@@ -20,7 +20,7 @@ object Test extends Logging{
     val numPartitions = args(1).toInt;
     log.info(s"Running for efile ${eFilePath}")
     val graph = GraphLoader.edgeListFile[Long, Long](sc, eFilePath, 1L,false, numPartitions)
-
-   log.info("Finish running test")
+    graph.cache()
+   log.info(s"Finish running test, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
   }
 }
