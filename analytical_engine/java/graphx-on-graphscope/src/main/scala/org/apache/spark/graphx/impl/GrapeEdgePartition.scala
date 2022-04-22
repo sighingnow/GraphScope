@@ -14,13 +14,11 @@ import scala.reflect.ClassTag
  * shuffle, from this edgepartition
  */
 class GrapeEdgePartition[@specialized(Char, Long, Int, Double) ED: ClassTag]
-(srcOids: Array[Long], dstOids: Array[Long], edatas: Array[ED], ivLid2Oid : Array[Long], ovLid2Oid : Array[Long],
- ivOid2Lid : GraphXPrimitiveKeyOpenHashMap[VertexId,Long], ovOid2Lid : GraphXPrimitiveKeyOpenHashMap[VertexId,Long],
- ovOid2Fid :  GraphXPrimitiveKeyOpenHashMap[VertexId,Int]) extends Serializable {
+(srcOids: Array[Long], dstOids: Array[Long], edatas: Array[ED], vertexMapPartition: GrapeVertexMapPartition) extends Serializable {
 
   val numEdges :Int  = srcOids.length
-  val innerVertexNum : Int = ivLid2Oid.length
-  val outerVertexNum: Int = ovLid2Oid.length
+  val innerVertexNum : Int = vertexMapPartition.innerVertexNum
+  val outerVertexNum: Int = vertexMapPartition.outerVertexNum
 
   def iterator() : Iterator[Edge[ED]] = {
     new Iterator[Edge[ED]] {
@@ -88,7 +86,7 @@ class GrapeEdgePartition[@specialized(Char, Long, Int, Double) ED: ClassTag]
    */
   def withData[ED2: ClassTag](newData: Array[ED2]): GrapeEdgePartition[ED2] = {
     new GrapeEdgePartition[ED2](
-      srcOids, dstOids, newData, ivLid2Oid, ovLid2Oid, ivOid2Lid , ovOid2Lid,ovOid2Fid)
+      srcOids, dstOids, newData, vertexMapPartition)
   }
 
   def srcOid(i: Long) : Long = srcOids(i.toInt)
@@ -96,6 +94,10 @@ class GrapeEdgePartition[@specialized(Char, Long, Int, Double) ED: ClassTag]
   def dstOid(i: Long) : Long = dstOids(i.toInt)
 
   def edgeData(i: Long) : ED = edatas(i.toInt)
+
+  def getVertexMapPartition() = {
+    vertexMapPartition
+  }
 }
 
 class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassTag](pid : Int, partitionNum : Int, partitioner : Partitioner) extends Logging{
@@ -155,7 +157,14 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
     for (ind <- 0 until srcOidBuffer.size){
       val srcOid = srcOidBuffer(ind)
       val dstOid = dstOidBuffer(ind)
-      innerVertexOid2Lid.changeValue(srcOid, { ivCurLid += 1 ; innerVertexLid2Oid += srcOid; ivCurLid}, identity)
+      val srcOidPid = partitioner.getPartition(srcOid)
+      if (srcOidPid == pid){
+        innerVertexOid2Lid.changeValue(srcOid, { ivCurLid += 1 ; innerVertexLid2Oid += srcOid; ivCurLid}, identity)
+      }
+      else {
+        outerVertexOid2Lid.changeValue(srcOid, {ovCurLid += 1; outerVertexLid2Oid += dstOid; ovCurLid}, identity)
+        outerVertexOid2Fid.changeValue(srcOid, srcOidPid, identity)
+      }
       val dstOidPid = partitioner.getPartition(dstOid)
       if (dstOidPid == pid) {
         innerVertexOid2Lid.changeValue(dstOid, {ivCurLid += 1; innerVertexLid2Oid += dstOid; ivCurLid}, identity)
@@ -186,8 +195,8 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
     log.info(s"Partition ${pid}: ovOid2Lid: ${toString(outerVertexOid2Lid)}")
     log.info(s"Partition ${pid}: ovOid2fid: ${toString(outerVertexOid2Fid)}")
 
-    new GrapeEdgePartition[ED](srcOidArray, dstOidArray, edataArray, ivLid2Oid, ovLid2Oid,
-      innerVertexOid2Lid, outerVertexOid2Lid, outerVertexOid2Fid)
+    new GrapeEdgePartition[ED](srcOidArray, dstOidArray, edataArray, new GrapeVertexMapPartition(ivLid2Oid, ovLid2Oid,
+      innerVertexOid2Lid, outerVertexOid2Lid, outerVertexOid2Fid))
   }
 
   def toString(index : GraphXPrimitiveKeyOpenHashMap[VertexId,_]) : String = {

@@ -144,7 +144,7 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
    * [[org.apache.spark.graphx.EdgeRDD#cache]] on the returned EdgeRDD.
    */
   override private[graphx] def withTargetStorageLevel(targetStorageLevel: StorageLevel) = {
-    null
+    new GrapeEdgeRDDImpl[ED](this.grapePartitionsRDD, targetStorageLevel)
   }
 
 
@@ -212,4 +212,18 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
    * @return
    */
   override private[graphx] def partitionsRDD = null
+
+  def createVertexMapRDD(): RDD[(PartitionID, GrapeVertexMapPartition)] = {
+    grapePartitionsRDD.mapPartitions(
+      iter => {
+        if (iter.hasNext){
+          val tuple = iter.next()
+          Iterator((tuple._1, tuple._2.getVertexMapPartition()))
+        }
+        else {
+          Iterator.empty
+        }
+      }
+    )
+  }
 }

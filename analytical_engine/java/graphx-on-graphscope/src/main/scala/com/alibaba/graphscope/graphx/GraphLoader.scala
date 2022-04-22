@@ -1,7 +1,7 @@
 package com.alibaba.graphscope.graphx
 
-import org.apache.spark.graphx.impl.GrapeEdgePartitionBuilder
-import org.apache.spark.graphx.{Edge, GrapeEdgeRDD, Graph}
+import org.apache.spark.graphx.impl.{GrapeEdgePartitionBuilder, GrapeGraphImpl}
+import org.apache.spark.graphx.{Edge, GrapeEdgeRDD, Graph, PartitionID}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -28,22 +28,36 @@ object GraphLoader extends Logging {
         sc.textFile(path)
       }
 
-    val parsedLines: RDD[(Long, Edge[ED])] = lines.map(line => {
+    val linesCount = lines.count()
+    val partitioner = new HashPartitioner(numEdgePartitions)
+    val allEdges: RDD[(PartitionID, Edge[ED])] = lines.flatMap(line => {
         val lineArray = line.split("\\s+")
         if (lineArray.length < 2) {
           throw new IllegalArgumentException("Invalid line: " + line)
         }
         val srcId = lineArray(0).toLong //partition on srcId
         val dstId = lineArray(1).toLong
-        (srcId, new Edge[ED](srcId, dstId, defaultEdata))
+        val srcPid = partitioner.getPartition(srcId)
+        val dstPid = partitioner.getPartition(dstId)
+      if (srcPid == dstPid) {
+        Iterator((srcPid, new Edge[ED](srcId, dstId, defaultEdata)))
+      }
+      else {
+        Iterator((srcPid, new Edge[ED](srcId, dstId, defaultEdata)),(dstPid, new Edge[ED](srcId, dstId, defaultEdata)))
+      }
     })
 
-    val shuffledEdges = parsedLines.partitionBy(new HashPartitioner(numEdgePartitions))
+    val shuffledEdges = allEdges.partitionBy(partitioner)
     log.info(s"${shuffledEdges.collect().mkString("Array(", ", ", ")")}")
-    val totalEdges = shuffledEdges.count()
+    val distributedEdges = shuffledEdges.count()
+    log.info(s"Original edges ${linesCount}, after shuffle ${distributedEdges}")
+
     val t1 = System.nanoTime();
     val loadEdgeTime = (t1 - startTimeNs) / 1000000
 
+    //The edges shuffled to us are in to folders
+    //1. srcId belongs to us.
+    //2. dstId belongs to us
     val shuffledEdgePartitions = shuffledEdges.mapPartitionsWithIndex(
       {
         (pid, iter) =>{
@@ -62,8 +76,10 @@ object GraphLoader extends Logging {
 
     val edgeRDD = GrapeEdgeRDD.fromEdgePartitions(shuffledEdgePartitions)
     log.info("EdgeRDD count: " + edgeRDD.count())
-//    val grapeEdgeRDD = GrapeEdgeRDD.fromRDD(shuffledEdges)
-    log.info(s"Load total edges ${totalEdges}, num partitions: ${shuffledEdges.getNumPartitions}, cost ${loadEdgeTime}ms")
+    log.info(s"Load total edges ${linesCount}, sum of edges in all frag ${distributedEdges} num partitions: ${shuffledEdges.getNumPartitions}, cost ${loadEdgeTime}ms")
+    val graph = GrapeGraphImpl.fromEdgeRDD(edgeRDD, 0L)
+    log.info(s"total vertex count ${graph.numVertices}")
+    log.info("[Now construct graph]")
 
     null
   }
