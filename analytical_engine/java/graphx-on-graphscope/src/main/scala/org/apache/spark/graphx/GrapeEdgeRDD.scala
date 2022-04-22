@@ -70,7 +70,7 @@ object GrapeEdgeRDD {
     null
   }
 
-  def fromEdgePartitions[ED: ClassTag, VD: ClassTag](
+  def fromEdgePartitions[ED: ClassTag](
         grapeEdgePartitions: RDD[(Int, GrapeEdgePartition[ED])]): GrapeEdgeRDDImpl[ED] = {
     new GrapeEdgeRDDImpl[ED](grapeEdgePartitions)
   }
