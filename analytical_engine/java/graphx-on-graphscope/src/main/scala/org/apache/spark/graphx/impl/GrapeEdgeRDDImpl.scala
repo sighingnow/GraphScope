@@ -253,7 +253,7 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
           //| total-len | ed type  | srcOid len |  srcoids  |  dstOids   |   edata len |
           mappedBuffer.writeLong(totalBytes)
           mappedBuffer.writeInt(GrapeUtils.class2Int(edClass))
-          mappedBuffer.writeLong(16L * innerEdgeNum.toLong)
+          mappedBuffer.writeLong(8 * innerEdgeNum.toLong)
 
           var ind = 0
           while (ind < innerEdgeNum){

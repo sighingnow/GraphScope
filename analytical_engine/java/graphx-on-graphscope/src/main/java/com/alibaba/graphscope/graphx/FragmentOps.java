@@ -18,10 +18,10 @@ import org.slf4j.LoggerFactory;
  */
 public class FragmentOps {
     private static Logger logger = LoggerFactory.getLogger(FragmentOps.class.getName());
-    private static  String GRAPHX_LOADER = "graphx_fragment_loader";
+    private static  String GRAPHX_LOADER = MPIUtils.getGAEHome() + "/build/graphx_fragment_loader";
     private static String MPI_EXEC = "mpirun";
-    private static String VERTEX_MAPPED_FILES = "--vertex_mapped_files";
-    private static String EDGE_MAPPED_FILES = "--edge_mapped_files";
+    private static String VERTEX_MAPPED_FILES = "--vertex_files";
+    private static String EDGE_MAPPED_FILES = "--edge_files";
     private static String VERTEX_MAPPED_SIZE = "--vertex_mapped_size";
     private static String EDGE_MAPPED_SIZE = "--edge_mapped_size";
 

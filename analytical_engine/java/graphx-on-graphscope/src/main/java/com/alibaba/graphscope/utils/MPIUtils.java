@@ -22,6 +22,10 @@ public class MPIUtils {
             throw new IllegalStateException("GraphScope code home wrong");
         }
     }
+    public static String getGAEHome(){
+        return GAE_HOME;
+    }
+
     private static boolean fileExists(String p) {
         return Files.exists(Paths.get(p));
     }

@@ -81,10 +81,13 @@ public class SharedMemoryRegistry {
             String fileName = set.nextElement();
             if (fileName.startsWith(prefix)){
                 sb.append(fileName);
-                sb.append(";");
+                sb.append(":");
             }
         }
         String res = sb.toString();
+        if (res.endsWith(":")){
+            res = res.substring(0, res.length() - 1);
+        }
         logger.info("all Mapped file names: {}", res);
         return res;
     }
