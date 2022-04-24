@@ -13,8 +13,17 @@ import org.slf4j.LoggerFactory;
  * user this sharedMemoryRegistry, to manages the shared memory in a thread-safe manner.
  */
 public class SharedMemoryRegistry {
-    private static SharedMemoryRegistry registry;
     private static Logger logger = LoggerFactory.getLogger(SharedMemoryRegistry.class.getName());
+    static{
+        try {
+            System.loadLibrary("grape-jni");
+            logger.info("load grape-jni success");
+        }
+        catch (Exception e){
+            throw new IllegalStateException("Fail to load library: grape-jni");
+        }
+    }
+    private static SharedMemoryRegistry registry;
 
     private ConcurrentHashMap<String, MemoryMappedBuffer> key2MappedBuffer;
     private SharedMemoryRegistry(){
