@@ -3,6 +3,8 @@ package com.alibaba.graphscope.graphx;
 import com.alibaba.fastffi.FFIByteString;
 import com.alibaba.fastffi.FFITypeFactory;
 import com.alibaba.graphscope.ds.MemoryMappedBuffer;
+import com.alibaba.graphscope.ds.Vertex;
+import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
 import java.util.Enumeration;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -37,9 +39,11 @@ public class SharedMemoryRegistry {
         }
         FFIByteString byteString = FFITypeFactory.newByteString();
         byteString.copyFrom(key);
-        Thread.currentThread().setContextClassLoader(SharedMemoryRegistry.class.getClassLoader());
-        logger.info("Set context class loader : " + SharedMemoryRegistry.class.getClassLoader());
         logger.info("MemoryMappedBuffer class loader: " + MemoryMappedBuffer.class.getClassLoader());
+        logger.info("Set context class loader : " + SharedMemoryRegistry.class.getClassLoader());
+        Thread.currentThread().setContextClassLoader(SharedMemoryRegistry.class.getClassLoader());
+        System.loadLibrary("grape-jni");
+        Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
         MemoryMappedBuffer res = MemoryMappedBuffer.factory.create(byteString, size);
         logger.info("mapping for {}: buffer {} of size: {}", key, res, size);
         return res;
