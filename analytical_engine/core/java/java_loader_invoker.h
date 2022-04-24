@@ -281,14 +281,12 @@ class JavaLoaderInvoker {
 
       success_cnt += 1;
       if (forVertex) {
-        int numVertices =
-            digestVerticesFromMapedFile(data_start, data_len, partition_id);
+        int numVertices = digestVerticesFromMapedFile(data_start, data_len);
         VLOG(1) << "Worker " << worker_id << " Finish reading " << file_apht
                 << ", got " << numVertices << " vertices";
         vertices_or_edges_read += numVertices;
       } else {
-        int numEdges =
-            digestEdgesFromMapedFile(data_start, data_len, partition_id);
+        int numEdges = digestEdgesFromMapedFile(data_start, data_len);
         VLOG(1) << "Worker " << worker_id << " Finish reading " << file_path
                 << " got " << numEdges << " edges";
         vertices_or_edges_read += numEdges;
@@ -312,23 +310,17 @@ class JavaLoaderInvoker {
     // it is possible that on some nodes, there are no graphx data. We broad
     // cast type int, to allow subsequent move.
     MPI_Barrier(comm_spec_.comm());
-    int prev_oid_type, prev_vdata_type, prev_edata_type, prev_msg_type;
+    int prev_oid_type, prev_vdata_type;
     prev_oid_type = oid_type;
     prev_vdata_type = vdata_type;
-    prev_edata_type = edata_type;
-    prev_msg_type = msg_type;
+
     communicator.Max(prev_oid_type, oid_type);
     communicator.Max(prev_vdata_type, vdata_type);
-    communicator.Max(prev_edata_type, edata_type);
-    communicator.Max(prev_msg_type, msg_type);
     VLOG(1) << "previous oid: " << prev_oid_type
             << ", after aggre: " << oid_type;
-    VLOG(1) << "previous edata: " << prev_edata_type
-            << ", after aggre: " << edata_type;
+
     VLOG(1) << "previous vdata: " << prev_vdata_type
             << ", after aggre: " << vdata_type;
-    VLOG(1) << "previous msg: " << prev_msg_type
-            << ", after aggre: " << msg_type;
   }
 
   // load vertices must be called before load edge, since we assume giraph type
@@ -349,10 +341,12 @@ class JavaLoaderInvoker {
     callJavaLoaderEdges(edge_location_prune.c_str(), eformatter_class.c_str());
   }
 
-  void load_edges(const std::string& location_prefix, int max_parition_id,
-                  int64_t mapped_size) {
-    readDataFromMMapedFile(location_prefix, false, max_parition_id,
-                           mapped_size);
+  void load_edges(const std::string& location_prefix, int64_t mapped_size) {
+    readDataFromMMapedFile(location_prefix, false, mapped_size);
+    int prev_edata_type = edata_type;
+    communicator.Max(prev_edata_type, edata_type);
+    VLOG(1) << "previous edata: " << prev_edata_type
+            << ", after aggre: " << edata_type;
   }
 
   std::shared_ptr<arrow::Table> get_edge_table() {
@@ -540,45 +534,27 @@ class JavaLoaderInvoker {
   }
 
   /* Deserializing from the mmaped file. The layout of is
-   |   8bytes | 4 bytes  | 4 bytes  | 4 bytes  | 8 bytes  | 4 or 8 bytes | ...
-   | length  |  vd class | ed class | msgClass | oid-0    | vdata        | ...
+   |   8bytes | 4 bytes   | 8 bytes  |  ...  | 8 bytes   | ...
+   | length  |  vd class  | oid-len  |  ...  | vdata-len | ...
 
    do not modify pointer */
-  int digestVerticesFromMapedFile(char* data, int64_t chunk_len,
-                                  int partition_id) {
-    if (chunk_len < 12) {
+  int digestVerticesFromMapedFile(char* data, int64_t chunk_len) {
+    if (chunk_len < 20) {
       LOG(ERROR) << "At least need 16 bytes to read meta";
       return 0;
     }
     int _vdata_type = *reinterpret_cast<int*>(data);
     VLOG(1) << "vdClass " << _vdata_type;
     data += 4;
-    int _edata_type = *reinterpret_cast<int*>(data);
-    VLOG(1) << "edClass " << _edata_type;
-    data += 4;
-    int _msg_type = *reinterpret_cast<int*>(data);
-    VLOG(1) << "msgClass " << _msg_type;
-    data += 4;
     // check consistency.
-    updateTypeInfo(_vdata_type, _edata_type, _msg_type);
+    updateVdataTypeInfo(_vdata_type);
 
-    // f
-    chunk_len -= 12;
-    int total_vertices = 0;
-    int bytes_gap = 0;
-    if (vdata_type == 4 || vdata_type == 7) {
-      CHECK_EQ(chunk_len % 16, 0);
-      total_vertices = chunk_len / 16;
-      bytes_gap = 16;
-    } else if (vdata_type == 2) {
-      CHECK_EQ(chunk_len % 12, 0);
-      total_vertices = chunk_len / 12;
-      bytes_gap = 12;
-    } else {
-      LOG(ERROR) << "unexpected " << vdata_type;
-    }
-    VLOG(1) << "Total vertices in partition " << partition_id << ": "
-            << total_vertices;
+    int64_t oidsTotalBytes = *reinterpret_cast<int64_t*>(data);
+    data += 8;
+    CHECK_EQ(oidsTotalBytes % 8, 0);
+    int total_vertices = oidsTotalBytes / 8;
+    VLOG(1) << "oid total bytes " << oidsTotalBytes
+            << " vertices: " << total_vertices;
 
     std::vector<char>& dst_oids0 = oids[0];
     std::vector<char>& dst_vdatas0 = vdatas[0];
@@ -587,44 +563,32 @@ class JavaLoaderInvoker {
     // read acutal data
     // when we start put data in vector<char>, there may be already bytes there.
     // it is safe to start from size. But first of all, we need to resize.
-    size_t dst_oid_previous_size = dst_oids0.size();
-    size_t dst_vdata_previous_size = dst_vdatas0.size();
-    dst_oids0.resize(dst_oid_previous_size + 8 * total_vertices);
-    dst_vdatas0.resize(dst_vdata_previous_size +
-                       (bytes_gap - 8) * total_vertices);
 
-    VLOG(1) << "bytes_gap: " << bytes_gap
-            << "dst oids prev size: " << dst_oid_previous_size
-            << "dst oids size: " << dst_oids0.size()
-            << "dst vdata prev size: " << dst_vdata_previous_size
-            << " dst vdata size: " << dst_vdatas0.size();
     {
+      size_t dst_oid_previous_size = dst_oids0.size();
+      dst_oids0.resize(dst_oid_previous_size + 8 * total_vertices);
       char* src_oid_ptr = data;
       char* dst_oids_ptr = &dst_oids0[dst_oid_previous_size];
+      std::memcpy(dst_oids_ptr, src_oid_ptr, 8 * total_vertices);
       for (auto i = 0; i < total_vertices; ++i) {
-        int64_t oid = *reinterpret_cast<int64_t*>(src_oid_ptr);
-        std::memcpy(dst_oids_ptr, &oid, sizeof(oid));
-        // VLOG(1) << "Reading oid: " << oid << " sizeof " << sizeof(oid);
-        dst_oids_ptr += sizeof(oid);
-        src_oid_ptr += bytes_gap;  // move 1 * 8 bytes
         dst_oids_offsets0.push_back(8);
       }
     }
     VLOG(1) << "Finish oid putting";
+    data = data + total_vertices * 8;
+    int64_t vdataTotalBytes = *reinterpret_cast<int64_t*>(data);
+    int64_t bytePerVdata = vdataTotalBytes / total_vertices;
+    VLOG(1) << " vdata total bytes: " << vdataTotalBytes
+            << "vdata byte per ele: " << bytePerVdata;
+    data += 8;
     {
-      char* src_vdata_ptr = data + 8;  // shift right to point to vdata
+      size_t dst_vdata_previous_size = dst_vdatas0.size();
+      dst_vdatas0.resize(dst_vdata_previous_size + vdataTotalBytes);
+      char* src_vdata_ptr = data;
       char* dst_vdata_ptr = &dst_vdatas0[dst_vdata_previous_size];
-      if (vdata_type == 4) {
-        readData<int64_t>(total_vertices, bytes_gap, src_vdata_ptr,
-                          dst_vdata_ptr, dst_vdata_offsets0);
-      } else if (vdata_type == 2) {
-        readData<int32_t>(total_vertices, bytes_gap, src_vdata_ptr,
-                          dst_vdata_ptr, dst_vdata_offsets0);
-      } else if (vdata_type == 7) {
-        readData<double>(total_vertices, bytes_gap, src_vdata_ptr,
-                         dst_vdata_ptr, dst_vdata_offsets0);
-      } else {
-        LOG(ERROR) << "Unrecognized data type: " << vdata_type;
+      std::memcpy(dst_vdata_ptr, src_vdata_ptr, vdataTotalBytes);
+      for (auto i = 0; i < total_vertices; ++i) {
+        dst_vdata_offsets0.push_back(bytePerVdata);
       }
     }
     VLOG(1) << "Finish reading vertices";
@@ -632,31 +596,29 @@ class JavaLoaderInvoker {
   }
 
   /* Deserializing from the mmaped file. The layout of is
- |   8bytes | 4 bytes  | 4 bytes  | 4 bytes  | 8 bytes  | 4 or 8 bytes | ...
- | length  |  vd class | ed class | msgClass | oid-0    | vdata        | ...
+ |   8bytes |  4 bytes   | 8 bytes | ...     | ...      |  8 bytes    | ...
+ | length  |   ed class  | oid-len | srcOids | dstOids  | edata-len   | ...
 
  do not modify pointer */
   int digestEdgesFromMapedFile(char* data, int64_t chunk_len,
                                int partition_id) {
-    // no headers need for edges
+    if (chunk_len < 28) {
+      LOG(ERROR) << "At least need 16 bytes to read meta";
+      return 0;
+    }
+    int _edata_type = *reinterpret_cast<int*>(data);
+    VLOG(1) << "edClass " << _edata_type;
+    data += 4;
+    // check consistency.
+    updateEdataTypeInfo(_edata_type);
     CHECK_GT(oid_type, 0);
     CHECK_GT(vdata_type, 0);
     CHECK_GT(edata_type, 0);
-    CHECK_GT(msg_type, 0);
-    int edges_num = 0;
-    int bytes_gap = 0;
-    if (edata_type == 4 || edata_type == 7) {
-      CHECK_EQ(chunk_len % 24, 0);
-      edges_num = chunk_len / 24;
-      bytes_gap = 24;
-    } else if (edata_type == 2) {
-      CHECK_EQ(chunk_len % 20, 0);
-      edges_num = chunk_len / 20;
-      bytes_gap = 20;
-    } else {
-      LOG(ERROR) << "unexpected " << edata_type;
-    }
-    VLOG(1) << "Total edges in partition " << partition_id << ": " << edges_num;
+    int64_t edges_bytes = *reinterpret_cast<int64_t*>(data);
+    CHECK_EQ(edges_bytes % 8, 0);
+    int64_t edges_num = edges_bytes / 8;
+    data += 8;
+    VLOG(1) << "Total edges: " << edges_num;
 
     std::vector<char>& dst_esrc0 = esrcs[0];
     std::vector<char>& dst_edst0 = edsts[0];
@@ -669,54 +631,40 @@ class JavaLoaderInvoker {
     // it is safe to start from size. But first of all, we need to resize.
     size_t dst_esrc_previous_size = dst_esrc0.size();
     size_t dst_edst_previous_size = dst_edst0.size();
-    size_t dst_edata_previous_size = dst_edata0.size();
     dst_esrc0.resize(dst_esrc_previous_size + 8 * edges_num);
     dst_edst0.resize(dst_edst_previous_size + 8 * edges_num);
-    dst_edata0.resize(dst_edata_previous_size + (bytes_gap - 16) * edges_num);
 
-    VLOG(1) << "bytes_gap: " << bytes_gap
-            << "dst esrc prev size: " << dst_esrc_previous_size
-            << "dst esrc size: " << dst_esrc0.size()
-            << "dst edst prev size: " << dst_edst_previous_size
-            << " dst edst size: " << dst_edst0.size()
-            << "dst edata prev size: " << dst_edata_previous_size
-            << "dst edata size: " << dst_edata0.size();
     {
       char* src_esrc_oid_ptr = data;
-      char* src_edst_oid_ptr = data + 8;
       char* dst_esrc_oid_ptr = &dst_esrc0[dst_esrc_previous_size];
-      char* dst_edst_oid_ptr = &dst_edst0[dst_edst_previous_size];
-      for (auto i = 0; i < edges_num; ++i) {
-        int64_t src_esrc_oid = *reinterpret_cast<int64_t*>(src_esrc_oid_ptr);
-        int64_t src_edst_oid = *reinterpret_cast<int64_t*>(src_edst_oid_ptr);
-        std::memcpy(dst_esrc_oid_ptr, &src_esrc_oid, sizeof(src_esrc_oid));
-        std::memcpy(dst_edst_oid_ptr, &src_edst_oid, sizeof(src_edst_oid));
+      std::memcpy(dst_esrc_oid_ptr, &src_esrc_oid, 8 * edges_num));
+      data = data + 8 * edges_num;
 
-        // VLOG(1) << "Reading edge [" << src_esrc_oid << "->" << src_edst_oid
-        //         << "] size " << sizeof(src_esrc_oid);
-        src_esrc_oid_ptr += bytes_gap;
-        src_edst_oid_ptr += bytes_gap;
-        dst_esrc_oid_ptr += 8;
-        dst_edst_oid_ptr += 8;
+      char* src_edst_oid_ptr = data;
+      char* dst_edst_oid_ptr = &dst_edst0[dst_edst_previous_size];
+      std::memcpy(dst_edst_oid_ptr, &src_edst_oid, 8 * edges_num);
+      data = data + 8 * edges_num;
+
+      for (auto i = 0; i < edges_num; ++i) {
         dst_esrc_offset0.push_back(8);
         dst_edst_offset0.push_back(8);
       }
     }
     VLOG(1) << "Finish oid putting";
+    int64_t edata_bytes = *reinterpret_cast<int64_t*>(data);
+    data += 8;
+    int64_t bytes_per_edata = edata_types / edges_num;
+    VLOG(1) << "edata total bytes: " << edata_bytes
+            << " per ele: " << bytes_per_edata;
+
     {
-      char* src_edata_ptr = data + 16;  // shift right to point to vdata
+      char* src_edata_ptr = data;
+      size_t dst_edata_previous_size = dst_edata0.size();
+      dst_edata0.resize(dst_edata_previous_size + bytes_per_edata * edges_num);
       char* dst_edata_ptr = &dst_edata0[dst_edata_previous_size];
-      if (vdata_type == 4) {
-        readData<int64_t>(edges_num, bytes_gap, src_edata_ptr, dst_edata_ptr,
-                          dst_edata_offset0);
-      } else if (vdata_type == 2) {
-        readData<int32_t>(edges_num, bytes_gap, src_edata_ptr, dst_edata_ptr,
-                          dst_edata_offset0);
-      } else if (vdata_type == 7) {
-        readData<double>(edges_num, bytes_gap, src_edata_ptr, dst_edata_ptr,
-                         dst_edata_offset0);
-      } else {
-        LOG(ERROR) << "Unrecognized data type: " << vdata_type;
+      std::memcpy(dst_edata_ptr, &src_edata_ptr, bytes_per_edata * edges_num);
+      for (auto i = 0; i < edges_num; ++i) {
+        dst_edata_offset0.push_back(bytes_per_edata);
       }
     }
     VLOG(1) << "Finish reading edges";
@@ -892,6 +840,27 @@ class JavaLoaderInvoker {
     CHECK_EQ(type_int, 0);
     VLOG(1) << "giraph types: oid [" << oid_type << "]  vd: [" << vdata_type
             << "]  ed: [" << edata_type << "]";
+  }
+
+  void updateVdataTypeInfo(int _vdata_type) {
+    if (oid_type == -1) {
+      oid_type = 4;  // long
+    }
+    if (vdata_type == -1) {
+      vdata_type = _vdata_type;
+    } else {
+      CHECK_EQ(vdata_type, _vdata_type);
+    }
+  }
+  void updateEdataTypeInfo(int _edata_type) {
+    if (oid_type == -1) {
+      oid_type = 4;  // long
+    }
+    if (edata_type == -1) {
+      edata_type = _edata_type;
+    } else {
+      CHECK_EQ(edata_type, _edata_type);
+    }
   }
 
   void updateTypeInfo(int _vdata_type, int _edata_type, int _msg_type) {

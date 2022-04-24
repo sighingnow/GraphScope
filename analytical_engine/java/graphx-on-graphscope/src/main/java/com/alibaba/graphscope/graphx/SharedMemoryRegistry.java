@@ -2,9 +2,9 @@ package com.alibaba.graphscope.graphx;
 
 import com.alibaba.fastffi.FFIByteString;
 import com.alibaba.fastffi.FFITypeFactory;
-import com.alibaba.graphscope.ds.MemoryMappedBuffer;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
+import com.alibaba.graphscope.utils.MappedBuffer;
 import java.util.Enumeration;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -27,33 +27,37 @@ public class SharedMemoryRegistry {
     }
     private static SharedMemoryRegistry registry;
 
-    private ConcurrentHashMap<String, MemoryMappedBuffer> key2MappedBuffer;
+//    private ConcurrentHashMap<String, MemoryMappedBuffer> key2MappedBuffer;
+    private ConcurrentHashMap<String, MappedBuffer> key2MappedBuffer;
+
     private SharedMemoryRegistry(){
         key2MappedBuffer = new ConcurrentHashMap<>();
         logger.info("Creating default sharedMemoryRegistry");
     }
 
-    public MemoryMappedBuffer mapFor(String key, long size){
+//    public MemoryMappedBuffer mapFor(String key, long size){
+    public MappedBuffer mapFor(String key, long size){
         if (key2MappedBuffer.contains(key)){
             throw new IllegalStateException("Mapping to an existing key: " + key);
         }
         FFIByteString byteString = FFITypeFactory.newByteString();
         byteString.copyFrom(key);
-        logger.info("MemoryMappedBuffer class loader: " + MemoryMappedBuffer.class.getClassLoader());
+        logger.info("MemoryMappedBuffer class loader: " + MappedBuffer.class.getClassLoader());
         logger.info("Set context class loader : " + SharedMemoryRegistry.class.getClassLoader());
         Thread.currentThread().setContextClassLoader(SharedMemoryRegistry.class.getClassLoader());
         System.loadLibrary("grape-jni");
         Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
-        MemoryMappedBuffer res = MemoryMappedBuffer.factory.create(byteString, size);
+//        MemoryMappedBuffer res = MemoryMappedBuffer.factory.create(byteString, size);
+        MappedBuffer res = MappedBuffer.mapToFile(key, size);
         logger.info("mapping for {}: buffer {} of size: {}", key, res, size);
         return res;
     }
 
     public void unMapFor(String key, long size){
         if (key2MappedBuffer.contains(key)){
-            MemoryMappedBuffer memoryMappedBuffer = key2MappedBuffer.get(key);
+            MappedBuffer memoryMappedBuffer = key2MappedBuffer.get(key);
             logger.info("Start unmapping: {} , buffer {}", key, memoryMappedBuffer);
-            memoryMappedBuffer.unMap();
+//            memoryMappedBuffer.unMap();
             key2MappedBuffer.remove(key);
         }
         else {

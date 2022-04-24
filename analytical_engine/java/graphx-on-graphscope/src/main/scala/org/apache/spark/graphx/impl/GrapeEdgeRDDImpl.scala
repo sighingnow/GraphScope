@@ -242,8 +242,8 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
           val dstFile = filePrefix + pid
           val mappedBuffer = registry.mapFor(dstFile, mappedSize)
           log.info(s"Partition ${pid} got edge mm file ${dstFile} buffer ${mappedBuffer}")
-          val startAddress = mappedBuffer.getAddr
-          val bufferWriter = new MemoryMappedBufferWriter(startAddress, mappedSize)
+          val startAddress = mappedBuffer
+//          val bufferWriter = new MemoryMappedBufferWriter(startAddress, mappedSize)
           //Write data.
           val innerEdgeNum = partition.ivEdgeNum
           val totalBytes = 8L + 4L + 16 + innerEdgeNum * 16 + innerEdgeNum * bytesForType(edClass)
@@ -251,36 +251,36 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
           //First put header
           //| 8bytes    | 4Bytes   | 8bytes     | ......    | ......     |   8Bytes   | .....
           //| total-len | ed type  | srcOid len |  srcoids  |  dstOids   |   edata len |
-          bufferWriter.writeLong(totalBytes)
-          bufferWriter.writeInt(GrapeUtils.class2Int(edClass))
-          bufferWriter.writeLong(16L * innerEdgeNum.toLong)
+          mappedBuffer.writeLong(totalBytes)
+          mappedBuffer.writeInt(GrapeUtils.class2Int(edClass))
+          mappedBuffer.writeLong(16L * innerEdgeNum.toLong)
 
           var ind = 0
           while (ind < innerEdgeNum){
-            bufferWriter.writeLong(partition.srcOid(ind))
+            mappedBuffer.writeLong(partition.srcOid(ind))
           }
           ind = 0
           while (ind < innerEdgeNum){
-            bufferWriter.writeLong(partition.dstOid(ind))
+            mappedBuffer.writeLong(partition.dstOid(ind))
           }
           log.info(s"Partition: ${pid} Finish writing oid array of size ${innerEdgeNum} to ${dstFile}")
 
-          bufferWriter.writeLong(innerEdgeNum.toLong * bytesForType[ED](edClass))
+          mappedBuffer.writeLong(innerEdgeNum.toLong * bytesForType[ED](edClass))
 
           ind = 0
           if (edClass.equals(classOf[Long])){
             while (ind < innerEdgeNum){
-              bufferWriter.writeLong(partition.edgeData(ind).asInstanceOf[Long])
+              mappedBuffer.writeLong(partition.edgeData(ind).asInstanceOf[Long])
             }
           }
           else if (edClass.equals(classOf[Double])){
             while (ind < innerEdgeNum){
-              bufferWriter.writeDouble(partition.edgeData(ind).asInstanceOf[Double])
+              mappedBuffer.writeDouble(partition.edgeData(ind).asInstanceOf[Double])
             }
           }
           else if (edClass.equals(classOf[Int])){
             while (ind < innerEdgeNum){
-              bufferWriter.writeInt(partition.edgeData(ind).asInstanceOf[Int])
+              mappedBuffer.writeInt(partition.edgeData(ind).asInstanceOf[Int])
             }
           }
           else {

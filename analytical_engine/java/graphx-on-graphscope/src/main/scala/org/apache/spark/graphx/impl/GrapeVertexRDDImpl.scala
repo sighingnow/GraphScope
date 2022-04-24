@@ -87,8 +87,8 @@ class GrapeVertexRDDImpl[VD](
           val partition = tuple._2
           val dstFile = filePrefix + pid
           val mappedBuffer = registry.mapFor(dstFile, mappedSize)
-          val startAddress = mappedBuffer.getAddr
-          val bufferWriter = new MemoryMappedBufferWriter(startAddress, mappedSize)
+//          val startAddress = mappedBuffer.getAddr
+//          val bufferWriter = new MemoryMappedBufferWriter(startAddress, mappedSize)
           //Write data.
           val innerVertexNum = partition.innerVertexNum
           val innerVertexOidArray = partition.ivLid2Oid
@@ -98,32 +98,32 @@ class GrapeVertexRDDImpl[VD](
           //First put header
           //| 8bytes    | 4Bytes   | 8bytes  | ...... | 8Bytes   | .....
           //| total-len | vd type  | oid len |        | data len |
-          bufferWriter.writeLong(totalBytes)
-          bufferWriter.writeInt(GrapeUtils.class2Int(vdClass))
-          bufferWriter.writeLong(8L * innerVertexNum)
+          mappedBuffer.writeLong(totalBytes)
+          mappedBuffer.writeInt(GrapeUtils.class2Int(vdClass))
+          mappedBuffer.writeLong(8L * innerVertexNum)
 
           var ind = 0
           while (ind < innerVertexNum){
-            bufferWriter.writeLong(innerVertexOidArray(ind))
+            mappedBuffer.writeLong(innerVertexOidArray(ind))
           }
           log.info(s"Partition: ${pid} Finish writing oid array of size ${innerVertexNum} to ${dstFile}")
 
-          bufferWriter.writeLong(innerVertexNum.toLong * bytesForType[VD](vdClass))
+          mappedBuffer.writeLong(innerVertexNum.toLong * bytesForType[VD](vdClass))
 
           ind = 0
           if (vdClass.equals(classOf[Long])){
             while (ind < innerVertexNum){
-              bufferWriter.writeLong(vertexDataArray(ind).asInstanceOf[Long])
+              mappedBuffer.writeLong(vertexDataArray(ind).asInstanceOf[Long])
             }
           }
           else if (vdClass.equals(classOf[Double])){
             while (ind < innerVertexNum){
-              bufferWriter.writeDouble(vertexDataArray(ind).asInstanceOf[Double])
+              mappedBuffer.writeDouble(vertexDataArray(ind).asInstanceOf[Double])
             }
           }
           else if (vdClass.equals(classOf[Int])){
             while (ind < innerVertexNum){
-              bufferWriter.writeInt(vertexDataArray(ind).asInstanceOf[Int])
+              mappedBuffer.writeInt(vertexDataArray(ind).asInstanceOf[Int])
             }
           }
           else {
