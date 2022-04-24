@@ -17,22 +17,22 @@
 
 package org.apache.spark.graphx.impl
 
-import com.alibaba.graphscope.ds.MemoryMappedBufferWriter
 import com.alibaba.graphscope.graphx.SharedMemoryRegistry
 import org.apache.spark.graphx.impl.GrapeUtils.bytesForType
-import org.apache.spark.graphx.{GrapeEdgeRDD, _}
+import org.apache.spark.graphx._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{HashPartitioner, OneToOneDependency}
 
 import scala.reflect.{ClassTag, classTag}
 
-class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
-               @transient override val grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartition[ED])],
-               val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
+class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx](
+                                                      @transient override val grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartition[ED])],
+                                                      val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   extends GrapeEdgeRDD[ED](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
   val edClass: Class[ED] = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
+
   override def setName(_name: String): this.type = {
     if (grapePartitionsRDD.name != null) {
       grapePartitionsRDD.setName(grapePartitionsRDD.name + ", " + _name)
@@ -41,6 +41,7 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
     }
     this
   }
+
   setName("GrapeEdgeRDD")
 
   /**
@@ -84,7 +85,7 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
   }
 
   override def isCheckpointed: Boolean = {
-    firstParent[(VertexId, (VertexId,VertexId,ED))].isCheckpointed
+    firstParent[(VertexId, (VertexId, VertexId, ED))].isCheckpointed
   }
 
   override def getCheckpointFile: Option[String] = {
@@ -93,18 +94,18 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
 
   /** The number of edges in the RDD. */
   override def count(): Long = {
-//    grapePartitionsRDD.map(_._2.size.toLong).fold(0)(_ + _)
+    //    grapePartitionsRDD.map(_._2.size.toLong).fold(0)(_ + _)
     grapePartitionsRDD.map(_._2.ivEdgeNum.toLong).fold(0)(_ + _)
   }
 
-//  override def mapValues[ED2: ClassTag](f: Edge[ED] => ED2): G[ED2] =
-//    mapEdgePartitions((pid, part) => part.map(f))
+  //  override def mapValues[ED2: ClassTag](f: Edge[ED] => ED2): G[ED2] =
+  //    mapEdgePartitions((pid, part) => part.map(f))
 
-//  override def mapValues[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgeRDDImpl[ED2, VD] = {
-//    mapEdges(f);
-////    mapEdgePartitions((pi
+  //  override def mapValues[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgeRDDImpl[ED2, VD] = {
+  //    mapEdges(f);
+  ////    mapEdgePartitions((pi
   // d, part) => part.map(f))
-//  }
+  //  }
 
 
   /**
@@ -115,7 +116,7 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
    * @return a new EdgeRDD containing the new edge values
    */
   override def mapValues[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgeRDDImpl[ED2] = {
-    mapEdgePartitions((pid,part) => part.map(f))
+    mapEdgePartitions((pid, part) => part.map(f))
   }
 
   /**
@@ -153,7 +154,7 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
 
 
   def mapEdgePartitions[ED2: ClassTag](
-      f: (PartitionID, GrapeEdgePartition[ED]) => GrapeEdgePartition[ED2]): GrapeEdgeRDDImpl[ED2] = {
+                                        f: (PartitionID, GrapeEdgePartition[ED]) => GrapeEdgePartition[ED2]): GrapeEdgeRDDImpl[ED2] = {
     this.withPartitionsRDD[ED2](grapePartitionsRDD.mapPartitions({ iter =>
       if (iter.hasNext) {
         val (pid, ep) = iter.next()
@@ -165,54 +166,55 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
   }
 
   private[graphx] def withPartitionsRDD[ED2: ClassTag](
-       grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartition[ED2])]): GrapeEdgeRDDImpl[ED2] = {
+                                                        grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartition[ED2])]): GrapeEdgeRDDImpl[ED2] = {
     new GrapeEdgeRDDImpl[ED2](grapePartitionsRDD, this.targetStorageLevel)
   }
 
-//  override def reverse: GrapeEdgeRDDImpl[ED] = mapEdgePartitions((pid, part) => part.reverse)
+  //  override def reverse: GrapeEdgeRDDImpl[ED] = mapEdgePartitions((pid, part) => part.reverse)
 
-//  def filter(
-//              epred: EdgeTriplet[VD, ED] => Boolean,
-//              vpred: (VertexId, VD) => Boolean): EdgeRDDImpl[ED, VD] = {
-//    mapEdgePartitions((pid, part) => part.filter(epred, vpred))
-//  }
+  //  def filter(
+  //              epred: EdgeTriplet[VD, ED] => Boolean,
+  //              vpred: (VertexId, VD) => Boolean): EdgeRDDImpl[ED, VD] = {
+  //    mapEdgePartitions((pid, part) => part.filter(epred, vpred))
+  //  }
 
-//  override def innerJoin[ED2: ClassTag, ED3: ClassTag](other: EdgeRDD[ED2])
-//  (f: (VertexId, VertexId, ED, ED2) => ED3): GrapeEdgeRDDImpl[ED3] = {
-//    val ed2Tag = classTag[ED2]
-//    val ed3Tag = classTag[ED3]
-//    this.withPartitionsRDD[ED3](grapePartitionsRDD.zipPartitions(other.grapePartitionsRDD, true) {
-//      (thisIter, otherIter) =>
-//        val (pid, thisEPart) = thisIter.next()
-//        val (_, otherEPart) = otherIter.next()
-//        Iterator(Tuple2(pid, thisEPart.innerJoin(otherEPart)(f)(ed2Tag, ed3Tag)))
-//    })
-//  }
+  //  override def innerJoin[ED2: ClassTag, ED3: ClassTag](other: EdgeRDD[ED2])
+  //  (f: (VertexId, VertexId, ED, ED2) => ED3): GrapeEdgeRDDImpl[ED3] = {
+  //    val ed2Tag = classTag[ED2]
+  //    val ed3Tag = classTag[ED3]
+  //    this.withPartitionsRDD[ED3](grapePartitionsRDD.zipPartitions(other.grapePartitionsRDD, true) {
+  //      (thisIter, otherIter) =>
+  //        val (pid, thisEPart) = thisIter.next()
+  //        val (_, otherEPart) = otherIter.next()
+  //        Iterator(Tuple2(pid, thisEPart.innerJoin(otherEPart)(f)(ed2Tag, ed3Tag)))
+  //    })
+  //  }
 
-//  def mapEdgePartitions[ED2: ClassTag, VD2: ClassTag](
-//               f: (VertexId, (VertexId,VertexId,ED)) => EdgePartition[ED2, VD2]): EdgeRDDImpl[ED2, VD2] = {
-//    this.withPartitionsRDD[ED2, VD2](grapePartitionsRDD.mapPartitions({ iter =>
-//      if (iter.hasNext) {
-//        val (pid, ep) = iter.next()
-//        Iterator(Tuple2(pid, f(pid, ep)))
-//      } else {
-//        Iterator.empty
-//      }
-//    }, preservesPartitioning = true))
-//  }
+  //  def mapEdgePartitions[ED2: ClassTag, VD2: ClassTag](
+  //               f: (VertexId, (VertexId,VertexId,ED)) => EdgePartition[ED2, VD2]): EdgeRDDImpl[ED2, VD2] = {
+  //    this.withPartitionsRDD[ED2, VD2](grapePartitionsRDD.mapPartitions({ iter =>
+  //      if (iter.hasNext) {
+  //        val (pid, ep) = iter.next()
+  //        Iterator(Tuple2(pid, f(pid, ep)))
+  //      } else {
+  //        Iterator.empty
+  //      }
+  //    }, preservesPartitioning = true))
+  //  }
 
-//  private[graphx] def withPartitionsRDD[ED2: ClassTag, VD2: ClassTag](
-//                                                                       grapePartitionsRDD: RDD[(PartitionID, EdgePartition[ED2, VD2])]): EdgeRDDImpl[ED2, VD2] = {
-//    new EdgeRDDImpl(grapePartitionsRDD, this.targetStorageLevel)
-//  }
+  //  private[graphx] def withPartitionsRDD[ED2: ClassTag, VD2: ClassTag](
+  //                                                                       grapePartitionsRDD: RDD[(PartitionID, EdgePartition[ED2, VD2])]): EdgeRDDImpl[ED2, VD2] = {
+  //    new EdgeRDDImpl(grapePartitionsRDD, this.targetStorageLevel)
+  //  }
 
-//  override private[graphx] def withTargetStorageLevel(
-//                                                       targetStorageLevel: StorageLevel): EdgeRDDImpl[ED, VD] = {
-//    new EdgeRDDImpl(this.grapePartitionsRDD, targetStorageLevel)
-//  }
+  //  override private[graphx] def withTargetStorageLevel(
+  //                                                       targetStorageLevel: StorageLevel): EdgeRDDImpl[ED, VD] = {
+  //    new EdgeRDDImpl(this.grapePartitionsRDD, targetStorageLevel)
+  //  }
 
   /**
    * Just inherit but don't use.
+   *
    * @return
    */
   override private[graphx] def partitionsRDD = null
@@ -220,7 +222,7 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
   def createVertexMapRDD(): RDD[(PartitionID, GrapeVertexMapPartition)] = {
     grapePartitionsRDD.mapPartitions(
       iter => {
-        if (iter.hasNext){
+        if (iter.hasNext) {
           val tuple = iter.next()
           Iterator((tuple._1, tuple._2.getVertexMapPartition()))
         }
@@ -231,11 +233,11 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
     )
   }
 
-  override def mapToFile(filePrefix: String, mappedSize : Long): Array[String] = {
+  override def mapToFile(filePrefix: String, mappedSize: Long): Array[String] = {
     grapePartitionsRDD.foreachPartition({
       iter => {
         val registry = SharedMemoryRegistry.getOrCreate()
-        if (iter.hasNext){
+        if (iter.hasNext) {
           val tuple = iter.next()
           val pid = tuple._1
           val partition = tuple._2
@@ -243,7 +245,7 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
           val mappedBuffer = registry.mapFor(dstFile, mappedSize)
           log.info(s"Partition ${pid} got edge mm file ${dstFile} buffer ${mappedBuffer}")
           val startAddress = mappedBuffer
-//          val bufferWriter = new MemoryMappedBufferWriter(startAddress, mappedSize)
+          //          val bufferWriter = new MemoryMappedBufferWriter(startAddress, mappedSize)
           //Write data.
           val innerEdgeNum = partition.ivEdgeNum
           val totalBytes = 8L + 4L + 16 + innerEdgeNum * 16 + innerEdgeNum * bytesForType(edClass)
@@ -256,40 +258,40 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
           mappedBuffer.writeLong(8 * innerEdgeNum.toLong)
 
           var ind = 0
-          while (ind < innerEdgeNum){
+          while (ind < innerEdgeNum) {
             mappedBuffer.writeLong(partition.srcOid(ind))
-   	    ind += 1
+            ind += 1
           }
           ind = 0
-          while (ind < innerEdgeNum){
+          while (ind < innerEdgeNum) {
             mappedBuffer.writeLong(partition.dstOid(ind))
-	    ind += 1
+            ind += 1
           }
           log.info(s"Partition: ${pid} Finish writing oid array of size ${innerEdgeNum} to ${dstFile}")
 
           mappedBuffer.writeLong(innerEdgeNum.toLong * bytesForType[ED](edClass))
 
           ind = 0
-          if (edClass.equals(classOf[Long])){
-            while (ind < innerEdgeNum){
+          if (edClass.equals(classOf[Long])) {
+            while (ind < innerEdgeNum) {
               mappedBuffer.writeLong(partition.edgeData(ind).asInstanceOf[Long])
-		ind += 1
+              ind += 1
             }
           }
-          else if (edClass.equals(classOf[Double])){
-            while (ind < innerEdgeNum){
+          else if (edClass.equals(classOf[Double])) {
+            while (ind < innerEdgeNum) {
               mappedBuffer.writeDouble(partition.edgeData(ind).asInstanceOf[Double])
-		ind += 1
+              ind += 1
             }
           }
-          else if (edClass.equals(classOf[Int])){
-            while (ind < innerEdgeNum){
+          else if (edClass.equals(classOf[Int])) {
+            while (ind < innerEdgeNum) {
               mappedBuffer.writeInt(partition.edgeData(ind).asInstanceOf[Int])
-		ind += 1
+              ind += 1
             }
           }
           else {
-            throw new IllegalStateException("Unsupported vd type: "+ edClass.getName)
+            throw new IllegalStateException("Unsupported vd type: " + edClass.getName)
           }
           log.info(s"Partition: ${pid} Finish writing vdata array of size ${innerEdgeNum} to ${dstFile}")
         }
