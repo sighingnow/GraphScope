@@ -105,6 +105,7 @@ class GrapeVertexRDDImpl[VD](
           var ind = 0
           while (ind < innerVertexNum){
             mappedBuffer.writeLong(innerVertexOidArray(ind))
+	    ind += 1
           }
           log.info(s"Partition: ${pid} Finish writing oid array of size ${innerVertexNum} to ${dstFile}")
 
@@ -114,16 +115,19 @@ class GrapeVertexRDDImpl[VD](
           if (vdClass.equals(classOf[Long])){
             while (ind < innerVertexNum){
               mappedBuffer.writeLong(vertexDataArray(ind).asInstanceOf[Long])
+	    ind += 1
             }
           }
           else if (vdClass.equals(classOf[Double])){
             while (ind < innerVertexNum){
               mappedBuffer.writeDouble(vertexDataArray(ind).asInstanceOf[Double])
+	    ind += 1
             }
           }
           else if (vdClass.equals(classOf[Int])){
             while (ind < innerVertexNum){
               mappedBuffer.writeInt(vertexDataArray(ind).asInstanceOf[Int])
+	    ind += 1
             }
           }
           else {

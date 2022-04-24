@@ -232,9 +232,9 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
   }
 
   override def mapToFile(filePrefix: String, mappedSize : Long): Array[String] = {
-    val registry = SharedMemoryRegistry.getOrCreate()
     grapePartitionsRDD.foreachPartition({
       iter => {
+        val registry = SharedMemoryRegistry.getOrCreate()
         if (iter.hasNext){
           val tuple = iter.next()
           val pid = tuple._1
@@ -258,10 +258,12 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
           var ind = 0
           while (ind < innerEdgeNum){
             mappedBuffer.writeLong(partition.srcOid(ind))
+   	    ind += 1
           }
           ind = 0
           while (ind < innerEdgeNum){
             mappedBuffer.writeLong(partition.dstOid(ind))
+	    ind += 1
           }
           log.info(s"Partition: ${pid} Finish writing oid array of size ${innerEdgeNum} to ${dstFile}")
 
@@ -271,16 +273,19 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
           if (edClass.equals(classOf[Long])){
             while (ind < innerEdgeNum){
               mappedBuffer.writeLong(partition.edgeData(ind).asInstanceOf[Long])
+		ind += 1
             }
           }
           else if (edClass.equals(classOf[Double])){
             while (ind < innerEdgeNum){
               mappedBuffer.writeDouble(partition.edgeData(ind).asInstanceOf[Double])
+		ind += 1
             }
           }
           else if (edClass.equals(classOf[Int])){
             while (ind < innerEdgeNum){
               mappedBuffer.writeInt(partition.edgeData(ind).asInstanceOf[Int])
+		ind += 1
             }
           }
           else {
@@ -292,6 +297,7 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
     })
     val mappedFileSet = grapePartitionsRDD.mapPartitions({
       iter => {
+        val registry = SharedMemoryRegistry.getOrCreate()
         Iterator(registry.getAllMappedFileNames(filePrefix))
       }
     })

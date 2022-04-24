@@ -102,7 +102,7 @@ public class MappedBuffer {
         }
         long address = create(path, size);
 	if (address <= 0){
-	    throw new IllegalStateException("map failed");
+	    throw new IllegalStateException("map failed: " + path + " size: " + size);
         }
         return new MappedBuffer(path, address, size);
     }

@@ -79,7 +79,8 @@ public class FragmentOps {
 
     public static String[] dedup(String[] files){
         Set<String> set = new HashSet<>(Arrays.asList(files));
-        String[] res = (String[]) set.toArray();
+        String res[] = new String[set.size()];
+        res = set.toArray(res);
         return res;
     }
 
