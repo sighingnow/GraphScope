@@ -34,7 +34,7 @@ class GrapeGraphImpl[VD :ClassTag, ED: ClassTag] protected (
   protected def this() = this(null, null)
   def numVertices : Long = vertices.count()
   def numEdges : Long = edges.count()
-  def numParitions : Int = vertices.getNumPartitions
+  def numParitions : Int = vertices.numPartitions
   var fragIds : String = "null";
   val sc = vertices.sparkContext
 

@@ -31,6 +31,8 @@ class GrapeVertexRDDImpl[VD](
     grapePartitionsRDD.map(_._2.innerVertexNum.toLong).fold(0)(_ + _)
   }
 
+  override def numPartitions = grapePartitionsRDD.getNumPartitions
+
   override def reindex(): VertexRDD[VD] = ???
 
   override private[graphx] def mapVertexPartitions[VD2](f: ShippableVertexPartition[VD] => ShippableVertexPartition[VD2])(implicit evidence$1: ClassTag[VD2]) = ???
