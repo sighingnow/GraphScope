@@ -50,6 +50,7 @@ public class SharedMemoryRegistry {
 //        MemoryMappedBuffer res = MemoryMappedBuffer.factory.create(byteString, size);
         MappedBuffer res = MappedBuffer.mapToFile(key, size);
         logger.info("mapping for {}: buffer {} of size: {}", key, res, size);
+        key2MappedBuffer.put(key, res);
         return res;
     }
 
