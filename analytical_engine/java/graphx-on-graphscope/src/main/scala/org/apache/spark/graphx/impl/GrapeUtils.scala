@@ -21,4 +21,17 @@ object GrapeUtils {
     else if (value.eq(classOf[Int]) || value.equals(classOf[Float])) 4
     else throw new IllegalStateException("Unrecognized : " + value.getName)
   }
+
+  def classToStr(value : Class[_]) : String = {
+    if (value.equals(classOf[java.lang.Long]) || value.equals(classOf[Long])) {
+      "int64_t"
+    }
+    else if (value.equals(classOf[java.lang.Integer]) || value.equals(classOf[Int])) {
+      "int32_t"
+    }
+    else if (value.equals(classOf[java.lang.Double]) || value.eq(classOf[Double])) {
+      "double"
+    }
+    else throw new IllegalArgumentException(s"unexpected class ${value}")
+  }
 }

@@ -47,20 +47,16 @@ DECLARE_string(edge_files);
 DECLARE_int64(vertex_mapped_size);
 DECLARE_int64(edge_mapped_size);
 DECLARE_bool(directed);
+DECLARE_bool(vd_type);
+DECLARE_bool(ed_type);
 
 namespace gs {
 
-static constexpr const char* IPC_SOCKET = "ipc_socket";
-
 using FragmentType =
     vineyard::ArrowFragment<int64_t, vineyard::property_graph_types::VID_TYPE>;
-using ProjectedFragmentType =
-    ArrowProjectedFragment<int64_t, uint64_t, double, double>;
-
 using FragmentLoaderType =
     ArrowFragmentLoader<int64_t, vineyard::property_graph_types::VID_TYPE>;
-using APP_TYPE = JavaPIEProjectedDefaultApp<ProjectedFragmentType>;
-
+template <typename ProjectedFragmentT>
 vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
                                 vineyard::Client& client, bool directed,
                                 const std::string& vertex_mm_files,
@@ -113,7 +109,26 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
           return 0;
         });
   }
-  return fragment_id;
+  VLOG(10) << "[worker " << comm_spec.worker_id()
+           << "] loaded frag id: " << fragment_id;
+
+  std::shared_ptr<FragmentType> fragment =
+      std::dynamic_pointer_cast<FragmentType>(client.GetObject(fragment_id));
+
+  VLOG(10) << "fid: " << fragment->fid() << "fnum: " << fragment->fnum()
+           << "v label num: " << fragment->vertex_label_num()
+           << "e label num: " << fragment->edge_label_num()
+           << "total v num: " << fragment->GetTotalVerticesNum();
+  VLOG(1) << "inner vertices: " << fragment->GetInnerVerticesNum(0)
+          << "outer vertices: " << fragment->GetOuterVerticesNum(0);
+
+  // Project
+  std::shared_ptr<ProjectedFragmentType> projected_fragment =
+      ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
+
+  VLOG(10) << "Worker[ " << comm_spec.worker_id() << "] "
+           << projected_fragment->id();
+  return projected_fragment->id();
 }
 
 void Run() {
@@ -129,40 +144,61 @@ void Run() {
   VLOG(10) << "vertex mapped size: " << FLAGS_vertex_mapped_size;
   VLOG(10) << "edge mapped size: " << FLAGS_edge_mapped_size;
   VLOG(10) << "directed: " << FLAGS_directed;
+  VLOG(10) << "vd: " << FLAGS_vd_type << " ed: " << FLAGS_ed_type;
 
   vineyard::Client client;
   VINEYARD_CHECK_OK(client.Connect(FLAGS_ipc_socket));
   VLOG(1) << "Connected to IPCServer: " << FLAGS_ipc_socket;
 
   double t0 = grape::GetCurrentTime();
+  vineyard::ObjectID projected_frag_id = vineyard::InvalidObjectID();
+  if (FLAGS_vd_type == "int64_t" && FLAGS_ed_type == "int64_t") {
+    using ProjectedFragmentType =
+        ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
+    using APP_TYPE = JavaPIEProjectedDefaultApp<ProjectedFragmentType>;
 
-  vineyard::ObjectID fragment_id = LoadFragment(
-      comm_spec, client, FLAGS_directed, FLAGS_vertex_files, FLAGS_edge_files,
-      FLAGS_vertex_mapped_size, FLAGS_edge_mapped_size);
-  VLOG(10) << "[worker " << comm_spec.worker_id()
-           << "] loaded frag id: " << fragment_id;
+    projected_frag_id = LoadFragment<ProjectedFragmentType>(
+        comm_spec, client, FLAGS_directed, FLAGS_vertex_files, FLAGS_edge_files,
+        FLAGS_vertex_mapped_size, FLAGS_edge_mapped_size);
+  } else if (FLAGS_vd_type == "double" && FLAGS_ed_type == "double") {
+    using ProjectedFragmentType =
+        ArrowProjectedFragment<int64_t, uint64_t, double, double>;
+    using APP_TYPE = JavaPIEProjectedDefaultApp<ProjectedFragmentType>;
 
-  std::shared_ptr<FragmentType> fragment =
-      std::dynamic_pointer_cast<FragmentType>(client.GetObject(fragment_id));
-  double t1 = grape::GetCurrentTime();
-
-  if (comm_spec.worker_id() == grape::kCoordinatorRank){
-      VLOG(1) << "Load fragment cost:"<< (t1 - t0) << "s";
+    projected_frag_id = LoadFragment<ProjectedFragmentType>(
+        comm_spec, client, FLAGS_directed, FLAGS_vertex_files, FLAGS_edge_files,
+        FLAGS_vertex_mapped_size, FLAGS_edge_mapped_size);
+  } else {
+    LOG(ERROR) << "Not supported: " << FLAGS_vd_type
+               << ",ed: " << FLAGS_ed_type;
   }
-  VLOG(10) << "fid: " << fragment->fid() << "fnum: " << fragment->fnum()
-           << "v label num: " << fragment->vertex_label_num()
-           << "e label num: " << fragment->edge_label_num()
-           << "total v num: " << fragment->GetTotalVerticesNum();
-  VLOG(1) << "inner vertices: " << fragment->GetInnerVerticesNum(0)
-          << "outer vertices: " << fragment->GetOuterVerticesNum(0);
 
-  // Project
-  std::shared_ptr<ProjectedFragmentType> projected_fragment =
-      ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
+  double t1 = grape::GetCurrentTime();
+  if (comm_spec.worker_id() == grape::kCoordinatorRank) {
+    VLOG(1) << "Load fragment cost:" << (t1 - t0) << "s";
+  }
+  if (projected_frag_id != vineyard::InvalidObjectID()) {
+    grape::Communicator comm;
+    comm.InitCommunicator(comm_spec.comm());
+    std::vector<vineyard::ObjectID> ids;
+    comm.AllGather(projected_frag_id, ids);
+    VLOG(1) << "[FragIds]:" << fragIdsToStr(ids);
+  }
+}
 
-  VLOG(10) << "Worker[ " << comm_spec.worker_id() << "] "
-           << projected_fragment->id();
-}  // namespace gs
+std::string fragidsToStr(std::vector<vineyard::ObjectID>& ids) {
+  stringstream ss;
+  bool first = true;
+  for (auto id : id) {
+    if (!first) {
+      ss << ","
+    }
+    ss << id;
+    first = false;
+  }
+  return ss.str();
+}
+
 void Finalize() {
   grape::FinalizeMPIComm();
   VLOG(1) << "Workers finalized.";

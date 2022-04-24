@@ -35,6 +35,8 @@ DEFINE_string(edge_files, "", "edge files concatenated by ;");
 DEFINE_int64(vertex_mapped_size, 512 * 1024 * 1024, "vertex mapped size");
 DEFINE_int64(edge_mapped_size, 512 * 1024 * 1024, "edge mapped size");
 DEFINE_bool(directed, true, "directed or not");
+DEFINE_string(vd_type, "int64_t", "vertex data type");
+DEFINE_string(ed_type, "int64_t", "vertex data type");
 // put all flags in a json str
 
 int main(int argc, char* argv[]) {

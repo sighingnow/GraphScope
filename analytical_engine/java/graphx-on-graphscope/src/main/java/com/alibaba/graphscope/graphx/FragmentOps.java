@@ -24,10 +24,12 @@ public class FragmentOps {
     private static String EDGE_MAPPED_FILES = "--edge_files";
     private static String VERTEX_MAPPED_SIZE = "--vertex_mapped_size";
     private static String EDGE_MAPPED_SIZE = "--edge_mapped_size";
+    private static String VD_TYPE = "--vd_type";
+    private static String ED_TYPE = "--ed_type";
 
 
     public static <OID, VID, GS_VD, GS_ED, GX_VD, GX_ED> String graph2Fragment(
-        String[]vertexMappedFiles, String[]edgeMappedFiles, long vertexMappedSize, long edgeMappedSize, Boolean cluster) {
+        String[]vertexMappedFiles, String[]edgeMappedFiles, long vertexMappedSize, long edgeMappedSize, Boolean cluster, String vdType, String edType) {
         //Duplicate.
         String[] vertexMappedFilesDedup = dedup(vertexMappedFiles);
         String[] edgeMappedFilesDedup = dedup(edgeMappedFiles);
@@ -43,7 +45,7 @@ public class FragmentOps {
         long startTime = System.nanoTime();
         String[] commands = {MPI_EXEC, "-n", String.valueOf(numWorkers), GRAPHX_LOADER, VERTEX_MAPPED_FILES , String.join(":", vertexMappedFilesDedup),
             EDGE_MAPPED_FILES,  String.join(":", edgeMappedFilesDedup), VERTEX_MAPPED_SIZE,
-            String.valueOf(vertexMappedSize), EDGE_MAPPED_SIZE, String.valueOf(edgeMappedSize)};
+            String.valueOf(vertexMappedSize), EDGE_MAPPED_SIZE, String.valueOf(edgeMappedSize) , VD_TYPE, vdType, ED_TYPE, edType};
         logger.info("Running command: " + String.join(" ", commands));
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command(commands);

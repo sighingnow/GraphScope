@@ -1,6 +1,5 @@
 package org.apache.spark.graphx.impl
 
-import com.alibaba.graphscope.ds.MemoryMappedBufferWriter
 import com.alibaba.graphscope.graphx.SharedMemoryRegistry
 import org.apache.spark.OneToOneDependency
 import org.apache.spark.graphx._
@@ -17,8 +16,8 @@ class GrapeVertexRDDImpl[VD](
   extends GrapeVertexRDD[VD](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
   val vdClass: Class[VD] = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
-//  val MAPPED_SIZE : Long = 2L * 1024 * 1024 * 1024;
-//  val VERTEX_FILE_PREFIX = "/tmp/vertex-partition-"
+  //  val MAPPED_SIZE : Long = 2L * 1024 * 1024 * 1024;
+  //  val VERTEX_FILE_PREFIX = "/tmp/vertex-partition-"
 
   /**
    * Just inherit but don't use.
@@ -63,7 +62,7 @@ class GrapeVertexRDDImpl[VD](
 
   override def withEdges(edges: EdgeRDD[_]): VertexRDD[VD] = ???
 
-  override  def withPartitionsRDD[VD2](partitionsRDD: RDD[ShippableVertexPartition[VD2]])(implicit evidence$13: ClassTag[VD2]): Null = {
+  override def withPartitionsRDD[VD2](partitionsRDD: RDD[ShippableVertexPartition[VD2]])(implicit evidence$13: ClassTag[VD2]): Null = {
     null
   }
 
@@ -81,14 +80,14 @@ class GrapeVertexRDDImpl[VD](
     grapePartitionsRDD.foreachPartition({
       iter => {
         val registry = SharedMemoryRegistry.getOrCreate()
-        if (iter.hasNext){
+        if (iter.hasNext) {
           val tuple = iter.next()
           val pid = tuple._1
           val partition = tuple._2
           val dstFile = filePrefix + pid
           val mappedBuffer = registry.mapFor(dstFile, mappedSize)
-//          val startAddress = mappedBuffer.getAddr
-//          val bufferWriter = new MemoryMappedBufferWriter(startAddress, mappedSize)
+          //          val startAddress = mappedBuffer.getAddr
+          //          val bufferWriter = new MemoryMappedBufferWriter(startAddress, mappedSize)
           //Write data.
           val innerVertexNum = partition.innerVertexNum
           val innerVertexOidArray = partition.ivLid2Oid
@@ -103,35 +102,35 @@ class GrapeVertexRDDImpl[VD](
           mappedBuffer.writeLong(8L * innerVertexNum)
 
           var ind = 0
-          while (ind < innerVertexNum){
+          while (ind < innerVertexNum) {
             mappedBuffer.writeLong(innerVertexOidArray(ind))
-	    ind += 1
+            ind += 1
           }
           log.info(s"Partition: ${pid} Finish writing oid array of size ${innerVertexNum} to ${dstFile}")
 
           mappedBuffer.writeLong(innerVertexNum.toLong * bytesForType[VD](vdClass))
 
           ind = 0
-          if (vdClass.equals(classOf[Long])){
-            while (ind < innerVertexNum){
+          if (vdClass.equals(classOf[Long])) {
+            while (ind < innerVertexNum) {
               mappedBuffer.writeLong(vertexDataArray(ind).asInstanceOf[Long])
-	    ind += 1
+              ind += 1
             }
           }
-          else if (vdClass.equals(classOf[Double])){
-            while (ind < innerVertexNum){
+          else if (vdClass.equals(classOf[Double])) {
+            while (ind < innerVertexNum) {
               mappedBuffer.writeDouble(vertexDataArray(ind).asInstanceOf[Double])
-	    ind += 1
+              ind += 1
             }
           }
-          else if (vdClass.equals(classOf[Int])){
-            while (ind < innerVertexNum){
+          else if (vdClass.equals(classOf[Int])) {
+            while (ind < innerVertexNum) {
               mappedBuffer.writeInt(vertexDataArray(ind).asInstanceOf[Int])
-	    ind += 1
+              ind += 1
             }
           }
           else {
-            throw new IllegalStateException("Unsupported vd type: "+ vdClass.getName)
+            throw new IllegalStateException("Unsupported vd type: " + vdClass.getName)
           }
           log.info(s"Partition: ${pid} Finish writing vdata array of size ${innerVertexNum} to ${dstFile}")
         }
