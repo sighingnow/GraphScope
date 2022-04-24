@@ -197,7 +197,7 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
       }
     }
     require(ivEdgeCnt + ovEdgeCnt == edgeArray.size, "edge cnt doesn't match")
-    require(iePointer == oePointer , "two pointer now met: " + iePointer + " " +oePointer)
+    require(iePointer == oePointer + 1, "two pointer now met: " + iePointer + " " +oePointer)
     val innerVertexNum = ivCurLid + 1
     val outerVertexNum = ovCurLid + 1
     log.info(s" ivnum: ${innerVertexNum}, ovnum: ${outerVertexNum}, total ${innerVertexNum + outerVertexNum}")

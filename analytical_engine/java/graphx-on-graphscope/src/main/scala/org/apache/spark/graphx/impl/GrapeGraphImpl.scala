@@ -1,5 +1,6 @@
 package org.apache.spark.graphx.impl
 
+import com.alibaba.graphscope.graphx.{FragmentOps, MPILauncher}
 import org.apache.spark.graphx.{Edge, EdgeContext, EdgeDirection, EdgeTriplet, GrapeEdgeRDD, GrapeVertexRDD, Graph, PartitionID, PartitionStrategy, TripletFields, VertexId, VertexRDD}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -34,21 +35,26 @@ class GrapeGraphImpl[VD :ClassTag, ED: ClassTag] protected (
   def numVertices : Long = vertices.count()
   def numEdges : Long = edges.count()
   def numParitions : Int = vertices.getNumPartitions
+  var fragIds : String = "null";
+  val sc = vertices.sparkContext
 
   //Run initiation.
   init
   def init  = {
     //Write data to Memory mapped file.
+    val vertexMappedSize = 32L * numVertices / numParitions
+    val edgeMappedSize = 32L * numEdges / numParitions
     println("numPartitions: " + numParitions)
-    println("reserve memory " + 32L * numVertices / numParitions + " for per vertex file")
-    println("reserve memory " + 32L * numEdges / numParitions + " for per edge file")
-    val vertexFileArray = vertices.mapToFile("/tmp/graphx-vertex", 32L * numVertices / numParitions)
-    val edgeFileArray = edges.mapToFile("/tmp/graphx-edge", 32 * numEdges / numParitions) // actual 24
+    println("reserve memory " +  vertexMappedSize + " for per vertex file")
+    println("reserve memory " +  edgeMappedSize+ " for per edge file")
+    val vertexFileArray = vertices.mapToFile("/tmp/graphx-vertex", vertexMappedSize)
+    val edgeFileArray = edges.mapToFile("/tmp/graphx-edge", edgeMappedSize) // actual 24
     println("map result for vertex: " + vertexFileArray.mkString("Array(", ", ", ")"))
     println("map result for edge : " + edgeFileArray.mkString("Array(", ", ", ")"))
     //Serialize the info to string, and pass it to mpi processes, which are launched to load the graph
     //to fragment
-
+    this.fragIds = FragmentOps.graph2Fragment(vertexFileArray, edgeFileArray, vertexMappedSize, edgeMappedSize, !sc.isLocal)
+    //fragIds = 10001;111002;11003
     //Fetch back the fragment id, construct an object to hold fragment meta.
     //When pregel invoked, we will use this fragment for graph computing.
   }
