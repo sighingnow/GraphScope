@@ -16,6 +16,7 @@ import com.alibaba.fastffi.FFITypeFactory;
 @CXXHead(value = {GS_MEMORY_MAPPED_BUFFER_H})
 @FFITypeAlias(GS_MEMORY_MAPPED_BUFFER)
 public interface MemoryMappedBuffer extends FFIPointer {
+
     Factory factory = FFITypeFactory.getFactory(Factory.class, MemoryMappedBuffer.class);
 
     @FFINameAlias("Map")

@@ -37,6 +37,9 @@ public class SharedMemoryRegistry {
         }
         FFIByteString byteString = FFITypeFactory.newByteString();
         byteString.copyFrom(key);
+        Thread.currentThread().setContextClassLoader(SharedMemoryRegistry.class.getClassLoader());
+        logger.info("Set context class loader : " + SharedMemoryRegistry.class.getClassLoader());
+        logger.info("MemoryMappedBuffer class loader: " + MemoryMappedBuffer.class.getClassLoader());
         MemoryMappedBuffer res = MemoryMappedBuffer.factory.create(byteString, size);
         logger.info("mapping for {}: buffer {} of size: {}", key, res, size);
         return res;
