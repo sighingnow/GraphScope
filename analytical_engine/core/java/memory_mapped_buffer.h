@@ -27,6 +27,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "glog/logging.h"
+
 namespace gs {
 
 /**
@@ -34,8 +36,8 @@ namespace gs {
  */
 class MemoryMappedBuffer {
  public:
-  MemoryMappedBuffer(std::string memory_mapped_file,int64_t mapped_size)
-      : filePath(std::move(memroy_mapped_file), fd(-1), addr(MAP_FAILED), mapped_size(mapped_size) {}
+  MemoryMappedBuffer(std::string memory_mapped_file,int64_t mapped_size_in)
+      : filePath(std::move(memory_mapped_file)), fd(-1), addr(MAP_FAILED), mapped_size(mapped_size_in) {}
   void Map() {
     if (fd != -1 || addr != MAP_FAILED) {
       LOG(ERROR) << "Already mapped!";
@@ -44,7 +46,7 @@ class MemoryMappedBuffer {
     }
     if (mapped_size < 0) {
       LOG(ERROR) << "mapped size: " << mapped_size;
-      perror("mapped size wrong")
+      perror("mapped size wrong");
     }
     fd = shm_open(filePath.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
     if (fd == -1) {
@@ -72,7 +74,8 @@ class MemoryMappedBuffer {
 
   void Unmap() {
     if (fd != -1) {
-      munmap(fd, mapped_size);
+      munmap(addr, mapped_size);
+      close(fd);
     }
     fd = -1;
     addr = MAP_FAILED;

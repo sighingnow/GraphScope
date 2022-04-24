@@ -7,6 +7,7 @@ import com.alibaba.fastffi.CXXHead;
 import com.alibaba.fastffi.FFIByteString;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
+import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
@@ -30,6 +31,6 @@ public interface MemoryMappedBuffer extends FFIPointer {
     @FFIFactory
     interface Factory {
 
-        MemoryMappedBuffer create(FFIByteString string, long mappedSize);
+        MemoryMappedBuffer create(@CXXValue FFIByteString string, long mappedSize);
     }
 }

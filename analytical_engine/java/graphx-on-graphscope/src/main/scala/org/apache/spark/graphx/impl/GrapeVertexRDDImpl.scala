@@ -78,9 +78,9 @@ class GrapeVertexRDDImpl[VD](
   }
 
   override def mapToFile(filePrefix: String, mappedSize: Long): Array[String] = {
-    val registry = SharedMemoryRegistry.getOrCreate()
     grapePartitionsRDD.foreachPartition({
       iter => {
+        val registry = SharedMemoryRegistry.getOrCreate()
         if (iter.hasNext){
           val tuple = iter.next()
           val pid = tuple._1
@@ -135,6 +135,7 @@ class GrapeVertexRDDImpl[VD](
     })
     val mappedFileSet = grapePartitionsRDD.mapPartitions({
       iter => {
+        val registry = SharedMemoryRegistry.getOrCreate()
         Iterator(registry.getAllMappedFileNames(filePrefix))
       }
     })
