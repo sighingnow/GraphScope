@@ -41,7 +41,7 @@ public class FragmentOps {
             numWorkers = MPIUtils.getNumWorker();
         }
         long startTime = System.nanoTime();
-        String[] commands = {MPI_EXEC, "-n", String.valueOf(numWorkers), VERTEX_MAPPED_FILES , String.join(":", vertexMappedFilesDedup),
+        String[] commands = {MPI_EXEC, "-n", String.valueOf(numWorkers), GRAPHX_LOADER, VERTEX_MAPPED_FILES , String.join(":", vertexMappedFilesDedup),
             EDGE_MAPPED_FILES,  String.join(":", edgeMappedFilesDedup), VERTEX_MAPPED_SIZE,
             String.valueOf(vertexMappedSize), EDGE_MAPPED_SIZE, String.valueOf(edgeMappedSize)};
         logger.info("Running command: " + String.join(" ", commands));
