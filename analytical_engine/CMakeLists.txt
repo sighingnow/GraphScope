@@ -288,11 +288,18 @@ if (BUILD_TESTS)
         target_compile_definitions(graphx_runner PUBLIC ENABLE_JAVA_SDK)
         target_link_libraries(graphx_runner ${CMAKE_DL_LIBS} gs_proto ${VINEYARD_LIBRARIES} ${Boost_LIBRARIES} ${GFLAGS_LIBRARIES}  ${JNI_LIBRARIES} ${LIBRT})
 
+        add_executable(graphx_fragment_loader test/graphx_fragment_loader.cc core/java/javasdk.cc)
+        target_include_directories(graphx_fragment_loader PRIVATE core utils apps)
+        target_compile_definitions(graphx_fragment_loader PUBLIC ENABLE_JAVA_SDK)
+        target_link_libraries(graphx_fragment_loader ${CMAKE_DL_LIBS} gs_proto ${VINEYARD_LIBRARIES} ${Boost_LIBRARIES} ${GFLAGS_LIBRARIES}  ${JNI_LIBRARIES} ${LIBRT})
+
+
         if (${LIBUNWIND_FOUND})
             # target_link_libraries(run_java_app ${LIBUNWIND_LIBRARIES})
             # target_link_libraries(property_graph_java_app_benchmarks ${LIBUNWIND_LIBRARIES})
             # target_link_libraries(giraph_runner ${LIBUNWIND_LIBRARIES})
             target_link_libraries(graphx_runner ${LIBUNWIND_LIBRARIES})
+            target_link_libraries(graphx_fragment_loader ${LIBUNWIND_LIBRARIES})
         endif ()
     endif()
 
