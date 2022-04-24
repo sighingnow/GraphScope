@@ -12,4 +12,8 @@ class GrapeVertexPartition[VD : ClassTag](grapeVertexMapPartition: GrapeVertexMa
   val innerVertices : Range = 0 until innerVertexNum
   val outerVertices : Range = innerVertexNum until totalVertexNum
 
+
+  def ivLid2Oid: Array[Long] = grapeVertexMapPartition.getIvLid2Oid
+
+  def vdataArray : Array[VD] = data
 }

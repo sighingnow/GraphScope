@@ -74,4 +74,6 @@ public class CppClassName {
 
     public static final String GS_ARROW_PROJECTED_FRAGMENT_IMPL_TYPED_ARRAY =
             "gs::arrow_projected_fragment_impl::TypedArray";
+
+    public static final String GS_MEMORY_MAPPED_BUFFER = "gs::MemoryMappedBuffer";
 }

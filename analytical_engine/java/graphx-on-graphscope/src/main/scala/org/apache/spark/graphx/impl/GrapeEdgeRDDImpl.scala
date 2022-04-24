@@ -17,6 +17,9 @@
 
 package org.apache.spark.graphx.impl
 
+import com.alibaba.graphscope.ds.MemoryMappedBufferWriter
+import com.alibaba.graphscope.graphx.SharedMemoryRegistry
+import org.apache.spark.graphx.impl.GrapeUtils.bytesForType
 import org.apache.spark.graphx.{GrapeEdgeRDD, _}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -29,6 +32,7 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
                val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   extends GrapeEdgeRDD[ED](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
+  val edClass: Class[ED] = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
   override def setName(_name: String): this.type = {
     if (grapePartitionsRDD.name != null) {
       grapePartitionsRDD.setName(grapePartitionsRDD.name + ", " + _name)
@@ -225,5 +229,74 @@ class GrapeEdgeRDDImpl[ED: ClassTag] private[graphx] (
         }
       }
     )
+  }
+
+  override def mapToFile(filePrefix: String, mappedSize : Long): Array[String] = {
+    val registry = SharedMemoryRegistry.getOrCreate()
+    grapePartitionsRDD.foreachPartition({
+      iter => {
+        if (iter.hasNext){
+          val tuple = iter.next()
+          val pid = tuple._1
+          val partition = tuple._2
+          val dstFile = filePrefix + pid
+          val mappedBuffer = registry.mapFor(dstFile, mappedSize)
+          log.info(s"Partition ${pid} got edge mm file ${dstFile} buffer ${mappedBuffer}")
+          val startAddress = mappedBuffer.getAddr
+          val bufferWriter = new MemoryMappedBufferWriter(startAddress, mappedSize)
+          //Write data.
+          val innerEdgeNum = partition.ivEdgeNum
+          val totalBytes = 8L + 4L + 16 + innerEdgeNum * 16 + innerEdgeNum * bytesForType(edClass)
+          log.info("Total bytes written: " + totalBytes)
+          //First put header
+          //| 8bytes    | 4Bytes   | 8bytes     | ......    | ......     |   8Bytes   | .....
+          //| total-len | ed type  | srcOid len |  srcoids  |  dstOids   |   edata len |
+          bufferWriter.writeLong(totalBytes)
+          bufferWriter.writeInt(GrapeUtils.class2Int(edClass))
+          bufferWriter.writeLong(16L * innerEdgeNum.toLong)
+
+          var ind = 0
+          while (ind < innerEdgeNum){
+            bufferWriter.writeLong(partition.srcOid(ind))
+          }
+          ind = 0
+          while (ind < innerEdgeNum){
+            bufferWriter.writeLong(partition.dstOid(ind))
+          }
+          log.info(s"Partition: ${pid} Finish writing oid array of size ${innerEdgeNum} to ${dstFile}")
+
+          bufferWriter.writeLong(innerEdgeNum.toLong * bytesForType[ED](edClass))
+
+          ind = 0
+          if (edClass.equals(classOf[Long])){
+            while (ind < innerEdgeNum){
+              bufferWriter.writeLong(partition.edgeData(ind).asInstanceOf[Long])
+            }
+          }
+          else if (edClass.equals(classOf[Double])){
+            while (ind < innerEdgeNum){
+              bufferWriter.writeDouble(partition.edgeData(ind).asInstanceOf[Double])
+            }
+          }
+          else if (edClass.equals(classOf[Int])){
+            while (ind < innerEdgeNum){
+              bufferWriter.writeInt(partition.edgeData(ind).asInstanceOf[Int])
+            }
+          }
+          else {
+            throw new IllegalStateException("Unsupported vd type: "+ edClass.getName)
+          }
+          log.info(s"Partition: ${pid} Finish writing vdata array of size ${innerEdgeNum} to ${dstFile}")
+        }
+      }
+    })
+    val mappedFileSet = grapePartitionsRDD.mapPartitions({
+      iter => {
+        Iterator(registry.getAllMappedFileNames(filePrefix))
+      }
+    })
+    val mappedFileArray = mappedFileSet.collect()
+    log.info("collect mappedFileSet: " + mappedFileSet.collect().mkString("Array(", ", ", ")"))
+    mappedFileArray
   }
 }

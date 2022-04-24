@@ -35,6 +35,7 @@ import com.alibaba.fastffi.FFIGenBatch;
  */
 @FFIGenBatch(
         value = {
+            @FFIGen(type = "com.alibaba.graphscope.ds.MemoryMappedBuffer"),
             @FFIGen(type = "com.alibaba.graphscope.fragment.Loader.JavaLoaderInvoker"),
             @FFIGen(type = "com.alibaba.graphscope.fragment.Loader.ArrowFragmentLoader"),
             @FFIGen(type = "com.alibaba.graphscope.ds.EmptyType"),

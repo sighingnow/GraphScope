@@ -6,6 +6,26 @@ import org.apache.spark.storage.StorageLevel
 
 import scala.reflect.ClassTag
 
+/**
+ * Creating a graph abstraction by combining vertex RDD and edge RDD together.
+ * Before doing this construction:
+ *   - Both vertex RDD and edge RDD are available for map,fliter operators.
+ *   - Both vertex RDD and edge RDD stores data in partitions
+ * When construct this graph, we will
+ *   - copy data out to shared-memory
+ *   - create mpi processes to load into fragment.
+ *   - Wrap fragment as GrapeGraph when doing pregel computation.
+ * When changes made to graphx graph, it will not directly take effect on grape-graph. To apply these
+ * changes to grape-graph. Invoke to grape graph directly.
+ *
+ * The vertexRDD and EdgeRDD are designed in a way that, we can construct the whole graph without
+ * any shuffle in MPI.
+ *
+ * @param vertices vertex rdd
+ * @param edges edge rdd
+ * @tparam VD vd
+ * @tparam ED ed
+ */
 class GrapeGraphImpl[VD :ClassTag, ED: ClassTag] protected (
          @transient  val vertices: GrapeVertexRDD[VD],
          @transient val edges: GrapeEdgeRDD[ED]) extends Graph[VD, ED] with Serializable{
@@ -13,6 +33,25 @@ class GrapeGraphImpl[VD :ClassTag, ED: ClassTag] protected (
   protected def this() = this(null, null)
   def numVertices : Long = vertices.count()
   def numEdges : Long = edges.count()
+  def numParitions : Int = vertices.getNumPartitions
+
+  //Run initiation.
+  init
+  def init  = {
+    //Write data to Memory mapped file.
+    println("numPartitions: " + numParitions)
+    println("reserve memory " + 32L * numVertices / numParitions + " for per vertex file")
+    println("reserve memory " + 32L * numEdges / numParitions + " for per edge file")
+    val vertexFileArray = vertices.mapToFile("/tmp/graphx-vertex", 32L * numVertices / numParitions)
+    val edgeFileArray = edges.mapToFile("/tmp/graphx-edge", 32 * numEdges / numParitions) // actual 24
+    println("map result for vertex: " + vertexFileArray.mkString("Array(", ", ", ")"))
+    println("map result for edge : " + edgeFileArray.mkString("Array(", ", ", ")"))
+    //Serialize the info to string, and pass it to mpi processes, which are launched to load the graph
+    //to fragment
+
+    //Fetch back the fragment id, construct an object to hold fragment meta.
+    //When pregel invoked, we will use this fragment for graph computing.
+  }
 
   override val triplets: RDD[EdgeTriplet[VD, ED]] = null
 

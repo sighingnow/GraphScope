@@ -67,4 +67,6 @@ public class CppHeaderName {
             "grpae/serialization/out_archive.h";
 
     public static final String JAVA_LOADER_INVOKER_H = "core/java/java_loader_invoker.h";
+
+    public static final String GS_MEMORY_MAPPED_BUFFER_H = "core/java/memory_mapped_buffer.h";
 }

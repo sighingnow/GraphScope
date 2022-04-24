@@ -153,6 +153,8 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
 
   def toGrapeEdgePartition : GrapeEdgePartition[ED] = {
     log.info(s"Start convert to GrapeEdgePartition[${pid}], total num edges: ${edgeArray.size}")
+    var oePointer = edgeArray.size - 1
+    var iePointer = 0
     val srcOidArray = new Array[Long](edgeArray.size)
     val dstOidArray = new Array[Long](edgeArray.size)
     val edataArray = new Array[ED](edgeArray.size)
@@ -166,18 +168,24 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
       val edge = edgeArray(ind)
       val srcOid = edge.srcId
       val dstOid = edge.dstId
-      srcOidArray(ind) = srcOid
-      dstOidArray(ind) = dstOid
-      edataArray(ind) = edge.attr
+
       val srcOidPid = partitioner.getPartition(srcOid)
       if (srcOidPid == pid){
         innerVertexOid2Lid.changeValue(srcOid, { ivCurLid += 1 ; innerVertexLid2Oid += srcOid; ivCurLid}, identity)
         ivEdgeCnt += 1
+        srcOidArray(iePointer) = srcOid
+        dstOidArray(iePointer) = dstOid
+        edataArray(iePointer) = edge.attr
+        iePointer += 1
       }
       else {
         outerVertexOid2Lid.changeValue(srcOid, {ovCurLid += 1; outerVertexLid2Oid += srcOid; ovCurLid}, identity)
         outerVertexOid2Fid.changeValue(srcOid, srcOidPid, identity)
         ovEdgeCnt += 1
+        srcOidArray(oePointer) = srcOid
+        dstOidArray(oePointer) = dstOid
+        edataArray(oePointer) = edge.attr
+        oePointer -= 1
       }
       val dstOidPid = partitioner.getPartition(dstOid)
       if (dstOidPid == pid) {
@@ -189,7 +197,7 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
       }
     }
     require(ivEdgeCnt + ovEdgeCnt == edgeArray.size, "edge cnt doesn't match")
-
+    require(iePointer == oePointer , "two pointer now met: " + iePointer + " " +oePointer)
     val innerVertexNum = ivCurLid + 1
     val outerVertexNum = ovCurLid + 1
     log.info(s" ivnum: ${innerVertexNum}, ovnum: ${outerVertexNum}, total ${innerVertexNum + outerVertexNum}")

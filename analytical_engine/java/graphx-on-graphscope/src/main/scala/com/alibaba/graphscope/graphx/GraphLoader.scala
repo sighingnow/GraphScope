@@ -70,9 +70,8 @@ object GraphLoader extends Logging {
           Iterator((pid, builder.toGrapeEdgePartition))
         }
       }, true
-    )
+    ).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
     log.info("shuffledEdgePartitions: " + shuffledEdgePartitions.count()) //FIXME: printed 4 here
-    shuffledEdgePartitions.persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
 
     val edgeRDD = GrapeEdgeRDD.fromEdgePartitions(shuffledEdgePartitions)
     log.info("EdgeRDD count: " + edgeRDD.count())

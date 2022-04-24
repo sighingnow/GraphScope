@@ -8,6 +8,7 @@ import scala.reflect.ClassTag
 
 abstract class GrapeVertexRDD[VD](
      sc: SparkContext, deps: Seq[Dependency[_]]) extends VertexRDD[VD](sc, deps){
+  def mapToFile(filePrefix : String, mappedSize : Long) : Array[String]
 }
 
 object GrapeVertexRDD{

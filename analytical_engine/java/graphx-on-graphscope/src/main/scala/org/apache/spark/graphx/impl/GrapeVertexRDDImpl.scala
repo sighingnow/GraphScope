@@ -1,11 +1,14 @@
 package org.apache.spark.graphx.impl
 
+import com.alibaba.graphscope.ds.MemoryMappedBufferWriter
+import com.alibaba.graphscope.graphx.SharedMemoryRegistry
 import org.apache.spark.OneToOneDependency
 import org.apache.spark.graphx._
+import org.apache.spark.graphx.impl.GrapeUtils.bytesForType
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 
 class GrapeVertexRDDImpl[VD](
                               @transient val grapePartitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD])],
@@ -13,12 +16,17 @@ class GrapeVertexRDDImpl[VD](
                             (implicit override protected val vdTag: ClassTag[VD])
   extends GrapeVertexRDD[VD](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
+  val vdClass: Class[VD] = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
+//  val MAPPED_SIZE : Long = 2L * 1024 * 1024 * 1024;
+//  val VERTEX_FILE_PREFIX = "/tmp/vertex-partition-"
+
   /**
    * Just inherit but don't use.
    *
    * @return
    */
   override def partitionsRDD = null
+
   override def count(): Long = {
     grapePartitionsRDD.map(_._2.innerVertexNum.toLong).fold(0)(_ + _)
   }
@@ -66,4 +74,71 @@ class GrapeVertexRDDImpl[VD](
   override private[graphx] def shipVertexIds() = {
     null
   }
+
+  override def mapToFile(filePrefix: String, mappedSize: Long): Array[String] = {
+    val registry = SharedMemoryRegistry.getOrCreate()
+    grapePartitionsRDD.foreachPartition({
+      iter => {
+        if (iter.hasNext){
+          val tuple = iter.next()
+          val pid = tuple._1
+          val partition = tuple._2
+          val dstFile = filePrefix + pid
+          val mappedBuffer = registry.mapFor(dstFile, mappedSize)
+          val startAddress = mappedBuffer.getAddr
+          val bufferWriter = new MemoryMappedBufferWriter(startAddress, mappedSize)
+          //Write data.
+          val innerVertexNum = partition.innerVertexNum
+          val innerVertexOidArray = partition.ivLid2Oid
+          val vertexDataArray = partition.vdataArray
+          val totalBytes = 8L + 4L + 16 + innerVertexNum * 8 + innerVertexNum * bytesForType(vdClass)
+          log.info("Total bytes written: " + totalBytes)
+          //First put header
+          //| 8bytes    | 4Bytes   | 8bytes  | ...... | 8Bytes   | .....
+          //| total-len | vd type  | oid len |        | data len |
+          bufferWriter.writeLong(totalBytes)
+          bufferWriter.writeInt(GrapeUtils.class2Int(vdClass))
+          bufferWriter.writeLong(8L * innerVertexNum)
+
+          var ind = 0
+          while (ind < innerVertexNum){
+            bufferWriter.writeLong(innerVertexOidArray(ind))
+          }
+          log.info(s"Partition: ${pid} Finish writing oid array of size ${innerVertexNum} to ${dstFile}")
+
+          bufferWriter.writeLong(innerVertexNum.toLong * bytesForType[VD](vdClass))
+
+          ind = 0
+          if (vdClass.equals(classOf[Long])){
+            while (ind < innerVertexNum){
+              bufferWriter.writeLong(vertexDataArray(ind).asInstanceOf[Long])
+            }
+          }
+          else if (vdClass.equals(classOf[Double])){
+            while (ind < innerVertexNum){
+              bufferWriter.writeDouble(vertexDataArray(ind).asInstanceOf[Double])
+            }
+          }
+          else if (vdClass.equals(classOf[Int])){
+            while (ind < innerVertexNum){
+              bufferWriter.writeInt(vertexDataArray(ind).asInstanceOf[Int])
+            }
+          }
+          else {
+            throw new IllegalStateException("Unsupported vd type: "+ vdClass.getName)
+          }
+          log.info(s"Partition: ${pid} Finish writing vdata array of size ${innerVertexNum} to ${dstFile}")
+        }
+      }
+    })
+    val mappedFileSet = grapePartitionsRDD.mapPartitions({
+      iter => {
+        Iterator(registry.getAllMappedFileNames(filePrefix))
+      }
+    })
+    log.info("collect mappedFileSet: " + mappedFileSet.collect().mkString("Array(", ", ", ")"))
+    mappedFileSet.collect()
+  }
+
+
 }
