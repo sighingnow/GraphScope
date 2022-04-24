@@ -79,9 +79,10 @@ public class SharedMemoryRegistry {
         Enumeration<String> set = key2MappedBuffer.keys();
         while (set.hasMoreElements()){
             String fileName = set.nextElement();
-            if (fileName.startsWith(prefix))
-            sb.append(fileName);
-            sb.append(";");
+            if (fileName.startsWith(prefix)){
+                sb.append(fileName);
+                sb.append(";");
+            }
         }
         String res = sb.toString();
         logger.info("all Mapped file names: {}", res);

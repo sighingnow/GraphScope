@@ -31,10 +31,10 @@ public class FragmentOps {
         //Duplicate.
         String[] vertexMappedFilesDedup = dedup(vertexMappedFiles);
         String[] edgeMappedFilesDedup = dedup(edgeMappedFiles);
-        logger.info("Before duplication, vertex files: {}", String.join(":", vertexMappedFiles));
-        logger.info("After duplication, vertex files: {}",String.join(":", vertexMappedFilesDedup));
-        logger.info("Before duplication, edge files: {}", String.join(":", edgeMappedFiles));
-        logger.info("After duplication, edge files: {}",String.join(":", edgeMappedFilesDedup));
+        logger.info("Before duplication, vertex files: {}", String.join( "",vertexMappedFiles));
+        logger.info("After duplication, vertex files: {}",String.join("", vertexMappedFilesDedup));
+        logger.info("Before duplication, edge files: {}", String.join("", edgeMappedFiles));
+        logger.info("After duplication, edge files: {}",String.join("", edgeMappedFilesDedup));
 
         int numWorkers = 1;
         if (cluster){
@@ -47,7 +47,7 @@ public class FragmentOps {
         logger.info("Running command: " + String.join(" ", commands));
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command(commands);
-//        processBuilder.inheritIO();
+        processBuilder.inheritIO();
         Process process = null;
         String fragIds = null;
         try {
