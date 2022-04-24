@@ -41,6 +41,13 @@ limitations under the License.
 #include "core/java/javasdk.h"
 #include "core/loader/arrow_fragment_loader.h"
 
+DECLARE_string(ipc_socket);
+DECLARE_string(vertex_files);
+DECLARE_string(edge_files);
+DECLARE_int64(vertex_mapped_size);
+DECLARE_int64(edge_mapped_size);
+DECLARE_bool(directed);
+
 namespace gs {
 
 static constexpr const char* IPC_SOCKET = "ipc_socket";
@@ -124,8 +131,8 @@ void Run() {
   VLOG(10) << "directed: " << FLAGS_directed;
 
   vineyard::Client client;
-  VINEYARD_CHECK_OK(client.Connect(ipc_socket));
-  VLOG(1) << "Connected to IPCServer: " << ipc_socket;
+  VINEYARD_CHECK_OK(client.Connect(FLAGS_ipc_socket));
+  VLOG(1) << "Connected to IPCServer: " << FLAGS_ipc_socket;
 
   double t0 = grape::GetCurrentTime();
 
@@ -139,6 +146,9 @@ void Run() {
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(fragment_id));
   double t1 = grape::GetCurrentTime();
 
+  if (comm_spec.worker_id() == grape::kCoordinatorRank){
+      VLOG(1) << "Load fragment cost:"<< (t1 - t0) << "s";
+  }
   VLOG(10) << "fid: " << fragment->fid() << "fnum: " << fragment->fnum()
            << "v label num: " << fragment->vertex_label_num()
            << "e label num: " << fragment->edge_label_num()
@@ -151,7 +161,7 @@ void Run() {
       ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
 
   VLOG(10) << "Worker[ " << comm_spec.worker_id() << "] "
-           << projected_fragment->Id();
+           << projected_fragment->id();
 }  // namespace gs
 void Finalize() {
   grape::FinalizeMPIComm();

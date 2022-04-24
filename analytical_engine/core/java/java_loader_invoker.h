@@ -252,8 +252,8 @@ class JavaLoaderInvoker {
   void readDataFromMMapedFile(const std::string& files, bool forVertex,
                               int64_t mapped_size) {
     std::vector<std::string> files_splited;
-    boost::split(files_splited, files, boost::is_any_of(";"));
-    int sucess_cnt = 0;
+    boost::split(files_splited, files, boost::is_any_of(":"));
+    int success_cnt = 0;
     int64_t vertices_or_edges_read = 0;
     // FIXME
     for (auto file_path : files_splited) {
@@ -261,7 +261,7 @@ class JavaLoaderInvoker {
       int fd =
           shm_open(file_path.c_str(), O_RDWR, S_IRUSR | S_IWUSR);  // no O_CREAT
       if (fd < 0) {
-        LOG(ERROR) << "Worker [" << worker_id << " Not exists " << file_path;
+        LOG(ERROR) << "Worker [" << worker_id_ << " Not exists " << file_path;
         continue;
       }
 
@@ -282,12 +282,12 @@ class JavaLoaderInvoker {
       success_cnt += 1;
       if (forVertex) {
         int numVertices = digestVerticesFromMapedFile(data_start, data_len);
-        VLOG(1) << "Worker " << worker_id << " Finish reading " << file_apht
+        VLOG(1) << "Worker " << worker_id_ << " Finish reading " << file_path
                 << ", got " << numVertices << " vertices";
         vertices_or_edges_read += numVertices;
       } else {
         int numEdges = digestEdgesFromMapedFile(data_start, data_len);
-        VLOG(1) << "Worker " << worker_id << " Finish reading " << file_path
+        VLOG(1) << "Worker " << worker_id_ << " Finish reading " << file_path
                 << " got " << numEdges << " edges";
         vertices_or_edges_read += numEdges;
       }
@@ -295,11 +295,11 @@ class JavaLoaderInvoker {
     if (forVertex) {
       VLOG(1) << " Worker [" << worker_id_
               << "] finish loading vertices,  success: " << success_cnt << " / "
-              << files_splited.size() << " read: " << vertex_or_edges_read;
+              << files_splited.size() << " read: " << vertices_or_edges_read;
     } else {
       VLOG(1) << " Worker [" << worker_id_
               << "] finish loading edges,  success: " << success_cnt << " / "
-              << files_splited.size() << " read: " << vertex_or_edges_read;
+              << files_splited.size() << " read: " << vertices_or_edges_read;
     }
   }
 
@@ -600,8 +600,8 @@ class JavaLoaderInvoker {
  | length  |   ed class  | oid-len | srcOids | dstOids  | edata-len   | ...
 
  do not modify pointer */
-  int digestEdgesFromMapedFile(char* data, int64_t chunk_len,
-                               int partition_id) {
+  int digestEdgesFromMapedFile(char* data,
+                               int64_t chunk_len) {
     if (chunk_len < 28) {
       LOG(ERROR) << "At least need 16 bytes to read meta";
       return 0;
@@ -637,12 +637,12 @@ class JavaLoaderInvoker {
     {
       char* src_esrc_oid_ptr = data;
       char* dst_esrc_oid_ptr = &dst_esrc0[dst_esrc_previous_size];
-      std::memcpy(dst_esrc_oid_ptr, &src_esrc_oid, 8 * edges_num));
+      std::memcpy(dst_esrc_oid_ptr, src_esrc_oid_ptr, 8 * edges_num);
       data = data + 8 * edges_num;
 
       char* src_edst_oid_ptr = data;
       char* dst_edst_oid_ptr = &dst_edst0[dst_edst_previous_size];
-      std::memcpy(dst_edst_oid_ptr, &src_edst_oid, 8 * edges_num);
+      std::memcpy(dst_edst_oid_ptr, src_edst_oid_ptr, 8 * edges_num);
       data = data + 8 * edges_num;
 
       for (auto i = 0; i < edges_num; ++i) {
@@ -653,7 +653,7 @@ class JavaLoaderInvoker {
     VLOG(1) << "Finish oid putting";
     int64_t edata_bytes = *reinterpret_cast<int64_t*>(data);
     data += 8;
-    int64_t bytes_per_edata = edata_types / edges_num;
+    int64_t bytes_per_edata = edata_bytes / edges_num;
     VLOG(1) << "edata total bytes: " << edata_bytes
             << " per ele: " << bytes_per_edata;
 

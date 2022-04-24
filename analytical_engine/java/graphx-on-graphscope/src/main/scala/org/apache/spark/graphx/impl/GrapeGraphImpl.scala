@@ -42,13 +42,13 @@ class GrapeGraphImpl[VD :ClassTag, ED: ClassTag] protected (
   init
   def init  = {
     //Write data to Memory mapped file.
-    val vertexMappedSize = 32L * numVertices / numParitions
-    val edgeMappedSize = 32L * numEdges / numParitions
+    val vertexMappedSize = 32L * numVertices / numParitions + 128
+    val edgeMappedSize = 32L * numEdges / numParitions + 128
     println("numPartitions: " + numParitions)
     println("reserve memory " +  vertexMappedSize + " for per vertex file")
     println("reserve memory " +  edgeMappedSize+ " for per edge file")
-    val vertexFileArray = vertices.mapToFile("/tmp/graphx-vertex", vertexMappedSize)
-    val edgeFileArray = edges.mapToFile("/tmp/graphx-edge", edgeMappedSize) // actual 24
+    val vertexFileArray = vertices.mapToFile("graphx-vertex", vertexMappedSize)
+    val edgeFileArray = edges.mapToFile("graphx-edge", edgeMappedSize) // actual 24
     println("map result for vertex: " + vertexFileArray.mkString("Array(", ", ", ")"))
     println("map result for edge : " + edgeFileArray.mkString("Array(", ", ", ")"))
     //Serialize the info to string, and pass it to mpi processes, which are launched to load the graph
