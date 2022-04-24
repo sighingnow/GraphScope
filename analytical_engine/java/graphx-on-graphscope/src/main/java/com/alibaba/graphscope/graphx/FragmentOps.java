@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
  */
 public class FragmentOps {
     private static Logger logger = LoggerFactory.getLogger(FragmentOps.class.getName());
-    private static  String GRAPHX_LOADER = "graphx_loader";
+    private static  String GRAPHX_LOADER = "graphx_fragment_loader";
     private static String MPI_EXEC = "mpirun";
     private static String VERTEX_MAPPED_FILES = "--vertex_mapped_files";
     private static String EDGE_MAPPED_FILES = "--edge_mapped_files";
@@ -27,18 +27,23 @@ public class FragmentOps {
 
 
     public static <OID, VID, GS_VD, GS_ED, GX_VD, GX_ED> String graph2Fragment(
-        String[]vertexMappedFiles, String[]edgeMappedFiles, long vertexMapSize, long edgeMapSize, Boolean cluster) {
+        String[]vertexMappedFiles, String[]edgeMappedFiles, long vertexMappedSize, long edgeMappedSize, Boolean cluster) {
         //Duplicate.
-        logger.info("Before duplication: {}", String.join(":", vertexMappedFiles));
         String[] vertexMappedFilesDedup = dedup(vertexMappedFiles);
         String[] edgeMappedFilesDedup = dedup(edgeMappedFiles);
+        logger.info("Before duplication, vertex files: {}", String.join(":", vertexMappedFiles));
+        logger.info("After duplication, vertex files: {}",String.join(":", vertexMappedFilesDedup));
+        logger.info("Before duplication, edge files: {}", String.join(":", edgeMappedFiles));
+        logger.info("After duplication, edge files: {}",String.join(":", edgeMappedFilesDedup));
+
         int numWorkers = 1;
         if (cluster){
             numWorkers = MPIUtils.getNumWorker();
         }
         long startTime = System.nanoTime();
         String[] commands = {MPI_EXEC, "-n", String.valueOf(numWorkers), VERTEX_MAPPED_FILES , String.join(":", vertexMappedFilesDedup),
-            EDGE_MAPPED_FILES,  String.join(":", edgeMappedFilesDedup)};
+            EDGE_MAPPED_FILES,  String.join(":", edgeMappedFilesDedup), VERTEX_MAPPED_SIZE,
+            String.valueOf(vertexMappedSize), EDGE_MAPPED_SIZE, String.valueOf(edgeMappedSize)};
         logger.info("Running command: " + String.join(" ", commands));
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command(commands);

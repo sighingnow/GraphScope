@@ -249,23 +249,19 @@ class JavaLoaderInvoker {
     parseGiraphTypeInt(giraph_type_int);
   }
 
-  void readDataFromMMapedFile(const std::string& location_prefix,
-                              bool forVertex, int max_partition_id,
+  void readDataFromMMapedFile(const std::string& files, bool forVertex,
                               int64_t mapped_size) {
-    int partition_id = 0;
+    std::vector<std::string> files_splited;
+    boost::split(files_splited, files, boost::is_any_of(";"));
+    int sucess_cnt = 0;
+    int64_t vertices_or_edges_read = 0;
     // FIXME
-    int cnt = 0;
-    while (partition_id < max_partition_id) {
-      std::string file_path = location_prefix + std::to_string(partition_id);
-      //      size_t file_size = get_file_size(file_path.c_str());
-      //      if (file_size > 0) {
-      // VLOG(1) << "opening file " << file_path << ", size " << file_size;
+    for (auto file_path : files_splited) {
       VLOG(1) << "reading from " << file_path;
       int fd =
           shm_open(file_path.c_str(), O_RDWR, S_IRUSR | S_IWUSR);  // no O_CREAT
       if (fd < 0) {
-        LOG(ERROR) << "Not exists " << file_path;
-        partition_id += 1;
+        LOG(ERROR) << "Worker [" << worker_id << " Not exists " << file_path;
         continue;
       }
 
@@ -277,46 +273,42 @@ class JavaLoaderInvoker {
         return;
       }
 
-      cnt += 1;
       // first 8 bytes are size in int64_t;
       int64_t data_len = *reinterpret_cast<int64_t*>(mmapped_data);
       CHECK_GT(data_len, 0);
       VLOG(1) << "Reading first 8 bytes, indicating total len: " << data_len;
       char* data_start = (reinterpret_cast<char*>(mmapped_data) + 8);
 
+      success_cnt += 1;
       if (forVertex) {
         int numVertices =
             digestVerticesFromMapedFile(data_start, data_len, partition_id);
-        VLOG(1) << "Finish reading mmaped v file, got " << numVertices
-                << " vertices";
+        VLOG(1) << "Worker " << worker_id << " Finish reading " << file_apht
+                << ", got " << numVertices << " vertices";
+        vertices_or_edges_read += numVertices;
       } else {
         int numEdges =
             digestEdgesFromMapedFile(data_start, data_len, partition_id);
-        VLOG(1) << "Finish reading mmaped e file, got " << numEdges << " edges";
+        VLOG(1) << "Worker " << worker_id << " Finish reading " << file_path
+                << " got " << numEdges << " edges";
+        vertices_or_edges_read += numEdges;
       }
-
-      //      } else {
-      //        VLOG(1) << "file: " << file_path << "size " << file_size
-      //                << " doesn't exist";
-      //      }
-      partition_id += 1;
     }
     if (forVertex) {
       VLOG(1) << " Worker [" << worker_id_
-              << "] finish loading vertices for max partition: "
-              << max_partition_id << ", success: " << cnt;
+              << "] finish loading vertices,  success: " << success_cnt << " / "
+              << files_splited.size() << " read: " << vertex_or_edges_read;
     } else {
       VLOG(1) << " Worker [" << worker_id_
-              << "] finish loading edges for max partition: "
-              << max_partition_id << ", success: " << cnt;
+              << "] finish loading edges,  success: " << success_cnt << " / "
+              << files_splited.size() << " read: " << vertex_or_edges_read;
     }
   }
 
   // Work for graphx graph loading, the input is the prefix for memory mapped
   // file.
-  void load_vertices(const std::string& location_prefix, int max_parition_id,
-                     int64_t mapped_size) {
-    readDataFromMMapedFile(location_prefix, true, max_parition_id, mapped_size);
+  void load_vertices(const std::string& vertex_files, int64_t mapped_size) {
+    readDataFromMMapedFile(vertex_files, true, mapped_size);
     // it is possible that on some nodes, there are no graphx data. We broad
     // cast type int, to allow subsequent move.
     MPI_Barrier(comm_spec_.comm());
