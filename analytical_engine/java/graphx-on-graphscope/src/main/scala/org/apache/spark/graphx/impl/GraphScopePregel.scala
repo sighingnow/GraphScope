@@ -48,6 +48,6 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
 
     log.info(s"[Driver:] Writing back vertex data")
     val resVertices = grapeGraph.vertices.copyAndUpdateVertexData(VDATA_MAPPED_PATH, vdata_mapped_size).cache()
-    GrapeGraphImpl.fromExistingRDDs(resVertices, grapeGraph.edges).cache()
+    GrapeGraphImpl.fromExistingRDDs(resVertices, grapeGraph.edges, grapeGraph.fragIds).cache()
   }
 }
