@@ -139,7 +139,7 @@ public class DefaultMessageStore<MSG_T, VD> implements MessageStore<MSG_T, VD> {
             }
             vertex.SetValue((long) index);
             messageManager.syncStateOnOuterVertexArrowProjected(
-                (ArrowProjectedFragment<Long, Long, Double, Double>) fragment.getFFIPointer(),
+                (ArrowProjectedFragment<Long, Long, ?, ?>) fragment.getFFIPointer(),
                 vertex, values[index]);
             //CAUTION-------------------------------------------------------------
             //update outer vertices data here, otherwise will cause infinite message sending
