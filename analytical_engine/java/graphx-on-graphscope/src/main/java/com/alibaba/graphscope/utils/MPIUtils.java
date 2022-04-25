@@ -42,10 +42,10 @@ public class MPIUtils {
         return GAE_HOME;
     }
 
-    public static <MSG> MappedBuffer launchGraphX(String fragIds, MSG initialMsg,Class<? extends MSG> msgClass, int maxIteration, String vprogPath, String sendMsgPath, String mergeMsgpath, String vdataPath, long size){
+    public static <MSG> void launchGraphX(String fragIds, MSG initialMsg,Class<? extends MSG> msgClass, int maxIteration, String vprogPath, String sendMsgPath, String mergeMsgpath, String vdataPath, long size){
         int numWorkers = Math.min(fragIds.split(",").length, getNumWorker());
         logger.info("running mpi with {} workers", numWorkers);
-        MappedBuffer buffer = SharedMemoryRegistry.getOrCreate().mapFor(vdataPath, size);
+//        MappedBuffer buffer = SharedMemoryRegistry.getOrCreate().mapFor(vdataPath, size);
         String[] commands = {"/bin/bash", SHELL_SCRIPT, String.valueOf(numWorkers), fragIds, initialMsg.toString(), GrapeUtils.classToStr(msgClass),
             String.valueOf(maxIteration), vprogPath, sendMsgPath, mergeMsgpath,vdataPath,
             String.valueOf(size)};
@@ -69,7 +69,6 @@ public class MPIUtils {
         }
         long endTime = System.nanoTime();
         logger.info("Total time spend on running mpi processes : {}ms", (endTime - startTime) / 1000000);
-        return buffer;
     }
 
     private static boolean fileExists(String p) {

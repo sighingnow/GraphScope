@@ -54,6 +54,11 @@ public class SharedMemoryRegistry {
         return res;
     }
 
+    public MappedBuffer tryMapFor(String key, long size){
+        if (key2MappedBuffer.contains(key)) return key2MappedBuffer.get(key);
+        else return mapFor(key, size);
+    }
+
     public void unMapFor(String key, long size){
         if (key2MappedBuffer.contains(key)){
             MappedBuffer memoryMappedBuffer = key2MappedBuffer.get(key);

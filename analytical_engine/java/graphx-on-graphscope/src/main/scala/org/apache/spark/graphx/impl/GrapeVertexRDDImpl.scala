@@ -146,5 +146,13 @@ class GrapeVertexRDDImpl[VD](
     mappedFileSet.collect()
   }
 
-
+  override def createMapFilePerExecutor(filepath: String, mappedSize: VertexId): Unit = {
+    grapePartitionsRDD.foreachPartition( iter => {
+      val registry = SharedMemoryRegistry.getOrCreate()
+      if (iter.hasNext) {
+        val tuple = iter.next()
+        val mappedBuffer = registry.tryMapFor(filepath, mappedSize)
+      }
+    })
+  }
 }
