@@ -30,7 +30,8 @@ import scala.reflect.{ClassTag, classTag}
  */
 class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
                                                             @transient val vertices: GrapeVertexRDD[VD],
-                                                            @transient val edges: GrapeEdgeRDD[ED]) extends Graph[VD, ED] with Serializable {
+                                                            @transient val edges: GrapeEdgeRDD[ED],
+                                                            var fragIds : String = null) extends Graph[VD, ED] with Serializable {
 
   protected def this() = this(null, null)
 
@@ -43,11 +44,13 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   def numParitions: Int = vertices.numPartitions
 
-  var fragIds: String = "null";
   val sc = vertices.sparkContext
 
   //Run initiation.
-  init
+  if (fragIds == null){
+    init
+  }
+
 
   def init = {
     //Write data to Memory mapped file.
@@ -164,8 +167,9 @@ object GrapeGraphImpl {
 
   def fromExistingRDDs[VD: ClassTag, ED: ClassTag](
                                                     vertices: GrapeVertexRDD[VD],
-                                                    edges: GrapeEdgeRDD[ED]): GrapeGraphImpl[VD, ED] = {
-    new GrapeGraphImpl[VD, ED](vertices, edges)
+                                                    edges: GrapeEdgeRDD[ED],
+                                                    fragIds : String = null): GrapeGraphImpl[VD, ED] = {
+    new GrapeGraphImpl[VD, ED](vertices, edges, fragIds)
   }
 
   def fromEdgeRDD[VD: ClassTag, ED: ClassTag](
