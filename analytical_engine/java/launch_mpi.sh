@@ -29,7 +29,7 @@ echo "vdata map size      "${VDATA_SIZE}
 echo "frag ids            "${FRAG_IDS}
 echo "num workers:        "${NUM_WORKERS}
 
-export LD_PRELOAD=$LD_PRELOAD://usr/local/lib64/libssl.so.1.1
+export LD_PRELOAD=$LD_PRELOAD:/usr/local/lib64/libssl.so.1.1
 DEFAULT_SPARK_HOME=~/spark/spark-3.2.1-bin-hadoop2.7
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -74,7 +74,7 @@ done
 
 #cmd="GLOG_v=10 mpirun -n 1 -hostfile ${SPARK_CONF_WORKER} -x GLOG_v -x GRAPHSCOPE_CODE_HOME -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} --user_class ${USER_CLASS} --vertex_mm_file_prefix ${V_FILE_PREFIX} --edge_mm_file_prefix ${E_FILE_PREFIX}"
 cmd="GLOG_v=10 mpirun --mca btl_tcp_if_include bond0 -n ${NUM_WORKERS} -host d50 -x LD_PRELOAD -x GLOG_v \
--x GRAPHSCOPE_CODE_HOME -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} \
+-x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} \
 --vprog_path ${VPROG_SERIALIZATION} --send_msg_path ${SEND_MSG_SERIALIZATION} \
 --merge_msg_path ${MERGE_MSG_SERIALIZATION} --msg_class ${MSG_CLASS} \
 --initial_msg ${INIT_MSG} --vdata_path ${VDATA_PATH} --vdata_size ${VDATA_SIZE} \

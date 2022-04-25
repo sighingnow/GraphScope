@@ -84,9 +84,9 @@ int main(int argc, char* argv[]) {
   google::InitGoogleLogging("graphx-runner");
   google::InstallFailureSignalHandler();
 
-  VLOG(1) << "Finish option parsing";
 
   std::string params = flags2JsonStr();
+  VLOG(1) << "Finish option parsing" << params;
   if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
       std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
     using ProjectedFragmentType =
@@ -95,7 +95,9 @@ int main(int argc, char* argv[]) {
     std::string frag_name =
         "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>";
 
+    LOG(INFO) << "Running for int64_t, int64_t";
     gs::CreateAndQuery<ProjectedFragmentType>(params, frag_name);
+    gs::Finalize();
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
     using ProjectedFragmentType =
@@ -103,9 +105,12 @@ int main(int argc, char* argv[]) {
     std::string frag_name =
         "gs::ArrowProjectedFragment<int64_t,uint64_t,double,double>";
     gs::CreateAndQuery<ProjectedFragmentType>(params, frag_name);
+    gs::Finalize();
+  }
+  else {
+    LOG(ERROR) << "Unrecognized: " << FLAGS_vd_clas << ", " << FLAGS_ed_class;
   }
 
-  gs::Finalize();
   VLOG(1) << "Finish Querying.";
 
   google::ShutdownGoogleLogging();

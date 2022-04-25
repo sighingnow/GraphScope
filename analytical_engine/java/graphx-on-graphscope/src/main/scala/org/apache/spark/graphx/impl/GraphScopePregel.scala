@@ -14,7 +14,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
   val VPROG_SERIALIZATION_PATH = "/tmp/graphx-vprog"
   val SEND_MSG_SERIALIZATION_PATH = "/tmp/graphx-sendMsg"
   val MERGE_MSG_SERIALIZATION_PATH = "/tmp/graphx-mergeMsg"
-  val VDATA_MAPPED_PATH = "/tmp/graphx-vdata"
+  val VDATA_MAPPED_PATH = "graphx-vdata"
   val msgClass = classTag[MSG].runtimeClass.asInstanceOf[java.lang.Class[MSG]]
 
   def run(): Unit = {
