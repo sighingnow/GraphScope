@@ -16,6 +16,8 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
   val MERGE_MSG_SERIALIZATION_PATH = "/tmp/graphx-mergeMsg"
   val VDATA_MAPPED_PATH = "/tmp/graphx-vdata"
   val msgClass = classTag[MSG].runtimeClass.asInstanceOf[java.lang.Class[MSG]]
+  val vdClass = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
+  val edClass = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
 
   def run(): Unit = {
     if (!graph.isInstanceOf[GrapeGraphImpl[VD,ED]]) {
@@ -37,7 +39,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
 
     //launch mpi processes. and run.
     val t0 = System.nanoTime()
-    MPIUtils.launchGraphX(grapeGraph.fragIds, initialMsg, msgClass.asInstanceOf, maxIteration, VPROG_SERIALIZATION_PATH,
+    MPIUtils.launchGraphX(grapeGraph.fragIds, initialMsg, msgClass, vdClass, edClass, maxIteration, VPROG_SERIALIZATION_PATH,
       SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, VDATA_MAPPED_PATH, grapeGraph.numVertices * 16L)
     val t1 = System.nanoTime();
     log.info(s"[Driver:] Running graphx pie cost: ${(t1 - t0) / 1000000} ms")
