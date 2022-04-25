@@ -61,8 +61,15 @@ std::string flags2JsonStr() {
   pt.put("user_lib_path", FLAGS_user_lib_path);
   pt.put("app_class", FLAGS_app_class);
   pt.put("msg_class", FLAGS_msg_class);
+  pt.put("vd_class", FLAGS_vd_class);
+  pt.put("ed_class", FLAGS_ed_class);
   pt.put("initial_msg", FLAGS_initial_msg);
   pt.put("max_iterations", FLAGS_max_iterations);
+  pt.put("vprog_path", FLAGS_vprog_path);
+  pt.put("send_msg_path", FLAGS_send_msg_path);
+  pt.put("merge_msg_path", FLAGS_merge_msg_path);
+  pt.put("vdata_path", FLAGS_vdata_path);
+  pt.put("vdata_size", FLAGS_vdata_size);
 
   std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);
