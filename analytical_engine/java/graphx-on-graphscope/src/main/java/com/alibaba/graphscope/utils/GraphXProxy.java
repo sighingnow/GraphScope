@@ -396,6 +396,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 for (long lid = 0; lid < innerVertexNum; ++lid){
                     vdataBuffer.writeLong(idManager.lid2Oid(lid));
                     vdataBuffer.writeLong((Long)(VD)vertexDataManager.getVertexData(lid));
+                    logger.info("Writing {}, {}", idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
                 }
                 logger.info("Finish writing long vdata to shared memory");
             }

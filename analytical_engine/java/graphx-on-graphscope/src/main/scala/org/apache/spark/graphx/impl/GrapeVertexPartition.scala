@@ -16,7 +16,6 @@ class GrapeVertexPartition[VD : ClassTag](pid : Int, grapeVertexMapPartition: Gr
 
   def iterator() : Iterator[(VertexId, VD)] = {
     new Iterator[(VertexId,VD)] {
-      private[this] var tuple = new [VertexId,VD](0,null.asInstanceOf[VD])
       private[this] var lid = 0
 
       override def hasNext: Boolean = lid < innerVertexNum

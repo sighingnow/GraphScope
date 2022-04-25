@@ -35,17 +35,18 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
 //    log.info("[Driver:] Finish distribution")
 
     //map vdata path
-    grapeGraph.vertices.createMapFilePerExecutor(VDATA_MAPPED_PATH, grapeGraph.numVertices *16L)
+    //grapeGraph.vertices.createMapFilePerExecutor(VDATA_MAPPED_PATH, grapeGraph.numVertices *16L)
 
     //launch mpi processes. and run.
     val t0 = System.nanoTime()
+    val vdata_mapped_size = grapeGraph.numVertices * 16L + 8L
     MPIUtils.launchGraphX[MSG,VD,ED](grapeGraph.fragIds, initialMsg, msgClass, vdClass, edClass, maxIteration, VPROG_SERIALIZATION_PATH,
-      SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, VDATA_MAPPED_PATH, grapeGraph.numVertices * 16L)
+      SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, VDATA_MAPPED_PATH, vdata_mapped_size)
     val t1 = System.nanoTime();
     log.info(s"[Driver:] Running graphx pie cost: ${(t1 - t0) / 1000000} ms")
     //update the result to graph for a new graph.
 
     log.info(s"[Driver:] Writing back vertex data")
-    grapeGraph.vertices.updateVertexData(VDATA_MAPPED_PATH, grapeGraph.numVertices * 16L)
+    grapeGraph.vertices.updateVertexData(VDATA_MAPPED_PATH, vdata_mapped_size)
   }
 }
