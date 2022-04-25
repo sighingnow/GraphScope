@@ -30,7 +30,6 @@ public class GraphxDoubleDoubleEdgeManagerImpl<MSG_T> extends
     private VertexDataManager<Double> vertexDataManager;
     private long[] dstOids;
     private long[] dstLids;
-    private double[] dstVdatas;
     private double[] edatas;
     private int[] nbrPositions;
     private long[] numOfEdges;
@@ -64,10 +63,6 @@ public class GraphxDoubleDoubleEdgeManagerImpl<MSG_T> extends
         edatas = csrHolder.edatas;
         nbrPositions = csrHolder.nbrPositions;
         numOfEdges = csrHolder.numOfEdges;
-        dstVdatas = new double[dstOids.length];
-        for (int i = 0; i < dstOids.length; ++i){
-            dstVdatas[i] = vertexDataManager.getVertexData(dstLids[i]);
-        }
         logger.info("create EdgeManagerImpl({})", fragment.fid());
     }
 

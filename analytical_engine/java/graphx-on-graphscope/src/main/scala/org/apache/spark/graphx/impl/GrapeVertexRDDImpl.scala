@@ -1,7 +1,7 @@
 package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.graphx.SharedMemoryRegistry
-import org.apache.spark.OneToOneDependency
+import org.apache.spark.{OneToOneDependency, Partition}
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.impl.GrapeUtils.bytesForType
 import org.apache.spark.rdd.RDD
@@ -15,6 +15,7 @@ class GrapeVertexRDDImpl[VD](
                             (implicit override protected val vdTag: ClassTag[VD])
   extends GrapeVertexRDD[VD](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
+  override protected def getPartitions: Array[Partition] = grapePartitionsRDD.partitions
   val vdClass: Class[VD] = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
   //  val MAPPED_SIZE : Long = 2L * 1024 * 1024 * 1024;
   //  val VERTEX_FILE_PREFIX = "/tmp/vertex-partition-"
