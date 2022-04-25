@@ -1,6 +1,6 @@
 package org.apache.spark.graphx
 
-import org.apache.spark.graphx.impl.{GrapeEdgeRDDImpl, GrapeVertexPartition, GrapeVertexRDDImpl}
+import org.apache.spark.graphx.impl.{GrapeEdgeRDDImpl, GrapeVertexPartition, GrapeVertexRDDImpl, ShippableVertexPartition}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Dependency, SparkContext}
 
@@ -16,6 +16,13 @@ abstract class GrapeVertexRDD[VD](
   def createMapFilePerExecutor(filepath: String, mappedSize : Long): Unit;
 
   def updateVertexData(filePath : String , mappedSize :Long) : Unit
+
+  private[graphx] def mapGrapeVertexPartitions[VD2: ClassTag](
+          f: GrapeVertexPartition[VD] => GrapeVertexPartition[VD2])
+  : GrapeVertexRDD[VD2]
+
+  private[graphx] def withGrapePartitionsRDD[VD2: ClassTag](
+      partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])]): GrapeVertexRDD[VD2]
 }
 
 object GrapeVertexRDD{

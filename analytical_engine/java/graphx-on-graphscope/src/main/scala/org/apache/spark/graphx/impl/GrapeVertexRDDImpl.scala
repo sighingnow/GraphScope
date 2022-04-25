@@ -34,7 +34,26 @@ class GrapeVertexRDDImpl[VD](
 
   override def reindex(): VertexRDD[VD] = ???
 
-  override private[graphx] def mapVertexPartitions[VD2](f: ShippableVertexPartition[VD] => ShippableVertexPartition[VD2])(implicit evidence$1: ClassTag[VD2]) = ???
+  override private[graphx] def mapVertexPartitions[VD2](f: ShippableVertexPartition[VD] => ShippableVertexPartition[VD2])(implicit evidence$1: ClassTag[VD2]) = {
+    throw new IllegalStateException("Not implemented")
+  }
+
+  override private[graphx] def mapGrapeVertexPartitions[VD2: ClassTag](f: GrapeVertexPartition[VD] => GrapeVertexPartition[VD2]): GrapeVertexRDD[VD2] = {
+    val newPartitionsRDD = grapePartitionsRDD.mapPartitions({
+      iter => {
+        if (iter.hasNext){
+          val tuple = iter.next()
+          val partition = tuple._2
+          Iterator((tuple._1, f(partition)))
+        }
+        else {
+          Iterator.empty
+        }
+      }
+    }, preservesPartitioning = true)
+    this.withGrapePartitionsRDD[VD2](newPartitionsRDD)
+  }
+
 
   override def mapValues[VD2](f: VD => VD2)(implicit evidence$2: ClassTag[VD2]): VertexRDD[VD2] = ???
 
@@ -62,9 +81,15 @@ class GrapeVertexRDDImpl[VD](
 
   override def withEdges(edges: EdgeRDD[_]): VertexRDD[VD] = ???
 
-  override def withPartitionsRDD[VD2](partitionsRDD: RDD[ShippableVertexPartition[VD2]])(implicit evidence$13: ClassTag[VD2]): Null = {
-    null
+  override def withPartitionsRDD[VD2](newPartitionsRDD: RDD[ShippableVertexPartition[VD2]])(implicit evidence$13: ClassTag[VD2]): Null = {
+    throw new IllegalStateException("Not implemented");
   }
+
+  private[graphx] def withGrapePartitionsRDD[VD2: ClassTag](
+            newPartitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])]): GrapeVertexRDD[VD2] = {
+    new GrapeVertexRDDImpl[VD2](newPartitionsRDD, targetStorageLevel)
+  }
+
 
   override def withTargetStorageLevel(targetStorageLevel: StorageLevel): GrapeVertexRDDImpl[VD] = {
     new GrapeVertexRDDImpl[VD](grapePartitionsRDD, targetStorageLevel)
@@ -204,4 +229,6 @@ class GrapeVertexRDDImpl[VD](
       }
     )
   }
+
+//  override private[graphx] def withGrapePartitionsRDD[VD2: ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])]) = ???
 }

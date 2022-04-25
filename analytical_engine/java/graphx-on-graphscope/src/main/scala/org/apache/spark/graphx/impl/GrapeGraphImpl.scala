@@ -118,8 +118,10 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     throw new IllegalStateException("Unimplemented")
   }
 
-  override def mapVertices[VD2](map: (VertexId, VD) => VD2)(implicit evidence$3: ClassTag[VD2], eq: VD =:= VD2): Graph[VD2, ED] = {
-    throw new IllegalStateException("Unimplemented")
+  override def mapVertices[VD2: ClassTag](f: (VertexId, VD) => VD2)(implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
+      vertices.cache()
+      val newVertices = vertices.mapGrapeVertexPartitions[VD2](_.map(f)).cache()
+      new GrapeGraphImpl[VD2,ED](newVertices, edges)
   }
 
   override def mapEdges[ED2](map: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2])(implicit newEd: ClassTag[ED2]): Graph[VD, ED2] = {

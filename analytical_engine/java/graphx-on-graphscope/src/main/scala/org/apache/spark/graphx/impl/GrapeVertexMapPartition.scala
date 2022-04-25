@@ -16,7 +16,7 @@ class GrapeVertexMapPartition(pid : Int, ivLid2Oid : Array[Long], ovLid2Oid : Ar
   def getIvLid2Oid = ivLid2Oid
 
   def toVertexPartition[VD : ClassTag](defaultValue : VD) : GrapeVertexPartition[VD] = {
-    new GrapeVertexPartition[VD](pid, this, defaultValue)
+    new GrapeVertexPartition[VD](pid, this, defaultValue, Array.fill(innerVertexNum)(defaultValue))
   }
 
   def oid2Lid(oid : Long): Long ={
