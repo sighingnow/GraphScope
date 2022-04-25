@@ -12,6 +12,8 @@ abstract class GrapeVertexRDD[VD](
 
   //We should not call RDD.getNumPartitions.
   def numPartitions : Int
+
+  def createMapFilePerExecutor(filepath: String, mappedSize : Long): Unit;
 }
 
 object GrapeVertexRDD{

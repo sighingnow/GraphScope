@@ -32,6 +32,9 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
 //    MPIUtils.distribute(VPROG_SERIALIZATION_PATH, SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH)
 //    log.info("[Driver:] Finish distribution")
 
+    //map vdata path
+    grapeGraph.vertices.createMapFilePerExecutor(VDATA_MAPPED_PATH, grapeGraph.numVertices *16L)
+
     //launch mpi processes. and run.
     val t0 = System.nanoTime()
     MPIUtils.launchGraphX[MSG](grapeGraph.fragIds, initialMsg, msgClass, maxIteration, VPROG_SERIALIZATION_PATH,
