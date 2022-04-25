@@ -40,7 +40,7 @@ public class FragmentOps {
 
         int numWorkers = 1;
         if (cluster){
-            numWorkers = MPIUtils.getNumWorker();
+            numWorkers = Math.min(MPIUtils.getNumWorker(), numWorkers);
         }
         long startTime = System.nanoTime();
         String[] commands = {MPI_EXEC, "-n", String.valueOf(numWorkers), GRAPHX_LOADER, VERTEX_MAPPED_FILES , String.join(":", vertexMappedFilesDedup),
