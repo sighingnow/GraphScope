@@ -662,7 +662,7 @@ class JavaLoaderInvoker {
       size_t dst_edata_previous_size = dst_edata0.size();
       dst_edata0.resize(dst_edata_previous_size + bytes_per_edata * edges_num);
       char* dst_edata_ptr = &dst_edata0[dst_edata_previous_size];
-      std::memcpy(dst_edata_ptr, &src_edata_ptr, bytes_per_edata * edges_num);
+      std::memcpy(dst_edata_ptr, src_edata_ptr, bytes_per_edata * edges_num);
       for (auto i = 0; i < edges_num; ++i) {
         dst_edata_offset0.push_back(bytes_per_edata);
       }

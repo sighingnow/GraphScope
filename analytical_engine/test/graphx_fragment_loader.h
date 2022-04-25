@@ -47,8 +47,8 @@ DECLARE_string(edge_files);
 DECLARE_int64(vertex_mapped_size);
 DECLARE_int64(edge_mapped_size);
 DECLARE_bool(directed);
-DECLARE_bool(vd_type);
-DECLARE_bool(ed_type);
+DECLARE_string(vd_type);
+DECLARE_string(ed_type);
 
 namespace gs {
 
@@ -56,7 +56,7 @@ using FragmentType =
     vineyard::ArrowFragment<int64_t, vineyard::property_graph_types::VID_TYPE>;
 using FragmentLoaderType =
     ArrowFragmentLoader<int64_t, vineyard::property_graph_types::VID_TYPE>;
-template <typename ProjectedFragmentT>
+template <typename ProjectedFragmentType>
 vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
                                 vineyard::Client& client, bool directed,
                                 const std::string& vertex_mm_files,
@@ -131,6 +131,18 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
   return projected_fragment->id();
 }
 
+std::string fragIdsToStr(std::vector<vineyard::ObjectID>& ids) {
+  std::stringstream ss;
+  bool first = true;
+  for (auto id : ids) {
+    if (!first) {
+      ss << ",";
+    }
+    ss << id;
+    first = false;
+  }
+  return ss.str();
+}
 void Run() {
   grape::InitMPIComm();
   grape::CommSpec comm_spec;
@@ -152,7 +164,7 @@ void Run() {
 
   double t0 = grape::GetCurrentTime();
   vineyard::ObjectID projected_frag_id = vineyard::InvalidObjectID();
-  if (FLAGS_vd_type == "int64_t" && FLAGS_ed_type == "int64_t") {
+  if (std::strcmp(FLAGS_vd_type.c_str(),"int64_t") == 0 && std::strcmp(FLAGS_ed_type.c_str(),"int64_t") == 0) {
     using ProjectedFragmentType =
         ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
     using APP_TYPE = JavaPIEProjectedDefaultApp<ProjectedFragmentType>;
@@ -160,7 +172,7 @@ void Run() {
     projected_frag_id = LoadFragment<ProjectedFragmentType>(
         comm_spec, client, FLAGS_directed, FLAGS_vertex_files, FLAGS_edge_files,
         FLAGS_vertex_mapped_size, FLAGS_edge_mapped_size);
-  } else if (FLAGS_vd_type == "double" && FLAGS_ed_type == "double") {
+  } else if (std::strcmp(FLAGS_vd_type.c_str(),"double") == 0 && std::strcmp(FLAGS_ed_type.c_str(), "double") == 0) {
     using ProjectedFragmentType =
         ArrowProjectedFragment<int64_t, uint64_t, double, double>;
     using APP_TYPE = JavaPIEProjectedDefaultApp<ProjectedFragmentType>;
@@ -186,18 +198,7 @@ void Run() {
   }
 }
 
-std::string fragidsToStr(std::vector<vineyard::ObjectID>& ids) {
-  stringstream ss;
-  bool first = true;
-  for (auto id : id) {
-    if (!first) {
-      ss << ","
-    }
-    ss << id;
-    first = false;
-  }
-  return ss.str();
-}
+
 
 void Finalize() {
   grape::FinalizeMPIComm();

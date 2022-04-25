@@ -107,11 +107,11 @@ void CreateAndQuery(std::string params, const std::string& frag_name) {
   VINEYARD_CHECK_OK(client.Connect(FLAGS_ipc_socket));
   VLOG(1) << "Connected to IPCServer: " << FLAGS_ipc_socket;
 
-  std::vector<vineyard::ObjectID> frags_splited;
-  boost::split(frags_splited, FLAG_frag_ids, boost::is_any_of(","));
+  std::vector<std::string> frags_splited;
+  boost::split(frags_splited, FLAGS_frag_ids, boost::is_any_of(","));
 
   CHECK_EQ(frags_splited.size(), comm_spec.worker_num());
-  auto fragment_id = frags_splited[comm_spec.worker_id()];
+  auto fragment_id = std::stoull(frags_splited[comm_spec.worker_id()].c_str(),NULL,10);
 
   VLOG(10) << "[worker " << comm_spec.worker_id()
            << "] loaded frag id: " << fragment_id;
@@ -137,7 +137,7 @@ void CreateAndQuery(std::string params, const std::string& frag_name) {
 
   for (int i = 0; i < 1; ++i) {
     Query<ProjectedFragmentType>(comm_spec, fragment, new_params,
-                                 user_lib_path);
+                                 FLAGS_user_lib_path);
   }
   double t1 = grape::GetCurrentTime();
   if (comm_spec.worker_id() == grape::kCoordinatorRank) {
