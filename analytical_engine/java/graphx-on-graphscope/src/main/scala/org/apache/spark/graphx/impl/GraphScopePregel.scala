@@ -19,10 +19,10 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
   val vdClass = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
   val edClass = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
 
-  def run(): Unit = {
+  def run(): Graph[VD,ED] = {
     if (!graph.isInstanceOf[GrapeGraphImpl[VD,ED]]) {
       log.error("Only support grape graph")
-      return
+      return graph
     }
     val grapeGraph = graph.asInstanceOf[GrapeGraphImpl[VD, ED]]
     //Persist and distribute functions.
@@ -47,6 +47,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     //update the result to graph for a new graph.
 
     log.info(s"[Driver:] Writing back vertex data")
-    grapeGraph.vertices.updateVertexData(VDATA_MAPPED_PATH, vdata_mapped_size)
+    val resVertices = grapeGraph.vertices.copyAndUpdateVertexData(VDATA_MAPPED_PATH, vdata_mapped_size).cache()
+    GrapeGraphImpl.fromExistingRDDs(resVertices, grapeGraph.edges).cache()
   }
 }

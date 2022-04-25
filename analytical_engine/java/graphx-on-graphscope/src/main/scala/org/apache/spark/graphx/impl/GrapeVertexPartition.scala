@@ -46,6 +46,16 @@ class GrapeVertexPartition[VD : ClassTag](pid : Int, grapeVertexMapPartition: Gr
     }
   }
 
+  /**
+   * A new grapeVertexPartition with new data.
+   * @return
+   */
+  def copyWithNewData(newDefaultValue : VD = defaultValue) : GrapeVertexPartition[VD] = {
+//    val newValues = new Array[VD](innerVertexNum)
+    val newValues = Array.fill(innerVertexNum)(newDefaultValue)
+    new GrapeVertexPartition[VD](pid, grapeVertexMapPartition, newDefaultValue, newValues)
+  }
+
   def map[VD2 : ClassTag](f: (VertexId, VD) => VD2) : GrapeVertexPartition[VD2] = {
     val newValues = new Array[VD2](innerVertexNum)
     var i = 0

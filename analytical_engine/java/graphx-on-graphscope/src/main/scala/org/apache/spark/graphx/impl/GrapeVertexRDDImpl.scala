@@ -182,13 +182,14 @@ class GrapeVertexRDDImpl[VD](
     })
   }
 
-  override def updateVertexData(filePath: String, mappedSize: VertexId): Unit = {
-    grapePartitionsRDD.foreachPartition(
+  override def copyAndUpdateVertexData(filePath: String, mappedSize: VertexId): GrapeVertexRDD[VD] = {
+    val newParitions = grapePartitionsRDD.mapPartitions(
       iter =>{
         val registry = SharedMemoryRegistry.getOrCreate()
         if (iter.hasNext){
           val tuple = iter.next()
           val vertexPartition = tuple._2
+          val newVertexPartition = vertexPartition.copyWithNewData()
           val mappedBuffer = registry.tryMapFor(filePath, mappedSize)
           val length = mappedBuffer.readLong(0);
           log.info(s"There are total ${length} bytes can be read")
@@ -198,7 +199,7 @@ class GrapeVertexRDDImpl[VD](
             while (ind + 16 <= limit){
               val oid = mappedBuffer.readLong(ind)
               val data = mappedBuffer.readLong(ind + 8)
-              vertexPartition.updateData(oid, data.asInstanceOf[VD])
+              newVertexPartition.updateData(oid, data.asInstanceOf[VD])
               ind = ind + 16
             }
             if (ind != limit){
@@ -209,7 +210,7 @@ class GrapeVertexRDDImpl[VD](
             while (ind + 12 <= limit){
               val oid = mappedBuffer.readLong(ind)
               val data = mappedBuffer.readInt(ind + 8)
-              vertexPartition.updateData(oid, data.asInstanceOf[VD])
+              newVertexPartition.updateData(oid, data.asInstanceOf[VD])
               ind = ind + 12
             }
             if (ind != limit){
@@ -220,16 +221,24 @@ class GrapeVertexRDDImpl[VD](
             while (ind + 16 <= limit){
               val oid = mappedBuffer.readLong(ind)
               val data = mappedBuffer.readInt(ind + 8)
-              vertexPartition.updateData(oid, data.asInstanceOf[VD])
+              newVertexPartition.updateData(oid, data.asInstanceOf[VD])
               ind = ind + 16
             }
             if (ind != limit){
               throw new IllegalStateException("length should be equal to 12 * vertices" + limit + ", " + ind)
             }
           }
+          else {
+            throw new IllegalStateException("expected vd class")
+          }
+          Iterator((tuple._1, newVertexPartition))
         }
-      }
+        else {
+          Iterator.empty
+        }
+      },true
     )
+    new GrapeVertexRDDImpl[VD](newParitions, targetStorageLevel)
   }
 
 //  override private[graphx] def withGrapePartitionsRDD[VD2: ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])]) = ???

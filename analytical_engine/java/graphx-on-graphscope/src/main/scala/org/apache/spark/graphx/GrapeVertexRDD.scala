@@ -26,7 +26,7 @@ abstract class GrapeVertexRDD[VD](
 
   def createMapFilePerExecutor(filepath: String, mappedSize : Long): Unit;
 
-  def updateVertexData(filePath : String , mappedSize :Long) : Unit
+  def copyAndUpdateVertexData(filePath : String , mappedSize :Long) : GrapeVertexRDD[VD]
 
   private[graphx] def mapGrapeVertexPartitions[VD2: ClassTag](
           f: GrapeVertexPartition[VD] => GrapeVertexPartition[VD2])
