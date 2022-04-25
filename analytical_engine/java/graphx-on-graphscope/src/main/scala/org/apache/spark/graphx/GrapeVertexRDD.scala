@@ -14,6 +14,8 @@ abstract class GrapeVertexRDD[VD](
   def numPartitions : Int
 
   def createMapFilePerExecutor(filepath: String, mappedSize : Long): Unit;
+
+  def updateVertexData(filePath : String , mappedSize :Long) : Unit
 }
 
 object GrapeVertexRDD{

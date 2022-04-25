@@ -155,4 +155,53 @@ class GrapeVertexRDDImpl[VD](
       }
     })
   }
+
+  override def updateVertexData(filePath: String, mappedSize: VertexId): Unit = {
+    grapePartitionsRDD.foreachPartition(
+      iter =>{
+        val registry = SharedMemoryRegistry.getOrCreate()
+        if (iter.hasNext){
+          val tuple = iter.next()
+          val vertexPartition = tuple._2
+          val mappedBuffer = registry.tryMapFor(filePath, mappedSize)
+          val length = mappedBuffer.readLong(0);
+          log.info(s"There are total ${length} bytes can be read")
+          var ind = 8
+          if (vdClass.equals(classOf[Long])){
+            while (ind + 16 <= length){
+              val oid = mappedBuffer.readLong(ind)
+              val data = mappedBuffer.readLong(ind + 8)
+              vertexPartition.updateData(oid, data.asInstanceOf[VD])
+              ind = ind + 16
+            }
+            if (ind + 16 != length){
+              throw new IllegalStateException("length should be equal to 16 * vertices" + length)
+            }
+          }
+          else if (vdClass.equals(classOf[Int])){
+            while (ind + 12 <= length){
+              val oid = mappedBuffer.readLong(ind)
+              val data = mappedBuffer.readInt(ind + 8)
+              vertexPartition.updateData(oid, data.asInstanceOf[VD])
+              ind = ind + 12
+            }
+            if (ind + 12 != length){
+              throw new IllegalStateException("length should be equal to 12 * vertices" + length)
+            }
+          }
+          else if (vdClass.equals(classOf[Double])){
+            while (ind + 16 <= length){
+              val oid = mappedBuffer.readLong(ind)
+              val data = mappedBuffer.readInt(ind + 8)
+              vertexPartition.updateData(oid, data.asInstanceOf[VD])
+              ind = ind + 16
+            }
+            if (ind + 16 != length){
+              throw new IllegalStateException("length should be equal to 12 * vertices" + length)
+            }
+          }
+        }
+      }
+    )
+  }
 }

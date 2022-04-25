@@ -215,7 +215,7 @@ class GrapeEdgePartitionBuilder[@specialized(Char, Long, Int, Double) ED: ClassT
     log.info(s"Partition ${pid}: ovOid2Lid: ${toString(outerVertexOid2Lid)}")
     log.info(s"Partition ${pid}: ovOid2fid: ${toString(outerVertexOid2Fid)}")
 
-    new GrapeEdgePartition[ED](srcOidArray, dstOidArray, edataArray,ivEdgeCnt, ovEdgeCnt, new GrapeVertexMapPartition(ivLid2Oid, ovLid2Oid,
+    new GrapeEdgePartition[ED](srcOidArray, dstOidArray, edataArray,ivEdgeCnt, ovEdgeCnt, new GrapeVertexMapPartition(pid, ivLid2Oid, ovLid2Oid,
       innerVertexOid2Lid, outerVertexOid2Lid, outerVertexOid2Fid))
   }
 

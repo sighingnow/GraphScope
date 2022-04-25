@@ -20,10 +20,11 @@ object Test extends Logging {
     val numPartitions = args(1).toInt;
     log.info(s"Running for efile ${eFilePath}")
     val graph = GraphLoader.edgeListFile[Long, Long](sc, eFilePath, 1L, false, numPartitions)
-    graph.cache()
+    val mapped_graph = graph.mapVertices((vid, vdata) => 99999L)
+    mapped_graph.cache()
     log.info(s"Finish loading, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
 
-    val res = graph.pregel(99999L, maxIterations = 100)(
+    val res = mapped_graph.pregel(99999L, maxIterations = 100)(
       (vid, vd, msg) => {
         math.min(vd,msg)
       },
@@ -37,5 +38,6 @@ object Test extends Logging {
       (a, b) => a
     )
     log.info(s"Finish query, graph vertices: ${res.numVertices}  and edges: ${res.numEdges}")
+    log.info(s"${res.vertices.collect().mkString("Array(", ", ", ")")}")
   }
 }

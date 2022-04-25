@@ -44,5 +44,8 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     val t1 = System.nanoTime();
     log.info(s"[Driver:] Running graphx pie cost: ${(t1 - t0) / 1000000} ms")
     //update the result to graph for a new graph.
+
+    log.info(s"[Driver:] Writing back vertex data")
+    grapeGraph.vertices.updateVertexData(VDATA_MAPPED_PATH, grapeGraph.numVertices * 16L)
   }
 }

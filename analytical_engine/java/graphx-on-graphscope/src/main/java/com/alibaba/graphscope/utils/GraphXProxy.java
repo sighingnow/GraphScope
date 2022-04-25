@@ -13,6 +13,7 @@ import com.alibaba.graphscope.mm.MessageStore;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.parallel.message.DoubleMsg;
 import com.alibaba.graphscope.parallel.message.LongMsg;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -382,6 +383,43 @@ public class GraphXProxy<VD, ED, MSG_T> {
             graphxFragment.fid(), round, receiveTime / 1000000, vprogTime / 1000000,
             msgSendTime / 1000000, flushTime / 1000000);
         return false;
+    }
+
+    public void persistVdata() {
+        long innerVertexNum =graphxFragment.getInnerVerticesNum();
+        long bytesToWrite = innerVertexNum * ( 8 + TypeUtils.classToBytes(conf.getVdataClass()));
+        if (Objects.nonNull(vdataBuffer) && vdataBuffer.remaining()
+            >= bytesToWrite){
+            logger.info("Writing vertex data to graphx shared memory");
+            vdataBuffer.writeLong(bytesToWrite);
+            if (conf.getVdataClass().equals(Long.class)){
+                for (long lid = 0; lid < innerVertexNum; ++lid){
+                    vdataBuffer.writeLong(idManager.lid2Oid(lid));
+                    vdataBuffer.writeLong((Long)(VD)vertexDataManager.getVertexData(lid));
+                }
+                logger.info("Finish writing long vdata to shared memory");
+            }
+            else if (conf.getVdataClass().equals(Double.class)){
+                for (long lid = 0; lid < innerVertexNum; ++lid){
+                    vdataBuffer.writeLong(idManager.lid2Oid(lid));
+                    vdataBuffer.writeDouble((Double)(VD)vertexDataManager.getVertexData(lid));
+                }
+                logger.info("Finish write double vdata to shared memory");
+            }
+            else if(conf.getVdataClass().equals(Integer.class)){
+                for (long lid = 0; lid < innerVertexNum; ++lid){
+                    vdataBuffer.writeLong(idManager.lid2Oid(lid));
+                    vdataBuffer.writeInt((Integer)(VD)vertexDataManager.getVertexData(lid));
+                }
+                logger.info("Finish write int vdata to shared memory");
+            }
+            else {
+                logger.error("Not recognized vdata class: " + conf.getVdataClass());
+            }
+        }
+        else {
+            logger.error("vdata null or space not enough {}, remaining {}, to write {}", vdataBuffer, vdataBuffer.remaining(), bytesToWrite);
+        }
     }
 
     public void postApp() {

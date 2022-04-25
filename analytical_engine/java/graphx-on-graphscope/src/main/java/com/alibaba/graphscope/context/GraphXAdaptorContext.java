@@ -123,6 +123,12 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     public void Output(IFragment<Long, Long, VDATA_T, EDATA_T> frag) {
         String prefix = "/tmp/graphx_output";
         String filePath = prefix + "_frag_" + String.valueOf(frag.fid());
+        /**
+         * In order to return the computing result back to graphx, we write back vertex data, to the
+         * mapped buffer.
+         */
+        graphXProxy.persistVdata();
+
         VertexDataManager<VDATA_T> vertexDataManager = graphXProxy.getVertexDataManager();
         try {
             FileWriter fileWritter = new FileWriter(new File(filePath));

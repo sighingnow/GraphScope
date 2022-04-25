@@ -52,4 +52,17 @@ public class TypeUtils {
         }
         throw new IllegalStateException("Unrecognized class: " + clz);
     }
+
+    public static int classToBytes(Class<?> clz){
+        if (clz.equals(Long.class) || clz.equals(long.class)) {
+            return 8;
+        } else if (clz.equals(Integer.class) || clz.equals(int.class)) {
+            return 4;
+        } else if (clz.equals(Double.class) || clz.equals(double.class)) {
+            return 8;
+        } else if (clz.equals(Float.class) || clz.equals(float.class)) {
+            return 4;
+        }
+        throw new IllegalStateException("Unrecognized class: " + clz);
+    }
 }
