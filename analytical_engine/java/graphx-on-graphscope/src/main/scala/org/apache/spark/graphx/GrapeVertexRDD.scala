@@ -13,6 +13,7 @@ abstract class GrapeVertexRDD[VD](
   //We should not call RDD.getNumPartitions.
   def numPartitions : Int
 
+
   override def compute(part: Partition, context: TaskContext): Iterator[(VertexId,VD)] = {
     val p = firstParent[(Int, GrapeVertexPartition[VD])].iterator(part, context)
     if (p.hasNext) {
