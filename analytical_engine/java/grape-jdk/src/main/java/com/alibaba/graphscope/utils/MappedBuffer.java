@@ -76,15 +76,15 @@ public class MappedBuffer {
     }
 
     public int readInt(int offset){
-        checkOffset(offset);
+        checkOffset(offset + 4);
         return JavaRuntime.getInt(startAddress + offset);
     }
     public long readLong(int offset){
-        checkOffset(offset);
+        checkOffset(offset + 8);
         return JavaRuntime.getLong(startAddress + offset);
     }
     public double readDouble(int offset){
-        checkOffset(offset);
+        checkOffset(offset + 8);
         return JavaRuntime.getDouble(startAddress + offset);
     }
 
@@ -94,8 +94,12 @@ public class MappedBuffer {
         }
     }
 
+    /**
+     * check whether last bit is in range
+     * @param addr start + size
+     */
     private void check(long addr){
-        if (addr >= limit){
+        if (addr > limit){
             throw new IndexOutOfBoundsException(" out of bound, limit : " + limit + ", cur " + addr);
         }
     }
