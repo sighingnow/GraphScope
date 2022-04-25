@@ -1,8 +1,8 @@
 package org.apache.spark.graphx
 
-import org.apache.spark.graphx.impl.{GrapeEdgeRDDImpl, GrapeVertexPartition, GrapeVertexRDDImpl, ShippableVertexPartition}
+import org.apache.spark.graphx.impl.{GrapeEdgePartition, GrapeEdgeRDDImpl, GrapeVertexPartition, GrapeVertexRDDImpl, ShippableVertexPartition}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{Dependency, SparkContext}
+import org.apache.spark.{Dependency, Partition, SparkContext, TaskContext}
 
 import scala.reflect.ClassTag
 
@@ -12,6 +12,16 @@ abstract class GrapeVertexRDD[VD](
 
   //We should not call RDD.getNumPartitions.
   def numPartitions : Int
+
+  override def compute(part: Partition, context: TaskContext): Iterator[(VertexId,VD)] = {
+    val p = firstParent[(Int, GrapeVertexPartition[VD])].iterator(part, context)
+    if (p.hasNext) {
+      p.next()._2.iterator.map(_.copy())
+    }
+    else {
+      Iterator.empty
+    }
+  }
 
   def createMapFilePerExecutor(filepath: String, mappedSize : Long): Unit;
 

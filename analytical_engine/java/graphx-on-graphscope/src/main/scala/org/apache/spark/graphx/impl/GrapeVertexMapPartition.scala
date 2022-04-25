@@ -19,6 +19,9 @@ class GrapeVertexMapPartition(pid : Int, ivLid2Oid : Array[Long], ovLid2Oid : Ar
     new GrapeVertexPartition[VD](pid, this, defaultValue, Array.fill(innerVertexNum)(defaultValue))
   }
 
+  def innerVertexLid2Oid(lid : Long) : Long = {
+    ivLid2Oid.apply(lid.toInt)
+  }
   def oid2Lid(oid : Long): Long ={
     val ires = ivOid2Lid.getOrElse(oid, -1)
     if (ires == -1){

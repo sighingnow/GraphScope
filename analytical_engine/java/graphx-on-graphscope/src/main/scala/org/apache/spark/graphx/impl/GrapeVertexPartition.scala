@@ -14,6 +14,20 @@ class GrapeVertexPartition[VD : ClassTag](pid : Int, grapeVertexMapPartition: Gr
   val innerVertices : Range = 0 until innerVertexNum
   val outerVertices : Range = innerVertexNum until totalVertexNum
 
+  def iterator() : Iterator[(VertexId, VD)] = {
+    new Iterator[(VertexId,VD)] {
+      private[this] var tuple = new [VertexId,VD](0,null.asInstanceOf[VD])
+      private[this] var lid = 0
+
+      override def hasNext: Boolean = lid < innerVertexNum
+
+      override def next(): (VertexId,VD) = {
+        val res = (grapeVertexMapPartition.innerVertexLid2Oid(lid),data(lid))
+        lid += 1
+        res
+      }
+    }
+  }
 
   def ivLid2Oid: Array[Long] = grapeVertexMapPartition.getIvLid2Oid
 
