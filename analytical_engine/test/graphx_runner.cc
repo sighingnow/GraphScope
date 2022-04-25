@@ -30,47 +30,38 @@ limitations under the License.
 #include "grape/config.h"
 
 DEFINE_string(ipc_socket, "/tmp/vineyard.sock", "vineyard socket addr");
-DEFINE_string(user_class, "", "graphx user app");
 DEFINE_bool(directed, true, "directed or not");
-DEFINE_string(vertex_mm_file_prefix, "/tmp/graphx-vertex-", "memory mapped file prefix");//graphx-${partitionId}
-DEFINE_string(edge_mm_file_prefix, "/tmp/graphx-edge-", "memory mapped file prefix");
-DEFINE_string(user_lib_path, "/opt/graphscope/lib/libgrape-jni.so", "user jni lib");
-DEFINE_string(app_class, "com.alibaba.graphscope.app.GraphXAdaptor", "graphx driver class"); //graphx_driver_class
-DEFINE_string(vprog_serialization, "/tmp/graphx-vprog", "path to the serialization file for vprog");
-DEFINE_string(send_msg_serialization, "/tmp/graphx-sendMsg", "path to the serialization file for sendMsg");
-DEFINE_string(merge_msg_serialization, "/tmp/graphx-mergeMsg", "path to the serialization file for Merge msg");
-DEFINE_string(vd_class, "", "int,long,double");
-DEFINE_string(ed_class, "", "int,long,double");
-DEFINE_string(msg_class, "", "int,long,double");
+DEFINE_string(user_lib_path, "/opt/graphscope/lib/libgrape-jni.so",
+              "user jni lib");
+DEFINE_string(app_class, "com.alibaba.graphscope.app.GraphXAdaptor",
+              "graphx driver class");  // graphx_driver_class
+DEFINE_string(vprog_path, "/tmp/graphx-vprog",
+              "path to the serialization file for vprog");
+DEFINE_string(send_msg_path, "/tmp/graphx-sendMsg",
+              "path to the serialization file for sendMsg");
+DEFINE_string(merge_msg_path, "/tmp/graphx-mergeMsg",
+              "path to the serialization file for Merge msg");
+DEFINE_string(vdata_path, "/tmp/graphx-vdata",
+              "path to serialization for vdata array");
+DEFINE_string(vd_class, "", "int64_t,int32_t,double");
+DEFINE_string(ed_class, "", "int64_t,int32_t,double");
+DEFINE_string(msg_class, "", "int64_t,int32_t,double");
 DEFINE_string(initial_msg, "", "the initial msg");
-DEFINE_int64(mapped_size, 10 * 1024 * 1024, "mapped size fo v e shared memroy");
-DEFINE_int32(max_partition_id, 10, "max partition id from graphx");
+DEFINE_int64(vdata_size, 10 * 1024 * 1024,
+             "mapped size fo vdata shared memroy");
 DEFINE_int32(max_iterations, 100000, "max iterations");
+DEFINE_string(frag_ids, "", "frag ids got, should be in order");
 // put all flags in a json str
 std::string flags2JsonStr() {
   boost::property_tree::ptree pt;
-  if (FLAGS_user_class.empty()){
-      LOG(ERROR) << "user class not set";
-  }
-  pt.put("user_class", FLAGS_user_class);
   pt.put("directed", FLAGS_directed);
-  if (FLAGS_user_lib_path.empty()){
-      LOG(ERROR) << "user jni lib not set";
+  if (FLAGS_user_lib_path.empty()) {
+    LOG(ERROR) << "user jni lib not set";
   }
   pt.put("user_lib_path", FLAGS_user_lib_path);
   pt.put("app_class", FLAGS_app_class);
-  pt.put("ipc_socket", FLAGS_ipc_socket);
-  pt.put("vertex_mm_file_prefix", FLAGS_vertex_mm_file_prefix);
-  pt.put("edge_mm_file_prefix", FLAGS_edge_mm_file_prefix);
-  pt.put("vprog_serialization", FLAGS_vprog_serialization);
-  pt.put("merge_msg_serialization", FLAGS_merge_msg_serialization);
-  pt.put("send_msg_serialization", FLAGS_send_msg_serialization);
-  pt.put("vd_class", FLAGS_vd_class);
-  pt.put("ed_class", FLAGS_ed_class);
   pt.put("msg_class", FLAGS_msg_class);
   pt.put("initial_msg", FLAGS_initial_msg);
-  pt.put("mapped_size", FLAGS_mapped_size);
-  pt.put("max_partition_id", FLAGS_max_partition_id);
   pt.put("max_iterations", FLAGS_max_iterations);
 
   std::stringstream ss;
@@ -96,8 +87,24 @@ int main(int argc, char* argv[]) {
   VLOG(1) << "Finish option parsing";
 
   std::string params = flags2JsonStr();
-  gs::Init(params);
-  gs::CreateAndQuery(params);
+  if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
+      std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
+    using ProjectedFragmentType =
+        ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
+    // using APP_TYPE = JavaPIEProjectedDefaultApp<ProjectedFragmentType>;
+    std::string frag_name =
+        "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>";
+
+    gs::CreateAndQuery<ProjectedFragmentType>(params, frag_name);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
+    using ProjectedFragmentType =
+        ArrowProjectedFragment<int64_t, uint64_t, double, double>;
+    std::string frag_name =
+        "gs::ArrowProjectedFragment<int64_t,uint64_t,double,double>";
+    gs::CreateAndQuery<ProjectedFragmentType>(params, frag_name);
+  }
+
   gs::Finalize();
   VLOG(1) << "Finish Querying.";
 

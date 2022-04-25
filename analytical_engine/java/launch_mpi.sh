@@ -1,10 +1,14 @@
 #!/bin/bash
 
-echo $1$2$3
-#vertex mm file
-V_FILE_PREFIX=$1
+NUM_WORKERS=$1
 shift
-E_FILE_PREFIX=$1
+FRAG_IDS=$1
+shift
+INIT_MSG=$1
+shift
+MSG_CLASS=$1
+shift
+MAX_ITERATION=$1
 shift
 VPROG_SERIALIZATION=$1
 shift
@@ -12,34 +16,18 @@ SEND_MSG_SERIALIZATION=$1
 shift
 MERGE_MSG_SERIALIZATION=$1
 shift
-USER_CLASS=$1
+VDATA_PATH=$1
 shift
-vdClass=$1
-shift
-edClass=$1
-shift
-msgClass=$1
-shift
-initialMsg=$1
-shift
-maxIterations=$1
-shift
-max_partition_id=$1
-shift
-mapped_size=$1
+VDATA_SIZE=$1
 
-echo "vfile prefix:    "${V_FILE_PREFIX}
-echo "efile preifx:    "${E_FILE_PREFIX}
-echo "user class:      "${USER_CLASS}
-echo "vprog            "${VPROG_SERIALIZATION}
-echo "send_msg         "${SEND_MSG_SERIALIZATION}
-echo "merge msg        "${MERGE_MSG_SERIALIZATION}
-echo "vd class         "${vdClass}
-echo "edClass          "${edClass}
-echo "msgClass         "${msgClass}
-echo "initial msg      "${initialMsg}
-echo "max partition_id "${max_partition_id}
-echo "mapped isze      "${mapped_size}
+echo "vprog               "${VPROG_SERIALIZATION}
+echo "send_msg            "${SEND_MSG_SERIALIZATION}
+echo "merge msg           "${MERGE_MSG_SERIALIZATION}
+echo "msgClass            "${MSG_CLASS}
+echo "initial msg         "${INIT_MSG}
+echo "vdata map size      "${VDATA_SIZE}
+echo "frag ids            "${FRAG_IDS}
+echo "num workers:        "${NUM_WORKERS}
 
 export LD_PRELOAD=$LD_PRELOAD://usr/local/lib64/libssl.so.1.1
 DEFAULT_SPARK_HOME=~/spark/spark-3.2.1-bin-hadoop2.7
@@ -85,6 +73,11 @@ do
 done
 
 #cmd="GLOG_v=10 mpirun -n 1 -hostfile ${SPARK_CONF_WORKER} -x GLOG_v -x GRAPHSCOPE_CODE_HOME -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} --user_class ${USER_CLASS} --vertex_mm_file_prefix ${V_FILE_PREFIX} --edge_mm_file_prefix ${E_FILE_PREFIX}"
-cmd="GLOG_v=10 mpirun --mca btl_tcp_if_include bond0 -n 2 -host d50,d51 -x LD_PRELOAD -x GLOG_v -x GRAPHSCOPE_CODE_HOME -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} --user_class ${USER_CLASS} --vertex_mm_file_prefix ${V_FILE_PREFIX} --edge_mm_file_prefix ${E_FILE_PREFIX} --vprog_serialization ${VPROG_SERIALIZATION} --send_msg_serialization ${SEND_MSG_SERIALIZATION} --merge_msg_serialization ${MERGE_MSG_SERIALIZATION} --vd_class ${vdClass} --ed_class ${edClass} --msg_class ${msgClass} --initial_msg ${initialMsg} --max_partition_id ${max_partition_id} --mapped_size ${mapped_size} --max_iterations ${maxIterations}"
+cmd="GLOG_v=10 mpirun --mca btl_tcp_if_include bond0 -n ${NUM_WORKERS} -host d50 -x LD_PRELOAD -x GLOG_v \
+-x GRAPHSCOPE_CODE_HOME -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} \
+--vprog_path ${VPROG_SERIALIZATION} --send_msg_path ${SEND_MSG_SERIALIZATION} \
+--merge_msg_path ${MERGE_MSG_SERIALIZATION} --msg_class ${MSG_CLASS} \
+--initial_msg ${INIT_MSG} --vdata_path ${VDATA_PATH} --vdata_size ${VDATA_SIZE} \
+ --max_iterations ${MAX_ITERATION} --frag_ids ${FRAG_IDS}"
 echo "running cmd: "$cmd
 eval $cmd

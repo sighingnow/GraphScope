@@ -4,7 +4,7 @@ import com.alibaba.graphscope.graphx.GraphLoader
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 
-object Test extends Logging{
+object Test extends Logging {
   def main(args: Array[String]): Unit = {
     // Creates a SparkSession.
     val spark = SparkSession
@@ -19,8 +19,18 @@ object Test extends Logging{
     val eFilePath = args(0);
     val numPartitions = args(1).toInt;
     log.info(s"Running for efile ${eFilePath}")
-    val graph = GraphLoader.edgeListFile[Long, Long](sc, eFilePath, 1L,false, numPartitions)
+    val graph = GraphLoader.edgeListFile[Long, Long](sc, eFilePath, 1L, false, numPartitions)
     graph.cache()
-   log.info(s"Finish running test, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
+    log.info(s"Finish loading, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
+
+    val res = graph.pregel(99999L, maxIterations = 100)((vid, vd, msg) => {
+      msg
+    },
+      triplet => {
+        Iterator.empty
+      },
+      (a, b) => a
+    )
+    log.info(s"Finish query, graph vertices: ${res.numVertices}  and edges: ${res.numEdges}")
   }
 }
