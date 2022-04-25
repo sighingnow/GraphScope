@@ -23,11 +23,16 @@ object Test extends Logging {
     graph.cache()
     log.info(s"Finish loading, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
 
-    val res = graph.pregel(99999L, maxIterations = 100)((vid, vd, msg) => {
-      msg
-    },
+    val res = graph.pregel(99999L, maxIterations = 100)(
+      (vid, vd, msg) => {
+        math.min(vd,msg)
+      },
       triplet => {
-        Iterator.empty
+        if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
+          Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
+        } else {
+          Iterator.empty
+        }
       },
       (a, b) => a
     )

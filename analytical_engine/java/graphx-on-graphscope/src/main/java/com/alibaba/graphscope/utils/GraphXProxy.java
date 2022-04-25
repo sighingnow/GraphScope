@@ -4,7 +4,6 @@ import com.alibaba.graphscope.conf.GraphXConf;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.factory.GraphXFactory;
 import com.alibaba.graphscope.fragment.IFragment;
-import com.alibaba.graphscope.graph.EdgeContextImpl;
 import com.alibaba.graphscope.graph.GraphXVertexIdManager;
 import com.alibaba.graphscope.graph.GraphxEdgeManager;
 import com.alibaba.graphscope.graph.VertexDataManager;
@@ -14,7 +13,6 @@ import com.alibaba.graphscope.mm.MessageStore;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.parallel.message.DoubleMsg;
 import com.alibaba.graphscope.parallel.message.LongMsg;
-import java.util.BitSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -48,10 +46,10 @@ public class GraphXProxy<VD, ED, MSG_T> {
     private Function2<MSG_T, MSG_T, MSG_T> mergeMsg;
     private GraphXVertexIdManager idManager;
     private VertexDataManager<VD> vertexDataManager;
-    private MessageStore<MSG_T,VD> inComingMessageStore, outgoingMessageStore;
-//    private EdgeContextImpl<VD, ED, MSG_T> edgeContext;
-    private GSEdgeTriplet<VD,ED> edgeTriplet;
-    private GSEdgeTriplet<VD,ED>[] edgeTriplets;
+    private MessageStore<MSG_T, VD> inComingMessageStore, outgoingMessageStore;
+    //    private EdgeContextImpl<VD, ED, MSG_T> edgeContext;
+    private GSEdgeTriplet<VD, ED> edgeTriplet;
+    private GSEdgeTriplet<VD, ED>[] edgeTriplets;
     private GraphXConf<VD, ED, MSG_T> conf;
     private GraphxEdgeManager<VD, ED, MSG_T> edgeManager;
     private DefaultMessageManager messageManager;
@@ -81,10 +79,11 @@ public class GraphXProxy<VD, ED, MSG_T> {
 //        this.edgeContext = GraphXFactory.createEdgeContext(conf);
         this.edgeTriplet = GraphXFactory.createEdgeTriplet(conf);
         this.edgeTriplets = new GSEdgeTriplet[numCores];
-        for (int i = 0; i < numCores; ++i){
+        for (int i = 0; i < numCores; ++i) {
             this.edgeTriplets[i] = GraphXFactory.createEdgeTriplet(conf);
         }
-        this.edgeManager = GraphXFactory.createEdgeManager(conf, idManager, vertexDataManager, outgoingMessageStore);
+        this.edgeManager = GraphXFactory.createEdgeManager(conf, idManager, vertexDataManager,
+            outgoingMessageStore);
         executorService = Executors.newFixedThreadPool(numCores);
     }
 
@@ -97,8 +96,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
 
         idManager.init(graphxFragment);
         vertexDataManager.init(graphxFragment);
-        inComingMessageStore.init(graphxFragment, idManager,vertexDataManager, mergeMsg);
-        outgoingMessageStore.init(graphxFragment,  idManager, vertexDataManager,mergeMsg);
+        inComingMessageStore.init(graphxFragment, idManager, vertexDataManager, mergeMsg);
+        outgoingMessageStore.init(graphxFragment, idManager, vertexDataManager, mergeMsg);
 //        edgeContext.init(outgoingMessageStore);
         //edgeTriplet no initialization
         edgeManager.init(graphxFragment, numCores);
@@ -148,7 +147,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
                             try {
                                 for (long lid = curBegin; lid < curEnd; ++lid) {
                                     vertexDataManager.setVertexData(lid,
-                                        vprog.apply(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid),
+                                        vprog.apply(idManager.lid2Oid(lid),
+                                            vertexDataManager.getVertexData(lid),
                                             initialMessage));
                                 }
                             } catch (Exception e) {
@@ -173,7 +173,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
             CountDownLatch countDownLatch = new CountDownLatch(numCores);
             int originEnd = innerVerticesNum;
             for (int tid = 0; tid < numCores; ++tid) {
-                GSEdgeTriplet<VD,ED> threadTriplet = edgeTriplets[tid];
+                GSEdgeTriplet<VD, ED> threadTriplet = edgeTriplets[tid];
                 int finalTid = tid;
                 executorService.execute(
                     () -> {
@@ -186,8 +186,10 @@ public class GraphXProxy<VD, ED, MSG_T> {
                             }
                             try {
                                 for (long lid = curBegin; lid < curEnd; ++lid) {
-                                    threadTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
-                                    edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet, sendMsg);
+                                    threadTriplet.setSrcOid(idManager.lid2Oid(lid),
+                                        vertexDataManager.getVertexData(lid));
+                                    edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet,
+                                        sendMsg);
                                 }
                             } catch (Exception e) {
                                 e.printStackTrace();
@@ -214,8 +216,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
     }
 
     public void IncEval() {
-        if (round >= maxIterations){
-            return ;
+        if (round >= maxIterations) {
+            return;
         }
         outgoingMessageStore.swap(inComingMessageStore);
         Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
@@ -238,7 +240,8 @@ public class GraphXProxy<VD, ED, MSG_T> {
             //after running vprog, we now send msg and merge msg
             for (long lid = 0; lid < innerVerticesNum; ++lid) {
                 if (inComingMessageStore.messageAvailable(lid)) {
-                    edgeTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
+                    edgeTriplet.setSrcOid(idManager.lid2Oid(lid),
+                        vertexDataManager.getVertexData(lid));
                     edgeManager.iterateOnEdges(lid, edgeTriplet, sendMsg);
                     sendMsgCnt += 1;
                 }
@@ -260,7 +263,6 @@ public class GraphXProxy<VD, ED, MSG_T> {
         }
         Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
         long innerVerticesNum = this.graphxFragment.getInnerVerticesNum();
-
 
         inComingMessageStore.clear();
         outgoingMessageStore.swap(inComingMessageStore);
@@ -302,10 +304,11 @@ public class GraphXProxy<VD, ED, MSG_T> {
                                 try {
                                     for (long lid = curBegin; lid < curEnd; ++lid) {
                                         if (inComingMessageStore.messageAvailable(lid)) {
-					    Long oid = idManager.lid2Oid(lid);
-				            VD vdata = vertexDataManager.getVertexData(lid);
-					    MSG_T msg = inComingMessageStore.getMessage(lid);
-                                            vertexDataManager.setVertexData(lid, vprog.apply(oid,vdata,msg));
+                                            Long oid = idManager.lid2Oid(lid);
+                                            VD vdata = vertexDataManager.getVertexData(lid);
+                                            MSG_T msg = inComingMessageStore.getMessage(lid);
+                                            vertexDataManager.setVertexData(lid,
+                                                vprog.apply(oid, vdata, msg));
                                         }
                                     }
                                 } catch (Exception e) {
@@ -330,7 +333,7 @@ public class GraphXProxy<VD, ED, MSG_T> {
                 int originEnd = (int) innerVerticesNum;
                 CountDownLatch countDownLatch = new CountDownLatch(numCores);
                 for (int tid = 0; tid < numCores; ++tid) {
-                    GSEdgeTriplet<VD,ED> threadTriplet = edgeTriplets[tid];
+                    GSEdgeTriplet<VD, ED> threadTriplet = edgeTriplets[tid];
                     int finalTid = tid;
                     executorService.execute(
                         () -> {
@@ -344,8 +347,10 @@ public class GraphXProxy<VD, ED, MSG_T> {
                                 try {
                                     for (long lid = curBegin; lid < curEnd; ++lid) {
                                         if (inComingMessageStore.messageAvailable(lid)) {
-                                         threadTriplet.setSrcOid(idManager.lid2Oid(lid), vertexDataManager.getVertexData(lid));
-                                         edgeManager.iterateOnEdgesParallel(finalTid, lid, threadTriplet, sendMsg);
+                                            threadTriplet.setSrcOid(idManager.lid2Oid(lid),
+                                                vertexDataManager.getVertexData(lid));
+                                            edgeManager.iterateOnEdgesParallel(finalTid, lid,
+                                                threadTriplet, sendMsg);
                                         }
                                     }
                                 } catch (Exception e) {
@@ -372,7 +377,10 @@ public class GraphXProxy<VD, ED, MSG_T> {
             logger.info("Frag {} No message received", graphxFragment.fid());
         }
         round += 1;
-        logger.info("[frag {} Profiling]: end of round {}, receiveMsg cost {}ms, vprog cost {}ms, sendMsg cost {} flush msg {}",graphxFragment.fid(), round, receiveTime/ 1000000, vprogTime /1000000, msgSendTime / 1000000, flushTime / 1000000);
+        logger.info(
+            "[frag {} Profiling]: end of round {}, receiveMsg cost {}ms, vprog cost {}ms, sendMsg cost {} flush msg {}",
+            graphxFragment.fid(), round, receiveTime / 1000000, vprogTime / 1000000,
+            msgSendTime / 1000000, flushTime / 1000000);
         return false;
     }
 
@@ -415,11 +423,11 @@ public class GraphXProxy<VD, ED, MSG_T> {
         return msgReceived > 0;
     }
 
-    public VertexDataManager<VD> getVertexDataManager(){
+    public VertexDataManager<VD> getVertexDataManager() {
         return vertexDataManager;
     }
 
-    public MessageStore<MSG_T,VD> getOutgoingMessageStore(){
+    public MessageStore<MSG_T, VD> getOutgoingMessageStore() {
         return outgoingMessageStore;
     }
 }
