@@ -3,6 +3,9 @@ package com.alibaba.graphscope.graphx;
 import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
 import com.alibaba.graphscope.utils.MPIUtils;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -26,10 +29,12 @@ public class FragmentOps {
     private static String EDGE_MAPPED_SIZE = "--edge_mapped_size";
     private static String VD_TYPE = "--vd_type";
     private static String ED_TYPE = "--ed_type";
+    private static String MPI_LOG_FILE = "/tmp/graphx-mpi-log";
 
 
     public static <OID, VID, GS_VD, GS_ED, GX_VD, GX_ED> String graph2Fragment(
-        String[]vertexMappedFiles, String[]edgeMappedFiles, long vertexMappedSize, long edgeMappedSize, Boolean cluster, String vdType, String edType) {
+        String[]vertexMappedFiles, String[]edgeMappedFiles, long vertexMappedSize, long edgeMappedSize, Boolean cluster, String vdType, String edType)
+        throws FileNotFoundException {
         //Duplicate.
         String[] vertexMappedFilesDedup = dedup(vertexMappedFiles);
         String[] edgeMappedFilesDedup = dedup(edgeMappedFiles);
@@ -49,35 +54,36 @@ public class FragmentOps {
         logger.info("Running command: " + String.join(" ", commands));
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command(commands);
-        processBuilder.inheritIO().redirectOutput(ProcessBuilder.Redirect.PIPE);
+        //processBuilder.inheritIO().redirectOutput(ProcessBuilder.Redirect.PIPE);
         //processBuilder.inheritIO();
+        processBuilder.inheritIO().redirectOutput(new File(MPI_LOG_FILE));
         Process process = null;
         String fragIds = null;
         try {
             process = processBuilder.start();
-            BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line = br.readLine();
-            logger.info(line);
-            while (line != null){
-                logger.info(line);
-                if (line.contains("[FragIds]:")){
-                    int pos = line.indexOf("[FragIds]:");
-                    fragIds = line.substring(pos + 10);
-                }
-                line = br.readLine();
-            }
             int exitCode = process.waitFor();
             logger.info("Mpi process exit code {}", exitCode);
             if (exitCode != 0) {
                 throw new IllegalStateException("Error in mpi process" + exitCode);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
         long endTime = System.nanoTime();
         logger.info("Total time spend on running mpi processes : {}ms", (endTime - startTime) / 1000000);
+        //read fragids
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(MPI_LOG_FILE));
+            String line = br.readLine();
+            logger.info(line);
+            if (line != null){
+               fragIds = line;
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+
         return fragIds;
     }
 

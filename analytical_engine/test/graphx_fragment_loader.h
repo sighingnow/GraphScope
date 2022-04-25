@@ -49,6 +49,7 @@ DECLARE_int64(edge_mapped_size);
 DECLARE_bool(directed);
 DECLARE_string(vd_type);
 DECLARE_string(ed_type);
+DECLARE_string(frag_ids_path);
 
 namespace gs {
 
@@ -195,6 +196,10 @@ void Run() {
     std::vector<vineyard::ObjectID> ids;
     comm.AllGather(projected_frag_id, ids);
     LOG(INFO) << "[FragIds]:" << fragIdsToStr(ids);
+    std::ofstream unused_stream;
+    unused_stream.open(FLAGS_frag_ids_path);
+    unused_stream << fragIdsToStr(ids);
+    unused_stream.close();
   }
 }
 

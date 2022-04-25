@@ -37,6 +37,7 @@ DEFINE_int64(edge_mapped_size, 512 * 1024 * 1024, "edge mapped size");
 DEFINE_bool(directed, true, "directed or not");
 DEFINE_string(vd_type, "int64_t", "vertex data type");
 DEFINE_string(ed_type, "int64_t", "vertex data type");
+DEFINE_string(frag_ids_path, "/tmp/graphx-mpi-log", "path for fragids");
 // put all flags in a json str
 
 int main(int argc, char* argv[]) {

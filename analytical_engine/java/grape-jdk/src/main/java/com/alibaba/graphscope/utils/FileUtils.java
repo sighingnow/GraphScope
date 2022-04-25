@@ -3,6 +3,7 @@ package com.alibaba.graphscope.utils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.ProcessBuilder.Redirect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,7 +11,7 @@ public class FileUtils {
     private static Logger logger = LoggerFactory.getLogger(FileUtils.class.getName());
     public static long getNumLinesOfFile(String path) {
         ProcessBuilder builder = new ProcessBuilder("wc", "-l", path);
-        builder.inheritIO().redirectOutput(ProcessBuilder.Redirect.PIPE);
+        builder.inheritIO().redirectOutput(Redirect.PIPE);
         Process process = null;
         try {
             process = builder.start();
