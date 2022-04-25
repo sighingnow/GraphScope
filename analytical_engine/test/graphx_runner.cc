@@ -96,6 +96,7 @@ int main(int argc, char* argv[]) {
         "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>";
 
     gs::CreateAndQuery<ProjectedFragmentType>(params, frag_name);
+    gs::Finalize();
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
     using ProjectedFragmentType =
@@ -103,9 +104,9 @@ int main(int argc, char* argv[]) {
     std::string frag_name =
         "gs::ArrowProjectedFragment<int64_t,uint64_t,double,double>";
     gs::CreateAndQuery<ProjectedFragmentType>(params, frag_name);
+    gs::Finalize();
   }
 
-  gs::Finalize();
   VLOG(1) << "Finish Querying.";
 
   google::ShutdownGoogleLogging();
