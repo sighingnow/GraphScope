@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
     gs::Finalize();
   }
   else {
-    LOG(ERROR) << "Unrecognized: " << FLAGS_vd_clas << ", " << FLAGS_ed_class;
+    LOG(ERROR) << "Unrecognized: " << FLAGS_vd_class << ", " << FLAGS_ed_class;
   }
 
   VLOG(1) << "Finish Querying.";

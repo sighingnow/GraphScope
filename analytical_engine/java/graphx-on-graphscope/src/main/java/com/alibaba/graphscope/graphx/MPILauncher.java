@@ -113,9 +113,9 @@ public class MPILauncher<VD, ED, MSG> {
 
     private String clzToStr(Class<?> clz) {
         if (clz.equals(Integer.class) || clz.equals(int.class)) {
-            return "int";
+            return "int32_t";
         } else if (clz.equals(Long.class) || clz.equals(long.class)) {
-            return "long";
+            return "int64_t";
         } else if (clz.equals(Double.class) || clz.equals(double.class)) {
             return "double";
         }
