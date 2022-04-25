@@ -9,6 +9,7 @@ import com.alibaba.graphscope.graph.GraphXVertexIdManager;
 import com.alibaba.graphscope.graph.GraphxEdgeManager;
 import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.graphx.GSEdgeTriplet;
+import com.alibaba.graphscope.graphx.SharedMemoryRegistry;
 import com.alibaba.graphscope.mm.MessageStore;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.parallel.message.DoubleMsg;
@@ -59,10 +60,13 @@ public class GraphXProxy<VD, ED, MSG_T> {
     private ExecutorService executorService;
     private int numCores, maxIterations, round;
     private long vprogTime, msgSendTime, receiveTime, flushTime;
+    private MappedBuffer vdataBuffer;
 
     public GraphXProxy(GraphXConf<VD, ED, MSG_T> conf, Function3<Long, VD, MSG_T, VD> vprog,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> sendMsg,
-        Function2<MSG_T, MSG_T, MSG_T> mergeMsg, int numCores) {
+        Function2<MSG_T, MSG_T, MSG_T> mergeMsg, int numCores, String vdataPath, long vdataSize) {
+        vdataBuffer = SharedMemoryRegistry.getOrCreate().mapFor(vdataPath, vdataSize);
+        logger.info("mapped vdata buffer {} of size {}", vdataBuffer, vdataSize);
         this.numCores = numCores;
         this.conf = conf;
         this.vprog = vprog;
