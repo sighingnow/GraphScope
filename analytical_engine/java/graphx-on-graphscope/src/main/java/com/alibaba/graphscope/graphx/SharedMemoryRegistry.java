@@ -24,6 +24,10 @@ public class SharedMemoryRegistry {
         catch (Exception e){
             throw new IllegalStateException("Fail to load library: grape-jni");
         }
+        catch (UnsatisfiedLinkError error){
+            logger.error("Error in loading jni library");
+            logger.error(error.getMessage());
+        }
     }
     private static SharedMemoryRegistry registry;
 
