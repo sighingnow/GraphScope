@@ -174,7 +174,7 @@ object GrapeGraphImpl {
     val edgesCached = edgeRdd.withTargetStorageLevel(edgeStorageLevel).cache()
     val vertices =
       GrapeVertexRDD.fromEdges(edgesCached, edgesCached.partitions.length, defaultVertexAttr)
-        .withTargetStorageLevel(vertexStorageLevel)
+        .withTargetStorageLevel(vertexStorageLevel).cache()
     fromExistingRDDs(vertices, edgesCached)
   }
 }

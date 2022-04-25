@@ -49,13 +49,15 @@ public class FragmentOps {
         logger.info("Running command: " + String.join(" ", commands));
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command(commands);
-        processBuilder.inheritIO();
+        processBuilder.inheritIO().redirectOutput(ProcessBuilder.Redirect.PIPE);
+        //processBuilder.inheritIO();
         Process process = null;
         String fragIds = null;
         try {
             process = processBuilder.start();
             BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line = br.readLine();
+            logger.info(line);
             while (line != null){
                 logger.info(line);
                 if (line.contains("[FragIds]:")){
