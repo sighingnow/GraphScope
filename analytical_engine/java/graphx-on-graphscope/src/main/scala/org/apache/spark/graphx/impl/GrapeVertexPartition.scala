@@ -16,7 +16,6 @@ class GrapeVertexPartition[VD : ClassTag](pid : Int, grapeVertexMapPartition: Gr
 
   def iterator() : Iterator[(VertexId, VD)] = {
     new Iterator[(VertexId,VD)] {
-      private[this] var tuple = new [VertexId,VD](0,null.asInstanceOf[VD])
       private[this] var lid = 0
 
       override def hasNext: Boolean = lid < innerVertexNum
@@ -45,6 +44,16 @@ class GrapeVertexPartition[VD : ClassTag](pid : Int, grapeVertexMapPartition: Gr
       log.info(s"Partition: ${pid} got vertex ${oid}, inner vertex ${lid}, update to ${newData}");
       data.update(lid, newData)
     }
+  }
+
+  /**
+   * A new grapeVertexPartition with new data.
+   * @return
+   */
+  def copyWithNewData(newDefaultValue : VD = defaultValue) : GrapeVertexPartition[VD] = {
+//    val newValues = new Array[VD](innerVertexNum)
+    val newValues = Array.fill(innerVertexNum)(newDefaultValue)
+    new GrapeVertexPartition[VD](pid, grapeVertexMapPartition, newDefaultValue, newValues)
   }
 
   def map[VD2 : ClassTag](f: (VertexId, VD) => VD2) : GrapeVertexPartition[VD2] = {

@@ -141,8 +141,6 @@ object Pregel extends Logging {
 
     graphScopePregel.run()
 
-    graph
-
   } // end of apply
 
 } // end of class Pregel
