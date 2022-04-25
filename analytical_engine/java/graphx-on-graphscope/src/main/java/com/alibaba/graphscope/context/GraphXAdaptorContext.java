@@ -31,27 +31,24 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     DefaultContextBase<Long, Long, VDATA_T, EDATA_T> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphXAdaptorContext.class.getName());
-    private static String USER_CLASS = "user_class";
-    private static String VPROG_SERIALIZATION = "vprog_serialization";
-    private static String SEND_MSG_SERIALIZATION = "send_msg_serialization";
-    private static String MERGE_MSG_SERIALIZATION = "merge_msg_serialization";
+    private static String VPROG_SERIALIZATION = "vprog_path";
+    private static String SEND_MSG_SERIALIZATION = "send_msg_path";
+    private static String MERGE_MSG_SERIALIZATION = "merge_msg_path";
+    private static String VDATA_SERIALIZATION = "vdata_path";
+    private static String VDATA_SIZE = "vdata_size";
     private static String VD_CLASS = "vd_class";
     private static String ED_CLASS = "ed_class";
     private static String MSG_CLASS = "msg_class";
     private static String INITIAL_MSG = "initial_msg";
-    private static String TOTAL_CORES = "total_cores";//total cores assigned to this cluster.
-    private String userClassName;
-    private String vprogFilePath, sendMsgFilePath, mergeMsgFilePath;
+    private static int numCores = 8;
+    private String vprogFilePath, sendMsgFilePath, mergeMsgFilePath, vdataFilePath;
     private Class<?> vdClass, edClass, msgClass;
     private GraphXConf conf;
     private GraphXProxy graphXProxy;
     private Object initialMsg;
-    private int cores,maxIterations;
+    private int maxIterations;
     public ExecutorService executor;
 
-    public String getUserClassName() {
-        return userClassName;
-    }
     public GraphXConf getConf(){
         return conf;
     }
@@ -78,8 +75,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
         String edClassStr = jsonObject.getString(ED_CLASS);
         String msgClassStr = jsonObject.getString(MSG_CLASS);
         logger.info("received vd {} ed {} msg {}", vdClassStr, edClassStr, msgClassStr);
-        cores = jsonObject.getInteger(TOTAL_CORES) / frag.fnum();
-        logger.info("Parallelism: " + cores);
+        logger.info("Parallelism: " + numCores);
 
         maxIterations = jsonObject.getInteger("max_iterations");
         logger.info("Max iterations: " + maxIterations);
@@ -92,24 +88,18 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
         //TODO: get vdata class from conf
         createFFIContext(frag, (Class<? extends VDATA_T>) conf.getVdataClass(), false);
 
-        if (jsonObject.containsKey(USER_CLASS) && !jsonObject.getString(USER_CLASS).isEmpty()) {
-            logger.info("Parse user app class {} from json str", jsonObject.getString(USER_CLASS));
-            userClassName = jsonObject.getString(USER_CLASS);
-//        }
-        } else {
-            throw new IllegalStateException("user class required");
-        }
-
         this.vprogFilePath = jsonObject.getString(VPROG_SERIALIZATION);
         this.sendMsgFilePath = jsonObject.getString(SEND_MSG_SERIALIZATION);
         this.mergeMsgFilePath = jsonObject.getString(MERGE_MSG_SERIALIZATION);
+        this.vdataFilePath = jsonObject.getString(VDATA_SERIALIZATION);
+        long vdataSize = jsonObject.getLong(VDATA_SIZE);
         if (this.vprogFilePath == null || this.vprogFilePath.isEmpty() ||
             this.sendMsgFilePath == null || this.sendMsgFilePath.isEmpty() ||
         this.mergeMsgFilePath == null || this.mergeMsgFilePath.isEmpty()){
             throw new IllegalStateException("file path empty " + vprogFilePath + ", " + sendMsgFilePath + "," + mergeMsgFilePath);
         }
 
-        graphXProxy = GraphXFactory.createGraphXProxy(conf, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, 8);
+        graphXProxy = GraphXFactory.createGraphXProxy(conf, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, vdataFilePath, numCores, vdataSize);
         String msgStr = jsonObject.getString(INITIAL_MSG);
         logger.info("Initial msg in str: " + msgStr);
         //get initial msg
@@ -154,10 +144,10 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
 
 
     private Class<?> loadClassWithName(ClassLoader cl, String name){
-        if (name.equals("int")){
+        if (name.equals("int") || name.equals("int32_t")){
             return Integer.class;
         }
-        else if (name.equals("long")){
+        else if (name.equals("long") || name.equals("int64_t")){
             return Long.class;
         }
         else if (name.equals("double")){

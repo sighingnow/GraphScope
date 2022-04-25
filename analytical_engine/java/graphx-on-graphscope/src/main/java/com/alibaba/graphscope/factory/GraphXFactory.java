@@ -41,20 +41,20 @@ public class GraphXFactory {
     private static <VD, ED, MSG> GraphXProxy<VD, ED, MSG> createGraphXProxy(
         GraphXConf<VD, ED, MSG> conf, Function3<Long, VD, MSG, VD> vprog,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG>>> sendMsg,
-        Function2<MSG, MSG, MSG> mergeMsg, int numCores) {
-        return new GraphXProxy<VD, ED, MSG>(conf, vprog, sendMsg, mergeMsg, numCores);
+        Function2<MSG, MSG, MSG> mergeMsg, int numCores, String vdataPath, long vdataSize) {
+        return new GraphXProxy<VD, ED, MSG>(conf, vprog, sendMsg, mergeMsg, numCores, vdataPath, vdataSize);
     }
 
     public static <VD, ED, MSG> GraphXProxy<VD, ED, MSG> createGraphXProxy(
         GraphXConf<VD, ED, MSG> conf, String vprogFilePath, String sendMsgFilePath,
-        String mergeMsgFilePath, int numCores) {
+        String mergeMsgFilePath, String vdataPath,int numCores, long vdataSize) {
         Function3<Long, VD, MSG, VD> vprog = deserializeVprog(vprogFilePath, conf);
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG>>> sendMsg = deserializeSendMsg(
             sendMsgFilePath, conf);
         Function2<MSG, MSG, MSG> mergeMsg = deserializeMergeMsg(mergeMsgFilePath, conf);
         logger.info("deserialization success: {}, {}, {}", vprog, sendMsg, mergeMsg);
 
-        GraphXProxy<VD, ED, MSG> graphXProxy = createGraphXProxy(conf, vprog, sendMsg, mergeMsg, numCores);
+        GraphXProxy<VD, ED, MSG> graphXProxy = createGraphXProxy(conf, vprog, sendMsg, mergeMsg, numCores, vdataPath, vdataSize);
         logger.info("Construct graphx proxy: " + graphXProxy);
         return graphXProxy;
     }
