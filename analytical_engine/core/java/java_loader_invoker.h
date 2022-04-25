@@ -33,6 +33,8 @@
 #include "arrow/array.h"
 #include "arrow/array/builder_binary.h"
 #include "arrow/builder.h"
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/split.hpp>
 
 #include "grape/communication/communicator.h"
 #include "grape/grape.h"

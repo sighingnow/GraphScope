@@ -49,8 +49,6 @@ public class SharedMemoryRegistry {
         logger.info("MemoryMappedBuffer class loader: " + MappedBuffer.class.getClassLoader());
         logger.info("Set context class loader : " + SharedMemoryRegistry.class.getClassLoader());
         Thread.currentThread().setContextClassLoader(SharedMemoryRegistry.class.getClassLoader());
-        System.loadLibrary("grape-jni");
-        Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
 //        MemoryMappedBuffer res = MemoryMappedBuffer.factory.create(byteString, size);
         MappedBuffer res = MappedBuffer.mapToFile(key, size);
         logger.info("mapping for {}: buffer {} of size: {}", key, res, size);
