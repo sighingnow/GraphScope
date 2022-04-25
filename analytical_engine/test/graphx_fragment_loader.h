@@ -194,7 +194,7 @@ void Run() {
     comm.InitCommunicator(comm_spec.comm());
     std::vector<vineyard::ObjectID> ids;
     comm.AllGather(projected_frag_id, ids);
-    VLOG(1) << "[FragIds]:" << fragIdsToStr(ids);
+    LOG(INFO) << "[FragIds]:" << fragIdsToStr(ids);
   }
 }
 
