@@ -1,6 +1,6 @@
 package com.alibaba.graphscope.example
 
-import com.alibaba.graphscope.graphx.GraphLoader
+import org.apache.spark.graphx.GraphLoader
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 
@@ -19,7 +19,8 @@ object Test extends Logging {
     val eFilePath = args(0);
     val numPartitions = args(1).toInt;
     log.info(s"Running for efile ${eFilePath}")
-    val graph = GraphLoader.edgeListFile[Long, Long](sc, eFilePath, 1L, false, numPartitions)
+//    val graph = GraphLoader.edgeListFile[Long, Long](sc, eFilePath, 1L, false, numPartitions)
+    val graph = GraphLoader.edgeListFile(sc, eFilePath,canonicalOrientation = false,numPartitions)
     val mapped_graph = graph.mapVertices((vid, vdata) => {
       if (vid == 1){
         0L
