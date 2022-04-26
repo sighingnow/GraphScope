@@ -107,7 +107,7 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_getArrowProjectedFragment(
     JNIEnv* env, jclass clz, jlong fragId, jstring jfragName) {
   std::string ipc_socket = "/tmp/vineyard.sock";
   VINEYARD_CHECK_OK(client.Connect(ipc_socket));
-  std::string fragName = JString2String(env, jfragName);
+  std::string fragName = gs::JString2String(env, jfragName);
   if (std::strcmp(
           fragName.c_str(),
           "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>") ==

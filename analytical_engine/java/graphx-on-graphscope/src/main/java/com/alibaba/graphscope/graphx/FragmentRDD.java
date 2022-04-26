@@ -18,7 +18,10 @@ public class FragmentRDD {
             if (nativeClz == null){
                 throw new IllegalStateException("failed to load nativeUtils clz");
             }
-            method = nativeClz.getDeclaredMethod("getArrowProjectedFragment");
+            method = nativeClz.getDeclaredMethod("getArrowProjectedFragment", long.class, String.class);
+	    if (method == null){
+	    	throw new IllegalStateException("method null");
+	     }
         } catch (ClassNotFoundException | NoSuchMethodException e) {
             e.printStackTrace();
         }

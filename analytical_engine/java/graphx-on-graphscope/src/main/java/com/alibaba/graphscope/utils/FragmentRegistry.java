@@ -26,14 +26,17 @@ public class FragmentRegistry {
     }
 
     public static int registFragment(String fragIds){
-        JSONObject jsonObject = JSONObject.parseObject(fragIds);
+  	String[] host2frag = fragIds.split(",");
 
         synchronized (FragmentRegistry.class){
             if (fragId == null){
-                if (jsonObject.containsKey(hostName)){
-                    FragmentRegistry.fragId = jsonObject.getString(hostName);
-                    logger.info("on host {} get frag id{}", hostName, fragId);
-                }
+		for (String val : host2frag){
+		   logger.info("test: {} start with {}, {}", val, hostName, val.startsWith(hostName));
+                   if (val.startsWith(hostName)){
+                       FragmentRegistry.fragId = val.split(":")[1];
+                       logger.info("on host {} get frag id{}", hostName, fragId);
+                    }
+		}
             }
         }
         int partitionId = partition.getAndAdd(1);

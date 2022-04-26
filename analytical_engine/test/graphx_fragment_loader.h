@@ -29,6 +29,8 @@ limitations under the License.
 #include <utility>
 #include <vector>
 
+#include <boost/asio.hpp>
+
 #include "grape/config.h"
 #include "grape/fragment/immutable_edgecut_fragment.h"
 #include "grape/fragment/loader.h"
@@ -132,17 +134,24 @@ vineyard::ObjectID LoadFragment(const grape::CommSpec& comm_spec,
   return projected_fragment->id();
 }
 
-std::string fragIdsToStr(std::vector<vineyard::ObjectID>& ids) {
+std::string fragIdsToStr(std::vector<vineyard::ObjectID>& ids, std::vector<std::string> hosts) {
+  if (ids.size() != hosts.size()){
+    LOG(ERROR) << "size not match: " <<ids.size() << ","<<hosts.size();
+  }
   std::stringstream ss;
   bool first = true;
-  for (auto id : ids) {
-    if (!first) {
-      ss << ",";
-    }
-    ss << id;
-    first = false;
+  for (auto i = 0; i < ids.size(); ++i){
+     if (first){
+        ss << hosts[i]<< ":" << ids[i];
+        first = false;
+     }
+     else {
+        ss << "," << hosts[i] << ":" << ids[i];
+     }
   }
-  return ss.str();
+  std::string hostName2Fragids = ss.str();
+  LOG(INFO) << "host name to frag id" << hostName2Fragids;
+  return hostName2Fragids;
 }
 void Run() {
   grape::InitMPIComm();
@@ -195,15 +204,19 @@ void Run() {
     comm.InitCommunicator(comm_spec.comm());
     std::vector<vineyard::ObjectID> ids;
     comm.AllGather(projected_frag_id, ids);
-    LOG(INFO) << "[FragIds]:" << fragIdsToStr(ids);
+    std::vector<std::string> hosts;
+    comm.AllGather(boost::asio::ip::host_name(), hosts);
+    LOG(INFO) << "[FragIds]:" << fragIdsToStr(ids,hosts);
     std::ofstream unused_stream;
     unused_stream.open(FLAGS_frag_ids_path);
-    unused_stream << fragIdsToStr(ids);
+    unused_stream << fragIdsToStr(ids, hosts);
     unused_stream.close();
   }
 }
 
-
+std::string getHost(){
+    
+}
 
 void Finalize() {
   grape::FinalizeMPIComm();
