@@ -1,8 +1,9 @@
 package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.graphx.FragmentOps
+import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
-import org.apache.spark.graphx.impl.GrapeUtils.classToStr
+import org.apache.spark.graphx.impl.GrapeUtils.{classToStr, generateForeignFragName}
 import org.apache.spark.graphx.utils.SharedMemoryUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -44,27 +45,6 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   val sc = vertices.sparkContext
 
-
-
-  //  def init = {
-  //    //Write data to Memory mapped file.
-  //    val vertexMappedSize = 32L * numVertices / numParitions + 128
-  //    val edgeMappedSize = 32L * numEdges / numParitions + 128
-  //    println("numPartitions: " + numParitions)
-  //    println("reserve memory " + vertexMappedSize + " for per vertex file")
-  //    println("reserve memory " + edgeMappedSize + " for per edge file")
-  //    val vertexFileArray = vertices.mapToFile("graphx-vertex", vertexMappedSize)
-  //    val edgeFileArray = edges.mapToFile("graphx-edge", edgeMappedSize) // actual 24
-  //    println("map result for vertex: " + vertexFileArray.mkString("Array(", ", ", ")"))
-  //    println("map result for edge : " + edgeFileArray.mkString("Array(", ", ", ")"))
-  //    //Serialize the info to string, and pass it to mpi processes, which are launched to load the graph
-  //    //to fragment
-  //    this.fragIds = FragmentOps.graph2Fragment(vertexFileArray, edgeFileArray, vertexMappedSize, edgeMappedSize, !sc.isLocal, classToStr(vdClass), classToStr(edClass))
-  //    println(s"Fragid: [${fragIds}]")
-  //    //fragIds = 10001,111002,11003
-  //    //Fetch back the fragment id, construct an object to hold fragment meta.
-  //    //When pregel invoked, we will use this fragment for graph computing.
-  //  }
 
   override val triplets: RDD[EdgeTriplet[VD, ED]] = null
 
@@ -184,6 +164,23 @@ object GrapeGraphImpl {
       vertexMappedSize, edgeMappedSize, !sc.isLocal, classToStr(vdClass), classToStr(edClass))
     println(s"Fragid: [${fragIds}]")
     //fragIds = 10001,111002,11003
+    val grapePartition = oldGraph.vertices.partitionsRDD.mapPartitions(iter => {
+      if (iter.hasNext){
+        val grapePid = FragmentRegistry.registFragment(fragIds);
+        Iterator(grapePid)
+      }
+      else {
+        Iterator.empty
+      }
+    })
+    grapePartition.foreachPartition(
+      iter => {
+        if (iter.hasNext){
+          val pid = iter.next()
+          FragmentRegistry.constructFragment(pid,generateForeignFragName(vdClass,edClass))
+        }
+      })
+
 
     null
   }

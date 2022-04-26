@@ -42,4 +42,14 @@ object GrapeUtils {
     require(method != null, "can not find method: " + name)
     method
   }
+
+  def generateForeignFragName[VD: ClassTag, ED : ClassTag](vdClass : Class[VD], edClass : Class[ED]): String ={
+    val sb = StringBuilder
+    sb.+("gs::ArrowProjectedFragment<int64_t,uint64_t")
+    sb.+(classToStr(vdClass))
+    sb.+(",")
+    sb.+(classToStr(edClass))
+    sb.+(">")
+    sb.toString
+  }
 }

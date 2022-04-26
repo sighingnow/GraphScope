@@ -57,7 +57,8 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_createLoader(JNIEnv*, jclass) {
   graph->edges.push_back(edge);
 
   // create arrowFragmentLoader and return
-  static auto loader = std::make_shared<FragmentLoaderType>(client, comm_spec, graph);
+  static auto loader =
+      std::make_shared<FragmentLoaderType>(client, comm_spec, graph);
   VLOG(1) << "Sucessfully create load;";
   return reinterpret_cast<jlong>(loader.get());
 }
@@ -85,9 +86,9 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_invokeLoadingAndProjection(
         LOG(FATAL) << "Unmatched error " << unmatched;
         return 0;
       });
-  VLOG(1) << "frag id: "<< fragment_id;
-  
-static std::shared_ptr<FragmentType> fragment =
+  VLOG(1) << "frag id: " << fragment_id;
+
+  static std::shared_ptr<FragmentType> fragment =
       std::dynamic_pointer_cast<FragmentType>(client.GetObject(fragment_id));
 
   VLOG(10) << "fid: " << fragment->fid() << "fnum: " << fragment->fnum()
@@ -96,10 +97,30 @@ static std::shared_ptr<FragmentType> fragment =
            << "total v num: " << fragment->GetTotalVerticesNum();
   VLOG(1) << "inner vertices: " << fragment->GetInnerVerticesNum(0);
   // project
-static  std::shared_ptr<ProjectedFragmentType> projected_fragment =
+  static std::shared_ptr<ProjectedFragmentType> projected_fragment =
       ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
   // return projected fragment pointer.
   return reinterpret_cast<jlong>(projected_fragment.get());
+}
+JNIEXPORT jlong JNICALL
+Java_com_alibaba_graphscope_runtime_NativeUtils_getArrowProjectedFragment(
+    JNIEnv* env, jclass clz, jlong fragId, jstring jfragName) {
+  std::string ipc_socket = "/tmp/vineyard.sock";
+  VINEYARD_CHECK_OK(client.Connect(ipc_socket));
+  std::string fragName = JString2String(env, jfragName);
+  if (std::strcmp(
+          fragName.c_str(),
+          "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>") ==
+      0) {
+    using FragType =
+        gs::ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
+    static std::shared_ptr<FragType> fragment =
+        std::dynamic_pointer_cast<FragType>(client.GetObject(fragId));
+    return reinterpret_cast<jlong>(fragment.get());
+  } else {
+    LOG(ERROR) << "Unrecognized fragname: " << fragName;
+  }
+  return 0;
 }
 
 #ifdef __cplusplus
