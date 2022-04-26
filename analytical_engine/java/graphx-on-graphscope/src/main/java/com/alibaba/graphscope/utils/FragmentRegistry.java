@@ -8,19 +8,13 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FragmentRegistry {
 
-    //    private static Logger logger = LoggerFactory.getLogger(FragmentRegistry.class.getName());
-    private static BufferedWriter writer;
-
-    static {
-        try {
-            writer = new BufferedWriter(new FileWriter("/tmp/fragment-registry"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+        private static Logger logger = LoggerFactory.getLogger(FragmentRegistry.class.getName());
+//    private static BufferedWriter writer;
 
     private static AtomicInteger partition = new AtomicInteger(0);
     private static String hostName;
@@ -42,10 +36,10 @@ public class FragmentRegistry {
         synchronized (FragmentRegistry.class) {
             if (fragId == null) {
                 for (String val : host2frag) {
-                    writer.write("test: " + val + " start with " + hostName + ", matches: " + val.startsWith(hostName) + "\n");
+                    logger.info("test: " + val + " start with " + hostName + ", matches: " + val.startsWith(hostName));
                     if (val.startsWith(hostName)) {
                         FragmentRegistry.fragId = val.split(":")[1];
-                        writer.write("on host " + hostName + " get frag id " + fragId + "\n");
+                        logger.info("on host " + hostName + " get frag id " + fragId + "\n");
                     }
                 }
             }
@@ -60,7 +54,7 @@ public class FragmentRegistry {
     public static void constructFragment(int pid, String fragName) throws IOException {
         if (!lock.isLocked()) {
             if (lock.tryLock()) {
-                writer.write("partition " + pid + " successfully got lock\n");
+                logger.info("partition " + pid + " successfully got lock");
                 if (fragmentRDD != null) {
                     throw new IllegalStateException(
                         "Impossible: fragment rdd has been constructed" + fragmentRDD);
@@ -69,12 +63,12 @@ public class FragmentRegistry {
                     throw new IllegalStateException("Please register fragment first");
                 }
                 fragmentRDD = FragmentRDD.create(fragId, fragName, partition.get());
-                writer.write("Successfully create fragment RDD\n");
+                logger.info("Successfully create fragment RDD");
             } else {
-                writer.write("partition " + pid + " try to get lock failed");
+                logger.info("partition " + pid + " try to get lock failed");
             }
         } else {
-            writer.write("lock has been acquired when partition " + pid + "arrived\n");
+            logger.info("lock has been acquired when partition " + pid + "arrived");
         }
     }
 

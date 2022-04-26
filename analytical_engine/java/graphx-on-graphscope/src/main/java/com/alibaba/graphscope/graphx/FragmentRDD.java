@@ -1,8 +1,6 @@
 package com.alibaba.graphscope.graphx;
 
 import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -12,16 +10,8 @@ import org.slf4j.LoggerFactory;
 
 public class FragmentRDD {
 
-//    private static Logger logger = LoggerFactory.getLogger(FragmentRDD.class.getName());
-    private static BufferedWriter writer;
-
-    static {
-        try {
-            writer = new BufferedWriter(new FileWriter("/tmp/fragment-rdd"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+    private static Logger logger = LoggerFactory.getLogger(FragmentRDD.class.getName());
+//    private static BufferedWriter writer;
 
     private static String NATIVE_UTILS = "com.alibaba.graphscope.runtime.NativeUtils";
     private static Class<?> nativeClz;
@@ -56,7 +46,7 @@ public class FragmentRDD {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
-        writer.write("Retried fragment: address" + address + " \n");
+        logger.info("Retried fragment: address" + address);
     }
 
     /**
@@ -68,7 +58,7 @@ public class FragmentRDD {
      */
     public static synchronized FragmentRDD create(String fragId, String foreignFragName,
         int numPartitions) throws IOException {
-        writer.write("creating fragment: " + fragId + ", " + numPartitions + "\n");
+        logger.info("creating fragment: " + fragId + ", " + numPartitions);
         return new FragmentRDD(Long.parseLong(fragId), foreignFragName, numPartitions);
     }
 
