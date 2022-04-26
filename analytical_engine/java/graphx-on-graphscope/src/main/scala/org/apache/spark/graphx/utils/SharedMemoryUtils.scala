@@ -22,7 +22,7 @@ object SharedMemoryUtils extends Logging{
           val partition = tuple._1
           val pid = tuple._2
           val bufferedWriter = new BufferedWriter(new FileWriter(new File("/tmp/graphx-log-" + pid)))
-          val innerVerticesNum = partition.values.length
+          val innerVerticesNum = partition.size
 
           val dstFile = vprefix + pid
           val mappedBuffer = registry.mapFor(dstFile, mappedSize)
@@ -38,15 +38,16 @@ object SharedMemoryUtils extends Logging{
           mappedBuffer.writeLong(8L * innerVerticesNum)
           val vertexIter = partition.iterator
           val vidArray = new Array[Long](innerVerticesNum)
-          val vdataArray = partition.values
+          val vdataArray = new Array[VD](innerVerticesNum)
           require(vidArray.length == vdataArray.length)
           var ind = 0;
           while (vertexIter.hasNext){
             val value = vertexIter.next()
             vidArray(ind) = value._1
+            vdataArray(ind) = value._2
             ind += 1
           }
-          writeVertices(mappedBuffer, vidArray, vdataArray, innerVerticesNum, vdClass)
+          writeVertices(mappedBuffer, vidArray, vdataArray, innerVerticesNum, vdClass,bufferedWriter)
         }
       }
     )
@@ -159,7 +160,7 @@ object SharedMemoryUtils extends Logging{
     if (vdClass.equals(classOf[Long])) {
       while (ind < size) {
         buffer.writeLong(attrs(ind).asInstanceOf[Long])
-        bufferedWriter.write("write " + attrs(ind) + ",ind " + ind + " size: " + size)
+        bufferedWriter.write("write " + attrs(ind) + ",ind " + ind + " size: " + size + "\n")
         ind += 1
       }
     }
