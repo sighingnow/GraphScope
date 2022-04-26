@@ -20,7 +20,7 @@ object Test extends Logging {
     val numPartitions = args(1).toInt;
     log.info(s"Running for efile ${eFilePath}")
 //    val graph = GraphLoader.edgeListFile[Long, Long](sc, eFilePath, 1L, false, numPartitions)
-    val graph = GraphLoader.edgeListFile(sc, eFilePath,canonicalOrientation = false,numPartitions)
+    val graph = GraphLoader.edgeListFileV2(sc, eFilePath,canonicalOrientation = false,numPartitions)
     val mapped_graph = graph.mapVertices((vid, vdata) => {
       if (vid == 1){
         0L

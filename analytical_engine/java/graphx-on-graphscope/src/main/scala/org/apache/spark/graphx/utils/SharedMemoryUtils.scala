@@ -46,7 +46,7 @@ object SharedMemoryUtils extends Logging{
             vidArray(ind) = value._1
             ind += 1
           }
-          writeVertices(mappedBuffer, vidArray, vdataArray, innerVerticesNum, vdClass)
+          writeVertices(mappedBuffer, vidArray, vdataArray, innerVerticesNum, vdClass, bufferedWriter)
         }
       }
     )

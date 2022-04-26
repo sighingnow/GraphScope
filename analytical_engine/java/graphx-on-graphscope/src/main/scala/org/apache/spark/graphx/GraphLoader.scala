@@ -12,7 +12,6 @@ object GraphLoader extends Logging {
   def edgeListFileV2[VD: ClassTag, ED: ClassTag]
   (sc: SparkContext,
    path: String,
-   defaultEdata: ED,
    canonicalOrientation: Boolean = false,
    numEdgePartitions: Int = -1,
    edgeStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
