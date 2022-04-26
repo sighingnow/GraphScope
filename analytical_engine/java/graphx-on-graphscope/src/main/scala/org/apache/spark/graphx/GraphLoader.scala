@@ -1,10 +1,9 @@
 package org.apache.spark.graphx
 
-import org.apache.spark.graphx.impl.{EdgePartitionBuilder, GrapeEdgePartitionBuilder, GrapeGraphImpl, GraphImpl}
+import org.apache.spark.SparkContext
+import org.apache.spark.graphx.impl.{EdgePartitionBuilder, GrapeGraphImpl, GraphImpl}
 import org.apache.spark.internal.Logging
-import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{HashPartitioner, SparkContext}
 
 import java.util.concurrent.TimeUnit
 import scala.reflect.ClassTag
@@ -18,7 +17,7 @@ object GraphLoader extends Logging {
    numEdgePartitions: Int = -1,
    edgeStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
    vertexStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
-  : Graph[VD, ED] = {
+  : Graph[Long, Long] = {
     val startTimeNs = System.nanoTime()
     // Parse the edge data table directly into edge partitions
     val lines =
@@ -51,10 +50,10 @@ object GraphLoader extends Logging {
     logInfo(s"It took ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTimeNs)} ms" +
       " to load the edges")
 
-//    GraphImpl.fromEdgePartitions(edges, defaultVertexAttr = 1, edgeStorageLevel = edgeStorageLevel,
-//      vertexStorageLevel = vertexStorageLevel)
+    //    GraphImpl.fromEdgePartitions(edges, defaultVertexAttr = 1, edgeStorageLevel = edgeStorageLevel,
+    //      vertexStorageLevel = vertexStorageLevel)
     val res = GraphImpl.fromEdgePartitions(edges, defaultVertexAttr = 1, edgeStorageLevel = edgeStorageLevel,
-      vertexStorageLevel = vertexStorageLevel)
+      vertexStorageLevel = vertexStorageLevel).mapVertices((vid, attr) => attr.toLong).mapEdges(edge => edge.attr.toLong)
     GrapeGraphImpl.fromGraphXGraph(res)
   }
 
@@ -65,8 +64,7 @@ object GraphLoader extends Logging {
                     numEdgePartitions: Int = -1,
                     edgeStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
                     vertexStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
-  : Graph[Int, Int] =
-  {
+  : Graph[Int, Int] = {
     val startTimeNs = System.nanoTime()
     // Parse the edge data table directly into edge partitions
     val lines =

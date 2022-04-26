@@ -157,6 +157,9 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
 object GrapeGraphImpl {
   def fromGraphXGraph[VD:ClassTag, ED: ClassTag](oldGraph: Graph[VD,ED]): GrapeGraphImpl[VD,ED] ={
+    val sc = oldGraph.vertices.sparkContext
+    val vdClass = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
+    val edClass = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
     require(oldGraph.isInstanceOf[GraphImpl[VD,ED]], "expect a graphImpl")
     val numVertices = oldGraph.numVertices
     val numEdges = oldGraph.numEdges //these are total edges
@@ -171,17 +174,18 @@ object GrapeGraphImpl {
     val vertexFileArray = SharedMemoryUtils.mapVerticesToFile(oldGraph.vertices, "graphx-vertex", vertexMappedSize)
 //    val vertexFileArray = vertices.mapToFile("graphx-vertex", vertexMappedSize)
 //    val edgeFileArray = edges.mapToFile("graphx-edge", edgeMappedSize) // actual 24
-    val vertexFileArray = SharedMemoryUtils.mapEdgesToFile(oldGraph.edges, "graphx-vertex", vertexMappedSize)
+    val edgeFileArray = SharedMemoryUtils.mapEdgesToFile(oldGraph.edges, "graphx-edge", vertexMappedSize)
 
     println("map result for vertex: " + vertexFileArray.mkString("Array(", ", ", ")"))
     println("map result for edge : " + edgeFileArray.mkString("Array(", ", ", ")"))
     //Serialize the info to string, and pass it to mpi processes, which are launched to load the graph
     //to fragment
-    this.fragIds = FragmentOps.graph2Fragment(vertexFileArray, edgeFileArray, vertexMappedSize, edgeMappedSize, !sc.isLocal, classToStr(vdClass), classToStr(edClass))
+    val fragIds = FragmentOps.graph2Fragment(vertexFileArray, edgeFileArray,
+      vertexMappedSize, edgeMappedSize, !sc.isLocal, classToStr(vdClass), classToStr(edClass))
     println(s"Fragid: [${fragIds}]")
     //fragIds = 10001,111002,11003
-    //Fetch back the fragment id, construct an object to hold fragment meta.
-    //When pregel invoked, we will use this fragment for graph computing.
+
+    null
   }
 
   def toGraphXGraph[VD:ClassTag, ED : ClassTag](graph : Graph[VD,ED]) : Graph[VD,ED] = {

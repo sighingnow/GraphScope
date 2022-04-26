@@ -1,14 +1,176 @@
 package org.apache.spark.graphx.utils
 
+import com.alibaba.graphscope.graphx.SharedMemoryRegistry
+import com.alibaba.graphscope.utils.MappedBuffer
+import org.apache.spark.graphx.impl.GrapeUtils
+import org.apache.spark.graphx.impl.GrapeUtils.{bytesForType, getMethodFromClass}
 import org.apache.spark.graphx.{EdgeRDD, VertexRDD}
+import org.apache.spark.internal.Logging
 
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 
-object SharedMemoryUtils {
-  def mapVerticesToFile[VD: ClassTag](vertices : VertexRDD[VD], vprefix : String, mappedSize : Long) = {
+object SharedMemoryUtils extends Logging{
+  def mapVerticesToFile[VD: ClassTag](vertices : VertexRDD[VD], vprefix : String, mappedSize : Long): Array[String] = {
+    val vdClass = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
 
+    vertices.partitionsRDD.zipWithIndex().foreachPartition(
+      iter =>{
+        val registry = SharedMemoryRegistry.getOrCreate()
+        if (iter.hasNext){
+          val tuple = iter.next()
+          val partition = tuple._1
+          val pid = tuple._2
+          val innerVerticesNum = partition.values.length
+
+          val dstFile = vprefix + pid
+          val mappedBuffer = registry.mapFor(dstFile, mappedSize)
+
+          val totalBytes = 8L + 4L + 16 + innerVerticesNum * 8 + innerVerticesNum * bytesForType(vdClass)
+          log.info("Total bytes written: " + totalBytes)
+          //First put header
+          //| 8bytes    | 4Bytes   | 8bytes  | ...... | 8Bytes   | .....
+          //| total-len | vd type  | oid len |        | data len |
+          mappedBuffer.writeLong(totalBytes)
+          mappedBuffer.writeInt(GrapeUtils.class2Int(vdClass))
+          mappedBuffer.writeLong(8L * innerVerticesNum)
+          val vertexIter = partition.iterator
+          val vidArray = new Array[Long](innerVerticesNum)
+          val vdataArray = partition.values
+          require(vidArray.length == vdataArray.length)
+          var ind = 0;
+          while (vertexIter.hasNext){
+            val value = vertexIter.next()
+            vidArray(ind) = value._1
+            ind += 1
+          }
+          writeVertices(mappedBuffer, vidArray, vdataArray, innerVerticesNum, vdClass)
+        }
+      }
+    )
+    val mappedFileSet = vertices.partitionsRDD.mapPartitions({
+      iter => {
+        val registry = SharedMemoryRegistry.getOrCreate()
+        Iterator(registry.getAllMappedFileNames(vprefix))
+      }
+    })
+    log.info("collect mappedFileSet: " + mappedFileSet.collect().mkString("Array(", ", ", ")"))
+    mappedFileSet.collect()
   }
-  def mapEdgesToFile[VD: ClassTag](vertices : EdgeRDD[VD], vprefix : String, mappedSize : Long) = {
+  def mapEdgesToFile[ED: ClassTag](edges : EdgeRDD[ED], eprefix : String, mappedSize : Long): Array[String] = {
+    val edClass = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
+    edges.partitionsRDD.foreachPartition(
+      iter => {
+        val registry = SharedMemoryRegistry.getOrCreate()
+        if (iter.hasNext){
+          val tuple = iter.next()
+          val pid = tuple._1
+          val partition = tuple._2
+          val edgesNum = partition.size
 
+          val dstFile = eprefix + pid
+          val mappedBuffer = registry.mapFor(dstFile, mappedSize)
+          val totalBytes = 8L + 4L + 16 + edgesNum * 16 + edgesNum * bytesForType(edClass)
+          //First put header
+          //| 8bytes    | 4Bytes   | 8bytes     | ......    | ......     |   8Bytes   | .....
+          //| total-len | ed type  | srcOid len |  srcoids  |  dstOids   |   edata len |
+          mappedBuffer.writeLong(totalBytes)
+          mappedBuffer.writeInt(GrapeUtils.class2Int(edClass))
+          mappedBuffer.writeLong(8 * edgesNum.toLong)
+
+          val srcIdMethod = getMethodFromClass(partition.getClass, "srcIds", classOf[Int])
+          val dstIdMethod = getMethodFromClass(partition.getClass, "dstIds",classOf[Int])
+          val attrMethod = getMethodFromClass(partition.getClass, "attrs",classOf[Int])
+          val srcIds = new Array[Long](edgesNum)
+          val dstIds = new Array[Long](edgesNum)
+          val attrs = new Array[ED](edgesNum)
+          var ind = 0
+          val partitionIter = partition.iterator
+          while (ind < edgesNum && partitionIter.hasNext){
+            val edge = partitionIter.next()
+            srcIds(ind) = edge.srcId
+            dstIds(ind) = edge.dstId
+            attrs(ind) = edge.attr
+            ind += 1
+          }
+          ind = 0
+          while (ind < edgesNum) {
+            mappedBuffer.writeLong(srcIds(ind))
+            ind += 1
+          }
+          ind = 0
+          while (ind < edgesNum) {
+            mappedBuffer.writeLong(dstIds(ind))
+            ind += 1
+          }
+          mappedBuffer.writeLong(edgesNum.toLong * bytesForType[ED](edClass))
+
+          ind = 0
+          if (edClass.equals(classOf[Long])) {
+            while (ind < edgesNum) {
+              mappedBuffer.writeLong(attrs(ind).asInstanceOf[Long])
+              ind += 1
+            }
+          }
+          else if (edClass.equals(classOf[Double])) {
+            while (ind < edgesNum) {
+              mappedBuffer.writeDouble(attrs(ind).asInstanceOf[Double])
+              ind += 1
+            }
+          }
+          else if (edClass.equals(classOf[Int])) {
+            while (ind < edgesNum) {
+              mappedBuffer.writeInt(attrs(ind).asInstanceOf[Int])
+              ind += 1
+            }
+          }
+          else {
+            throw new IllegalStateException("Unsupported vd type: " + edClass.getName)
+          }
+          log.info(s"Partition: ${pid} Finish writing vdata array of size ${edgesNum} to ${dstFile}")
+        }
+      }
+    )
+    val mappedFileSet = edges.partitionsRDD.mapPartitions({
+      iter => {
+        val registry = SharedMemoryRegistry.getOrCreate()
+        Iterator(registry.getAllMappedFileNames(eprefix))
+      }
+    })
+    val mappedFileArray = mappedFileSet.collect()
+    log.info("collect mappedFileSet: " + mappedFileSet.collect().mkString("Array(", ", ", ")"))
+    mappedFileArray
+  }
+
+
+  def writeVertices[VD : ClassTag](buffer: MappedBuffer, vidArray: Array[Long], attrs: Array[VD], size: Int, vdClass : Class[VD]): Unit ={
+    var ind = 0
+    while (ind < size) {
+      buffer.writeLong(vidArray(ind))
+      ind += 1
+    }
+    buffer.writeLong(size.toLong * bytesForType[VD](vdClass))
+
+    ind = 0
+    if (vdClass.equals(classOf[Long])) {
+      while (ind < size) {
+        buffer.writeLong(attrs(ind).asInstanceOf[Long])
+        ind += 1
+      }
+    }
+    else if (vdClass.equals(classOf[Double])) {
+      while (ind < size) {
+        buffer.writeDouble(attrs(ind).asInstanceOf[Double])
+        ind += 1
+      }
+    }
+    else if (vdClass.equals(classOf[Int])) {
+      while (ind < size) {
+        buffer.writeInt(attrs(ind).asInstanceOf[Int])
+        ind += 1
+      }
+    }
+    else {
+      throw new IllegalStateException("Unsupported vd type: " + vdClass.getName)
+    }
   }
 }

@@ -1,5 +1,6 @@
 package org.apache.spark.graphx.impl
 
+import java.lang.reflect.Method
 import scala.reflect.ClassTag
 
 object GrapeUtils {
@@ -33,5 +34,12 @@ object GrapeUtils {
       "double"
     }
     else throw new IllegalArgumentException(s"unexpected class ${value}")
+  }
+
+  def getMethodFromClass[T](clz : Class[T], name : String ,paramClasses : Class[_]) : Method = {
+    val method = clz.getDeclaredMethod(name, paramClasses)
+    method.setAccessible(true)
+    require(method != null, "can not find method: " + name)
+    method
   }
 }
