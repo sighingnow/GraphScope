@@ -43,6 +43,6 @@ object Test extends Logging {
       (a, b) => Math.min(a,b)
     )
     log.info(s"Finish query, graph vertices: ${res.numVertices}  and edges: ${res.numEdges}")
-    log.info(s"${res.vertices.collect().mkString("Array(", ", ", ")")}")
+//    log.info(s"${res.vertices.collect().mkString("Array(", ", ", ")")}")
   }
 }

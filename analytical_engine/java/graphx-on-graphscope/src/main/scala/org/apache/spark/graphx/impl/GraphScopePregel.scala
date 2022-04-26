@@ -35,7 +35,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
 //    log.info("[Driver:] Finish distribution")
 
     //map vdata path
-    grapeGraph.vertices.createMapFilePerExecutor(VDATA_MAPPED_PATH, grapeGraph.numVertices *16L)
+//    grapeGraph.vertices.createMapFilePerExecutor(VDATA_MAPPED_PATH, grapeGraph.numVertices *16L)
 
     //launch mpi processes. and run.
     val t0 = System.nanoTime()

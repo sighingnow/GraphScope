@@ -48,7 +48,7 @@ object GraphLoader extends Logging {
     })
 
     val shuffledEdges = allEdges.partitionBy(partitioner).cache()
-    log.info(s"${shuffledEdges.collect().mkString("Array(", ", ", ")")}")
+//    log.info(s"${shuffledEdges.collect().mkString("Array(", ", ", ")")}")
     val distributedEdges = shuffledEdges.count()
     log.info(s"Original edges ${linesCount}, after shuffle ${distributedEdges}")
 
