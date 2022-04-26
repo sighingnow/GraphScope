@@ -7,6 +7,7 @@ import org.apache.spark.graphx.impl.GrapeUtils.{bytesForType, getMethodFromClass
 import org.apache.spark.graphx.{EdgeRDD, VertexRDD}
 import org.apache.spark.internal.Logging
 
+import java.io.{BufferedWriter, File, FileWriter}
 import scala.reflect.{ClassTag, classTag}
 
 object SharedMemoryUtils extends Logging{
@@ -20,13 +21,15 @@ object SharedMemoryUtils extends Logging{
           val tuple = iter.next()
           val partition = tuple._1
           val pid = tuple._2
+          val bufferedWriter = new BufferedWriter(new FileWriter(new File("/tmp/graphx-log-" + pid)))
           val innerVerticesNum = partition.values.length
 
           val dstFile = vprefix + pid
           val mappedBuffer = registry.mapFor(dstFile, mappedSize)
 
           val totalBytes = 8L + 4L + 16 + innerVerticesNum * 8 + innerVerticesNum * bytesForType(vdClass)
-          log.info("Total bytes written: " + totalBytes)
+          bufferedWriter.write("Total bytes written: " + totalBytes + "mapped size: " + mappedSize  +"\n")
+          bufferedWriter.write("ivnum: " + innerVerticesNum)
           //First put header
           //| 8bytes    | 4Bytes   | 8bytes  | ...... | 8Bytes   | .....
           //| total-len | vd type  | oid len |        | data len |
@@ -142,18 +145,21 @@ object SharedMemoryUtils extends Logging{
   }
 
 
-  def writeVertices[VD : ClassTag](buffer: MappedBuffer, vidArray: Array[Long], attrs: Array[VD], size: Int, vdClass : Class[VD]): Unit ={
+  def writeVertices[VD : ClassTag](buffer: MappedBuffer, vidArray: Array[Long], attrs: Array[VD],
+                                   size: Int, vdClass : Class[VD], bufferedWriter : BufferedWriter): Unit ={
     var ind = 0
     while (ind < size) {
       buffer.writeLong(vidArray(ind))
       ind += 1
     }
     buffer.writeLong(size.toLong * bytesForType[VD](vdClass))
+    bufferedWriter.write("Start writing vdata: " + buffer.position() + " limit: " + buffer.remaining() + " size: " + size + "\n")
 
     ind = 0
     if (vdClass.equals(classOf[Long])) {
       while (ind < size) {
         buffer.writeLong(attrs(ind).asInstanceOf[Long])
+        bufferedWriter.write("write " + attrs(ind) + ",ind " + ind + " size: " + size)
         ind += 1
       }
     }

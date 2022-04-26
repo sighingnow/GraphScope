@@ -40,7 +40,7 @@ public class MappedBuffer {
     }
 
     public long limit(){
-        return limit - startAddress;
+        return limit;
     }
 
     public void position(long newPos){

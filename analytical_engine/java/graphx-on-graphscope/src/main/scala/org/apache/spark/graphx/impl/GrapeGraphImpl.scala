@@ -168,13 +168,13 @@ object GrapeGraphImpl {
     val vertexMappedSize = 32L * numVertices / numParitions + 128
     val edgeMappedSize = 32L * numEdges / numParitions + 128
 
-    println("numPartitions: " + numParitions)
+    println("numPartitions: v:" + oldGraph.vertices.getNumPartitions + ", e:" + oldGraph.edges.getNumPartitions)
     println("reserve memory " + vertexMappedSize + " for per vertex file")
     println("reserve memory " + edgeMappedSize + " for per edge file")
     val vertexFileArray = SharedMemoryUtils.mapVerticesToFile(oldGraph.vertices, "graphx-vertex", vertexMappedSize)
 //    val vertexFileArray = vertices.mapToFile("graphx-vertex", vertexMappedSize)
 //    val edgeFileArray = edges.mapToFile("graphx-edge", edgeMappedSize) // actual 24
-    val edgeFileArray = SharedMemoryUtils.mapEdgesToFile(oldGraph.edges, "graphx-edge", vertexMappedSize)
+    val edgeFileArray = SharedMemoryUtils.mapEdgesToFile(oldGraph.edges, "graphx-edge", edgeMappedSize)
 
     println("map result for vertex: " + vertexFileArray.mkString("Array(", ", ", ")"))
     println("map result for edge : " + edgeFileArray.mkString("Array(", ", ", ")"))
