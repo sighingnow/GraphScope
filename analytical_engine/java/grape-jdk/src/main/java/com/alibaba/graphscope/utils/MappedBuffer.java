@@ -89,7 +89,7 @@ public class MappedBuffer {
     }
 
     public void checkOffset(int offset){
-        if (offset >= size){
+        if (offset > size){
             throw new IndexOutOfBoundsException(" out of bound, size : " + size + ", cur " + offset);
         }
     }

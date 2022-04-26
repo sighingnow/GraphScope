@@ -194,35 +194,38 @@ class GrapeVertexRDDImpl[VD](
           val length = mappedBuffer.readLong(0);
           log.info(s"There are total ${length} bytes can be read")
           var ind = 8
+          val limit = length + 8
           if (vdClass.equals(classOf[Long])){
-            while (ind + 16 <= length){
+            while (ind + 16 <= limit){
               val oid = mappedBuffer.readLong(ind)
               val data = mappedBuffer.readLong(ind + 8)
               newVertexPartition.updateData(oid, data.asInstanceOf[VD])
               ind = ind + 16
             }
-            if (ind + 16 != length){
-              throw new IllegalStateException("length should be equal to 16 * vertices" + length)
+            if (ind != limit){
+              throw new IllegalStateException("length should be equal to 16 * vertices" + limit + ", " + ind)
             }
-          } else if (vdClass.equals(classOf[Int])){
-            while (ind + 12 <= length){
+          }
+          else if (vdClass.equals(classOf[Int])){
+            while (ind + 12 <= limit){
               val oid = mappedBuffer.readLong(ind)
               val data = mappedBuffer.readInt(ind + 8)
               newVertexPartition.updateData(oid, data.asInstanceOf[VD])
               ind = ind + 12
             }
-            if (ind + 12 != length){
-              throw new IllegalStateException("length should be equal to 12 * vertices" + length)
+            if (ind != limit){
+              throw new IllegalStateException("length should be equal to 12 * vertices" + limit + "," + ind)
             }
-          } else if (vdClass.equals(classOf[Double])){
-            while (ind + 16 <= length){
+          }
+          else if (vdClass.equals(classOf[Double])){
+            while (ind + 16 <= limit){
               val oid = mappedBuffer.readLong(ind)
               val data = mappedBuffer.readInt(ind + 8)
               newVertexPartition.updateData(oid, data.asInstanceOf[VD])
               ind = ind + 16
             }
-            if (ind + 16 != length){
-              throw new IllegalStateException("length should be equal to 12 * vertices" + length)
+            if (ind != limit){
+              throw new IllegalStateException("length should be equal to 12 * vertices" + limit + ", " + ind)
             }
           }
           else {
