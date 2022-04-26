@@ -1,7 +1,5 @@
 package org.apache.spark.graphx.impl
 
-import com.alibaba.graphscope.graphx.FragmentOps
-import org.apache.spark.graphx.impl.GrapeUtils.classToStr
 import org.apache.spark.graphx._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -30,8 +28,7 @@ import scala.reflect.{ClassTag, classTag}
  */
 class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
                                                             @transient val vertices: GrapeVertexRDD[VD],
-                                                            @transient val edges: GrapeEdgeRDD[ED],
-                                                            var fragIds : String = null) extends Graph[VD, ED] with Serializable {
+                                                            @transient val edges: GrapeEdgeRDD[ED]) extends Graph[VD, ED] with Serializable {
 
   protected def this() = this(null, null)
 
@@ -42,35 +39,29 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   def numEdges: Long = edges.count()
 
-  def numParitions: Int = vertices.numPartitions
-
   val sc = vertices.sparkContext
 
-  //Run initiation.
-  if (fragIds == null){
-    init
-  }
 
 
-  def init = {
-    //Write data to Memory mapped file.
-    val vertexMappedSize = 32L * numVertices / numParitions + 128
-    val edgeMappedSize = 32L * numEdges / numParitions + 128
-    println("numPartitions: " + numParitions)
-    println("reserve memory " + vertexMappedSize + " for per vertex file")
-    println("reserve memory " + edgeMappedSize + " for per edge file")
-    val vertexFileArray = vertices.mapToFile("graphx-vertex", vertexMappedSize)
-    val edgeFileArray = edges.mapToFile("graphx-edge", edgeMappedSize) // actual 24
-    println("map result for vertex: " + vertexFileArray.mkString("Array(", ", ", ")"))
-    println("map result for edge : " + edgeFileArray.mkString("Array(", ", ", ")"))
-    //Serialize the info to string, and pass it to mpi processes, which are launched to load the graph
-    //to fragment
-    this.fragIds = FragmentOps.graph2Fragment(vertexFileArray, edgeFileArray, vertexMappedSize, edgeMappedSize, !sc.isLocal, classToStr(vdClass), classToStr(edClass))
-    println(s"Fragid: [${fragIds}]")
-    //fragIds = 10001,111002,11003
-    //Fetch back the fragment id, construct an object to hold fragment meta.
-    //When pregel invoked, we will use this fragment for graph computing.
-  }
+  //  def init = {
+  //    //Write data to Memory mapped file.
+  //    val vertexMappedSize = 32L * numVertices / numParitions + 128
+  //    val edgeMappedSize = 32L * numEdges / numParitions + 128
+  //    println("numPartitions: " + numParitions)
+  //    println("reserve memory " + vertexMappedSize + " for per vertex file")
+  //    println("reserve memory " + edgeMappedSize + " for per edge file")
+  //    val vertexFileArray = vertices.mapToFile("graphx-vertex", vertexMappedSize)
+  //    val edgeFileArray = edges.mapToFile("graphx-edge", edgeMappedSize) // actual 24
+  //    println("map result for vertex: " + vertexFileArray.mkString("Array(", ", ", ")"))
+  //    println("map result for edge : " + edgeFileArray.mkString("Array(", ", ", ")"))
+  //    //Serialize the info to string, and pass it to mpi processes, which are launched to load the graph
+  //    //to fragment
+  //    this.fragIds = FragmentOps.graph2Fragment(vertexFileArray, edgeFileArray, vertexMappedSize, edgeMappedSize, !sc.isLocal, classToStr(vdClass), classToStr(edClass))
+  //    println(s"Fragid: [${fragIds}]")
+  //    //fragIds = 10001,111002,11003
+  //    //Fetch back the fragment id, construct an object to hold fragment meta.
+  //    //When pregel invoked, we will use this fragment for graph computing.
+  //  }
 
   override val triplets: RDD[EdgeTriplet[VD, ED]] = null
 
@@ -122,9 +113,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
   override def mapVertices[VD2: ClassTag](f: (VertexId, VD) => VD2)(implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
-      vertices.cache()
-      val newVertices = vertices.mapGrapeVertexPartitions[VD2](_.map(f)).cache()
-      new GrapeGraphImpl[VD2,ED](newVertices, edges)
+    throw new IllegalStateException("Unimplemented")
   }
 
   override def mapEdges[ED2](map: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2])(implicit newEd: ClassTag[ED2]): Graph[VD, ED2] = {
@@ -164,23 +153,11 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
 
 object GrapeGraphImpl {
-
-  def fromExistingRDDs[VD: ClassTag, ED: ClassTag](
-                                                    vertices: GrapeVertexRDD[VD],
-                                                    edges: GrapeEdgeRDD[ED],
-                                                    fragIds : String = null): GrapeGraphImpl[VD, ED] = {
-    new GrapeGraphImpl[VD, ED](vertices, edges, fragIds)
+  def fromGraphXGraph[VD:ClassTag, ED: ClassTag](graph: Graph[VD,ED]): GrapeGraphImpl[VD,ED] ={
+    null
   }
 
-  def fromEdgeRDD[VD: ClassTag, ED: ClassTag](
-                                               edgeRdd: GrapeEdgeRDDImpl[ED],
-                                               defaultVertexAttr: VD,
-                                               edgeStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
-                                               vertexStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY): GrapeGraphImpl[VD, ED] = {
-    val edgesCached = edgeRdd.withTargetStorageLevel(edgeStorageLevel).cache()
-    val vertices =
-      GrapeVertexRDD.fromEdges(edgesCached, edgesCached.partitions.length, defaultVertexAttr)
-        .withTargetStorageLevel(vertexStorageLevel).cache()
-    fromExistingRDDs(vertices, edgesCached)
+  def toGraphXGraph[VD:ClassTag, ED : ClassTag](graph : Graph[VD,ED]) : Graph[VD,ED] = {
+    null
   }
 }

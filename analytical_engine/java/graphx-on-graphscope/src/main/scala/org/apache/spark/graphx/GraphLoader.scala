@@ -27,60 +27,35 @@ object GraphLoader extends Logging {
       } else {
         sc.textFile(path)
       }
-
-    val linesCount = lines.count()
-    val partitioner = new HashPartitioner(numEdgePartitions)
-    val allEdges: RDD[(PartitionID, Edge[ED])] = lines.flatMap(line => {
-        val lineArray = line.split("\\s+")
-        if (lineArray.length < 2) {
-          throw new IllegalArgumentException("Invalid line: " + line)
-        }
-        val srcId = lineArray(0).toLong //partition on srcId
-        val dstId = lineArray(1).toLong
-        val srcPid = partitioner.getPartition(srcId)
-        val dstPid = partitioner.getPartition(dstId)
-      if (srcPid == dstPid) {
-        Iterator((srcPid, new Edge[ED](srcId, dstId, defaultEdata)))
-      }
-      else {
-        Iterator((srcPid, new Edge[ED](srcId, dstId, defaultEdata)),(dstPid, new Edge[ED](srcId, dstId, defaultEdata)))
-      }
-    })
-
-    val shuffledEdges = allEdges.partitionBy(partitioner).cache()
-//    log.info(s"${shuffledEdges.collect().mkString("Array(", ", ", ")")}")
-    val distributedEdges = shuffledEdges.count()
-    log.info(s"Original edges ${linesCount}, after shuffle ${distributedEdges}")
-
-    val t1 = System.nanoTime();
-    val loadEdgeTime = (t1 - startTimeNs) / 1000000
-
-    //The edges shuffled to us are in to folders
-    //1. srcId belongs to us.
-    //2. dstId belongs to us
-    val shuffledEdgePartitions = shuffledEdges.mapPartitionsWithIndex(
-      {
-        (pid, iter) =>{
-          //For a iterator of (src,Edge), convert it to a edgePartition which store them in columar format
-          val builder = new GrapeEdgePartitionBuilder[ED](pid, numEdgePartitions, shuffledEdges.partitioner.get)
-          while (iter.hasNext){
-            val item = iter.next()
-            builder.add(item._2)
+    val edges = lines.mapPartitionsWithIndex { (pid, iter) =>
+      val builder = new EdgePartitionBuilder[Int, Int]
+      iter.foreach { line =>
+        if (!line.isEmpty && line(0) != '#') {
+          val lineArray = line.split("\\s+")
+          if (lineArray.length < 2) {
+            throw new IllegalArgumentException("Invalid line: " + line)
           }
-          Iterator((pid, builder.toGrapeEdgePartition))
+          val srcId = lineArray(0).toLong
+          val dstId = lineArray(1).toLong
+          if (canonicalOrientation && srcId > dstId) {
+            builder.add(dstId, srcId, 1)
+          } else {
+            builder.add(srcId, dstId, 1)
+          }
         }
-      }, true
-    ).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
-    log.info("shuffledEdgePartitions: " + shuffledEdgePartitions.count()) //FIXME: printed 4 here
+      }
+      Iterator((pid, builder.toEdgePartition))
+    }.persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
+    edges.count()
 
-    val edgeRDD = GrapeEdgeRDD.fromEdgePartitions(shuffledEdgePartitions)
-    log.info("EdgeRDD count: " + edgeRDD.count())
-    log.info(s"Load total edges ${linesCount}, sum of edges in all frag ${distributedEdges} num partitions: ${shuffledEdges.getNumPartitions}, cost ${loadEdgeTime}ms")
-    val graph = GrapeGraphImpl.fromEdgeRDD(edgeRDD, null.asInstanceOf[VD])
-    log.info(s"total vertex count ${graph.numVertices}, total edges count ${graph.numEdges}")
-    log.info("[Now construct graph]")
+    logInfo(s"It took ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTimeNs)} ms" +
+      " to load the edges")
 
-    graph
+//    GraphImpl.fromEdgePartitions(edges, defaultVertexAttr = 1, edgeStorageLevel = edgeStorageLevel,
+//      vertexStorageLevel = vertexStorageLevel)
+    val res = GraphImpl.fromEdgePartitions(edges, defaultVertexAttr = 1, edgeStorageLevel = edgeStorageLevel,
+      vertexStorageLevel = vertexStorageLevel)
+    GrapeGraphImpl.fromGraphXGraph(res)
   }
 
   def edgeListFile(
