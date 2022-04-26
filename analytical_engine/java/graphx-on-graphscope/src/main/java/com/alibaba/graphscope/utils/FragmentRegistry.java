@@ -64,6 +64,7 @@ public class FragmentRegistry {
                 }
                 fragmentRDD = FragmentRDD.create(fragId, fragName, partition.get());
                 logger.info("Successfully create fragment RDD");
+                lock.unlock();
             } else {
                 logger.info("partition " + pid + " try to get lock failed");
             }

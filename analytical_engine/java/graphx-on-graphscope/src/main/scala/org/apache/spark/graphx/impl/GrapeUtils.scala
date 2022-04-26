@@ -44,12 +44,6 @@ object GrapeUtils {
   }
 
   def generateForeignFragName[VD: ClassTag, ED : ClassTag](vdClass : Class[VD], edClass : Class[ED]): String ={
-    val sb = new StringBuilder()
-    sb.+("gs::ArrowProjectedFragment<int64_t,uint64_t")
-    sb.+(classToStr(vdClass))
-    sb.+(",")
-    sb.+(classToStr(edClass))
-    sb.+(">")
-    sb.toString
+    new StringBuilder().+("gs::ArrowProjectedFragment<int64_t,uint64_t").+(classToStr(vdClass)).+(",").+(classToStr(edClass)).+(">")
   }
 }
