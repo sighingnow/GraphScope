@@ -24,6 +24,7 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
   override def reindex(): VertexRDD[VD] = {
     throw new IllegalStateException("Not implemented")
   }
+  override protected def getPartitions: Array[Partition] = grapePartitionsRDD.partitions
   override def compute(part: Partition, context: TaskContext): Iterator[(VertexId,VD)] = {
     val p = firstParent[(PartitionID, GrapeVertexPartition[VD])].iterator(part, context)
     if (p.hasNext) {

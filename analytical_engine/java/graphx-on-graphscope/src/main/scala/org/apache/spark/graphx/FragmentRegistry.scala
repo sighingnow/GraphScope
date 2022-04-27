@@ -64,9 +64,9 @@ object FragmentRegistry extends Logging{
           }
         }
       }
+      maxPartitionId = Math.max(maxPartitionId, index)
     }
 
-    maxPartitionId = Math.max(maxPartitionId, index)
     log.info("max Partition id: " + maxPartitionId)
     index
   }

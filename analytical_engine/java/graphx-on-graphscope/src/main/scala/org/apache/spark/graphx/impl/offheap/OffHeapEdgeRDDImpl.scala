@@ -16,6 +16,7 @@ class OffHeapEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx] (
   override private[graphx] def partitionsRDD = {
     throw new IllegalStateException("Not implemented")
   }
+  override protected def getPartitions: Array[Partition] = grapePartitionsRDD.partitions
   override def compute(part: Partition, context: TaskContext): Iterator[Edge[ED]] = {
     val p = firstParent[(PartitionID, GrapeEdgePartition[VD, ED])].iterator(part, context)
     if (p.hasNext) {

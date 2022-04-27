@@ -66,7 +66,7 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
     }
 
     @Override
-    public Iterator<Edge<ED>> iterator(long startLid, long endLid) {
+    public synchronized Iterator<Edge<ED>> iterator(long startLid, long endLid) {
         return new Iterator<Edge<ED>>() {
             private long curLid = startLid;
             private ReusableEdge<ED> edge = new ReusableEdge<ED>();
@@ -76,24 +76,31 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
             int curPos = nbrPos;
             @Override
             public boolean hasNext(){
+		//logger.info("has next: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
                 if (curLid >= endLid) return false;
-                if (curPos >= endPos){
-                    curLid += 1;
+		if (curPos < endPos) return true;
+                else {
+		    curLid += 1;
+		    while (curLid< endLid){
+                        numEdge = numOfEdges[(int) curLid];
+			if (numEdge > 0) break;
+                        curLid += 1;
+		    }
                     if (curLid >= endLid) return false;
-                    numEdge = numOfEdges[(int) curLid];
                     nbrPos = nbrPositions[(int) curLid];
                     endPos = (int) (nbrPos + numEdge);
                     curPos = nbrPos;
+		    //logger.info("has next move to new lid: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
                     edge.setSrcId(idManager.lid2Oid(curLid));
-                    return true;
+		    return true;
                 }
-                else return true;
             }
 
             @Override
             public Edge<ED> next(){
                 edge.setDstId(dstOids[curPos]);
                 edge.setAttr(edatas[curPos]);
+	//	logger.info("src{}, dst{}}", dstOids[curPos], edatas[curPos]);
                 curPos += 1;
                 return edge;
             }
