@@ -70,6 +70,13 @@ public class GraphXFactory {
         }
         return new VertexDataManagerImpl<VD>(conf);
     }
+    public static <VD,ED> VertexDataManager<VD> createVertexDataManagerv2(GraphXConf<VD,ED,?> conf) {
+        if (conf.getVdataClass().equals(Double.class)){
+            logger.info("creating [DoubleVertexDataManagerImpl]");
+            return (VertexDataManager<VD>) new DoubleVertexDataManagerImpl(conf);
+        }
+        return new VertexDataManagerImpl<VD>(conf);
+    }
 
     public static <VD,ED,MSG> MessageStore<MSG,VD> createDefaultMessageStore(GraphXConf<VD,ED,MSG> conf) {
         return new DefaultMessageStore<MSG,VD>(conf);

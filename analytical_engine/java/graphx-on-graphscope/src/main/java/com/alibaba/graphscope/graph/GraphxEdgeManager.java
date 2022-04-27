@@ -3,6 +3,7 @@ package com.alibaba.graphscope.graph;
 import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.graphx.GSEdgeTriplet;
 import com.alibaba.graphscope.mm.MessageStore;
+import org.apache.spark.graphx.Edge;
 import org.apache.spark.graphx.EdgeTriplet;
 import scala.Function1;
 import scala.Function2;
@@ -12,6 +13,8 @@ import scala.collection.Iterator;
 public interface GraphxEdgeManager<VD,ED,MSG_T> {
 
     void init(IFragment<Long,Long,VD,ED> fragment, int numCores);
+
+    scala.collection.Iterator<Edge<ED>> iterator(long startLid, long endLid);
 
     /**
      * Iterator over edges start from srcLid, update dstId info in context, and apply functions to

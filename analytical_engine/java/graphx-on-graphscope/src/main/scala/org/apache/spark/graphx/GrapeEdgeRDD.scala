@@ -1,6 +1,8 @@
 package org.apache.spark.graphx
 
-import org.apache.spark.graphx.impl.{EdgePartition, EdgeRDDImpl}
+import com.alibaba.graphscope.graphx.JavaEdgePartition
+import org.apache.spark.graphx.impl.GrapeEdgePartition
+import org.apache.spark.graphx.impl.offheap.OffHeapEdgeRDDImpl
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Dependency, SparkContext}
 
@@ -17,8 +19,9 @@ object GrapeEdgeRDD {
     null
   }
 
-  private[graphx] def fromEdgePartitions[ED: ClassTag, VD: ClassTag](
-                                                                      edgePartitions: RDD[(Int, EdgePartition[ED, VD])]): EdgeRDDImpl[ED, VD] = {
-    new EdgeRDDImpl(edgePartitions)
+  private[graphx] def fromEdgePartitions[VD: ClassTag, ED : ClassTag](
+                                                        edgePartitions: RDD[(PartitionID, GrapeEdgePartition[VD, ED])]): OffHeapEdgeRDDImpl[VD, ED] = {
+    //    new EdgeRDDImpl(edgePartitions)
+    new OffHeapEdgeRDDImpl[VD,ED](edgePartitions)
   }
 }

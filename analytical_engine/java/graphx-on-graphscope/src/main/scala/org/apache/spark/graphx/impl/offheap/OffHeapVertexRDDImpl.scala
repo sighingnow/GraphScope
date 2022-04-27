@@ -1,8 +1,9 @@
 package org.apache.spark.graphx.impl.offheap
 
-import org.apache.spark.OneToOneDependency
-import org.apache.spark.graphx.impl.ShippableVertexPartition
-import org.apache.spark.graphx.{EdgeRDD, VertexId, VertexRDD}
+import com.alibaba.graphscope.graphx.JavaVertexPartition
+import org.apache.spark.{OneToOneDependency, Partition, TaskContext}
+import org.apache.spark.graphx.impl.{GrapeEdgePartition, ShippableVertexPartition}
+import org.apache.spark.graphx.{Edge, EdgeRDD, GrapeVertexPartition, PartitionID, VertexId, VertexRDD}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
@@ -16,11 +17,22 @@ import scala.reflect.ClassTag
  * @tparam VD
  */
 class OffHeapVertexRDDImpl[VD] private[graphx] (
-                                       @transient val partitionsRDD: RDD[ShippableVertexPartition[VD]],
-                                             val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
+                                                 @transient val grapePartitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD])],
+                                                 val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
                                            (implicit override protected val vdTag: ClassTag[VD])
-  extends VertexRDD[VD](partitionsRDD.context, List(new OneToOneDependency(partitionsRDD))) {
-  override def reindex(): VertexRDD[VD] = ???
+  extends VertexRDD[VD](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
+  override def reindex(): VertexRDD[VD] = {
+    throw new IllegalStateException("Not implemented")
+  }
+  override def compute(part: Partition, context: TaskContext): Iterator[(VertexId,VD)] = {
+    val p = firstParent[(PartitionID, GrapeVertexPartition[VD])].iterator(part, context)
+    if (p.hasNext) {
+      //      p.next()._2.iterator.map(_.copy())
+      p.next()._2.iterator.map(_.copy())
+    } else {
+      Iterator.empty
+    }
+  }
 
   override private[graphx] def mapVertexPartitions[VD2](f: ShippableVertexPartition[VD] => ShippableVertexPartition[VD2])(implicit evidence$1: ClassTag[VD2]) = ???
 
@@ -56,5 +68,12 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
 
   override private[graphx] def shipVertexAttributes(shipSrc: Boolean, shipDst: Boolean) = ???
 
-  override private[graphx] def shipVertexIds() = ???
+  override private[graphx] def shipVertexIds() = {
+      throw new IllegalStateException("Not implemented")
+    }
+
+
+  override private[graphx] def partitionsRDD = {
+    throw new IllegalStateException("Not implemented")
+  }
 }
