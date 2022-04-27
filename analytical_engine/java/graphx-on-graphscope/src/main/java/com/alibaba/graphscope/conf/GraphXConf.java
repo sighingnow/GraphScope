@@ -16,6 +16,8 @@ public class GraphXConf<VD, ED, MSG_T> {
         this.edataClass = edataClass;
         this.msgClass = msgClass;
     }
+    public GraphXConf(){
+    }
 
     public Class<? extends VD> getVdataClass() {
         return vdataClass;

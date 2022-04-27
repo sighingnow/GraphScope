@@ -3,7 +3,7 @@ package org.apache.spark.graphx.impl
 import com.alibaba.graphscope.graphx.FragmentOps
 import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
-import org.apache.spark.graphx.impl.GrapeUtils.{classToStr, generateForeignFragName}
+import org.apache.spark.graphx.impl.GrapeUtils.{classToStr, generateForeignFragName, scalaClass2JavaClass}
 import org.apache.spark.graphx.utils.SharedMemoryUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -136,7 +136,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
 
 object GrapeGraphImpl {
-  def fromGraphXGraph[VD:ClassTag, ED: ClassTag](oldGraph: Graph[VD,ED]): GrapeGraphImpl[VD,ED] ={
+  def fromGraphXGraph[VD:ClassTag, ED: ClassTag](oldGraph: Graph[VD,ED], numCores: Int = 8): GrapeGraphImpl[VD,ED] ={
     val sc = oldGraph.vertices.sparkContext
     val vdClass = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
     val edClass = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
@@ -177,10 +177,36 @@ object GrapeGraphImpl {
       iter => {
         if (iter.hasNext){
           val pid = iter.next()
-          FragmentRegistry.constructFragment(pid,generateForeignFragName(vdClass,edClass))
+          FragmentRegistry.constructFragment(pid,generateForeignFragName(vdClass,edClass),
+            scalaClass2JavaClass(vdClass), scalaClass2JavaClass(edClass), numCores)
         }
       })
 
+    val grapeVertexPartitions = grapePartition.mapPartitions(
+      iter => {
+        if (iter.hasNext){
+          val pid = iter.next();
+          Iterator(FragmentRegistry.getVertexPartition(pid))
+        }
+        else {
+          Iterator.empty
+        }
+      }
+    )
+
+    val grapeEdgePartitions = grapePartition.mapPartitions(
+      iter => {
+        if (iter.hasNext){
+          val pid = iter.next();
+          Iterator(FragmentRegistry.getEdgePartition(pid))
+        }
+        else {
+          Iterator.empty
+        }
+      }
+    )
+    println(s"total grape vertex partitions ${grapeVertexPartitions.count()}, edge partitions ${grapeEdgePartitions.count()}")
+    //Construct grape vertex edge rdd from partitions.
 
     null
   }

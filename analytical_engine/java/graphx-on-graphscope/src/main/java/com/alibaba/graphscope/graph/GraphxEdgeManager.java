@@ -22,8 +22,8 @@ public interface GraphxEdgeManager<VD,ED,MSG_T> {
      * @param msgSender mapping from edge triplet to a iterator for (dstId, msg).
      */
      void iterateOnEdges(long srcLid, GSEdgeTriplet<VD, ED> context,
-        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender);
+        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,MessageStore<MSG_T,VD> outMessageCache);
 
     void iterateOnEdgesParallel(int tid, long srcLid, GSEdgeTriplet<VD, ED> context,
-        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender);
+        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,MessageStore<MSG_T,VD> outMessageCache);
 }

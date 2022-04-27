@@ -2,6 +2,8 @@ package com.alibaba.graphscope.graphx;
 
 import com.alibaba.fastffi.FFITypeFactory;
 import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
+import com.alibaba.graphscope.fragment.IFragment;
+import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -9,9 +11,9 @@ import java.lang.reflect.Method;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FragmentRDD {
+public class FragmentHolder {
 
-    private static Logger logger = LoggerFactory.getLogger(FragmentRDD.class.getName());
+    private static Logger logger = LoggerFactory.getLogger(FragmentHolder.class.getName());
 //    private static BufferedWriter writer;
 
     private static String NATIVE_UTILS = "com.alibaba.graphscope.runtime.NativeUtils";
@@ -20,7 +22,7 @@ public class FragmentRDD {
 
     static {
         try {
-            nativeClz = FragmentRDD.class.getClassLoader().loadClass(NATIVE_UTILS);
+            nativeClz = FragmentHolder.class.getClassLoader().loadClass(NATIVE_UTILS);
             if (nativeClz == null) {
                 throw new IllegalStateException("failed to load nativeUtils clz");
             }
@@ -36,20 +38,32 @@ public class FragmentRDD {
 
     private long address;
     private ArrowProjectedFragment projectedFragment;
+    private IFragment iFragment;
 
-    public FragmentRDD(long fragId, String foreignFragName, int numPartitions) throws IOException {
+    public FragmentHolder(long fragId, String foreignFragName, int numPartitions)
+        throws IOException {
         try {
             address = (long) method.invoke(null, fragId, foreignFragName);
             if (address <= 0) {
                 throw new IllegalStateException("Got an address less than zero");
             }
             projectedFragment = createArrowProjectedFragmentInstance(
-                (Class<? extends ArrowProjectedFragment>) FFITypeFactory.getType(ArrowProjectedFragment.class, foreignFragName), address);
+                (Class<? extends ArrowProjectedFragment>) FFITypeFactory.getType(
+                    ArrowProjectedFragment.class, foreignFragName), address);
             logger.info("construct projected fragment: " + projectedFragment);
+            iFragment = new ArrowProjectedAdaptor(projectedFragment);
         } catch (IllegalAccessException | InstantiationException | ClassNotFoundException | InvocationTargetException e) {
             e.printStackTrace();
         }
         logger.info("Retried fragment: address" + address);
+    }
+
+    public ArrowProjectedFragment getProjectedFragment() {
+        return projectedFragment;
+    }
+
+    public IFragment getIFragment() {
+        return iFragment;
     }
 
     /**
@@ -59,10 +73,10 @@ public class FragmentRDD {
      * @param numPartitions num partitions on this worker.
      * @return created fragment
      */
-    public static synchronized FragmentRDD create(String fragId, String foreignFragName,
+    public static synchronized FragmentHolder create(String fragId, String foreignFragName,
         int numPartitions) throws IOException {
         logger.info("creating fragment: " + fragId + ", " + numPartitions);
-        return new FragmentRDD(Long.parseLong(fragId), foreignFragName, numPartitions);
+        return new FragmentHolder(Long.parseLong(fragId), foreignFragName, numPartitions);
     }
 
     private static ArrowProjectedFragment createArrowProjectedFragmentInstance(

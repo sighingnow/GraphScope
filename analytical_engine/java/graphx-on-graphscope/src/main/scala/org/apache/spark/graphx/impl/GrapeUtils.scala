@@ -46,4 +46,19 @@ object GrapeUtils {
   def generateForeignFragName[VD: ClassTag, ED : ClassTag](vdClass : Class[VD], edClass : Class[ED]): String ={
     new StringBuilder().+("gs::ArrowProjectedFragment<int64_t,uint64_t").+(classToStr(vdClass)).+(",").+(classToStr(edClass)).+(">")
   }
+
+  def scalaClass2JavaClass[T: ClassTag](vdClass : Class[T]) : Class[_] = {
+    if (vdClass.equals(classOf[Int])) {
+      classOf[Integer];
+    }
+    else if (vdClass.equals(classOf[Long])) {
+      classOf[java.lang.Long]
+    }
+    else if (vdClass.equals(classOf[Double])) {
+      classOf[java.lang.Double]
+    }
+    else {
+      throw new IllegalStateException("transform failed for " + vdClass.getName);
+    }
+  }
 }

@@ -34,19 +34,19 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
     private ED[] edatas;
     private int[] nbrPositions;
     private long[] numOfEdges;
-    private Function1<Tuple2<Long,MSG_T>, Unit> function1;
-    private MessageStore<MSG_T,VD> outMessageCache;
+//    private Function1<Tuple2<Long,MSG_T>, Unit> function1;
+//    private MessageStore<MSG_T,VD> outMessageCache;
 
     public GraphxEdgeManagerImpl(GraphXConf conf, VertexIdManager<Long, Long> idManager,
-        VertexDataManager<VD> vertexDataManager, MessageStore<MSG_T,VD> outMessageCache) {
+        VertexDataManager<VD> vertexDataManager) {
         this.conf = conf;
         this.idManager = idManager;
         this.vertexDataManager = vertexDataManager;
-        this.outMessageCache = outMessageCache;
-        this.function1 = v1 -> {
-            outMessageCache.addOidMessage(v1._1(), v1._2());
-            return null;
-        };
+//        this.outMessageCache = outMessageCache;
+//        this.function1 = v1 -> {
+//            outMessageCache.addOidMessage(v1._1(), v1._2());
+//            return null;
+//        };
     }
 
     public TupleIterable getTupleIterable(int threadId){
@@ -76,7 +76,7 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
      */
     @Override
     public void iterateOnEdges(long srcLid, GSEdgeTriplet<VD, ED> triplet,
-        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender) {
+        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,MessageStore<MSG_T,VD> outMessageCache) {
         edgeIterable.setLid(srcLid);
         for (GrapeEdge<Long, Long, ED> edge : edgeIterable) {
             triplet.setDstOid(edge.dstOid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
@@ -94,7 +94,7 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
     }
     @Override
     public void iterateOnEdgesParallel(int threadId, long srcLid, GSEdgeTriplet<VD, ED> triplet,
-        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender) {
+        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,MessageStore<MSG_T,VD> outMessageCache) {
         long numEdge = numOfEdges[(int) srcLid];
         int nbrPos = nbrPositions[(int) srcLid];
         int endPos = (int) (nbrPos + numEdge);
