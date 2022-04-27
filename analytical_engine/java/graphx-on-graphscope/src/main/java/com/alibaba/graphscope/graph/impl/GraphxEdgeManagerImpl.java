@@ -9,6 +9,7 @@ import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.graph.VertexIdManager;
 import com.alibaba.graphscope.graphx.GSEdgeTriplet;
 import com.alibaba.graphscope.mm.MessageStore;
+import java.util.List;
 import org.apache.spark.graphx.Edge;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.apache.spark.graphx.ReusableEdge;
@@ -24,38 +25,26 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
 
     private static Logger logger = LoggerFactory.getLogger(GraphxEdgeManagerImpl.class.getName());
 
-    private GraphXConf conf;
-    private VertexIdManager<Long, Long> idManager;
-    private VertexDataManager<VD> vertexDataManager;
-//    private long[] threadNumEdges;
-//    private int[] threadNbrPos;
-    private Long[] dstOids;
-    private Long[] dstLids;
-    private ED[] edatas;
-    private int[] nbrPositions;
-    private long[] numOfEdges;
-//    private Function1<Tuple2<Long,MSG_T>, Unit> function1;
-//    private MessageStore<MSG_T,VD> outMessageCache;
+    protected GraphXConf conf;
+    protected VertexIdManager<Long, Long> idManager;
+    protected VertexDataManager<VD> vertexDataManager;
+    protected Long[] dstOids;
+    protected Long[] dstLids;
+    protected ED[] edatas;
+    protected int[] nbrPositions;
+    protected long[] numOfEdges;
 
     public GraphxEdgeManagerImpl(GraphXConf conf, VertexIdManager<Long, Long> idManager,
         VertexDataManager<VD> vertexDataManager) {
         this.conf = conf;
         this.idManager = idManager;
         this.vertexDataManager = vertexDataManager;
-//        this.outMessageCache = outMessageCache;
-//        this.function1 = v1 -> {
-//            outMessageCache.addOidMessage(v1._1(), v1._2());
-//            return null;
-//        };
-    }
-
-    public TupleIterable getTupleIterable(int threadId){
-        return edgeIterables.get(threadId);
     }
 
     @Override
     public void init(IFragment<Long, Long, VD, ED> fragment, int numCores) {
-        super.init(fragment, idManager, Long.class, Long.class, conf.getEdataClass(), conf.getEdataClass(),
+        super.init(fragment, idManager, Long.class, Long.class, conf.getEdataClass(),
+            conf.getEdataClass(),
             null, numCores);
         dstOids = csrHolder.dstOids;
         dstLids = csrHolder.dstLids;
@@ -74,52 +63,74 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
             int nbrPos = nbrPositions[(int) curLid];
             int endPos = (int) (nbrPos + numEdge);
             int curPos = nbrPos;
+
             @Override
-            public boolean hasNext(){
-		//logger.info("has next: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
-                if (curLid >= endLid) return false;
-		if (curPos < endPos) return true;
-                else {
-		    curLid += 1;
-		    while (curLid< endLid){
+            public boolean hasNext() {
+                //logger.info("has next: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
+                if (curLid >= endLid) {
+                    return false;
+                }
+                if (curPos < endPos) {
+                    return true;
+                } else {
+                    curLid += 1;
+                    while (curLid < endLid) {
                         numEdge = numOfEdges[(int) curLid];
-			if (numEdge > 0) break;
+                        if (numEdge > 0) {
+                            break;
+                        }
                         curLid += 1;
-		    }
-                    if (curLid >= endLid) return false;
+                    }
+                    if (curLid >= endLid) {
+                        return false;
+                    }
                     nbrPos = nbrPositions[(int) curLid];
                     endPos = (int) (nbrPos + numEdge);
                     curPos = nbrPos;
-		    //logger.info("has next move to new lid: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
+                    //logger.info("has next move to new lid: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
                     edge.setSrcId(idManager.lid2Oid(curLid));
-		    return true;
+                    return true;
                 }
             }
 
             @Override
-            public Edge<ED> next(){
+            public Edge<ED> next() {
                 edge.setDstId(dstOids[curPos]);
                 edge.setAttr(edatas[curPos]);
-	//	logger.info("src{}, dst{}}", dstOids[curPos], edatas[curPos]);
+                //	logger.info("src{}, dst{}}", dstOids[curPos], edatas[curPos]);
                 curPos += 1;
                 return edge;
             }
         };
     }
 
+    @Override
+    public long getPartialEdgeNum(long startLid, long endLid) {
+        long startLidPos = nbrPositions[(int) startLid];
+        long endLidPos = nbrPositions[(int) endLid];
+        return numOfEdges[(int) endLid] + endLidPos - startLidPos;
+    }
+
+    @Override
+    public long getTotalEdgeNum(){
+        return dstLids.length;
+    }
+
     /**
      * Iterator over edges start from srcLid, update dstId info in context, and apply functions to
      * context;
      *
-     * @param srcLid          src lid
-     * @param msgSender       mapping from edge triplet to a iterator for (dstId, msg).
+     * @param srcLid    src lid
+     * @param msgSender mapping from edge triplet to a iterator for (dstId, msg).
      */
     @Override
     public void iterateOnEdges(long srcLid, GSEdgeTriplet<VD, ED> triplet,
-        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,MessageStore<MSG_T,VD> outMessageCache) {
+        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,
+        MessageStore<MSG_T, VD> outMessageCache) {
         edgeIterable.setLid(srcLid);
         for (GrapeEdge<Long, Long, ED> edge : edgeIterable) {
-            triplet.setDstOid(edge.dstOid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
+            triplet.setDstOid(edge.dstOid, vertexDataManager.getVertexData(edge.dstLid),
+                edge.value);
 //            context.setDstValues(edge.dstOid, edge.dstLid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
             //Avoid creating edge triplet.
             Iterator<Tuple2<Long, MSG_T>> iterator = msgSender.apply(triplet);
@@ -132,13 +143,15 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
             }
         }
     }
+
     @Override
     public void iterateOnEdgesParallel(int threadId, long srcLid, GSEdgeTriplet<VD, ED> triplet,
-        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,MessageStore<MSG_T,VD> outMessageCache) {
+        Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> msgSender,
+        MessageStore<MSG_T, VD> outMessageCache) {
         long numEdge = numOfEdges[(int) srcLid];
         int nbrPos = nbrPositions[(int) srcLid];
         int endPos = (int) (nbrPos + numEdge);
-        for (int i = nbrPos; i < endPos; ++i){
+        for (int i = nbrPos; i < endPos; ++i) {
             triplet.setDstOid(dstOids[i], vertexDataManager.getVertexData(dstLids[i]), edatas[i]);
             Iterator<Tuple2<Long, MSG_T>> iterator = msgSender.apply(triplet);
             logger.info("for edge: {}->{}", triplet.srcId(), triplet.dstId());
@@ -147,18 +160,14 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
                 outMessageCache.addOidMessage(tuple2._1(), tuple2._2());
             }
         }
+    }
 
-//        TupleIterable iterable = edgeIterables.get(threadId);
-//
-//        iterable.setLid(srcLid);
-//        for (GrapeEdge<Long, Long, ED> edge : iterable) {
-//            triplet.setDstOid(edge.dstOid, vertexDataManager.getVertexData(edge.dstLid), edge.value);
-//            Iterator<Tuple2<Long, MSG_T>> iterator = msgSender.apply(triplet);
-//            while (iterator.hasNext()) {
-//                Tuple2<Long, MSG_T> tuple2 = iterator.next();
-//                outMessageStore.addOidMessage(tuple2._1(), tuple2._2());
-//            }
-//        }
+    @Override
+    public <ED2> GraphxEdgeManager<VD, ED2, MSG_T> withNewEdgeData(List<ED2> newEdgeData, long startLid, long endLid) {
+        if (newEdgeData.size() != getPartialEdgeNum(startLid, endLid)){
+            throw new IllegalStateException("Unmatched size: " + newEdgeData.size() + " parial edge num: " + getPartialEdgeNum(startLid,endLid));
+        }
+        return new GraphxEdgeManagerUpdateEData<VD,ED2,MSG_T>(conf, idManager,vertexDataManager, dstOids, dstLids, newEdgeData, nbrPositions, numOfEdges, startLid, endLid);
     }
 
 }

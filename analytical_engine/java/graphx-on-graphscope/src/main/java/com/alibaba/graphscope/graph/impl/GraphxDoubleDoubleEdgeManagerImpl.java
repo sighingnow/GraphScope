@@ -11,6 +11,7 @@ import com.alibaba.graphscope.graph.VertexIdManager;
 import com.alibaba.graphscope.graphx.GSEdgeTriplet;
 import com.alibaba.graphscope.mm.MessageStore;
 import java.lang.reflect.Array;
+import java.util.List;
 import org.apache.spark.graphx.Edge;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
@@ -67,6 +68,18 @@ public class GraphxDoubleDoubleEdgeManagerImpl<MSG_T> extends
         throw new IllegalStateException("Not implemented");
     }
 
+    @Override
+    public long getPartialEdgeNum(long startLid, long endLid) {
+        long startLidPos = nbrPositions[(int)startLid];
+        long endLidPos = nbrPositions[(int) endLid];
+        return numOfEdges[(int) endLid] + endLidPos - startLidPos;
+    }
+
+    @Override
+    public long getTotalEdgeNum() {
+        return nbrPositions.length;
+    }
+
     /**
      * Iterator over edges start from srcLid, update dstId info in context, and apply functions to
      * context;
@@ -121,6 +134,20 @@ public class GraphxDoubleDoubleEdgeManagerImpl<MSG_T> extends
 //                outMessageStore.addOidMessage(tuple2._1(), tuple2._2());
 //            }
 //        }
+    }
+
+    /**
+     * Create copy with new (can be different type) edge data.
+     *
+     * @param newEdgeData
+     * @param startLid
+     * @param endLid
+     * @return created edge manager
+     */
+    @Override
+    public <ED2> GraphxEdgeManager<Double, ED2, MSG_T> withNewEdgeData(List<ED2> newEdgeData,
+        long startLid, long endLid) {
+        throw new IllegalStateException("Not implemented");
     }
 
 }

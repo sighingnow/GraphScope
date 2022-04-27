@@ -5,6 +5,7 @@ import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,5 +45,21 @@ public class DoubleVertexDataManagerImpl implements VertexDataManager<Double> {
     @Override
     public void setVertexData(long lid, Double vertexData) {
         values[(int) lid] = vertexData;
+    }
+
+    @Override
+    public <VDATA_T2> VertexDataManager<VDATA_T2> withNewVertexData(List<VDATA_T2> newVertexData) {
+        return null;
+    }
+
+
+    @Override
+    public void setIFragment(IFragment<Long, Long, Double, ?> fragment) {
+
+    }
+
+    @Override
+    public void setValues(List<Double> vdatas) {
+
     }
 }

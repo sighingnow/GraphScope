@@ -10,6 +10,7 @@ import scala.reflect.ClassTag
 
 abstract class GrapeEdgeRDD[ED](sc: SparkContext,
                                 deps: Seq[Dependency[_]]) extends EdgeRDD[ED](sc, deps) {
+  def mapValues[ED2 : ClassTag](f: Edge[ED] => ED2): GrapeEdgeRDD[ED2]
 }
 
 object GrapeEdgeRDD {
