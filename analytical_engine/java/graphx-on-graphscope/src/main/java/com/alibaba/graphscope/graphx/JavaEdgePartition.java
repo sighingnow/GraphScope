@@ -21,6 +21,7 @@ public class JavaEdgePartition<VD, ED> {
         long chunkSize = (totalVnum + (numPartitions - 1)) / numPartitions;
         this.startLid = Math.min(chunkSize * pid, totalVnum);
         this.endLid = Math.min(startLid + chunkSize, totalVnum);
+        this.edgeManager = edgeManager;
         logger.info("Creating JavaEdgePartition {}", this);
     }
 

@@ -164,9 +164,10 @@ object GrapeGraphImpl {
       vertexMappedSize, edgeMappedSize, !sc.isLocal, classToStr(vdClass), classToStr(edClass))
     println(s"Fragid: [${fragIds}]")
     //fragIds = 10001,111002,11003
-    val grapePartition = oldGraph.vertices.partitionsRDD.mapPartitions(iter => {
+    val grapePartition = oldGraph.vertices.partitionsRDD.zipWithIndex().mapPartitions(iter => {
       if (iter.hasNext){
-        val grapePid = FragmentRegistry.registFragment(fragIds);
+        val t= iter.next()
+        val grapePid = FragmentRegistry.registFragment(fragIds, t._2.toInt);
         Iterator(grapePid)
       }
       else {

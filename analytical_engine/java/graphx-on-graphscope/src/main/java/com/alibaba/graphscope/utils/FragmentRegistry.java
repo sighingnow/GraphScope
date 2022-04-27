@@ -24,7 +24,8 @@ public class FragmentRegistry {
         private static Logger logger = LoggerFactory.getLogger(FragmentRegistry.class.getName());
 //    private static BufferedWriter writer;
 
-    private static AtomicInteger partition = new AtomicInteger(0);
+//    private static AtomicInteger partition = new AtomicInteger(0);
+    private static int maxPartitionId = 0;
     private static String hostName;
     private static String fragId;
     private static ReentrantLock lock = new ReentrantLock();
@@ -71,7 +72,7 @@ public class FragmentRegistry {
         return conf;
     }
 
-    public static int registFragment(String fragIds) throws IOException {
+    public static int registFragment(String fragIds, int index) throws IOException {
         String[] host2frag = fragIds.split(",");
 
         synchronized (FragmentRegistry.class) {
@@ -85,8 +86,9 @@ public class FragmentRegistry {
                 }
             }
         }
-        int partitionId = partition.getAndAdd(1);
-        return partitionId;
+        maxPartitionId = Math.max(maxPartitionId, index);
+        logger.info("max Partition id: " + maxPartitionId);
+        return index;
     }
 
     /**
@@ -103,7 +105,7 @@ public class FragmentRegistry {
                 if (fragId == null || fragId.isEmpty()) {
                     throw new IllegalStateException("Please register fragment first");
                 }
-                fragmentHolder = FragmentHolder.create(fragId, fragName, partition.get());
+                fragmentHolder = FragmentHolder.create(fragId, fragName, maxPartitionId + 1);
                 GraphXConf<VD,ED,?> conf = initConf(vdClass, edClass);
                 GraphXVertexIdManager idManager = GraphXFactory.createIdManager(conf);
                 VertexDataManager<VD> vertexDataManager = GraphXFactory.createVertexDataManager(conf);
@@ -130,8 +132,9 @@ public class FragmentRegistry {
             logger.error("Recreating vertex partitions is not expected");
             return ;
         }
-        vertexPartitions = new ArrayList<>(partition.get());
-        int numPartitions = partition.get();
+        int numPartitions = maxPartitionId + 1;
+        vertexPartitions = new ArrayList<>(numPartitions);
+
         for (int i = 0; i < numPartitions; ++i){
             vertexPartitions.add(new JavaVertexPartition(i,numPartitions, idManager,vertexDataManager));
         }
@@ -145,8 +148,9 @@ public class FragmentRegistry {
         }
         GraphxEdgeManager<VD,ED,?> edgeManager = GraphXFactory.createEdgeManager(conf,idManager, vertexDataManager);
         edgeManager.init(fragmentHolder.getIFragment(), numCores);
-        edgePartitions = new ArrayList<>(partition.get());
-        int numPartitions = partition.get();
+        int numPartitions = maxPartitionId + 1;
+        edgePartitions = new ArrayList<>(numPartitions);
+
         for (int i = 0; i < numPartitions; ++i){
             edgePartitions.add(new JavaEdgePartition(i,numPartitions, idManager,edgeManager));
         }
