@@ -27,13 +27,26 @@ object FragmentRegistry extends Logging{
 
   def initConf[VD, ED](vdClass: Class[_ <: VD], edClass: Class[_ <: ED]): GraphXConf[VD, ED, _] = {
     val conf = new GraphXConf[VD, ED, AnyRef]
-    if (vdClass == classOf[Long] || vdClass == classOf[Long]) conf.setVdataClass(classOf[Long].asInstanceOf[Class[_ <: VD]])
-    else if (vdClass == classOf[Int] || vdClass == classOf[Integer]) conf.setVdataClass(classOf[Integer].asInstanceOf[Class[_ <: VD]])
-    else if (vdClass == classOf[Double] || vdClass == classOf[Double]) conf.setVdataClass(classOf[Double].asInstanceOf[Class[_ <: VD]])
+    if (vdClass == classOf[java.lang.Long] || vdClass == classOf[Long]){
+      conf.setVdataClass(classOf[java.lang.Long].asInstanceOf[Class[_ <: VD]])
+    }
+    else if (vdClass == classOf[Int] || vdClass == classOf[java.lang.Integer]){
+      conf.setVdataClass(classOf[java.lang.Integer].asInstanceOf[Class[_ <: VD]])
+    }
+    else if (vdClass == classOf[Double] || vdClass == classOf[java.lang.Double]){
+      conf.setVdataClass(classOf[java.lang.Double].asInstanceOf[Class[_ <: VD]])
+    }
     else throw new IllegalStateException("Error vd class: " + vdClass.getName)
-    if (edClass == classOf[Long] || edClass == classOf[Long]) conf.setEdataClass(classOf[Long].asInstanceOf[Class[_ <: ED]])
-    else if (edClass == classOf[Int] || edClass == classOf[Integer]) conf.setEdataClass(classOf[Integer].asInstanceOf[Class[_ <: ED]])
-    else if (edClass == classOf[Double] || edClass == classOf[Double]) conf.setEdataClass(classOf[Double].asInstanceOf[Class[_ <: ED]])
+
+    if (edClass == classOf[Long] || edClass == classOf[java.lang.Long]){
+      conf.setEdataClass(classOf[java.lang.Long].asInstanceOf[Class[_ <: ED]])
+    }
+    else if (edClass == classOf[Int] || edClass == classOf[java.lang.Integer]){
+      conf.setEdataClass(classOf[java.lang.Integer].asInstanceOf[Class[_ <: ED]])
+    }
+    else if (edClass == classOf[Double] || edClass == classOf[java.lang.Double]){
+      conf.setEdataClass(classOf[java.lang.Double].asInstanceOf[Class[_ <: ED]])
+    }
     else throw new IllegalStateException("Error ed class: " + edClass.getName)
     conf
   }
