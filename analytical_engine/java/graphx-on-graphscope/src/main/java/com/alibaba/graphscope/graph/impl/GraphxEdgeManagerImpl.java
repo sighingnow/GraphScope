@@ -9,13 +9,13 @@ import com.alibaba.graphscope.graph.VertexDataManager;
 import com.alibaba.graphscope.graph.VertexIdManager;
 import com.alibaba.graphscope.graphx.GSEdgeTriplet;
 import com.alibaba.graphscope.mm.MessageStore;
-import java.lang.reflect.Array;
+import org.apache.spark.graphx.Edge;
 import org.apache.spark.graphx.EdgeTriplet;
+import org.apache.spark.graphx.ReusableEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Function1;
 import scala.Tuple2;
-import scala.Unit;
 import scala.collection.Iterator;
 
 public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
@@ -57,14 +57,47 @@ public class GraphxEdgeManagerImpl<VD, ED, MSG_T> extends
     public void init(IFragment<Long, Long, VD, ED> fragment, int numCores) {
         super.init(fragment, idManager, Long.class, Long.class, conf.getEdataClass(), conf.getEdataClass(),
             null, numCores);
-//        threadNumEdges = new long[numCores];
-//        threadNbrPos = new int[numCores];
         dstOids = csrHolder.dstOids;
         dstLids = csrHolder.dstLids;
         edatas = csrHolder.edatas;
         nbrPositions = csrHolder.nbrPositions;
         numOfEdges = csrHolder.numOfEdges;
         logger.info("create EdgeManagerImpl({})", fragment.fid());
+    }
+
+    @Override
+    public Iterator<Edge<ED>> iterator(long startLid, long endLid) {
+        return new Iterator<Edge<ED>>() {
+            private long curLid = startLid;
+            private ReusableEdge<ED> edge = new ReusableEdge<ED>();
+            long numEdge = numOfEdges[(int) curLid];
+            int nbrPos = nbrPositions[(int) curLid];
+            int endPos = (int) (nbrPos + numEdge);
+            int curPos = nbrPos;
+            @Override
+            public boolean hasNext(){
+                if (curLid >= endLid) return false;
+                if (curPos >= endPos){
+                    curLid += 1;
+                    if (curLid >= endLid) return false;
+                    numEdge = numOfEdges[(int) curLid];
+                    nbrPos = nbrPositions[(int) curLid];
+                    endPos = (int) (nbrPos + numEdge);
+                    curPos = nbrPos;
+                    edge.setSrcId(idManager.lid2Oid(curLid));
+                    return true;
+                }
+                else return true;
+            }
+
+            @Override
+            public Edge<ED> next(){
+                edge.setDstId(dstOids[curPos]);
+                edge.setAttr(edatas[curPos]);
+                curPos += 1;
+                return edge;
+            }
+        };
     }
 
     /**

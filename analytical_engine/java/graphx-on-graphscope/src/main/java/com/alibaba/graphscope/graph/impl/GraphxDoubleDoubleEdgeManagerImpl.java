@@ -11,6 +11,7 @@ import com.alibaba.graphscope.graph.VertexIdManager;
 import com.alibaba.graphscope.graphx.GSEdgeTriplet;
 import com.alibaba.graphscope.mm.MessageStore;
 import java.lang.reflect.Array;
+import org.apache.spark.graphx.Edge;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,11 @@ public class GraphxDoubleDoubleEdgeManagerImpl<MSG_T> extends
         nbrPositions = csrHolder.nbrPositions;
         numOfEdges = csrHolder.numOfEdges;
         logger.info("create EdgeManagerImpl({})", fragment.fid());
+    }
+
+    @Override
+    public Iterator<Edge<Double>> iterator(long startLid, long endLid) {
+        throw new IllegalStateException("Not implemented");
     }
 
     /**

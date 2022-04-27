@@ -1,5 +1,8 @@
 package org.apache.spark.graphx
 
+import com.alibaba.graphscope.graphx.JavaVertexPartition
+import org.apache.spark.graphx.impl.offheap.OffHeapVertexRDDImpl
+import org.apache.spark.rdd.RDD
 import org.apache.spark.{Dependency, SparkContext}
 
 import scala.reflect.ClassTag
@@ -27,6 +30,10 @@ object GrapeVertexRDD {
                                edges: EdgeRDD[_], numPartitions: Int, defaultVal: VD): GrapeVertexRDD[VD] = {
 
     null
+  }
+
+  def fromVertexPartitions[VD : ClassTag](vertexPartition : RDD[(PartitionID, GrapeVertexPartition[VD])]): OffHeapVertexRDDImpl[VD] ={
+    new OffHeapVertexRDDImpl[VD](vertexPartition)
   }
 
 }
