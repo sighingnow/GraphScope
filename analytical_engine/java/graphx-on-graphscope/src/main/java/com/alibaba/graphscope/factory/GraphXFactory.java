@@ -85,12 +85,12 @@ public class GraphXFactory {
 
     public static <VD, ED, MSG_T> GraphxEdgeManager<VD, ED, MSG_T> createEdgeManager(
         GraphXConf<VD,ED,MSG_T> conf, VertexIdManager<Long, Long> idManager,
-        VertexDataManager<VD> vertexDataManager, MessageStore<MSG_T,VD> outMessage) {
+        VertexDataManager<VD> vertexDataManager) {
         if (conf.getEdataClass().equals(Double.class)){
             logger.info("Creating double edge manager");
-            return (GraphxEdgeManager<VD, ED, MSG_T>) new GraphxDoubleDoubleEdgeManagerImpl<MSG_T>(conf, idManager, (VertexDataManager<Double>) vertexDataManager, (MessageStore<MSG_T, Double>) outMessage);
+            return (GraphxEdgeManager<VD, ED, MSG_T>) new GraphxDoubleDoubleEdgeManagerImpl<MSG_T>(conf, idManager, (VertexDataManager<Double>) vertexDataManager);
         }
-        return new GraphxEdgeManagerImpl<>(conf, idManager, vertexDataManager, outMessage);
+        return new GraphxEdgeManagerImpl<>(conf, idManager, vertexDataManager);
     }
 
     public static <VD,ED>GSEdgeTriplet<VD,ED> createEdgeTriplet(GraphXConf<VD,ED,?> conf){
