@@ -1,5 +1,6 @@
 package com.alibaba.graphscope.graphx;
 
+import com.alibaba.fastffi.FFITypeFactory;
 import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -34,6 +35,7 @@ public class FragmentRDD {
     }
 
     private long address;
+    private ArrowProjectedFragment projectedFragment;
 
     public FragmentRDD(long fragId, String foreignFragName, int numPartitions) throws IOException {
         try {
@@ -41,9 +43,10 @@ public class FragmentRDD {
             if (address <= 0) {
                 throw new IllegalStateException("Got an address less than zero");
             }
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
+            projectedFragment = createArrowProjectedFragmentInstance(
+                (Class<? extends ArrowProjectedFragment>) FFITypeFactory.getType(ArrowProjectedFragment.class, foreignFragName), address);
+            logger.info("construct projected fragment: " + projectedFragment);
+        } catch (IllegalAccessException | InstantiationException | ClassNotFoundException | InvocationTargetException e) {
             e.printStackTrace();
         }
         logger.info("Retried fragment: address" + address);
