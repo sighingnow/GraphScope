@@ -77,7 +77,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](
   override def getPartialEdgeNum(startLid: Long, endLid: Long): Long = {
     val startLidPos = nbrPositions(startLid.toInt)
     val endLidPos = nbrPositions(endLid.toInt - 1)
-    numOfEdges(endLid.toInt) + endLidPos - startLidPos
+    numOfEdges(endLid.toInt - 1) + endLidPos - startLidPos
   }
 
   override def getTotalEdgeNum: Long = {
