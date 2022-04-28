@@ -25,11 +25,12 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
     new Iterator[(VertexId,VD)]{
       private var curLid = startLid
       override def hasNext: Boolean = {
-        curLid < endLid
+        curLid = mask.nextSetBit(curLid.toInt)
+        curLid < endLid && curLid > 0 && curLid >= startLid
       }
 
       override def next(): (VertexId, VD) = {
-        val res = (idManager.lid2Oid(curLid).asInstanceOf[VertexId], vertexDataManager.getVertexData(curLid))
+        val res = (idManager.lid2Oid(curLid), vertexDataManager.getVertexData(curLid))
         curLid += 1
         res
       }
@@ -42,7 +43,7 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
     val newValues = new Array[VD2](totalVnum.toInt)
     var i = startLid.toInt
     while (i < totalVnum) {
-      newValues(i) =  f(idManager.lid2Oid(i), vertexDataManager.getVertexData(i))
+      newValues(i) = f(idManager.lid2Oid(i), vertexDataManager.getVertexData(i))
       i += 1
     }
     this.withNewValues(newValues)
