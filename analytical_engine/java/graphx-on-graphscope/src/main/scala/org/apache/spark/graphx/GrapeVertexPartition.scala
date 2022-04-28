@@ -17,6 +17,7 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
   val partitionVnum: VertexId = endLid - startLid
   if (mask == null){
     mask = new BitSet(totalVnum.toInt)
+    mask.setUntil(endLid.toInt)
   }
   log.info(s"Creating GrapeVertexPartition ${this} active vertices: ${mask.cardinality()}")
 

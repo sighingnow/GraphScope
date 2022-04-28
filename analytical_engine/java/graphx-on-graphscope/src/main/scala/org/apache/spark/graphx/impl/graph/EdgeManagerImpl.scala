@@ -44,8 +44,9 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
       logger.info("No edata provided, read from csr");
       realEdatas = csrHolder.edatas
     }
-    val inactiveSet = new BitSet(tmpDstLids.size())
-    initialize(inConf, inVertexIdManager, inVertexDataManager, tmpDstOids, tmpDstLids, tmpNbrPositions, tmpNumOfEdges, realEdatas, inEdataOffset, inEdgeReversed,inactiveSet)
+
+    val activeSet = new BitSet(tmpDstLids.size())
+    initialize(inConf, inVertexIdManager, inVertexDataManager, tmpDstOids, tmpDstLids, tmpNbrPositions, tmpNumOfEdges, realEdatas, inEdataOffset, inEdgeReversed,activeSet)
     //    this(conf, vertexIdManager, vertexDataManager,dstOids, dstLids, nbrPositions, numOfEdges, realEdatas, edataOffset, edgeReversed)
   }
 
@@ -63,10 +64,10 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     this.edgeReversed = bool
     this.activeSet = set
   }
-  if (activeSet == null){
-    activeSet = new BitSet(dstLids.size())
-    activeSet.setUntil(dstLids.size())
-  }
+//  if (activeSet == null){
+//    activeSet = new BitSet(dstLids.size())
+//    activeSet.setUntil(dstLids.size())
+//  }
   logger.info(s"Using customized edata, length ${edatas.size()}, offset ${edataOffset}");
   require(edataOffset < getTotalEdgeNum, s"offset error ${edataOffset} greater than ${getTotalEdgeNum}")
   require(edatas.size() < getTotalEdgeNum, s"length ${edatas.size()} should smaller than ${getTotalEdgeNum}")

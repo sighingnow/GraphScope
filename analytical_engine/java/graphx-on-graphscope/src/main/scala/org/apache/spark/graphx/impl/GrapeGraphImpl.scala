@@ -1,7 +1,7 @@
 package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.graphx.FragmentOps
-import org.apache.spark.graphx.impl.offheap.OffHeapEdgeRDDImpl
+import org.apache.spark.graphx.impl.offheap.{OffHeapEdgeRDDImpl, OffHeapVertexRDDImpl}
 //import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.impl.GrapeUtils.{classToStr, generateForeignFragName, scalaClass2JavaClass}
@@ -222,7 +222,11 @@ object GrapeGraphImpl {
     val grapeEdgeRDD = GrapeEdgeRDD.fromEdgePartitions[VD,ED](grapeEdgePartitions)
     println(s"grape vertex rdd ${grapeVertexRDD.count()}, edge rdd ${grapeEdgeRDD.count()}")
 
-    null
+    fromExistingRDDs(grapeVertexRDD, grapeEdgeRDD)
+  }
+
+  def fromExistingRDDs[VD: ClassTag,ED :ClassTag](vertices: OffHeapVertexRDDImpl[VD], edges: OffHeapEdgeRDDImpl[VD, ED]): GrapeGraphImpl[VD,ED] ={
+    new GrapeGraphImpl[VD,ED](vertices, edges)
   }
 
   def toGraphXGraph[VD:ClassTag, ED : ClassTag](graph : Graph[VD,ED]) : Graph[VD,ED] = {
