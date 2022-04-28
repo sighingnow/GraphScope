@@ -82,7 +82,7 @@ public class DefaultImmutableEdgeManager<
                         GIRAPH_EDATA_T edata =
                             (GIRAPH_EDATA_T) ReflectionUtils.newInstance(conf.getEdgeValueClass());
                         edata.readFields(inputStream);
-                        edatas[index2++] = edata;
+                        edatas.set(index2++,edata);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

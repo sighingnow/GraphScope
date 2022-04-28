@@ -1,8 +1,7 @@
 package org.apache.spark.graphx
 
-import scala.reflect.ClassTag
 
-class ReusableEdge[@specialized(Char, Int, Boolean, Byte, Long, Float, Double) ED] extends Edge[ED] {
+class ReusableEdge[ED] extends Edge[ED] {
   def setSrcId(vertexId: VertexId) = {
     this.srcId = vertexId
   }

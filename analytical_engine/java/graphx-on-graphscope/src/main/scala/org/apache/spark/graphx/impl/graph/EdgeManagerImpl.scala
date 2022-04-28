@@ -3,6 +3,7 @@ package org.apache.spark.graphx.impl.graph
 import com.alibaba.graphscope.fragment.IFragment
 import com.alibaba.graphscope.graph.AbstractEdgeManager
 import com.alibaba.graphscope.graphx.GSEdgeTriplet
+import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx.{Edge, EdgeTriplet, GraphXConf, VertexId}
 import org.apache.spark.graphx.traits.{EdgeManager, GraphXVertexIdManager, MessageStore, VertexDataManager}
 import org.slf4j.LoggerFactory
@@ -12,21 +13,22 @@ import scala.reflect.ClassTag
 
 class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](
                               conf: GraphXConf[VD,ED], fragment : IFragment[Long,Long,_,_],
-                              vertexIdManager: GraphXVertexIdManager, vertexDataManager: VertexDataManager[VD], numCores : Int, var edatas : Array[ED] = null, val edataOffset :Int = 0) extends AbstractEdgeManager[Long,Long,Long,ED,ED] with EdgeManager[VD,ED]{
+                              vertexIdManager: GraphXVertexIdManager, vertexDataManager: VertexDataManager[VD], numCores : Int, var edatas : PrimitiveArray[ED] = null,
+                              val edataOffset :Int = 0) extends AbstractEdgeManager[Long,Long,Long,ED,ED] with EdgeManager[VD,ED]{
   private val logger = LoggerFactory.getLogger(classOf[EdgeManagerImpl[_,_]].getName)
   super.init(fragment.asInstanceOf[IFragment[Long,Long,_,ED]], vertexIdManager, classOf[java.lang.Long].asInstanceOf[Class[_ <: Long]], classOf[java.lang.Long].asInstanceOf[Class[_ <: Long]], conf.getEdClass, conf.getEdClass, null, numCores)
-  val dstOids: Array[Long] = csrHolder.dstOids.toArray[Long]
-  val dstLids: Array[Long] = csrHolder.dstLids.toArray[Long]
+  val dstOids: PrimitiveArray[Long] = csrHolder.dstOids
+  val dstLids: PrimitiveArray[Long] = csrHolder.dstLids
   val nbrPositions: Array[Int] = csrHolder.nbrPositions
   val numOfEdges: Array[Long] = csrHolder.numOfEdges
-  if (edatas == null || edatas.length == 0){
+  if (edatas == null || edatas.size() == 0){
     logger.info("No edata provided, read from csr");
-    edatas = csrHolder.edatas.toArray[ED]
+    edatas = csrHolder.edatas
   }
   else {
-    logger.info(s"Using customized edata, length ${edatas.length}, offset ${edataOffset}");
+    logger.info(s"Using customized edata, length ${edatas.size()}, offset ${edataOffset}");
     require(edataOffset < getTotalEdgeNum, s"offset error ${edataOffset} greater than ${getTotalEdgeNum}")
-    require(edatas.length < getTotalEdgeNum, s"length ${edatas.length} should smaller than ${getTotalEdgeNum}")
+    require(edatas.size() < getTotalEdgeNum, s"length ${edatas.size()} should smaller than ${getTotalEdgeNum}")
   }
 
   logger.info(s"create EdgeManagerImpl(${this})")
@@ -63,8 +65,8 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](
       }
 
       def next: Edge[ED] = {
-        edge.setDstId(dstOids(curPos))
-        edge.setAttr(edatas(curPos - edataOffset))
+        edge.setDstId(dstOids.get(curPos))
+        edge.setAttr(edatas.get(curPos - edataOffset))
         //	logger.info("src{}, dst{}}", dstOids[curPos], edatas[curPos]);
         curPos += 1
         edge
@@ -79,7 +81,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](
   }
 
   override def getTotalEdgeNum: Long = {
-    dstLids.length
+    dstLids.size()
   }
 
   override def iterateOnEdgesParallel[MSG](tid: Int, srcLid: Long, triplet: GSEdgeTriplet[VD, ED], msgSender: EdgeTriplet[VD, ED] => Iterator[(VertexId, MSG)], outMessageCache: MessageStore[MSG]): Unit = {
@@ -88,7 +90,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](
     val endPos = (nbrPos + numEdge).toInt
     var i = nbrPos
     while (i < endPos) {
-      triplet.setDstOid(dstOids(i), vertexDataManager.getVertexData(dstLids(i)), edatas(i - edataOffset))
+      triplet.setDstOid(dstOids.get(i), vertexDataManager.getVertexData(dstLids.get(i)), edatas.get(i - edataOffset))
       val iterator = msgSender.apply(triplet)
       logger.info("for edge: {}->{}", triplet.srcId, triplet.dstId)
       while (iterator.hasNext) {
@@ -99,9 +101,12 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](
     }
   }
 
-  override def withNewEdgeData[ED2 : ClassTag](newEdgeData: Array[ED2], startLid: Long, endLid: Long): EdgeManager[VD, ED2] = {
-    new EdgeManagerImpl[VD,ED2](new GraphXConf[VD,ED2], fragment, vertexIdManager, vertexDataManager, numCores, newEdgeData, edataOffset)
+  override def withNewEdgeData[ED2 : ClassTag](newEdgeData: PrimitiveArray[ED2], startLid: Long, endLid: Long): EdgeManager[VD, ED2] = {
+    val newEdataOffset = getPartialEdgeNum(0, startLid)
+    require(newEdataOffset + newEdgeData.size() == getPartialEdgeNum(startLid, endLid),
+      s"override edata array size not match ${newEdataOffset + newEdgeData.size()} should match ${getPartialEdgeNum(startLid,endLid)}")
+    new EdgeManagerImpl[VD,ED2](new GraphXConf[VD,ED2], fragment, vertexIdManager, vertexDataManager, numCores, newEdgeData, newEdataOffset.toInt)
   }
 
-  override def toString: String = "EdgeManagerImpl(length=" + dstLids.length + ",numEdges=" + getTotalEdgeNum+ ")"
+  override def toString: String = "EdgeManagerImpl(length=" + dstLids.size() + ",numEdges=" + getTotalEdgeNum+ ")"
 }

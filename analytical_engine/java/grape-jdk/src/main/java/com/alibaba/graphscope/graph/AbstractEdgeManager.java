@@ -10,6 +10,7 @@ import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream;
 import com.alibaba.graphscope.stdcxx.FFIByteVector;
+import com.alibaba.graphscope.utils.array.PrimitiveArray;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -54,7 +55,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
         Class<? extends VID_T> vidClass,
         Class<? extends GRAPE_ED_T> grapeEdataClass,
         Class<? extends BIZ_EDATA_T> bizEdataClass,
-        BiConsumer<FFIByteVectorInputStream, BIZ_EDATA_T[]> consumer) {
+        BiConsumer<FFIByteVectorInputStream, PrimitiveArray<BIZ_EDATA_T>> consumer) {
         this.edataClass = grapeEdataClass;
         this.bizEdataClass = bizEdataClass;
         this.bizOidClass = bizOidClass;
@@ -87,7 +88,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
         Class<? extends VID_T> vidClass,
         Class<? extends GRAPE_ED_T> grapeEdataClass,
         Class<? extends BIZ_EDATA_T> bizEdataClass,
-        BiConsumer<FFIByteVectorInputStream, BIZ_EDATA_T[]> consumer, int numCores) {
+        BiConsumer<FFIByteVectorInputStream, PrimitiveArray<BIZ_EDATA_T>> consumer, int numCores) {
         init(fragment,vertexIdManager,bizOidClass, vidClass,grapeEdataClass,bizEdataClass, consumer);
         edgeIterables = Lists.newArrayListWithCapacity(numCores);
         for (int i = 0; i < numCores; ++i){
@@ -124,12 +125,16 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
         private GrapeEdge<VID_T, BIZ_OID_T, BIZ_EDATA_T> grapeEdge = new GrapeEdge<>();
         private int nbrPos;
         private long numEdge;
-        private BIZ_OID_T[] dstOids;
-        private VID_T[] dstLids;
-        private BIZ_EDATA_T[] edatas;
+        //FIXME: Support more types
+//        private BIZ_OID_T[] dstOids;
+//        private VID_T[] dstLids;
+//        private BIZ_EDATA_T[] edatas;
+        private PrimitiveArray<BIZ_OID_T> dstOids;
+        private PrimitiveArray<VID_T> dstLids;
+        private PrimitiveArray<BIZ_EDATA_T> edatas;
         private int[] nbrPositions;
         private long[] numOfEdges;
-        public TupleIterator(long[] numOfEdges, int[] nbrPositions, BIZ_OID_T[] dstOids, VID_T[] dstLids, BIZ_EDATA_T[] edatas){
+        public TupleIterator(long[] numOfEdges, int[] nbrPositions, PrimitiveArray<BIZ_OID_T> dstOids, PrimitiveArray<VID_T> dstLids, PrimitiveArray<BIZ_EDATA_T> edatas){
             this.numOfEdges = numOfEdges;
             this.nbrPositions = nbrPositions;
             this.dstOids = dstOids;
@@ -147,9 +152,9 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
 
         @Override
         public GrapeEdge<VID_T, BIZ_OID_T, BIZ_EDATA_T> next() {
-            grapeEdge.dstLid = dstLids[nbrPos];
-            grapeEdge.dstOid = dstOids[nbrPos];
-            grapeEdge.value = edatas[nbrPos++];
+            grapeEdge.dstLid = dstLids.get(nbrPos);
+            grapeEdge.dstOid = dstOids.get(nbrPos);
+            grapeEdge.value = edatas.get(nbrPos++);
             numEdge -= 1;
             return grapeEdge;
         }
@@ -160,14 +165,17 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
         private long totalNumOfEdges;
 
         public long[] nbrUnitAddrs, numOfEdges;
-        public BIZ_OID_T[] dstOids;
-        public VID_T[] dstLids;
-        public BIZ_EDATA_T[] edatas;
+//        public BIZ_OID_T[] dstOids;
+//        public VID_T[] dstLids;
+//        public BIZ_EDATA_T[] edatas;
+        public PrimitiveArray<BIZ_OID_T> dstOids;
+        public PrimitiveArray<VID_T> dstLids;
+        public PrimitiveArray<BIZ_EDATA_T> edatas;
         public int[] nbrPositions;
-        private BiConsumer<FFIByteVectorInputStream, BIZ_EDATA_T[]> consumer;
+        private BiConsumer<FFIByteVectorInputStream, PrimitiveArray<BIZ_EDATA_T>> consumer;
 
         public CSRHolder(TypedArray<GRAPE_ED_T> edataArray,
-            BiConsumer<FFIByteVectorInputStream, BIZ_EDATA_T[]> consumer) {
+            BiConsumer<FFIByteVectorInputStream, PrimitiveArray<BIZ_EDATA_T>> consumer) {
             this.consumer = consumer;
             totalNumOfEdges = getTotalNumOfEdges();
             nbrUnitAddrs = new long[(int) innerVerticesNum];
@@ -175,11 +183,14 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
             nbrPositions = new int[(int) innerVerticesNum];
             // marks the mapping between lid to start pos of nbr, i.e. offset.
             // the reason why we don't resuse oeBegin Offset is that eid may not sequential.
-            edatas = (BIZ_EDATA_T[]) Array.newInstance(bizEdataClass, (int)totalNumOfEdges);
+//            edatas = (BIZ_EDATA_T[]) Array.newInstance(bizEdataClass, (int)totalNumOfEdges);
 //            edatas = (BIZ_EDATA_T[]) new Object[(int) totalNumOfEdges];
-            dstOids = (BIZ_OID_T[]) Array.newInstance(bizOidClass, (int) totalNumOfEdges);
-            dstLids = (VID_T[]) Array.newInstance(vidClass, (int) totalNumOfEdges);
+//            dstOids = (BIZ_OID_T[]) Array.newInstance(bizOidClass, (int) totalNumOfEdges);
+//            dstLids = (VID_T[]) Array.newInstance(vidClass, (int) totalNumOfEdges);
 //            dstLids = (VID_T[]) new Object[(int) totalNumOfEdges];
+            edatas = PrimitiveArray.create(bizEdataClass, (int) totalNumOfEdges);
+            dstOids = PrimitiveArray.create(bizOidClass, (int) totalNumOfEdges);
+            dstLids = PrimitiveArray.create(vidClass, (int) totalNumOfEdges);
             try {
                 initArrays(edataArray);
             } catch (IOException e) {
@@ -218,14 +229,14 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                 for (int j = 0; j < numOfEdges[lid]; ++j) {
                     if (vid_t == 0) {
                         Long dstLid = (Long) unsafe.getLong(curAddrr);
-                        dstLids[index] = (VID_T) dstLid;
-                        dstOids[index++] = vertexIdManager.lid2Oid(
-                            (VID_T) dstLid);
+                        dstLids.set(index, (VID_T) dstLid);
+                        dstOids.set(index++, vertexIdManager.lid2Oid(
+                            (VID_T) dstLid));
                     } else {
                         Integer dstLid = (Integer) unsafe.getInt(curAddrr);
-                        dstLids[index] = (VID_T) dstLid;
-                        dstOids[index++] = vertexIdManager.lid2Oid(
-                            (VID_T) dstLid);
+                        dstLids.set(index, (VID_T) dstLid);
+                        dstOids.set(index++, vertexIdManager.lid2Oid(
+                            (VID_T) dstLid));
                     }
                     curAddrr += nbrUnitEleSize;
                 }
@@ -245,7 +256,8 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                         for (int j = 0; j < numOfEdges[lid]; ++j) {
                             long eid = unsafe.getLong(curAddrr);
                             Long edata = (Long) edataArray.get(eid);
-                            edatas[index++] = (BIZ_EDATA_T) edata;
+//                            edatas[index++] = (BIZ_EDATA_T) edata;
+                            edatas.set(index, (BIZ_EDATA_T) edata);
                             curAddrr += nbrUnitEleSize;
                         }
                     }
@@ -255,7 +267,8 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                         for (int j = 0; j < numOfEdges[lid]; ++j) {
                             long eid = unsafe.getLong(curAddrr);
                             Integer edata = (Integer) edataArray.get(eid);
-                            edatas[index++] = (BIZ_EDATA_T) edata;
+//                            edatas[index++] = (BIZ_EDATA_T) edata;
+                            edatas.set(index, (BIZ_EDATA_T) edata);
                             curAddrr += nbrUnitEleSize;
                         }
                     }
@@ -266,7 +279,8 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                         for (int j = 0; j < numOfEdges[lid]; ++j) {
                             long eid = unsafe.getLong(curAddrr);
                             Double edata = (Double) edataArray.get(eid);
-                            edatas[index++] = (BIZ_EDATA_T) edata;
+//                            edatas[index++] = (BIZ_EDATA_T) edata;
+                            edatas.set(index, (BIZ_EDATA_T) edata);
 //                            logger.info("lid {} j {} eid {} edata {}", lid, j, eid, edata);
                             curAddrr += nbrUnitEleSize;
                         }
@@ -277,7 +291,8 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                         for (int j = 0; j < numOfEdges[lid]; ++j) {
                             long eid = unsafe.getLong(curAddrr);
                             Float edata = (Float) edataArray.get(eid);
-                            edatas[index++] = (BIZ_EDATA_T) edata;
+//                            edatas[index++] = (BIZ_EDATA_T) edata;
+                            edatas.set(index, (BIZ_EDATA_T) edata);
                             curAddrr += nbrUnitEleSize;
                         }
                     }
@@ -299,8 +314,8 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
             if (logger.isDebugEnabled()) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("[");
-                for (int i = 0; i < edatas.length; ++i) {
-                    sb.append(edatas[i] + ",");
+                for (int i = 0; i < edatas.size(); ++i) {
+                    sb.append(edatas.get(i) + ",");
                 }
                 sb.append("]");
                 logger.info("edata array:" + sb.toString());
@@ -310,7 +325,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
         //By default, we check whether BIZ_EDATA_T is the same as GRAPE_EDATA_T, if so, we just convert and set.
         //If not we turn for this function.
         public void rebuildEdatasFromStream(FFIByteVectorInputStream inputStream,
-            BIZ_EDATA_T[] edatas) {
+            PrimitiveArray<BIZ_EDATA_T> edatas) {
             if (consumer == null) {
                 throw new IllegalStateException(
                     "You should override rebuildEdatasFromStream, since automatic conversion failed.");

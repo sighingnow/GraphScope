@@ -1,5 +1,6 @@
 package org.apache.spark.graphx.impl
 
+import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx.traits.{EdgeManager, GraphXVertexIdManager}
 import org.apache.spark.graphx.{Edge, PartitionID}
 import org.apache.spark.internal.Logging
@@ -22,11 +23,11 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
   }
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
-    val newData = new Array[ED2](numEdges.toInt)
+    val newData : PrimitiveArray[ED2] = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2].asInstanceOf[Class[ED2]], numEdges.toInt)
     val iter = iterator;
     var ind = 0;
     while (iter.hasNext){
-      newData(ind) =  f(iter.next())
+      newData.set(ind, f(iter.next()))
       ind += 1
     }
     new GrapeEdgePartition[VD,ED2](pid, numPartitions, idManager, edgeManager.withNewEdgeData[ED2](newData, startLid, endLid))

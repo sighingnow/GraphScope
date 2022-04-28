@@ -2,6 +2,7 @@ package org.apache.spark.graphx.traits
 
 import com.alibaba.graphscope.fragment.IFragment
 import com.alibaba.graphscope.graphx.GSEdgeTriplet
+import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx.{Edge, EdgeTriplet, VertexId}
 
 import scala.reflect.ClassTag
@@ -16,5 +17,5 @@ trait EdgeManager[VD,ED] {
   def iterateOnEdgesParallel[MSG](tid: Int, srcLid: Long, context: GSEdgeTriplet[VD, ED],
                                   msgSender: EdgeTriplet[VD, ED] => Iterator[(VertexId, MSG)], outMessageCache: MessageStore[MSG]): Unit
 
-  def withNewEdgeData[ED2 : ClassTag](newEdgeData: Array[ED2], startLid: Long, endLid: Long): EdgeManager[VD, ED2]
+  def withNewEdgeData[ED2 : ClassTag](newEdgeData: PrimitiveArray[ED2], startLid: Long, endLid: Long): EdgeManager[VD, ED2]
 }
