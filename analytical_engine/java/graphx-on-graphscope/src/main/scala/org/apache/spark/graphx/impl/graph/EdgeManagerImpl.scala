@@ -46,8 +46,8 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     }
 
     val activeSet = new BitSet(tmpDstLids.size())
+    activeSet.setUntil(tmpDstLids.size())
     initialize(inConf, inVertexIdManager, inVertexDataManager, tmpDstOids, tmpDstLids, tmpNbrPositions, tmpNumOfEdges, realEdatas, inEdataOffset, inEdgeReversed,activeSet)
-    //    this(conf, vertexIdManager, vertexDataManager,dstOids, dstLids, nbrPositions, numOfEdges, realEdatas, edataOffset, edgeReversed)
   }
 
   def initialize(inConf: GraphXConf[VD, ED], manager: GraphXVertexIdManager, vdManager: VertexDataManager[VD], oids: PrimitiveArray[Long], lids: PrimitiveArray[Long],
@@ -88,21 +88,23 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
 
       def hasNext: Boolean = {
         //logger.info("has next: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
-        while (activeSet.get(curPos)){
-          curPos += 1
+        curPos = activeSet.nextSetBit(curPos);
+        if (curPos < endPos){
+          return true
         }
-        if (curLid >= endLid) return false
-        if (curPos < endPos) true
+        curLid += 1
+        if (curLid >= endLid) false
         else {
-          curLid += 1
           numEdge = numOfEdges(curLid.toInt)
-          while (curLid < endLid && numEdge <= 0){
-            curLid += 1
-            numEdge = numOfEdges(curLid.toInt)
-          }
-          if (curLid >= endLid) return false
           nbrPos = nbrPositions(curLid.toInt)
           endPos = (nbrPos + numEdge).toInt
+          while (curLid < endLid && numEdge <= 0 && (activeSet.nextSetBit(nbrPos) < 0 || activeSet.nextSetBit(nbrPos) >= endPos)){
+            curLid += 1
+            numEdge = numOfEdges(curLid.toInt)
+            nbrPos = nbrPositions(curLid.toInt)
+            endPos = (nbrPos + numEdge).toInt
+          }
+          if (curLid >= endLid) return false
           curPos = nbrPos
           //logger.info("has next move to new lid: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
           edge.setSrcId(vertexIdManager.lid2Oid(curLid))
@@ -136,22 +138,24 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
       var curPos: Int = nbrPos
 
       def hasNext: Boolean = {
-        while (activeSet.get(curPos)) {
-          curPos += 1
+        curPos = activeSet.nextSetBit(curPos);
+        if (curPos < endPos){
+          return true
         }
+        curLid += 1
         //logger.info("has next: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
-        if (curLid >= endLid) return false
-        if (curPos < endPos) true
+        if (curLid >= endLid) false
         else {
-          curLid += 1
           numEdge = numOfEdges(curLid.toInt)
-          while (curLid < endLid && numEdge <= 0){
-            numEdge = numOfEdges(curLid.toInt)
-            curLid += 1
-          }
-          if (curLid >= endLid) return false
           nbrPos = nbrPositions(curLid.toInt)
           endPos = (nbrPos + numEdge).toInt
+          while (curLid < endLid && numEdge <= 0 && (activeSet.nextSetBit(nbrPos) < 0 || activeSet.nextSetBit(nbrPos) >= endPos)){
+            curLid += 1
+            numEdge = numOfEdges(curLid.toInt)
+            nbrPos = nbrPositions(curLid.toInt)
+            endPos = (nbrPos + numEdge).toInt
+          }
+          if (curLid >= endLid) return false
           curPos = nbrPos
           //logger.info("has next move to new lid: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
           if (tripletFields.useSrc){
@@ -194,7 +198,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     val endPos = (nbrPos + numEdge).toInt
     var i = nbrPos
     while (i < endPos) {
-      if (!activeSet.get(i)) {
+      if (activeSet.get(i)) {
         triplet.setDstOid(dstOids.get(i), vertexDataManager.getVertexData(dstLids.get(i)))
         triplet.setAttr(edatas.get(i - edataOffset))
         val iterator = msgSender.apply(triplet)
@@ -241,14 +245,15 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
       throw new IllegalStateException("Not possible")
     }
     val iter = tripletIterator(startLid, endLid)
+    val newActiveSet = new BitSet(dstLids.size())
     var ind = 0;
     while (iter.hasNext){
       val triplet = iter.next()
       if (epred(triplet) || vpred(triplet.srcId, triplet.srcAttr) || vpred(triplet.dstId,triplet.dstAttr)){
-        activeSet.set(ind)
+        newActiveSet.set(ind)
       }
       ind += 1
     }
-    new EdgeManagerImpl[VD,ED](conf, vertexIdManager, vertexDataManager,dstOids, dstLids, nbrPositions, numOfEdges, edatas, edataOffset, !edgeReversed,activeSet)
+    new EdgeManagerImpl[VD,ED](conf, vertexIdManager, vertexDataManager,dstOids, dstLids, nbrPositions, numOfEdges, edatas, edataOffset, !edgeReversed,newActiveSet)
   }
 }
