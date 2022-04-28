@@ -10,6 +10,12 @@ import scala.reflect.ClassTag
 trait EdgeManager[VD,ED] {
   def iterator(startLid: Long, endLid: Long): Iterator[Edge[ED]]
 
+  /**
+   * Get the num edges between [startLid, endLid)
+   * @param startLid
+   * @param endLid
+   * @return
+   */
   def getPartialEdgeNum(startLid: Long, endLid: Long): Long
 
   def getTotalEdgeNum: Long
