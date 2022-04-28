@@ -62,15 +62,11 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     this.edataOffset = inEdataOffset
     this.edgeReversed = bool
     this.activeSet = set
-  }
-  if (activeSet == null){
-    activeSet = new BitSet(dstLids.size())
-    activeSet.setUntil(dstLids.size())
-  }
   logger.info(s"Using customized edata, length ${edatas.size()}, offset ${edataOffset}");
   require(edataOffset < getTotalEdgeNum, s"offset error ${edataOffset} greater than ${getTotalEdgeNum}")
-  require(edatas.size() < getTotalEdgeNum, s"length ${edatas.size()} should smaller than ${getTotalEdgeNum}")
+  require(edatas.size() <= getTotalEdgeNum, s"length ${edatas.size()} should smaller than ${getTotalEdgeNum}")
   logger.info(s"create EdgeManagerImpl(${this}), reversed ${edgeReversed}")
+  }
 
 
   override def iterator(startLid: Long, endLid: Long): Iterator[Edge[ED]] = {
