@@ -2,7 +2,7 @@ package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx.traits.{EdgeManager, GraphXVertexIdManager}
-import org.apache.spark.graphx.{Edge, PartitionID}
+import org.apache.spark.graphx.{Edge, EdgeTriplet, PartitionID, VertexId}
 import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag
@@ -31,6 +31,26 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
       ind += 1
     }
     new GrapeEdgePartition[VD,ED2](pid, numPartitions, idManager, edgeManager.withNewEdgeData[ED2](newData, startLid, endLid))
+  }
+
+  /**
+   * Reverse all the edges in this partition.
+   *
+   * @return a new edge partition with all edges reversed.
+   */
+  def reverse: GrapeEdgePartition[VD, ED] = {
+    //A copy of edgemanager is created.
+    new GrapeEdgePartition[VD,ED](pid, numPartitions, idManager, edgeManager.reverseEdges())
+  }
+
+  /**
+   * Construct a new edge partition containing only the edges matching `epred` and where both
+   * vertices match `vpred`.
+   */
+  def filter(
+              epred: EdgeTriplet[VD, ED] => Boolean,
+              vpred: (VertexId, VD) => Boolean): GrapeEdgePartition[VD, ED] = {
+    new GrapeEdgePartition[VD,ED](pid, numPartitions, idManager, edgeManager.filter(epred, vpred, startLid, endLid))
   }
 
 

@@ -1,13 +1,12 @@
 package org.apache.spark.graphx
 
 import com.alibaba.graphscope.fragment.IFragment
-import com.alibaba.graphscope.graphx.GSEdgeTriplet
+import com.alibaba.graphscope.graphx.{GSEdgeTriplet, GSEdgeTripletImpl, SerializationUtils}
 import com.alibaba.graphscope.parallel.DefaultMessageManager
 import org.apache.spark.graphx.impl.graph.GraphXProxy
 import org.apache.spark.graphx.impl.graph.{EdgeManagerImpl, GraphXProxy, GraphXVertexIdManagerImpl, VertexDataManagerImpl}
 import org.apache.spark.graphx.impl.message.DefaultMessageStore
 import org.apache.spark.graphx.traits.{GraphXVertexIdManager, VertexDataManager}
-import com.alibaba.graphscope.graphx.SerializationUtils
 import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag
@@ -42,7 +41,7 @@ object GraphXFactory extends Logging{
     new DefaultMessageStore[MSG]
   }
   def createEdgeTriplet[VD: ClassTag, ED : ClassTag](conf: GraphXConf[VD,ED]): GSEdgeTriplet[VD, ED] = {
-    new GSEdgeTriplet[VD,ED]
+    new GSEdgeTripletImpl[VD,ED]
   }
 
   def createEdgeManager[VD : ClassTag,ED : ClassTag](conf: GraphXConf[VD,ED], fragment : IFragment[Long,Long,_,_], vertexIdManager: GraphXVertexIdManager, vertexDataManager: VertexDataManager[VD], numCores : Int): EdgeManagerImpl[VD, ED] = {

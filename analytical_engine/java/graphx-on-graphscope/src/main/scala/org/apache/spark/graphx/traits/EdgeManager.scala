@@ -10,6 +10,7 @@ import scala.reflect.ClassTag
 trait EdgeManager[VD,ED] {
   def iterator(startLid: Long, endLid: Long): Iterator[Edge[ED]]
 
+  def tripletIterator(startLid: Long, endLid: Long): Iterator[EdgeTriplet[VD,ED]]
   /**
    * Get the num edges between [startLid, endLid)
    * @param startLid
@@ -24,4 +25,21 @@ trait EdgeManager[VD,ED] {
                                   msgSender: EdgeTriplet[VD, ED] => Iterator[(VertexId, MSG)], outMessageCache: MessageStore[MSG]): Unit
 
   def withNewEdgeData[ED2 : ClassTag](newEdgeData: PrimitiveArray[ED2], startLid: Long, endLid: Long): EdgeManager[VD, ED2]
+
+  /**
+   * Reverse src,dst pairs. return a new edgeManager.
+   * This reverse will not write back to c++ memory.
+   * @param startLid start vid
+   * @param endLid end vid
+   */
+  def reverseEdges() : EdgeManager[VD,ED]
+
+  /**
+   * Return a new edge manager, will only partial of the original data.
+   * @param epred
+   * @param vpred
+   * @return
+   */
+  def filter(epred: EdgeTriplet[VD, ED] => Boolean,
+             vpred: (VertexId, VD) => Boolean, startLid : Long, endLid : Long) : EdgeManager[VD,ED]
 }
