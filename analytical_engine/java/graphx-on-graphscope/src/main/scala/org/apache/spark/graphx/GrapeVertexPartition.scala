@@ -17,6 +17,7 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
   val partitionVnum: VertexId = endLid - startLid
   if (mask == null){
     mask = new BitSet(totalVnum.toInt)
+    mask.setUntil(endLid.toInt)
   }
   log.info(s"Creating GrapeVertexPartition ${this} active vertices: ${mask.cardinality()}")
 
@@ -49,11 +50,12 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
 
   def filter(pred: (VertexId, VD) => Boolean): GrapeVertexPartition[VD] = {
     // Allocate the array to store the results into
-    val newMask = new BitSet(partitionVnum.toInt)
+    val newMask = new BitSet(totalVnum.toInt)
     // Iterate over the active bits in the old mask and evaluate the predicate
     var i = mask.nextSetBit(startLid.toInt)
     while (i >= 0 && i < endLid) {
       if (pred(idManager.lid2Oid(i), vertexDataManager.getVertexData(i))){
+        log.info(s"vertex lid ${i} ${idManager.lid2Oid(i)} matches")
         newMask.set(i)
       }
       i = mask.nextSetBit(i + 1)

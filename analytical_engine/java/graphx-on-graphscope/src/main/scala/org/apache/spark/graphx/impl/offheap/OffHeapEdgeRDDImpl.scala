@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
 class OffHeapEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx] (
                                                                         @transient val grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartition[VD, ED])],
                                                                         val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
-  extends EdgeRDD[ED](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
+  extends GrapeEdgeRDD[ED](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
   override protected def getPartitions: Array[Partition] = grapePartitionsRDD.partitions
 

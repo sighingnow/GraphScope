@@ -44,8 +44,9 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
       logger.info("No edata provided, read from csr");
       realEdatas = csrHolder.edatas
     }
-    val inactiveSet = new BitSet(tmpDstLids.size())
-    initialize(inConf, inVertexIdManager, inVertexDataManager, tmpDstOids, tmpDstLids, tmpNbrPositions, tmpNumOfEdges, realEdatas, inEdataOffset, inEdgeReversed,inactiveSet)
+
+    val activeSet = new BitSet(tmpDstLids.size())
+    initialize(inConf, inVertexIdManager, inVertexDataManager, tmpDstOids, tmpDstLids, tmpNbrPositions, tmpNumOfEdges, realEdatas, inEdataOffset, inEdgeReversed,activeSet)
     //    this(conf, vertexIdManager, vertexDataManager,dstOids, dstLids, nbrPositions, numOfEdges, realEdatas, edataOffset, edgeReversed)
   }
 
@@ -66,6 +67,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
   require(edataOffset < getTotalEdgeNum, s"offset error ${edataOffset} greater than ${getTotalEdgeNum}")
   require(edatas.size() <= getTotalEdgeNum, s"length ${edatas.size()} should smaller than ${getTotalEdgeNum}")
   logger.info(s"create EdgeManagerImpl(${this}), reversed ${edgeReversed}")
+
   }
 
 
@@ -144,8 +146,8 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
           curLid += 1
           numEdge = numOfEdges(curLid.toInt)
           while (curLid < endLid && numEdge <= 0){
-            curLid += 1
             numEdge = numOfEdges(curLid.toInt)
+            curLid += 1
           }
           if (curLid >= endLid) return false
           nbrPos = nbrPositions(curLid.toInt)
