@@ -2,7 +2,7 @@ package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx.traits.{EdgeManager, GraphXVertexIdManager}
-import org.apache.spark.graphx.{Edge, EdgeTriplet, PartitionID, VertexId}
+import org.apache.spark.graphx.{Edge, EdgeTriplet, PartitionID, TripletFields, VertexId}
 import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag
@@ -22,6 +22,12 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
     edgeManager.iterator(startLid, endLid)
   }
 
+  def tripletIterator(
+                       tripletFields: TripletFields)
+  : Iterator[EdgeTriplet[VD, ED]] = {
+    edgeManager.tripletIterator(startLid, endLid, tripletFields)
+  }
+
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
     val newData : PrimitiveArray[ED2] = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2].asInstanceOf[Class[ED2]], numEdges.toInt)
     val iter = iterator;
@@ -30,6 +36,22 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
       newData.set(ind, f(iter.next()))
       ind += 1
     }
+    withData(newData)
+  }
+
+  def map[ED2: ClassTag](iter: Iterator[ED2]): GrapeEdgePartition[VD, ED2] = {
+    // Faster than iter.toArray, because the expected size is known.
+    val newData : PrimitiveArray[ED2] = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2].asInstanceOf[Class[ED2]], numEdges.toInt)
+    var i = 0
+    while (iter.hasNext) {
+      newData.set(i,iter.next())
+      i += 1
+    }
+    assert(newData.size() == i)
+    this.withData(newData)
+  }
+
+  def withData[ED2: ClassTag](newData: PrimitiveArray[ED2]): GrapeEdgePartition[VD,ED2] ={
     new GrapeEdgePartition[VD,ED2](pid, numPartitions, idManager, edgeManager.withNewEdgeData[ED2](newData, startLid, endLid))
   }
 

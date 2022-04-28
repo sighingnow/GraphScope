@@ -1,6 +1,7 @@
 package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.graphx.FragmentOps
+import org.apache.spark.graphx.impl.offheap.OffHeapEdgeRDDImpl
 //import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.impl.GrapeUtils.{classToStr, generateForeignFragName, scalaClass2JavaClass}
@@ -34,10 +35,11 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
                                                             @transient val vertices: GrapeVertexRDD[VD],
                                                             @transient val edges: GrapeEdgeRDD[ED]) extends Graph[VD, ED] with Serializable {
 
-  protected def this() = this(null, null)
+  protected def this(vertices : GrapeVertexRDD[VD], edges : OffHeapEdgeRDDImpl[VD,ED]) = this(vertices,edges.asInstanceOf[GrapeEdgeRDD[ED]])
 
   val vdClass: Class[VD] = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
   val edClass: Class[ED] = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
+  val offHeapEdgeRDDImpl = edges.asInstanceOf[OffHeapEdgeRDDImpl[VD,ED]]
 
   def numVertices: Long = vertices.count()
 
@@ -96,23 +98,31 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
   override def mapVertices[VD2: ClassTag](f: (VertexId, VD) => VD2)(implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
-    throw new IllegalStateException("Unimplemented")
+    new GrapeGraphImpl[VD2,ED](vertices.mapGrapeVertexPartitions(_.map(f)), edges)
   }
 
-  override def mapEdges[ED2](map: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2])(implicit newEd: ClassTag[ED2]): Graph[VD, ED2] = {
-    throw new IllegalStateException("Unimplemented")
+  override def mapEdges[ED2](f: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2])(implicit newEd: ClassTag[ED2]): Graph[VD, ED2] = {
+    val newEdges = offHeapEdgeRDDImpl.mapEdgePartitions((pid, part) => part.map(f(pid, part.iterator)))
+    new GrapeGraphImpl[VD,ED2](vertices,newEdges)
   }
 
-  override def mapTriplets[ED2](map: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], tripletFields: TripletFields)(implicit newEd: ClassTag[ED2]): Graph[VD, ED2] = {
-    throw new IllegalStateException("Unimplemented")
+  override def mapTriplets[ED2: ClassTag](
+       map: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2],
+       tripletFields: TripletFields): Graph[VD, ED2] = {
+    val newEdges = offHeapEdgeRDDImpl.mapEdgePartitions({
+      (pid,partition) => partition.map(map(pid, partition.tripletIterator(tripletFields)))
+    })
+    new GrapeGraphImpl[VD,ED2](vertices, newEdges)
   }
 
   override def reverse: Graph[VD, ED] = {
-    throw new IllegalStateException("Unimplemented")
+    new GrapeGraphImpl[VD,ED](vertices, edges.reverse.asInstanceOf[GrapeEdgeRDD[ED]])
   }
 
   override def subgraph(epred: EdgeTriplet[VD, ED] => Boolean, vpred: (VertexId, VD) => Boolean): Graph[VD, ED] = {
-    throw new IllegalStateException("Unimplemented")
+    val newEdges = offHeapEdgeRDDImpl.filter(epred,vpred)
+    val newVertices = vertices.mapGrapeVertexPartitions(_.filter(vpred))
+     new GrapeGraphImpl[VD,ED](newVertices, newEdges)
   }
 
   override def mask[VD2, ED2](other: Graph[VD2, ED2])(implicit evidence$9: ClassTag[VD2], evidence$10: ClassTag[ED2]): Graph[VD, ED] = {
@@ -218,4 +228,6 @@ object GrapeGraphImpl {
   def toGraphXGraph[VD:ClassTag, ED : ClassTag](graph : Graph[VD,ED]) : Graph[VD,ED] = {
     null
   }
+
+
 }

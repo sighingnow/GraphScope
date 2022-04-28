@@ -5,7 +5,7 @@ import com.alibaba.graphscope.graph.AbstractEdgeManager
 import com.alibaba.graphscope.graphx.{GSEdgeTriplet, GSEdgeTripletImpl, ReverseGSEdgeTripletImpl}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.util.collection.BitSet
-import org.apache.spark.graphx.{Edge, EdgeTriplet, GraphXConf, ReusableEdge, ReusableEdgeImpl, ReversedReusableEdge, VertexId}
+import org.apache.spark.graphx.{Edge, EdgeTriplet, GraphXConf, ReusableEdge, ReusableEdgeImpl, ReversedReusableEdge, TripletFields, VertexId}
 import org.apache.spark.graphx.traits.{EdgeManager, GraphXVertexIdManager, MessageStore, VertexDataManager}
 import org.slf4j.LoggerFactory
 
@@ -21,7 +21,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
                                                   var edatas : PrimitiveArray[ED],
                                                   var edataOffset :Int,
                                                   var edgeReversed: Boolean,
-                                                  var inactiveSet : BitSet)
+                                                  var activeSet : BitSet)
   extends AbstractEdgeManager[Long,Long,Long,ED,ED]() with EdgeManager[VD,ED]{
 
   private val logger = LoggerFactory.getLogger(classOf[EdgeManagerImpl[_,_]].getName)
@@ -61,10 +61,11 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     this.edatas = inEdatas
     this.edataOffset = inEdataOffset
     this.edgeReversed = bool
-    this.inactiveSet = set
+    this.activeSet = set
   }
-  if (inactiveSet == null){
-    inactiveSet = new BitSet(dstLids.size())
+  if (activeSet == null){
+    activeSet = new BitSet(dstLids.size())
+    activeSet.setUntil(dstLids.size())
   }
   logger.info(s"Using customized edata, length ${edatas.size()}, offset ${edataOffset}");
   require(edataOffset < getTotalEdgeNum, s"offset error ${edataOffset} greater than ${getTotalEdgeNum}")
@@ -89,7 +90,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
 
       def hasNext: Boolean = {
         //logger.info("has next: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
-        while (inactiveSet.get(curPos)){
+        while (activeSet.get(curPos)){
           curPos += 1
         }
         if (curLid >= endLid) return false
@@ -121,7 +122,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     }
   }
 
-  override def tripletIterator(startLid: Long, endLid: Long): Iterator[EdgeTriplet[VD,ED]] = {
+  override def tripletIterator(startLid: Long, endLid: Long, tripletFields: TripletFields = TripletFields.All): Iterator[EdgeTriplet[VD,ED]] = {
     new Iterator[EdgeTriplet[VD,ED]]() {
       private var curLid = startLid
       private var edge : GSEdgeTriplet[VD,ED] = null.asInstanceOf[GSEdgeTriplet[VD,ED]]
@@ -137,7 +138,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
       var curPos: Int = nbrPos
 
       def hasNext: Boolean = {
-        while (inactiveSet.get(curPos)) {
+        while (activeSet.get(curPos)) {
           curPos += 1
         }
         //logger.info("has next: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
@@ -155,14 +156,24 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
           endPos = (nbrPos + numEdge).toInt
           curPos = nbrPos
           //logger.info("has next move to new lid: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
-          edge.setSrcOid(vertexIdManager.lid2Oid(curLid), vertexDataManager.getVertexData(curLid))
+          if (tripletFields.useSrc){
+            edge.setSrcOid(vertexIdManager.lid2Oid(curLid), vertexDataManager.getVertexData(curLid))
+          }
+          else {
+            edge.setSrcOid(vertexIdManager.lid2Oid(curLid))
+          }
           true
         }
       }
 
       def next: EdgeTriplet[VD,ED] = {
-        edge.setDstOid(dstOids.get(curPos),vertexDataManager.getVertexData(dstLids.get(curPos)), edatas.get(curPos - edataOffset))
-        //	logger.info("src{}, dst{}}", dstOids[curPos], edatas[curPos]);
+        if (tripletFields.useDst){
+          edge.setDstOid(dstOids.get(curPos),vertexDataManager.getVertexData(dstLids.get(curPos)))
+        }
+        else {
+          edge.setDstOid(dstOids.get(curPos))
+        }
+        edge.setAttr(edatas.get(curPos - edataOffset))
         curPos += 1
         edge
       }
@@ -185,8 +196,9 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     val endPos = (nbrPos + numEdge).toInt
     var i = nbrPos
     while (i < endPos) {
-      if (!inactiveSet.get(i)) {
-        triplet.setDstOid(dstOids.get(i), vertexDataManager.getVertexData(dstLids.get(i)), edatas.get(i - edataOffset))
+      if (!activeSet.get(i)) {
+        triplet.setDstOid(dstOids.get(i), vertexDataManager.getVertexData(dstLids.get(i)))
+        triplet.setAttr(edatas.get(i - edataOffset))
         val iterator = msgSender.apply(triplet)
         logger.info("for edge: {}->{}", triplet.srcId, triplet.dstId)
         while (iterator.hasNext) {
@@ -202,7 +214,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     val newEdataOffset = getPartialEdgeNum(0, startLid)
     require(newEdataOffset + newEdgeData.size() == getPartialEdgeNum(startLid, endLid),
       s"override edata array size not match ${newEdataOffset + newEdgeData.size()} should match ${getPartialEdgeNum(startLid,endLid)}")
-    new EdgeManagerImpl[VD,ED2](new GraphXConf[VD,ED2], vertexIdManager, vertexDataManager, dstOids, dstLids, nbrPositions, numOfEdges, newEdgeData, edataOffset, edgeReversed, inactiveSet)
+    new EdgeManagerImpl[VD,ED2](new GraphXConf[VD,ED2], vertexIdManager, vertexDataManager, dstOids, dstLids, nbrPositions, numOfEdges, newEdgeData, edataOffset, edgeReversed, activeSet)
   }
 
   override def toString: String = "EdgeManagerImpl(length=" + dstLids.size() + ",numEdges=" + getTotalEdgeNum+ ")"
@@ -216,7 +228,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
    * @param endLid   end vid
    */
   override def reverseEdges(): EdgeManager[VD,ED] = {
-    new EdgeManagerImpl[VD,ED](conf, vertexIdManager, vertexDataManager, dstOids, dstLids, nbrPositions, numOfEdges, edatas, edataOffset, !edgeReversed, inactiveSet)
+    new EdgeManagerImpl[VD,ED](conf, vertexIdManager, vertexDataManager, dstOids, dstLids, nbrPositions, numOfEdges, edatas, edataOffset, !edgeReversed, activeSet)
   }
 
   /**
@@ -227,7 +239,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
    * @return
    */
   override def filter(epred: EdgeTriplet[VD, ED] => Boolean, vpred: (VertexId, VD) => Boolean, startLid : Long, endLid : Long): EdgeManager[VD, ED] = {
-    if (inactiveSet == null){
+    if (activeSet == null){
       throw new IllegalStateException("Not possible")
     }
     val iter = tripletIterator(startLid, endLid)
@@ -235,10 +247,10 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     while (iter.hasNext){
       val triplet = iter.next()
       if (epred(triplet) || vpred(triplet.srcId, triplet.srcAttr) || vpred(triplet.dstId,triplet.dstAttr)){
-        inactiveSet.set(ind)
+        activeSet.set(ind)
       }
       ind += 1
     }
-    new EdgeManagerImpl[VD,ED](conf, vertexIdManager, vertexDataManager,dstOids, dstLids, nbrPositions, numOfEdges, edatas, edataOffset, !edgeReversed,inactiveSet)
+    new EdgeManagerImpl[VD,ED](conf, vertexIdManager, vertexDataManager,dstOids, dstLids, nbrPositions, numOfEdges, edatas, edataOffset, !edgeReversed,activeSet)
   }
 }

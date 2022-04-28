@@ -2,9 +2,12 @@ package com.alibaba.graphscope.graphx
 
 import org.apache.spark.graphx.EdgeTriplet
 
-trait GSEdgeTriplet[VD,ED] extends EdgeTriplet[VD,ED]{
+abstract class GSEdgeTriplet[VD,ED] extends EdgeTriplet[VD,ED]{
   def setSrcOid(srcId : Long, srcAttr : VD): Unit
-  def setDstOid(dstId : Long, dstAttr : VD, edgeAttr : ED): Unit
+  def setSrcOid(srcId : Long): Unit
+  def setDstOid(dstId : Long, dstAttr : VD): Unit
+  def setDstOid(dst : Long): Unit
+  def setAttr(edgeAttr: ED) : Unit
 }
 class GSEdgeTripletImpl[VD,ED] extends GSEdgeTriplet[VD,ED]{
 
@@ -13,11 +16,16 @@ class GSEdgeTripletImpl[VD,ED] extends GSEdgeTriplet[VD,ED]{
     this.srcAttr = srcAttr
   }
 
-  override def setDstOid(dstId : Long, dstAttr : VD, edgeAttr : ED): Unit ={
+  override def setDstOid(dstId : Long, dstAttr : VD): Unit ={
     this.dstId = dstId;
     this.dstAttr = dstAttr
-    this.attr = edgeAttr
   }
+
+  override def setSrcOid(srcId: Long): Unit = this.srcId = srcId
+
+  override def setDstOid(dstId: Long): Unit = this.dstId = dstId
+
+  override def setAttr(edgeAttr: ED): Unit = this.attr = edgeAttr
 }
 
 class ReverseGSEdgeTripletImpl[VD,ED] extends GSEdgeTriplet[VD,ED]{
@@ -27,9 +35,14 @@ class ReverseGSEdgeTripletImpl[VD,ED] extends GSEdgeTriplet[VD,ED]{
     this.dstAttr = srcAttr
   }
 
-  override def setDstOid(dstId : Long, dstAttr : VD, edgeAttr : ED): Unit ={
+  override def setDstOid(dstId : Long, dstAttr : VD): Unit ={
     this.srcId = dstId;
     this.srcAttr = dstAttr
-    this.attr = edgeAttr
   }
+
+  override def setSrcOid(srcId: Long): Unit = this.dstId = srcId
+
+  override def setDstOid(srcId: Long): Unit = this.srcId = dstId
+
+  override def setAttr(edgeAttr: ED): Unit = this.attr = edgeAttr
 }

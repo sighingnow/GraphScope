@@ -3,14 +3,14 @@ package org.apache.spark.graphx.traits
 import com.alibaba.graphscope.fragment.IFragment
 import com.alibaba.graphscope.graphx.GSEdgeTriplet
 import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.graphx.{Edge, EdgeTriplet, VertexId}
+import org.apache.spark.graphx.{Edge, EdgeTriplet, TripletFields, VertexId}
 
 import scala.reflect.ClassTag
 
 trait EdgeManager[VD,ED] {
   def iterator(startLid: Long, endLid: Long): Iterator[Edge[ED]]
 
-  def tripletIterator(startLid: Long, endLid: Long): Iterator[EdgeTriplet[VD,ED]]
+  def tripletIterator(startLid: Long, endLid: Long, tripletFields: TripletFields = TripletFields.All): Iterator[EdgeTriplet[VD,ED]]
   /**
    * Get the num edges between [startLid, endLid)
    * @param startLid
