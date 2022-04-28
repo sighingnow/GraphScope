@@ -63,15 +63,12 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     this.edataOffset = inEdataOffset
     this.edgeReversed = bool
     this.activeSet = set
-  }
-//  if (activeSet == null){
-//    activeSet = new BitSet(dstLids.size())
-//    activeSet.setUntil(dstLids.size())
-//  }
   logger.info(s"Using customized edata, length ${edatas.size()}, offset ${edataOffset}");
   require(edataOffset < getTotalEdgeNum, s"offset error ${edataOffset} greater than ${getTotalEdgeNum}")
-  require(edatas.size() < getTotalEdgeNum, s"length ${edatas.size()} should smaller than ${getTotalEdgeNum}")
+  require(edatas.size() <= getTotalEdgeNum, s"length ${edatas.size()} should smaller than ${getTotalEdgeNum}")
   logger.info(s"create EdgeManagerImpl(${this}), reversed ${edgeReversed}")
+
+  }
 
 
   override def iterator(startLid: Long, endLid: Long): Iterator[Edge[ED]] = {
@@ -149,8 +146,8 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
           curLid += 1
           numEdge = numOfEdges(curLid.toInt)
           while (curLid < endLid && numEdge <= 0){
-            curLid += 1
             numEdge = numOfEdges(curLid.toInt)
+            curLid += 1
           }
           if (curLid >= endLid) return false
           nbrPos = nbrPositions(curLid.toInt)
@@ -184,7 +181,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
   override def getPartialEdgeNum(startLid: Long, endLid: Long): Long = {
     val startLidPos = nbrPositions(startLid.toInt)
     val endLidPos = nbrPositions(endLid.toInt - 1)
-    numOfEdges(endLid.toInt) + endLidPos - startLidPos
+    numOfEdges(endLid.toInt - 1) + endLidPos - startLidPos
   }
 
   override def getTotalEdgeNum: Long = {
