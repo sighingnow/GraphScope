@@ -1,7 +1,7 @@
 package org.apache.spark.graphx.impl.offheap
 
-import org.apache.spark.graphx.impl.GrapeEdgePartition
-import org.apache.spark.graphx.{Edge, EdgeRDD, PartitionID, VertexId}
+import org.apache.spark.graphx.impl.{EdgeRDDImpl, GrapeEdgePartition}
+import org.apache.spark.graphx.{Edge, EdgeRDD, EdgeTriplet, GrapeEdgeRDD, PartitionID, VertexId}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{OneToOneDependency, Partition, TaskContext}
@@ -73,17 +73,25 @@ class OffHeapEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx] (
   override def count(): Long = {
     grapePartitionsRDD.map(_._2.numEdges.toLong).fold(0)(_ + _)
   }
-//  override def mapValues[ED2: ClassTag](f: Edge[ED] => ED2): EdgeRDDImpl[ED2, VD] = {
-//    throw new NotImplementedError("this inherited method is not implemented")
-//  }
 
   override def mapValues[ED2 :ClassTag](f: Edge[ED] => ED2): OffHeapEdgeRDDImpl[VD,ED2] = {
     mapEdgePartitions((pid, part) => part.map(f))
   }
 
-  override def reverse: EdgeRDD[ED] = ???
+  override def reverse: EdgeRDD[ED] = {
+    mapEdgePartitions((pid, partition) => partition.reverse)
+  }
 
-  override def innerJoin[ED2, ED3](other: EdgeRDD[ED2])(f: (VertexId, VertexId, ED, ED2) => ED3)(implicit evidence$2: ClassTag[ED2], evidence$3: ClassTag[ED3]): EdgeRDD[ED3] = ???
+  def filter(
+              epred: EdgeTriplet[VD, ED] => Boolean,
+              vpred: (VertexId, VD) => Boolean): OffHeapEdgeRDDImpl[VD, ED] = {
+    mapEdgePartitions((pid, part) => part.filter(epred, vpred))
+  }
+
+
+  override def innerJoin[ED2: ClassTag, ED3: ClassTag](other: EdgeRDD[ED2])(f: (VertexId, VertexId, ED, ED2) => ED3): EdgeRDD[ED3] = {
+    throw new IllegalStateException("Not implemented")
+  }
 
   override private[graphx] def withTargetStorageLevel(targetStorageLevel: StorageLevel) = ???
 
