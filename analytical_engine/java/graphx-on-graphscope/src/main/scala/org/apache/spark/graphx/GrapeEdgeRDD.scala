@@ -1,6 +1,5 @@
 package org.apache.spark.graphx
 
-import com.alibaba.graphscope.graphx.JavaEdgePartition
 import org.apache.spark.graphx.impl.GrapeEdgePartition
 import org.apache.spark.graphx.impl.offheap.OffHeapEdgeRDDImpl
 import org.apache.spark.rdd.RDD

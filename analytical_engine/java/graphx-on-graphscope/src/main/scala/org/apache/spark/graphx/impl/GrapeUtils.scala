@@ -61,4 +61,5 @@ object GrapeUtils {
       throw new IllegalStateException("transform failed for " + vdClass.getName);
     }
   }
+  def getRuntimeClass[T: ClassTag] = implicitly[ClassTag[T]].runtimeClass
 }

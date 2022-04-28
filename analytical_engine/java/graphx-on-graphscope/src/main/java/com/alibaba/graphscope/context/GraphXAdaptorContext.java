@@ -1,32 +1,24 @@
 package com.alibaba.graphscope.context;
 
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.graphscope.conf.GraphXConf;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.ds.VertexRange;
-import com.alibaba.graphscope.factory.GraphXFactory;
 import com.alibaba.graphscope.fragment.IFragment;
-import com.alibaba.graphscope.graph.VertexDataManager;
-import com.alibaba.graphscope.graphx.SerializationUtils;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
-import com.alibaba.graphscope.utils.GraphXProxy;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import org.apache.spark.graphx.EdgeTriplet;
+import org.apache.spark.graphx.GraphXConf;
+import org.apache.spark.graphx.GraphXFactory;
+import org.apache.spark.graphx.impl.graph.GraphXProxy;
+import org.apache.spark.graphx.traits.VertexDataManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Function1;
-import scala.Function2;
-import scala.Function3;
-import scala.Tuple2;
-import scala.collection.Iterator;
 
-public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
+public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
     VertexDataContext<IFragment<Long, Long, VDATA_T, EDATA_T>, VDATA_T> implements
     DefaultContextBase<Long, Long, VDATA_T, EDATA_T> {
 
@@ -49,15 +41,15 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     private int maxIterations;
     public ExecutorService executor;
 
-    public GraphXConf getConf(){
+    public GraphXConf getConf() {
         return conf;
     }
 
-    public GraphXProxy getGraphXProxy(){
+    public GraphXProxy getGraphXProxy() {
         return graphXProxy;
     }
 
-    public Object getInitialMsg(){
+    public Object getInitialMsg() {
         return initialMsg;
     }
 
@@ -83,10 +75,11 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
         vdClass = loadClassWithName(this.getClass().getClassLoader(), vdClassStr);
         edClass = loadClassWithName(this.getClass().getClassLoader(), edClassStr);
         msgClass = loadClassWithName(this.getClass().getClassLoader(), msgClassStr);
-        conf = GraphXFactory.createGraphXConf(vdClass,edClass,msgClass);
+        //FIXME: create conf
+//        conf = GraphXFactory.createGraphxConf(vdClass, edClass);
 
         //TODO: get vdata class from conf
-        createFFIContext(frag, (Class<? extends VDATA_T>) conf.getVdataClass(), false);
+        createFFIContext(frag, (Class<? extends VDATA_T>) conf.getVdClass(), false);
 
         this.vprogFilePath = jsonObject.getString(VPROG_SERIALIZATION);
         this.sendMsgFilePath = jsonObject.getString(SEND_MSG_SERIALIZATION);
@@ -95,28 +88,31 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
         long vdataSize = jsonObject.getLong(VDATA_SIZE);
         if (this.vprogFilePath == null || this.vprogFilePath.isEmpty() ||
             this.sendMsgFilePath == null || this.sendMsgFilePath.isEmpty() ||
-        this.mergeMsgFilePath == null || this.mergeMsgFilePath.isEmpty()){
-            throw new IllegalStateException("file path empty " + vprogFilePath + ", " + sendMsgFilePath + "," + mergeMsgFilePath);
+            this.mergeMsgFilePath == null || this.mergeMsgFilePath.isEmpty()) {
+            throw new IllegalStateException(
+                "file path empty " + vprogFilePath + ", " + sendMsgFilePath + ","
+                    + mergeMsgFilePath);
         }
-
-        graphXProxy = GraphXFactory.createGraphXProxy(conf, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, vdataFilePath, numCores, vdataSize);
         String msgStr = jsonObject.getString(INITIAL_MSG);
         logger.info("Initial msg in str: " + msgStr);
         //get initial msg
-        if (msgClass.equals(Long.class)){
+        if (msgClass.equals(Long.class)) {
             this.initialMsg = Long.valueOf(msgStr);
-        }
-        else if (msgClass.equals(Double.class)){
+        } else if (msgClass.equals(Double.class)) {
             this.initialMsg = Double.valueOf(msgStr);
-        }
-        else if (msgClass.equals(Integer.class)){
+        } else if (msgClass.equals(Integer.class)) {
             this.initialMsg = Integer.valueOf(msgStr);
-        }
-        else {
+        } else {
             throw new IllegalStateException("unmatched msg class " + msgClass.getName());
         }
-        graphXProxy.init(frag,messageManager,this.initialMsg, maxIterations);
+        graphXProxy = create((Class<? extends VDATA_T>) vdClass, (Class<? extends EDATA_T>) edClass,(Class<? extends MSG>) msgClass, (IFragment) frag, mergeMsgFilePath, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, vdataFilePath, maxIterations, numCores, vdataSize,(MSG) msgClass.cast(initialMsg));
+
         System.gc();
+    }
+
+    private GraphXProxy create(Class<? extends VDATA_T> vdClass, Class<? extends EDATA_T> edClass, Class<? extends MSG> msgClass, IFragment frag, String mergeMsgFilePath, String vprogFilePath, String sendMsgFilePath, String mergeMsgFilePath1,
+        String vdataFilePath, int maxIterations, int numCores, long vdataSize, MSG cast) {
+        throw new IllegalStateException("Not implemented");
     }
 
     @Override
@@ -140,7 +136,8 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
                 cur.SetValue(index);
                 Long oid = frag.getId(cur);
                 bufferedWriter.write(
-                    cur.GetValue() + "\t" + oid + "\t" + vertexDataManager.getVertexData(index) + "\n");
+                    cur.GetValue() + "\t" + oid + "\t" + vertexDataManager.getVertexData(index)
+                        + "\n");
             }
             bufferedWriter.close();
         } catch (IOException e) {
@@ -149,14 +146,12 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T> extends
     }
 
 
-    private Class<?> loadClassWithName(ClassLoader cl, String name){
-        if (name.equals("int") || name.equals("int32_t")){
+    private Class<?> loadClassWithName(ClassLoader cl, String name) {
+        if (name.equals("int") || name.equals("int32_t")) {
             return Integer.class;
-        }
-        else if (name.equals("long") || name.equals("int64_t")){
+        } else if (name.equals("long") || name.equals("int64_t")) {
             return Long.class;
-        }
-        else if (name.equals("double")){
+        } else if (name.equals("double")) {
             return Double.class;
         }
         throw new IllegalStateException("Unrecoginizable :" + name);

@@ -1,6 +1,6 @@
 package org.apache.spark.graphx.impl
 
-import com.alibaba.graphscope.graphx.{FragmentOps, JavaEdgePartition}
+import com.alibaba.graphscope.graphx.FragmentOps
 //import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.impl.GrapeUtils.{classToStr, generateForeignFragName, scalaClass2JavaClass}

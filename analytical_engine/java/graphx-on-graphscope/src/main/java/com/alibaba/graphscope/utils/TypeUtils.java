@@ -1,13 +1,9 @@
 package com.alibaba.graphscope.utils;
 
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.FloatWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Writable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Double;
+import scala.Float;
 import scala.Int;
 
 public class TypeUtils {
@@ -54,13 +50,14 @@ public class TypeUtils {
     }
 
     public static int classToBytes(Class<?> clz){
-        if (clz.equals(Long.class) || clz.equals(long.class)) {
+        if (clz.equals(java.lang.Long.class) || clz.equals(long.class) || clz.equals(scala.Long.class)) {
             return 8;
-        } else if (clz.equals(Integer.class) || clz.equals(int.class)) {
+        } else if (clz.equals(java.lang.Integer.class) || clz.equals(int.class) || clz.equals(scala.Int.class)) {
             return 4;
-        } else if (clz.equals(Double.class) || clz.equals(double.class)) {
+        } else if (clz.equals(java.lang.Double.class) || clz.equals(double.class) || clz.equals(
+            scala.Double.class)) {
             return 8;
-        } else if (clz.equals(Float.class) || clz.equals(float.class)) {
+        } else if (clz.equals(java.lang.Float.class) || clz.equals(float.class) || clz.equals(scala.Float.class)) {
             return 4;
         }
         throw new IllegalStateException("Unrecognized class: " + clz);

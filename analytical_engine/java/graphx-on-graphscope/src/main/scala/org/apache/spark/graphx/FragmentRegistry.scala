@@ -1,11 +1,9 @@
 package org.apache.spark.graphx
 
-import com.alibaba.graphscope.conf.GraphXConf
-import com.alibaba.graphscope.factory.GraphXFactory
 import com.alibaba.graphscope.fragment.IFragment
-import com.alibaba.graphscope.graph.{GraphXVertexIdManager, VertexDataManager}
 import com.alibaba.graphscope.graphx.FragmentHolder
 import org.apache.spark.graphx.impl.GrapeEdgePartition
+import org.apache.spark.graphx.traits.{EdgeManager, VertexDataManager, GraphXVertexIdManager}
 import org.apache.spark.internal.Logging
 
 import java.io.IOException
@@ -25,31 +23,31 @@ object FragmentRegistry extends Logging{
   private var vertexPartitions = null.asInstanceOf[Array[GrapeVertexPartition[_]]]
   private var edgePartitions = null.asInstanceOf[Array[GrapeEdgePartition[_,_]]]
 
-  def initConf[VD, ED](vdClass: Class[_ <: VD], edClass: Class[_ <: ED]): GraphXConf[VD, ED, _] = {
-    val conf = new GraphXConf[VD, ED, AnyRef]
-    if (vdClass == classOf[java.lang.Long] || vdClass == classOf[Long]){
-      conf.setVdataClass(classOf[java.lang.Long].asInstanceOf[Class[_ <: VD]])
-    }
-    else if (vdClass == classOf[Int] || vdClass == classOf[java.lang.Integer]){
-      conf.setVdataClass(classOf[java.lang.Integer].asInstanceOf[Class[_ <: VD]])
-    }
-    else if (vdClass == classOf[Double] || vdClass == classOf[java.lang.Double]){
-      conf.setVdataClass(classOf[java.lang.Double].asInstanceOf[Class[_ <: VD]])
-    }
-    else throw new IllegalStateException("Error vd class: " + vdClass.getName)
-
-    if (edClass == classOf[Long] || edClass == classOf[java.lang.Long]){
-      conf.setEdataClass(classOf[java.lang.Long].asInstanceOf[Class[_ <: ED]])
-    }
-    else if (edClass == classOf[Int] || edClass == classOf[java.lang.Integer]){
-      conf.setEdataClass(classOf[java.lang.Integer].asInstanceOf[Class[_ <: ED]])
-    }
-    else if (edClass == classOf[Double] || edClass == classOf[java.lang.Double]){
-      conf.setEdataClass(classOf[java.lang.Double].asInstanceOf[Class[_ <: ED]])
-    }
-    else throw new IllegalStateException("Error ed class: " + edClass.getName)
-    conf
-  }
+//  def initConf[VD, ED](vdClass: Class[_ <: VD], edClass: Class[_ <: ED]): GraphXConf[VD, ED, _] = {
+//    val conf = new GraphXConf[VD, ED, AnyRef]
+//    if (vdClass == classOf[java.lang.Long] || vdClass == classOf[Long]){
+//      conf.setVdataClass(classOf[java.lang.Long].asInstanceOf[Class[_ <: VD]])
+//    }
+//    else if (vdClass == classOf[Int] || vdClass == classOf[java.lang.Integer]){
+//      conf.setVdataClass(classOf[java.lang.Integer].asInstanceOf[Class[_ <: VD]])
+//    }
+//    else if (vdClass == classOf[Double] || vdClass == classOf[java.lang.Double]){
+//      conf.setVdataClass(classOf[java.lang.Double].asInstanceOf[Class[_ <: VD]])
+//    }
+//    else throw new IllegalStateException("Error vd class: " + vdClass.getName)
+//
+//    if (edClass == classOf[Long] || edClass == classOf[java.lang.Long]){
+//      conf.setEdataClass(classOf[java.lang.Long].asInstanceOf[Class[_ <: ED]])
+//    }
+//    else if (edClass == classOf[Int] || edClass == classOf[java.lang.Integer]){
+//      conf.setEdataClass(classOf[java.lang.Integer].asInstanceOf[Class[_ <: ED]])
+//    }
+//    else if (edClass == classOf[Double] || edClass == classOf[java.lang.Double]){
+//      conf.setEdataClass(classOf[java.lang.Double].asInstanceOf[Class[_ <: ED]])
+//    }
+//    else throw new IllegalStateException("Error ed class: " + edClass.getName)
+//    conf
+//  }
 
   @throws[IOException]
   def registFragment(fragIds: String, index: Int): Int = {
@@ -86,17 +84,18 @@ object FragmentRegistry extends Logging{
           throw new IllegalStateException("Please register fragment first")
         }
         fragmentHolder = FragmentHolder.create(fragId, fragName, maxPartitionId + 1)
-        val conf = initConf[VD,ED](vdClass, edClass).asInstanceOf[GraphXConf[VD,ED,_]]
-        val idManager = GraphXFactory.createIdManager(conf)
-        val vertexDataManager  = GraphXFactory.createVertexDataManagerv2[VD,ED](conf)
-        idManager.init(fragmentHolder.getIFragment.asInstanceOf[IFragment[java.lang.Long,java.lang.Long,_,_]])
-        vertexDataManager.init(fragmentHolder.getIFragment.asInstanceOf[IFragment[java.lang.Long,java.lang.Long,VD,_]])
-        log.info("create id Manager: {}", idManager)
-        log.info("create vdata manager: {}", vertexDataManager)
+        val iFragment = fragmentHolder.getIFragment.asInstanceOf[IFragment[Long,Long,_,_]]
+        val conf = new GraphXConf[VD,ED]
+        val idManager = GraphXFactory.createVertexIdManager[VD,ED](conf, iFragment)
+        val vertexDataManager  = GraphXFactory.createVertexDataManager[VD,ED](conf,iFragment)
+        val edgeManager = GraphXFactory.createEdgeManager(conf, iFragment, idManager, vertexDataManager, numCores)
+        log.info(s"create id Manager: ${idManager}")
+        log.info(s"create vdata manager: ${vertexDataManager}")
+        log.info(s"create edge manager ${edgeManager}")
         log.info("Successfully create fragment RDD")
         //Now create vertexPartitions and edge partitions.
         createVertexPartitions(conf, idManager, vertexDataManager)
-        createEdgePartitions(conf, idManager, vertexDataManager, numCores)
+        createEdgePartitions(conf, idManager, vertexDataManager,edgeManager)
         lock.unlock()
       }
       else log.info("partition " + pid + " try to get lock failed")
@@ -104,7 +103,7 @@ object FragmentRegistry extends Logging{
     else log.info("lock has been acquired when partition " + pid + "arrived")
   }
 
-  def createVertexPartitions[VD : ClassTag, ED: ClassTag](conf: GraphXConf[VD, ED, _], idManager: GraphXVertexIdManager, vertexDataManager: VertexDataManager[VD]): Unit = {
+  def createVertexPartitions[VD : ClassTag, ED: ClassTag](conf: GraphXConf[VD, ED], idManager: GraphXVertexIdManager, vertexDataManager: VertexDataManager[VD]): Unit = {
     if (Objects.nonNull(vertexPartitions)) {
       log.error("Recreating vertex partitions is not expected")
       return
@@ -117,13 +116,12 @@ object FragmentRegistry extends Logging{
     log.info("Finish creating javaVertexPartitions of size {}", numPartitions)
   }
 
-  def createEdgePartitions[VD : ClassTag, ED : ClassTag](conf: GraphXConf[VD, ED, _], idManager: GraphXVertexIdManager, vertexDataManager: VertexDataManager[VD], numCores: Int): Unit = {
+  def createEdgePartitions[VD : ClassTag, ED : ClassTag](conf: GraphXConf[VD, ED], idManager: GraphXVertexIdManager, vertexDataManager: VertexDataManager[VD], edgeManager: EdgeManager[VD,ED]): Unit = {
     if (Objects.nonNull(edgePartitions)) {
       log.error("Recreating edge partitions is not expected")
       return
     }
-    val edgeManager = GraphXFactory.createEdgeManager(conf, idManager, vertexDataManager)
-    edgeManager.init(fragmentHolder.getIFragment.asInstanceOf[IFragment[java.lang.Long,java.lang.Long,VD,ED]], numCores)
+
     val numPartitions = maxPartitionId + 1
     edgePartitions = new Array[GrapeEdgePartition[_, _]](numPartitions)
     for (i <- 0 until numPartitions) {

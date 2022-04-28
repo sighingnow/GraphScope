@@ -1,13 +1,12 @@
 package org.apache.spark.graphx.impl.offheap
 
-import com.alibaba.graphscope.graphx.JavaEdgePartition
-import org.apache.spark.{OneToOneDependency, Partition, TaskContext}
-import org.apache.spark.graphx.{Edge, EdgeRDD, GrapeEdgeRDD, PartitionID, VertexId}
-import org.apache.spark.graphx.impl.{EdgePartition, EdgeRDDImpl, GrapeEdgePartition}
+import org.apache.spark.graphx.impl.GrapeEdgePartition
+import org.apache.spark.graphx.{Edge, EdgeRDD, PartitionID, VertexId}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{OneToOneDependency, Partition, TaskContext}
 
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 
 class OffHeapEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx] (
                                                                         @transient val grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartition[VD, ED])],

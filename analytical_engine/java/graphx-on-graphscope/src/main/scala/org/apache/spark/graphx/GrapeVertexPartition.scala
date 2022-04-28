@@ -1,13 +1,13 @@
 package org.apache.spark.graphx
 
-import com.alibaba.graphscope.graph.{GraphXVertexIdManager, VertexDataManager}
+import org.apache.spark.graphx.traits.{VertexDataManager, GraphXVertexIdManager}
 import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag
 
 class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
-                            idManager: GraphXVertexIdManager, vertexDataManager: VertexDataManager[VD]) extends Logging {
-  val totalVnum: Long = idManager.innerVerticesNum
+                                           idManager: GraphXVertexIdManager, vertexDataManager: VertexDataManager[VD]) extends Logging {
+  val totalVnum: Long = idManager.getInnerVerticesNum
   val chunkSize: Long = (totalVnum + (numPartitions - 1)) / numPartitions
   val startLid = Math.min(chunkSize * pid, totalVnum)
   val endLid = Math.min(startLid + chunkSize, totalVnum)
@@ -31,16 +31,16 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
   def map[VD2: ClassTag](f: (VertexId, VD) => VD2): GrapeVertexPartition[VD2] = {
     // Construct a view of the map transformation
 //    val newValues = new Array[Object](totalVnum.toInt)
-    val newValues = new java.util.ArrayList[VD2](totalVnum.toInt)
+    val newValues = new Array[VD2](totalVnum.toInt)
     var i = startLid.toInt
     while (i < totalVnum) {
-      newValues.set(i, f(idManager.lid2Oid(i), vertexDataManager.getVertexData(i)))
+      newValues(i) =  f(idManager.lid2Oid(i), vertexDataManager.getVertexData(i))
       i += 1
     }
     this.withNewValues(newValues)
   }
 
-  def withNewValues[VD2 : ClassTag](vds: java.util.ArrayList[VD2]) : GrapeVertexPartition[VD2] = {
+  def withNewValues[VD2 : ClassTag](vds: Array[VD2]) : GrapeVertexPartition[VD2] = {
     new GrapeVertexPartition[VD2](pid, numPartitions, idManager, vertexDataManager.withNewVertexData[VD2](vds))
   }
 

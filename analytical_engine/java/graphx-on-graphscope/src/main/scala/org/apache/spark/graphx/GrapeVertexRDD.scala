@@ -1,6 +1,5 @@
 package org.apache.spark.graphx
 
-import com.alibaba.graphscope.graphx.JavaVertexPartition
 import org.apache.spark.graphx.impl.offheap.OffHeapVertexRDDImpl
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Dependency, SparkContext}
