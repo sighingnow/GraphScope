@@ -105,7 +105,9 @@ class OffHeapEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx] (
     }
   }
 
-  override private[graphx] def withTargetStorageLevel(targetStorageLevel: StorageLevel) = ???
+  override private[graphx] def withTargetStorageLevel(newTargetStorageLevel: StorageLevel) = {
+    new OffHeapEdgeRDDImpl[VD,ED](grapePartitionsRDD, newTargetStorageLevel)
+  }
 
   override private[graphx] def partitionsRDD = {
     throw new IllegalStateException("Not implemented")

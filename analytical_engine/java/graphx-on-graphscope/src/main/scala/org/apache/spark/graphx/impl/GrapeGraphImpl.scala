@@ -49,7 +49,18 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   val sc = vertices.sparkContext
 
 
-  override val triplets: RDD[EdgeTriplet[VD, ED]] = null
+  @transient override lazy val triplets: RDD[EdgeTriplet[VD, ED]] = {
+    val grapeEdges = edges.asInstanceOf[OffHeapEdgeRDDImpl[VD,ED]]
+    grapeEdges.grapePartitionsRDD.mapPartitions(iter =>{
+      if (iter.hasNext){
+        val tuple = iter.next();
+        tuple._2.tripletIterator()
+      }
+      else {
+        Iterator.empty
+      }
+    })
+  }
 
   override def persist(newLevel: StorageLevel): Graph[VD, ED] = {
     vertices.persist(newLevel)
@@ -91,11 +102,11 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
   override def partitionBy(partitionStrategy: PartitionStrategy): Graph[VD, ED] = {
-    throw new IllegalStateException("Unimplemented")
+    throw new IllegalStateException("Currently grape graph doesn't support partition")
   }
 
   override def partitionBy(partitionStrategy: PartitionStrategy, numPartitions: PartitionID): Graph[VD, ED] = {
-    throw new IllegalStateException("Unimplemented")
+    throw new IllegalStateException("Currently grape graph doesn't support partition")
   }
 
   override def mapVertices[VD2: ClassTag](f: (VertexId, VD) => VD2)(implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
@@ -127,20 +138,22 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
   override def mask[VD2, ED2](other: Graph[VD2, ED2])(implicit evidence$9: ClassTag[VD2], evidence$10: ClassTag[ED2]): Graph[VD, ED] = {
-    throw new IllegalStateException("Unimplemented")
-
+    val newVertices = vertices.innerJoin(other.vertices) {(vid, v, w) => v}
+    val newEdges = edges.innerJoin(other.edges){ (src,dst,v,w) => v}
+    GrapeGraphImpl.fromRDDs(newVertices, newEdges)
   }
 
   override def groupEdges(merge: (ED, ED) => ED): Graph[VD, ED] = {
-    throw new IllegalStateException("Unimplemented")
-
+    val newEdges = edges.asInstanceOf[OffHeapEdgeRDDImpl[VD,ED]].mapEdgePartitions(
+      (pid, part) => part.groupEdges(merge))
+    new GrapeGraphImpl(vertices, newEdges)
   }
 
   override private[graphx] def aggregateMessagesWithActiveSet[A](sendMsg: EdgeContext[VD, ED, A] => Unit, mergeMsg: (A, A) => A, tripletFields: TripletFields, activeSetOpt: Option[(VertexRDD[_], EdgeDirection)])(implicit evidence$12: ClassTag[A]) = {
     throw new IllegalStateException("Unimplemented")
   }
 
-  override def outerJoinVertices[U, VD2](other: RDD[(VertexId, U)])(mapFunc: (VertexId, VD, Option[U]) => VD2)(implicit evidence$13: ClassTag[U], evidence$14: ClassTag[VD2], eq: VD =:= VD2): Graph[VD2, ED] = {
+  override def outerJoinVertices[U: ClassTag, VD2 : ClassTag](other: RDD[(VertexId, U)])(mapFunc: (VertexId, VD, Option[U]) => VD2)(implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
     throw new IllegalStateException("Unimplemented")
   }
 }
@@ -232,6 +245,10 @@ object GrapeGraphImpl {
 
   def toGraphXGraph[VD:ClassTag, ED : ClassTag](graph : Graph[VD,ED]) : Graph[VD,ED] = {
     null
+  }
+
+  def fromRDDs[VD: ClassTag, ED : ClassTag](vertices : VertexRDD[VD], edges : EdgeRDD[ED]) : GrapeGraphImpl[VD,ED] = {
+    new GrapeGraphImpl[VD,ED](vertices.asInstanceOf[OffHeapVertexRDDImpl[VD]], edges.asInstanceOf[OffHeapEdgeRDDImpl[VD,ED]]);
   }
 
 
