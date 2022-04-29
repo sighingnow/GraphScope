@@ -1,10 +1,10 @@
 package org.apache.spark.graphx.impl.offheap
 
-import org.apache.spark.graphx.impl.ShippableVertexPartition
+import org.apache.spark.graphx.impl.{EdgePartition, EdgeRDDImpl, GrapeEdgePartition, ShippableVertexPartition}
 import org.apache.spark.graphx._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{OneToOneDependency, Partition, TaskContext}
+import org.apache.spark.{HashPartitioner, OneToOneDependency, Partition, Partitioner, TaskContext}
 
 import scala.reflect.ClassTag
 
@@ -25,6 +25,8 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
     throw new IllegalStateException("Not implemented")
   }
   override protected def getPartitions: Array[Partition] = grapePartitionsRDD.partitions
+
+  override val partitioner: Option[Partitioner] = grapePartitionsRDD.partitioner
 
   override def compute(part: Partition, context: TaskContext): Iterator[(VertexId,VD)] = {
     val p = firstParent[(PartitionID, GrapeVertexPartition[VD])].iterator(part, context)
@@ -70,7 +72,21 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
   }
 
   override def minus(other: VertexRDD[VD]): VertexRDD[VD] = {
-    throw new IllegalStateException("Not implemented")
+    other match{
+      case other : OffHeapVertexRDDImpl[VD] if this.partitioner == other.partitioner => {
+        this.withGrapePartitionsRDD[VD](
+          grapePartitionsRDD.zipPartitions(
+            other.grapePartitionsRDD, preservesPartitioning = true) {
+            (thisIter, otherIter) =>
+              val thisTuple = thisIter.next()
+              val thisPartition = thisTuple._2
+              val otherTuple = otherIter.next()
+              require(thisTuple._1 == otherTuple._1, "partition id should match")
+              Iterator((thisTuple._1, thisPartition.minus(otherTuple._2)))
+          })
+      }
+      case _ =>  throw new IllegalArgumentException("can only minus a grape vertex rdd now")
+    }
   }
 
   override def diff(other: RDD[(VertexId, VD)]): VertexRDD[VD] = {
@@ -78,39 +94,111 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
   }
 
   override def diff(other: VertexRDD[VD]): VertexRDD[VD] = {
-    throw new IllegalStateException("Not implemented")
+    val otherPartition = other match {
+      case other: OffHeapVertexRDDImpl[VD] if this.partitioner == other.partitioner =>
+        other.grapePartitionsRDD
+      case _ =>  throw new IllegalArgumentException("can only minus a grape vertex rdd now")
+    }
+    val newPartitionsRDD = grapePartitionsRDD.zipPartitions(
+      otherPartition, preservesPartitioning = true
+    ) { (thisIter, otherIter) =>
+      val thisTuple = thisIter.next()
+      val otherTuple = otherIter.next()
+      require(thisTuple._1 == otherTuple._1, "partition id should match")
+      Iterator((thisTuple._1, thisTuple._2.diff(otherTuple._2)))
+    }
+    this.withGrapePartitionsRDD(newPartitionsRDD)
   }
 
-  override def leftZipJoin[VD2, VD3](other: VertexRDD[VD2])(f: (VertexId, VD, Option[VD2]) => VD3)(implicit evidence$4: ClassTag[VD2], evidence$5: ClassTag[VD3]): VertexRDD[VD3] = {
-    throw new IllegalStateException("Not implemented")
+  override def leftZipJoin[VD2 : ClassTag, VD3 : ClassTag](other: VertexRDD[VD2])(f: (VertexId, VD, Option[VD2]) => VD3): VertexRDD[VD3] = {
+    val newPartitionsRDD = other match {
+      case other : OffHeapVertexRDDImpl[VD2] => {
+        grapePartitionsRDD.zipPartitions(
+          other.grapePartitionsRDD, preservesPartitioning = true
+        ) { (thisIter, otherIter) =>
+          val thisTuple = thisIter.next()
+          val otherTuple = otherIter.next()
+          Iterator((thisTuple._1, thisTuple._2.leftJoin(otherTuple._2)(f)))
+        }
+      }
+    }
+    this.withGrapePartitionsRDD(newPartitionsRDD)
   }
 
   override def leftJoin[VD2, VD3](other: RDD[(VertexId, VD2)])(f: (VertexId, VD, Option[VD2]) => VD3)(implicit evidence$6: ClassTag[VD2], evidence$7: ClassTag[VD3]): VertexRDD[VD3] = {
-    throw new IllegalStateException("Not implemented")
+    other match {
+      case other: OffHeapVertexRDDImpl[_] if this.partitioner == other.partitioner =>
+        leftZipJoin(other)(f)
+      case _ =>
+        throw new IllegalArgumentException("currently not support to join with non-grape vertex rdd")
+    }
   }
 
-  override def innerZipJoin[U, VD2](other: VertexRDD[U])(f: (VertexId, VD, U) => VD2)(implicit evidence$8: ClassTag[U], evidence$9: ClassTag[VD2]): VertexRDD[VD2] = {
-    throw new IllegalStateException("Not implemented")
+  override def innerZipJoin[U : ClassTag, VD2 : ClassTag](other: VertexRDD[U])(f: (VertexId, VD, U) => VD2): VertexRDD[VD2] = {
+    val newPartitionsRDD = other match {
+      case other : OffHeapVertexRDDImpl[U] => {
+        grapePartitionsRDD.zipPartitions(
+          other.grapePartitionsRDD, preservesPartitioning = true
+        ) { (thisIter, otherIter) =>
+          val thisTuple = thisIter.next()
+          val otherTuple = otherIter.next()
+          Iterator((thisTuple._1, thisTuple._2.innerJoin(otherTuple._2)(f)))
+        }
+      }
+    }
+    this.withGrapePartitionsRDD(newPartitionsRDD)
   }
 
   override def innerJoin[U, VD2](other: RDD[(VertexId, U)])(f: (VertexId, VD, U) => VD2)(implicit evidence$10: ClassTag[U], evidence$11: ClassTag[VD2]): VertexRDD[VD2] = {
-    throw new IllegalStateException("Not implemented")
+    other match {
+      case other: OffHeapVertexRDDImpl[U] if this.partitioner == other.partitioner =>
+        innerZipJoin(other)(f)
+      case _ =>
+          throw new IllegalArgumentException("Current only support join with grape vertex rdd");
+    }
   }
 
-  override def aggregateUsingIndex[VD2](messages: RDD[(VertexId, VD2)], reduceFunc: (VD2, VD2) => VD2)(implicit evidence$12: ClassTag[VD2]): VertexRDD[VD2] = {
-    throw new IllegalStateException("Not implemented")
+  /**
+   * To aggregate with us, the input rdd can be a offheap vertexRDDImpl or a common one.
+   * - For offHeap rdd ,just do the aggregation, since its partitioner is same with use, i.e. hashPartition
+   *   with fnum = num of workers.
+   * - For common one, we need to make sure they share the same num of partitions. and then we repartition to size of excutors.
+   * @param messages
+   * @param reduceFunc
+   * @tparam VD2
+   * @return
+   */
+  override def aggregateUsingIndex[VD2: ClassTag](messages: RDD[(VertexId, VD2)], reduceFunc: (VD2, VD2) => VD2)
+                                       : VertexRDD[VD2] = {
+    val executorStatus = sparkContext.getExecutorMemoryStatus
+    log.info(s"Current available executors ${executorStatus}")
+    val numExecutors = executorStatus.size
+    val shuffled = messages.partitionBy(new HashPartitioner(numExecutors))
+    val newPartitionsRDD = grapePartitionsRDD.zipPartitions(shuffled,true) {
+      (thisIter, msgIter) =>{
+        if (thisIter.hasNext){
+          val tuple = thisIter.next();
+          val newPartition = tuple._2.aggregateUsingIndex(msgIter, reduceFunc)
+          Iterator((tuple._1, newPartition))
+        }
+        else {
+          Iterator.empty
+        }
+      }
+    }
+    this.withGrapePartitionsRDD[VD2](newPartitionsRDD)
   }
 
   override def reverseRoutingTables(): VertexRDD[VD] = {
-    throw new IllegalStateException("Not implemented")
+    throw new IllegalStateException("Inherited but not implemented, should not be used")
   }
 
   override def withEdges(edges: EdgeRDD[_]): VertexRDD[VD] = {
-    throw new IllegalStateException("Not implemented")
+    throw new IllegalStateException("Inherited but not implemented, should not be used")
   }
 
   override private[graphx] def withPartitionsRDD[VD2](partitionsRDD: RDD[ShippableVertexPartition[VD2]])(implicit evidence$13: ClassTag[VD2]) = {
-    throw new IllegalStateException("not implemented")
+    throw new IllegalStateException("Inherited but not implemented, should not be used, use withGrapePartitionsRDD instead")
   }
 
   override private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])]) : GrapeVertexRDD[VD2] = {
@@ -122,13 +210,14 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
   }
 
   override private[graphx] def shipVertexAttributes(shipSrc: Boolean, shipDst: Boolean) = {
-    throw new IllegalStateException("not implemented")  }
+    throw new IllegalStateException("Inherited but not implemented, should not be used")
+  }
 
   override private[graphx] def shipVertexIds() = {
-      throw new IllegalStateException("Not implemented")
+    throw new IllegalStateException("Inherited but not implemented, should not be used")
     }
 
   override private[graphx] def partitionsRDD = {
-    throw new IllegalStateException("Not implemented")
+    throw new IllegalStateException("Inherited but not implemented, should not be used")
   }
 }

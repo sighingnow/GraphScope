@@ -9,7 +9,8 @@ import scala.reflect.ClassTag
 
 class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
                                                        val pid : PartitionID, numPartitions: Int,
-                                                       idManager: GraphXVertexIdManager, edgeManager: EdgeManager[VD, ED]) extends Logging{
+                                                       val idManager: GraphXVertexIdManager,
+                                                       val edgeManager: EdgeManager[VD, ED]) extends Logging{
   val totalVnum: Long = idManager.getInnerVerticesNum
   val chunkSize: Long = (totalVnum + (numPartitions - 1)) / numPartitions
   val startLid = Math.min(chunkSize * pid, totalVnum)
@@ -23,7 +24,7 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
   }
 
   def tripletIterator(
-                       tripletFields: TripletFields)
+                       tripletFields: TripletFields = TripletFields.All)
   : Iterator[EdgeTriplet[VD, ED]] = {
     edgeManager.tripletIterator(startLid, endLid, tripletFields)
   }
@@ -55,6 +56,12 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
     new GrapeEdgePartition[VD,ED2](pid, numPartitions, idManager, edgeManager.withNewEdgeData[ED2](newData, startLid, endLid))
   }
 
+  def innerJoin[ED2: ClassTag, ED3: ClassTag]
+  (other: GrapeEdgePartition[_, ED2])
+  (f: (VertexId, VertexId, ED, ED2) => ED3): GrapeEdgePartition[VD, ED3] = {
+    new GrapeEdgePartition[VD,ED3](pid, numPartitions, idManager, this.edgeManager.innerJoin[ED2,ED3](other.edgeManager,startLid, endLid)(f))
+  }
+
   /**
    * Reverse all the edges in this partition.
    *
@@ -73,6 +80,18 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
               epred: EdgeTriplet[VD, ED] => Boolean,
               vpred: (VertexId, VD) => Boolean): GrapeEdgePartition[VD, ED] = {
     new GrapeEdgePartition[VD,ED](pid, numPartitions, idManager, edgeManager.filter(epred, vpred, startLid, endLid))
+  }
+
+  /**
+   * Merge all the edges with the same src and dest id into a single
+   * edge using the `merge` function
+   *
+   * @param merge a commutative associative merge operation
+   * @return a new edge partition without duplicate edges
+   */
+  def groupEdges(merge: (ED, ED) => ED): GrapeEdgePartition[VD, ED] = {
+    //suppose dst oids are sort
+    this
   }
 
 

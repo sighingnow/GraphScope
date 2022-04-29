@@ -2,7 +2,7 @@ package org.apache.spark.graphx
 
 import org.apache.spark.graphx.impl.offheap.OffHeapVertexRDDImpl
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{Dependency, SparkContext}
+import org.apache.spark.{Dependency, Partitioner, SparkContext}
 
 import scala.reflect.ClassTag
 
