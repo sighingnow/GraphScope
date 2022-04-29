@@ -1,6 +1,6 @@
 package org.apache.spark.graphx.impl
 
-import com.alibaba.graphscope.graphx.FragmentOps
+import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.impl.offheap.{OffHeapEdgeRDDImpl, OffHeapVertexRDDImpl}
 //import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
@@ -170,7 +170,7 @@ object GrapeGraphImpl {
     println("map result for edge : " + edgeFileArray.mkString("Array(", ", ", ")"))
     //Serialize the info to string, and pass it to mpi processes, which are launched to load the graph
     //to fragment
-    val fragIds = FragmentOps.graph2Fragment(vertexFileArray, edgeFileArray,
+    val fragIds = MPIUtils.graph2Fragment(vertexFileArray, edgeFileArray,
       vertexMappedSize, edgeMappedSize, !sc.isLocal, classToStr(vdClass), classToStr(edClass))
     println(s"Fragid: [${fragIds}]")
     //fragIds = 10001,111002,11003
