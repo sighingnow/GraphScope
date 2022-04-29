@@ -9,7 +9,8 @@ import scala.reflect.ClassTag
 
 class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
                                                        val pid : PartitionID, numPartitions: Int,
-                                                       idManager: GraphXVertexIdManager, edgeManager: EdgeManager[VD, ED]) extends Logging{
+                                                       val idManager: GraphXVertexIdManager,
+                                                       val edgeManager: EdgeManager[VD, ED]) extends Logging{
   val totalVnum: Long = idManager.getInnerVerticesNum
   val chunkSize: Long = (totalVnum + (numPartitions - 1)) / numPartitions
   val startLid = Math.min(chunkSize * pid, totalVnum)
@@ -53,6 +54,12 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
 
   def withData[ED2: ClassTag](newData: PrimitiveArray[ED2]): GrapeEdgePartition[VD,ED2] ={
     new GrapeEdgePartition[VD,ED2](pid, numPartitions, idManager, edgeManager.withNewEdgeData[ED2](newData, startLid, endLid))
+  }
+
+  def innerJoin[ED2: ClassTag, ED3: ClassTag]
+  (other: GrapeEdgePartition[_, ED2])
+  (f: (VertexId, VertexId, ED, ED2) => ED3): GrapeEdgePartition[VD, ED3] = {
+    new GrapeEdgePartition[VD,ED3](pid, numPartitions, idManager, this.edgeManager.innerJoin[ED2,ED3](other.edgeManager,startLid, endLid)(f))
   }
 
   /**

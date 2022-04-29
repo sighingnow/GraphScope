@@ -4,6 +4,7 @@ import com.alibaba.graphscope.fragment.IFragment
 import com.alibaba.graphscope.graph.AbstractEdgeManager
 import com.alibaba.graphscope.graphx.{GSEdgeTriplet, GSEdgeTripletImpl, ReverseGSEdgeTripletImpl}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
+import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.util.collection.BitSet
 import org.apache.spark.graphx.{Edge, EdgeTriplet, GraphXConf, ReusableEdge, ReusableEdgeImpl, ReversedReusableEdge, TripletFields, VertexId}
 import org.apache.spark.graphx.traits.{EdgeManager, GraphXVertexIdManager, MessageStore, VertexDataManager}
@@ -258,5 +259,28 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
       ind += 1
     }
     new EdgeManagerImpl[VD,ED](conf, vertexIdManager, vertexDataManager,dstOids, dstLids, nbrPositions, numOfEdges, edatas, edataOffset, !edgeReversed,newActiveSet)
+  }
+
+  override def innerJoin[ED2: ClassTag, ED3: ClassTag]
+  (edgeManager: EdgeManager[_, ED2], startLid: VertexId, endLid: VertexId)
+  (f: (VertexId, VertexId, ED, ED2) => ED3): EdgeManager[VD, ED3] = {
+    val edgeManagerImpl = edgeManager.asInstanceOf[EdgeManagerImpl[VD,ED2]]
+    val newActiveSet =  this.activeSet.&(edgeManagerImpl.activeSet)
+//    var i = newActiveSet.nextSetBit(startLid.toInt);
+    val newEdatas = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED3], edatas.size()).asInstanceOf[PrimitiveArray[ED3]]
+    var curLid = startLid
+    while (curLid < endLid){
+      val numEdge: Long = numOfEdges(curLid.toInt)
+      val nbrPos: Int = nbrPositions(curLid.toInt)
+      val endPos: Int = (nbrPos + numEdge).toInt
+      var curPos: Int = newActiveSet.nextSetBit(nbrPos)
+      val srcId = vertexIdManager.lid2Oid(curLid)
+      while (curPos >=0 && curPos < endPos){
+        newEdatas.set(curPos, f(srcId, vertexIdManager.lid2Oid(dstLids.get(curPos)), edatas.get(curPos), edgeManagerImpl.edatas.get(curPos)))
+        curPos = newActiveSet.nextSetBit(curPos + 1)
+      }
+      curLid += 1
+    }
+    new EdgeManagerImpl[VD,ED3](new GraphXConf[VD,ED3], vertexIdManager, vertexDataManager, dstOids, dstLids, nbrPositions, numOfEdges, newEdatas, edataOffset, edgeReversed, newActiveSet)
   }
 }

@@ -1,6 +1,7 @@
 package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.utils.MPIUtils
+import org.apache.spark.HashPartitioner
 import org.apache.spark.graphx.impl.offheap.{OffHeapEdgeRDDImpl, OffHeapVertexRDDImpl}
 //import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
