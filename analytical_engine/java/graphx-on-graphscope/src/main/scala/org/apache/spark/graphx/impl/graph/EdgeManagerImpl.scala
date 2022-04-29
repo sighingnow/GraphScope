@@ -139,7 +139,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
 
       def hasNext: Boolean = {
         curPos = activeSet.nextSetBit(curPos);
-        if (curPos < endPos){
+        if (curPos >= 0 && curPos < endPos){
           return true
         }
         curLid += 1
@@ -149,15 +149,18 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
           numEdge = numOfEdges(curLid.toInt)
           nbrPos = nbrPositions(curLid.toInt)
           endPos = (nbrPos + numEdge).toInt
-          while (curLid < endLid && numEdge <= 0 && (activeSet.nextSetBit(nbrPos) < 0 || activeSet.nextSetBit(nbrPos) >= endPos)){
+	  var firstPos = activeSet.nextSetBit(nbrPos)
+          while (curLid + 1 < endLid && (numEdge <= 0 || firstPos < 0 || firstPos >= endPos)){
             curLid += 1
             numEdge = numOfEdges(curLid.toInt)
             nbrPos = nbrPositions(curLid.toInt)
             endPos = (nbrPos + numEdge).toInt
+	    firstPos = activeSet.nextSetBit(nbrPos)
           }
           if (curLid >= endLid) return false
-          curPos = nbrPos
-          //logger.info("has next move to new lid: curLId {} endLid {} curPos {} endPos {} numEdge {}", curLid, endLid, curPos, endPos, numEdge);
+          curPos = firstPos
+	  if (curPos < 0 || curPos >= endPos) return false;
+          logger.info(s"has next move to new lid: curLId ${curLid} endLid ${endLid} curPos ${curPos} endPos ${endPos} numEdge ${numEdge}");
           if (tripletFields.useSrc){
             edge.setSrcOid(vertexIdManager.lid2Oid(curLid), vertexDataManager.getVertexData(curLid))
           }
