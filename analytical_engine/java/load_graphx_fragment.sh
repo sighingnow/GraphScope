@@ -24,9 +24,9 @@ echo "vd type:               "${VD_TYPE}
 echo "ed type:               "${ED_TYPE}
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-source ${SCRIPT_DIR}/prepare.sh
+source ${SCRIPT_DIR}/prepare_mpi.sh
 
-cmd="GLOG_v=10 mpirun --mca btl_tcp_if_include bond0 -n ${NUM_WORKERS} -hostfile ${HOST_FILE} -x LD_PRELOAD -x GLOG_v \
+cmd="GLOG_v=10 mpirun --mca btl_tcp_if_include bond0 -n ${NUM_WORKERS} --hostfile ${HOST_FILE} -x LD_PRELOAD -x GLOG_v \
 -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_FRAGMENT_LOADER} \
 --vertex_files ${VERTEX_MAPPED_FILES} --edge_files ${EDGE_MAPPED_FILES} \
 --vertex_mapped_size ${VERTEX_MAPPED_SIZE} --edge_mapped_size ${EDGE_MAPPED_SIZE} \

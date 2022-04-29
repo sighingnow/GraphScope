@@ -92,7 +92,7 @@ public class MPIUtils {
 
         int numWorkers = 1;
         if (cluster){
-            numWorkers = Math.min(getNumWorker(), numWorkers);
+            numWorkers = getNumWorker();
         }
         long startTime = System.nanoTime();
         String[] commands = {"/bin/bash", LOAD_GRAPH_SHELL_SCRIPT, String.valueOf(numWorkers), SPARK_CONF_WORKERS, String.join(":", vertexMappedFilesDedup),

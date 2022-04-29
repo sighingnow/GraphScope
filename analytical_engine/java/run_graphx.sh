@@ -38,7 +38,7 @@ echo "frag ids            "${FRAG_IDS}
 echo "num workers:        "${NUM_WORKERS}
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-source ${SCRIPT_DIR}/prepare.sh
+source ${SCRIPT_DIR}/prepare_mpi.sh
 
 # 1.first distribute serialized vprog functions.
 for host in `cat ${SPARK_CONF_WORKER}`;

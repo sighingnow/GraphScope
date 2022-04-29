@@ -1,0 +1,52 @@
+[2022-04-29 10:36:06,737][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:57] loaded jni lib
+[2022-04-29 10:36:06,736][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:57] loaded jni lib
+[2022-04-29 10:36:06,740][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:74] Loaded lib: /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.322.b06-1.el7_9.x86_64/jre/lib/amd64/libzip.so /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.322.b06-1.el7_9.x86_64/jre/lib/amd64/libnio.so /opt/graphscope/lib/libgrape-jni.so
+[2022-04-29 10:36:06,740][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:212] Splited class path: /home/graphscope/gs/analytical_engine/java/graphx-on-graphscope/target/graphx-on-graphscope-0.1-shaded.jar
+[2022-04-29 10:36:06,740][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:74] Loaded lib: /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.322.b06-1.el7_9.x86_64/jre/lib/amd64/libzip.so /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.322.b06-1.el7_9.x86_64/jre/lib/amd64/libnio.so /opt/graphscope/lib/libgrape-jni.so
+[2022-04-29 10:36:06,741][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:212] Splited class path: /home/graphscope/gs/analytical_engine/java/graphx-on-graphscope/target/graphx-on-graphscope-0.1-shaded.jar
+[2022-04-29 10:36:06,807][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:226] Extracted URL: file:/home/graphscope/gs/analytical_engine/java/graphx-on-graphscope/target/graphx-on-graphscope-0.1-shaded.jar
+[2022-04-29 10:36:06,807][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:76] URLClassLoader loaded lib: /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.322.b06-1.el7_9.x86_64/jre/lib/amd64/libzip.so,/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.322.b06-1.el7_9.x86_64/jre/lib/amd64/libnio.so,/opt/graphscope/lib/libgrape-jni.so
+[2022-04-29 10:36:06,807][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:79] Class Loader java.net.URLClassLoader@56ac3a89 serach path: file:/home/graphscope/gs/analytical_engine/java/graphx-on-graphscope/target/graphx-on-graphscope-0.1-shaded.jar,
+[2022-04-29 10:36:06,809][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:226] Extracted URL: file:/home/graphscope/gs/analytical_engine/java/graphx-on-graphscope/target/graphx-on-graphscope-0.1-shaded.jar
+[2022-04-29 10:36:06,809][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:76] URLClassLoader loaded lib: /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.322.b06-1.el7_9.x86_64/jre/lib/amd64/libzip.so,/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.322.b06-1.el7_9.x86_64/jre/lib/amd64/libnio.so,/opt/graphscope/lib/libgrape-jni.so
+[2022-04-29 10:36:06,809][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:79] Class Loader java.net.URLClassLoader@56ac3a89 serach path: file:/home/graphscope/gs/analytical_engine/java/graphx-on-graphscope/target/graphx-on-graphscope-0.1-shaded.jar,
+[2022-04-29 10:36:06,809][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIByteVecVector
+[2022-04-29 10:36:06,811][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIByteVecVector
+[2022-04-29 10:36:06,811][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIByteVecVector@df9d48
+[2022-04-29 10:36:06,812][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIByteVecVector
+[2022-04-29 10:36:06,812][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIByteVecVector@df9d60
+[2022-04-29 10:36:06,812][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIByteVecVector
+[2022-04-29 10:36:06,812][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIByteVecVector@df9d78
+[2022-04-29 10:36:06,812][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIByteVecVector
+[2022-04-29 10:36:06,812][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIByteVecVector@df9d90
+[2022-04-29 10:36:06,812][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIByteVecVector
+[2022-04-29 10:36:06,812][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIByteVecVector@df9da8
+[2022-04-29 10:36:06,813][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIByteVecVector@df9ca8
+[2022-04-29 10:36:06,813][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIByteVecVector
+[2022-04-29 10:36:06,813][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIByteVecVector@df9cc0
+[2022-04-29 10:36:06,813][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIByteVecVector
+[2022-04-29 10:36:06,813][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIByteVecVector@df9cd8
+[2022-04-29 10:36:06,813][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIIntVecVector
+[2022-04-29 10:36:06,813][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIByteVecVector
+[2022-04-29 10:36:06,813][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIByteVecVector@df9cf0
+[2022-04-29 10:36:06,813][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIIntVecVector@df9dc0
+[2022-04-29 10:36:06,813][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIByteVecVector
+[2022-04-29 10:36:06,814][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIByteVecVector@df9d08
+[2022-04-29 10:36:06,814][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIIntVecVector
+[2022-04-29 10:36:06,814][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIIntVecVector@df9dd8
+[2022-04-29 10:36:06,814][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIIntVecVector
+[2022-04-29 10:36:06,814][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIIntVecVector@df9df0
+[2022-04-29 10:36:06,814][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIIntVecVector
+[2022-04-29 10:36:06,814][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIIntVecVector
+[2022-04-29 10:36:06,814][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIIntVecVector@df9e08
+[2022-04-29 10:36:06,814][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIIntVecVector@df9d20
+[2022-04-29 10:36:06,814][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIIntVecVector
+[2022-04-29 10:36:06,815][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIIntVecVector
+[2022-04-29 10:36:06,815][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIIntVecVector@df9d38
+[2022-04-29 10:36:06,815][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIIntVecVector@df9e20
+[2022-04-29 10:36:06,815][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIIntVecVector
+[2022-04-29 10:36:06,815][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIIntVecVector@df9d50
+[2022-04-29 10:36:06,815][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIIntVecVector
+[2022-04-29 10:36:06,815][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIIntVecVector@df9d68
+[2022-04-29 10:36:06,815][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:161] Desired constructor exists for com.alibaba.graphscope.stdcxx.FFIIntVecVector
+[2022-04-29 10:36:06,815][INFO][main][com.alibaba.graphscope.runtime.GraphScopeClassLoader:163] Successfully Construct com.alibaba.graphscope.stdcxx.FFIIntVecVector@df9d80

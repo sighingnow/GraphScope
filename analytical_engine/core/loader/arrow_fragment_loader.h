@@ -497,7 +497,7 @@ class ArrowFragmentLoader {
       return nullptr;
     }
     std::string files = loc.substr(0, first_occur);
-    int mapped_size =
+    int64_t mapped_size =
         std::stoull(loc.substr(first_occur + 1).c_str(), NULL, 10);
     VLOG(1) << "Worker [" << comm_spec_.worker_id() << "] files: " << files
             << ", mapped size" << mapped_size;

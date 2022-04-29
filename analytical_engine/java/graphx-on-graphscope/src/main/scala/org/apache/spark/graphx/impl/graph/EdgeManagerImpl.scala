@@ -160,7 +160,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
           if (curLid >= endLid) return false
           curPos = firstPos
 	  if (curPos < 0 || curPos >= endPos) return false;
-          logger.info(s"has next move to new lid: curLId ${curLid} endLid ${endLid} curPos ${curPos} endPos ${endPos} numEdge ${numEdge}");
+          //logger.info(s"has next move to new lid: curLId ${curLid} endLid ${endLid} curPos ${curPos} endPos ${endPos} numEdge ${numEdge}");
           if (tripletFields.useSrc){
             edge.setSrcOid(vertexIdManager.lid2Oid(curLid), vertexDataManager.getVertexData(curLid))
           }
