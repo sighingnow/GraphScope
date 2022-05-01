@@ -3,7 +3,7 @@ package org.apache.spark.graphx
 import com.alibaba.graphscope.fragment.IFragment
 import com.alibaba.graphscope.graphx.{FragmentHolder, SharedMemoryRegistry}
 import com.alibaba.graphscope.utils.MappedBuffer
-import org.apache.spark.graphx.impl.GrapeEdgePartition
+import org.apache.spark.graphx.impl.{GrapeEdgePartition, GrapeUtils}
 import org.apache.spark.graphx.traits.{EdgeManager, GraphXVertexIdManager, VertexDataManager}
 import org.apache.spark.internal.Logging
 
@@ -16,7 +16,7 @@ import scala.reflect.ClassTag
 
 object FragmentRegistry extends Logging{
   private var maxPartitionId = 0
-  private val hostName = getSelfHostName
+  private val hostName = GrapeUtils.getSelfHostName
   private var fragId = ""
   private val lock = new ReentrantLock
   private var fragmentHolder = null.asInstanceOf[FragmentHolder]
@@ -24,7 +24,6 @@ object FragmentRegistry extends Logging{
   private var vertexPartitions = null.asInstanceOf[Array[GrapeVertexPartition[_]]]
   private var edgePartitions = null.asInstanceOf[Array[GrapeEdgePartition[_,_]]]
 
-  def getFragIds: String = fragId
   @throws[IOException]
   def registFragment(fragIds: String, index: Int): Int = {
     this.synchronized{
@@ -129,8 +128,5 @@ object FragmentRegistry extends Logging{
       log.info(s"Partition ${pid} arrives to write vdata, already locked");
     }
   }
-
-  @throws[UnknownHostException]
-  private def getSelfHostName = InetAddress.getLocalHost.getHostName
 }
 

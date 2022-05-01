@@ -46,7 +46,19 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   def numEdges: Long = edges.count()
 
+  var fragId : String = null
+
   val sc = vertices.sparkContext
+
+  def setFragId(fragIds : String): Unit = {
+    val fragsStrs = fragIds.split(",")
+    val hostName = GrapeUtils.getSelfHostName
+    for (frag <- fragsStrs){
+      if (frag.startsWith(hostName)){
+        fragId = frag.substring(frag.indexOf(":") + 1, frag.size)
+      }
+    }
+  }
 
 
   @transient override lazy val triplets: RDD[EdgeTriplet[VD, ED]] = {
@@ -236,7 +248,9 @@ object GrapeGraphImpl {
     val grapeEdgeRDD = GrapeEdgeRDD.fromEdgePartitions[VD,ED](grapeEdgePartitions)
     println(s"grape vertex rdd ${grapeVertexRDD.count()}, edge rdd ${grapeEdgeRDD.count()}")
 
-    fromExistingRDDs(grapeVertexRDD, grapeEdgeRDD)
+    val resgraph = fromExistingRDDs(grapeVertexRDD, grapeEdgeRDD)
+    resgraph.setFragId(fragIds)
+    resgraph
   }
 
   def fromExistingRDDs[VD: ClassTag,ED :ClassTag](vertices: GrapeVertexRDDImpl[VD], edges: GrapeEdgeRDDImpl[VD, ED]): GrapeGraphImpl[VD,ED] ={
