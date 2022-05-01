@@ -35,6 +35,9 @@ DEFINE_string(user_lib_path, "/opt/graphscope/lib/libgrape-jni.so",
               "user jni lib");
 DEFINE_string(app_class, "com.alibaba.graphscope.app.GraphXAdaptor",
               "graphx driver class");  // graphx_driver_class
+DEFINE_string(context_class,
+              "com.alibaba.graphscope.context.GraphXAdaptorContext",
+              "graphx driver context class");  // graphx_driver_class
 DEFINE_string(vprog_path, "/tmp/graphx-vprog",
               "path to the serialization file for vprog");
 DEFINE_string(send_msg_path, "/tmp/graphx-sendMsg",
@@ -51,6 +54,16 @@ DEFINE_int64(vdata_size, 10 * 1024 * 1024,
              "mapped size fo vdata shared memroy");
 DEFINE_int32(max_iterations, 100000, "max iterations");
 DEFINE_string(frag_ids, "", "frag ids got, should be in order");
+
+std::string build_app_class(const std::string& app_base_class,
+                            const std::string& vd_class,
+                            const std::string& ed_class,
+                            const std::string& msg_class) {
+  std::stringstream ss;
+  ss << app_base_class << "<" << vd_class << "," << ed_class << "," << msg_class
+     << ">";
+  return ss.str();
+}
 // put all flags in a json str
 std::string flags2JsonStr() {
   boost::property_tree::ptree pt;
@@ -59,7 +72,11 @@ std::string flags2JsonStr() {
     LOG(ERROR) << "user jni lib not set";
   }
   pt.put("user_lib_path", FLAGS_user_lib_path);
-  pt.put("app_class", FLAGS_app_class);
+  // Different from other type of apps, we need to specify
+  // vd and ed type in app_class for generic class creations
+  pt.put("app_class", build_app_class(FLAGS_app_class, FLAGS_vd_class,
+                                      FLAGS_ed_class, FLAGS_msg_class));
+  pt.put("context_class", FLAGS_context_class);
   pt.put("msg_class", FLAGS_msg_class);
   pt.put("vd_class", FLAGS_vd_class);
   pt.put("ed_class", FLAGS_ed_class);
@@ -91,7 +108,6 @@ int main(int argc, char* argv[]) {
   google::InitGoogleLogging("graphx-runner");
   google::InstallFailureSignalHandler();
 
-
   std::string params = flags2JsonStr();
   VLOG(1) << "Finish option parsing" << params;
   if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
@@ -113,8 +129,7 @@ int main(int argc, char* argv[]) {
         "gs::ArrowProjectedFragment<int64_t,uint64_t,double,double>";
     gs::CreateAndQuery<ProjectedFragmentType>(params, frag_name);
     gs::Finalize();
-  }
-  else {
+  } else {
     LOG(ERROR) << "Unrecognized: " << FLAGS_vd_class << ", " << FLAGS_ed_class;
   }
 

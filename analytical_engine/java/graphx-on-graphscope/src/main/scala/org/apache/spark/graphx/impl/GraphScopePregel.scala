@@ -2,7 +2,7 @@ package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.graphx.SerializationUtils
 import com.alibaba.graphscope.utils.MPIUtils
-import org.apache.spark.graphx.{EdgeDirection, EdgeTriplet, Graph, VertexId}
+import org.apache.spark.graphx.{EdgeDirection, EdgeTriplet, FragmentRegistry, Graph, VertexId}
 import org.apache.spark.internal.Logging
 
 import scala.reflect.{ClassTag, classTag}
@@ -20,26 +20,29 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
   val edClass = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
 
   def run(): Graph[VD,ED] = {
+    if (!graph.isInstanceOf[GrapeGraphImpl[VD,ED]]) {
+      log.error("Only support grape graph")
+      return graph
+    }
+    //0. write back vertex.
+    val grapeGraph = graph.asInstanceOf[GrapeGraphImpl[VD,ED]]
+      val vdataMappedSize = grapeGraph.numVertices * 16L + 8L
+    grapeGraph.vertices.writeBackVertexData(VDATA_MAPPED_PATH, vdataMappedSize)
+    log.info(s"[Driver:] Finish write back vdata mapped size: ${vdataMappedSize} to ${VDATA_MAPPED_PATH}")
+    //1. serialization
+    log.info("[Driver:] start serialization functions.")
+    SerializationUtils.write(vprog, VPROG_SERIALIZATION_PATH)
+    SerializationUtils.write(sendMsg, SEND_MSG_SERIALIZATION_PATH)
+    SerializationUtils.write(mergeMsg, MERGE_MSG_SERIALIZATION_PATH)
+
+//launch mpi processes. and run.
+    val t0 = System.nanoTime()
+
+    MPIUtils.launchGraphX[MSG,VD,ED](FragmentRegistry.getFragIds, initialMsg, msgClass, vdClass, edClass, maxIteration, VPROG_SERIALIZATION_PATH,
+      SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, VDATA_MAPPED_PATH, vdataMappedSize)
+    val t1 = System.nanoTime()
+    log.info(s"[Driver:] Running graphx pie cost: ${(t1 - t0) / 1000000} ms")
     graph
-//    if (!graph.isInstanceOf[GrapeGraphImpl[VD,ED]]) {
-//      log.error("Only support grape graph")
-//      return graph
-//    }
-//    val grapeGraph = graph.asInstanceOf[GrapeGraphImpl[VD, ED]]
-//    //Persist and distribute functions.
-//    log.info("[Driver:] start serialization functions.")
-//    SerializationUtils.write(vprog, VPROG_SERIALIZATION_PATH)
-//    SerializationUtils.write(sendMsg, SEND_MSG_SERIALIZATION_PATH)
-//    SerializationUtils.write(mergeMsg, MERGE_MSG_SERIALIZATION_PATH)
-//    //Distribute them to all workers.
-//
-//    //launch mpi processes. and run.
-//    val t0 = System.nanoTime()
-//    val vdata_mapped_size = grapeGraph.numVertices * 16L + 8L
-//    MPIUtils.launchGraphX[MSG,VD,ED](grapeGraph.fragIds, initialMsg, msgClass, vdClass, edClass, maxIteration, VPROG_SERIALIZATION_PATH,
-//      SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, VDATA_MAPPED_PATH, vdata_mapped_size)
-//    val t1 = System.nanoTime();
-//    log.info(s"[Driver:] Running graphx pie cost: ${(t1 - t0) / 1000000} ms")
 //    //update the result to graph for a new graph.
 //
 //    log.info(s"[Driver:] Writing back vertex data")

@@ -1,4 +1,4 @@
-package org.apache.spark.graphx.impl.offheap
+package org.apache.spark.graphx.impl.grape
 
 import org.apache.spark.graphx.impl.GrapeEdgePartition
 import org.apache.spark.graphx._
@@ -8,7 +8,7 @@ import org.apache.spark.{OneToOneDependency, Partition, Partitioner, TaskContext
 
 import scala.reflect.{ClassTag, classTag}
 
-class OffHeapEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx] (
+class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
                                                                         @transient val grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartition[VD, ED])],
                                                                         val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   extends GrapeEdgeRDD[ED](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
@@ -73,7 +73,7 @@ class OffHeapEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx] (
     grapePartitionsRDD.map(_._2.numEdges.toLong).fold(0)(_ + _)
   }
 
-  override def mapValues[ED2 :ClassTag](f: Edge[ED] => ED2): OffHeapEdgeRDDImpl[VD,ED2] = {
+  override def mapValues[ED2 :ClassTag](f: Edge[ED] => ED2): GrapeEdgeRDDImpl[VD,ED2] = {
     mapEdgePartitions((pid, part) => part.map(f))
   }
 
@@ -83,13 +83,13 @@ class OffHeapEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx] (
 
   def filter(
               epred: EdgeTriplet[VD, ED] => Boolean,
-              vpred: (VertexId, VD) => Boolean): OffHeapEdgeRDDImpl[VD, ED] = {
+              vpred: (VertexId, VD) => Boolean): GrapeEdgeRDDImpl[VD, ED] = {
     mapEdgePartitions((pid, part) => part.filter(epred, vpred))
   }
 
   override def innerJoin[ED2: ClassTag, ED3: ClassTag](other: EdgeRDD[ED2])(f: (VertexId, VertexId, ED, ED2) => ED3): GrapeEdgeRDD[ED3] = {
     other match {
-      case other : OffHeapEdgeRDDImpl[VD,ED2] if this.partitioner == other.partitioner => {
+      case other : GrapeEdgeRDDImpl[VD,ED2] if this.partitioner == other.partitioner => {
         val ed2Tag = classTag[ED2]
         val ed3Tag = classTag[ED3]
         this.withPartitionsRDD[VD, ED3](
@@ -106,7 +106,7 @@ class OffHeapEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx] (
   }
 
   override private[graphx] def withTargetStorageLevel(newTargetStorageLevel: StorageLevel) = {
-    new OffHeapEdgeRDDImpl[VD,ED](grapePartitionsRDD, newTargetStorageLevel)
+    new GrapeEdgeRDDImpl[VD,ED](grapePartitionsRDD, newTargetStorageLevel)
   }
 
   override private[graphx] def partitionsRDD = {
@@ -114,7 +114,7 @@ class OffHeapEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx] (
   }
 
   def mapEdgePartitions[VD2: ClassTag, ED2: ClassTag](
-           f: (PartitionID, GrapeEdgePartition[VD, ED]) => GrapeEdgePartition[VD2, ED2]): OffHeapEdgeRDDImpl[VD2, ED2] = {
+           f: (PartitionID, GrapeEdgePartition[VD, ED]) => GrapeEdgePartition[VD2, ED2]): GrapeEdgeRDDImpl[VD2, ED2] = {
     this.withPartitionsRDD[VD2, ED2](grapePartitionsRDD.mapPartitions({ iter =>
       if (iter.hasNext) {
         val (pid, ep) = iter.next()
@@ -126,7 +126,7 @@ class OffHeapEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx] (
   }
 
   private[graphx] def withPartitionsRDD[VD2: ClassTag, ED2: ClassTag](
-          partitionsRDD: RDD[(PartitionID, GrapeEdgePartition[VD2, ED2])]): OffHeapEdgeRDDImpl[VD2, ED2] = {
-    new OffHeapEdgeRDDImpl[VD2,ED2](partitionsRDD, this.targetStorageLevel)
+          partitionsRDD: RDD[(PartitionID, GrapeEdgePartition[VD2, ED2])]): GrapeEdgeRDDImpl[VD2, ED2] = {
+    new GrapeEdgeRDDImpl[VD2,ED2](partitionsRDD, this.targetStorageLevel)
   }
 }

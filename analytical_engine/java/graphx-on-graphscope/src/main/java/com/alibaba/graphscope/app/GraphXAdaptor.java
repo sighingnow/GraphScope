@@ -16,6 +16,13 @@ public class GraphXAdaptor<VDATA_T, EDATA_T,MSG> extends Communicator implements
     private static String gsRuntimeJar = "local:/opt/graphscope/lib/grape-runtime-0.1-shaded.jar";
     private static String gsLibPath = "/opt/graphscope/lib";
 
+    public static <VD,ED,M> GraphXAdaptor<VD,ED,M> create(String vdClass, String edClass, String msgClass){
+        if (vdClass.equals("int64_t") && edClass.equals("int64_t") && msgClass.equals("int64_t")){
+            return (GraphXAdaptor<VD, ED, M>) new GraphXAdaptor<Long, Long, Long>();
+        }
+        else throw new IllegalStateException("not supported classes: " + vdClass + "," +  edClass + "," +  msgClass);
+    }
+
     @Override
     public void PEval(IFragment<Long, Long, VDATA_T, EDATA_T> graph,
         DefaultContextBase<Long, Long, VDATA_T, EDATA_T> context,
