@@ -52,10 +52,13 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   def setFragId(fragIds : String): Unit = {
     val fragsStrs = fragIds.split(",")
+    println(s"frag str ${fragsStrs}")
     val hostName = GrapeUtils.getSelfHostName
     for (frag <- fragsStrs){
+      println(s"for frag ${frag}")
       if (frag.startsWith(hostName)){
         fragId = frag.substring(frag.indexOf(":") + 1, frag.size)
+	println(s"matched ${fragId}")
       }
     }
   }
@@ -250,6 +253,7 @@ object GrapeGraphImpl {
 
     val resgraph = fromExistingRDDs(grapeVertexRDD, grapeEdgeRDD)
     resgraph.setFragId(fragIds)
+    println(s"after set ${resgraph.fragId}")
     resgraph
   }
 

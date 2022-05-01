@@ -29,8 +29,7 @@ object Test extends Logging {
     })
     mapped_graph.cache()
     log.info(s"Finish loading, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
-    val res = mapped_graph.subgraph((_)=>true, (vid, vd) => vid < 3)
-    val res2 = res.pregel(99999L, maxIterations = 100)(
+    val res2 = mapped_graph.pregel(99999L, maxIterations = 100)(
       (vid, vd, msg) => {
         math.min(vd,msg)
       },

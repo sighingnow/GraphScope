@@ -52,6 +52,7 @@ public class MPIUtils {
     public static <MSG,VD,ED> void launchGraphX(String fragIds, MSG initialMsg,Class<? extends MSG> msgClass,
         Class<? extends VD> vdClass, Class<? extends ED> edClass, int maxIteration,
         String vprogPath, String sendMsgPath, String mergeMsgpath, String vdataPath, long size){
+        logger.info("[Driver:] {}", fragIds);
         int numWorkers = Math.min(fragIds.split(",").length, getNumWorker());
         logger.info("running mpi with {} workers", numWorkers);
 //        MappedBuffer buffer = SharedMemoryRegistry.getOrCreate().mapFor(vdataPath, size);
