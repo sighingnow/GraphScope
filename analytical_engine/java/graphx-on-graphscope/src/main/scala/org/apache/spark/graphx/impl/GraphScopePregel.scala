@@ -35,7 +35,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     SerializationUtils.write(sendMsg, SEND_MSG_SERIALIZATION_PATH)
     SerializationUtils.write(mergeMsg, MERGE_MSG_SERIALIZATION_PATH)
 
-//launch mpi processes. and run.
+    //launch mpi processes. and run.
     val t0 = System.nanoTime()
 
     MPIUtils.launchGraphX[MSG,VD,ED](grapeGraph.fragId, initialMsg, msgClass, vdClass, edClass, maxIteration, VPROG_SERIALIZATION_PATH,

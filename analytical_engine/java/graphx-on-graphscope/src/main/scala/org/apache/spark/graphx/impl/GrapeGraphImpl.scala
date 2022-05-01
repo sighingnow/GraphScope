@@ -34,9 +34,10 @@ import scala.reflect.{ClassTag, classTag}
  */
 class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
                                                             @transient val vertices: GrapeVertexRDD[VD],
-                                                            @transient val edges: GrapeEdgeRDD[ED]) extends Graph[VD, ED] with Serializable {
+                                                            @transient val edges: GrapeEdgeRDD[ED],
+                                                            @transient val fragId : String) extends Graph[VD, ED] with Serializable {
 
-  protected def this(vertices : GrapeVertexRDD[VD], edges : GrapeEdgeRDDImpl[VD,ED]) = this(vertices,edges.asInstanceOf[GrapeEdgeRDD[ED]])
+  protected def this(vertices : GrapeVertexRDD[VD], edges : GrapeEdgeRDDImpl[VD,ED], fragId : String) = this(vertices,edges.asInstanceOf[GrapeEdgeRDD[ED]], fragId)
 
   val vdClass: Class[VD] = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
   val edClass: Class[ED] = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
@@ -46,23 +47,9 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   def numEdges: Long = edges.count()
 
-  var fragId : String = null
+
 
   val sc = vertices.sparkContext
-
-  def setFragId(fragIds : String): Unit = {
-    val fragsStrs = fragIds.split(",")
-    println(s"frag str ${fragsStrs}")
-    val hostName = GrapeUtils.getSelfHostName
-    for (frag <- fragsStrs){
-      println(s"for frag ${frag}")
-      if (frag.startsWith(hostName)){
-        fragId = frag.substring(frag.indexOf(":") + 1, frag.size)
-	println(s"matched ${fragId}")
-      }
-    }
-  }
-
 
   @transient override lazy val triplets: RDD[EdgeTriplet[VD, ED]] = {
     val grapeEdges = edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]]
@@ -125,12 +112,12 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
   override def mapVertices[VD2: ClassTag](f: (VertexId, VD) => VD2)(implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
-    new GrapeGraphImpl[VD2,ED](vertices.mapGrapeVertexPartitions(_.map(f)), edges)
+    new GrapeGraphImpl[VD2,ED](vertices.mapGrapeVertexPartitions(_.map(f)), edges, fragId)
   }
 
   override def mapEdges[ED2](f: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2])(implicit newEd: ClassTag[ED2]): Graph[VD, ED2] = {
     val newEdges = offHeapEdgeRDDImpl.mapEdgePartitions((pid, part) => part.map(f(pid, part.iterator)))
-    new GrapeGraphImpl[VD,ED2](vertices,newEdges)
+    new GrapeGraphImpl[VD,ED2](vertices,newEdges, fragId)
   }
 
   override def mapTriplets[ED2: ClassTag](
@@ -139,29 +126,29 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     val newEdges = offHeapEdgeRDDImpl.mapEdgePartitions({
       (pid,partition) => partition.map(map(pid, partition.tripletIterator(tripletFields)))
     })
-    new GrapeGraphImpl[VD,ED2](vertices, newEdges)
+    new GrapeGraphImpl[VD,ED2](vertices, newEdges, fragId)
   }
 
   override def reverse: Graph[VD, ED] = {
-    new GrapeGraphImpl[VD,ED](vertices, edges.reverse.asInstanceOf[GrapeEdgeRDD[ED]])
+    new GrapeGraphImpl[VD,ED](vertices, edges.reverse.asInstanceOf[GrapeEdgeRDD[ED]], fragId)
   }
 
   override def subgraph(epred: EdgeTriplet[VD, ED] => Boolean, vpred: (VertexId, VD) => Boolean): Graph[VD, ED] = {
     val newEdges = offHeapEdgeRDDImpl.filter(epred,vpred)
     val newVertices = vertices.mapGrapeVertexPartitions(_.filter(vpred))
-     new GrapeGraphImpl[VD,ED](newVertices, newEdges)
+     new GrapeGraphImpl[VD,ED](newVertices, newEdges, fragId)
   }
 
   override def mask[VD2, ED2](other: Graph[VD2, ED2])(implicit evidence$9: ClassTag[VD2], evidence$10: ClassTag[ED2]): Graph[VD, ED] = {
     val newVertices = vertices.innerJoin(other.vertices) {(vid, v, w) => v}
     val newEdges = edges.innerJoin(other.edges){ (src,dst,v,w) => v}
-    GrapeGraphImpl.fromRDDs(newVertices, newEdges)
+    GrapeGraphImpl.fromRDDs(newVertices, newEdges,fragId)
   }
 
   override def groupEdges(merge: (ED, ED) => ED): Graph[VD, ED] = {
     val newEdges = edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]].mapEdgePartitions(
       (pid, part) => part.groupEdges(merge))
-    new GrapeGraphImpl(vertices, newEdges)
+    new GrapeGraphImpl(vertices, newEdges, fragId)
   }
 
   override private[graphx] def aggregateMessagesWithActiveSet[A](sendMsg: EdgeContext[VD, ED, A] => Unit, mergeMsg: (A, A) => A, tripletFields: TripletFields, activeSetOpt: Option[(VertexRDD[_], EdgeDirection)])(implicit evidence$12: ClassTag[A]) = {
@@ -251,23 +238,36 @@ object GrapeGraphImpl {
     val grapeEdgeRDD = GrapeEdgeRDD.fromEdgePartitions[VD,ED](grapeEdgePartitions)
     println(s"grape vertex rdd ${grapeVertexRDD.count()}, edge rdd ${grapeEdgeRDD.count()}")
 
-    val resgraph = fromExistingRDDs(grapeVertexRDD, grapeEdgeRDD)
-    resgraph.setFragId(fragIds)
+    val resgraph = fromExistingRDDs(grapeVertexRDD, grapeEdgeRDD, getFragId(fragIds))
     println(s"after set ${resgraph.fragId}")
     resgraph
   }
 
-  def fromExistingRDDs[VD: ClassTag,ED :ClassTag](vertices: GrapeVertexRDDImpl[VD], edges: GrapeEdgeRDDImpl[VD, ED]): GrapeGraphImpl[VD,ED] ={
-    new GrapeGraphImpl[VD,ED](vertices, edges)
+  def fromExistingRDDs[VD: ClassTag,ED :ClassTag](vertices: GrapeVertexRDDImpl[VD], edges: GrapeEdgeRDDImpl[VD, ED], fragId : String): GrapeGraphImpl[VD,ED] ={
+    new GrapeGraphImpl[VD,ED](vertices, edges, fragId)
   }
 
   def toGraphXGraph[VD:ClassTag, ED : ClassTag](graph : Graph[VD,ED]) : Graph[VD,ED] = {
     null
   }
 
-  def fromRDDs[VD: ClassTag, ED : ClassTag](vertices : VertexRDD[VD], edges : EdgeRDD[ED]) : GrapeGraphImpl[VD,ED] = {
-    new GrapeGraphImpl[VD,ED](vertices.asInstanceOf[GrapeVertexRDDImpl[VD]], edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]]);
+  def fromRDDs[VD: ClassTag, ED : ClassTag](vertices : VertexRDD[VD], edges : EdgeRDD[ED], fragId :String) : GrapeGraphImpl[VD,ED] = {
+    new GrapeGraphImpl[VD,ED](vertices.asInstanceOf[GrapeVertexRDDImpl[VD]], edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]], fragId);
   }
 
 
+  def getFragId(fragIds : String): String = {
+    val fragsStrs = fragIds.split(",")
+    println(s"frag str ${fragsStrs}")
+    val hostName = GrapeUtils.getSelfHostName
+    for (frag <- fragsStrs){
+      println(s"for frag ${frag}")
+      if (frag.startsWith(hostName)){
+        val fragId = frag.substring(frag.indexOf(":") + 1, frag.size)
+        println(s"matched ${fragId}")
+        return fragId
+      }
+    }
+    throw new IllegalStateException("Empty string found")
+  }
 }
