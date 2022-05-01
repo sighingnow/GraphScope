@@ -30,20 +30,20 @@ object Test extends Logging {
     mapped_graph.cache()
     log.info(s"Finish loading, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
     val res = mapped_graph.subgraph((_)=>true, (vid, vd) => vid < 3)
-//    val res = mapped_graph.pregel(99999L, maxIterations = 100)(
-//      (vid, vd, msg) => {
-//        math.min(vd,msg)
-//      },
-//      triplet => {
-//        if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
-//          Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
-//        } else {
-//          Iterator.empty
-//        }
-//      },
-//      (a, b) => Math.min(a,b)
-//    )
-    log.info(s"Finish query, graph vertices: ${res.numVertices}  and edges: ${res.numEdges}")
+    val res2 = res.pregel(99999L, maxIterations = 100)(
+      (vid, vd, msg) => {
+        math.min(vd,msg)
+      },
+      triplet => {
+        if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
+          Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
+        } else {
+          Iterator.empty
+        }
+      },
+      (a, b) => Math.min(a,b)
+    )
+    log.info(s"Finish query, graph vertices: ${res2.numVertices}  and edges: ${res2.numEdges}")
 //    log.info(s"${res.vertices.collect().mkString("Array(", ", ", ")")}")
   }
 }
