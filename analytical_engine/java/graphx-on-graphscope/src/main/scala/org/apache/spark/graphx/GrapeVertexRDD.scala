@@ -1,6 +1,6 @@
 package org.apache.spark.graphx
 
-import org.apache.spark.graphx.impl.offheap.OffHeapVertexRDDImpl
+import org.apache.spark.graphx.impl.grape.GrapeVertexRDDImpl
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Dependency, Partitioner, SparkContext}
 
@@ -18,6 +18,11 @@ abstract class GrapeVertexRDD[VD](
 
   private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])])
   : GrapeVertexRDD[VD2]
+
+  /**
+   * Write the updated vertex data to memory mapped region.
+   */
+  def writeBackVertexData(vdataMappedPath : String, size : Long): Unit ;
 }
 
 object GrapeVertexRDD {
@@ -37,8 +42,8 @@ object GrapeVertexRDD {
     null
   }
 
-  def fromVertexPartitions[VD : ClassTag](vertexPartition : RDD[(PartitionID, GrapeVertexPartition[VD])]): OffHeapVertexRDDImpl[VD] ={
-    new OffHeapVertexRDDImpl[VD](vertexPartition)
+  def fromVertexPartitions[VD : ClassTag](vertexPartition : RDD[(PartitionID, GrapeVertexPartition[VD])]): GrapeVertexRDDImpl[VD] ={
+    new GrapeVertexRDDImpl[VD](vertexPartition)
   }
 
 }

@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.Iterator
 import scala.reflect.ClassTag
 
-class GraphXProxy[VD : ClassTag, ED : ClassTag, MSG_T : ClassTag](val conf: GraphXConf[VD, ED],
+class GraphXProxy[VD : ClassTag, ED : ClassTag, MSG_T: ClassTag](val conf: GraphXConf[VD, ED],
                                                        val fragment : IFragment[Long,Long,_,_],
                                                        val messageManager: DefaultMessageManager,
                                                        val initialMessage: MSG_T,

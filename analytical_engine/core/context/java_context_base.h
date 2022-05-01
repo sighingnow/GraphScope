@@ -150,8 +150,10 @@ class JavaContextBase : public grape::ContextBase {
     }
     std::string user_library_name;
     std::string user_class_path;
-    std::string args_str = parseParamsAndSetupJVMEnv(
-        params, lib_path, user_library_name, user_class_path);
+    std::string context_class_name_ = "";  // should only used by graphx
+    std::string args_str =
+        parseParamsAndSetupJVMEnv(params, lib_path, user_library_name,
+                                  user_class_path, context_class_name);
 
     JavaVM* jvm = GetJavaVM();
     (void) jvm;
@@ -212,13 +214,23 @@ class JavaContextBase : public grape::ContextBase {
       }
 
       {
-        std::string _context_class_name_str = getCtxClassNameFromAppObject(env);
-        VLOG(1) << "Context class name: " << _context_class_name_str;
-        context_object_ = LoadAndCreate(env, url_class_loader_object_,
-                                        _context_class_name_str.c_str());
-        VLOG(1) << "Successfully created ctx object with class loader:"
-                << &url_class_loader_object_
-                << ", of type: " << _context_class_name_str;
+        if (context_class_name_.size() != 0 &&
+            context_class_name.find(
+                "com.alibaba.graphscope.context.GraphXAdaptorContext") !=
+                std::string::npos) {
+          context_object_ =
+              LoadAndCreate(env, url_class_loader_object_, context_class_name_);
+          VLOG(1) << "Succcessfully loaded graphx context: " << context_object_;
+        } else {
+          std::string _context_class_name_str =
+              getCtxClassNameFromAppObject(env);
+          VLOG(1) << "Context class name: " << _context_class_name_str;
+          context_object_ = LoadAndCreate(env, url_class_loader_object_,
+                                          _context_class_name_str.c_str());
+          VLOG(1) << "Successfully created ctx object with class loader:"
+                  << &url_class_loader_object_
+                  << ", of type: " << _context_class_name_str;
+        }
       }
       jclass context_class = env->GetObjectClass(context_object_);
       CHECK_NOTNULL(context_class);
@@ -380,7 +392,8 @@ class JavaContextBase : public grape::ContextBase {
   std::string parseParamsAndSetupJVMEnv(const std::string& params,
                                         const std::string lib_path,
                                         std::string& user_library_name,
-                                        std::string& user_class_path) {
+                                        std::string& user_class_path,
+                                        std::string& context_class_name) {
     VLOG(10) << "received params: " << params;
     boost::property_tree::ptree pt;
     std::stringstream ss;
@@ -411,8 +424,13 @@ class JavaContextBase : public grape::ContextBase {
     app_class_name_ = new char[strlen(ch) + 1];
     memcpy(app_class_name_, ch, strlen(ch));
     app_class_name_[strlen(ch)] = '\0';
-
     pt.erase("app_class");
+
+    context_class_name = pt.get<std::string>("context_class");
+    if (!context_class_name.empty()) {
+      LOG(INFO) << "Found context class: " + context_class_name;
+    }
+
     boost::filesystem::path lib_path_fs, lib_dir;
     if (!lib_path.empty()) {
       lib_path_fs = lib_path;

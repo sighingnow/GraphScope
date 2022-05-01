@@ -44,7 +44,8 @@ limitations under the License.
 DECLARE_string(ipc_socket);
 DECLARE_bool(directed);
 DECLARE_string(user_lib_path);
-DECLARE_string(app_class);  // graphx_driver_class
+DECLARE_string(app_class);      // graphx_driver_class
+DECLARE_string(context_class);  // graphx_driver_class
 DECLARE_string(vprog_path);
 DECLARE_string(send_msg_path);
 DECLARE_string(merge_msg_path);
@@ -111,7 +112,8 @@ void CreateAndQuery(std::string params, const std::string& frag_name) {
   boost::split(frags_splited, FLAGS_frag_ids, boost::is_any_of(","));
 
   CHECK_EQ(frags_splited.size(), comm_spec.worker_num());
-  auto fragment_id = std::stoull(frags_splited[comm_spec.worker_id()].c_str(),NULL,10);
+  auto fragment_id =
+      std::stoull(frags_splited[comm_spec.worker_id()].c_str(), NULL, 10);
 
   VLOG(10) << "[worker " << comm_spec.worker_id()
            << "] loaded frag id: " << fragment_id;

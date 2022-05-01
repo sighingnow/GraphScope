@@ -17,7 +17,7 @@ object GraphXFactory extends Logging{
     new GraphXConf[VD,ED]
   }
 
-  def createGraphxProxy[VD: ClassTag,ED: ClassTag,MSG: ClassTag](conf : GraphXConf[VD,ED], iFragment: IFragment[Long,Long,_,_], mm : DefaultMessageManager, vprogPath : String,
+  def createGraphxProxy[VD : ClassTag,ED : ClassTag,MSG: ClassTag](conf : GraphXConf[VD,ED], iFragment: IFragment[Long,Long,_,_], mm : DefaultMessageManager, vprogPath : String,
                                    sendMsgFilePath : String, mergeMsgFilePath : String, vdataFilePath : String, maxIter: Int,
                                    numCores : Int, vdataSize : Long, initialmessage : MSG): GraphXProxy[VD,ED,MSG] ={
 

@@ -2,7 +2,7 @@ package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.HashPartitioner
-import org.apache.spark.graphx.impl.offheap.{OffHeapEdgeRDDImpl, OffHeapVertexRDDImpl}
+import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
 //import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.impl.GrapeUtils.{classToStr, generateForeignFragName, scalaClass2JavaClass}
@@ -36,11 +36,11 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
                                                             @transient val vertices: GrapeVertexRDD[VD],
                                                             @transient val edges: GrapeEdgeRDD[ED]) extends Graph[VD, ED] with Serializable {
 
-  protected def this(vertices : GrapeVertexRDD[VD], edges : OffHeapEdgeRDDImpl[VD,ED]) = this(vertices,edges.asInstanceOf[GrapeEdgeRDD[ED]])
+  protected def this(vertices : GrapeVertexRDD[VD], edges : GrapeEdgeRDDImpl[VD,ED]) = this(vertices,edges.asInstanceOf[GrapeEdgeRDD[ED]])
 
   val vdClass: Class[VD] = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
   val edClass: Class[ED] = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
-  val offHeapEdgeRDDImpl = edges.asInstanceOf[OffHeapEdgeRDDImpl[VD,ED]]
+  val offHeapEdgeRDDImpl = edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]]
 
   def numVertices: Long = vertices.count()
 
@@ -50,7 +50,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
 
   @transient override lazy val triplets: RDD[EdgeTriplet[VD, ED]] = {
-    val grapeEdges = edges.asInstanceOf[OffHeapEdgeRDDImpl[VD,ED]]
+    val grapeEdges = edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]]
     grapeEdges.grapePartitionsRDD.mapPartitions(iter =>{
       if (iter.hasNext){
         val tuple = iter.next();
@@ -144,7 +144,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
   override def groupEdges(merge: (ED, ED) => ED): Graph[VD, ED] = {
-    val newEdges = edges.asInstanceOf[OffHeapEdgeRDDImpl[VD,ED]].mapEdgePartitions(
+    val newEdges = edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]].mapEdgePartitions(
       (pid, part) => part.groupEdges(merge))
     new GrapeGraphImpl(vertices, newEdges)
   }
@@ -239,7 +239,7 @@ object GrapeGraphImpl {
     fromExistingRDDs(grapeVertexRDD, grapeEdgeRDD)
   }
 
-  def fromExistingRDDs[VD: ClassTag,ED :ClassTag](vertices: OffHeapVertexRDDImpl[VD], edges: OffHeapEdgeRDDImpl[VD, ED]): GrapeGraphImpl[VD,ED] ={
+  def fromExistingRDDs[VD: ClassTag,ED :ClassTag](vertices: GrapeVertexRDDImpl[VD], edges: GrapeEdgeRDDImpl[VD, ED]): GrapeGraphImpl[VD,ED] ={
     new GrapeGraphImpl[VD,ED](vertices, edges)
   }
 
@@ -248,7 +248,7 @@ object GrapeGraphImpl {
   }
 
   def fromRDDs[VD: ClassTag, ED : ClassTag](vertices : VertexRDD[VD], edges : EdgeRDD[ED]) : GrapeGraphImpl[VD,ED] = {
-    new GrapeGraphImpl[VD,ED](vertices.asInstanceOf[OffHeapVertexRDDImpl[VD]], edges.asInstanceOf[OffHeapEdgeRDDImpl[VD,ED]]);
+    new GrapeGraphImpl[VD,ED](vertices.asInstanceOf[GrapeVertexRDDImpl[VD]], edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]]);
   }
 
 

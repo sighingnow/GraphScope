@@ -1,6 +1,7 @@
 package com.alibaba.graphscope.context;
 
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.graphscope.app.GraphXAdaptor;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.ds.VertexRange;
 import com.alibaba.graphscope.fragment.IFragment;
@@ -21,6 +22,13 @@ import org.slf4j.LoggerFactory;
 public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
     VertexDataContext<IFragment<Long, Long, VDATA_T, EDATA_T>, VDATA_T> implements
     DefaultContextBase<Long, Long, VDATA_T, EDATA_T> {
+
+    public static <VD,ED,M> GraphXAdaptorContext<VD,ED,M> create(String vdClass, String edClass, String msgClass){
+        if (vdClass.equals("int64_t") && edClass.equals("int64_t") && msgClass.equals("int64_t")){
+            return (GraphXAdaptorContext<VD, ED, M>) new GraphXAdaptorContext<Long, Long, Long>();
+        }
+        else throw new IllegalStateException("not supported classes: " + vdClass + "," +  edClass + "," +  msgClass);
+    }
 
     private static Logger logger = LoggerFactory.getLogger(GraphXAdaptorContext.class.getName());
     private static String VPROG_SERIALIZATION = "vprog_path";
@@ -105,14 +113,18 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
         } else {
             throw new IllegalStateException("unmatched msg class " + msgClass.getName());
         }
-        graphXProxy = create((Class<? extends VDATA_T>) vdClass, (Class<? extends EDATA_T>) edClass,(Class<? extends MSG>) msgClass, (IFragment) frag, mergeMsgFilePath, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, vdataFilePath, maxIterations, numCores, vdataSize,(MSG) msgClass.cast(initialMsg));
-
+        graphXProxy = create(messageManager,(Class<? extends VDATA_T>) vdClass, (Class<? extends EDATA_T>) edClass,(Class<? extends MSG>) msgClass, (IFragment) frag, mergeMsgFilePath, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, vdataFilePath, maxIterations, numCores, vdataSize,(MSG) msgClass.cast(initialMsg));
+        logger.info("create graphx proxy: {}", graphXProxy);
         System.gc();
     }
 
-    private GraphXProxy create(Class<? extends VDATA_T> vdClass, Class<? extends EDATA_T> edClass, Class<? extends MSG> msgClass, IFragment frag, String mergeMsgFilePath, String vprogFilePath, String sendMsgFilePath, String mergeMsgFilePath1,
+    private GraphXProxy create(DefaultMessageManager mm, Class<? extends VDATA_T> vdClass, Class<? extends EDATA_T> edClass, Class<? extends MSG> msgClass,
+        IFragment frag, String mergeMsgFilePath, String vprogFilePath, String sendMsgFilePath, String mergeMsgFilePath1,
         String vdataFilePath, int maxIterations, int numCores, long vdataSize, MSG cast) {
-        throw new IllegalStateException("Not implemented");
+//        throw new IllegalStateException("Not implemented");
+        return GraphXFactory.createGraphxProxy(conf, frag, mm, vprogFilePath, sendMsgFilePath,
+            mergeMsgFilePath,vdataFilePath, maxIterations, numCores,vdataSize,initialMsg,
+            scala.reflect.ClassTag.apply(vdClass), scala.reflect.ClassTag.apply(edClass), scala.reflect.ClassTag.apply(msgClass));
     }
 
     @Override

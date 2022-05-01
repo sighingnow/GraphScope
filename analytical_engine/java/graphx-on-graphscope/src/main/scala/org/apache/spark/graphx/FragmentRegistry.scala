@@ -1,9 +1,10 @@
 package org.apache.spark.graphx
 
 import com.alibaba.graphscope.fragment.IFragment
-import com.alibaba.graphscope.graphx.FragmentHolder
+import com.alibaba.graphscope.graphx.{FragmentHolder, SharedMemoryRegistry}
+import com.alibaba.graphscope.utils.MappedBuffer
 import org.apache.spark.graphx.impl.GrapeEdgePartition
-import org.apache.spark.graphx.traits.{EdgeManager, VertexDataManager, GraphXVertexIdManager}
+import org.apache.spark.graphx.traits.{EdgeManager, GraphXVertexIdManager, VertexDataManager}
 import org.apache.spark.internal.Logging
 
 import java.io.IOException
@@ -23,32 +24,7 @@ object FragmentRegistry extends Logging{
   private var vertexPartitions = null.asInstanceOf[Array[GrapeVertexPartition[_]]]
   private var edgePartitions = null.asInstanceOf[Array[GrapeEdgePartition[_,_]]]
 
-//  def initConf[VD, ED](vdClass: Class[_ <: VD], edClass: Class[_ <: ED]): GraphXConf[VD, ED, _] = {
-//    val conf = new GraphXConf[VD, ED, AnyRef]
-//    if (vdClass == classOf[java.lang.Long] || vdClass == classOf[Long]){
-//      conf.setVdataClass(classOf[java.lang.Long].asInstanceOf[Class[_ <: VD]])
-//    }
-//    else if (vdClass == classOf[Int] || vdClass == classOf[java.lang.Integer]){
-//      conf.setVdataClass(classOf[java.lang.Integer].asInstanceOf[Class[_ <: VD]])
-//    }
-//    else if (vdClass == classOf[Double] || vdClass == classOf[java.lang.Double]){
-//      conf.setVdataClass(classOf[java.lang.Double].asInstanceOf[Class[_ <: VD]])
-//    }
-//    else throw new IllegalStateException("Error vd class: " + vdClass.getName)
-//
-//    if (edClass == classOf[Long] || edClass == classOf[java.lang.Long]){
-//      conf.setEdataClass(classOf[java.lang.Long].asInstanceOf[Class[_ <: ED]])
-//    }
-//    else if (edClass == classOf[Int] || edClass == classOf[java.lang.Integer]){
-//      conf.setEdataClass(classOf[java.lang.Integer].asInstanceOf[Class[_ <: ED]])
-//    }
-//    else if (edClass == classOf[Double] || edClass == classOf[java.lang.Double]){
-//      conf.setEdataClass(classOf[java.lang.Double].asInstanceOf[Class[_ <: ED]])
-//    }
-//    else throw new IllegalStateException("Error ed class: " + edClass.getName)
-//    conf
-//  }
-
+  def getFragIds: String = fragId
   @throws[IOException]
   def registFragment(fragIds: String, index: Int): Int = {
     this.synchronized{
@@ -133,6 +109,26 @@ object FragmentRegistry extends Logging{
   def getVertexPartition[VD: ClassTag](pid: Int): GrapeVertexPartition[VD] = vertexPartitions(pid).asInstanceOf[GrapeVertexPartition[VD]]
 
   def getEdgePartition[VD : ClassTag, ED : ClassTag](pid: Int): GrapeEdgePartition[VD, ED] = edgePartitions(pid).asInstanceOf[GrapeEdgePartition[VD,ED]]
+
+  def mapVertexData[VD : ClassTag](pid : Int, vdataPath : String, size : Long, vertexDataManager: VertexDataManager[VD]) : Unit = {
+    if (!lock.isLocked){
+      if (lock.tryLock()){
+        log.info(s"Partition ${pid} got lock!")
+        val registry = SharedMemoryRegistry.getOrCreate()
+        val buffer = registry.mapFor(vdataPath, size)//Should be created, not reused
+        log.info(s"Partition got vdata buffer: ${buffer.remaining()} bytes")
+        vertexDataManager.writeBackVertexData(buffer)
+        lock.unlock()
+        log.info(s"Partition ${pid} release lock")
+      }
+      else {
+        log.info(s"Parttiion ${pid} fails to get lock")
+      }
+    }
+    else {
+      log.info(s"Partition ${pid} arrives to write vdata, already locked");
+    }
+  }
 
   @throws[UnknownHostException]
   private def getSelfHostName = InetAddress.getLocalHost.getHostName

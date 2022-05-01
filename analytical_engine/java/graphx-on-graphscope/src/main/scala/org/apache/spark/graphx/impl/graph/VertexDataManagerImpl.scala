@@ -1,9 +1,11 @@
 package org.apache.spark.graphx.impl.graph
 
-import com.alibaba.graphscope.ds.Vertex
+import com.alibaba.graphscope.ds.{TypedArray, Vertex}
 import com.alibaba.graphscope.fragment.IFragment
-import com.alibaba.graphscope.utils.FFITypeFactoryhelper
+import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
+import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, MappedBuffer}
 import org.apache.spark.graphx.GraphXConf
+import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.traits.VertexDataManager
 import org.apache.spark.internal.Logging
 
@@ -19,9 +21,7 @@ class VertexDataManagerImpl[VD : ClassTag,ED : ClassTag](
     initValues
   }
   private def initValues  = {
-//    values = Array.fill[VD](fragVerticesNum)(defaultOutVdata)
     values = new Array[VD](fragVerticesNum.intValue())
-//    Array.fill[VD](fragVerticesNum)(defaultOutVdata)
     val vertex: Vertex[Long] = FFITypeFactoryhelper.newVertexLong.asInstanceOf[Vertex[Long]]
 
     var lid = 0
@@ -51,5 +51,34 @@ class VertexDataManagerImpl[VD : ClassTag,ED : ClassTag](
 
   override def withNewVertexData[VD2: ClassTag](newVertexData: Array[VD2]): VertexDataManager[VD2] = {
     new VertexDataManagerImpl[VD2,ED](new GraphXConf[VD2,ED], newVertexData, fragment, null.asInstanceOf[VD2])
+  }
+
+  override def writeBackVertexData(buffer: MappedBuffer): Unit = {
+    require(buffer.remaining() > 8 * innerVerticesNum, s"not enough space ${buffer.remaining()}, at least : ${8 * innerVerticesNum}")
+    var lid = 0;
+    val vdClass = GrapeUtils.getRuntimeClass[VD].asInstanceOf[Class[VD]]
+    buffer.writeLong(innerVerticesNum)
+    if (vdClass.equals(classOf[Long])){
+      while (lid < innerVerticesNum){
+        buffer.writeLong(values(lid).asInstanceOf[Long])
+        lid += 1
+      }
+    }
+    else if (vdClass.equals(classOf[Double])){
+      while (lid < innerVerticesNum){
+        buffer.writeDouble(values(lid).asInstanceOf[Double])
+        lid += 1
+      }
+    }
+    else if (vdClass.equals(classOf[Integer])){
+      while (lid < innerVerticesNum){
+        buffer.writeInt(values(lid).asInstanceOf[Integer])
+        lid += 1
+      }
+    }
+    else {
+      throw new IllegalStateException("not recognized vd class")
+    }
+    log.info(s"Finish writing bytes to mapped buffer for vdata")
   }
 }

@@ -1,4 +1,4 @@
-package org.apache.spark.graphx.impl.offheap
+package org.apache.spark.graphx.impl.grape
 
 import org.apache.spark.graphx.impl.{EdgePartition, EdgeRDDImpl, GrapeEdgePartition, ShippableVertexPartition}
 import org.apache.spark.graphx._
@@ -15,10 +15,10 @@ import scala.reflect.ClassTag
  * @param vdTag
  * @tparam VD
  */
-class OffHeapVertexRDDImpl[VD] private[graphx] (
+class GrapeVertexRDDImpl[VD] private[graphx](
                                                  @transient val grapePartitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD])],
                                                  val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
-                                           (implicit override protected val vdTag: ClassTag[VD])
+                                            (implicit override protected val vdTag: ClassTag[VD])
   extends GrapeVertexRDD[VD](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
   override def reindex(): VertexRDD[VD] = {
@@ -73,7 +73,7 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
 
   override def minus(other: VertexRDD[VD]): VertexRDD[VD] = {
     other match{
-      case other : OffHeapVertexRDDImpl[VD] if this.partitioner == other.partitioner => {
+      case other : GrapeVertexRDDImpl[VD] if this.partitioner == other.partitioner => {
         this.withGrapePartitionsRDD[VD](
           grapePartitionsRDD.zipPartitions(
             other.grapePartitionsRDD, preservesPartitioning = true) {
@@ -95,7 +95,7 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
 
   override def diff(other: VertexRDD[VD]): VertexRDD[VD] = {
     val otherPartition = other match {
-      case other: OffHeapVertexRDDImpl[VD] if this.partitioner == other.partitioner =>
+      case other: GrapeVertexRDDImpl[VD] if this.partitioner == other.partitioner =>
         other.grapePartitionsRDD
       case _ =>  throw new IllegalArgumentException("can only minus a grape vertex rdd now")
     }
@@ -112,7 +112,7 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
 
   override def leftZipJoin[VD2 : ClassTag, VD3 : ClassTag](other: VertexRDD[VD2])(f: (VertexId, VD, Option[VD2]) => VD3): VertexRDD[VD3] = {
     val newPartitionsRDD = other match {
-      case other : OffHeapVertexRDDImpl[VD2] => {
+      case other : GrapeVertexRDDImpl[VD2] => {
         grapePartitionsRDD.zipPartitions(
           other.grapePartitionsRDD, preservesPartitioning = true
         ) { (thisIter, otherIter) =>
@@ -127,7 +127,7 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
 
   override def leftJoin[VD2, VD3](other: RDD[(VertexId, VD2)])(f: (VertexId, VD, Option[VD2]) => VD3)(implicit evidence$6: ClassTag[VD2], evidence$7: ClassTag[VD3]): VertexRDD[VD3] = {
     other match {
-      case other: OffHeapVertexRDDImpl[_] if this.partitioner == other.partitioner =>
+      case other: GrapeVertexRDDImpl[_] if this.partitioner == other.partitioner =>
         leftZipJoin(other)(f)
       case _ =>
         throw new IllegalArgumentException("currently not support to join with non-grape vertex rdd")
@@ -136,7 +136,7 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
 
   override def innerZipJoin[U : ClassTag, VD2 : ClassTag](other: VertexRDD[U])(f: (VertexId, VD, U) => VD2): VertexRDD[VD2] = {
     val newPartitionsRDD = other match {
-      case other : OffHeapVertexRDDImpl[U] => {
+      case other : GrapeVertexRDDImpl[U] => {
         grapePartitionsRDD.zipPartitions(
           other.grapePartitionsRDD, preservesPartitioning = true
         ) { (thisIter, otherIter) =>
@@ -151,7 +151,7 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
 
   override def innerJoin[U, VD2](other: RDD[(VertexId, U)])(f: (VertexId, VD, U) => VD2)(implicit evidence$10: ClassTag[U], evidence$11: ClassTag[VD2]): VertexRDD[VD2] = {
     other match {
-      case other: OffHeapVertexRDDImpl[U] if this.partitioner == other.partitioner =>
+      case other: GrapeVertexRDDImpl[U] if this.partitioner == other.partitioner =>
         innerZipJoin(other)(f)
       case _ =>
           throw new IllegalArgumentException("Current only support join with grape vertex rdd");
@@ -189,6 +189,17 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
     this.withGrapePartitionsRDD[VD2](newPartitionsRDD)
   }
 
+  override def writeBackVertexData(vdataMappedPath : String, vdataMappedSize : Long): Unit = {
+    grapePartitionsRDD.foreachPartition(iter => {
+      if (iter.hasNext){
+        val tuple = iter.next()
+        val pid = tuple._1
+        val part = tuple._2
+        FragmentRegistry.mapVertexData(pid, vdataMappedPath, vdataMappedSize, part.vertexDataManager)
+      }
+    })
+  }
+
   override def reverseRoutingTables(): VertexRDD[VD] = {
     throw new IllegalStateException("Inherited but not implemented, should not be used")
   }
@@ -202,11 +213,11 @@ class OffHeapVertexRDDImpl[VD] private[graphx] (
   }
 
   override private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])]) : GrapeVertexRDD[VD2] = {
-    new OffHeapVertexRDDImpl[VD2](partitionsRDD,this.targetStorageLevel)
+    new GrapeVertexRDDImpl[VD2](partitionsRDD,this.targetStorageLevel)
   }
 
   override private[graphx] def withTargetStorageLevel(newTargetStorageLevel: StorageLevel) = {
-    new OffHeapVertexRDDImpl[VD](grapePartitionsRDD, newTargetStorageLevel)
+    new GrapeVertexRDDImpl[VD](grapePartitionsRDD, newTargetStorageLevel)
   }
 
   override private[graphx] def shipVertexAttributes(shipSrc: Boolean, shipDst: Boolean) = {
