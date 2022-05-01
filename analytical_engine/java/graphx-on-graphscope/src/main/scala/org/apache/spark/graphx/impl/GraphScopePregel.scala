@@ -38,7 +38,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
 //launch mpi processes. and run.
     val t0 = System.nanoTime()
 
-    MPIUtils.launchGraphX[MSG,VD,ED](FragmentRegistry.getFragIds, initialMsg, msgClass, vdClass, edClass, maxIteration, VPROG_SERIALIZATION_PATH,
+    MPIUtils.launchGraphX[MSG,VD,ED](grapeGraph.fragId, initialMsg, msgClass, vdClass, edClass, maxIteration, VPROG_SERIALIZATION_PATH,
       SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, VDATA_MAPPED_PATH, vdataMappedSize)
     val t1 = System.nanoTime()
     log.info(s"[Driver:] Running graphx pie cost: ${(t1 - t0) / 1000000} ms")

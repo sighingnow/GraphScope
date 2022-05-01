@@ -1,6 +1,7 @@
 package org.apache.spark.graphx.impl
 
 import java.lang.reflect.Method
+import java.net.{InetAddress, UnknownHostException}
 import scala.reflect.ClassTag
 
 object GrapeUtils {
@@ -61,5 +62,9 @@ object GrapeUtils {
       throw new IllegalStateException("transform failed for " + vdClass.getName);
     }
   }
+
   def getRuntimeClass[T: ClassTag] = implicitly[ClassTag[T]].runtimeClass
+
+  @throws[UnknownHostException]
+  def getSelfHostName = InetAddress.getLocalHost.getHostName
 }

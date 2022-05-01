@@ -49,11 +49,14 @@ public class MPIUtils {
         return GAE_HOME;
     }
 
-    public static <MSG,VD,ED> void launchGraphX(String fragIds, MSG initialMsg,Class<? extends MSG> msgClass, Class<? extends VD> vdClass, Class<? extends ED> edClass, int maxIteration, String vprogPath, String sendMsgPath, String mergeMsgpath, String vdataPath, long size){
+    public static <MSG,VD,ED> void launchGraphX(String fragIds, MSG initialMsg,Class<? extends MSG> msgClass,
+        Class<? extends VD> vdClass, Class<? extends ED> edClass, int maxIteration,
+        String vprogPath, String sendMsgPath, String mergeMsgpath, String vdataPath, long size){
         int numWorkers = Math.min(fragIds.split(",").length, getNumWorker());
         logger.info("running mpi with {} workers", numWorkers);
 //        MappedBuffer buffer = SharedMemoryRegistry.getOrCreate().mapFor(vdataPath, size);
-        String[] commands = {"/bin/bash", LAUNCH_GRAPHX_SHELL_SCRIPT, String.valueOf(numWorkers), SPARK_CONF_WORKERS,fragIds, initialMsg.toString(), GrapeUtils.classToStr(msgClass),
+        String[] commands = {"/bin/bash", LAUNCH_GRAPHX_SHELL_SCRIPT, String.valueOf(numWorkers),
+            SPARK_CONF_WORKERS,fragIds, initialMsg.toString(), GrapeUtils.classToStr(msgClass),
             GrapeUtils.classToStr(vdClass), GrapeUtils.classToStr(edClass),
             String.valueOf(maxIteration), vprogPath, sendMsgPath, mergeMsgpath,vdataPath,
             String.valueOf(size)};
