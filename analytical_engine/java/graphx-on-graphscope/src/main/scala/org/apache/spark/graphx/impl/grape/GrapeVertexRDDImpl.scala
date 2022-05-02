@@ -199,7 +199,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
         val tuple = iter.next()
         val pid = tuple._1
         val part = tuple._2
-        FragmentRegistry.mapVertexData(pid, vdataMappedPath, vdataMappedSize, part.values)
+        FragmentRegistry.mapVertexData(pid, vdataMappedPath, vdataMappedSize)
       }
     })
   }

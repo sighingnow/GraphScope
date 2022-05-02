@@ -118,7 +118,7 @@ object FragmentRegistry extends Logging{
 
   def getEdgePartition[VD : ClassTag, ED : ClassTag](pid: Int): GrapeEdgePartition[VD, ED] = edgePartitions(pid).asInstanceOf[GrapeEdgePartition[VD,ED]]
 
-  def mapVertexData[VD : ClassTag](pid : Int, vdataPath : String, size : Long, vdArray: Array[VD]) : Unit = {
+  def mapVertexData[VD : ClassTag](pid : Int, vdataPath : String, size : Long) : Unit = {
     if (!lock.isLocked){
       if (lock.tryLock()){
         log.info(s"Partition ${pid} got lock!")
@@ -128,26 +128,38 @@ object FragmentRegistry extends Logging{
         val vdClass = GrapeUtils.getRuntimeClass[VD].asInstanceOf[Class[VD]]
         val bytesPerEle = GrapeUtils.bytesForType[VD](vdClass)
 //        vertexDataManager.writeBackVertexData(buffer)
-        require(buffer.remaining() >= 8 + bytesPerEle * vdArray.length, s"size not enough ${buffer.remaining()}, ${8 + bytesPerEle * vdArray.length}")
-        buffer.writeLong(vdArray.length)
+        val totalLength = vertexPartitions.map(_.values.length).foldLeft(0)(_ + _)
+        require(buffer.remaining() >= 8 + bytesPerEle * totalLength, s"size not enough ${buffer.remaining()}, ${8 + bytesPerEle * totalLength}")
+        buffer.writeLong(totalLength)
         var i = 0
         if (vdClass.equals(classOf[Long]) || vdClass.equals(classOf[java.lang.Long])){
-          while (i < vdArray.length){
-            buffer.writeLong(vdArray(i).asInstanceOf[Long])
-            log.info(s"pid ${pid} write vdata ${vdArray(i)}")
-            i += 1
+          for (partition <- vertexPartitions){
+            val curVdarray = partition.values
+            while (i < totalLength){
+              buffer.writeLong(curVdarray(i).asInstanceOf[Long])
+              log.info(s"pid ${pid} write vdata ${curVdarray(i)}")
+              i += 1
+            }
           }
         }
         else if (vdClass.equals(classOf[Double]) || vdClass.equals(classOf[java.lang.Double])){
-          while (i < vdArray.length){
-            buffer.writeDouble(vdArray(i).asInstanceOf[Double])
-            i += 1
+          for (partition <- vertexPartitions){
+            val curVdarray = partition.values
+            while (i < totalLength){
+              buffer.writeDouble(curVdarray(i).asInstanceOf[Double])
+              log.info(s"pid ${pid} write vdata ${curVdarray(i)}")
+              i += 1
+            }
           }
         }
         else if (vdClass.equals(classOf[Int]) || vdClass.equals(classOf[java.lang.Integer])){
-          while (i < vdArray.length){
-            buffer.writeInt(vdArray(i).asInstanceOf[Int])
-            i += 1
+          for (partition <- vertexPartitions){
+            val curVdarray = partition.values
+            while (i < totalLength){
+              buffer.writeInt(curVdarray(i).asInstanceOf[Int])
+              log.info(s"pid ${pid} write vdata ${curVdarray(i)}")
+              i += 1
+            }
           }
         }
         else {
