@@ -3,6 +3,7 @@ package org.apache.spark.graphx
 import com.alibaba.graphscope.fragment.IFragment
 import com.alibaba.graphscope.graphx.{GSEdgeTriplet, GSEdgeTripletImpl, SerializationUtils}
 import com.alibaba.graphscope.parallel.DefaultMessageManager
+import com.alibaba.graphscope.utils.MappedBuffer
 import org.apache.spark.graphx.impl.graph.GraphXProxy
 import org.apache.spark.graphx.impl.graph.{EdgeManagerImpl, GraphXProxy, GraphXVertexIdManagerImpl, VertexDataManagerImpl}
 import org.apache.spark.graphx.impl.message.DefaultMessageStore
@@ -33,8 +34,10 @@ object GraphXFactory extends Logging{
     new GraphXVertexIdManagerImpl(conf, fragment)
   }
 
-  def createVertexDataManager[VD: ClassTag, ED : ClassTag](conf: GraphXConf[VD, ED],  fragment : IFragment[Long,Long,_,_], values : Array[VD] = null,defaultOutData : VD = null.asInstanceOf[VD]): VertexDataManager[VD] = {
-    new VertexDataManagerImpl[VD,ED](conf, values, fragment, defaultOutData)
+  def createVertexDataManager[VD: ClassTag, ED : ClassTag](conf: GraphXConf[VD, ED],  fragment : IFragment[Long,Long,_,_],
+                                                           buffer : MappedBuffer,
+                                                           values : Array[VD] = null,defaultOutData : VD = null.asInstanceOf[VD]): VertexDataManager[VD] = {
+    new VertexDataManagerImpl[VD,ED](conf, values, fragment, buffer, defaultOutData)
   }
 
   def createDefaultMessageStore[VD : ClassTag,MSG : ClassTag](conf: GraphXConf[VD,_], fragment : IFragment[Long,Long,_,_],

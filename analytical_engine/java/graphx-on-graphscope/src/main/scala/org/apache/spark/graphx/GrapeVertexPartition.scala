@@ -29,7 +29,7 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
       private var curLid = startLid
       override def hasNext: Boolean = {
         curLid = mask.nextSetBit(curLid.toInt)
-        curLid < endLid && curLid > 0 && curLid >= startLid
+        curLid < endLid && curLid >= 0 && curLid >= startLid
       }
 
       override def next(): (VertexId, VD) = {

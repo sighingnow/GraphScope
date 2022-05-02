@@ -40,7 +40,7 @@ class GraphXProxy[VD : ClassTag, ED : ClassTag, MSG_T: ClassTag](val conf: Graph
   val executorService: ExecutorService = Executors.newFixedThreadPool(numCores)
 
   val idManager: GraphXVertexIdManager = GraphXFactory.createVertexIdManager(conf, fragment)
-  val vertexDataManager: VertexDataManager[VD] = GraphXFactory.createVertexDataManager[VD,ED](conf, fragment)
+  val vertexDataManager: VertexDataManager[VD] = GraphXFactory.createVertexDataManager[VD,ED](conf, fragment, vdataBuffer)
   val inComingMessageStore: DefaultMessageStore[VD,MSG_T] = GraphXFactory.createDefaultMessageStore[VD,MSG_T](conf, fragment, idManager, vertexDataManager,mergeMsg)
   val outgoingMessageStore: DefaultMessageStore[VD,MSG_T] = GraphXFactory.createDefaultMessageStore[VD,MSG_T](conf,fragment, idManager, vertexDataManager,mergeMsg)
 
