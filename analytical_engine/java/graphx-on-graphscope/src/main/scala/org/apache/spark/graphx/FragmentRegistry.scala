@@ -23,6 +23,7 @@ object FragmentRegistry extends Logging{
   //    private static GraphXConf conf;
   private var vertexPartitions = null.asInstanceOf[Array[GrapeVertexPartition[_]]]
   private var edgePartitions = null.asInstanceOf[Array[GrapeEdgePartition[_,_]]]
+  private var cnt = 0;
 
   @throws[IOException]
   def registFragment(fragIds: String, index: Int): Int = {
@@ -122,6 +123,11 @@ object FragmentRegistry extends Logging{
     if (!lock.isLocked){
       if (lock.tryLock()){
         log.info(s"Partition ${pid} got lock!")
+        if (cnt > 0) {
+          log.info(s"Already been executed by other partition, skip ${cnt}")
+          return
+        }
+        cnt += 1
         val registry = SharedMemoryRegistry.getOrCreate()
         val buffer = registry.mapFor(vdataPath, size)//Should be created, not reused
         log.info(s"Partition got vdata buffer: ${buffer.remaining()} bytes")
