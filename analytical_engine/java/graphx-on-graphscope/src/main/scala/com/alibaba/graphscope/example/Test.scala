@@ -31,10 +31,12 @@ object Test extends Logging {
     log.info(s"Finish loading, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
     val res2 = mapped_graph.pregel(99999L, maxIterations = 100)(
       (vid, vd, msg) => {
+        println(s" ${vid} recevie msg ${msg}, cur vd ${vd}")
         math.min(vd,msg)
       },
       triplet => {
         if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
+	  println(s"${triplet.srcId} send ${triplet.srcAttr + triplet.attr} to ${triplet.dstId}")
           Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
         } else {
           Iterator.empty
