@@ -55,10 +55,10 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
     // Construct a view of the map transformation
 //    val newValues = new Array[Object](totalVnum.toInt)
     val newValues = new Array[VD2](partitionVnum.toInt)
-    var i = startLid.toInt
-    while (i < endLid) {
-      newValues(i) = f(idManager.lid2Oid(i), values(i - startLid.toInt))
-      i += 1
+    var i = mask.nextSetBit(0)
+    while (i >= 0) {
+      newValues(i) = f(idManager.lid2Oid(i + startLid.toInt), values(i))
+      i = mask.nextSetBit(i + 1)
     }
     this.withNewValues(newValues)
   }

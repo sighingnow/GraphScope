@@ -135,7 +135,8 @@ object FragmentRegistry extends Logging{
         if (vdClass.equals(classOf[Long]) || vdClass.equals(classOf[java.lang.Long])){
           for (partition <- vertexPartitions){
             val curVdarray = partition.values
-            while (i < totalLength){
+	    val curLength = curVdarray.length
+            while (i < curLength){
               buffer.writeLong(curVdarray(i).asInstanceOf[Long])
               log.info(s"pid ${pid} write vdata ${curVdarray(i)}")
               i += 1
@@ -145,7 +146,8 @@ object FragmentRegistry extends Logging{
         else if (vdClass.equals(classOf[Double]) || vdClass.equals(classOf[java.lang.Double])){
           for (partition <- vertexPartitions){
             val curVdarray = partition.values
-            while (i < totalLength){
+	    val curLength = curVdarray.length
+            while (i < curLength){
               buffer.writeDouble(curVdarray(i).asInstanceOf[Double])
               log.info(s"pid ${pid} write vdata ${curVdarray(i)}")
               i += 1
@@ -155,7 +157,8 @@ object FragmentRegistry extends Logging{
         else if (vdClass.equals(classOf[Int]) || vdClass.equals(classOf[java.lang.Integer])){
           for (partition <- vertexPartitions){
             val curVdarray = partition.values
-            while (i < totalLength){
+	    val curLength = curVdarray.length
+            while (i < curLength){
               buffer.writeInt(curVdarray(i).asInstanceOf[Int])
               log.info(s"pid ${pid} write vdata ${curVdarray(i)}")
               i += 1
