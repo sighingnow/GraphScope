@@ -95,7 +95,7 @@ class VertexDataManagerImpl[VD : ClassTag,ED : ClassTag](
   }
 
   override def writeBackVertexData(buffer: MappedBuffer): Unit = {
-    require(buffer.remaining() > 8 * innerVerticesNum, s"not enough space ${buffer.remaining()}, at least : ${8 * innerVerticesNum}")
+    require(buffer.remaining() >= 8 + 8 * innerVerticesNum, s"not enough space ${buffer.remaining()}, at least : ${8 + 8 * innerVerticesNum}")
     var lid = 0;
     val vdClass = GrapeUtils.getRuntimeClass[VD].asInstanceOf[Class[VD]]
     buffer.writeLong(innerVerticesNum)

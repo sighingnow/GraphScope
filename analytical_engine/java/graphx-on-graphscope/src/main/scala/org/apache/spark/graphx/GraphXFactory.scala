@@ -14,7 +14,7 @@ import scala.reflect.ClassTag
 
 object GraphXFactory extends Logging{
 
-  def createGraphxConf[VD :ClassTag,ED : ClassTag](vdclz : Class[_ >: VD], edClz : Class[_ >: ED]): GraphXConf[VD, ED] = {
+  def createGraphxConf[VD :ClassTag,ED : ClassTag]: GraphXConf[VD, ED] = {
     new GraphXConf[VD,ED]
   }
 

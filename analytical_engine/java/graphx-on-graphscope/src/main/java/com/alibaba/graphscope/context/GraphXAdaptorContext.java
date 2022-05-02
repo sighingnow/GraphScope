@@ -42,10 +42,12 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
     private static String INITIAL_MSG = "initial_msg";
     private static int numCores = 8;
     private String vprogFilePath, sendMsgFilePath, mergeMsgFilePath, vdataFilePath;
-    private Class<?> vdClass, edClass, msgClass;
-    private GraphXConf conf;
-    private GraphXProxy graphXProxy;
-    private Object initialMsg;
+    private Class< ? extends VDATA_T> vdClass;
+    private Class<? extends EDATA_T>  edClass;
+    private Class<? extends MSG> msgClass;
+    private GraphXConf<VDATA_T,EDATA_T> conf;
+    private GraphXProxy<VDATA_T,EDATA_T,MSG> graphXProxy;
+    private MSG initialMsg;
     private int maxIterations;
     public ExecutorService executor;
 
@@ -80,14 +82,17 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
         maxIterations = jsonObject.getInteger("max_iterations");
         logger.info("Max iterations: " + maxIterations);
 
-        vdClass = loadClassWithName(this.getClass().getClassLoader(), vdClassStr);
-        edClass = loadClassWithName(this.getClass().getClassLoader(), edClassStr);
-        msgClass = loadClassWithName(this.getClass().getClassLoader(), msgClassStr);
+        vdClass = (Class<? extends VDATA_T>)loadClassWithName(this.getClass().getClassLoader(), vdClassStr);
+        edClass = (Class<? extends EDATA_T>)loadClassWithName(this.getClass().getClassLoader(), edClassStr);
+        msgClass = (Class<? extends MSG>) loadClassWithName(this.getClass().getClassLoader(), msgClassStr);
         //FIXME: create conf
 //        conf = GraphXFactory.createGraphxConf(vdClass, edClass);
-
+//        conf = GraphXFactory.createGraphxConf(vdClass, edClass, scala.reflect.ClassTag.apply( vdClass),
+//            scala.reflect.ClassTag.apply(edClass));
+        conf = GraphXFactory.createGraphxConf((scala.reflect.ClassTag<VDATA_T>) scala.reflect.ClassTag.apply(vdClass),
+            (scala.reflect.ClassTag<EDATA_T>) scala.reflect.ClassTag.apply(edClass));
         //TODO: get vdata class from conf
-        createFFIContext(frag, (Class<? extends VDATA_T>) conf.getVdClass(), false);
+        createFFIContext(frag, conf.getVdClass(), false);
 
         this.vprogFilePath = jsonObject.getString(VPROG_SERIALIZATION);
         this.sendMsgFilePath = jsonObject.getString(SEND_MSG_SERIALIZATION);
@@ -105,15 +110,15 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
         logger.info("Initial msg in str: " + msgStr);
         //get initial msg
         if (msgClass.equals(Long.class)) {
-            this.initialMsg = Long.valueOf(msgStr);
+            this.initialMsg = (MSG) Long.valueOf(msgStr);
         } else if (msgClass.equals(Double.class)) {
-            this.initialMsg = Double.valueOf(msgStr);
+            this.initialMsg = (MSG) Double.valueOf(msgStr);
         } else if (msgClass.equals(Integer.class)) {
-            this.initialMsg = Integer.valueOf(msgStr);
+            this.initialMsg = (MSG) Integer.valueOf(msgStr);
         } else {
             throw new IllegalStateException("unmatched msg class " + msgClass.getName());
         }
-        graphXProxy = create(messageManager,(Class<? extends VDATA_T>) vdClass, (Class<? extends EDATA_T>) edClass,(Class<? extends MSG>) msgClass, (IFragment) frag, mergeMsgFilePath, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, vdataFilePath, maxIterations, numCores, vdataSize,(MSG) msgClass.cast(initialMsg));
+        graphXProxy = create(messageManager, vdClass,  edClass, msgClass, (IFragment) frag, mergeMsgFilePath, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, vdataFilePath, maxIterations, numCores, vdataSize,initialMsg);
         logger.info("create graphx proxy: {}", graphXProxy);
         System.gc();
     }

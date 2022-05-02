@@ -153,7 +153,7 @@ class JavaContextBase : public grape::ContextBase {
     std::string context_class_name_ = "";  // should only used by graphx
     std::string args_str =
         parseParamsAndSetupJVMEnv(params, lib_path, user_library_name,
-                                  user_class_path, context_class_name);
+                                  user_class_path, context_class_name_);
 
     JavaVM* jvm = GetJavaVM();
     (void) jvm;
@@ -215,11 +215,11 @@ class JavaContextBase : public grape::ContextBase {
 
       {
         if (context_class_name_.size() != 0 &&
-            context_class_name.find(
+            context_class_name_.find(
                 "com.alibaba.graphscope.context.GraphXAdaptorContext") !=
                 std::string::npos) {
           context_object_ =
-              LoadAndCreate(env, url_class_loader_object_, context_class_name_);
+              LoadAndCreate(env, url_class_loader_object_, context_class_name_.c_str());
           VLOG(1) << "Succcessfully loaded graphx context: " << context_object_;
         } else {
           std::string _context_class_name_str =

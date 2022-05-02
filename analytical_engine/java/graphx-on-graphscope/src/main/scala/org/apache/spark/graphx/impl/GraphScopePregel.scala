@@ -26,7 +26,8 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     }
     //0. write back vertex.
     val grapeGraph = graph.asInstanceOf[GrapeGraphImpl[VD,ED]]
-      val vdataMappedSize = grapeGraph.numVertices * 16L + 8L
+    val vdataMappedSize = grapeGraph.numVertices * 16L + 8L
+    log.info(s"[Driver:] Begin write back vdata mapped size: ${vdataMappedSize} to ${VDATA_MAPPED_PATH}")
     grapeGraph.vertices.writeBackVertexData(VDATA_MAPPED_PATH, vdataMappedSize)
     log.info(s"[Driver:] Finish write back vdata mapped size: ${vdataMappedSize} to ${VDATA_MAPPED_PATH}")
     //1. serialization

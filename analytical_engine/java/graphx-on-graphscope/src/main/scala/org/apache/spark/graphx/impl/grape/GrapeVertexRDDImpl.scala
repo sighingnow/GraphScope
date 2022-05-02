@@ -38,6 +38,10 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     }
   }
 
+  override def count(): Long = {
+    grapePartitionsRDD.map(_._2.partitionVnum.toLong).fold(0)(_ + _)
+  }
+
   override private[graphx] def mapVertexPartitions[VD2](f: ShippableVertexPartition[VD] => ShippableVertexPartition[VD2])(implicit evidence$1: ClassTag[VD2]) = {
     throw new IllegalStateException("Not implemented")
   }

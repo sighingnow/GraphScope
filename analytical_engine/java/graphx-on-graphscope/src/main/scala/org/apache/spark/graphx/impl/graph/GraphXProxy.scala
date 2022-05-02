@@ -291,7 +291,7 @@ class GraphXProxy[VD : ClassTag, ED : ClassTag, MSG_T: ClassTag](val conf: Graph
         msgReceived += 1
       }
     }
-      else if (conf.getEdClass.equals(classOf[Long]) || conf.getEdClass.equals(classOf[Long])) {
+    else if (conf.getEdClass.equals(classOf[Long]) || conf.getEdClass.equals(classOf[java.lang.Long])) {
       val msg = FFITypeFactoryhelper.newLongMsg
       while ( {
         messageManager.getMessage(fragment, receiveVertex, msg)
@@ -300,7 +300,7 @@ class GraphXProxy[VD : ClassTag, ED : ClassTag, MSG_T: ClassTag](val conf: Graph
         msgReceived += 1
       }
     }
-    else log.info("Not supported msg type")
+    else log.info("Not supported msg type ${conf.getEdClass.getName}")
     log.info(s"Frag [${fragment.fid}] received msg from others ${msgReceived}")
     msgReceived > 0
   }
