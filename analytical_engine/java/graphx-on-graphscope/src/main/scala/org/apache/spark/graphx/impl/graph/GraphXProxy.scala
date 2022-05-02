@@ -41,8 +41,8 @@ class GraphXProxy[VD : ClassTag, ED : ClassTag, MSG_T: ClassTag](val conf: Graph
 
   val idManager: GraphXVertexIdManager = GraphXFactory.createVertexIdManager(conf, fragment)
   val vertexDataManager: VertexDataManager[VD] = GraphXFactory.createVertexDataManager[VD,ED](conf, fragment)
-  val inComingMessageStore: DefaultMessageStore[MSG_T] = GraphXFactory.createDefaultMessageStore[VD,MSG_T](conf, fragment, idManager, vertexDataManager,mergeMsg)
-  val outgoingMessageStore: DefaultMessageStore[MSG_T] = GraphXFactory.createDefaultMessageStore[VD,MSG_T](conf,fragment, idManager, vertexDataManager,mergeMsg)
+  val inComingMessageStore: DefaultMessageStore[VD,MSG_T] = GraphXFactory.createDefaultMessageStore[VD,MSG_T](conf, fragment, idManager, vertexDataManager,mergeMsg)
+  val outgoingMessageStore: DefaultMessageStore[VD,MSG_T] = GraphXFactory.createDefaultMessageStore[VD,MSG_T](conf,fragment, idManager, vertexDataManager,mergeMsg)
 
     val edgeTriplets = new Array[GSEdgeTriplet[VD, ED]](numCores)
     for (i <- 0 until numCores) {

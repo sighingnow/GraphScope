@@ -4,10 +4,10 @@ import com.alibaba.graphscope.fragment.IFragment
 import com.alibaba.graphscope.graph.AbstractEdgeManager
 import com.alibaba.graphscope.graphx.{GSEdgeTriplet, GSEdgeTripletImpl, ReverseGSEdgeTripletImpl}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
+import org.apache.spark.graphx._
 import org.apache.spark.graphx.impl.GrapeUtils
-import org.apache.spark.util.collection.BitSet
-import org.apache.spark.graphx.{Edge, EdgeTriplet, GraphXConf, ReusableEdge, ReusableEdgeImpl, ReversedReusableEdge, TripletFields, VertexId}
 import org.apache.spark.graphx.traits.{EdgeManager, GraphXVertexIdManager, MessageStore, VertexDataManager}
+import org.apache.spark.util.collection.BitSet
 import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
@@ -71,6 +71,9 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
 
   }
 
+  override def getTotalEdgeNum: Long = {
+    dstLids.size()
+  }
 
   override def iterator(startLid: Long, endLid: Long): Iterator[Edge[ED]] = {
     new Iterator[Edge[ED]]() {
@@ -121,6 +124,77 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
         edge
       }
     }
+  }
+
+  override def iterateOnEdgesParallel[MSG](tid: Int, srcLid: Long, triplet: GSEdgeTriplet[VD, ED], msgSender: EdgeTriplet[VD, ED] => Iterator[(VertexId, MSG)], outMessageCache: MessageStore[MSG]): Unit = {
+    val numEdge = numOfEdges(srcLid.toInt)
+    val nbrPos = nbrPositions(srcLid.toInt)
+    val endPos = (nbrPos + numEdge).toInt
+    var i = nbrPos
+    while (i < endPos) {
+      if (activeSet.get(i)) {
+        triplet.setDstOid(dstOids.get(i), vertexDataManager.getVertexData(dstLids.get(i)))
+        triplet.setAttr(edatas.get(i - edataOffset))
+        val iterator = msgSender.apply(triplet)
+        logger.info("for edge: {}->{}", triplet.srcId, triplet.dstId)
+        while (iterator.hasNext) {
+          val tuple2 = iterator.next
+          outMessageCache.addOidMessage(tuple2._1, tuple2._2)
+        }
+      }
+      i += 1
+    }
+  }
+
+  override def withNewEdgeData[ED2 : ClassTag](newEdgeData: PrimitiveArray[ED2], startLid: Long, endLid: Long): EdgeManager[VD, ED2] = {
+    val newEdataOffset = getPartialEdgeNum(0, startLid)
+    require(newEdataOffset + newEdgeData.size() == getPartialEdgeNum(startLid, endLid),
+      s"override edata array size not match ${newEdataOffset + newEdgeData.size()} should match ${getPartialEdgeNum(startLid,endLid)}")
+    new EdgeManagerImpl[VD,ED2](new GraphXConf[VD,ED2], vertexIdManager, vertexDataManager, dstOids, dstLids, nbrPositions, numOfEdges, newEdgeData, edataOffset, edgeReversed, activeSet)
+  }
+
+  override def getPartialEdgeNum(startLid: Long, endLid: Long): Long = {
+    val startLidPos = nbrPositions(startLid.toInt)
+    val endLidPos = nbrPositions(endLid.toInt - 1)
+    numOfEdges(endLid.toInt - 1) + endLidPos - startLidPos
+  }
+
+  override def toString: String = "EdgeManagerImpl(length=" + dstLids.size() + ",numEdges=" + getTotalEdgeNum+ ")"
+
+  /**
+   * Reverse src,dst pairs. return a new edgeManager.
+   * This reverse will not write back to c++ memory.
+   * For ease of implementation, we only reverse iterators. we don't really reverse edges.
+   *
+   * @param startLid start vid
+   * @param endLid   end vid
+   */
+  override def reverseEdges(): EdgeManager[VD,ED] = {
+    new EdgeManagerImpl[VD,ED](conf, vertexIdManager, vertexDataManager, dstOids, dstLids, nbrPositions, numOfEdges, edatas, edataOffset, !edgeReversed, activeSet)
+  }
+
+  /**
+   * Return a new edge manager, will only partial of the original data.
+   *
+   * @param epred
+   * @param vpred
+   * @return
+   */
+  override def filter(epred: EdgeTriplet[VD, ED] => Boolean, vpred: (VertexId, VD) => Boolean, startLid : Long, endLid : Long): EdgeManager[VD, ED] = {
+    if (activeSet == null){
+      throw new IllegalStateException("Not possible")
+    }
+    val iter = tripletIterator(startLid, endLid)
+    val newActiveSet = new BitSet(dstLids.size())
+    var ind = 0;
+    while (iter.hasNext){
+      val triplet = iter.next()
+      if (epred(triplet) || vpred(triplet.srcId, triplet.srcAttr) || vpred(triplet.dstId,triplet.dstAttr)){
+        newActiveSet.set(ind)
+      }
+      ind += 1
+    }
+    new EdgeManagerImpl[VD,ED](conf, vertexIdManager, vertexDataManager,dstOids, dstLids, nbrPositions, numOfEdges, edatas, edataOffset, !edgeReversed,newActiveSet)
   }
 
   override def tripletIterator(startLid: Long, endLid: Long, tripletFields: TripletFields = TripletFields.All): Iterator[EdgeTriplet[VD,ED]] = {
@@ -184,81 +258,6 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
         edge
       }
     }
-  }
-
-  override def getPartialEdgeNum(startLid: Long, endLid: Long): Long = {
-    val startLidPos = nbrPositions(startLid.toInt)
-    val endLidPos = nbrPositions(endLid.toInt - 1)
-    numOfEdges(endLid.toInt - 1) + endLidPos - startLidPos
-  }
-
-  override def getTotalEdgeNum: Long = {
-    dstLids.size()
-  }
-
-  override def iterateOnEdgesParallel[MSG](tid: Int, srcLid: Long, triplet: GSEdgeTriplet[VD, ED], msgSender: EdgeTriplet[VD, ED] => Iterator[(VertexId, MSG)], outMessageCache: MessageStore[MSG]): Unit = {
-    val numEdge = numOfEdges(srcLid.toInt)
-    val nbrPos = nbrPositions(srcLid.toInt)
-    val endPos = (nbrPos + numEdge).toInt
-    var i = nbrPos
-    while (i < endPos) {
-      if (activeSet.get(i)) {
-        triplet.setDstOid(dstOids.get(i), vertexDataManager.getVertexData(dstLids.get(i)))
-        triplet.setAttr(edatas.get(i - edataOffset))
-        val iterator = msgSender.apply(triplet)
-        logger.info("for edge: {}->{}", triplet.srcId, triplet.dstId)
-        while (iterator.hasNext) {
-          val tuple2 = iterator.next
-          outMessageCache.addOidMessage(tuple2._1, tuple2._2)
-        }
-      }
-      i += 1
-    }
-  }
-
-  override def withNewEdgeData[ED2 : ClassTag](newEdgeData: PrimitiveArray[ED2], startLid: Long, endLid: Long): EdgeManager[VD, ED2] = {
-    val newEdataOffset = getPartialEdgeNum(0, startLid)
-    require(newEdataOffset + newEdgeData.size() == getPartialEdgeNum(startLid, endLid),
-      s"override edata array size not match ${newEdataOffset + newEdgeData.size()} should match ${getPartialEdgeNum(startLid,endLid)}")
-    new EdgeManagerImpl[VD,ED2](new GraphXConf[VD,ED2], vertexIdManager, vertexDataManager, dstOids, dstLids, nbrPositions, numOfEdges, newEdgeData, edataOffset, edgeReversed, activeSet)
-  }
-
-  override def toString: String = "EdgeManagerImpl(length=" + dstLids.size() + ",numEdges=" + getTotalEdgeNum+ ")"
-
-  /**
-   * Reverse src,dst pairs. return a new edgeManager.
-   * This reverse will not write back to c++ memory.
-   * For ease of implementation, we only reverse iterators. we don't really reverse edges.
-   *
-   * @param startLid start vid
-   * @param endLid   end vid
-   */
-  override def reverseEdges(): EdgeManager[VD,ED] = {
-    new EdgeManagerImpl[VD,ED](conf, vertexIdManager, vertexDataManager, dstOids, dstLids, nbrPositions, numOfEdges, edatas, edataOffset, !edgeReversed, activeSet)
-  }
-
-  /**
-   * Return a new edge manager, will only partial of the original data.
-   *
-   * @param epred
-   * @param vpred
-   * @return
-   */
-  override def filter(epred: EdgeTriplet[VD, ED] => Boolean, vpred: (VertexId, VD) => Boolean, startLid : Long, endLid : Long): EdgeManager[VD, ED] = {
-    if (activeSet == null){
-      throw new IllegalStateException("Not possible")
-    }
-    val iter = tripletIterator(startLid, endLid)
-    val newActiveSet = new BitSet(dstLids.size())
-    var ind = 0;
-    while (iter.hasNext){
-      val triplet = iter.next()
-      if (epred(triplet) || vpred(triplet.srcId, triplet.srcAttr) || vpred(triplet.dstId,triplet.dstAttr)){
-        newActiveSet.set(ind)
-      }
-      ind += 1
-    }
-    new EdgeManagerImpl[VD,ED](conf, vertexIdManager, vertexDataManager,dstOids, dstLids, nbrPositions, numOfEdges, edatas, edataOffset, !edgeReversed,newActiveSet)
   }
 
   override def innerJoin[ED2: ClassTag, ED3: ClassTag]
