@@ -1,12 +1,8 @@
 package org.apache.spark.graphx.traits
 
-import com.alibaba.graphscope.fragment.IFragment
 import com.alibaba.graphscope.parallel.DefaultMessageManager
 
 trait MessageStore[MSG] {
-  def init[VD](fragment: IFragment[Long, Long, _, _],
-               idManager: GraphXVertexIdManager, vertexDataManager: VertexDataManager[VD], mergeMessage: (MSG, MSG) => MSG): Unit
-
   def messageAvailable(lid: Long): Boolean
 
   def hasMessages: Boolean
