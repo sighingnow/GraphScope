@@ -62,7 +62,7 @@ object FragmentRegistry extends Logging{
         val iFragment = fragmentHolder.getIFragment.asInstanceOf[IFragment[Long,Long,_,_]]
         val conf = new GraphXConf[VD,ED]
         val idManager = GraphXFactory.createVertexIdManager[VD,ED](conf, iFragment)
-        val vertexDataManager  = GraphXFactory.createVertexDataManager[VD,ED](conf,iFragment)
+        val vertexDataManager  = GraphXFactory.createVertexDataManager[VD,ED](conf,iFragment,null)
         val edgeManager = GraphXFactory.createEdgeManager(conf, iFragment, idManager, vertexDataManager, numCores)
         log.info(s"create id Manager: ${idManager}")
         log.info(s"create vdata manager: ${vertexDataManager}")
