@@ -10,31 +10,42 @@ import scala.reflect.ClassTag
 
 class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
                                            val idManager: GraphXVertexIdManager,
-                                           val vertexDataManager: VertexDataManager[VD],
+                                           val values : Array[VD],
+                                           val startLid : Long,
+                                           val endLid : Long,
                                            var mask : BitSet = null) extends Logging {
-
   val totalVnum: Long = idManager.getInnerVerticesNum
-  val chunkSize: Long = (totalVnum + (numPartitions - 1)) / numPartitions
-  val startLid: VertexId = Math.min(chunkSize * pid, totalVnum)
-  val endLid: VertexId = Math.min(startLid + chunkSize, totalVnum)
+//  val chunkSize: Long = (totalVnum + (numPartitions - 1)) / numPartitions
+//  val startLid: VertexId = Math.min(chunkSize * pid, totalVnum)
+//  val endLid: VertexId = Math.min(startLid + chunkSize, totalVnum)
   val partitionVnum: VertexId = endLid - startLid
-  if (mask == null){
-    mask = new BitSet(totalVnum.toInt)
-    mask.setUntil(endLid.toInt)
-  }
-  log.info(s"Creating GrapeVertexPartition ${this} active vertices: ${mask.cardinality()}")
 
+  if (mask == null){
+    mask = new BitSet(partitionVnum.toInt)
+    mask.setUntil(partitionVnum.toInt)
+  }
+
+  log.info(s"Creating GrapeVertexPartition ${this} active vertices: ${mask.cardinality()}, startLid ${startLid}, endLid ${endLid}")
+
+//  def initValues(vertexDataManager: VertexDataManager[VD], len : Int) : Unit = {
+//    val values = new Array[VD](len)
+//    var i = 0
+//    while (i < partitionVnum){
+//      values(i) = vertexDataManager.getVertexData(i + startLid)
+//      i += 1
+//    }
+//  }
   def iterator : Iterator[(VertexId,VD)] = {
     new Iterator[(VertexId,VD)]{
-      private var curLid = startLid
+      private var offset = 0
       override def hasNext: Boolean = {
-        curLid = mask.nextSetBit(curLid.toInt)
-        curLid < endLid && curLid > 0 && curLid >= startLid
+        offset = mask.nextSetBit(offset)
+        offset < partitionVnum && offset >= 0
       }
 
       override def next(): (VertexId, VD) = {
-        val res = (idManager.lid2Oid(curLid), vertexDataManager.getVertexData(curLid))
-        curLid += 1
+        val res = (idManager.lid2Oid(startLid + offset), values(offset))
+        offset += 1
         res
       }
     }
@@ -43,10 +54,10 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
   def map[VD2: ClassTag](f: (VertexId, VD) => VD2): GrapeVertexPartition[VD2] = {
     // Construct a view of the map transformation
 //    val newValues = new Array[Object](totalVnum.toInt)
-    val newValues = new Array[VD2](totalVnum.toInt)
+    val newValues = new Array[VD2](partitionVnum.toInt)
     var i = startLid.toInt
-    while (i < totalVnum) {
-      newValues(i) = f(idManager.lid2Oid(i), vertexDataManager.getVertexData(i))
+    while (i < endLid) {
+      newValues(i) = f(idManager.lid2Oid(i), values(i - startLid.toInt))
       i += 1
     }
     this.withNewValues(newValues)
@@ -54,15 +65,15 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
 
   def filter(pred: (VertexId, VD) => Boolean): GrapeVertexPartition[VD] = {
     // Allocate the array to store the results into
-    val newMask = new BitSet(totalVnum.toInt)
+    val newMask = new BitSet(partitionVnum.toInt)
     // Iterate over the active bits in the old mask and evaluate the predicate
-    var i = mask.nextSetBit(startLid.toInt)
-    while (i >= 0 && i < endLid) {
-      if (pred(idManager.lid2Oid(i), vertexDataManager.getVertexData(i))){
-        log.info(s"vertex lid ${i} ${idManager.lid2Oid(i)} matches")
-        newMask.set(i)
+    var offset = mask.nextSetBit(0)
+    while (offset >= 0 && offset < partitionVnum) {
+      if (pred(idManager.lid2Oid(offset + startLid), values(offset))){
+        log.info(s"vertex lid ${offset + startLid} ${idManager.lid2Oid(offset + startLid)} matches")
+        newMask.set(offset)
       }
-      i = mask.nextSetBit(i + 1)
+      offset = mask.nextSetBit(offset + 1)
     }
     this.withMask(newMask)
   }
@@ -70,19 +81,20 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
   def aggregateUsingIndex[VD2: ClassTag](
                                           iter: Iterator[Product2[VertexId, VD2]],
                                           reduceFunc: (VD2, VD2) => VD2): GrapeVertexPartition[VD2] = {
-    val newMask = new BitSet(totalVnum.toInt)
-    val newValues = new Array[VD2](totalVnum.toInt)
+    val newMask = new BitSet(partitionVnum.toInt)
+    val newValues = new Array[VD2](partitionVnum.toInt)
     iter.foreach { product =>
       val vid = product._1
       val vdata = product._2
       val lid = idManager.oid2Lid(vid).toInt
 //      val pos = self.index.getPos(vid)
       if (lid >= 0) {
-        if (newMask.get(lid)) {
-          newValues(lid) = reduceFunc(newValues(lid), vdata)
+        val lidOffset = lid - startLid.toInt
+        if (newMask.get(lidOffset)) {
+          newValues(lidOffset) = reduceFunc(newValues(lidOffset), vdata)
         } else { // otherwise just store the new value
-          newMask.set(lid)
-          newValues(lid) = vdata
+          newMask.set(lidOffset)
+          newValues(lidOffset) = vdata
         }
       }
     }
@@ -107,14 +119,14 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
       require(this.startLid == other.startLid, "start lid should match")
       require(this.endLid == other.endLid, "end lid should match")
       val newMask = this.mask & other.mask
-      var i = newMask.nextSetBit(startLid.toInt)
-      while (i >= 0 && i < endLid) {
-        if (this.vertexDataManager.getVertexData(i) == other.vertexDataManager.getVertexData(i)) {
+      var i = newMask.nextSetBit(0)
+      while (i >= 0 && i < partitionVnum) {
+        if (values(i) == other.values(i)) {
           newMask.unset(i)
         }
         i = newMask.nextSetBit(i + 1)
       }
-      this.withNewVertexData(other.vertexDataManager).withMask(newMask)
+      this.withNewValues(other.values).withMask(newMask)
     }
   }
 
@@ -125,13 +137,13 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
       logWarning("Joining two VertexPartitions with different indexes is slow.")
       leftJoin(createUsingIndex(other.iterator))(f)
     } else {
-      val newValues = new Array[VD3](totalVnum.toInt)
+      val newValues = new Array[VD3](partitionVnum.toInt)
       require(this.startLid == other.startLid, "start lid should match")
       require(this.endLid == other.endLid, "end lid should match")
-      var i = this.mask.nextSetBit(startLid.toInt)
-      while (i >= 0 && i < endLid) {
-        val otherV: Option[VD2] = if (other.mask.get(i)) Some(other.vertexDataManager.getVertexData(i)) else None
-        newValues(i) = f(this.idManager.lid2Oid(i), this.vertexDataManager.getVertexData(i), otherV)
+      var i = this.mask.nextSetBit(0)
+      while (i >= 0 && i < partitionVnum) {
+        val otherV: Option[VD2] = if (other.mask.get(i)) Some(other.values(i)) else None
+        newValues(i) = f(this.idManager.lid2Oid(i + startLid), this.values(i), otherV)
         i = this.mask.nextSetBit(i + 1)
       }
       this.withNewValues(newValues)
@@ -143,14 +155,14 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
    */
   def createUsingIndex[VD2: ClassTag](iter: Iterator[Product2[VertexId, VD2]])
   : GrapeVertexPartition[VD2] = {
-    val newMask = new BitSet(totalVnum.toInt)
-    val newValues = new Array[VD2](totalVnum.toInt)
+    val newMask = new BitSet(partitionVnum.toInt)
+    val newValues = new Array[VD2](partitionVnum.toInt)
     iter.foreach { pair =>
 //      val pos = self.index.getPos(pair._1)
       val lid = idManager.oid2Lid(pair._1).toInt
       if (lid >= 0) {
-        newMask.set(lid)
-        newValues(lid) = pair._2
+        newMask.set(lid - startLid.toInt)
+        newValues(lid - startLid.toInt) = pair._2
       }
     }
     this.withNewValues(newValues).withMask(newMask)
@@ -167,10 +179,10 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
       require(this.startLid == other.startLid, "start lid should match")
       require(this.endLid == other.endLid, "end lid should match")
       val newMask = this.mask & other.mask
-      val newValues = new Array[VD2](totalVnum.toInt)
-      var i = newMask.nextSetBit(startLid.toInt)
+      val newValues = new Array[VD2](partitionVnum.toInt)
+      var i = newMask.nextSetBit(0)
       while (i >= 0) {
-        newValues(i) = f(this.idManager.lid2Oid(i), this.vertexDataManager.getVertexData(i), other.vertexDataManager.getVertexData(i))
+        newValues(i) = f(this.idManager.lid2Oid(i + startLid.toInt), this.values(i), other.values(i))
         i = newMask.nextSetBit(i + 1)
       }
       this.withNewValues(newValues).withMask(newMask)
@@ -178,17 +190,17 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
   }
 
   def withNewValues[VD2 : ClassTag](vds: Array[VD2]) : GrapeVertexPartition[VD2] = {
-    new GrapeVertexPartition[VD2](pid, numPartitions, idManager, vertexDataManager.withNewVertexData[VD2](vds), mask)
+    new GrapeVertexPartition[VD2](pid, numPartitions, idManager, vds, startLid, endLid, mask)
   }
 
-  def withNewVertexData[VD2 : ClassTag](newVertexDataManager: VertexDataManager[VD2]) : GrapeVertexPartition[VD2] = {
-    new GrapeVertexPartition[VD2](pid, numPartitions, idManager, newVertexDataManager, mask)
-  }
+//  def withNewVertexData[VD2 : ClassTag](newVertexDataManager: VertexDataManager[VD2]) : GrapeVertexPartition[VD2] = {
+//    new GrapeVertexPartition[VD2](pid, numPartitions, idManager, newVertexDataManager, mask)
+//  }
 
   def withMask(newMask: BitSet): GrapeVertexPartition[VD] ={
-    new GrapeVertexPartition(pid, numPartitions, idManager, vertexDataManager, newMask)
+    new GrapeVertexPartition(pid, numPartitions, idManager, values, startLid, endLid, newMask)
   }
 
-  override def toString: String = "JavaVertexPartition{" + "idManager=" + idManager + ", vertexDataManager=" + vertexDataManager + ", startLid=" + startLid + ", endLid=" + endLid + ", pid=" + pid + '}'
+  override def toString: String = "JavaVertexPartition{" + "idManager=" + idManager + ", startLid=" + startLid + ", endLid=" + endLid + ", pid=" + pid + '}'
 
 }

@@ -84,9 +84,18 @@ object FragmentRegistry extends Logging{
       return
     }
     val numPartitions = maxPartitionId + 1
+    val chunkSize = (idManager.getInnerVerticesNum + (numPartitions - 1)) / numPartitions
     vertexPartitions = new Array[GrapeVertexPartition[VD]](numPartitions).asInstanceOf[Array[GrapeVertexPartition[_]]]
     for (i <- 0 until numPartitions) {
-      vertexPartitions(i) = new GrapeVertexPartition[VD](i, numPartitions, idManager, vertexDataManager)
+      val startLid = i * chunkSize;
+      val endLid = Math.min(startLid + chunkSize, idManager.getInnerVerticesNum)
+      val partitionVdataArray = new Array[VD]((endLid - startLid).toInt)
+      var j = 0
+      while (j < (endLid - startLid)){
+        partitionVdataArray(j) = vertexDataManager.getVertexData(j + startLid)
+        j += 1
+      }
+      vertexPartitions(i) = new GrapeVertexPartition[VD](i, numPartitions, idManager, partitionVdataArray, startLid, endLid)
     }
     log.info("Finish creating javaVertexPartitions of size {}", numPartitions)
   }
@@ -109,14 +118,42 @@ object FragmentRegistry extends Logging{
 
   def getEdgePartition[VD : ClassTag, ED : ClassTag](pid: Int): GrapeEdgePartition[VD, ED] = edgePartitions(pid).asInstanceOf[GrapeEdgePartition[VD,ED]]
 
-  def mapVertexData[VD : ClassTag](pid : Int, vdataPath : String, size : Long, vertexDataManager: VertexDataManager[VD]) : Unit = {
+  def mapVertexData[VD : ClassTag](pid : Int, vdataPath : String, size : Long, vdArray: Array[VD]) : Unit = {
     if (!lock.isLocked){
       if (lock.tryLock()){
         log.info(s"Partition ${pid} got lock!")
         val registry = SharedMemoryRegistry.getOrCreate()
         val buffer = registry.mapFor(vdataPath, size)//Should be created, not reused
         log.info(s"Partition got vdata buffer: ${buffer.remaining()} bytes")
-        vertexDataManager.writeBackVertexData(buffer)
+        val vdClass = GrapeUtils.getRuntimeClass[VD].asInstanceOf[Class[VD]]
+        val bytesPerEle = GrapeUtils.bytesForType[VD](vdClass)
+//        vertexDataManager.writeBackVertexData(buffer)
+        require(buffer.remaining() >= 8 + bytesPerEle * vdArray.length, s"size not enough ${buffer.remaining()}, ${8 + bytesPerEle * vdArray.length}")
+        buffer.writeLong(vdArray.length)
+        var i = 0
+        if (vdClass.equals(classOf[Long]) || vdClass.equals(classOf[java.lang.Long])){
+          while (i < vdArray.length){
+            buffer.writeLong(vdArray(i).asInstanceOf[Long])
+            log.info(s"pid ${pid} write vdata ${vdArray(i)}")
+            i += 1
+          }
+        }
+        else if (vdClass.equals(classOf[Double]) || vdClass.equals(classOf[java.lang.Double])){
+          while (i < vdArray.length){
+            buffer.writeDouble(vdArray(i).asInstanceOf[Double])
+            i += 1
+          }
+        }
+        else if (vdClass.equals(classOf[Int]) || vdClass.equals(classOf[java.lang.Integer])){
+          while (i < vdArray.length){
+            buffer.writeInt(vdArray(i).asInstanceOf[Int])
+            i += 1
+          }
+        }
+        else {
+          throw new IllegalStateException("not recognized class:" + vdClass.getName)
+        }
+
         lock.unlock()
         log.info(s"Partition ${pid} release lock")
       }
