@@ -60,6 +60,7 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
       newValues(i) = f(idManager.lid2Oid(i + startLid.toInt), values(i))
       i = mask.nextSetBit(i + 1)
     }
+    log.info(s"partition ${pid} after vertex mapping: ${newValues.mkString("Array(", ", ", ")")}")
     this.withNewValues(newValues)
   }
 
