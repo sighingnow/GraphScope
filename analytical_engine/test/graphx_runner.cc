@@ -55,12 +55,12 @@ DEFINE_int64(vdata_size, 10 * 1024 * 1024,
 DEFINE_int32(max_iterations, 100000, "max iterations");
 DEFINE_string(frag_ids, "", "frag ids got, should be in order");
 
-std::string build_app_class(const std::string& app_base_class,
+std::string build_generic_class(const std::string& base_class,
                             const std::string& vd_class,
                             const std::string& ed_class,
                             const std::string& msg_class) {
   std::stringstream ss;
-  ss << app_base_class << "<" << vd_class << "," << ed_class << "," << msg_class
+  ss << base_class << "<" << vd_class << "," << ed_class << "," << msg_class
      << ">";
   return ss.str();
 }
@@ -74,9 +74,10 @@ std::string flags2JsonStr() {
   pt.put("user_lib_path", FLAGS_user_lib_path);
   // Different from other type of apps, we need to specify
   // vd and ed type in app_class for generic class creations
-  pt.put("app_class", build_app_class(FLAGS_app_class, FLAGS_vd_class,
+  pt.put("app_class", build_generic_class(FLAGS_app_class, FLAGS_vd_class,
                                       FLAGS_ed_class, FLAGS_msg_class));
-  pt.put("context_class", FLAGS_context_class);
+  pt.put("context_class", build_generic_class(FLAGS_context_class, FLAGS_vd_class,
+                                      FLAGS_ed_class, FLAGS_msg_class));
   pt.put("msg_class", FLAGS_msg_class);
   pt.put("vd_class", FLAGS_vd_class);
   pt.put("ed_class", FLAGS_ed_class);

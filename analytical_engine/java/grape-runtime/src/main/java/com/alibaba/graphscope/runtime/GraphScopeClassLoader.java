@@ -349,11 +349,11 @@ public class GraphScopeClassLoader {
         if (t.length != 2){
             throw new IllegalStateException("Not possible legnth: " + t.length);
         }
-        String []t2 = t[1].substring(0, t[1].length()).split(",");
+        String []t2 = t[1].substring(0, t[1].length() - 1).split(",");
         if (t2.length != 3){
             throw new IllegalStateException("Not possible legnth: " + t2.length);
         }
-        Object obj = method.invoke(null, t2[0], t2[1], t2[3]);
+        Object obj = method.invoke(null, t2[0], t2[1], t2[2]);
         logger.info("Successfully invoked method, got" + obj);
         return obj;
     }
@@ -370,11 +370,11 @@ public class GraphScopeClassLoader {
         if (t.length != 2){
             throw new IllegalStateException("Not possible legnth: " + t.length);
         }
-        String []t2 = t[1].substring(0, t[1].length()).split(",");
+        String []t2 = t[1].substring(0, t[1].length() - 1).split(",");
         if (t2.length != 3){
             throw new IllegalStateException("Not possible legnth: " + t2.length);
         }
-        Object obj = method.invoke(null, t2[0], t2[1], t2[3]);
+        Object obj = method.invoke(null, t2[0], t2[1], t2[2]);
         logger.info("Successfully invoked method, got" + obj);
         return obj;
     }
