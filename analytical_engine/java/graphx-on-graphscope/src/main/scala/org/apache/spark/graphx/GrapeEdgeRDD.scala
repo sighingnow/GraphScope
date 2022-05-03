@@ -14,7 +14,7 @@ abstract class GrapeEdgeRDD[ED](sc: SparkContext,
   override def innerJoin[ED2: ClassTag, ED3: ClassTag](other: EdgeRDD[ED2])
   (f: (VertexId, VertexId, ED, ED2) => ED3): GrapeEdgeRDD[ED3]
 
-  def generateDegreeRDD[VD2 : ClassTag](originalVertexRDD : GrapeVertexRDD[VD2]) : GrapeVertexRDD[VD2]
+  def generateDegreeRDD(originalVertexRDD : GrapeVertexRDD[_]) : GrapeVertexRDD[Int]
 }
 
 object GrapeEdgeRDD {

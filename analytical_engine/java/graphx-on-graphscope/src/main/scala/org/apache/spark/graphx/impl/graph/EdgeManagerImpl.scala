@@ -293,13 +293,13 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     new EdgeManagerImpl[VD,ED3](new GraphXConf[VD,ED3], vertexIdManager, vertexDataManager, dstOids, dstLids, nbrPositions, numOfEdges, newEdatas, edataOffset, edgeReversed, newActiveSet)
   }
 
-  override def getDegreeArray(startLid: VertexId, endLid: VertexId): Array[VD] = {
+  override def getDegreeArray(startLid: VertexId, endLid: VertexId): Array[Int] = {
     val len = (endLid - startLid).toInt
     require(endLid <= numOfEdges.length, s"ind out of range ${endLid}, ${numOfEdges.length}")
-    val res = new Array[VD](len)
+    val res = new Array[Int](len)
     var i = 0
     while (i < len){
-      res(i) = numOfEdges(i + startLid.toInt).asInstanceOf[VD]
+      res(i) = numOfEdges(i + startLid.toInt).toInt
       i += 1
     }
     res

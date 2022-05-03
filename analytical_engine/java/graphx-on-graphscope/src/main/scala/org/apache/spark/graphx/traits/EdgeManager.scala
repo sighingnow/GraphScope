@@ -23,7 +23,7 @@ trait EdgeManager[VD,ED] {
    */
   def getPartialEdgeNum(startLid: Long, endLid: Long): Long
 
-  def getDegreeArray(startLid : Long, endLid : Long) : Array[VD];
+  def getDegreeArray(startLid : Long, endLid : Long) : Array[Int];
 
   def getTotalEdgeNum: Long
 

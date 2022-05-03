@@ -20,7 +20,7 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
   log.info("Creating JavaEdgePartition {}", this)
 
 
-  def getDegreeArray(startLid : Long, endLid : Long) : Array[VD] = {
+  def getDegreeArray(startLid : Long, endLid : Long) : Array[Int] = {
     edgeManager.getDegreeArray(startLid, endLid)
   }
 
