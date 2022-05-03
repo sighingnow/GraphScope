@@ -19,6 +19,11 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
   val numEdges = edgeManager.getPartialEdgeNum(startLid, endLid)
   log.info("Creating JavaEdgePartition {}", this)
 
+
+  def getDegreeArray(startLid : Long, endLid : Long) : Array[VD] = {
+    edgeManager.getDegreeArray(startLid, endLid)
+  }
+
   def iterator : Iterator[Edge[ED]] = {
     edgeManager.iterator(startLid, endLid)
   }

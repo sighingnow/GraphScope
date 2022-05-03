@@ -75,20 +75,20 @@ public class MappedBuffer {
         currentAddress += 8;
     }
 
-    public int readInt(int offset){
+    public int readInt(long offset){
         checkOffset(offset + 4);
         return JavaRuntime.getInt(startAddress + offset);
     }
-    public long readLong(int offset){
+    public long readLong(long offset){
         checkOffset(offset + 8);
         return JavaRuntime.getLong(startAddress + offset);
     }
-    public double readDouble(int offset){
+    public double readDouble(long offset){
         checkOffset(offset + 8);
         return JavaRuntime.getDouble(startAddress + offset);
     }
 
-    public void checkOffset(int offset){
+    public void checkOffset(long offset){
         if (offset > size){
             throw new IndexOutOfBoundsException(" out of bound, size : " + size + ", cur " + offset);
         }

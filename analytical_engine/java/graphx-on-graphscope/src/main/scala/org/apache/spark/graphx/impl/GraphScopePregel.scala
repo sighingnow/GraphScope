@@ -2,7 +2,8 @@ package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.graphx.SerializationUtils
 import com.alibaba.graphscope.utils.MPIUtils
-import org.apache.spark.graphx.{EdgeDirection, EdgeTriplet, FragmentRegistry, Graph, VertexId}
+import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
+import org.apache.spark.graphx.{EdgeDirection, EdgeTriplet, FragmentRegistry, GrapeVertexRDD, Graph, VertexId}
 import org.apache.spark.internal.Logging
 
 import scala.reflect.{ClassTag, classTag}
@@ -43,11 +44,10 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
       SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, VDATA_MAPPED_PATH, vdataMappedSize)
     val t1 = System.nanoTime()
     log.info(s"[Driver:] Running graphx pie cost: ${(t1 - t0) / 1000000} ms")
-    graph
-//    //update the result to graph for a new graph.
-//
-//    log.info(s"[Driver:] Writing back vertex data")
-//    val resVertices = grapeGraph.vertices.copyAndUpdateVertexData(VDATA_MAPPED_PATH, vdata_mapped_size).cache()
-//    GrapeGraphImpl.fromExistingRDDs(resVertices, grapeGraph.edges, grapeGraph.fragIds).cache()
+
+    log.info(s"[Driver:] create new graph containing res vdata")
+    val resVertices = grapeGraph.vertices.withGrapeVertexData(VDATA_MAPPED_PATH, vdataMappedSize).cache()
+    GrapeGraphImpl.fromExistingRDDs(resVertices.asInstanceOf[GrapeVertexRDDImpl[VD]],
+      grapeGraph.edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]], grapeGraph.fragId).cache()
   }
 }

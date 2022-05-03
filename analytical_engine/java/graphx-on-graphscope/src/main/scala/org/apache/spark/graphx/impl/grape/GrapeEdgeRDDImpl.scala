@@ -36,6 +36,20 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
   }
   setName("OffHeapGrapeEdgeRDD")
 
+  override def generateDegreeRDD[VD2 : ClassTag](originalVertexRDD : GrapeVertexRDD[VD2]) : GrapeVertexRDD[VD2] = {
+    val grapeVertexRDDImpl = originalVertexRDD.asInstanceOf[GrapeVertexRDDImpl[VD2]]
+    val newVertexPartitionRDD = this.grapePartitionsRDD.zipPartitions(grapeVertexRDDImpl.grapePartitionsRDD, true){
+      (thisIter, otherIter) => {
+        val (pid, thisEPart) = thisIter.next()
+        val (_, otherVPart) = otherIter.next()
+//        val newPart = thisEPart.innerJoin[ED2, ED3](otherEPart)(f)
+        val newVPart = otherVPart.withNewValues(thisEPart.getDegreeArray(otherVPart.startLid, otherVPart.endLid))
+        Iterator((pid, newVPart))
+      }
+    }
+    originalVertexRDD.withGrapePartitionsRDD(newVertexPartitionRDD)
+  }
+
 
   override def collect(): Array[Edge[ED]] = this.map(_.copy()).collect()
 

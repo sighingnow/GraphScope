@@ -212,6 +212,22 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     })
   }
 
+  override def withGrapeVertexData(vdataMappedPath: String, size : Long) : GrapeVertexRDD[VD] = {
+    val newPartitionRDD = grapePartitionsRDD.mapPartitions(iter => {
+      if (iter.hasNext){
+        val tuple = iter.next();
+        val pid = tuple._1
+        val part = tuple._2
+        //For every part, we read new data from the shared memroy
+        Iterator((pid, part.withNewValues(vdataMappedPath, size)))
+      }
+      else {
+        Iterator.empty
+      }
+    })
+    this.withGrapePartitionsRDD(newPartitionRDD)
+  }
+
   override def reverseRoutingTables(): VertexRDD[VD] = {
     throw new IllegalStateException("Inherited but not implemented, should not be used")
   }

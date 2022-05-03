@@ -1,5 +1,6 @@
 package org.apache.spark.graphx
 
+import com.alibaba.graphscope.graphx.SharedMemoryRegistry
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.traits.{GraphXVertexIdManager, VertexDataManager}
@@ -192,6 +193,47 @@ class GrapeVertexPartition[VD : ClassTag] (pid: Int, numPartitions: Int,
 
   def withNewValues[VD2 : ClassTag](vds: Array[VD2]) : GrapeVertexPartition[VD2] = {
     new GrapeVertexPartition[VD2](pid, numPartitions, idManager, vds, startLid, endLid, mask)
+  }
+
+  def withNewValues[VD2 : ClassTag](vdataMappedPath : String, size : Long) : GrapeVertexPartition[VD2] = {
+    val newArray = new Array[VD2](partitionVnum.toInt)
+    val registry = SharedMemoryRegistry.getOrCreate()
+    val buffer = registry.tryMapFor(vdataMappedPath, size)
+    val totalLength = buffer.readLong(0)
+    log.info(s"grape vertex partition ${pid} mapped buffer ${buffer} for ${vdataMappedPath} of size ${size}, length ${totalLength}")
+
+    require(totalLength >= endLid, s"total length should be greater than lid ${totalLength} vs ${endLid}")
+    val dstVdClass = GrapeUtils.getRuntimeClass[VD2]
+    val chunksize = GrapeUtils.bytesForType(dstVdClass)
+    var curAddr = 8L + chunksize * startLid
+    var ind = 0
+    val endAddr = 8L + chunksize * endLid
+    if (dstVdClass.equals(classOf[Long]) || dstVdClass.eq(classOf[java.lang.Long])){
+      while (curAddr < endAddr){
+        newArray(ind) = buffer.readLong(curAddr).asInstanceOf[VD2]
+        curAddr += chunksize
+        ind += 1
+      }
+    }
+    else if (dstVdClass.equals(classOf[Double]) || dstVdClass.eq(classOf[java.lang.Double])){
+      while (curAddr < endAddr){
+        newArray(ind) = buffer.readDouble(curAddr).asInstanceOf[VD2]
+        curAddr += chunksize
+        ind += 1
+      }
+    }
+    else if (dstVdClass.equals(classOf[Int]) || dstVdClass.eq(classOf[java.lang.Integer])){
+      while (curAddr < endAddr){
+        newArray(ind) = buffer.readInt(curAddr).asInstanceOf[VD2]
+        curAddr += chunksize
+        ind += 1
+      }
+    }
+    else {
+      throw new IllegalStateException(s"Unrecognized clz ${dstVdClass.getName}, byte per ele ${chunksize}")
+    }
+    log.info(s"updated new array for ${startLid} to ${endLid} ${newArray.mkString("Array(", ", ", ")")}")
+    new GrapeVertexPartition[VD2](pid, numPartitions, idManager, newArray, startLid, endLid, mask)
   }
 
 //  def withNewVertexData[VD2 : ClassTag](newVertexDataManager: VertexDataManager[VD2]) : GrapeVertexPartition[VD2] = {

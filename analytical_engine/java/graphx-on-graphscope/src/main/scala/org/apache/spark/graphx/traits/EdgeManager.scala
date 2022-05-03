@@ -19,6 +19,8 @@ trait EdgeManager[VD,ED] {
    */
   def getPartialEdgeNum(startLid: Long, endLid: Long): Long
 
+  def getDegreeArray(startLid : Long, endLid : Long) : Array[VD];
+
   def getTotalEdgeNum: Long
 
   def iterateOnEdgesParallel[MSG](tid: Int, srcLid: Long, context: GSEdgeTriplet[VD, ED],

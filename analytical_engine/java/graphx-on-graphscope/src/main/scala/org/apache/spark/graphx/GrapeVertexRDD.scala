@@ -22,7 +22,12 @@ abstract class GrapeVertexRDD[VD](
   /**
    * Write the updated vertex data to memory mapped region.
    */
-  def writeBackVertexData(vdataMappedPath : String, size : Long): Unit ;
+  def writeBackVertexData(vdataMappedPath : String, size : Long): Unit
+
+  /**
+   * Create a new vertex rdd which contains the data updated from shared memeory
+   */
+  def withGrapeVertexData(vdataMappedPath: String, size : Long) : GrapeVertexRDD[VD]
 }
 
 object GrapeVertexRDD {
