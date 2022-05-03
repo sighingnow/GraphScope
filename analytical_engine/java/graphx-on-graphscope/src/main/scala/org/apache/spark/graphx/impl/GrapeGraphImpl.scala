@@ -47,8 +47,6 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   def numEdges: Long = edges.count()
 
-
-
   val sc = vertices.sparkContext
 
   @transient override lazy val triplets: RDD[EdgeTriplet[VD, ED]] = {
@@ -155,8 +153,11 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     throw new IllegalStateException("Unimplemented")
   }
 
-  override def outerJoinVertices[U: ClassTag, VD2 : ClassTag](other: RDD[(VertexId, U)])(mapFunc: (VertexId, VD, Option[U]) => VD2)(implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
-    throw new IllegalStateException("Unimplemented")
+  override def outerJoinVertices[U: ClassTag, VD2 : ClassTag](other: RDD[(VertexId, U)])
+                                                             (mapFunc: (VertexId, VD, Option[U]) => VD2)
+                                                             (implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
+    val newVertices = vertices.leftJoin(other)(mapFunc)
+    GrapeGraphImpl.fromRDDs(newVertices, edges, fragId)
   }
 }
 

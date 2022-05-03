@@ -434,8 +434,14 @@ object PageRank extends Logging {
     val personalized = srcId.isDefined
     val src: VertexId = srcId.getOrElse(-1L)
 
-    val outDegreeRDD = graph.outDegrees
+    val outDegreeRDD = graph.outDegrees.cache()
     log.info(s"degree rdd ${outDegreeRDD.collect().mkString("Array(", ", ", ")")}")
+    val graph1 = graph.outerJoinVertices(outDegreeRDD){
+      (vid, vdata, deg) => deg.getOrElse(0)
+    }.cache()
+    log.info(s"after outer join ${graph1.vertices.collect().mkString("Array(", ", ", ")")}")
+    val graph2 = graph1.mapTriplets( e => 1.0 / e.srcAttr).cache()
+    log.info(s"after map triplet ${graph2.triplets.collect().mkString("Array(", ", ", ")")}")
 
     // Initialize the pagerankGraph with each edge attribute
     // having weight 1/outDegree and each vertex with attribute 0.

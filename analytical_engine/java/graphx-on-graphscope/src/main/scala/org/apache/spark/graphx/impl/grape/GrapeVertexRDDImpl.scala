@@ -131,7 +131,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
 
   override def leftJoin[VD2, VD3](other: RDD[(VertexId, VD2)])(f: (VertexId, VD, Option[VD2]) => VD3)(implicit evidence$6: ClassTag[VD2], evidence$7: ClassTag[VD3]): VertexRDD[VD3] = {
     other match {
-      case other: GrapeVertexRDDImpl[_] if this.partitioner == other.partitioner =>
+      case other: GrapeVertexRDDImpl[_] =>
         leftZipJoin(other)(f)
       case _ =>
         throw new IllegalArgumentException("currently not support to join with non-grape vertex rdd")
