@@ -28,10 +28,12 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
     edgeManager.iterator(startLid, endLid)
   }
 
-  def tripletIterator(
+  def tripletIterator(vdArray : Array[VD],
                        tripletFields: TripletFields = TripletFields.All)
   : Iterator[EdgeTriplet[VD, ED]] = {
-    edgeManager.tripletIterator(startLid, endLid, tripletFields)
+    //!can not use edge manager here!!!!!!!
+    //edgeManager.tripletIterator(startLid, endLid, tripletFields)
+    edgeManager.tripletIterator(startLid, endLid, vdArray,tripletFields)
   }
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
