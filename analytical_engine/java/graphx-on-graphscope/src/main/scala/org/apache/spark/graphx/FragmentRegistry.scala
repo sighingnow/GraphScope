@@ -54,7 +54,10 @@ object FragmentRegistry extends Logging{
       if (lock.tryLock) {
         log.info("partition " + pid + " successfully got lock")
         if (fragmentHolder != null){
-          throw new IllegalStateException("Impossible: fragment rdd has been constructed" + fragmentHolder)
+	  log.info(s"Fragment rdd has been constructed, partition skip ${fragmentHolder}")
+	  lock.unlock();
+	  return ;
+          //throw new IllegalStateException("Impossible: fragment rdd has been constructed" + fragmentHolder)
         }
         if (fragId == null || fragId.isEmpty){
           throw new IllegalStateException("Please register fragment first")
@@ -119,15 +122,20 @@ object FragmentRegistry extends Logging{
 
   def getEdgePartition[VD : ClassTag, ED : ClassTag](pid: Int): GrapeEdgePartition[VD, ED] = edgePartitions(pid).asInstanceOf[GrapeEdgePartition[VD,ED]]
 
+  def updateVertexPartition[VD : ClassTag](pid : Int, part : GrapeVertexPartition[VD]) : Unit = {
+    vertexPartitions(pid) = part
+  }
+
+
   def mapVertexData[VD : ClassTag](pid : Int, vdataPath : String, size : Long) : Unit = {
     if (!lock.isLocked){
       if (lock.tryLock()){
         log.info(s"Partition ${pid} got lock!")
-        if (cnt > 0) {
-          log.info(s"Already been executed by other partition, skip ${cnt}")
+        if (pid != maxPartitionId) {
+          log.info(s"cur pid ${pid}, wait for max pid ${maxPartitionId} to execute")
+	  lock.unlock()
           return
         }
-        cnt += 1
         val registry = SharedMemoryRegistry.getOrCreate()
         val buffer = registry.mapFor(vdataPath, size)//Should be created, not reused
         log.info(s"Partition got vdata buffer: ${buffer.remaining()} bytes")
@@ -136,12 +144,15 @@ object FragmentRegistry extends Logging{
 //        vertexDataManager.writeBackVertexData(buffer)
         val totalLength = vertexPartitions.map(_.values.length).foldLeft(0)(_ + _)
         require(buffer.remaining() >= 8 + bytesPerEle * totalLength, s"size not enough ${buffer.remaining()}, ${8 + bytesPerEle * totalLength}")
+ 	log.info(s"total length ${totalLength}")
         buffer.writeLong(totalLength)
-        var i = 0
         if (vdClass.equals(classOf[Long]) || vdClass.equals(classOf[java.lang.Long])){
+          log.info(s"partitions size ${vertexPartitions.length}")
           for (partition <- vertexPartitions){
+	    log.info(s"partition ${partition}")
             val curVdarray = partition.values
 	    val curLength = curVdarray.length
+            var i = 0 
             while (i < curLength){
               buffer.writeLong(curVdarray(i).asInstanceOf[Long])
               log.info(s"pid ${pid} write vdata ${curVdarray(i)}")
@@ -153,6 +164,7 @@ object FragmentRegistry extends Logging{
           for (partition <- vertexPartitions){
             val curVdarray = partition.values
 	    val curLength = curVdarray.length
+            var i = 0 
             while (i < curLength){
               buffer.writeDouble(curVdarray(i).asInstanceOf[Double])
               log.info(s"pid ${pid} write vdata ${curVdarray(i)}")
@@ -164,6 +176,7 @@ object FragmentRegistry extends Logging{
           for (partition <- vertexPartitions){
             val curVdarray = partition.values
 	    val curLength = curVdarray.length
+            var i = 0 
             while (i < curLength){
               buffer.writeInt(curVdarray(i).asInstanceOf[Int])
               log.info(s"pid ${pid} write vdata ${curVdarray(i)}")

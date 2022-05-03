@@ -40,9 +40,14 @@ class DefaultMessageStore[VD: ClassTag, MSG: ClassTag](val conf : GraphXConf[VD,
   override def addLidMessage(lid: Long, msg: MSG): Unit = {
     val intLid = lid.toInt
     if (bitSet.get(intLid)){
+      log.info(s"merge msg at ${intLid}, prev ${values.get(intLid)}, incoming ${msg}")
       values.set(intLid, mergeMsg.apply(values.get(intLid), msg))
     }
-    else values.set(intLid, msg)
+    else {
+      log.info(s"put first msg at ${intLid} msg ${msg}")
+      bitSet.set(intLid)
+      values.set(intLid, msg)
+    }
   }
 
   override def addOidMessage(oid: Long, msg: MSG): Unit = {

@@ -139,6 +139,8 @@ object Pregel extends Logging {
      *
      *    So after computation, we can use shared memory to pass the updated vertex data.
      */
+    graph.vertices.count()
+    graph.edges.count()
     val graphScopePregel = new GraphScopePregel[VD,ED,A](graph, initialMsg, maxIterations, activeDirection, vprog, sendMsg, mergeMsg)
 
     graphScopePregel.run()

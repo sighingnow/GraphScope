@@ -200,6 +200,7 @@ object GrapeGraphImpl {
         Iterator.empty
       }
     })
+    grapePartition.cache().count()
     grapePartition.foreachPartition(
       iter => {
         if (iter.hasNext){

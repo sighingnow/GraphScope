@@ -257,7 +257,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                             long eid = unsafe.getLong(curAddrr);
                             Long edata = (Long) edataArray.get(eid);
 //                            edatas[index++] = (BIZ_EDATA_T) edata;
-                            edatas.set(index, (BIZ_EDATA_T) edata);
+                            edatas.set(index++, (BIZ_EDATA_T) edata);
                             curAddrr += nbrUnitEleSize;
                         }
                     }
@@ -268,7 +268,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                             long eid = unsafe.getLong(curAddrr);
                             Integer edata = (Integer) edataArray.get(eid);
 //                            edatas[index++] = (BIZ_EDATA_T) edata;
-                            edatas.set(index, (BIZ_EDATA_T) edata);
+                            edatas.set(index++, (BIZ_EDATA_T) edata);
                             curAddrr += nbrUnitEleSize;
                         }
                     }
@@ -280,7 +280,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                             long eid = unsafe.getLong(curAddrr);
                             Double edata = (Double) edataArray.get(eid);
 //                            edatas[index++] = (BIZ_EDATA_T) edata;
-                            edatas.set(index, (BIZ_EDATA_T) edata);
+                            edatas.set(index++, (BIZ_EDATA_T) edata);
 //                            logger.info("lid {} j {} eid {} edata {}", lid, j, eid, edata);
                             curAddrr += nbrUnitEleSize;
                         }
@@ -292,7 +292,7 @@ public abstract class AbstractEdgeManager<VID_T, GRAPE_OID_T, BIZ_OID_T, GRAPE_E
                             long eid = unsafe.getLong(curAddrr);
                             Float edata = (Float) edataArray.get(eid);
 //                            edatas[index++] = (BIZ_EDATA_T) edata;
-                            edatas.set(index, (BIZ_EDATA_T) edata);
+                            edatas.set(index++, (BIZ_EDATA_T) edata);
                             curAddrr += nbrUnitEleSize;
                         }
                     }

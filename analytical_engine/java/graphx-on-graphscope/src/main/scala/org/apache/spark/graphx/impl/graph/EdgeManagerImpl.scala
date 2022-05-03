@@ -65,6 +65,16 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     this.edgeReversed = bool
     this.activeSet = set
   logger.info(s"Using customized edata, length ${edatas.size()}, offset ${edataOffset}");
+    logger.info(s"${edatas.get(0)}, ${edatas.get(1)}, ${edatas.get(2)}")
+  val sb = new StringBuilder();
+  sb.append("[");
+  var i = 0
+  while( i < edatas.size()) {
+    sb.append(edatas.get(i) + ",");
+    i += 1
+  }
+  sb.append("]");
+  logger.info("edata array:" + sb.toString());
   require(edataOffset < getTotalEdgeNum, s"offset error ${edataOffset} greater than ${getTotalEdgeNum}")
   require(edatas.size() <= getTotalEdgeNum, s"length ${edatas.size()} should smaller than ${getTotalEdgeNum}")
   logger.info(s"create EdgeManagerImpl(${this}), reversed ${edgeReversed}")
@@ -136,7 +146,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
         triplet.setDstOid(dstOids.get(i), vertexDataManager.getVertexData(dstLids.get(i)))
         triplet.setAttr(edatas.get(i - edataOffset))
         val iterator = msgSender.apply(triplet)
-        logger.info("for edge: {}->{}", triplet.srcId, triplet.dstId)
+        logger.info("for edge: {} {} -> {} {}, edge attr {}", triplet.srcId.toString, triplet.srcAttr.toString, triplet.dstId.toString, triplet.dstAttr.toString, triplet.attr.toString)
         while (iterator.hasNext) {
           val tuple2 = iterator.next
           outMessageCache.addOidMessage(tuple2._1, tuple2._2)
