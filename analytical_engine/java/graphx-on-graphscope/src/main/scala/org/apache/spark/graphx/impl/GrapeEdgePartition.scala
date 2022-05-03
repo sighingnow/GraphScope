@@ -85,8 +85,9 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
    */
   def filter(
               epred: EdgeTriplet[VD, ED] => Boolean,
-              vpred: (VertexId, VD) => Boolean): GrapeEdgePartition[VD, ED] = {
-    new GrapeEdgePartition[VD,ED](pid, numPartitions, idManager, edgeManager.filter(epred, vpred, startLid, endLid))
+              vpred: (VertexId, VD) => Boolean,
+              vdArray : Array[VD]): GrapeEdgePartition[VD, ED] = {
+    new GrapeEdgePartition[VD,ED](pid, numPartitions, idManager, edgeManager.filter(epred, vpred, startLid, endLid, vdArray))
   }
 
   /**

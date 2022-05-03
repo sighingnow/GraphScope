@@ -47,7 +47,8 @@ trait EdgeManager[VD,ED] {
    * @return
    */
   def filter(epred: EdgeTriplet[VD, ED] => Boolean,
-             vpred: (VertexId, VD) => Boolean, startLid : Long, endLid : Long) : EdgeManager[VD,ED]
+             vpred: (VertexId, VD) => Boolean, startLid : Long, endLid : Long,
+             vdArray : Array[VD]) : EdgeManager[VD,ED]
 
   def innerJoin[ED2 : ClassTag, ED3 : ClassTag](edgeManager: EdgeManager[_,ED2], startLid : Long, endLid : Long)(f: (VertexId, VertexId, ED, ED2) => ED3): EdgeManager[VD,ED3]
 }

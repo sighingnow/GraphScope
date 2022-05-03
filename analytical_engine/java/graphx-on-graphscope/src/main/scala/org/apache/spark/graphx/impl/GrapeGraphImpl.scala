@@ -143,9 +143,21 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
   override def subgraph(epred: EdgeTriplet[VD, ED] => Boolean, vpred: (VertexId, VD) => Boolean): Graph[VD, ED] = {
-    val newEdges = grapeEdgeRDDImpl.filter(epred,vpred)
-    val newVertices = vertices.mapGrapeVertexPartitions(_.filter(vpred))
-     new GrapeGraphImpl[VD,ED](newVertices, newEdges, fragId)
+    val grapeVertexRDDImpl = vertices.asInstanceOf[GrapeVertexRDDImpl[VD]]
+    val newPartitionRDD = grapeEdgeRDDImpl.grapePartitionsRDD.zipPartitions(grapeVertexRDDImpl.grapePartitionsRDD)({
+      (eIter, vIter) => {
+        if (eIter.hasNext){
+          val (ePid, ePart) = eIter.next()
+          val (vPid, vPart) = vIter.next()
+          Iterator((ePid,ePart.filter(epred, vpred, vPart.values)))
+        }
+        else {
+          Iterator.empty
+        }
+      }
+    })
+    val newGrapeEdgeRDDImpl = grapeEdgeRDDImpl.withPartitionsRDD(newPartitionRDD)
+    GrapeGraphImpl.fromRDDs(vertices, newGrapeEdgeRDDImpl, fragId)
   }
 
   override def mask[VD2, ED2](other: Graph[VD2, ED2])(implicit evidence$9: ClassTag[VD2], evidence$10: ClassTag[ED2]): Graph[VD, ED] = {

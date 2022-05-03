@@ -95,11 +95,12 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
     mapEdgePartitions((pid, partition) => partition.reverse)
   }
 
-  def filter(
-              epred: EdgeTriplet[VD, ED] => Boolean,
-              vpred: (VertexId, VD) => Boolean): GrapeEdgeRDDImpl[VD, ED] = {
-    mapEdgePartitions((pid, part) => part.filter(epred, vpred))
-  }
+//  def filter(
+//              epred: EdgeTriplet[VD, ED] => Boolean,
+//              vpred: (VertexId, VD) => Boolean,
+//              vdArray : Array[VD]): GrapeEdgeRDDImpl[VD, ED] = {
+//    mapEdgePartitions((pid, part) => part.filter(epred, vpred, vdArray))
+//  }
 
   override def innerJoin[ED2: ClassTag, ED3: ClassTag](other: EdgeRDD[ED2])(f: (VertexId, VertexId, ED, ED2) => ED3): GrapeEdgeRDD[ED3] = {
     other match {
