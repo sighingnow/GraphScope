@@ -10,7 +10,11 @@ import scala.reflect.ClassTag
 trait EdgeManager[VD,ED] {
   def iterator(startLid: Long, endLid: Long): Iterator[Edge[ED]]
 
-  def tripletIterator(startLid: Long, endLid: Long, tripletFields: TripletFields = TripletFields.All): Iterator[EdgeTriplet[VD,ED]]
+  /**
+   *For graphx ops, we need to pass vd array for actual vdata
+   * @return
+   */
+  def tripletIterator(startLid: Long, endLid: Long,vdArray : Array[VD], tripletFields: TripletFields = TripletFields.All): Iterator[EdgeTriplet[VD,ED]]
   /**
    * Get the num edges between [startLid, endLid)
    * @param startLid

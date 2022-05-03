@@ -139,7 +139,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
     }, preservesPartitioning = true))
   }
 
-  private[graphx] def withPartitionsRDD[VD2: ClassTag, ED2: ClassTag](
+  def withPartitionsRDD[VD2: ClassTag, ED2: ClassTag](
           partitionsRDD: RDD[(PartitionID, GrapeEdgePartition[VD2, ED2])]): GrapeEdgeRDDImpl[VD2, ED2] = {
     new GrapeEdgeRDDImpl[VD2,ED2](partitionsRDD, this.targetStorageLevel)
   }

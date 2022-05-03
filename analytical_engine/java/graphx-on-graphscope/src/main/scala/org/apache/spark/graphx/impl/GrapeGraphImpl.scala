@@ -41,7 +41,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   val vdClass: Class[VD] = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
   val edClass: Class[ED] = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
-  val offHeapEdgeRDDImpl = edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]]
+  val grapeEdgeRDDImpl = edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]]
 
   def numVertices: Long = vertices.count()
 
@@ -51,15 +51,14 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   @transient override lazy val triplets: RDD[EdgeTriplet[VD, ED]] = {
     val grapeEdges = edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]]
-    grapeEdges.grapePartitionsRDD.mapPartitions(iter =>{
-      if (iter.hasNext){
-        val tuple = iter.next();
-        tuple._2.tripletIterator()
+    val grapeVertices = vertices.asInstanceOf[GrapeVertexRDDImpl[VD]]
+    grapeEdges.grapePartitionsRDD.zipPartitions(grapeVertices.grapePartitionsRDD)(
+      (edgeIter, vertexIter) => {
+        val edgeTuple = edgeIter.next()
+        val vertexTuple = vertexIter.next()
+        edgeTuple._2.tripletIterator(vertexTuple._2.values)
       }
-      else {
-        Iterator.empty
-      }
-    })
+    )
   }
 
   override def persist(newLevel: StorageLevel): Graph[VD, ED] = {
@@ -114,17 +113,29 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
   override def mapEdges[ED2](f: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2])(implicit newEd: ClassTag[ED2]): Graph[VD, ED2] = {
-    val newEdges = offHeapEdgeRDDImpl.mapEdgePartitions((pid, part) => part.map(f(pid, part.iterator)))
+    val newEdges = grapeEdgeRDDImpl.mapEdgePartitions((pid, part) => part.map(f(pid, part.iterator)))
     new GrapeGraphImpl[VD,ED2](vertices,newEdges, fragId)
   }
 
   override def mapTriplets[ED2: ClassTag](
        map: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2],
        tripletFields: TripletFields): Graph[VD, ED2] = {
-    val newEdges = offHeapEdgeRDDImpl.mapEdgePartitions({
-      (pid,partition) => partition.map(map(pid, partition.tripletIterator(tripletFields)))
+    val grapeVertexRDDImpl = vertices.asInstanceOf[GrapeVertexRDDImpl[VD]]
+    val newPartitionRDD = grapeEdgeRDDImpl.grapePartitionsRDD.zipPartitions(grapeVertexRDDImpl.grapePartitionsRDD)({
+      (eIter, vIter) => {
+        if (eIter.hasNext){
+          val (ePid, ePart) = eIter.next()
+          val (vPid, vPart) = vIter.next()
+          val tripletIter = ePart.tripletIterator(vPart.values, tripletFields)
+          Iterator((ePid,ePart.map(map(ePid, tripletIter))))
+        }
+        else {
+          Iterator.empty
+        }
+      }
     })
-    new GrapeGraphImpl[VD,ED2](vertices, newEdges, fragId)
+    val newGrapeEdgeRDDImpl = grapeEdgeRDDImpl.withPartitionsRDD(newPartitionRDD)
+    new GrapeGraphImpl[VD,ED2](vertices, newGrapeEdgeRDDImpl, fragId)
   }
 
   override def reverse: Graph[VD, ED] = {
@@ -132,7 +143,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
   override def subgraph(epred: EdgeTriplet[VD, ED] => Boolean, vpred: (VertexId, VD) => Boolean): Graph[VD, ED] = {
-    val newEdges = offHeapEdgeRDDImpl.filter(epred,vpred)
+    val newEdges = grapeEdgeRDDImpl.filter(epred,vpred)
     val newVertices = vertices.mapGrapeVertexPartitions(_.filter(vpred))
      new GrapeGraphImpl[VD,ED](newVertices, newEdges, fragId)
   }
