@@ -67,7 +67,7 @@ class GraphOps[VD: ClassTag, ED: ClassTag](graph: Graph[VD, ED]) extends Seriali
    * @param edgeDirection the direction along which to collect neighboring vertex attributes
    */
   private def degreesRDD(edgeDirection: EdgeDirection): VertexRDD[Int] = {
-    if (graph.isInstanceOf[GrapeGraphImpl]){
+    if (graph.isInstanceOf[GrapeGraphImpl[VD,ED]]){
       val grapeGraph = graph.asInstanceOf[GrapeGraphImpl[VD,ED]]
       if (edgeDirection == EdgeDirection.Out){
         grapeGraph.edges.generateDegreeRDD(grapeGraph.vertices)
