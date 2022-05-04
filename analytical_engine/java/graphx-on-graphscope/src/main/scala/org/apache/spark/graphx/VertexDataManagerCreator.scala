@@ -7,7 +7,7 @@ import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag
 
-class VertexDataManagerCreator extends Logging{
+object VertexDataManagerCreator extends Logging{
 
   private var newVDManager : VertexDataManager[_] = null.asInstanceOf[VertexDataManager[_]]
 
@@ -38,19 +38,5 @@ class VertexDataManagerCreator extends Logging{
 
   def reset() : Unit = {
     newVDManager = null
-  }
-}
-
-object VertexDataManagerCreator{
-  private var creator : VertexDataManagerCreator = null
-  def getOrCreate() : VertexDataManagerCreator= {
-    if (creator == null){
-      synchronized{
-        if (creator == null){
-          creator = new VertexDataManagerCreator
-        }
-      }
-    }
-    creator
   }
 }

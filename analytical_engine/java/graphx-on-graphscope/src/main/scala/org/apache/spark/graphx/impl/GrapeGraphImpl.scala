@@ -209,15 +209,13 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     /** if new vd2 differs from vertex data manager, create a vertex data manager */
     grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
       val (pid, part) = iter.next()
-      val vdCreator =  VertexDataManagerCreator.getOrCreate()
-      vdCreator.create[VD,VD2,ED](pid, part.edgeManager.asInstanceOf[EdgeManagerImpl[VD,ED]].vertexDataManager)
+      VertexDataManagerCreator.create[VD,VD2,ED](pid, part.edgeManager.asInstanceOf[EdgeManagerImpl[VD,ED]].vertexDataManager)
     })
     val newEdges = grapeEdges.withPartitionsRDD(grapeEdges.grapePartitionsRDD.mapPartitions(iter => {
       val (pid, part) = iter.next()
-      val vdCreator =  VertexDataManagerCreator.getOrCreate()
 //      vdCreator.create[VD,VD2,ED](pid, .vertexDataManager)
       val oldEdgeManager = part.edgeManager.asInstanceOf[EdgeManagerImpl[VD,ED]]
-      val newVdManager = vdCreator.get[VD2]
+      val newVdManager = VertexDataManagerCreator.get[VD2]
       Iterator((pid,part.withNewEdgeManager(oldEdgeManager.withNewVertexDataManager(newVdManager))))
     }))
     GrapeGraphImpl.fromRDDs[VD2, ED](newVertices, newEdges, fragId)
