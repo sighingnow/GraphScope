@@ -28,6 +28,7 @@ import com.alibaba.fastffi.CXXHead;
 import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
+import com.alibaba.fastffi.FFISkip;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.app.DefaultAppBase;
 import com.alibaba.graphscope.ds.Vertex;
@@ -52,12 +53,13 @@ import com.alibaba.graphscope.fragment.adaptor.ImmutableEdgecutFragmentAdaptor;
 })
 public interface DefaultMessageManager extends MessageManagerBase {
 
-    default <FRAG_T extends IFragment, MSG_T> boolean getMessage(
+    default <FRAG_T extends IFragment, MSG_T, SKIP_T> boolean getMessage(
         @CXXReference FRAG_T frag,
         @CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex,
-        @CXXReference MSG_T msg) {
+        @CXXReference MSG_T msg,
+        SKIP_T skip) {
         if (frag.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)) {
-            return getMessageArrowProjected((ArrowProjectedFragment) frag.getFFIPointer(), vertex, msg);
+            return getMessageArrowProjected((ArrowProjectedFragment) frag.getFFIPointer(), vertex, msg, skip);
         } else if (frag.fragmentType().equals(ImmutableEdgecutFragmentAdaptor.fragmentType)) {
             return getMessageImmutable((ImmutableEdgecutFragment) frag.getFFIPointer(), vertex, msg);
         }
@@ -164,10 +166,11 @@ public interface DefaultMessageManager extends MessageManagerBase {
      * @param <MSG_T>  msg type.
      * @return true if really got a message.
      */
-    @FFINameAlias("GetMessage") <FRAG_T extends ArrowProjectedFragment, MSG_T> boolean getMessageArrowProjected(
+    @FFINameAlias("GetMessage") <FRAG_T extends ArrowProjectedFragment, MSG_T, @FFISkip SKIP_T> boolean getMessageArrowProjected(
         @CXXReference FRAG_T frag,
         @CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex,
-        @CXXReference MSG_T msg);
+        @CXXReference MSG_T msg,
+        @FFISkip SKIP_T skip);
 
     /**
      * Send a msg to the fragment where the querying outer vertex is an inner vertex.
