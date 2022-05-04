@@ -440,6 +440,7 @@ object PageRank extends Logging {
       (vid, vdata, deg) => deg.getOrElse(0)
     }.cache()
     log.info(s"after outer join ${graph1.vertices.collect().mkString("Array(", ", ", ")")}")
+    log.info(s"before map triplet ${graph1.triplets.collect().mkString("Array(", ", ", ")")}")
     val graph2 = graph1.mapTriplets( e => 1.0 / e.srcAttr).cache()
     log.info(s"after map triplet ${graph2.triplets.collect().mkString("Array(", ", ", ")")}")
 

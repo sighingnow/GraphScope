@@ -157,10 +157,14 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
   }
 
   override def withNewEdgeData[ED2 : ClassTag](newEdgeData: PrimitiveArray[ED2], startLid: Long, endLid: Long): EdgeManager[VD, ED2] = {
-    val newEdataOffset = getPartialEdgeNum(0, startLid)
-    require(newEdataOffset + newEdgeData.size() == getPartialEdgeNum(startLid, endLid),
+    var newEdataOffset = 0L
+    if (startLid != 0){
+      newEdataOffset = getPartialEdgeNum(0, startLid)
+    }
+    logger.info("with new edge data from {} to {} arr size {} offset {}", startLid.toString, endLid.toString, newEdgeData.size().toString, newEdataOffset.toString)
+    require(newEdataOffset + newEdgeData.size() == getPartialEdgeNum(0, endLid),
       s"override edata array size not match ${newEdataOffset + newEdgeData.size()} should match ${getPartialEdgeNum(startLid,endLid)}")
-    new EdgeManagerImpl[VD,ED2](new GraphXConf[VD,ED2], vertexIdManager, vertexDataManager, dstOids, dstLids, nbrPositions, numOfEdges, newEdgeData, edataOffset, edgeReversed, activeSet)
+    new EdgeManagerImpl[VD,ED2](new GraphXConf[VD,ED2], vertexIdManager, vertexDataManager, dstOids, dstLids, nbrPositions, numOfEdges, newEdgeData, newEdataOffset.toInt, edgeReversed, activeSet)
   }
 
   def withNewVertexDataManager[VD2: ClassTag](newVdManager : VertexDataManager[VD2]) : EdgeManager[VD2,ED] = {
@@ -214,13 +218,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
   override def tripletIterator(startLid: Long, endLid: Long, tripletFields:TripletFields = TripletFields.All): Iterator[EdgeTriplet[VD,ED]] = {
     new Iterator[EdgeTriplet[VD,ED]]() {
       private var curLid = startLid
-      private var edge : GSEdgeTriplet[VD,ED] = null.asInstanceOf[GSEdgeTriplet[VD,ED]]
-      if (edgeReversed){
-        edge = new GSEdgeTripletImpl[VD,ED]
-      }
-      else {
-        edge = new ReverseGSEdgeTripletImpl[VD,ED]
-      }
+
       var numEdge: Long = numOfEdges(curLid.toInt)
       var nbrPos: Int = nbrPositions(curLid.toInt)
       var endPos: Int = (nbrPos + numEdge).toInt
@@ -251,27 +249,39 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
 	        if (curPos < 0 || curPos >= endPos) return false;
           //logger.info(s"has next move to new lid: curLId ${curLid} endLid ${endLid} curPos ${curPos} endPos ${endPos} numEdge ${numEdge}");
           if (tripletFields.useSrc){
-            edge.setSrcOid(vertexIdManager.lid2Oid(curLid), vertexDataManager.getVertexData(curLid))
           }
           else {
-            edge.setSrcOid(vertexIdManager.lid2Oid(curLid))
           }
           true
         }
       }
 
       def next: EdgeTriplet[VD,ED] = {
+        var edge : GSEdgeTriplet[VD,ED] = null.asInstanceOf[GSEdgeTriplet[VD,ED]]
+        if (edgeReversed){
+          edge = new ReverseGSEdgeTripletImpl[VD,ED]
+        }
+        else {
+          edge = new GSEdgeTripletImpl[VD,ED]
+        }
         if (tripletFields.useDst){
           val dstLid = dstLids.get(curPos).toInt
           var vd = null.asInstanceOf[VD];
-	        logger.info("start {} end {} dstLid {}", startLid.toString, endLid.toString, dstLid.toString)
+	  logger.info("start {} end {} dstLid {}", startLid.toString, endLid.toString, dstLid.toString)
           if (dstLid < endLid) vd = vertexDataManager.getVertexData(dstLid)
           else vd = vertexDataManager.getVertexData(dstLid)
           edge.setDstOid(dstOids.get(curPos), vd)
         }
-        else {
+	else {
           edge.setDstOid(dstOids.get(curPos))
+	}
+        if (tripletFields.useSrc) {
+          edge.setSrcOid(vertexIdManager.lid2Oid(curLid), vertexDataManager.getVertexData(curLid))
         }
+        else {
+          edge.setSrcOid(vertexIdManager.lid2Oid(curLid))
+	}
+        logger.info("get edata for pos {}, offset {}, size {}", curPos.toString, edataOffset.toString, edatas.size().toString)
         edge.setAttr(edatas.get(curPos - edataOffset))
         curPos += 1
         edge

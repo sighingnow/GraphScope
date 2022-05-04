@@ -7,14 +7,11 @@ import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag
 
-object VertexDataManagerCreator extends Logging{
+object VertexDataManagerCreator extends Logging with Serializable {
 
   private var newVDManager : VertexDataManager[_] = null.asInstanceOf[VertexDataManager[_]]
 
   def create[VD1 : ClassTag, VD2 : ClassTag, ED : ClassTag](pid : Int, original : VertexDataManager[VD1]) : Unit = {
-    if (newVDManager != null){
-      throw new IllegalStateException("Expect new vd is null to perform creation")
-    }
     require(!GrapeUtils.getRuntimeClass[VD1].equals(GrapeUtils.getRuntimeClass[VD2]), s"shouldn't be equals ${GrapeUtils.getRuntimeClass[VD1]}, ${GrapeUtils.getRuntimeClass[VD2]}")
 
     if (newVDManager == null) {
