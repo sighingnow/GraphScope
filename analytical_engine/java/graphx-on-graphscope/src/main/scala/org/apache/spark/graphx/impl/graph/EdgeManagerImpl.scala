@@ -260,9 +260,10 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
         if (tripletFields.useDst){
           val dstLid = dstLids.get(curPos).toInt
           var vd = null.asInstanceOf[VD];
-          if (dstLid < endLid) vd = vdArray(dstLid)
+	  logger.info("start {} end {} dstLid {}", startLid.toString, endLid.toString, dstLid.toString)
+          if (dstLid < endLid) vd = vdArray(dstLid - startLid.toInt)
           else vd = vertexDataManager.getVertexData(dstLid)
-          edge.setDstOid(dstOids.get(curPos),vdArray(dstLids.get(curPos).toInt - startLid.toInt))
+          edge.setDstOid(dstOids.get(curPos), vd)
         }
         else {
           edge.setDstOid(dstOids.get(curPos))
