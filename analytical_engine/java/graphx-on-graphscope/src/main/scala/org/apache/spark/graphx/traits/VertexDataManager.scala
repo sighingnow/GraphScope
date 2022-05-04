@@ -6,6 +6,7 @@ import scala.reflect.ClassTag
 
 
 trait VertexDataManager[VD] {
+  def getVDClz : Class[VD]
   def getVertexData(lid: Long): VD
 
   def setVertexData(lid: Long, vertexData: VD): Unit

@@ -11,9 +11,9 @@ import org.apache.spark.internal.Logging
 import scala.reflect.ClassTag
 
 class VertexDataManagerImpl[VD : ClassTag,ED : ClassTag](
-        val conf : GraphXConf[VD,ED], var values : Array[VD] = null, private val fragment: IFragment[Long,Long,_,_],
+        val conf : GraphXConf[VD,ED], var values : Array[VD] = null, val fragment: IFragment[Long,Long,_,_],
         val buffer : MappedBuffer,
-        val defaultOutVdata : VD = null.asInstanceOf[VD]) extends VertexDataManager[VD] with Logging{
+        val defaultOutVdata : VD = null.asInstanceOf[VD], fromGrape : Boolean = false) extends VertexDataManager[VD] with Logging{
 
   val innerVerticesNum: Long = fragment.getInnerVerticesNum
   val fragVerticesNum : Long = fragment.getVerticesNum
@@ -21,24 +21,30 @@ class VertexDataManagerImpl[VD : ClassTag,ED : ClassTag](
     initValues
   }
   private def initValues  = {
-    values = new Array[VD](fragVerticesNum.intValue())
     if (buffer == null) {
-      log.info(s"[Frag${fragment.fid()}]Init vertex data with default out vdata ${defaultOutVdata}, iv data are from fragment]")
-      val vertex: Vertex[Long] = FFITypeFactoryhelper.newVertexLong.asInstanceOf[Vertex[Long]]
+      if (fromGrape){
+        values = new Array[VD](fragVerticesNum.intValue())
+        log.info(s"[Frag${fragment.fid()}]Init vertex data with default out vdata ${defaultOutVdata}, iv data are from fragment]")
+        val vertex: Vertex[Long] = FFITypeFactoryhelper.newVertexLong.asInstanceOf[Vertex[Long]]
 
-      var lid = 0
-      while (lid < innerVerticesNum) {
-        vertex.SetValue(lid)
-        values(lid) = fragment.getData(vertex).asInstanceOf[VD]
-        lid += 1
+        var lid = 0
+        while (lid < innerVerticesNum) {
+          vertex.SetValue(lid)
+          values(lid) = fragment.getData(vertex).asInstanceOf[VD]
+          lid += 1
+        }
+        while (lid < fragVerticesNum) {
+          values(lid) = defaultOutVdata
+          lid += 1
+        }
       }
-      while (lid < fragVerticesNum) {
-        values(lid) = defaultOutVdata
-        lid += 1
+      else {
+        values = Array.fill(fragVerticesNum.intValue())(defaultOutVdata)
       }
       //FIXME: ArrowProjectedFragment stores not outer vertex data
     }
     else {
+      values = new Array[VD](fragVerticesNum.intValue())
       log.info(s"load vdata from shared memory ${buffer}")
       var offset = 0
       val totalLength = buffer.readLong(offset)
@@ -130,4 +136,6 @@ class VertexDataManagerImpl[VD : ClassTag,ED : ClassTag](
       ind += 1
     }
   }
+
+  override def getVDClz: Class[VD] = GrapeUtils.getRuntimeClass[VD].asInstanceOf[Class[VD]]
 }

@@ -3,6 +3,7 @@ package org.apache.spark.graphx.impl
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.HashPartitioner
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
+import org.apache.spark.graphx.impl.graph.{EdgeManagerImpl, VertexDataManagerImpl}
 //import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.impl.GrapeUtils.{classToStr, generateForeignFragName, scalaClass2JavaClass}
@@ -205,7 +206,21 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
                                                              (mapFunc: (VertexId, VD, Option[U]) => VD2)
                                                              (implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
     val newVertices = vertices.leftJoin(other)(mapFunc)
-    GrapeGraphImpl.fromRDDs(newVertices, edges, fragId)
+    /** if new vd2 differs from vertex data manager, create a vertex data manager */
+    grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
+      val (pid, part) = iter.next()
+      val vdCreator =  VertexDataManagerCreator.getOrCreate()
+      vdCreator.create[VD,VD2,ED](pid, part.edgeManager.asInstanceOf[EdgeManagerImpl[VD,ED]].vertexDataManager)
+    })
+    val newEdges = grapeEdges.withPartitionsRDD(grapeEdges.grapePartitionsRDD.mapPartitions(iter => {
+      val (pid, part) = iter.next()
+      val vdCreator =  VertexDataManagerCreator.getOrCreate()
+//      vdCreator.create[VD,VD2,ED](pid, .vertexDataManager)
+      val oldEdgeManager = part.edgeManager.asInstanceOf[EdgeManagerImpl[VD,ED]]
+      val newVdManager = vdCreator.get[VD2]
+      Iterator((pid,part.withNewEdgeManager(oldEdgeManager.withNewVertexDataManager(newVdManager))))
+    }))
+    GrapeGraphImpl.fromRDDs[VD2, ED](newVertices, newEdges, fragId)
   }
 }
 
@@ -302,6 +317,7 @@ object GrapeGraphImpl {
   }
 
   def fromRDDs[VD: ClassTag, ED : ClassTag](vertices : VertexRDD[VD], edges : EdgeRDD[ED], fragId :String) : GrapeGraphImpl[VD,ED] = {
+    /** it is possible that the vd type bound with edges has changes in this operation, but edge rdd just casted */
     new GrapeGraphImpl[VD,ED](vertices.asInstanceOf[GrapeVertexRDDImpl[VD]], edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]], fragId);
   }
 

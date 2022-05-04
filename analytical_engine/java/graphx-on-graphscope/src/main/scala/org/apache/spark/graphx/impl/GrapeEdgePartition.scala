@@ -29,7 +29,7 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
   }
 
   def aggregateVertexAttr(startLid : Long, endLid : Long, vdArray : Array[VD]) : GrapeEdgePartition[VD,ED] = {
-    edgeManager.aggregateVertexAttr(startLid,endLid, vdArray)
+    edgeManager.aggregateVertexAttr(startLid, endLid, vdArray)
     this
   }
 
@@ -105,6 +105,10 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
     this
   }
 
+
+  def withNewEdgeManager[VD2 : ClassTag](newEdgeManager : EdgeManager[VD2,ED]) : GrapeEdgePartition[VD2,ED] = {
+    new GrapeEdgePartition[VD2,ED](pid,numPartitions, idManager, newEdgeManager)
+  }
 
   override def toString: String = "JavaEdgePartition{" + "vertexIdManager=" + idManager + ", edgeManager=" + edgeManager + ", pid=" + pid + ", startLid=" + startLid + ", endLid=" + endLid + ", totalNumEdges=" + numEdges + '}'
 }

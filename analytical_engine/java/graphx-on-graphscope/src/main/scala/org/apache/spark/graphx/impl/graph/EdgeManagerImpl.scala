@@ -163,6 +163,10 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     new EdgeManagerImpl[VD,ED2](new GraphXConf[VD,ED2], vertexIdManager, vertexDataManager, dstOids, dstLids, nbrPositions, numOfEdges, newEdgeData, edataOffset, edgeReversed, activeSet)
   }
 
+  def withNewVertexDataManager[VD2: ClassTag](newVdManager : VertexDataManager[VD2]) : EdgeManager[VD2,ED] = {
+    new EdgeManagerImpl[VD2,ED](new GraphXConf[VD2,ED], vertexIdManager, newVdManager, dstOids, dstLids, nbrPositions, numOfEdges, edatas, edataOffset, edgeReversed, activeSet)
+  }
+
   override def getPartialEdgeNum(startLid: Long, endLid: Long): Long = {
     val startLidPos = nbrPositions(startLid.toInt)
     val endLidPos = nbrPositions(endLid.toInt - 1)
@@ -310,6 +314,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     res
   }
 
+  /** it is possible that vd array contains different type of vd with vertexDataManager. */
   override def aggregateVertexAttr(startLid: VertexId, endLid: VertexId, vdArray: Array[VD]): Unit = {
     require(vdArray.length == endLid - startLid, s"range and length should match ${vdArray.length}, ${endLid - startLid}")
     var i = 0
