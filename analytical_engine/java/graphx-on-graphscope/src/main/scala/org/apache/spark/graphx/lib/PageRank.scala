@@ -446,7 +446,7 @@ object PageRank extends Logging {
 
     // Initialize the pagerankGraph with each edge attribute
     // having weight 1/outDegree and each vertex with attribute 0.
-    val pagerankGraph: Graph[(Double, Double), Double] = graph
+    val pagerankGraph: Graph[Double, Double] = graph
       // Associate the degree with each vertex
       .outerJoinVertices(graph.outDegrees) {
         (vid, vdata, deg) => deg.getOrElse(0)
@@ -454,55 +454,26 @@ object PageRank extends Logging {
       // Set the weight on the edges based on the degree
       .mapTriplets( e => 1.0 / e.srcAttr )
       // Set the vertex attributes to (initialPR, delta = 0)
-      .mapVertices { (id, attr) =>
-        if (id == src) (0.0, Double.NegativeInfinity) else (0.0, 0.0)
+      .mapVertices { (id, attr) =>0.0
       }
       .cache()
 
     // Define the three functions needed to implement PageRank in the GraphX
     // version of Pregel
-    def vertexProgram(id: VertexId, attr: (Double, Double), msgSum: Double): (Double, Double) = {
-      val (oldPR, lastDelta) = attr
-      val newPR = oldPR + (1.0 - resetProb) * msgSum
-      (newPR, newPR - oldPR)
+    def vertexProgram(id: VertexId, attr: Double, msgSum: Double): Double = {
+      attr + (1.0 - resetProb) * msgSum
     }
 
-    def personalizedVertexProgram(id: VertexId, attr: (Double, Double),
-                                  msgSum: Double): (Double, Double) = {
-      val (oldPR, lastDelta) = attr
-      val newPR = if (lastDelta == Double.NegativeInfinity) {
-        1.0
-      } else {
-        oldPR + (1.0 - resetProb) * msgSum
-      }
-      (newPR, newPR - oldPR)
-    }
-
-    def sendMessage(edge: EdgeTriplet[(Double, Double), Double]) = {
-      if (edge.srcAttr._2 > tol) {
-        Iterator((edge.dstId, edge.srcAttr._2 * edge.attr))
-      } else {
-        Iterator.empty
-      }
+    def sendMessage(edge: EdgeTriplet[Double, Double]) = {
+      Iterator((edge.dstId, edge.srcAttr * edge.attr))
     }
 
     def messageCombiner(a: Double, b: Double): Double = a + b
 
     // The initial message received by all vertices in PageRank
-    val initialMessage = if (personalized) 0.0 else resetProb / (1.0 - resetProb)
+    val initialMessage = 0.0
 
-    // Execute a dynamic version of Pregel.
-    val vp = if (personalized) {
-      (id: VertexId, attr: (Double, Double), msgSum: Double) =>
-        personalizedVertexProgram(id, attr, msgSum)
-    } else {
-      (id: VertexId, attr: (Double, Double), msgSum: Double) =>
-        vertexProgram(id, attr, msgSum)
-    }
-
-    val rankGraph = Pregel(pagerankGraph, initialMessage, activeDirection = EdgeDirection.Out)(
-      vp, sendMessage, messageCombiner)
-      .mapVertices((vid, attr) => attr._1)
+    val rankGraph = Pregel(pagerankGraph, initialMessage, activeDirection = EdgeDirection.Out)(vertexProgram, sendMessage, messageCombiner)
 
     // SPARK-18847 If the graph has sinks (vertices with no outgoing edges) correct the sum of ranks
     normalizeRankSum(rankGraph, personalized)

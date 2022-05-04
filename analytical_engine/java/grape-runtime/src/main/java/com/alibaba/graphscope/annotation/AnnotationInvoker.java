@@ -448,6 +448,15 @@ import com.alibaba.fastffi.FFIGenBatch;
                                         "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
                                         "com.alibaba.graphscope.parallel.message.LongMsg"
                                     }
+                                ),
+                                @CXXTemplate(
+                                    cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
+                                        DOUBLE_MSG
+                                    },
+                                    java = {
+                                        "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                                        "com.alibaba.graphscope.parallel.message.DoubleMsg"
+                                    }
                                 )
                             }
                         ),
@@ -472,6 +481,15 @@ import com.alibaba.fastffi.FFIGenBatch;
                                     java = {
                                         "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
                                         "java.lang.Long",
+                                    }
+                                ),
+                                @CXXTemplate(
+                                    cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
+                                        "double"
+                                    },
+                                    java = {
+                                        "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                                        "java.lang.Double",
                                     }
                                 )
                             }
