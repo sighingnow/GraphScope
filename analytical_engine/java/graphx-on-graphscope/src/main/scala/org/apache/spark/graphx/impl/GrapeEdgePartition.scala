@@ -28,12 +28,16 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
     edgeManager.iterator(startLid, endLid)
   }
 
-  def tripletIterator(vdArray : Array[VD],
-                       tripletFields: TripletFields = TripletFields.All)
+  def aggregateVertexAttr(startLid : Long, endLid : Long, vdArray : Array[VD]) : GrapeEdgePartition[VD,ED] = {
+    edgeManager.aggregateVertexAttr(startLid,endLid, vdArray)
+    this
+  }
+
+  def tripletIterator(tripletFields: TripletFields = TripletFields.All)
   : Iterator[EdgeTriplet[VD, ED]] = {
     //!can not use edge manager here!!!!!!!
     //edgeManager.tripletIterator(startLid, endLid, tripletFields)
-    edgeManager.tripletIterator(startLid, endLid, vdArray,tripletFields)
+    edgeManager.tripletIterator(startLid, endLid,tripletFields)
   }
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
@@ -85,9 +89,8 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
    */
   def filter(
               epred: EdgeTriplet[VD, ED] => Boolean,
-              vpred: (VertexId, VD) => Boolean,
-              vdArray : Array[VD]): GrapeEdgePartition[VD, ED] = {
-    new GrapeEdgePartition[VD,ED](pid, numPartitions, idManager, edgeManager.filter(epred, vpred, startLid, endLid, vdArray))
+              vpred: (VertexId, VD) => Boolean): GrapeEdgePartition[VD, ED] = {
+    new GrapeEdgePartition[VD,ED](pid, numPartitions, idManager, edgeManager.filter(epred, vpred, startLid, endLid))
   }
 
   /**

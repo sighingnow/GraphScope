@@ -190,11 +190,11 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
    * @param vpred
    * @return
    */
-  override def filter(epred: EdgeTriplet[VD, ED] => Boolean, vpred: (VertexId, VD) => Boolean, startLid : Long, endLid : Long, vdArray : Array[VD]): EdgeManager[VD, ED] = {
+  override def filter(epred: EdgeTriplet[VD, ED] => Boolean, vpred: (VertexId, VD) => Boolean, startLid : Long, endLid : Long): EdgeManager[VD, ED] = {
     if (activeSet == null){
       throw new IllegalStateException("Not possible")
     }
-    val iter = tripletIterator(startLid, endLid, vdArray)
+    val iter = tripletIterator(startLid, endLid)
     val newActiveSet = new BitSet(dstLids.size())
     var ind = 0;
     while (iter.hasNext){
@@ -207,7 +207,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
     new EdgeManagerImpl[VD,ED](conf, vertexIdManager, vertexDataManager,dstOids, dstLids, nbrPositions, numOfEdges, edatas, edataOffset, !edgeReversed,newActiveSet)
   }
 
-  override def tripletIterator(startLid: Long, endLid: Long,  vdArray : Array[VD], tripletFields:TripletFields = TripletFields.All): Iterator[EdgeTriplet[VD,ED]] = {
+  override def tripletIterator(startLid: Long, endLid: Long, tripletFields:TripletFields = TripletFields.All): Iterator[EdgeTriplet[VD,ED]] = {
     new Iterator[EdgeTriplet[VD,ED]]() {
       private var curLid = startLid
       private var edge : GSEdgeTriplet[VD,ED] = null.asInstanceOf[GSEdgeTriplet[VD,ED]]
@@ -247,7 +247,7 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
 	        if (curPos < 0 || curPos >= endPos) return false;
           //logger.info(s"has next move to new lid: curLId ${curLid} endLid ${endLid} curPos ${curPos} endPos ${endPos} numEdge ${numEdge}");
           if (tripletFields.useSrc){
-            edge.setSrcOid(vertexIdManager.lid2Oid(curLid), vdArray(curLid.toInt - startLid.toInt))
+            edge.setSrcOid(vertexIdManager.lid2Oid(curLid), vertexDataManager.getVertexData(curLid))
           }
           else {
             edge.setSrcOid(vertexIdManager.lid2Oid(curLid))
@@ -260,8 +260,8 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
         if (tripletFields.useDst){
           val dstLid = dstLids.get(curPos).toInt
           var vd = null.asInstanceOf[VD];
-	  logger.info("start {} end {} dstLid {}", startLid.toString, endLid.toString, dstLid.toString)
-          if (dstLid < endLid) vd = vdArray(dstLid - startLid.toInt)
+	        logger.info("start {} end {} dstLid {}", startLid.toString, endLid.toString, dstLid.toString)
+          if (dstLid < endLid) vd = vertexDataManager.getVertexData(dstLid)
           else vd = vertexDataManager.getVertexData(dstLid)
           edge.setDstOid(dstOids.get(curPos), vd)
         }
@@ -308,5 +308,14 @@ class EdgeManagerImpl[VD: ClassTag,ED : ClassTag](var conf: GraphXConf[VD,ED],
       i += 1
     }
     res
+  }
+
+  override def aggregateVertexAttr(startLid: VertexId, endLid: VertexId, vdArray: Array[VD]): Unit = {
+    require(vdArray.length == endLid - startLid, s"range and length should match ${vdArray.length}, ${endLid - startLid}")
+    var i = 0
+    while (i < vdArray.length){
+      vertexDataManager.setVertexData(i + startLid, vdArray(i))
+      i += 1
+    }
   }
 }

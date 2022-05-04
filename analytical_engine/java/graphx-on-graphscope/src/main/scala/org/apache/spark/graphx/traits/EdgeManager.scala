@@ -10,11 +10,12 @@ import scala.reflect.ClassTag
 trait EdgeManager[VD,ED] {
   def iterator(startLid: Long, endLid: Long): Iterator[Edge[ED]]
 
+  def aggregateVertexAttr(startLid : Long, endLid : Long, vdArray : Array[VD]) : Unit
   /**
    *For graphx ops, we need to pass vd array for actual vdata
    * @return
    */
-  def tripletIterator(startLid: Long, endLid: Long,vdArray : Array[VD], tripletFields: TripletFields = TripletFields.All): Iterator[EdgeTriplet[VD,ED]]
+  def tripletIterator(startLid: Long, endLid: Long, tripletFields: TripletFields = TripletFields.All): Iterator[EdgeTriplet[VD,ED]]
   /**
    * Get the num edges between [startLid, endLid)
    * @param startLid
@@ -42,13 +43,13 @@ trait EdgeManager[VD,ED] {
 
   /**
    * Return a new edge manager, will only partial of the original data.
+   * Vertex data manager should be updated before calling this
    * @param epred
    * @param vpred
    * @return
    */
   def filter(epred: EdgeTriplet[VD, ED] => Boolean,
-             vpred: (VertexId, VD) => Boolean, startLid : Long, endLid : Long,
-             vdArray : Array[VD]) : EdgeManager[VD,ED]
+             vpred: (VertexId, VD) => Boolean, startLid : Long, endLid : Long) : EdgeManager[VD,ED]
 
   def innerJoin[ED2 : ClassTag, ED3 : ClassTag](edgeManager: EdgeManager[_,ED2], startLid : Long, endLid : Long)(f: (VertexId, VertexId, ED, ED2) => ED3): EdgeManager[VD,ED3]
 }
