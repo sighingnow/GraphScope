@@ -357,6 +357,7 @@ public class GraphScopeClassLoader {
         logger.info("Successfully invoked method, got" + obj);
         return obj;
     }
+
     private static Object loadGraphxAdaptorCtx(String genericString, URLClassLoader classLoader)
         throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         logger.info("Trying create graphx adaptor context: " + genericString);
