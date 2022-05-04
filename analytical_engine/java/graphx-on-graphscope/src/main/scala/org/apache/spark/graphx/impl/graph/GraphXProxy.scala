@@ -285,7 +285,7 @@ class GraphXProxy[VD : ClassTag, ED : ClassTag, MSG_T: ClassTag](val conf: Graph
     if (conf.getEdClass.equals(classOf[Double]) || conf.getEdClass.equals(classOf[java.lang.Double])) {
       val msg = FFITypeFactoryhelper.newDoubleMsg
       while ( {
-        messageManager.getMessage(fragment, receiveVertex, msg)
+        messageManager.getMessageArrowProjected(fragment, receiveVertex, msg, 2.0)
       }) { //logger.info("frag {} get message: {}, {}", graphxFragment.fid(), receiveVertex.GetValue(), msg.getData());
         inComingMessageStore.addLidMessage(receiveVertex.GetValue, msg.getData.asInstanceOf[Double].asInstanceOf[MSG_T])
         msgReceived += 1
@@ -294,7 +294,7 @@ class GraphXProxy[VD : ClassTag, ED : ClassTag, MSG_T: ClassTag](val conf: Graph
     else if (conf.getEdClass.equals(classOf[Long]) || conf.getEdClass.equals(classOf[java.lang.Long])) {
       val msg = FFITypeFactoryhelper.newLongMsg
       while ( {
-        messageManager.getMessage(fragment, receiveVertex, msg)
+        messageManager.getMessageArrowProjected(fragment, receiveVertex, msg, 1L)
       }) {
         inComingMessageStore.addLidMessage(receiveVertex.GetValue, msg.getData.asInstanceOf[MSG_T])
         msgReceived += 1

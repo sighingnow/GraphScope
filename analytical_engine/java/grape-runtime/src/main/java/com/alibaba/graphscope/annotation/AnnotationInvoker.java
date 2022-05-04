@@ -429,33 +429,26 @@ import com.alibaba.fastffi.FFIGenBatch;
                         @FFIFunGen(
                             name = "getMessageArrowProjected",
                             returnType = "boolean",
-                            parameterTypes = {"FRAG_T","com.alibaba.graphscope.ds.Vertex", "MSG_T"},
+                            parameterTypes = {"FRAG_T","com.alibaba.graphscope.ds.Vertex", "MSG_T", "SKIP_T"},
                             templates = {
                                 @CXXTemplate(
-                                    cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,double>",
-                                            DOUBLE_MSG
+                                    cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
+                                        LONG_MSG,"int64_t"
                                     },
                                     java = {
-                                            "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Double>",
-                                            "com.alibaba.graphscope.parallel.message.DoubleMsg"
+                                        "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                                        "com.alibaba.graphscope.parallel.message.LongMsg",
+                                        "java.lang.Long"
                                     }
                                 ),
                                 @CXXTemplate(
                                     cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
-                                        LONG_MSG
+                                        DOUBLE_MSG, "double"
                                     },
                                     java = {
                                         "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
-                                        "com.alibaba.graphscope.parallel.message.LongMsg"
-                                    }
-                                ),
-                                @CXXTemplate(
-                                    cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
-                                        DOUBLE_MSG
-                                    },
-                                    java = {
-                                        "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
-                                        "com.alibaba.graphscope.parallel.message.DoubleMsg"
+                                        "com.alibaba.graphscope.parallel.message.DoubleMsg",
+                                        "java.lang.Double"
                                     }
                                 )
                             }
@@ -465,15 +458,6 @@ import com.alibaba.fastffi.FFIGenBatch;
                             returnType = "void",
                             parameterTypes = {"FRAG_T","com.alibaba.graphscope.ds.Vertex", "MSG_T"}, //
                             templates = {
-                                @CXXTemplate(
-                                    cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,double,double>",
-                                        "double"
-                                    },
-                                    java = {
-                                        "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Double>",
-                                        "java.lang.Double",
-                                    }
-                                ),
                                 @CXXTemplate(
                                     cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
                                         "int64_t"
