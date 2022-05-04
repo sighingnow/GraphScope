@@ -1,8 +1,9 @@
 package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.utils.array.PrimitiveArray
+import org.apache.spark.graphx.impl.graph.EdgeManagerImpl
 import org.apache.spark.graphx.traits.{EdgeManager, GraphXVertexIdManager}
-import org.apache.spark.graphx.{Edge, EdgeTriplet, PartitionID, TripletFields, VertexId}
+import org.apache.spark.graphx.{Edge, EdgeTriplet, PartitionID, TripletFields, VertexDataManagerCreator, VertexId}
 import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag
@@ -19,6 +20,9 @@ class GrapeEdgePartition[VD: ClassTag, ED : ClassTag](
   val numEdges = edgeManager.getPartialEdgeNum(startLid, endLid)
   log.info("Creating JavaEdgePartition {}", this)
 
+  def createNewVDManager[VD2 : ClassTag] : Unit = {
+    VertexDataManagerCreator.create[VD,VD2,ED](pid, edgeManager.asInstanceOf[EdgeManagerImpl[VD,ED]].vertexDataManager)
+  }
 
   def getDegreeArray(startLid : Long, endLid : Long) : Array[Int] = {
     edgeManager.getDegreeArray(startLid, endLid)
