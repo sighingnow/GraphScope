@@ -1,12 +1,11 @@
-package com.alibaba.graphscope.example
+package com.alibaba.graphscope.example.graphx
 
-import org.apache.spark.graphx.{Edge, Graph, GraphLoader, VertexId}
+import org.apache.spark.graphx.{Edge, Graph, VertexId}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.util.collection.PrimitiveVector
 
 import scala.collection.mutable.ArrayBuffer
 
-object Benchmark {
+object SSSP {
   def main(args: Array[String]): Unit = {
     // Creates a SparkSession.
     val spark = SparkSession
@@ -14,15 +13,14 @@ object Benchmark {
       .appName(s"${this.getClass.getSimpleName}")
       .getOrCreate()
     val sc = spark.sparkContext
-    if (args.length < 5){
-      println("Expect 5 args")
+    if (args.length < 4){
+      println("Expect 2 args")
       return 0;
     }
     val vfilePath= args(0);
     val efilePath = args(1)
     val numParition = args(2)
     val sourceId: VertexId = args(3).toLong // The ultimate source
-    val numIteration = args(4).toInt
     println("vfile" + vfilePath  + "efile " + efilePath + "source : " + sourceId)
 
     val lines = sc.textFile(efilePath, numParition.toInt)
@@ -69,37 +67,37 @@ object Benchmark {
     println("edge rdd partitioner: " + edgesRDD.partitioner)
     println("vertex rdd num partitions: " + verticesRDD.getNumPartitions)
     println("vertex rdd partitioner: " + verticesRDD.partitioner)
-    val graph = Graph.apply(verticesRDD,edgesRDD)
+//    val newEdgesRDD = edgesRDD.repartition(numParition.toInt)
+//    val newVerticesRDD = verticesRDD.repartition(numParition.toInt)
+    val graph = Graph.apply(verticesRDD, edgesRDD)
 
     // Initialize the graph such that all vertices except the root have distance infinity.
-    val initialGraph = graph.mapVertices((id, vdata) => numIteration.toDouble
-      )
-    //    println(initialGraph.vertices.collect().mkString("Array(", ", ", ")"))
-    //    println(initialGraph.edges.collect().mkString("Array(", ", ", ")"))
+    val initialGraph = graph.mapVertices((id, vdata) =>
+      if (id == sourceId) 0.0 else vdata.toDouble)
+//    println(initialGraph.vertices.collect().mkString("Array(", ", ", ")"))
+//    println(initialGraph.edges.collect().mkString("Array(", ", ", ")"))
     val edgesNum = initialGraph.numEdges
     val verticesNum = initialGraph.numVertices
     println(s"Graph has ${verticesNum} vertices, ${edgesNum} edges")
 
     val startTime = System.nanoTime();
-    val sssp = initialGraph.pregel(numIteration.toDouble, numIteration)( //avoid overflow
-      (id, dist, newDist) => Math.min(dist, newDist), // Vertex Program
+    println("[Start pregel]")
+    val sssp = initialGraph.pregel(Double.PositiveInfinity, 10)( //avoid overflow
+      (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
-//        if (triplet.srcId.equals(1L) && triplet.dstId.equals(2L)){
-//          Iterator((1, 1), (2,1))
-//        }
-//        else Iterator.empty
-        if (triplet.srcAttr > 0) {
-	  //println("src id: " + triplet.srcId + " send " + triplet.srcAttr + " to dst Id" + triplet.srcId);
-          Iterator((triplet.srcId, triplet.srcAttr - 1))
+        println(triplet.srcId + ", to  " + triplet.dstId + ", data "+ (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
+        if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
+          Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
+        } else {
+          Iterator.empty
         }
-        else Iterator.empty
       },
       (a, b) => math.min(a, b) // Merge Message
     )
     val endTIme = System.nanoTime()
     println("[Pregel running time ] : " + ((endTIme - startTime) / 1000000) + "ms")
 //    sssp.vertices.saveAsTextFile("/tmp/spark-graphx")
-    //    println(sssp.vertices.collect.mkString("\n"))
+//    println(sssp.vertices.collect.mkString("\n"))
     // $example off$
 
     sc.stop()

@@ -1,12 +1,11 @@
-package com.alibaba.graphscope.example
+package com.alibaba.graphscope.example.graphx
 
-import org.apache.spark.graphx.{Edge, Graph, GraphLoader, VertexId}
+import org.apache.spark.graphx.{Edge, Graph, VertexId}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.util.collection.PrimitiveVector
 
 import scala.collection.mutable.ArrayBuffer
 
-object SSSP {
+object Traverse {
   def main(args: Array[String]): Unit = {
     // Creates a SparkSession.
     val spark = SparkSession
@@ -68,37 +67,41 @@ object SSSP {
     println("edge rdd partitioner: " + edgesRDD.partitioner)
     println("vertex rdd num partitions: " + verticesRDD.getNumPartitions)
     println("vertex rdd partitioner: " + verticesRDD.partitioner)
-//    val newEdgesRDD = edgesRDD.repartition(numParition.toInt)
-//    val newVerticesRDD = verticesRDD.repartition(numParition.toInt)
+    //    val newEdgesRDD = edgesRDD.repartition(numParition.toInt)
+    //    val newVerticesRDD = verticesRDD.repartition(numParition.toInt)
     val graph = Graph.apply(verticesRDD, edgesRDD)
 
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, vdata) =>
       if (id == sourceId) 0.0 else vdata.toDouble)
-//    println(initialGraph.vertices.collect().mkString("Array(", ", ", ")"))
-//    println(initialGraph.edges.collect().mkString("Array(", ", ", ")"))
+    //    println(initialGraph.vertices.collect().mkString("Array(", ", ", ")"))
+    //    println(initialGraph.edges.collect().mkString("Array(", ", ", ")"))
     val edgesNum = initialGraph.numEdges
     val verticesNum = initialGraph.numVertices
     println(s"Graph has ${verticesNum} vertices, ${edgesNum} edges")
 
+
+
     val startTime = System.nanoTime();
     println("[Start pregel]")
-    val sssp = initialGraph.pregel(Double.PositiveInfinity, 10)( //avoid overflow
-      (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
+    val sssp = initialGraph.pregel(Double.PositiveInfinity, 100)( //avoid overflow
+      (id, dist, newDist) => dist, // Vertex Program
       triplet => { // Send Message
-        println(triplet.srcId + ", to  " + triplet.dstId + ", data "+ (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
-        if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
-          Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
-        } else {
-          Iterator.empty
-        }
+        //        println(triplet.srcId + ", to  " + triplet.dstId + ", data "+ (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
+//        if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
+//          Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
+//        } else {
+//          Iterator.empty
+//        }
+        Iterator.empty
       },
-      (a, b) => math.min(a, b) // Merge Message
+//      (a, b) => math.min(a, b) // Merge Message
+      (a, b) => a
     )
     val endTIme = System.nanoTime()
     println("[Pregel running time ] : " + ((endTIme - startTime) / 1000000) + "ms")
-//    sssp.vertices.saveAsTextFile("/tmp/spark-graphx")
-//    println(sssp.vertices.collect.mkString("\n"))
+    //    sssp.vertices.saveAsTextFile("/tmp/spark-graphx")
+    //    println(sssp.vertices.collect.mkString("\n"))
     // $example off$
 
     sc.stop()

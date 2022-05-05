@@ -87,6 +87,22 @@
       <artifactId>logback-classic</artifactId>
       <groupId>ch.qos.logback</groupId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-graphx_2.12</artifactId>
+      <version>3.2.1</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>2.12.15</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-sql_2.12</artifactId>
+      <version>3.2.1</version>
+    </dependency>
   </dependencies>
 
   <modelVersion>4.0.0</modelVersion>

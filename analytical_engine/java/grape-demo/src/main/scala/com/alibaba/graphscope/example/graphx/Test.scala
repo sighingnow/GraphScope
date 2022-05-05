@@ -1,4 +1,4 @@
-package com.alibaba.graphscope.example
+package com.alibaba.graphscope.example.graphx
 
 import org.apache.spark.graphx.GraphLoader
 import org.apache.spark.internal.Logging
