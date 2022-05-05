@@ -1,7 +1,7 @@
 package com.alibaba.graphscope.utils;
 
 import com.alibaba.graphscope.graphx.SerializationUtils;
-import com.alibaba.graphscope.graphx.SerializationUtils2;
+import com.alibaba.graphscope.graphx.SerializationUtils2.Wrapper$;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,12 +39,27 @@ public class SerializationTest {
 //        SerializationUtils<Long, Long, Long> serializationUtils = new SerializationUtils<>();
 //        Function3<Long, Double, Double, Double> vprog = PageRankTest.vertexProgram();
 //        SerializationUtils2 serializationUtils2 = new SerializationUtils2();
-        Function3<?,?,?,?> vprog =  SerializationUtils2.vprog();
+        Function3<?, ?, ?, ?> vprog = Wrapper$.MODULE$.vprog();
         ClosureCleaner.clean(vprog, true, true);
         SerializationUtils.write(vprog, "tmp-vprog2");
         Function3<Long, Double, Double, Double> vprogRecovered = (Function3<Long, Double, Double, Double>) SerializationUtils.read(
             "tmp-vprog2");
 //        System.out.println(vprogRecovered.apply(1L, 2.0, 3.0));
         Assert.assertTrue(vprogRecovered.apply(1L, 2.0, 3.0).equals(3.2));
+    }
+
+    @Test
+    public void test3() {
+//        test("Deserialize object containing a primitive Class as attribute") {
+//            val serializer = new JavaSerializer(new SparkConf())
+//            val instance = serializer.newInstance()
+//            val obj = instance.deserialize[ContainsPrimitiveClass](instance.serialize(
+//                new ContainsPrimitiveClass()))
+//            // enforce class cast
+//            obj.getClass
+//        }
+//        JavaSerializer serializer = new JavaSerializer(new SparkConf());
+//        JavaSerializerInstance instance = serializer.newInstance();
+
     }
 }

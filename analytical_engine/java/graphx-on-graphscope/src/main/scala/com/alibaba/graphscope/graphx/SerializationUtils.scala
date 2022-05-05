@@ -11,15 +11,19 @@ class SerializationUtils[VD,ED,A]{
     (vd, ed ,a) => vd
   }
 }
-object SerializationUtils2 extends Serializable {
+object SerializationUtils2 {
   val resetProb = 0.6
-  val vprog : (VertexId, Double,Double) => Double = {
-    (vid, vd, a) => {
-      val innerResetProb = resetProb
-      vd + (1.0 - innerResetProb) * a
+  object Wrapper extends Serializable {
+    val innerResetProb: Double = resetProb
+    val vprog : (VertexId, Double,Double) => Double = {
+      (vid, vd, a) => {
+        vd + (1.0 - innerResetProb) * a
+      }
     }
   }
+
 }
+
 /**
  * Serialize a function obj to a path;
  * deserialize a function obj from path
