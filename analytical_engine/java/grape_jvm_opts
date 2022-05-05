@@ -26,13 +26,14 @@ then
     export GRAPHSCOPE_HOME=/home/graphscope/spark/spark-3.2.1-bin-hadoop2.7
 fi
 
+GRAPHX_GRAPE_SDK=/home/graphscope/gs/analytical_engine/java/graphx-on-graphscope/target/graphx-on-graphscope-0.1-shaded.jar
 # This env point to the directory where the output for llvm4jni run.sh on Grape-runtime.jar resides
 if [[ "${RUNTIME_LLVM4JNI_OUTPUT}"x != x ]];
 then
     echo "find env RUNTIME_LLVM4JNI_OUTPUT, append to init java class path"
-    class_path=${RUNTIME_LLVM4JNI_OUTPUT}:${GRAPHSCOPE_HOME}/lib/grape-runtime-0.1-shaded.jar
+    class_path=${RUNTIME_LLVM4JNI_OUTPUT}:${GRAPHSCOPE_HOME}/lib/grape-runtime-0.1-shaded.jar:${GRAPHX_GRAPE_SDK}
 else 
-    class_path=${GRAPHSCOPE_HOME}/lib/grape-runtime-0.1-shaded.jar
+    class_path=${GRAPHSCOPE_HOME}/lib/grape-runtime-0.1-shaded.jar:${GRAPHX_GRAPE_SDK}
 fi
 spark_jars=`cat ${SCRIPT_DIR}/graphx-on-graphscope/cp.txt`
 class_path=${class_path}:${spark_jars}
@@ -42,6 +43,7 @@ export GRAPE_JVM_OPTS="-Dcom.alibaba.fastffi.rvBuffer=2147483648 -XX:+StartAttac
 -XX:+UnlockDiagnosticVMOptions \
 -XX:CompileCommandFile=${GRAPHSCOPE_HOME}/conf/compile-commands.txt \
 -Djava.library.path=${GRAPHSCOPE_HOME}/lib \
+-XX:+TraceClassLoading \
 -Djava.class.path=${class_path}"
 #-XX:+PrintInlining
 #-XX:+PrintInlining 

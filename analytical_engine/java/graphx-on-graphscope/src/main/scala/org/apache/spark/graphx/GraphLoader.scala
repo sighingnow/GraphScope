@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 import scala.reflect.ClassTag
 
 object GraphLoader extends Logging {
-  def edgeListFile[VD: ClassTag, ED: ClassTag]
+  def edgeListFile
   (sc: SparkContext,
    path: String,
    canonicalOrientation: Boolean = false,
