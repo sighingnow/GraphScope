@@ -458,11 +458,9 @@ object PageRank extends Logging {
 
     // Define the three functions needed to implement PageRank in the GraphX
     // version of Pregel
-    object NestedVprog extends Serializable {
+    val vertexProgram : (VertexId, Double,Double) => Double = (id, attr, msgSum) =>{
       val innerResetProb: Double = resetProb
-      val vertexProgram : (VertexId, Double,Double) => Double = (id, attr, msgSum) =>{
-        attr + (1.0 - innerResetProb) * msgSum
-      }
+      attr + (1.0 - innerResetProb) * msgSum
     }
 
 
@@ -476,7 +474,7 @@ object PageRank extends Logging {
     // The initial message received by all vertices in PageRank
     val initialMessage = 0.0
 
-    val rankGraph = Pregel(pagerankGraph, initialMessage, activeDirection = EdgeDirection.Out)(NestedVprog.vertexProgram, sendMessage, messageCombiner)
+    val rankGraph = Pregel(pagerankGraph, initialMessage, activeDirection = EdgeDirection.Out)(vertexProgram, sendMessage, messageCombiner)
 
     // SPARK-18847 If the graph has sinks (vertices with no outgoing edges) correct the sum of ranks
     normalizeRankSum(rankGraph, personalized)
