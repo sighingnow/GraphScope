@@ -41,7 +41,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source ${SCRIPT_DIR}/prepare_mpi.sh
 
 # 1.first distribute serialized vprog functions.
-for host_line in `cat ${SPARK_CONF_WORKER} | awk '{ print $1; }'`;
+for host in `cat ${SPARK_CONF_WORKER} | awk '{ print $1; }'`;
 do
     echo ${host}
     scp ${VPROG_SERIALIZATION} ${host}:${VPROG_SERIALIZATION}

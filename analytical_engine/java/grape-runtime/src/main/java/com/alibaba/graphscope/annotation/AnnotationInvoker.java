@@ -370,11 +370,11 @@ import com.alibaba.fastffi.FFIGenBatch;
                         @CXXTemplate(
                             cxx = {
                                 ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
-                                "int64_t"
+                                "double"
                             },
                             java = {
                                 "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
-                                "Long"
+                                "java.lang.Double"
                             }),
                         @CXXTemplate(
                                 cxx = {

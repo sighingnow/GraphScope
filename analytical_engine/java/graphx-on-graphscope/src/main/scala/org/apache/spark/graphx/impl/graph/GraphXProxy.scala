@@ -2,7 +2,8 @@ package org.apache.spark.graphx.impl.graph
 
 
 import com.alibaba.graphscope.ds.Vertex
-import com.alibaba.graphscope.fragment.IFragment
+import com.alibaba.graphscope.fragment.{ArrowProjectedFragment,IFragment}
+import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.graphx.{GSEdgeTriplet, SharedMemoryRegistry}
 import com.alibaba.graphscope.parallel.DefaultMessageManager
 import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, MappedBuffer, TypeUtils}
@@ -39,6 +40,7 @@ class GraphXProxy[VD : ClassTag, ED : ClassTag, MSG_T: ClassTag](val conf: Graph
 
   val executorService: ExecutorService = Executors.newFixedThreadPool(numCores)
 
+  val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,_,_]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
   val idManager: GraphXVertexIdManager = GraphXFactory.createVertexIdManager(conf, fragment)
   val vertexDataManager: VertexDataManager[VD] = GraphXFactory.createVertexDataManager[VD,ED](conf, fragment, vdataBuffer)
   val inComingMessageStore: DefaultMessageStore[VD,MSG_T] = GraphXFactory.createDefaultMessageStore[VD,MSG_T](conf, fragment, idManager, vertexDataManager,mergeMsg)
@@ -285,7 +287,7 @@ class GraphXProxy[VD : ClassTag, ED : ClassTag, MSG_T: ClassTag](val conf: Graph
     if (conf.getEdClass.equals(classOf[Double]) || conf.getEdClass.equals(classOf[java.lang.Double])) {
       val msg = FFITypeFactoryhelper.newDoubleMsg
       while ( {
-        messageManager.getMessageArrowProjected(fragment, receiveVertex, msg, 2.0)
+        messageManager.getMessageArrowProjected(projectedFragment, receiveVertex, msg, 2.0)
       }) { //logger.info("frag {} get message: {}, {}", graphxFragment.fid(), receiveVertex.GetValue(), msg.getData());
         inComingMessageStore.addLidMessage(receiveVertex.GetValue, msg.getData.asInstanceOf[Double].asInstanceOf[MSG_T])
         msgReceived += 1
@@ -294,7 +296,7 @@ class GraphXProxy[VD : ClassTag, ED : ClassTag, MSG_T: ClassTag](val conf: Graph
     else if (conf.getEdClass.equals(classOf[Long]) || conf.getEdClass.equals(classOf[java.lang.Long])) {
       val msg = FFITypeFactoryhelper.newLongMsg
       while ( {
-        messageManager.getMessageArrowProjected(fragment, receiveVertex, msg, 1L)
+        messageManager.getMessageArrowProjected(projectedFragment, receiveVertex, msg, 1L)
       }) {
         inComingMessageStore.addLidMessage(receiveVertex.GetValue, msg.getData.asInstanceOf[MSG_T])
         msgReceived += 1

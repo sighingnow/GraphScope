@@ -111,8 +111,9 @@ int main(int argc, char* argv[]) {
 
   std::string params = flags2JsonStr();
   VLOG(1) << "Finish option parsing" << params;
-  if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
-      std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
+//  if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
+//      std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
+  if (true){
     using ProjectedFragmentType =
         gs::ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
     // using APP_TYPE = JavaPIEProjectedDefaultApp<ProjectedFragmentType>;
