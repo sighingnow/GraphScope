@@ -11,11 +11,12 @@ class SerializationUtils[VD,ED,A]{
     (vd, ed ,a) => vd
   }
 }
-class SerializationUtils2{
+object SerializationUtils2 extends Serializable {
   val resetProb = 0.6
   val vprog : (VertexId, Double,Double) => Double = {
-    (vd, ed, a) => {
-      vd + (1.0 - resetProb) * a
+    (vid, vd, a) => {
+      val innerResetProb = resetProb
+      vd + (1.0 - innerResetProb) * a
     }
   }
 }

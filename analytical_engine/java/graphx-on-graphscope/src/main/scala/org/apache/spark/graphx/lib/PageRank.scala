@@ -458,9 +458,13 @@ object PageRank extends Logging {
 
     // Define the three functions needed to implement PageRank in the GraphX
     // version of Pregel
-    val vertexProgram : (VertexId, Double,Double) => Double = (id, attr, msgSum) =>{
-      attr + (1.0 - resetProb) * msgSum
+    object nestedVprog extends Serializable {
+      val innerResetProb: Double = resetProb
+      val vertexProgram : (VertexId, Double,Double) => Double = (id, attr, msgSum) =>{
+        attr + (1.0 - innerResetProb) * msgSum
+      }
     }
+
 
     val sendMessage : EdgeTriplet[Double,Double] => Iterator[(VertexId, Double)] =  triplet => {
       Iterator((triplet.dstId, triplet.srcAttr * triplet.attr))

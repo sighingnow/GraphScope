@@ -33,17 +33,18 @@ public class SerializationTest {
             "tmp-vprog");
         Assert.assertTrue(vprogRecovered.apply(1L, 2L, 3L).equals(1L));
     }
-//
-//    @Test
-//    public void test2() throws ClassNotFoundException {
-////        SerializationUtils<Long, Long, Long> serializationUtils = new SerializationUtils<>();
-////        Function3<Long, Double, Double, Double> vprog = PageRankTest.vertexProgram();
+
+    @Test
+    public void test2() throws ClassNotFoundException {
+//        SerializationUtils<Long, Long, Long> serializationUtils = new SerializationUtils<>();
+//        Function3<Long, Double, Double, Double> vprog = PageRankTest.vertexProgram();
 //        SerializationUtils2 serializationUtils2 = new SerializationUtils2();
-//        Function3<?,?,?,?> vprog =  serializationUtils2.vprog();
-//        ClosureCleaner.clean(vprog, true, true);
-//        SerializationUtils.write(vprog, "tmp-vprog2");
-//        Function3<Long, Double, Double, Double> vprogRecovered = (Function3<Long, Double, Double, Double>) SerializationUtils.read(
-//            "tmp-vprog2");
-//        Assert.assertTrue(vprogRecovered.apply(1L, 2.0, 3.0).equals(3.2));
-//    }
+        Function3<?,?,?,?> vprog =  SerializationUtils2.vprog();
+        ClosureCleaner.clean(vprog, true, true);
+        SerializationUtils.write(vprog, "tmp-vprog2");
+        Function3<Long, Double, Double, Double> vprogRecovered = (Function3<Long, Double, Double, Double>) SerializationUtils.read(
+            "tmp-vprog2");
+//        System.out.println(vprogRecovered.apply(1L, 2.0, 3.0));
+        Assert.assertTrue(vprogRecovered.apply(1L, 2.0, 3.0).equals(3.2));
+    }
 }
