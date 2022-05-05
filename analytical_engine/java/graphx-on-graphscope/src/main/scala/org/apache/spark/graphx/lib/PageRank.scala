@@ -18,10 +18,8 @@
 package org.apache.spark.graphx.lib
 
 import scala.reflect.ClassTag
-
 import breeze.linalg.{Vector => BV}
-
-import org.apache.spark.graphx._
+import org.apache.spark.graphx.{VertexId, _}
 import org.apache.spark.internal.Logging
 import org.apache.spark.ml.linalg.{Vector, Vectors}
 
@@ -460,15 +458,16 @@ object PageRank extends Logging {
 
     // Define the three functions needed to implement PageRank in the GraphX
     // version of Pregel
-    def vertexProgram(id: VertexId, attr: Double, msgSum: Double): Double = {
+    val vertexProgram : (VertexId, Double,Double) => Double = (id, attr, msgSum) =>{
       attr + (1.0 - resetProb) * msgSum
     }
 
-    def sendMessage(edge: EdgeTriplet[Double, Double]) = {
-      Iterator((edge.dstId, edge.srcAttr * edge.attr))
+    val sendMessage : EdgeTriplet[Double,Double] => Iterator[(VertexId, Double)] =  triplet => {
+      Iterator((triplet.dstId, triplet.srcAttr * triplet.attr))
     }
 
-    def messageCombiner(a: Double, b: Double): Double = a + b
+    val messageCombiner : (Double,Double) => Double = (a, b) => a + b
+
 
     // The initial message received by all vertices in PageRank
     val initialMessage = 0.0

@@ -1,5 +1,6 @@
 package com.alibaba.graphscope.graphx
 
+import org.apache.spark.graphx.VertexId
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
@@ -8,6 +9,14 @@ class SerializationUtils[VD,ED,A]{
   //provide some demo functions to test
   val vprog : (VD,ED,A) => VD  = {
     (vd, ed ,a) => vd
+  }
+}
+class SerializationUtils2{
+  val resetProb = 0.6
+  val vprog : (VertexId, Double,Double) => Double = {
+    (vd, ed, a) => {
+      vd + (1.0 - resetProb) * a
+    }
   }
 }
 /**

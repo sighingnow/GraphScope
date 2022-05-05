@@ -17,6 +17,7 @@
 
 package org.apache.spark.graphx
 
+import org.apache.spark.SparkContext
 import org.apache.spark.graphx.impl.GraphScopePregel
 
 import scala.reflect.ClassTag
@@ -141,7 +142,11 @@ object Pregel extends Logging {
      */
     graph.vertices.count()
     graph.edges.count()
-    val graphScopePregel = new GraphScopePregel[VD,ED,A](graph, initialMsg, maxIterations, activeDirection, vprog, sendMsg, mergeMsg)
+    val sc = SparkContext.getOrCreate()
+    val vprogCleaned = sc.clean(vprog,true)
+    val sendMsgCleaned = sc.clean(sendMsg, true)
+    val mergeMsgCleaned = sc.clean(mergeMsg, true)
+    val graphScopePregel = new GraphScopePregel[VD,ED,A](graph, initialMsg, maxIterations, activeDirection, vprogCleaned, sendMsgCleaned, mergeMsgCleaned)
 
     graphScopePregel.run()
 
