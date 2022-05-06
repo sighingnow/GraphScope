@@ -10,6 +10,10 @@ public class NativeUtils {
 
     private static Logger logger = LoggerFactory.getLogger(NativeUtils.class.getName());
 
+    static{
+        System.loadLibrary("grape-jni");
+        logger.info("[NativeUtils:] load jni lib success");
+    }
     public static native long createLoader();
 
     public static native long invokeLoadingAndProjection(long addr, int vdType, int edType);
