@@ -107,8 +107,8 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
         oid2Lid.emplace(dstId, static_cast<vid_t>(oid2Lid.size()));
       }
     }
-    VLOG(1) << "Found " << oid2Lid.size() << " distince vertices from "
-            << edge_src->length() << " edges";
+    LOG(INFO) << "Found " << oid2Lid.size() << " distince vertices from "
+              << edge_src->length() << " edges";
     vnum = oid2Lid.size();
 
     grape::ImmutableCSRBuild<vid_t, nbr_t> ie_builder, oe_builder;
@@ -130,7 +130,7 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
     }
     ie_builder.finish(inEdges);
     oe_builder.finish(outEdges);
-    VLOG(1) << "Finish build inEdges and out Edges.";
+    LOG(INFO) << "Finish build inEdges and out Edges.";
   }
 
  private:
@@ -144,7 +144,7 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
     int64_t numEdges = 0;
     // FIXME
     for (auto file_path : files_splited) {
-      VLOG(1) << "reading from " << file_path;
+      LOG(INFO) << "reading from " << file_path;
       int fd =
           shm_open(file_path.c_str(), O_RDWR, S_IRUSR | S_IWUSR);  // no O_CREAT
       if (fd < 0) {
@@ -156,25 +156,25 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
           mmap(NULL, mapped_size, PROT_READ, MAP_SHARED, fd, 0);
       if (mmapped_data == MAP_FAILED) {
         close(fd);
-        VLOG(1) << "Error mmapping the file " << file_path;
+        LOG(INFO) << "Error mmapping the file " << file_path;
         return;
       }
 
       // first 8 bytes are size in int64_t;
       int64_t data_len = *reinterpret_cast<int64_t*>(mmapped_data);
       CHECK_GT(data_len, 0);
-      VLOG(1) << "Reading first 8 bytes, indicating total len: " << data_len;
+      LOG(INFO) << "Reading first 8 bytes, indicating total len: " << data_len;
       char* data_start = (reinterpret_cast<char*>(mmapped_data) + 8);
 
       int64_t res = digestEdgesFromMapedFile(data_start, data_len, edge_src,
                                              edge_dst, edge_data);
-      VLOG(1) <<  " Finish reading " << file_path
+      LOG(INFO) <<  " Finish reading " << file_path
               << " got " << numEdges << " edges";
       numEdges += res;
       success_cnt += 1;
     }
 
-    VLOG(1) 
+    LOG(INFO) 
             << "] finish loading edges,  success: " << success_cnt << " / "
             << files_splited.size() << " read: " << numEdges;
   }
@@ -188,10 +188,6 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
                                    std::shared_ptr<oid_array_t>& edge_src,
                                    std::shared_ptr<oid_array_t>& edge_dst,
                                    std::shared_ptr<edata_array_t>& edge_data) {
-    if (chunk_len < 28) {
-      LOG(ERROR) << "At least need 16 bytes to read meta";
-      return 0;
-    }
 
     oid_array_builder_t src_builder, dst_builder;
     edata_array_builder_t edata_builder;
