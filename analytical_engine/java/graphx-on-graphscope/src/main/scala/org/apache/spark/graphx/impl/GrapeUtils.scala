@@ -69,9 +69,7 @@ object GrapeUtils {
   def getSelfHostName = InetAddress.getLocalHost.getHostName
 
   def dedup(files: Array[String]): Array[String] = {
-    val set: java.util.Set[String] = new java.util.HashSet(java.util.Arrays.asList(files)).asInstanceOf[java.util.Set[String]]
-    var res: Array[String] = new Array[String](set.size)
-    res = set.toArray(res)
-    res
+    val set = files.toSet
+    set.toArray
   }
 }
