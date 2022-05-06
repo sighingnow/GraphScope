@@ -76,4 +76,7 @@ public class CppClassName {
             "gs::arrow_projected_fragment_impl::TypedArray";
 
     public static final String GS_MEMORY_MAPPED_BUFFER = "gs::MemoryMappedBuffer";
+
+    public static final String GS_EDGE_PARTITION = "gs::EdgePartition";
+    public static final String GS_VERTEX_PARTITION = "gs::VertexPartition";
 }

@@ -1,9 +1,8 @@
-package org.apache.spark.graphx
+package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.graphx.SharedMemoryRegistry
-import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.graphx.impl.GrapeUtils
-import org.apache.spark.graphx.traits.{GraphXVertexIdManager, VertexDataManager}
+import org.apache.spark.graphx.VertexId
+import org.apache.spark.graphx.traits.GraphXVertexIdManager
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 

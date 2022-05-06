@@ -42,6 +42,13 @@ import com.alibaba.fastffi.FFIGenBatch;
             @FFIGen(type = "com.alibaba.graphscope.parallel.message.DoubleMsg"),
             @FFIGen(type = "com.alibaba.graphscope.parallel.message.LongMsg"),
             @FFIGen(
+                type = "com.alibaba.graphscope.graphx.GrapeEdgePartition",
+                templates = {
+                    @CXXTemplate(cxx = {"int64_t","uint64_t","int64_t"}, java = {"Long","Long","Long"}),
+                    @CXXTemplate(cxx = {"int64_t","uint64_t","double"}, java = {"Long","Long","Double"}),
+                    @CXXTemplate(cxx = {"int64_t","uint64_t","int32_t"}, java = {"Long","Long","Integer"})
+                }),
+            @FFIGen(
                     type = "com.alibaba.graphscope.ds.TypedArray",
                     templates = {
                         @CXXTemplate(cxx = "int64_t", java = "Long"),

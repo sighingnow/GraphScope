@@ -1,5 +1,6 @@
 package org.apache.spark.graphx
 
+import org.apache.spark.graphx.impl.GrapeVertexPartition
 import org.apache.spark.graphx.impl.grape.GrapeVertexRDDImpl
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Dependency, Partitioner, SparkContext}

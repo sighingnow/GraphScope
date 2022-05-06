@@ -69,4 +69,6 @@ public class CppHeaderName {
     public static final String JAVA_LOADER_INVOKER_H = "core/java/java_loader_invoker.h";
 
     public static final String GS_MEMORY_MAPPED_BUFFER_H = "core/java/memory_mapped_buffer.h";
+    public static final String CORE_JAVA_GRAPHX_EDGE_PARTITION_H = "core/java/graphx/edge_partition.h";
+    public static final String CORE_JAVA_GRAPHX_VERTEX_PARTITION_H = "core/java/graphx/vertex_partition.h";
 }

@@ -2,10 +2,11 @@ package org.apache.spark.graphx.utils
 
 import com.alibaba.graphscope.graphx.SharedMemoryRegistry
 import com.alibaba.graphscope.utils.MappedBuffer
-import org.apache.spark.graphx.impl.GrapeUtils
+import org.apache.spark.graphx.impl.{EdgePartition, GrapeUtils}
 import org.apache.spark.graphx.impl.GrapeUtils.{bytesForType, getMethodFromClass}
-import org.apache.spark.graphx.{EdgeRDD, VertexRDD}
+import org.apache.spark.graphx.{EdgeRDD, PartitionID, VertexRDD}
 import org.apache.spark.internal.Logging
+import org.apache.spark.rdd.RDD
 
 import java.io.{BufferedWriter, File, FileWriter}
 import scala.reflect.{ClassTag, classTag}
@@ -142,6 +143,85 @@ object SharedMemoryUtils extends Logging{
     mappedFileArray
   }
 
+  def mapEdgePartitionToFile[ED: ClassTag, VD : ClassTag](edgePartition : RDD[(PartitionID, EdgePartition[ED,VD])],
+                                                          eprefix : String, size : Long): Array[String] = {
+    val edClass = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
+    edgePartition.foreachPartition(
+      iter => {
+        val registry = SharedMemoryRegistry.getOrCreate()
+        if (iter.hasNext){
+          val tuple = iter.next()
+          val pid = tuple._1
+          val partition = tuple._2
+          val edgesNum = partition.size
+
+          val dstFile = eprefix + pid
+          val totalBytes = 8L  + edgesNum * 16  + edgesNum * bytesForType(edClass)
+          val mappedBuffer = registry.mapFor(dstFile, size)
+          //First put header
+          //| 8bytes    | ......    | ......     | .....    |
+          //| total-len |  srcoids  |  dstOids   |   edatas |
+          mappedBuffer.writeLong(edgesNum)
+
+          val srcIds = new Array[Long](edgesNum)
+          val dstIds = new Array[Long](edgesNum)
+          val attrs = new Array[ED](edgesNum)
+          var ind = 0
+          val partitionIter = partition.iterator
+          while (ind < edgesNum && partitionIter.hasNext){
+            val edge = partitionIter.next()
+            srcIds(ind) = edge.srcId
+            dstIds(ind) = edge.dstId
+            attrs(ind) = edge.attr
+            ind += 1
+          }
+          ind = 0
+          while (ind < edgesNum) {
+            mappedBuffer.writeLong(srcIds(ind))
+            ind += 1
+          }
+          ind = 0
+          while (ind < edgesNum) {
+            mappedBuffer.writeLong(dstIds(ind))
+            ind += 1
+          }
+
+          ind = 0
+          if (edClass.equals(classOf[Long])) {
+            while (ind < edgesNum) {
+              mappedBuffer.writeLong(attrs(ind).asInstanceOf[Long])
+              ind += 1
+            }
+          }
+          else if (edClass.equals(classOf[Double])) {
+            while (ind < edgesNum) {
+              mappedBuffer.writeDouble(attrs(ind).asInstanceOf[Double])
+              ind += 1
+            }
+          }
+          else if (edClass.equals(classOf[Int])) {
+            while (ind < edgesNum) {
+              mappedBuffer.writeInt(attrs(ind).asInstanceOf[Int])
+              ind += 1
+            }
+          }
+          else {
+            throw new IllegalStateException("Unsupported vd type: " + edClass.getName)
+          }
+          log.info(s"Partition: ${pid} Finish writing vdata array of size ${edgesNum} to ${dstFile}, total Bytes ${totalBytes}")
+        }
+      }
+    )
+    val mappedFileSet = edgePartition.mapPartitions({
+      iter => {
+        val registry = SharedMemoryRegistry.getOrCreate()
+        Iterator(registry.getAllMappedFileNames(eprefix))
+      }
+    })
+    val mappedFileArray = mappedFileSet.collect()
+    log.info("collect mappedFileSet: " + mappedFileSet.collect().mkString("Array(", ", ", ")"))
+    mappedFileArray
+  }
 
   def writeVertices[VD : ClassTag](buffer: MappedBuffer, vidArray: Array[Long], attrs: Array[VD],
                                    size: Int, vdClass : Class[VD], bufferedWriter : BufferedWriter): Unit ={

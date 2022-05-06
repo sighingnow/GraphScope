@@ -3,7 +3,7 @@ package org.apache.spark.graphx
 import com.alibaba.graphscope.fragment.IFragment
 import com.alibaba.graphscope.graphx.{FragmentHolder, SharedMemoryRegistry}
 import com.alibaba.graphscope.utils.MappedBuffer
-import org.apache.spark.graphx.impl.{GrapeEdgePartition, GrapeUtils}
+import org.apache.spark.graphx.impl.{GrapeEdgePartitionWrapper, GrapeUtils, GrapeVertexPartition}
 import org.apache.spark.graphx.traits.{EdgeManager, GraphXVertexIdManager, VertexDataManager}
 import org.apache.spark.internal.Logging
 
@@ -22,7 +22,7 @@ object FragmentRegistry extends Logging{
   private var fragmentHolder = null.asInstanceOf[FragmentHolder]
   //    private static GraphXConf conf;
   private var vertexPartitions = null.asInstanceOf[Array[GrapeVertexPartition[_]]]
-  private var edgePartitions = null.asInstanceOf[Array[GrapeEdgePartition[_,_]]]
+  private var edgePartitions = null.asInstanceOf[Array[GrapeEdgePartitionWrapper[_,_]]]
   private var cnt = 0;
 
   @throws[IOException]
@@ -74,7 +74,7 @@ object FragmentRegistry extends Logging{
         log.info("Successfully create fragment RDD")
         //Now create vertexPartitions and edge partitions.
         createVertexPartitions(conf, idManager, vertexDataManager)
-        createEdgePartitions(conf, idManager, vertexDataManager,edgeManager)
+//        createEdgePartitions(conf, idManager, vertexDataManager,edgeManager)
         lock.unlock()
       }
       else log.info("partition " + pid + " try to get lock failed")
@@ -104,23 +104,23 @@ object FragmentRegistry extends Logging{
     log.info("Finish creating javaVertexPartitions of size {}", numPartitions)
   }
 
-  def createEdgePartitions[VD : ClassTag, ED : ClassTag](conf: GraphXConf[VD, ED], idManager: GraphXVertexIdManager, vertexDataManager: VertexDataManager[VD], edgeManager: EdgeManager[VD,ED]): Unit = {
-    if (Objects.nonNull(edgePartitions)) {
-      log.error("Recreating edge partitions is not expected")
-      return
-    }
-
-    val numPartitions = maxPartitionId + 1
-    edgePartitions = new Array[GrapeEdgePartition[_, _]](numPartitions)
-    for (i <- 0 until numPartitions) {
-      edgePartitions(i) = (new GrapeEdgePartition[VD, ED](i, numPartitions, idManager, edgeManager))
-    }
-    log.info("Finish creating javaEdgePartitions of size {}", numPartitions)
-  }
+//  def createEdgePartitions[VD : ClassTag, ED : ClassTag](conf: GraphXConf[VD, ED], idManager: GraphXVertexIdManager, vertexDataManager: VertexDataManager[VD], edgeManager: EdgeManager[VD,ED]): Unit = {
+//    if (Objects.nonNull(edgePartitions)) {
+//      log.error("Recreating edge partitions is not expected")
+//      return
+//    }
+//
+//    val numPartitions = maxPartitionId + 1
+//    edgePartitions = new Array[GrapeEdgePartitionWrapper[_, _]](numPartitions)
+//    for (i <- 0 until numPartitions) {
+//      edgePartitions(i) = (new GrapeEdgePartitionWrapper[VD, ED](i, numPartitions, idManager, edgeManager))
+//    }
+//    log.info("Finish creating javaEdgePartitions of size {}", numPartitions)
+//  }
 
   def getVertexPartition[VD: ClassTag](pid: Int): GrapeVertexPartition[VD] = vertexPartitions(pid).asInstanceOf[GrapeVertexPartition[VD]]
 
-  def getEdgePartition[VD : ClassTag, ED : ClassTag](pid: Int): GrapeEdgePartition[VD, ED] = edgePartitions(pid).asInstanceOf[GrapeEdgePartition[VD,ED]]
+  def getEdgePartition[VD : ClassTag, ED : ClassTag](pid: Int): GrapeEdgePartitionWrapper[VD, ED] = edgePartitions(pid).asInstanceOf[GrapeEdgePartitionWrapper[VD,ED]]
 
   def updateVertexPartition[VD : ClassTag](pid : Int, part : GrapeVertexPartition[VD]) : Unit = {
     vertexPartitions(pid) = part

@@ -1,6 +1,6 @@
 package org.apache.spark.graphx.impl.grape
 
-import org.apache.spark.graphx.impl.GrapeEdgePartition
+import org.apache.spark.graphx.impl.GrapeEdgePartitionWrapper
 import org.apache.spark.graphx._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -9,8 +9,8 @@ import org.apache.spark.{OneToOneDependency, Partition, Partitioner, TaskContext
 import scala.reflect.{ClassTag, classTag}
 
 class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
-                                                                        @transient val grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartition[VD, ED])],
-                                                                        val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
+                                                                     @transient val grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartitionWrapper[VD, ED])],
+                                                                     val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   extends GrapeEdgeRDD[ED](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
   override protected def getPartitions: Array[Partition] = grapePartitionsRDD.partitions
@@ -18,7 +18,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
   override val partitioner: Option[Partitioner] = grapePartitionsRDD.partitioner
 
   override def compute(part: Partition, context: TaskContext): Iterator[Edge[ED]] = {
-    val p = firstParent[(PartitionID, GrapeEdgePartition[VD, ED])].iterator(part, context)
+    val p = firstParent[(PartitionID, GrapeEdgePartitionWrapper[VD, ED])].iterator(part, context)
     if (p.hasNext) {
       p.next()._2.iterator.map(_.copy())
     } else {
@@ -38,16 +38,17 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
 
   override def generateDegreeRDD(originalVertexRDD : GrapeVertexRDD[_]) : GrapeVertexRDD[Int] = {
     val grapeVertexRDDImpl = originalVertexRDD.asInstanceOf[GrapeVertexRDDImpl[_]]
-    val newVertexPartitionRDD = this.grapePartitionsRDD.zipPartitions(grapeVertexRDDImpl.grapePartitionsRDD, true){
-      (thisIter, otherIter) => {
-        val (pid, thisEPart) = thisIter.next()
-        val (_, otherVPart) = otherIter.next()
-//        val newPart = thisEPart.innerJoin[ED2, ED3](otherEPart)(f)
-        val newVPart = otherVPart.withNewValues(thisEPart.getDegreeArray(otherVPart.startLid, otherVPart.endLid))
-        Iterator((pid, newVPart))
-      }
-    }
-    originalVertexRDD.withGrapePartitionsRDD(newVertexPartitionRDD)
+//    val newVertexPartitionRDD = this.grapePartitionsRDD.zipPartitions(grapeVertexRDDImpl.grapePartitionsRDD, true){
+//      (thisIter, otherIter) => {
+//        val (pid, thisEPart) = thisIter.next()
+//        val (_, otherVPart) = otherIter.next()
+////        val newPart = thisEPart.innerJoin[ED2, ED3](otherEPart)(f)
+//        val newVPart = otherVPart.withNewValues(thisEPart.getDegreeArray(otherVPart.startLid, otherVPart.endLid))
+//        Iterator((pid, newVPart))
+//      }
+//    }
+//    originalVertexRDD.withGrapePartitionsRDD(newVertexPartitionRDD)
+  null
   }
 
 
@@ -75,7 +76,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
   }
 
   override def isCheckpointed: Boolean = {
-    firstParent[(PartitionID, GrapeEdgePartition[VD, ED])].isCheckpointed
+    firstParent[(PartitionID, GrapeEdgePartitionWrapper[VD, ED])].isCheckpointed
   }
 
   override def getCheckpointFile: Option[String] = {
@@ -84,7 +85,8 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
 
   //FIXME: count active edges
   override def count(): Long = {
-    grapePartitionsRDD.map(_._2.numEdges.toLong).fold(0)(_ + _)
+//    grapePartitionsRDD.map(_._2.numEdges.toLong).fold(0)(_ + _)
+    throw new IllegalStateException("fix me")
   }
 
   override def mapValues[ED2 :ClassTag](f: Edge[ED] => ED2): GrapeEdgeRDDImpl[VD,ED2] = {
@@ -129,7 +131,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
   }
 
   def mapEdgePartitions[VD2: ClassTag, ED2: ClassTag](
-           f: (PartitionID, GrapeEdgePartition[VD, ED]) => GrapeEdgePartition[VD2, ED2]): GrapeEdgeRDDImpl[VD2, ED2] = {
+           f: (PartitionID, GrapeEdgePartitionWrapper[VD, ED]) => GrapeEdgePartitionWrapper[VD2, ED2]): GrapeEdgeRDDImpl[VD2, ED2] = {
     this.withPartitionsRDD[VD2, ED2](grapePartitionsRDD.mapPartitions({ iter =>
       if (iter.hasNext) {
         val (pid, ep) = iter.next()
@@ -141,7 +143,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
   }
 
   def withPartitionsRDD[VD2: ClassTag, ED2: ClassTag](
-          partitionsRDD: RDD[(PartitionID, GrapeEdgePartition[VD2, ED2])]): GrapeEdgeRDDImpl[VD2, ED2] = {
+          partitionsRDD: RDD[(PartitionID, GrapeEdgePartitionWrapper[VD2, ED2])]): GrapeEdgeRDDImpl[VD2, ED2] = {
     new GrapeEdgeRDDImpl[VD2,ED2](partitionsRDD, this.targetStorageLevel)
   }
 }

@@ -51,9 +51,12 @@ object GraphLoader extends Logging {
 
     //    GraphImpl.fromEdgePartitions(edges, defaultVertexAttr = 1, edgeStorageLevel = edgeStorageLevel,
     //      vertexStorageLevel = vertexStorageLevel)
-    val res = GraphImpl.fromEdgePartitions(edges, defaultVertexAttr = 1, edgeStorageLevel = edgeStorageLevel,
-      vertexStorageLevel = vertexStorageLevel).mapVertices((vid, attr) => attr.toLong).mapEdges(edge => edge.attr.toLong)
-    GrapeGraphImpl.fromGraphXGraph(res)
+//    val res = GraphImpl.fromEdgePartitions(edges, defaultVertexAttr = 1, edgeStorageLevel = edgeStorageLevel,
+//      vertexStorageLevel = vertexStorageLevel)
+//      .mapVertices((vid, attr) => attr.toLong).mapEdges(edge => edge.attr.toLong)
+    val edgeRDD = GrapeEdgeRDD.fromEdgePartitions(edges)
+    null
+//    GrapeGraphImpl.fromGraphXGraph(res)
   }
 
 //  def edgeListFile(

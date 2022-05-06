@@ -205,107 +205,27 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   override def outerJoinVertices[U: ClassTag, VD2 : ClassTag](other: RDD[(VertexId, U)])
                                                              (mapFunc: (VertexId, VD, Option[U]) => VD2)
                                                              (implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
-    val newVertices = vertices.leftJoin(other)(mapFunc)
-    /** if new vd2 differs from vertex data manager, create a vertex data manager */
-    grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
-      val (pid, part) = iter.next()
-//      VertexDataManagerCreator.create[VD,VD2,ED](pid, part.edgeManager.asInstanceOf[EdgeManagerImpl[VD,ED]].vertexDataManager)
-      part.createNewVDManager[VD2]
-    })
-    val newEdges = grapeEdges.withPartitionsRDD(grapeEdges.grapePartitionsRDD.mapPartitions(iter => {
-      val (pid, part) = iter.next()
-//      vdCreator.create[VD,VD2,ED](pid, .vertexDataManager)
-      val oldEdgeManager = part.edgeManager.asInstanceOf[EdgeManagerImpl[VD,ED]]
-      val newVdManager = VertexDataManagerCreator.get[VD2]
-      Iterator((pid,part.withNewEdgeManager(oldEdgeManager.withNewVertexDataManager(newVdManager))))
-    }))
-    GrapeGraphImpl.fromRDDs[VD2, ED](newVertices, newEdges, fragId)
+//    val newVertices = vertices.leftJoin(other)(mapFunc)
+//    /** if new vd2 differs from vertex data manager, create a vertex data manager */
+//    grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
+//      val (pid, part) = iter.next()
+////      VertexDataManagerCreator.create[VD,VD2,ED](pid, part.edgeManager.asInstanceOf[EdgeManagerImpl[VD,ED]].vertexDataManager)
+//      part.createNewVDManager[VD2]
+//    })
+//    val newEdges = grapeEdges.withPartitionsRDD(grapeEdges.grapePartitionsRDD.mapPartitions(iter => {
+//      val (pid, part) = iter.next()
+////      vdCreator.create[VD,VD2,ED](pid, .vertexDataManager)
+//      val oldEdgeManager = part.edgeManager.asInstanceOf[EdgeManagerImpl[VD,ED]]
+//      val newVdManager = VertexDataManagerCreator.get[VD2]
+//      Iterator((pid,part.withNewEdgeManager(oldEdgeManager.withNewVertexDataManager(newVdManager))))
+//    }))
+//    GrapeGraphImpl.fromRDDs[VD2, ED](newVertices, newEdges, fragId)
+    null
   }
 }
 
 
 object GrapeGraphImpl {
-  def fromGraphXGraph[VD:ClassTag, ED: ClassTag](oldGraph: Graph[VD,ED], numCores: Int = 8): GrapeGraphImpl[VD,ED] ={
-    val sc = oldGraph.vertices.sparkContext
-    val vdClass = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
-    val edClass = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
-    require(oldGraph.isInstanceOf[GraphImpl[VD,ED]], "expect a graphImpl")
-    val numVertices = oldGraph.numVertices
-    val numEdges = oldGraph.numEdges //these are total edges
-    val numParitions = oldGraph.edges.getNumPartitions
-
-    val vertexMappedSize = 32L * numVertices  + 128
-    val edgeMappedSize = 32L * numEdges  + 128
-
-    println("numPartitions: v:" + oldGraph.vertices.getNumPartitions + ", e:" + oldGraph.edges.getNumPartitions)
-    println("reserve memory " + vertexMappedSize + " for per vertex file, vertices: " + numVertices)
-    println("reserve memory " + edgeMappedSize + " for per edge file, edges" + numEdges)
-    val vertexFileArray = SharedMemoryUtils.mapVerticesToFile(oldGraph.vertices, "graphx-vertex", vertexMappedSize)
-//    val vertexFileArray = vertices.mapToFile("graphx-vertex", vertexMappedSize)
-//    val edgeFileArray = edges.mapToFile("graphx-edge", edgeMappedSize) // actual 24
-    val edgeFileArray = SharedMemoryUtils.mapEdgesToFile(oldGraph.edges, "graphx-edge", edgeMappedSize)
-
-    println("map result for vertex: " + vertexFileArray.mkString("Array(", ", ", ")"))
-    println("map result for edge : " + edgeFileArray.mkString("Array(", ", ", ")"))
-    //Serialize the info to string, and pass it to mpi processes, which are launched to load the graph
-    //to fragment
-    val fragIds = MPIUtils.graph2Fragment(vertexFileArray, edgeFileArray,
-      vertexMappedSize, edgeMappedSize, !sc.isLocal, classToStr(vdClass), classToStr(edClass))
-    println(s"Fragid: [${fragIds}]")
-    //fragIds = 10001,111002,11003
-    val grapePartition = oldGraph.vertices.partitionsRDD.zipWithIndex().mapPartitions(iter => {
-      if (iter.hasNext){
-        val t= iter.next()
-        val grapePid = FragmentRegistry.registFragment(fragIds, t._2.toInt);
-        Iterator(grapePid)
-      }
-      else {
-        Iterator.empty
-      }
-    })
-    grapePartition.cache().count()
-    grapePartition.foreachPartition(
-      iter => {
-        if (iter.hasNext){
-          val pid = iter.next()
-          FragmentRegistry.constructFragment[VD,ED](pid,generateForeignFragName(vdClass,edClass),
-            scalaClass2JavaClass(vdClass).asInstanceOf[Class[VD]], scalaClass2JavaClass(edClass).asInstanceOf[Class[ED]], numCores)
-        }
-      })
-
-    val grapeVertexPartitions = grapePartition.mapPartitions(
-      iter => {
-        if (iter.hasNext){
-          val pid = iter.next();
-          Iterator((pid,FragmentRegistry.getVertexPartition[VD](pid)))
-        }
-        else {
-          Iterator.empty
-        }
-      }
-    )
-
-    val grapeEdgePartitions : RDD[(PartitionID, GrapeEdgePartition[VD,ED])] = grapePartition.mapPartitions(
-      iter => {
-        if (iter.hasNext){
-          val pid = iter.next();
-          Iterator((pid,FragmentRegistry.getEdgePartition[VD,ED](pid)))
-        }
-        else {
-          Iterator.empty
-        }
-      }
-    )
-    println(s"total grape vertex partitions ${grapeVertexPartitions.count()}, edge partitions ${grapeEdgePartitions.count()}")
-    //Construct grape vertex edge rdd from partitions.
-    val grapeVertexRDD = GrapeVertexRDD.fromVertexPartitions(grapeVertexPartitions)
-    val grapeEdgeRDD = GrapeEdgeRDD.fromEdgePartitions[VD,ED](grapeEdgePartitions)
-    println(s"grape vertex rdd ${grapeVertexRDD.count()}, edge rdd ${grapeEdgeRDD.count()}")
-
-    val resgraph = fromExistingRDDs(grapeVertexRDD, grapeEdgeRDD, getFragId(fragIds))
-    println(s"after set ${resgraph.fragId}")
-    resgraph
-  }
 
   def fromExistingRDDs[VD: ClassTag,ED :ClassTag](vertices: GrapeVertexRDDImpl[VD], edges: GrapeEdgeRDDImpl[VD, ED], fragId : String): GrapeGraphImpl[VD,ED] ={
     new GrapeGraphImpl[VD,ED](vertices, edges, fragId)

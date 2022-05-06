@@ -123,6 +123,49 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_getArrowProjectedFragment(
   return 0;
 }
 
+/*
+ * Class:     com_alibaba_graphscope_runtime_NativeUtils
+ * Method:    nativeCreateEdgePartition
+ * Signature: (Ljava/lang/String;JI)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_alibaba_graphscope_runtime_NativeUtils_nativeCreateEdgePartition(
+    JNIEnv* env, jclass clz, jstring mmFiles, jlong mapped_size, jint ed_type) {
+  grape::CommSpec comm_spec;
+  comm_spec.Init(MPI_COMM_WORLD);
+  VLOG(1) << "Created comm_spec";
+  std::string ipc_socket = "/tmp/vineyard.sock";
+  VINEYARD_CHECK_OK(client.Connect(ipc_socket));
+  VLOG(1) << "Connected to " << ipc_socket;
+
+  std::string files = gs::JString2String(env, mmFiles);
+  if (ed_type == 0) {
+    VLOG(1) << "creating EdgePartition for ed = int64_t, mmfiles " << files;
+    static auto edge_partition =
+        std::make_shared<gs::EdgePartition<int64_t, uint64_t, int64_t>>(
+            client, comm_spec);
+    edge_partition->LoadEdges(files, mapped_size);
+    return reinterpret_cast<jlong>(edge_partition.get());
+  } else if (ed_type == 1) {
+    VLOG(1) << "creating EdgePartition for ed = double, mmfiles " << files;
+    static auto edge_partition =
+        std::make_shared<gs::EdgePartition<int64_t, uint64_t, double>>(
+            client, comm_spec);
+    edge_partition->LoadEdges(files, mapped_size);
+    return reinterpret_cast<jlong>(edge_partition.get());
+  } else if (ed_type == 2) {
+    VLOG(1) << "creating EdgePartition for ed = int32_t, mmfiles " << files;
+    static auto edge_partition =
+        std::make_shared<gs::EdgePartition<int64_t, uint64_t, int32_t>>(
+            client, comm_spec);
+    edge_partition->LoadEdges(files, mapped_size);
+    return reinterpret_cast<jlong>(edge_partition.get());
+  } else {
+    LOG(ERROR) << "WRONG ed type: " << ed_type;
+    return -1;
+  }
+}
+
 #ifdef __cplusplus
 }
 #endif

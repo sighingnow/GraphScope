@@ -1,7 +1,10 @@
 package org.apache.spark.graphx
 
-import org.apache.spark.graphx.impl.GrapeEdgePartition
+import org.apache.spark.graphx.impl.GrapeUtils.dedup
+import org.apache.spark.graphx.impl.{EdgePartition, GrapeEdgePartitionWrapper}
 import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
+import org.apache.spark.graphx.utils.{GrapeEdgePartitionRegistry, SharedMemoryUtils}
+import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Dependency, SparkContext}
 
@@ -17,16 +20,55 @@ abstract class GrapeEdgeRDD[ED](sc: SparkContext,
   def generateDegreeRDD(originalVertexRDD : GrapeVertexRDD[_]) : GrapeVertexRDD[Int]
 }
 
-object GrapeEdgeRDD {
+object GrapeEdgeRDD extends Logging{
   def fromEdges[ED: ClassTag, VD: ClassTag](edges: RDD[Edge[ED]]): GrapeEdgeRDD[ED] = {
     //Shuffle the edge rdd
     //then use build to build.
     null
   }
 
-  private[graphx] def fromEdgePartitions[VD: ClassTag, ED : ClassTag](
-                                                        edgePartitions: RDD[(PartitionID, GrapeEdgePartition[VD, ED])]): GrapeEdgeRDDImpl[VD, ED] = {
+  private[graphx] def fromGrapeEdgePartitions[VD: ClassTag, ED : ClassTag](
+                                                        edgePartitions: RDD[(PartitionID, GrapeEdgePartitionWrapper[VD, ED])]): GrapeEdgeRDDImpl[VD, ED] = {
     //    new EdgeRDDImpl(edgePartitions)
     new GrapeEdgeRDDImpl[VD,ED](edgePartitions)
   }
+  private[graphx] def fromEdgePartitions[VD: ClassTag, ED : ClassTag](
+                                                          edgePartitions: RDD[(PartitionID, EdgePartition[VD, ED])]): GrapeEdgeRDDImpl[VD, ED] = {
+    //1. edgePartition to memory mapped file.
+    val totalNumEdges = edgePartitions.map(_._2.size.toLong).fold(0)(_ + _)
+    log.info(s"Driver: Total num edges in Partition: ${totalNumEdges}")
+    val edgeMappedSize = 32L * totalNumEdges  + 128
+    val outputFilenames = SharedMemoryUtils.mapEdgePartitionToFile(edgePartitions, "graphx-edge", edgeMappedSize);
+    val outputFilenamesDedup = dedup(outputFilenames).mkString(":")
+    log.info(s"[Driver: ] got mapped edge files ${outputFilenamesDedup}")
+
+    edgePartitions.foreachPartition(iter => {
+      val (pid, part) = iter.next()
+      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
+      registry.registerPath(pid, outputFilenamesDedup)
+    })
+    log.info(s"[Driver:] Finish registering path ${outputFilenamesDedup}")
+
+    edgePartitions.foreachPartition(iter => {
+      val (pid, part) = iter.next()
+      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
+      registry.constructEdgePartition(pid, edgeMappedSize)
+    })
+    log.info(s"[Driver:] Finish construct edge partition")
+
+    val grapeEdgePartitionWrapper = edgePartitions.mapPartitions(iter => {
+      val (pid, part) = iter.next()
+      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
+      Iterator((pid,registry.getEdgePartitionWrapper(pid)))
+    })
+    log.info(s"[Driver:] got grape edge Partition Wrapper, total edges count ${grapeEdgePartitionWrapper.count()}")
+
+    null
+    //2. load grape edge partition from shared memory.
+
+    //3. return the java wrapper.
+//    new GrapeEdgeRDDImpl[VD,ED](edgePartitions)
+  }
+
+
 }
