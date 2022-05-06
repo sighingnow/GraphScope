@@ -30,12 +30,17 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#include "flat_hash_map/flat_hash_map.hpp"
 
 #include "grape/graph/adj_list.h"
 #include "grape/graph/immutable_csr.h"
 #include "grape/worker/comm_spec.h"
 #include "vineyard/basic/ds/arrow_utils.h"
-#include "vineyard/basic/ds/hashmap.h"
 #include "vineyard/basic/stream/byte_stream.h"
 #include "vineyard/basic/stream/dataframe_stream.h"
 #include "vineyard/basic/stream/parallel_stream.h"
@@ -54,9 +59,7 @@
  *
  */
 namespace gs {
-template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
-          typename VID_T = vineyard::property_graph_types::VID_TYPE>
-, typename ED_T > class EdgePartition {
+template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
   using oid_t = OID_T;
   using vid_t = VID_T;
   using edata_t = ED_T;
@@ -73,11 +76,10 @@ template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
       typename vineyard::ConvertToArrowType<oid_t>::BuilderType;
 
  public:
-  EdgePartition(vineyard::Client& client, const grape::CommSpec& comm_spec,
+  EdgePartition(vineyard::Client& client,
                 bool directed = true)
       : client_(client),
-        comm_spec_(comm_spec),
-        directed_(directed){oid2Lid = vineyard::Hashmap<oid_t, vid_t>(client)};
+        directed_(directed){};
 
   int64_t GetVerticesNum() { return vnum; }
 
@@ -87,43 +89,44 @@ template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
     std::shared_ptr<oid_array_t> edge_src, edge_dst;
     std::shared_ptr<edata_array_t> edge_data;
     readDataFromMMapedFile(mmFiles, mapped_size, edge_src, edge_dst, edge_data);
-    LOG(INFO) << "Worker [" << comm_spec.worker_id()
-              << "Finish loading edges, edge src nums: " << edge_src.length()
-              << " dst nums: " << edge_dst.length()
-              << "edge data length: " << edge_data.length();
+    LOG(INFO)  << "Finish loading edges, edge src nums: " << edge_src->length()
+              << " dst nums: " << edge_dst->length()
+              << "edge data length: " << edge_data->length();
     // 0.1 Iterate over all edges, to build index, and count how many vertices
     // in this edge partition.
-    CHECK_EQ(edge_src.length(), edge_dst.length());
-    for (auto srcId : edge_src) {
+    CHECK_EQ(edge_src->length(), edge_dst->length());
+    for (auto ind = 0; ind < edge_src->length(); ++ind) {
+       auto srcId = edge_src->Value(ind);
       if (oid2Lid.find(srcId) == oid2Lid.end()) {
         oid2Lid.emplace(srcId, static_cast<vid_t>(oid2Lid.size()));
       }
     }
-    for (auto dstId : edge_dst) {
+    for (auto ind = 0; ind < edge_dst->length(); ++ind) {
+       auto dstId = edge_dst->Value(ind);
       if (oid2Lid.find(dstId) == oid2Lid.end()) {
         oid2Lid.emplace(dstId, static_cast<vid_t>(oid2Lid.size()));
       }
     }
     VLOG(1) << "Found " << oid2Lid.size() << " distince vertices from "
-            << edge_src.length() << " edges";
+            << edge_src->length() << " edges";
     vnum = oid2Lid.size();
 
-    grape::ImmutableCSRBuild<vid_t, nbr> inEdgesBuilder, outEdgesBuilder;
-    inEdgesBuilder.init(vnum);
-    outEdgesBuilder.init(vnum);
+    grape::ImmutableCSRBuild<vid_t, nbr_t> ie_builder, oe_builder;
+    ie_builder.init(vnum);
+    oe_builder.init(vnum);
     // both in and out
-    for (auto i = 0; i < edge_src.length(); ++i) {
-      oid_t srcId = edge_src[i];
-      oid_t dstId = edge_dst[i];
-      inEdgesBuilder.inc_degree(oid2Lid[dstId]);
-      outEdgesBuilder.inc_degree(oid2Lid[srcId]);
+    for (auto i = 0; i < edge_src->length(); ++i) {
+      oid_t srcId = edge_src->Value(i);
+      oid_t dstId = edge_dst->Value(i);
+      ie_builder.inc_degree(oid2Lid[dstId]);
+      oe_builder.inc_degree(oid2Lid[srcId]);
     }
     ie_builder.build_offsets();
     oe_builder.build_offsets();
     // now add edges
-    for (auto i = 0; i < edge_src.length(); ++i) {
-      ie_builder.add_edge(edge_dst[i], nbr_t(edge_src[i], edge_data[i]));
-      oe_builder.add_edge(edge_src[i], nbr_t(edge_dst[i], edge_data[i]));
+    for (auto i = 0; i < edge_src->length(); ++i) {
+      ie_builder.add_edge(edge_dst->Value(i), nbr_t(edge_src->Value(i), edge_data->Value(i)));
+      oe_builder.add_edge(edge_src->Value(i), nbr_t(edge_dst->Value(i), edge_data->Value(i)));
     }
     ie_builder.finish(inEdges);
     oe_builder.finish(outEdges);
@@ -134,7 +137,7 @@ template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
   void readDataFromMMapedFile(const std::string& files, int64_t mapped_size,
                               std::shared_ptr<oid_array_t>& edge_src,
                               std::shared_ptr<oid_array_t>& edge_dst,
-                              std::shared_ptr<oid_array_t>& edge_edata) {
+                              std::shared_ptr<edata_array_t>& edge_data) {
     std::vector<std::string> files_splited;
     boost::split(files_splited, files, boost::is_any_of(":"));
     int success_cnt = 0;
@@ -145,7 +148,7 @@ template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
       int fd =
           shm_open(file_path.c_str(), O_RDWR, S_IRUSR | S_IWUSR);  // no O_CREAT
       if (fd < 0) {
-        LOG(ERROR) << "Worker [" << worker_id_ << " Not exists " << file_path;
+        LOG(ERROR) <<  " Not exists " << file_path;
         continue;
       }
 
@@ -165,15 +168,15 @@ template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
 
       int64_t res = digestEdgesFromMapedFile(data_start, data_len, edge_src,
                                              edge_dst, edge_data);
-      VLOG(1) << "Worker " << worker_id_ << " Finish reading " << file_path
+      VLOG(1) <<  " Finish reading " << file_path
               << " got " << numEdges << " edges";
       numEdges += res;
       success_cnt += 1;
     }
 
-    VLOG(1) << " Worker [" << worker_id_
+    VLOG(1) 
             << "] finish loading edges,  success: " << success_cnt << " / "
-            << files_splited.size() << " read: " << vertices_or_edges_read;
+            << files_splited.size() << " read: " << numEdges;
   }
 
   /* Deserializing from the mmaped file. The layout of is
@@ -184,7 +187,7 @@ template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
   int64_t digestEdgesFromMapedFile(char* data, int64_t chunk_len,
                                    std::shared_ptr<oid_array_t>& edge_src,
                                    std::shared_ptr<oid_array_t>& edge_dst,
-                                   std::shared_ptr<oid_array_t>& edge_edata) {
+                                   std::shared_ptr<edata_array_t>& edge_data) {
     if (chunk_len < 28) {
       LOG(ERROR) << "At least need 16 bytes to read meta";
       return 0;
@@ -200,8 +203,8 @@ template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
         ptr += 1;
       }
       src_builder.Finish(&edge_src);
-      LOG(INFO) << "Worker [" << comm_spec.worker_id()
-                << "] Finish read src oid of length: " << chunk_len;
+      LOG(INFO) 
+                << "Finish read src oid of length: " << chunk_len;
 
       dst_builder.Reserve(chunk_len);
       for (auto i = 0; i < chunk_len; ++i) {
@@ -209,27 +212,26 @@ template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
         ptr += 1;
       }
       dst_builder.Finish(&edge_dst);
-      LOG(INFO) << "Worker [" << comm_spec.worker_id()
-                << "] Finish read dst oid of length: " << chunk_len;
+      LOG(INFO) 
+                << "Finish read dst oid of length: " << chunk_len;
     }
 
     {
-      edata_t* data_ptr = reinterpret_cast<edata_t>(ptr);
+      edata_t* data_ptr = reinterpret_cast<edata_t*>(ptr);
       edata_builder.Reserve(chunk_len);
       for (auto i = 0; i < chunk_len; ++i) {
         edata_builder.UnsafeAppend(*data_ptr);
         data_ptr += 1;
       }
       edata_builder.Finish(&edge_data);
-      LOG(INFO) << "Worker [" << comm_spec.worker_id()
-                << "] Finish read edata of length: " << chunk_len;
+      LOG(INFO) 
+                << "Finish read edata of length: " << chunk_len;
     }
     return chunk_len;
   }
   vineyard::Client& client_;
-  grape::CommSpec comm_spec_;
-  grape::ImmutableCSR inEdges, outEdges;
-  vineyard::Hashmap<oid_t, vid_t> oid2Lid;
+  grape::ImmutableCSR<vid_t,nbr_t> inEdges, outEdges;
+  ska::flat_hash_map<oid_t, vid_t> oid2Lid;
   vid_t vnum;
   bool directed_;
 };
