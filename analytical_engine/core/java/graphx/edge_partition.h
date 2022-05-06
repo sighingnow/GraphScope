@@ -104,8 +104,8 @@ template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
         oid2Lid.emplace(dstId, static_cast<vid_t>(oid2Lid.size()));
       }
     }
-    VLOG(1) << "Found " << oid2Lid.size() << " distince vertices from "
-            << edge_src.length() << " edges";
+    LOG(INFO) << "Found " << oid2Lid.size() << " distince vertices from "
+              << edge_src.length() << " edges";
     vnum = oid2Lid.size();
 
     grape::ImmutableCSRBuild<vid_t, nbr> inEdgesBuilder, outEdgesBuilder;
@@ -127,7 +127,7 @@ template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
     }
     ie_builder.finish(inEdges);
     oe_builder.finish(outEdges);
-    VLOG(1) << "Finish build inEdges and out Edges.";
+    LOG(INFO) << "Finish build inEdges and out Edges.";
   }
 
  private:
@@ -141,7 +141,7 @@ template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
     int64_t numEdges = 0;
     // FIXME
     for (auto file_path : files_splited) {
-      VLOG(1) << "reading from " << file_path;
+      LOG(INFO) << "reading from " << file_path;
       int fd =
           shm_open(file_path.c_str(), O_RDWR, S_IRUSR | S_IWUSR);  // no O_CREAT
       if (fd < 0) {
@@ -153,27 +153,27 @@ template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
           mmap(NULL, mapped_size, PROT_READ, MAP_SHARED, fd, 0);
       if (mmapped_data == MAP_FAILED) {
         close(fd);
-        VLOG(1) << "Error mmapping the file " << file_path;
+        LOG(INFO) << "Error mmapping the file " << file_path;
         return;
       }
 
       // first 8 bytes are size in int64_t;
       int64_t data_len = *reinterpret_cast<int64_t*>(mmapped_data);
       CHECK_GT(data_len, 0);
-      VLOG(1) << "Reading first 8 bytes, indicating total len: " << data_len;
+      LOG(INFO) << "Reading first 8 bytes, indicating total len: " << data_len;
       char* data_start = (reinterpret_cast<char*>(mmapped_data) + 8);
 
       int64_t res = digestEdgesFromMapedFile(data_start, data_len, edge_src,
                                              edge_dst, edge_data);
-      VLOG(1) << "Worker " << worker_id_ << " Finish reading " << file_path
-              << " got " << numEdges << " edges";
+      LOG(INFO) << "Worker " << worker_id_ << " Finish reading " << file_path
+                << " got " << numEdges << " edges";
       numEdges += res;
       success_cnt += 1;
     }
 
-    VLOG(1) << " Worker [" << worker_id_
-            << "] finish loading edges,  success: " << success_cnt << " / "
-            << files_splited.size() << " read: " << vertices_or_edges_read;
+    LOG(INFO) << " Worker [" << worker_id_
+              << "] finish loading edges,  success: " << success_cnt << " / "
+              << files_splited.size() << " read: " << vertices_or_edges_read;
   }
 
   /* Deserializing from the mmaped file. The layout of is

@@ -131,6 +131,9 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_getArrowProjectedFragment(
 JNIEXPORT jlong JNICALL
 Java_com_alibaba_graphscope_runtime_NativeUtils_nativeCreateEdgePartition(
     JNIEnv* env, jclass clz, jstring mmFiles, jlong mapped_size, jint ed_type) {
+  google::InitGoogleLogging("NativeUtils");
+  google::InstallFailureSignalHandler();
+
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
   VLOG(1) << "Created comm_spec";
