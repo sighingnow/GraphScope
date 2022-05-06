@@ -83,6 +83,10 @@ template <typename OID_T = vineyard::property_graph_types::OID_TYPE,
 
   int64_t GetEdgesNum() { return outEdges.edge_num(); }
 
+  grape::ImmutableCSR<vid_t, nbr_t>& GetInEdges() { return inEdges; }
+
+  grape::ImmutableCSR<vid_t, nbr_t>& GetOutEdges() { return outEdges; }
+
   void LoadEdges(const std::string& mmFiles, int64_t mapped_size) {
     std::shared_ptr<oid_array_t> edge_src, edge_dst;
     std::shared_ptr<edata_array_t> edge_data;
