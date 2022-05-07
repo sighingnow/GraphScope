@@ -52,6 +52,7 @@
 
 #include "core/error.h"
 #include "core/io/property_parser.h"
+#include "core/java/type_alias.h"
 
 /**
  * @brief Defines the RDD of edges. when data is feed into this, we assume it is
