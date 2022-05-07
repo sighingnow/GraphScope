@@ -43,6 +43,7 @@ object GrapeEdgeRDD extends Logging{
     val totalNumEdges = edgePartitions.map(_._2.size.toLong).fold(0)(_ + _)
     log.info(s"Driver: Total num edges in Partition: ${totalNumEdges}")
     val edgeMappedSize = 32L * totalNumEdges  + 128
+    //FIXME: no shared memory need. use byteVectorStream
     val outputFilenames = SharedMemoryUtils.mapEdgePartitionToFile(edgePartitions, "graphx-edge", edgeMappedSize);
     val outputFilenamesDedup = dedup(outputFilenames).mkString(":")
     log.info(s"[Driver: ] got mapped edge files ${outputFilenamesDedup}")
