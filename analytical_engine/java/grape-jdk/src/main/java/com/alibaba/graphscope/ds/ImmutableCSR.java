@@ -29,8 +29,8 @@ public interface ImmutableCSR<VID_T, ED> extends FFIPointer { //grape::Nbr
     boolean isEmpty(VID_T lid);
 
     @FFINameAlias("get_begin")
-    @CXXReference GrapeNbr<VID_T,ED> getBegin(VID_T lid);
+    GrapeNbr<VID_T,ED> getBegin(VID_T lid);
 
     @FFINameAlias("get_end")
-    @CXXReference GrapeNbr<VID_T,ED> getEnd(VID_T lid);
+    GrapeNbr<VID_T,ED> getEnd(VID_T lid);
 }

@@ -92,7 +92,7 @@ template <typename FRAG_T>
 using IntColumn = Column<FRAG_T, uint32_t>;
 
 template <typename VID_T, typename ED_T>
-using DefaultImmutableCSR<VID_T, ED_T> =
+using DefaultImmutableCSR =
     grape::ImmutableCSR<VID_T, grape::Nbr<VID_T, ED_T>>;
 
 namespace graphx {
@@ -106,9 +106,10 @@ class MutableTypedArray {
       buffer_ = NULL;
       length = 0;
     } else {
-      buffer_ = std::dynamic_pointer_cast<
+      auto const_buffer_ = std::dynamic_pointer_cast<
                     typename vineyard::ConvertToArrowType<T>::ArrayType>(array)
                     ->raw_values();
+      buffer_ = const_cast<T*>(const_buffer_);
       length = array->length();
     }
   }
@@ -118,9 +119,10 @@ class MutableTypedArray {
       buffer_ = NULL;
       length = 0;
     } else {
-      buffer_ = std::dynamic_pointer_cast<
+      auto const_buffer_ = std::dynamic_pointer_cast<
                     typename vineyard::ConvertToArrowType<T>::ArrayType>(array)
                     ->raw_values();
+      buffer_ = const_cast<T*>(const_buffer_);
       length = array->length();
     }
   }
@@ -133,7 +135,7 @@ class MutableTypedArray {
   size_t GetLength() const { return length; }
 
  private:
-  const T* buffer_;
+  T* buffer_;
   size_t length;
 };
 }  // namespace graphx

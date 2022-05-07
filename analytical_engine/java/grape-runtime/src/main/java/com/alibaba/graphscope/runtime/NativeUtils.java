@@ -39,6 +39,7 @@ public class NativeUtils {
         logger.info("[NativeUtils:] create edge partition for {}, addr {}", foreignName, addr);
         Class<? extends GrapeEdgePartition> clz = (Class<? extends GrapeEdgePartition>) FFITypeFactory.getType(
             GrapeEdgePartition.class, foreignName);
+	logger.info("[NativeUtils:] got grapeEdgePartition clz" + clz.getName());
         Constructor[] constructors = clz.getConstructors();
         for (Constructor constructor : constructors) {
             if (constructor.getParameterCount() == 1
