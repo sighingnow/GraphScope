@@ -10,10 +10,11 @@ public class NativeUtils {
 
     private static Logger logger = LoggerFactory.getLogger(NativeUtils.class.getName());
 
-    static{
+    static {
         System.loadLibrary("grape-jni");
         logger.info("[NativeUtils:] load jni lib success");
     }
+
     public static native long createLoader();
 
     public static native long invokeLoadingAndProjection(long addr, int vdType, int edType);
@@ -27,19 +28,20 @@ public class NativeUtils {
         Class<? extends OID> oidClass, Class<? extends VID> vidClass, Class<? extends ED> edClass)
         throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         String foreignName = "gs::EdgePartition<int64_t,uint64_t," + clz2Str(edClass) + ">";
+        Class<? extends GrapeEdgePartition> clz = (Class<? extends GrapeEdgePartition>) FFITypeFactory.getType(
+            GrapeEdgePartition.class, foreignName);
+        logger.info("[NativeUtils:] got grapeEdgePartition clz" + clz.getName());
         long addr = nativeCreateEdgePartition(mmFiles, size, clz2Int(edClass));
         if (addr <= 0) {
             throw new IllegalStateException("Fail to create edge partition");
         }
-        return createEdgePartition(foreignName, addr);
+        logger.info("[NativeUtils:] create edge partition for {}, addr {}", foreignName, addr);
+        return createEdgePartition(clz, addr);
     }
 
-    private static GrapeEdgePartition createEdgePartition(String foreignName, long addr)
+    private static GrapeEdgePartition createEdgePartition(Class<? extends GrapeEdgePartition> clz, long addr)
         throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        logger.info("[NativeUtils:] create edge partition for {}, addr {}", foreignName, addr);
-        Class<? extends GrapeEdgePartition> clz = (Class<? extends GrapeEdgePartition>) FFITypeFactory.getType(
-            GrapeEdgePartition.class, foreignName);
-	logger.info("[NativeUtils:] got grapeEdgePartition clz" + clz.getName());
+
         Constructor[] constructors = clz.getConstructors();
         for (Constructor constructor : constructors) {
             if (constructor.getParameterCount() == 1
