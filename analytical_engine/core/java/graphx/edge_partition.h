@@ -162,6 +162,8 @@ class EdgePartition {
     boost::split(files_splited, files, boost::is_any_of(":"));
     int success_cnt = 0;
     int64_t numEdges = 0;
+    oid_array_builder_t src_builder, dst_builder;
+    edata_array_builder_t edata_builder;
     // FIXME
     for (auto file_path : files_splited) {
       LOG(INFO) << "reading from " << file_path;
@@ -186,16 +188,20 @@ class EdgePartition {
       LOG(INFO) << "Reading first 8 bytes, indicating total len: " << data_len;
       char* data_start = (reinterpret_cast<char*>(mmapped_data) + 8);
 
-      int64_t res = digestEdgesFromMapedFile(data_start, data_len, edge_src,
-                                             edge_dst, edge_data);
+      int64_t res = digestEdgesFromMapedFile(data_start, data_len, src_builder,
+                                             dst_builder, edata_builder);
+      numEdges += res;
       LOG(INFO) << " Finish reading " << file_path << " got " << numEdges
                 << " edges";
-      numEdges += res;
       success_cnt += 1;
     }
 
     LOG(INFO) << "] finish loading edges,  success: " << success_cnt << " / "
               << files_splited.size() << " read: " << numEdges;
+    src_builder.Finish(&edge_src);
+    dst_builder.Finish(&edge_dst);
+    edata_builder.Finish(&edge_data);
+    LOG(INFO) << "Finsih building arrow arrays";
   }
 
   /* Deserializing from the mmaped file. The layout of is
@@ -204,11 +210,9 @@ class EdgePartition {
 
  do not modify pointer */
   int64_t digestEdgesFromMapedFile(char* data, int64_t chunk_len,
-                                   std::shared_ptr<oid_array_t>& edge_src,
-                                   std::shared_ptr<oid_array_t>& edge_dst,
-                                   std::shared_ptr<edata_array_t>& edge_data) {
-    oid_array_builder_t src_builder, dst_builder;
-    edata_array_builder_t edata_builder;
+                                   oid_array_builder_t& edge_src_builder,
+                                   oid_array_builder_t& edge_dst_builder,
+                                   edata_array_builder_t& edge_data_builder) {
     oid_t* ptr = reinterpret_cast<oid_t*>(data);
     {
       src_builder.Reserve(chunk_len);
@@ -216,7 +220,6 @@ class EdgePartition {
         src_builder.UnsafeAppend(*ptr);
         ptr += 1;
       }
-      src_builder.Finish(&edge_src);
       LOG(INFO) << "Finish read src oid of length: " << chunk_len;
 
       dst_builder.Reserve(chunk_len);
@@ -224,7 +227,6 @@ class EdgePartition {
         dst_builder.UnsafeAppend(*ptr);
         ptr += 1;
       }
-      dst_builder.Finish(&edge_dst);
       LOG(INFO) << "Finish read dst oid of length: " << chunk_len;
     }
 
@@ -235,7 +237,6 @@ class EdgePartition {
         edata_builder.UnsafeAppend(*data_ptr);
         data_ptr += 1;
       }
-      edata_builder.Finish(&edge_data);
       LOG(INFO) << "Finish read edata of length: " << chunk_len;
     }
     return chunk_len;
