@@ -21,6 +21,10 @@
 #include <jni.h>
 #endif
 
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -30,10 +34,6 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #include "flat_hash_map/flat_hash_map.hpp"
 
@@ -59,7 +59,9 @@
  *
  */
 namespace gs {
-template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
+
+template <typename OID_T, typename VID_T, typename ED_T>
+class EdgePartition {
   using oid_t = OID_T;
   using vid_t = VID_T;
   using edata_t = ED_T;
@@ -76,10 +78,8 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
       typename vineyard::ConvertToArrowType<oid_t>::BuilderType;
 
  public:
-  EdgePartition(vineyard::Client& client,
-                bool directed = true)
-      : client_(client),
-        directed_(directed){};
+  EdgePartition(vineyard::Client& client, bool directed = true)
+      : client_(client), directed_(directed){};
 
   int64_t GetVerticesNum() { return vnum; }
 
@@ -89,31 +89,44 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
 
   grape::ImmutableCSR<vid_t, nbr_t>& GetOutEdges() { return outEdges; }
 
+  graphx::MutableTypedArray<oid_t>& getOidArray() { return oidArray_accessor; }
+
   void LoadEdges(const std::string& mmFiles, int64_t mapped_size) {
     std::shared_ptr<oid_array_t> edge_src, edge_dst;
     std::shared_ptr<edata_array_t> edge_data;
     readDataFromMMapedFile(mmFiles, mapped_size, edge_src, edge_dst, edge_data);
-    LOG(INFO)  << "Finish loading edges, edge src nums: " << edge_src->length()
+    LOG(INFO) << "Finish loading edges, edge src nums: " << edge_src->length()
               << " dst nums: " << edge_dst->length()
               << "edge data length: " << edge_data->length();
     // 0.1 Iterate over all edges, to build index, and count how many vertices
     // in this edge partition.
     CHECK_EQ(edge_src->length(), edge_dst->length());
     for (auto ind = 0; ind < edge_src->length(); ++ind) {
-       auto srcId = edge_src->Value(ind);
+      auto srcId = edge_src->Value(ind);
       if (oid2Lid.find(srcId) == oid2Lid.end()) {
         oid2Lid.emplace(srcId, static_cast<vid_t>(oid2Lid.size()));
       }
     }
     for (auto ind = 0; ind < edge_dst->length(); ++ind) {
-       auto dstId = edge_dst->Value(ind);
+      auto dstId = edge_dst->Value(ind);
       if (oid2Lid.find(dstId) == oid2Lid.end()) {
         oid2Lid.emplace(dstId, static_cast<vid_t>(oid2Lid.size()));
       }
     }
-    LOG(INFO) << "Found " << oid2Lid.size() << " distince vertices from "
-              << edge_src->length() << " edges";
     vnum = oid2Lid.size();
+    LOG(INFO) << "Found " << vnum << " distince vertices from "
+              << edge_src->length() << " edges";
+    {
+      oid_array_builder_t builder;
+      builder.Reserve(vnum);
+      for (auto iter = oid2Lid.begin(); iter != oid2Lid.end(); ++iter) {
+        builder.UnsafeAppend(iter->second);
+      }
+      builder.Finish(&lid2Oid);
+    }
+    LOG(INFO) << "Finish lid2oid building, len" << lid2Oid->length();
+    oidArray_accessor.Init(lid2Oid);
+    LOG(INFO) << "Finish construct accessor: " << oidArray_accessor.GetLength();
 
     grape::ImmutableCSRBuild<vid_t, nbr_t> ie_builder, oe_builder;
     ie_builder.init(vnum);
@@ -129,8 +142,10 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
     oe_builder.build_offsets();
     // now add edges
     for (auto i = 0; i < edge_src->length(); ++i) {
-      ie_builder.add_edge(edge_dst->Value(i), nbr_t(edge_src->Value(i), edge_data->Value(i)));
-      oe_builder.add_edge(edge_src->Value(i), nbr_t(edge_dst->Value(i), edge_data->Value(i)));
+      ie_builder.add_edge(edge_dst->Value(i),
+                          nbr_t(edge_src->Value(i), edge_data->Value(i)));
+      oe_builder.add_edge(edge_src->Value(i),
+                          nbr_t(edge_dst->Value(i), edge_data->Value(i)));
     }
     ie_builder.finish(inEdges);
     oe_builder.finish(outEdges);
@@ -152,7 +167,7 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
       int fd =
           shm_open(file_path.c_str(), O_RDWR, S_IRUSR | S_IWUSR);  // no O_CREAT
       if (fd < 0) {
-        LOG(ERROR) <<  " Not exists " << file_path;
+        LOG(ERROR) << " Not exists " << file_path;
         continue;
       }
 
@@ -172,15 +187,14 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
 
       int64_t res = digestEdgesFromMapedFile(data_start, data_len, edge_src,
                                              edge_dst, edge_data);
-      LOG(INFO) <<  " Finish reading " << file_path
-              << " got " << numEdges << " edges";
+      LOG(INFO) << " Finish reading " << file_path << " got " << numEdges
+                << " edges";
       numEdges += res;
       success_cnt += 1;
     }
 
-    LOG(INFO) 
-            << "] finish loading edges,  success: " << success_cnt << " / "
-            << files_splited.size() << " read: " << numEdges;
+    LOG(INFO) << "] finish loading edges,  success: " << success_cnt << " / "
+              << files_splited.size() << " read: " << numEdges;
   }
 
   /* Deserializing from the mmaped file. The layout of is
@@ -192,7 +206,6 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
                                    std::shared_ptr<oid_array_t>& edge_src,
                                    std::shared_ptr<oid_array_t>& edge_dst,
                                    std::shared_ptr<edata_array_t>& edge_data) {
-
     oid_array_builder_t src_builder, dst_builder;
     edata_array_builder_t edata_builder;
     oid_t* ptr = reinterpret_cast<oid_t*>(data);
@@ -203,8 +216,7 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
         ptr += 1;
       }
       src_builder.Finish(&edge_src);
-      LOG(INFO) 
-                << "Finish read src oid of length: " << chunk_len;
+      LOG(INFO) << "Finish read src oid of length: " << chunk_len;
 
       dst_builder.Reserve(chunk_len);
       for (auto i = 0; i < chunk_len; ++i) {
@@ -212,8 +224,7 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
         ptr += 1;
       }
       dst_builder.Finish(&edge_dst);
-      LOG(INFO) 
-                << "Finish read dst oid of length: " << chunk_len;
+      LOG(INFO) << "Finish read dst oid of length: " << chunk_len;
     }
 
     {
@@ -224,14 +235,15 @@ template <typename OID_T, typename VID_T, typename ED_T> class EdgePartition {
         data_ptr += 1;
       }
       edata_builder.Finish(&edge_data);
-      LOG(INFO) 
-                << "Finish read edata of length: " << chunk_len;
+      LOG(INFO) << "Finish read edata of length: " << chunk_len;
     }
     return chunk_len;
   }
   vineyard::Client& client_;
-  grape::ImmutableCSR<vid_t,nbr_t> inEdges, outEdges;
+  grape::ImmutableCSR<vid_t, nbr_t> inEdges, outEdges;
   ska::flat_hash_map<oid_t, vid_t> oid2Lid;
+  std::shared_ptr<oid_array_t> lid2Oid;
+  graphx::MutableTypedArray<oid_t> oidArray_accessor;
   vid_t vnum;
   bool directed_;
 };

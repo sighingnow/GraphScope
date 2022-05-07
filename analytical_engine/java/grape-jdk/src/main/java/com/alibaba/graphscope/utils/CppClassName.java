@@ -79,4 +79,7 @@ public class CppClassName {
 
     public static final String GS_EDGE_PARTITION = "gs::EdgePartition";
     public static final String GS_VERTEX_PARTITION = "gs::VertexPartition";
+    public static final String GS_VERTEX_PARTITION_BUILDER = "gs::VertexPartitionBuilder";
+    public static final String GS_MUTABLE_TYPE_ARRAY = "gs::graphx::MutableTypedArray";
+    public static final String GS_DEFAULT_IMMUTABLE_CSR = "gs::DefaultImmutableCSR";
 }

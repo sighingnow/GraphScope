@@ -1,6 +1,6 @@
 package org.apache.spark.graphx.impl.grape
 
-import org.apache.spark.graphx.impl.{EdgePartition, EdgeRDDImpl, GrapeEdgePartitionWrapper, GrapeVertexPartition, ShippableVertexPartition}
+import org.apache.spark.graphx.impl.{EdgePartition, EdgeRDDImpl, GrapeEdgePartitionWrapper, GrapeVertexPartitionWrapper, ShippableVertexPartition}
 import org.apache.spark.graphx._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -16,8 +16,8 @@ import scala.reflect.ClassTag
  * @tparam VD
  */
 class GrapeVertexRDDImpl[VD] private[graphx](
-                                                 @transient val grapePartitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD])],
-                                                 val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
+                                              @transient val grapePartitionsRDD: RDD[(PartitionID, GrapeVertexPartitionWrapper[VD])],
+                                              val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
                                             (implicit override protected val vdTag: ClassTag[VD])
   extends GrapeVertexRDD[VD](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
@@ -29,7 +29,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   override val partitioner: Option[Partitioner] = grapePartitionsRDD.partitioner
 
   override def compute(part: Partition, context: TaskContext): Iterator[(VertexId,VD)] = {
-    val p = firstParent[(PartitionID, GrapeVertexPartition[VD])].iterator(part, context)
+    val p = firstParent[(PartitionID, GrapeVertexPartitionWrapper[VD])].iterator(part, context)
     if (p.hasNext) {
       //      p.next()._2.iterator.map(_.copy())
       p.next()._2.iterator.map(_.copy())
@@ -39,13 +39,13 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   }
 
   override def count(): Long = {
-    grapePartitionsRDD.map(_._2.partitionVnum.toLong).fold(0)(_ + _)
+    grapePartitionsRDD.map(_._2.partitionVnum).fold(0)(_ + _)
   }
 
   override private[graphx] def mapVertexPartitions[VD2](f: ShippableVertexPartition[VD] => ShippableVertexPartition[VD2])(implicit evidence$1: ClassTag[VD2]) = {
     throw new IllegalStateException("Not implemented")
   }
-  override private[graphx] def mapGrapeVertexPartitions[VD2: ClassTag](f: GrapeVertexPartition[VD] => GrapeVertexPartition[VD2])
+  override private[graphx] def mapGrapeVertexPartitions[VD2: ClassTag](f: GrapeVertexPartitionWrapper[VD] => GrapeVertexPartitionWrapper[VD2])
   : GrapeVertexRDD[VD2] = {
     val newPartitionsRDD  = grapePartitionsRDD.mapPartitions(
       iter => {
@@ -193,24 +193,24 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     this.withGrapePartitionsRDD[VD2](newPartitionsRDD)
   }
 
-  override def writeBackVertexData(vdataMappedPath : String, vdataMappedSize : Long): Unit = {
-    grapePartitionsRDD.foreachPartition(iter => {
-      if (iter.hasNext){
-        val tuple = iter.next()
-        val pid = tuple._1
-        val part = tuple._2
-        FragmentRegistry.updateVertexPartition(pid, part)
-      }
-    })
-    grapePartitionsRDD.foreachPartition(iter => {
-      if (iter.hasNext){
-        val tuple = iter.next()
-        val pid = tuple._1
-        val part = tuple._2
-        FragmentRegistry.mapVertexData(pid, vdataMappedPath, vdataMappedSize)
-      }
-    })
-  }
+//  override def writeBackVertexData(vdataMappedPath : String, vdataMappedSize : Long): Unit = {
+//    grapePartitionsRDD.foreachPartition(iter => {
+//      if (iter.hasNext){
+//        val tuple = iter.next()
+//        val pid = tuple._1
+//        val part = tuple._2
+//        FragmentRegistry.updateVertexPartition(pid, part)
+//      }
+//    })
+//    grapePartitionsRDD.foreachPartition(iter => {
+//      if (iter.hasNext){
+//        val tuple = iter.next()
+//        val pid = tuple._1
+//        val part = tuple._2
+//        FragmentRegistry.mapVertexData(pid, vdataMappedPath, vdataMappedSize)
+//      }
+//    })
+//  }
 
   override def withGrapeVertexData(vdataMappedPath: String, size : Long) : GrapeVertexRDD[VD] = {
     val newPartitionRDD = grapePartitionsRDD.mapPartitions(iter => {
@@ -240,7 +240,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     throw new IllegalStateException("Inherited but not implemented, should not be used, use withGrapePartitionsRDD instead")
   }
 
-  override private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])]) : GrapeVertexRDD[VD2] = {
+  override private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartitionWrapper[VD2])]) : GrapeVertexRDD[VD2] = {
     new GrapeVertexRDDImpl[VD2](partitionsRDD,this.targetStorageLevel)
   }
 

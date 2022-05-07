@@ -49,12 +49,9 @@ object GraphLoader extends Logging {
     logInfo(s"It took ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTimeNs)} ms" +
       " to load the edges")
 
-    //    GraphImpl.fromEdgePartitions(edges, defaultVertexAttr = 1, edgeStorageLevel = edgeStorageLevel,
-    //      vertexStorageLevel = vertexStorageLevel)
-//    val res = GraphImpl.fromEdgePartitions(edges, defaultVertexAttr = 1, edgeStorageLevel = edgeStorageLevel,
-//      vertexStorageLevel = vertexStorageLevel)
-//      .mapVertices((vid, attr) => attr.toLong).mapEdges(edge => edge.attr.toLong)
-    val edgeRDD = GrapeEdgeRDD.fromEdgePartitions(edges)
+    val edgeRDD = GrapeEdgeRDD.fromEdgePartitions(edges).cache()
+    val vertexRDD = GrapeVertexRDD.fromEdgeRDD(edgeRDD, edgeRDD.partitions.length, 1).cache()
+    log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
     null
 //    GrapeGraphImpl.fromGraphXGraph(res)
   }

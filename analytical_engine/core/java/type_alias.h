@@ -18,6 +18,7 @@
 
 #ifdef ENABLE_JAVA_SDK
 
+#include "grape/graph/immutable_csr.h"
 #include "grape/utils/vertex_array.h"
 #include "vineyard/graph/fragment/arrow_fragment.h"
 #include "vineyard/graph/fragment/property_graph_types.h"
@@ -89,6 +90,53 @@ using LongColumn = Column<FRAG_T, uint64_t>;
 
 template <typename FRAG_T>
 using IntColumn = Column<FRAG_T, uint32_t>;
+
+template <typename VID_T, typename ED_T>
+using DefaultImmutableCSR<VID_T, ED_T> =
+    grape::ImmutableCSR<VID_T, grape::Nbr<VID_T, ED_T>>;
+
+namespace graphx {
+template <typename T>
+class MutableTypedArray {
+ public:
+  using value_type = T;
+  MutableTypedArray() : buffer_(NULL), length(0) {}
+  explicit MutableTypedArray(std::shared_ptr<arrow::Array> array) {
+    if (array == nullptr) {
+      buffer_ = NULL;
+      length = 0;
+    } else {
+      buffer_ = std::dynamic_pointer_cast<
+                    typename vineyard::ConvertToArrowType<T>::ArrayType>(array)
+                    ->raw_values();
+      length = array->length();
+    }
+  }
+
+  void Init(std::shared_ptr<arrow::Array> array) {
+    if (array == nullptr) {
+      buffer_ = NULL;
+      length = 0;
+    } else {
+      buffer_ = std::dynamic_pointer_cast<
+                    typename vineyard::ConvertToArrowType<T>::ArrayType>(array)
+                    ->raw_values();
+      length = array->length();
+    }
+  }
+
+  value_type operator[](size_t loc) const { return buffer_[loc]; }
+
+  value_type Get(size_t loc) const { return buffer_[loc]; }
+
+  void Set(size_t loc, value_type newValue) { buffer_[loc] = newValue; }
+  size_t GetLength() const { return length; }
+
+ private:
+  const T* buffer_;
+  size_t length;
+};
+}  // namespace graphx
 }  // namespace gs
 
 #endif

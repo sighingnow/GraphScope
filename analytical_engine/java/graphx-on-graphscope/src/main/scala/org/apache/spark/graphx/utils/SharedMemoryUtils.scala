@@ -208,7 +208,7 @@ object SharedMemoryUtils extends Logging{
           else {
             throw new IllegalStateException("Unsupported vd type: " + edClass.getName)
           }
-          log.info(s"Partition: ${pid} Finish writing vdata array of size ${edgesNum} to ${dstFile}, total Bytes ${totalBytes}")
+          log.info(s"Partition: ${pid} Finish writing edges of size ${edgesNum} to ${dstFile}, total Bytes ${totalBytes}")
         }
       }
     )

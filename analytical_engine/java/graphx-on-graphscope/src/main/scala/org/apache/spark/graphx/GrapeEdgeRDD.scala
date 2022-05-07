@@ -12,6 +12,11 @@ import scala.reflect.ClassTag
 
 abstract class GrapeEdgeRDD[ED](sc: SparkContext,
                                 deps: Seq[Dependency[_]]) extends EdgeRDD[ED](sc, deps) {
+
+  private[graphx] def grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartitionWrapper[VD, ED])] forSome { type VD }
+
+  override def partitionsRDD = null
+
   def mapValues[ED2 : ClassTag](f: Edge[ED] => ED2): GrapeEdgeRDD[ED2]
 
   override def innerJoin[ED2: ClassTag, ED3: ClassTag](other: EdgeRDD[ED2])
@@ -61,9 +66,12 @@ object GrapeEdgeRDD extends Logging{
       val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
       Iterator((pid,registry.getEdgePartitionWrapper(pid)))
     })
+    //Clear registry
+    edgePartitions.foreachPartition(_ =>  GrapeEdgePartitionRegistry.clear())
+
     log.info(s"[Driver:] got grape edge Partition Wrapper, total edges count ${grapeEdgePartitionWrapper.count()}")
 
-    null
+    new GrapeEdgeRDDImpl[VD,ED](grapeEdgePartitionWrapper)
     //2. load grape edge partition from shared memory.
 
     //3. return the java wrapper.

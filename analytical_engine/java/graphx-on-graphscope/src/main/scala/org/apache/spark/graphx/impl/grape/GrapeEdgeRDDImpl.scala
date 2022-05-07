@@ -8,8 +8,7 @@ import org.apache.spark.{OneToOneDependency, Partition, Partitioner, TaskContext
 
 import scala.reflect.{ClassTag, classTag}
 
-class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
-                                                                     @transient val grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartitionWrapper[VD, ED])],
+class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient override val grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartitionWrapper[VD, ED])],
                                                                      val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   extends GrapeEdgeRDD[ED](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
@@ -85,8 +84,8 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
 
   //FIXME: count active edges
   override def count(): Long = {
-//    grapePartitionsRDD.map(_._2.numEdges.toLong).fold(0)(_ + _)
-    throw new IllegalStateException("fix me")
+    grapePartitionsRDD.map(_._2.edgeNum).fold(0)(_ + _)
+//    throw new IllegalStateException("fix me")
   }
 
   override def mapValues[ED2 :ClassTag](f: Edge[ED] => ED2): GrapeEdgeRDDImpl[VD,ED2] = {
@@ -124,10 +123,6 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](
 
   override private[graphx] def withTargetStorageLevel(newTargetStorageLevel: StorageLevel) = {
     new GrapeEdgeRDDImpl[VD,ED](grapePartitionsRDD, newTargetStorageLevel)
-  }
-
-  override private[graphx] def partitionsRDD = {
-    throw new IllegalStateException("Not implemented")
   }
 
   def mapEdgePartitions[VD2: ClassTag, ED2: ClassTag](

@@ -41,12 +41,39 @@ import com.alibaba.fastffi.FFIGenBatch;
             @FFIGen(type = "com.alibaba.graphscope.ds.EmptyType"),
             @FFIGen(type = "com.alibaba.graphscope.parallel.message.DoubleMsg"),
             @FFIGen(type = "com.alibaba.graphscope.parallel.message.LongMsg"),
+            @FFIGen(type = "com.alibaba.graphscope.ds.MutableTypedArray",
+                templates = {
+                    @CXXTemplate(cxx = "int64_t", java = "Long"),
+                    @CXXTemplate(cxx = "int32_t", java = "Integer"),
+                    @CXXTemplate(cxx = "double", java = "Double")
+                }
+            ),
             @FFIGen(
                 type = "com.alibaba.graphscope.graphx.GrapeEdgePartition",
                 templates = {
                     @CXXTemplate(cxx = {"int64_t","uint64_t","int64_t"}, java = {"Long","Long","Long"}),
                     @CXXTemplate(cxx = {"int64_t","uint64_t","double"}, java = {"Long","Long","Double"}),
                     @CXXTemplate(cxx = {"int64_t","uint64_t","int32_t"}, java = {"Long","Long","Integer"})
+                }),
+            @FFIGen(
+                type = "com.alibaba.graphscope.ds.GrapeNbr",
+                templates = {
+                    @CXXTemplate(
+                        cxx = {"uint64_t", "double"},
+                        java = {"Long", "Double"}),
+                    @CXXTemplate(
+                        cxx = {"uint64_t", "int32_t"},
+                        java = {"Long", "Integer"}),
+                    @CXXTemplate(
+                        cxx = {"uint64_t", "int64_t"},
+                        java = {"Long", "Long"}),
+                }),
+            @FFIGen(
+                type = "com.alibaba.graphscope.ds.ImmutableCSR",
+                templates = {
+                    @CXXTemplate(cxx = {"uint64_t","int64_t"}, java = {"Long","Long"}),
+                    @CXXTemplate(cxx = {"uint64_t","double"}, java = {"Long","Double"}),
+                    @CXXTemplate(cxx = {"uint64_t","int32_t"}, java = {"Long","Integer"})
                 }),
             @FFIGen(
                     type = "com.alibaba.graphscope.ds.TypedArray",
@@ -86,19 +113,7 @@ import com.alibaba.fastffi.FFIGenBatch;
                                 cxx = {"uint64_t", "double"},
                                 java = {"Long", "Double"}),
                     }),
-            @FFIGen(
-                    type = "com.alibaba.graphscope.ds.GrapeNbr",
-                    templates = {
-                        @CXXTemplate(
-                                cxx = {"uint64_t", "double"},
-                                java = {"Long", "Double"}),
-                        @CXXTemplate(
-                                cxx = {"uint64_t", "int32_t"},
-                                java = {"Long", "Integer"}),
-                        @CXXTemplate(
-                                cxx = {"uint64_t", "int64_t"},
-                                java = {"Long", "Long"}),
-                    }),
+
             @FFIGen(
                     type = "com.alibaba.graphscope.ds.GrapeAdjList",
                     templates = {

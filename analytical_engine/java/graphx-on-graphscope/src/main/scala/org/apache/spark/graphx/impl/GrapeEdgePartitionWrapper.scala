@@ -1,8 +1,11 @@
 package org.apache.spark.graphx.impl
 
+import com.alibaba.graphscope.ds.{GrapeNbr, ImmutableCSR, MutableTypedArray}
 import com.alibaba.graphscope.graphx.GrapeEdgePartition
 import com.alibaba.graphscope.utils.array.PrimitiveArray
+import org.apache.spark.Partitioner
 import org.apache.spark.graphx.impl.graph.EdgeManagerImpl
+import org.apache.spark.graphx.impl.partition.VertexShuffle
 import org.apache.spark.graphx.traits.{EdgeManager, GraphXVertexIdManager}
 import org.apache.spark.graphx.{Edge, EdgeTriplet, PartitionID, TripletFields, VertexDataManagerCreator, VertexId}
 import org.apache.spark.internal.Logging
@@ -19,13 +22,43 @@ class GrapeEdgePartitionWrapper[VD: ClassTag, ED : ClassTag](
                                                        val startLid : Long,
                                                        val endLid : Long,
                                                        val grapePartition : GrapeEdgePartition[Long,Long,ED]) extends Logging{
-//  val totalVnum: Long = idManager.getInnerVerticesNum
-//  val chunkSize: Long = (totalVnum + (numPartitions - 1)) / numPartitions
-//  val startLid = Math.min(chunkSize * pid, totalVnum)
-//  val endLid = Math.min(startLid + chunkSize, totalVnum)
+  log.info("try to load jni library")
+  System.loadLibrary("grape-jni")
+  log.info("load jni lib success")
+  val vertexNum = grapePartition.getVerticesNum
+  val edgeNum = grapePartition.getEdgesNum
+  val inEdges : ImmutableCSR[Long,ED] = grapePartition.getInEdges
+  val outEdges : ImmutableCSR[Long,ED] = grapePartition.getOutEdges
+  val oids : MutableTypedArray[Long] = grapePartition.getOidArray
+  require(vertexNum == oids.getLength, s"length not match: ${vertexNum}, ${oids.getLength}")
 
-//  val numEdges = edgeManager.getPartialEdgeNum(startLid, endLid)
+  log.info(s"got inEdges : ${inEdges}, vnum: ${inEdges.vertexNum()}, edge num: ${inEdges.edgeNum()}")
+  log.info(s"got outEdges : ${outEdges}, vnum: ${outEdges.vertexNum()}, edge num: ${outEdges.edgeNum()}")
+
+  //  val numEdges = edgeManager.getPartialEdgeNum(startLid, endLid)
   log.info("Creating JavaEdgePartition {}", this)
+
+  def generateVertexShuffles(partitioner : Partitioner): Iterator[(PartitionID, VertexShuffle)] ={
+    //iterate over vertices, put them in different array, each for one partition.
+    val partitionNum = partitioner.numPartitions
+    log.info(s"Partition ${pid} shatter vertices into ${partitionNum} partitions")
+    val pid2Shuffle = new Array[VertexShuffle](partitionNum)
+    for (ind <- 0 until(partitionNum)){
+      pid2Shuffle(ind) = new VertexShuffle(ind, pid)
+    }
+    var ind = 0
+    while (ind < vertexNum){
+      val oid = oids.get(ind)
+      val pid = partitioner.getPartition(oid)
+      pid2Shuffle(pid).addOid(oid)
+      ind += 1
+    }
+    for (ind <- 0 until( partitionNum)){
+      val shuffle = pid2Shuffle(ind)
+      log.info(s"partition ${pid} to dst partition ${ind} ${shuffle.oidArray.array.mkString("Array(", ", ", ")")}")
+    }
+    pid2Shuffle.zipWithIndex.map(tuple => (tuple._2, tuple._1)).toIterator
+  }
 
   def createNewVDManager[VD2 : ClassTag] : Unit = {
 //    VertexDataManagerCreator.create[VD,VD2,ED](pid, edgeManager.asInstanceOf[EdgeManagerImpl[VD,ED]].vertexDataManager)

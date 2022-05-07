@@ -20,6 +20,7 @@ import static com.alibaba.graphscope.utils.CppClassName.GRAPE_MESSAGE_IN_BUFFER;
 import static com.alibaba.graphscope.utils.CppClassName.GS_PRIMITIVE_MESSAGE;
 import static com.alibaba.graphscope.utils.CppClassName.GS_VERTEX_ARRAY;
 
+import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIForeignType;
 import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeFactory;
@@ -38,6 +39,7 @@ import com.alibaba.graphscope.parallel.message.PrimitiveMessage;
 import com.alibaba.graphscope.stdcxx.StdString;
 import com.alibaba.graphscope.stdcxx.StdString.Factory;
 
+import com.alibaba.graphscope.stdcxx.StdVector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,6 +182,10 @@ public class FFITypeFactoryhelper {
             }
         }
         return ffiVectorFactoryMap.get(foreignTypeName);
+    }
+
+    public static StdVector.Factory getStdVectorFactory(String foreignName){
+        return FFITypeFactory.getFactory(StdVector.Factory.class, foreignName);
     }
 
     public static Vertex<Long> newVertexLong() {
