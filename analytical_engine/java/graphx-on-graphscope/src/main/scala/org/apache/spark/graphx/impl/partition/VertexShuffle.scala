@@ -9,9 +9,14 @@ import org.apache.spark.util.collection.PrimitiveVector
 
 class VertexShuffle(val dstPid : Int, val fromPid: Int)extends Logging  with Serializable{
 //  val oidArray = new Array[Long](INIT_SIZE)
-  val oidArray = new PrimitiveVector[Long](INIT_SIZE)
+  @transient val oidArray = new PrimitiveVector[Long](INIT_SIZE)
+  var resArray : Array[Long] = null.asInstanceOf[Array[Long]]
 
   def addOid(oid : Long) : Unit = oidArray.+=(oid)
+
+  def finish() : Unit = {
+    resArray = oidArray.array
+  }
 
   def size() : Int = oidArray.size
 
@@ -20,8 +25,8 @@ class VertexShuffle(val dstPid : Int, val fromPid: Int)extends Logging  with Ser
     vector.reserve(size())
     var i = 0;
     log.info(s"Writing vertex shuffle to vector ${vector} size ${size()}")
-    while (i < oidArray.size){
-      vector.set(i, oidArray(i))
+    while (i < resArray.size){
+      vector.set(i, resArray(i))
       i += 1
     }
     vector
