@@ -3,8 +3,11 @@ package com.alibaba.graphscope.utils;
 import com.alibaba.graphscope.graphx.GrapeEdgePartition;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ReflectUtils {
+    private static Logger logger = LoggerFactory.getLogger(ReflectUtils.class.getName());
 
     private static String NATIVE_UTILS = "com.alibaba.graphscope.runtime.NativeUtils";
     private static Class<?> nativeUtilsClz;
@@ -33,6 +36,7 @@ public class ReflectUtils {
         Class<? extends OID> oidClass, Class<? extends VID> vdClass,
         Class<? extends ED> edClass, String mmFiles, long size)
         throws InvocationTargetException, IllegalAccessException {
+        logger.info("invoke EdgePartition creation with params files {}, size{}", mmFiles, size);
         return (GrapeEdgePartition<OID, VID, ED>) createEdgePartitionMethod.invoke(null, mmFiles,
             size, oidClass, vdClass, edClass);
     }

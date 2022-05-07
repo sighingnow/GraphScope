@@ -185,7 +185,7 @@ public class FFITypeFactoryhelper {
     }
 
     public static StdVector.Factory getStdVectorFactory(String foreignName){
-        return FFITypeFactory.getFactory(StdVector.Factory.class, foreignName);
+        return FFITypeFactory.getFactory(StdVector.class, foreignName);
     }
 
     public static Vertex<Long> newVertexLong() {

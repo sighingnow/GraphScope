@@ -11,7 +11,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.util.collection.PrimitiveVector
 
 
-class VertexShuffle(val dstPid : Int, val fromPid: Int)extends Logging{
+class VertexShuffle(val dstPid : Int, val fromPid: Int)extends Logging  with Serializable{
 //  val oidArray = new Array[Long](INIT_SIZE)
   val oidArray = new PrimitiveVector[Long](INIT_SIZE)
 

@@ -210,9 +210,9 @@ class EdgePartition {
 
  do not modify pointer */
   int64_t digestEdgesFromMapedFile(char* data, int64_t chunk_len,
-                                   oid_array_builder_t& edge_src_builder,
-                                   oid_array_builder_t& edge_dst_builder,
-                                   edata_array_builder_t& edge_data_builder) {
+                                   oid_array_builder_t& src_builder,
+                                   oid_array_builder_t& dst_builder,
+                                   edata_array_builder_t& edata_builder) {
     oid_t* ptr = reinterpret_cast<oid_t*>(data);
     {
       src_builder.Reserve(chunk_len);

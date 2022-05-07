@@ -11,6 +11,7 @@ import scala.reflect.ClassTag
 class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
   private var registeredPath : String = null.asInstanceOf[String]
   private val partitionNum : AtomicInteger = new AtomicInteger(0)
+  private val partitionCnt : AtomicInteger = new AtomicInteger(0)
   private var grapeEdgePartition : GrapeEdgePartition[Long,Long,ED]  = null.asInstanceOf[GrapeEdgePartition[Long,Long,ED]]
    def registerPath(pid : Int, pathStr : String) : Unit = {
      partitionNum.addAndGet(1)
@@ -35,6 +36,7 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
             classOf[java.lang.Long].asInstanceOf[Class[_ <: Long]],
             classOf[java.lang.Long].asInstanceOf[Class[_ <: Long]],
             GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[_ <: ED]], registeredPath, size)
+	  log.info(s"Partition [${pid}] finish constructing edge partition ${grapeEdgePartition.toString}")
           return
         }
       }
@@ -43,10 +45,18 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
   }
 
   def getEdgePartitionWrapper(pid : Int): GrapeEdgePartitionWrapper[VD,ED] ={
-    val chunkSize = (grapeEdgePartition.getVerticesNum() + partitionNum.get() - 1) / partitionNum.get()
+    synchronized{   
+    val curPartId = partitionCnt.getAndAdd(1);
+    val numParts = partitionNum.get()
+    val totalVertices = grapeEdgePartition.getVerticesNum()
+    log.info(s"cur ${curPartId}, num parts ${numParts}, total vnum ${totalVertices}")
+    val chunkSize = (totalVertices + numParts - 1) / numParts
+    log.info(s"chunk size ${chunkSize}")
     val startLid = chunkSize * pid
     val endLid = Math.min(startLid + chunkSize, grapeEdgePartition.getVerticesNum)
+    log.info(s"cur pid ${curPartId} start from ${startLid} to ${endLid}")
     new GrapeEdgePartitionWrapper[VD,ED](pid, startLid, endLid, grapeEdgePartition)
+    }
   }
 }
 

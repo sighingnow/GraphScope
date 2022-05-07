@@ -139,7 +139,9 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_nativeCreateEdgePartition(
   VINEYARD_CHECK_OK(client.Connect(ipc_socket));
   LOG(INFO) << "Connected to " << ipc_socket;
 
+  LOG(INFO) << "mmfiles: "<< mmFiles;
   std::string files = gs::JString2String(env, mmFiles);
+  LOG(INFO) << "mm files in c++" << files;
   if (ed_type == 0) {
     LOG(INFO) << "creating EdgePartition for ed = int64_t, mmfiles " << files;
     static auto edge_partition =
