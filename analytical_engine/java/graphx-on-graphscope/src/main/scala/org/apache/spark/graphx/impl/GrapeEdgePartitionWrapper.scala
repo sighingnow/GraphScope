@@ -27,7 +27,7 @@ class GrapeEdgePartitionWrapper[VD: ClassTag, ED : ClassTag](
   log.info("load jni lib success")
   val vertexNum = grapePartition.getVerticesNum
   val edgeNum = grapePartition.getEdgesNum
-  val oids : MutableTypedArray[Long] = null.asInstanceOf[MutableTypedArray[Long]]
+  val oids : MutableTypedArray[Long] = grapePartition.getOidArray
 //  val inEdges : ImmutableCSR[Long,ED] = grapePartition.getInEdges
 //  val outEdges : ImmutableCSR[Long,ED] = grapePartition.getOutEdges
 //  val oids : MutableTypedArray[Long] = grapePartition.getOidArray
@@ -53,6 +53,9 @@ class GrapeEdgePartitionWrapper[VD: ClassTag, ED : ClassTag](
       val pid = partitioner.getPartition(oid)
       pid2Shuffle(pid).addOid(oid)
       ind += 1
+    }
+    for (ind <- 0 until(partitionNum)){
+      pid2Shuffle(ind).finish()
     }
     for (ind <- 0 until( partitionNum)){
       val shuffle = pid2Shuffle(ind)
