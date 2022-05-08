@@ -87,7 +87,7 @@ class EdgePartition {
 
   int64_t GetVerticesNum() { return vnum; }
 
-  int64_t GetEdgesNum() { return outEdges.edge_num(); }
+  int64_t GetEdgesNum() { return outEdges->edge_num(); }
 
   grape::ImmutableCSR<vid_t, nbr_t>* GetInEdges() { return inEdges.get(); }
 
