@@ -47,8 +47,8 @@ class GrapeEdgePartitionWrapper[VD: ClassTag, ED : ClassTag](
     for (ind <- 0 until(partitionNum)){
       pid2Shuffle(ind) = new VertexShuffleBuilder(ind, pid)
     }
-    var ind = 0
-    while (ind < vertexNum){
+    var ind = startLid
+    while (ind < endLid){
       val oid = oids.get(ind)
       val pid = partitioner.getPartition(oid)
       pid2Shuffle(pid).addOid(oid)

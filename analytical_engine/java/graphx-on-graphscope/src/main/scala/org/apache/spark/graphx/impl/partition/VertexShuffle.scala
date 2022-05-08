@@ -29,7 +29,7 @@ class VertexShuffleBuilder (val dstPid : Int, val fromPid: Int) extends Logging 
   def addOid(oid : Long) : Unit = oidArray.+=(oid)
 
   def finish() : VertexShuffle = {
-    new VertexShuffle(dstPid, fromPid, oidArray.array)
+    new VertexShuffle(dstPid, fromPid, oidArray.trim().array)
   }
 }
 object VertexShuffle{
