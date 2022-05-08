@@ -1,6 +1,7 @@
 package com.alibaba.graphscope.graphx;
 
 import com.alibaba.fastffi.CXXHead;
+import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
@@ -20,12 +21,12 @@ public interface GrapeVertexPartition<OID,VID,VD> extends FFIPointer {
     VID verticesNum();
 
     @FFINameAlias("Oid2Lid")
-    VID oid2Lid();
+    VID oid2Lid(OID oid);
 
     @FFINameAlias("Lid2Oid")
-    OID lid2Oid();
+    OID lid2Oid(VID lid);
 
-    @FFINameAlias("GetVdataArray") MutableTypedArray<VD> getVdataArray();
+    @FFINameAlias("GetVdataArray") @CXXReference MutableTypedArray<VD> getVdataArray();
 
     @FFIFactory
     interface Factory<OID,VID,VD>{

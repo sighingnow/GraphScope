@@ -17,11 +17,11 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
   require(partitionFactory !=null, s"can not find factory for ${partitionForeignName}")
   private var grapeVertexPartition : GrapeVertexPartition[Long,Long,VD] = null.asInstanceOf[GrapeVertexPartition[Long,Long,VD]]
   private var grapeVertexPartitionBuilder: GrapeVertexPartitionBuilder[Long, Long, VD] = null.asInstanceOf[GrapeVertexPartitionBuilder[Long, Long, VD]]
-  def createVertexPartitionBuilder(pid : Int, vd : VD) : Unit = {
+  def createVertexPartitionBuilder(pid : Int) : Unit = {
     if (grapeVertexPartitionBuilder == null){
       synchronized{
         if (grapeVertexPartitionBuilder == null){
-          grapeVertexPartitionBuilder = builderFactory.create(vd)
+          grapeVertexPartitionBuilder = builderFactory.create()
           log.info(s"Partition ${pid} created Builder ${grapeVertexPartitionBuilder}")
           return ;
         }
@@ -35,7 +35,7 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
     grapeVertexPartitionBuilder
   }
 
-  def build(pid : Int) : Unit = {
+  def build(pid : Int, defaultVal: VD) : Unit = {
     require(grapeVertexPartitionBuilder != null, "builder null")
     require(grapeVertexPartition == null, "partition is non null")
     if (grapeVertexPartition == null){
@@ -43,7 +43,7 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
         if (grapeVertexPartition == null){
           grapeVertexPartition = partitionFactory.create()
           log.info(s"Partition ${pid} created partition ${grapeVertexPartitionBuilder}")
-          grapeVertexPartitionBuilder.Build(grapeVertexPartition)
+          grapeVertexPartitionBuilder.Build(grapeVertexPartition, defaultVal)
           log.info(s"after building partition ${grapeVertexPartition.verticesNum()}")
           return
         }

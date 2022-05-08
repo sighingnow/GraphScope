@@ -31,20 +31,7 @@ class VertexPartition {
       typename vineyard::ConvertToArrowType<vdata_t>::ArrayType;
 
  public:
-  VertexPartition() : vnums(0) oids(_oids) {}
-
-  void Init(vid_t _vnums, std::shared_ptr<oid_array_t>& _oids,
-            std::shared_ptr<vdata_array_t>& _vdatas,
-            ska::flat_hash_map<oid_t, vid_t>& _oid2Lid,
-            graphx::MutableTypedArray<vdata_t>& _vdatas_accessor,
-            std::vector<std::vector<int>>& _lid2pids) {
-    vnums = _vnums;
-    oids = _oids;
-    vdatas = _vdatas;
-    oid2Lid = _oid2Lid;
-    vdatas_accessor = _vdatas_accessor;
-    lid2pids = _lid2pids;
-  }
+  VertexPartition() : vnums(0), oids(_oids) {}
 
   vid_t VerticesNum() { return vnums; }
 
@@ -62,7 +49,10 @@ class VertexPartition {
   ska::flat_hash_map<oid_t, vid_t> oid2Lid;
   vid_t vnums;
   graphx::MutableTypedArray<vdata_t> vdatas_accessor;
-  std::vector<std::vector<int>> lid2pids;
+  std::vector<std::vector<int>> lid2Pids;
+
+  template <typename _OID_T, typename _VID_T, typename _VD_T>
+  friend class VertexPartitionBuilder;
 };
 
 template <typename OID_T, typename VID_T, typename VD_T>
@@ -76,39 +66,59 @@ class VertexPartitionBuilder {
       typename vineyard::ConvertToArrowType<vdata_t>::BuilderType;
 
  public:
-  VertexPartitionBuilder() {
-    vnums = 0;
-    defaultVal = static_cast<vdata_t>(0);
-  }
-
-  VertexPartitionBuilder(vdata_t defaultValue) {
-    vnums = 0;
-    defaultVal = defaultValue;
-  }
-
-  //   void Init(vid_t numVertices, vdata_t value) {
-  //     this->vnums = numVertices;
-  //     defaultVal = value;
-  //     vdata_builder.Reserve(vnums);
-  //     oids_builder.Reserve(vnums);
-  //   }
+  VertexPartitionBuilder() {}
 
   /**
    * @brief Add vertices which receives from certain partition.
    * @param oids
    * @param pids
    */
-  void AddVertex(std::vector<oid_t>& oids, int fromPid) {}
+  void AddVertex(std::vector<oid_t>& oids, int fromPid) {
+    LOG(INFO) << "Add vertices received from partition " << fromPid
+              << " size: " << oids.size();
+    oids_builder.Reserve(oids.size());
+    for (auto oid : oids) {
+      oids_builder.UnsafeAppend(oid);
+      // Theoretically, no duplicate ids should appeal
+      oid2Lid.emplace(oid, static_cast<vid_t>(oid2Lid.size()));
+      auto lid = oid2Lid[oid];
+      lid2Pids[lid].push_back(fromPid);
+    }
+  }
 
-  void Build(VertexPartition<oid_t, vid_t, vdata_t>& partition) {}
+  void Build(VertexPartition<oid_t, vid_t, vdata_t>& partition,
+             vdata_t defaultVal) {
+    // get vnums
+    LOG(INFO) << "receives totally: " << oid2Lid.size() << " vertices,";
+    for (auto i = 0; i < lid2Pids.size(); ++i) {
+      LOG(INFO) << "lid " << i << " is reference in " << lid2Pids[i].size()
+                << " parts";
+    }
+    vid_t vnums = oids_builder.length();
+    CHECK_EQ(oid2Lid.size() == vnums);
+
+    oids_builder.Finish(&partition.oids);
+
+    vdata_builder.Reserve(vnums);
+    for (auto i = 0; i < vnums; ++i) {
+      vdata_builder.UnsafeAppend(defaultVal);
+    }
+    vdata_builder.Finish(&partition.vdatas);
+
+    partition.oid2Lid = std::move(oid2Lid);
+    partition.lid2Pids = std::move(lid2Pids);
+    partition.vdatas_accessor.Init(partition.vdatas);
+    partition.vnum = vnum;
+    LOG(INFO) << "Finish constructing vertex partition vertices : "
+              << partition.vnum << ", oid2Lid: " << partition.oid2Lid.size()
+              << "lid2Pids size: " << partition.lid2Pids.size();
+  }
 
  private:
   oid_array_builder_t oids_builder;
   vdata_array_builder_t vdata_builder;
   ska::flat_hash_map<oid_t, vid_t> oid2Lid;
-  vid_t vnums;
-  vdata_t defaultVal;
-  std::vector<std::vector<int>> lid2pids;
+  std::vector<std::vector<int>> lid2Pids;
 };
 }  // namespace gs
 #endif  // ANALYTICAL_ENGINE_CORE_JAVA_VERTEX_RDD_H

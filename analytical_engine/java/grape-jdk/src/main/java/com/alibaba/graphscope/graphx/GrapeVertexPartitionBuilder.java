@@ -18,18 +18,14 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @FFITypeAlias(CppClassName.GS_VERTEX_PARTITION_BUILDER)
 public interface GrapeVertexPartitionBuilder<OID,VID,VD> extends FFIPointer {
 
-    @FFINameAlias("Init")
-    void init(VID numVertices, VD defaultValue);
-
     @FFINameAlias("AddVertex")
     void addVertex(@CXXReference StdVector<OID> oids, int fromPid);
 
     @FFINameAlias("Build")
-    void Build(@CXXReference GrapeVertexPartition<OID,VID,VD> partition);
+    void Build(@CXXReference GrapeVertexPartition<OID,VID,VD> partition, VD defaultValue);
 
     @FFIFactory
     interface Factory<OID,VID,VD>{
         GrapeVertexPartitionBuilder<OID,VID,VD> create();
-        GrapeVertexPartitionBuilder<OID,VID,VD> create(VD val);
     }
 }
