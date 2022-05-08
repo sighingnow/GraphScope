@@ -26,6 +26,7 @@ public class CppHeaderName {
     public static final String PROPERTY_GRAPH_UTILS_H =
             "vineyard/graph/fragment/property_graph_utils.h";
     public static final String CORE_JAVA_TYPE_ALIAS_H = "core/java/type_alias.h";
+    public static final String ARROW_STATUS_H = "arrow/status.h";
     public static final String LABELED_VERTEX_PROPERTY_CONTEXT_H =
             "core/context/labeled_vertex_property_context.h";
     public static final String VERTEX_PROPERTY_CONTEXT_H = "core/context/vertex_property_context.h";

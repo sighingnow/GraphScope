@@ -84,4 +84,6 @@ public class CppClassName {
     public static final String GS_DEFAULT_IMMUTABLE_CSR = "gs::DefaultImmutableCSR";
     public static final String GS_ARROW_ARRAY_BUILDER = "gs::ArrowArrayBuilder";
     public static final String GS_ARROW_ARRAY = "gs::ArrowArray";
+
+    public static final String ARROW_STATUS = "arrow::Status";
 }
