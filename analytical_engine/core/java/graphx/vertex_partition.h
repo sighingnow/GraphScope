@@ -31,13 +31,13 @@ class VertexPartition {
       typename vineyard::ConvertToArrowType<vdata_t>::ArrayType;
 
  public:
-  VertexPartition() : vnums(0), oids(_oids) {}
+  VertexPartition() : vnums(0) {}
 
   vid_t VerticesNum() { return vnums; }
 
   vid_t Oid2Lid(oid_t oid) { return oid2Lid[oid]; }
 
-  oid_t Lid2Oid(vid_t lid) { return oids[lid]; }
+  oid_t Lid2Oid(vid_t lid) { return oids->Value(lid); }
 
   graphx::MutableTypedArray<vdata_t>& GetVdataArray() {
     return vdatas_accessor;
@@ -95,7 +95,7 @@ class VertexPartitionBuilder {
                 << " parts";
     }
     vid_t vnums = oids_builder.length();
-    CHECK_EQ(oid2Lid.size() == vnums);
+    CHECK_EQ(oid2Lid.size(), vnums);
 
     oids_builder.Finish(&partition.oids);
 
@@ -108,9 +108,9 @@ class VertexPartitionBuilder {
     partition.oid2Lid = std::move(oid2Lid);
     partition.lid2Pids = std::move(lid2Pids);
     partition.vdatas_accessor.Init(partition.vdatas);
-    partition.vnum = vnum;
+    partition.vnums = vnums;
     LOG(INFO) << "Finish constructing vertex partition vertices : "
-              << partition.vnum << ", oid2Lid: " << partition.oid2Lid.size()
+              << partition.vnums << ", oid2Lid: " << partition.oid2Lid.size()
               << "lid2Pids size: " << partition.lid2Pids.size();
   }
 
