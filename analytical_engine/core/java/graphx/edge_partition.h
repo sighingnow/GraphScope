@@ -104,44 +104,42 @@ class EdgePartition {
                  edata_array_builder_t& edata_builder) {
     std::shared_ptr<oid_array_t> edge_src, edge_dst;
     std::shared_ptr<edata_array_t> edge_data;
-    // src_builder.Finish(&edge_src);
-    // dst_builder.Finish(&edge_dst);
-    // edata_builder.Finish(&edge_data);
-    // LOG(INFO) << "Finish loading edges, edge src nums: " <<
-    // edge_src->length()
-    //           << " dst nums: " << edge_dst->length()
-    //           << "edge data length: " << edge_data->length();
-    // // 0.1 Iterate over all edges, to build index, and count how many
+    src_builder.Finish(&edge_src);
+    dst_builder.Finish(&edge_dst);
+    edata_builder.Finish(&edge_data);
+    LOG(INFO) << "Finish loading edges, edge src nums: " << edge_src->length()
+              << " dst nums: " << edge_dst->length()
+              << "edge data length: " << edge_data->length();
+    // 0.1 Iterate over all edges, to build index, and count how many
     // vertices
     // // in this edge partition.
-    // CHECK_EQ(edge_src->length(), edge_dst->length());
-    // for (auto ind = 0; ind < edge_src->length(); ++ind) {
-    //   auto srcId = edge_src->Value(ind);
-    //   if (oid2Lid.find(srcId) == oid2Lid.end()) {
-    //     oid2Lid.emplace(srcId, static_cast<vid_t>(oid2Lid.size()));
-    //   }
-    // }
-    // for (auto ind = 0; ind < edge_dst->length(); ++ind) {
-    //   auto dstId = edge_dst->Value(ind);
-    //   if (oid2Lid.find(dstId) == oid2Lid.end()) {
-    //     oid2Lid.emplace(dstId, static_cast<vid_t>(oid2Lid.size()));
-    //   }
-    // }
-    // vnum = oid2Lid.size();
-    // LOG(INFO) << "Found " << vnum << " distince vertices from "
-    //           << edge_src->length() << " edges";
-    // {
-    //   oid_array_builder_t builder;
-    //   builder.Reserve(vnum);
-    //   for (auto iter = oid2Lid.begin(); iter != oid2Lid.end(); ++iter) {
-    //     builder.UnsafeAppend(iter->second);
-    //   }
-    //   builder.Finish(&lid2Oid);
-    // }
-    // LOG(INFO) << "Finish lid2oid building, len" << lid2Oid->length();
-    // oidArray_accessor.Init(lid2Oid);
-    // LOG(INFO) << "Finish construct accessor: " <<
-    // oidArray_accessor.GetLength();
+    CHECK_EQ(edge_src->length(), edge_dst->length());
+    for (auto ind = 0; ind < edge_src->length(); ++ind) {
+      auto srcId = edge_src->Value(ind);
+      if (oid2Lid.find(srcId) == oid2Lid.end()) {
+        oid2Lid.emplace(srcId, static_cast<vid_t>(oid2Lid.size()));
+      }
+    }
+    for (auto ind = 0; ind < edge_dst->length(); ++ind) {
+      auto dstId = edge_dst->Value(ind);
+      if (oid2Lid.find(dstId) == oid2Lid.end()) {
+        oid2Lid.emplace(dstId, static_cast<vid_t>(oid2Lid.size()));
+      }
+    }
+    vnum = oid2Lid.size();
+    LOG(INFO) << "Found " << vnum << " distince vertices from "
+              << edge_src->length() << " edges";
+    {
+      oid_array_builder_t builder;
+      builder.Reserve(vnum);
+      for (auto iter = oid2Lid.begin(); iter != oid2Lid.end(); ++iter) {
+        builder.UnsafeAppend(iter->second);
+      }
+      builder.Finish(&lid2Oid);
+    }
+    LOG(INFO) << "Finish lid2oid building, len" << lid2Oid->length();
+    oidArray_accessor.Init(lid2Oid);
+    LOG(INFO) << "Finish construct accessor: " << oidArray_accessor.GetLength();
 
     // grape::ImmutableCSRBuild<vid_t, nbr_t> ie_builder, oe_builder;
     // ie_builder.init(vnum);
@@ -170,9 +168,9 @@ class EdgePartition {
  private:
   vineyard::Client& client_;
   // grape::ImmutableCSR<vid_t, nbr_t> inEdges, outEdges;
-  // ska::flat_hash_map<oid_t, vid_t> oid2Lid;
-  // std::shared_ptr<oid_array_t> lid2Oid;
-  // graphx::MutableTypedArray<oid_t> oidArray_accessor;
+  ska::flat_hash_map<oid_t, vid_t> oid2Lid;
+  std::shared_ptr<oid_array_t> lid2Oid;
+  graphx::MutableTypedArray<oid_t> oidArray_accessor;
   vid_t vnum;
   bool directed_;
 };
