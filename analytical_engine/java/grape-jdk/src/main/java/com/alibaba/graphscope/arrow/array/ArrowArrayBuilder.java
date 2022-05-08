@@ -9,6 +9,7 @@ import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
+import com.alibaba.graphscope.arrow.Status;
 
 @FFIGen
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
@@ -16,7 +17,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 public interface ArrowArrayBuilder<T> extends FFIPointer {
 
     @FFINameAlias("Reserve")
-    void reserve(long additionalCapacity);
+    Status reserve(long additionalCapacity);
 
     @FFINameAlias("UnsafeAppend")
     void unsafeAppend(T value);
