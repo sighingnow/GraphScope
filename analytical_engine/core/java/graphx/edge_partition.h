@@ -90,12 +90,16 @@ class EdgePartition {
 
   grape::ImmutableCSR<vid_t, nbr_t>& GetOutEdges() { return outEdges; }
 
-  graphx::MutableTypedArray<oid_t>& getOidArray() { return oidArray_accessor; }
+  graphx::MutableTypedArray<oid_t>& GetOidArray() { return oidArray_accessor; }
 
-  void LoadEdges(const std::string& mmFiles, int64_t mapped_size) {
+  void LoadEdges(oid_array_builder_t& src_builder,
+                 oid_array_builder_t& dst_builder,
+                 edata_array_builder_t& edata_builder) {
     std::shared_ptr<oid_array_t> edge_src, edge_dst;
     std::shared_ptr<edata_array_t> edge_data;
-    readDataFromMMapedFile(mmFiles, mapped_size, edge_src, edge_dst, edge_data);
+    src_builder.Finish(&edge_src);
+    dst_builder.Finish(&edge_dst);
+    edata_builder.Finish(&edge_data);
     LOG(INFO) << "Finish loading edges, edge src nums: " << edge_src->length()
               << " dst nums: " << edge_dst->length()
               << "edge data length: " << edge_data->length();
@@ -154,97 +158,6 @@ class EdgePartition {
   }
 
  private:
-  void readDataFromMMapedFile(const std::string& files, int64_t mapped_size,
-                              std::shared_ptr<oid_array_t>& edge_src,
-                              std::shared_ptr<oid_array_t>& edge_dst,
-                              std::shared_ptr<edata_array_t>& edge_data) {
-    std::vector<std::string> files_splited;
-    boost::split(files_splited, files, boost::is_any_of(":"));
-    int success_cnt = 0;
-    int64_t numEdges = 0;
-    oid_array_builder_t src_builder, dst_builder;
-    edata_array_builder_t edata_builder;
-    // FIXME
-    for (auto file_path : files_splited) {
-      LOG(INFO) << "reading from " << file_path;
-      int fd =
-          shm_open(file_path.c_str(), O_RDWR, S_IRUSR | S_IWUSR);  // no O_CREAT
-      if (fd < 0) {
-        LOG(ERROR) << " Not exists " << file_path;
-        continue;
-      }
-
-      void* mmapped_data =
-          mmap(NULL, mapped_size, PROT_READ, MAP_SHARED, fd, 0);
-      if (mmapped_data == MAP_FAILED) {
-        close(fd);
-        LOG(INFO) << "Error mmapping the file " << file_path;
-        return;
-      }
-
-      // first 8 bytes are size in int64_t;
-      int64_t data_len = *reinterpret_cast<int64_t*>(mmapped_data);
-      CHECK_GT(data_len, 0);
-      LOG(INFO) << "Reading first 8 bytes, indicating total len: " << data_len;
-      char* data_start = (reinterpret_cast<char*>(mmapped_data) + 8);
-
-      int64_t res = digestEdgesFromMapedFile(data_start, data_len, src_builder,
-                                             dst_builder, edata_builder);
-
-      munmap(mmapped_data, mapped_size);
-      close(fd);
-
-      numEdges += res;
-      LOG(INFO) << " Finish reading " << file_path << " got " << numEdges
-                << " edges";
-      success_cnt += 1;
-    }
-
-    LOG(INFO) << "] finish loading edges,  success: " << success_cnt << " / "
-              << files_splited.size() << " read: " << numEdges;
-    src_builder.Finish(&edge_src);
-    dst_builder.Finish(&edge_dst);
-    edata_builder.Finish(&edge_data);
-    LOG(INFO) << "Finsih building arrow arrays";
-  }
-
-  /* Deserializing from the mmaped file. The layout of is
- |   8bytes  | ...     | ...      |   ...
- | length    | srcOids | dstOids  |   edatas
-
- do not modify pointer */
-  int64_t digestEdgesFromMapedFile(char* data, int64_t chunk_len,
-                                   oid_array_builder_t& src_builder,
-                                   oid_array_builder_t& dst_builder,
-                                   edata_array_builder_t& edata_builder) {
-    oid_t* ptr = reinterpret_cast<oid_t*>(data);
-    {
-      src_builder.Reserve(chunk_len);
-      for (auto i = 0; i < chunk_len; ++i) {
-        src_builder.UnsafeAppend(*ptr);
-        ptr += 1;
-      }
-      LOG(INFO) << "Finish read src oid of length: " << chunk_len;
-
-      dst_builder.Reserve(chunk_len);
-      for (auto i = 0; i < chunk_len; ++i) {
-        dst_builder.UnsafeAppend(*ptr);
-        ptr += 1;
-      }
-      LOG(INFO) << "Finish read dst oid of length: " << chunk_len;
-    }
-
-    {
-      edata_t* data_ptr = reinterpret_cast<edata_t*>(ptr);
-      edata_builder.Reserve(chunk_len);
-      for (auto i = 0; i < chunk_len; ++i) {
-        edata_builder.UnsafeAppend(*data_ptr);
-        data_ptr += 1;
-      }
-      LOG(INFO) << "Finish read edata of length: " << chunk_len;
-    }
-    return chunk_len;
-  }
   vineyard::Client& client_;
   grape::ImmutableCSR<vid_t, nbr_t> inEdges, outEdges;
   ska::flat_hash_map<oid_t, vid_t> oid2Lid;

@@ -38,28 +38,47 @@ object GrapeEdgeRDD extends Logging{
     new GrapeEdgeRDDImpl[VD,ED](edgePartitions)
   }
   private[graphx] def fromEdgePartitions[VD: ClassTag, ED : ClassTag](
-                                                          edgePartitions: RDD[(PartitionID, EdgePartition[VD, ED])]): GrapeEdgeRDDImpl[VD, ED] = {
+                                                          edgePartitions: RDD[(PartitionID, EdgePartition[ED, VD])]): GrapeEdgeRDDImpl[VD, ED] = {
     //1. edgePartition to memory mapped file.
     val totalNumEdges = edgePartitions.map(_._2.size.toLong).fold(0)(_ + _)
     log.info(s"Driver: Total num edges in Partition: ${totalNumEdges}")
     val edgeMappedSize = 32L * totalNumEdges  + 128
     //FIXME: no shared memory need. use byteVectorStream
-    val outputFilenames = SharedMemoryUtils.mapEdgePartitionToFile(edgePartitions, "graphx-edge", edgeMappedSize);
-    val outputFilenamesDedup = dedup(outputFilenames).mkString(":")
-    log.info(s"[Driver: ] got mapped edge files ${outputFilenamesDedup}")
+//    val outputFilenames = SharedMemoryUtils.mapEdgePartitionToFile(edgePartitions, "graphx-edge", edgeMappedSize);
+
+//    val outputFilenamesDedup = dedup(outputFilenames).mkString(":")
+//    log.info(s"[Driver: ] got mapped edge files ${outputFilenamesDedup}")
 
     edgePartitions.foreachPartition(iter => {
       val (pid, part) = iter.next()
       val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
-      registry.registerPath(pid, outputFilenamesDedup)
+//      registry.registerPath(pid, outputFilenamesDedup)
+      registry.createArrayBuilder(pid)
     })
-    log.info(s"[Driver:] Finish registering path ${outputFilenamesDedup}")
+    log.info(s"[Driver:] Finish create array Builder")
 
     edgePartitions.foreachPartition(iter => {
       val (pid, part) = iter.next()
       val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
-      registry.constructEdgePartition(pid, edgeMappedSize)
+      val (srcBuilder,dstBuilder,edataBuilder) = registry.getBuilders()
+      srcBuilder.reserve(part.size)
+      dstBuilder.reserve(part.size)
+      edataBuilder.reserve(part.size)
+      val partIter = part.iterator
+      while (partIter.hasNext){
+        val edge = partIter.next()
+        srcBuilder.unsafeAppend(edge.srcId)
+        dstBuilder.unsafeAppend(edge.dstId)
+        edataBuilder.unsafeAppend(edge.attr)
+      }
+      log.info("Finish build srcOid array");
     })
+
+    edgePartitions.foreachPartition(iter => {
+      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
+      registry.constructEdgePartition(iter.next()._1)
+    })
+
     log.info(s"[Driver:] Finish construct edge partition")
 
     val grapeEdgePartitionWrapper = edgePartitions.mapPartitions(iter => {

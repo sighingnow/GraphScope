@@ -82,4 +82,6 @@ public class CppClassName {
     public static final String GS_VERTEX_PARTITION_BUILDER = "gs::VertexPartitionBuilder";
     public static final String GS_MUTABLE_TYPE_ARRAY = "gs::graphx::MutableTypedArray";
     public static final String GS_DEFAULT_IMMUTABLE_CSR = "gs::DefaultImmutableCSR";
+    public static final String GS_ARROW_ARRAY_BUILDER = "gs::ArrowArrayBuilder";
+    public static final String GS_ARROW_ARRAY = "gs::ArrowArray";
 }

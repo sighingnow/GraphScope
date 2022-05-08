@@ -1,5 +1,7 @@
 package org.apache.spark.graphx.utils
 
+import com.alibaba.fastffi.FFITypeFactory
+import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.graphx.GrapeEdgePartition
 import com.alibaba.graphscope.utils.ReflectUtils
 import org.apache.spark.graphx.impl.{GrapeEdgePartitionWrapper, GrapeUtils}
@@ -9,25 +11,40 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.ClassTag
 
 class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
-  private var registeredPath : String = null.asInstanceOf[String]
   private val partitionNum : AtomicInteger = new AtomicInteger(0)
   private val partitionCnt : AtomicInteger = new AtomicInteger(0)
+  val edClass = GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]]
   private var grapeEdgePartition : GrapeEdgePartition[Long,Long,ED]  = null.asInstanceOf[GrapeEdgePartition[Long,Long,ED]]
-   def registerPath(pid : Int, pathStr : String) : Unit = {
-     partitionNum.addAndGet(1)
-     if (registeredPath == null){
-       synchronized{
-          if (registeredPath == null){
-            log.info(s"Partition [${pid}] registered ${pathStr}")
-            registeredPath = pathStr
-            return
-         }
-       }
-     }
-     log.info(s"Partition [${pid}] skip registering since already registered ${registeredPath}, part num: ${partitionNum}");
+  private var srcOidBuilder : ArrowArrayBuilder[Long] = null.asInstanceOf[ArrowArrayBuilder[Long]]
+  private var dstOidBuilder : ArrowArrayBuilder[Long] = null.asInstanceOf[ArrowArrayBuilder[Long]]
+  private var edataBuilder : ArrowArrayBuilder[ED] = null.asInstanceOf[ArrowArrayBuilder[ED]]
+
+
+  def createArrayBuilder(pid : Int) : Unit = {
+    if (srcOidBuilder == null){
+      synchronized{
+        if (srcOidBuilder == null){
+          System.loadLibrary("grape-jni")
+          log.info("[NativeUtils:] load jni lib success")
+          val factory = FFITypeFactory.getFactory(classOf[ArrowArrayBuilder[_]], "gs::ArrowArrayBuilder<int64_t>").asInstanceOf[ArrowArrayBuilder.Factory[Long]]
+          srcOidBuilder = factory.create()
+          dstOidBuilder = factory.create()
+          log.info(s"Partition ${pid} create oid builders ${srcOidBuilder} ${dstOidBuilder}")
+          val edataFactory = FFITypeFactory.getFactory(classOf[ArrowArrayBuilder[_]], "gs::ArrowArrayBuilder<" + GrapeUtils.classToStr(edClass) +">").asInstanceOf[ArrowArrayBuilder.Factory[ED]]
+          edataBuilder = edataFactory.create()
+          log.info(s"Partitoin ${pid} create edata builder ${edataBuilder}")
+          return
+        }
+      }
+    }
+    log.info(s"Partition ${pid} already has builder ${srcOidBuilder}")
   }
 
-  def constructEdgePartition(pid : Int, size : Long) : Unit = {
+  def getBuilders() : (ArrowArrayBuilder[Long],ArrowArrayBuilder[Long],ArrowArrayBuilder[ED]) = {
+    (srcOidBuilder,dstOidBuilder,edataBuilder)
+  }
+
+  def constructEdgePartition(pid : Int) : Unit = {
     if (grapeEdgePartition == null){
       synchronized{
         if (grapeEdgePartition == null){
@@ -35,8 +52,10 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
           grapeEdgePartition = ReflectUtils.invokeEdgePartitionCreation(
             classOf[java.lang.Long].asInstanceOf[Class[_ <: Long]],
             classOf[java.lang.Long].asInstanceOf[Class[_ <: Long]],
-            GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[_ <: ED]], registeredPath, size)
-	  log.info(s"Partition [${pid}] finish constructing edge partition ${grapeEdgePartition.toString}")
+            GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[_ <: ED]])
+	          log.info(s"Partition [${pid}] finish constructing edge partition ${grapeEdgePartition.toString}")
+          grapeEdgePartition.loadEdges(srcOidBuilder,dstOidBuilder,edataBuilder)
+          log.info(s"Partition [${pid}] finish loading edges")
           return
         }
       }

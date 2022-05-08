@@ -19,12 +19,11 @@ public class ReflectUtils {
             if (nativeUtilsClz == null) {
                 throw new IllegalStateException("Failed to load nativeUtils clz");
             }
-            createEdgePartitionMethod = nativeUtilsClz.getDeclaredMethod("createEdgePartition",
-                String.class,
-                long.class, Class.class, Class.class, Class.class);
+            createEdgePartitionMethod = nativeUtilsClz.getDeclaredMethod("createEdgePartition", Class.class, Class.class, Class.class);
             if (createEdgePartitionMethod == null) {
                 throw new IllegalStateException("method null");
             }
+            logger.info("[ReflectUtils: ] got method {}", createEdgePartitionMethod.getName());
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (NoSuchMethodException e) {
@@ -34,11 +33,10 @@ public class ReflectUtils {
 
     public static <OID, VID, ED> GrapeEdgePartition<OID, VID, ED> invokeEdgePartitionCreation(
         Class<? extends OID> oidClass, Class<? extends VID> vdClass,
-        Class<? extends ED> edClass, String mmFiles, long size)
+        Class<? extends ED> edClass)
         throws InvocationTargetException, IllegalAccessException {
-        logger.info("invoke EdgePartition creation with params files {}, size{}", mmFiles, size);
-        return (GrapeEdgePartition<OID, VID, ED>) createEdgePartitionMethod.invoke(null, mmFiles,
-            size, oidClass, vdClass, edClass);
+        logger.info("invoke EdgePartition creation with params ed {}", edClass.getName());
+        return (GrapeEdgePartition<OID, VID, ED>) createEdgePartitionMethod.invoke(null, oidClass, vdClass, edClass);
     }
 
 }

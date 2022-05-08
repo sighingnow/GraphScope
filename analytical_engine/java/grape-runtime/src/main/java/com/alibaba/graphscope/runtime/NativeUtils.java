@@ -21,17 +21,16 @@ public class NativeUtils {
 
     public static native long getArrowProjectedFragment(long fragId, String fragName);
 
-    public static native long nativeCreateEdgePartition(String mmFiles, long size, int edType);
+    public static native long nativeCreateEdgePartition(int edType);
 
     public static <OID, VID, ED> GrapeEdgePartition<OID, VID, ED> createEdgePartition(
-        String mmFiles, long size,
         Class<? extends OID> oidClass, Class<? extends VID> vidClass, Class<? extends ED> edClass)
         throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         String foreignName = "gs::EdgePartition<int64_t,uint64_t," + clz2Str(edClass) + ">";
         Class<? extends GrapeEdgePartition> clz = (Class<? extends GrapeEdgePartition>) FFITypeFactory.getType(
             GrapeEdgePartition.class, foreignName);
         logger.info("[NativeUtils:] got grapeEdgePartition clz" + clz.getName());
-        long addr = nativeCreateEdgePartition(mmFiles, size, clz2Int(edClass));
+        long addr = nativeCreateEdgePartition(clz2Int(edClass));
         if (addr <= 0) {
             throw new IllegalStateException("Fail to create edge partition");
         }

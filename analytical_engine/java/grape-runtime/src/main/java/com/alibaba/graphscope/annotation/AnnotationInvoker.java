@@ -41,6 +41,12 @@ import com.alibaba.fastffi.FFIGenBatch;
             @FFIGen(type = "com.alibaba.graphscope.ds.EmptyType"),
             @FFIGen(type = "com.alibaba.graphscope.parallel.message.DoubleMsg"),
             @FFIGen(type = "com.alibaba.graphscope.parallel.message.LongMsg"),
+            @FFIGen(type = "com.alibaba.graphscope.arrow.array.ArrowArrayBuilder",
+            templates = {
+                @CXXTemplate(cxx = "int64_t", java = "Long"),
+                @CXXTemplate(cxx = "int32_t", java = "Integer"),
+                @CXXTemplate(cxx = "double", java = "Double")
+            }),
             @FFIGen(type = "com.alibaba.graphscope.ds.MutableTypedArray",
                 templates = {
                     @CXXTemplate(cxx = "int64_t", java = "Long"),
