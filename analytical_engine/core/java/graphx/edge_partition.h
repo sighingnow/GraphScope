@@ -82,87 +82,97 @@ class EdgePartition {
   EdgePartition(vineyard::Client& client, bool directed = true)
       : client_(client), directed_(directed){};
 
-  int64_t GetVerticesNum() { return vnum; }
+  int64_t GetVerticesNum() {
+    //  return vnum; }
+    return 0;
+  }
 
-  int64_t GetEdgesNum() { return outEdges.edge_num(); }
+  int64_t GetEdgesNum() {
+    // return outEdges.edge_num(); }
+    return 0;
+  }
 
-  grape::ImmutableCSR<vid_t, nbr_t>& GetInEdges() { return inEdges; }
+  // grape::ImmutableCSR<vid_t, nbr_t>& GetInEdges() { return inEdges; }
 
-  grape::ImmutableCSR<vid_t, nbr_t>& GetOutEdges() { return outEdges; }
+  // grape::ImmutableCSR<vid_t, nbr_t>& GetOutEdges() { return outEdges; }
 
-  graphx::MutableTypedArray<oid_t>& GetOidArray() { return oidArray_accessor; }
+  // graphx::MutableTypedArray<oid_t>& GetOidArray() { return oidArray_accessor;
+  // }
 
   void LoadEdges(oid_array_builder_t& src_builder,
                  oid_array_builder_t& dst_builder,
                  edata_array_builder_t& edata_builder) {
     std::shared_ptr<oid_array_t> edge_src, edge_dst;
     std::shared_ptr<edata_array_t> edge_data;
-    src_builder.Finish(&edge_src);
-    dst_builder.Finish(&edge_dst);
-    edata_builder.Finish(&edge_data);
-    LOG(INFO) << "Finish loading edges, edge src nums: " << edge_src->length()
-              << " dst nums: " << edge_dst->length()
-              << "edge data length: " << edge_data->length();
-    // 0.1 Iterate over all edges, to build index, and count how many vertices
-    // in this edge partition.
-    CHECK_EQ(edge_src->length(), edge_dst->length());
-    for (auto ind = 0; ind < edge_src->length(); ++ind) {
-      auto srcId = edge_src->Value(ind);
-      if (oid2Lid.find(srcId) == oid2Lid.end()) {
-        oid2Lid.emplace(srcId, static_cast<vid_t>(oid2Lid.size()));
-      }
-    }
-    for (auto ind = 0; ind < edge_dst->length(); ++ind) {
-      auto dstId = edge_dst->Value(ind);
-      if (oid2Lid.find(dstId) == oid2Lid.end()) {
-        oid2Lid.emplace(dstId, static_cast<vid_t>(oid2Lid.size()));
-      }
-    }
-    vnum = oid2Lid.size();
-    LOG(INFO) << "Found " << vnum << " distince vertices from "
-              << edge_src->length() << " edges";
-    {
-      oid_array_builder_t builder;
-      builder.Reserve(vnum);
-      for (auto iter = oid2Lid.begin(); iter != oid2Lid.end(); ++iter) {
-        builder.UnsafeAppend(iter->second);
-      }
-      builder.Finish(&lid2Oid);
-    }
-    LOG(INFO) << "Finish lid2oid building, len" << lid2Oid->length();
-    oidArray_accessor.Init(lid2Oid);
-    LOG(INFO) << "Finish construct accessor: " << oidArray_accessor.GetLength();
+    // src_builder.Finish(&edge_src);
+    // dst_builder.Finish(&edge_dst);
+    // edata_builder.Finish(&edge_data);
+    // LOG(INFO) << "Finish loading edges, edge src nums: " <<
+    // edge_src->length()
+    //           << " dst nums: " << edge_dst->length()
+    //           << "edge data length: " << edge_data->length();
+    // // 0.1 Iterate over all edges, to build index, and count how many
+    // vertices
+    // // in this edge partition.
+    // CHECK_EQ(edge_src->length(), edge_dst->length());
+    // for (auto ind = 0; ind < edge_src->length(); ++ind) {
+    //   auto srcId = edge_src->Value(ind);
+    //   if (oid2Lid.find(srcId) == oid2Lid.end()) {
+    //     oid2Lid.emplace(srcId, static_cast<vid_t>(oid2Lid.size()));
+    //   }
+    // }
+    // for (auto ind = 0; ind < edge_dst->length(); ++ind) {
+    //   auto dstId = edge_dst->Value(ind);
+    //   if (oid2Lid.find(dstId) == oid2Lid.end()) {
+    //     oid2Lid.emplace(dstId, static_cast<vid_t>(oid2Lid.size()));
+    //   }
+    // }
+    // vnum = oid2Lid.size();
+    // LOG(INFO) << "Found " << vnum << " distince vertices from "
+    //           << edge_src->length() << " edges";
+    // {
+    //   oid_array_builder_t builder;
+    //   builder.Reserve(vnum);
+    //   for (auto iter = oid2Lid.begin(); iter != oid2Lid.end(); ++iter) {
+    //     builder.UnsafeAppend(iter->second);
+    //   }
+    //   builder.Finish(&lid2Oid);
+    // }
+    // LOG(INFO) << "Finish lid2oid building, len" << lid2Oid->length();
+    // oidArray_accessor.Init(lid2Oid);
+    // LOG(INFO) << "Finish construct accessor: " <<
+    // oidArray_accessor.GetLength();
 
-    grape::ImmutableCSRBuild<vid_t, nbr_t> ie_builder, oe_builder;
-    ie_builder.init(vnum);
-    oe_builder.init(vnum);
-    // both in and out
-    for (auto i = 0; i < edge_src->length(); ++i) {
-      oid_t srcId = edge_src->Value(i);
-      oid_t dstId = edge_dst->Value(i);
-      ie_builder.inc_degree(oid2Lid[dstId]);
-      oe_builder.inc_degree(oid2Lid[srcId]);
-    }
-    ie_builder.build_offsets();
-    oe_builder.build_offsets();
-    // now add edges
-    for (auto i = 0; i < edge_src->length(); ++i) {
-      ie_builder.add_edge(edge_dst->Value(i),
-                          nbr_t(edge_src->Value(i), edge_data->Value(i)));
-      oe_builder.add_edge(edge_src->Value(i),
-                          nbr_t(edge_dst->Value(i), edge_data->Value(i)));
-    }
-    ie_builder.finish(inEdges);
-    oe_builder.finish(outEdges);
-    LOG(INFO) << "Finish build inEdges and out Edges.";
+    // grape::ImmutableCSRBuild<vid_t, nbr_t> ie_builder, oe_builder;
+    // ie_builder.init(vnum);
+    // oe_builder.init(vnum);
+    // // both in and out
+    // for (auto i = 0; i < edge_src->length(); ++i) {
+    //   oid_t srcId = edge_src->Value(i);
+    //   oid_t dstId = edge_dst->Value(i);
+    //   ie_builder.inc_degree(oid2Lid[dstId]);
+    //   oe_builder.inc_degree(oid2Lid[srcId]);
+    // }
+    // ie_builder.build_offsets();
+    // oe_builder.build_offsets();
+    // // now add edges
+    // for (auto i = 0; i < edge_src->length(); ++i) {
+    //   ie_builder.add_edge(edge_dst->Value(i),
+    //                       nbr_t(edge_src->Value(i), edge_data->Value(i)));
+    //   oe_builder.add_edge(edge_src->Value(i),
+    //                       nbr_t(edge_dst->Value(i), edge_data->Value(i)));
+    // }
+    // ie_builder.finish(inEdges);
+    // oe_builder.finish(outEdges);
+    // LOG(INFO) << "Finish build inEdges and out Edges.";
   }
 
  private:
   vineyard::Client& client_;
-  grape::ImmutableCSR<vid_t, nbr_t> inEdges, outEdges;
-  ska::flat_hash_map<oid_t, vid_t> oid2Lid;
-  std::shared_ptr<oid_array_t> lid2Oid;
-  graphx::MutableTypedArray<oid_t> oidArray_accessor;
+  // grape::ImmutableCSR<vid_t, nbr_t> inEdges, outEdges;
+  // ska::flat_hash_map<oid_t, vid_t> oid2Lid;
+  // std::shared_ptr<oid_array_t> lid2Oid;
+  // graphx::MutableTypedArray<oid_t> oidArray_accessor;
   vid_t vnum;
   bool directed_;
 };
