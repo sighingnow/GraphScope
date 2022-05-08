@@ -81,25 +81,21 @@ class EdgePartition {
  public:
   EdgePartition(vineyard::Client& client, bool directed = true)
       : client_(client), directed_(directed) {
-    inEdges = std::make_shared<grape::ImmutableCSR<vid_t, nbr_t>>();
-    outEdges = std::make_shared<grape::ImmutableCSR<vid_t, nbr_t>>();
   };
 
   int64_t GetVerticesNum() { return vnum; }
 
-  int64_t GetEdgesNum() { return outEdges->edge_num(); }
+  int64_t GetEdgesNum() { return edge_src->length(); }
 
-  grape::ImmutableCSR<vid_t, nbr_t>* GetInEdges() { return inEdges.get(); }
+ // grape::ImmutableCSR<vid_t, nbr_t>* GetInEdges() { return inEdges.get(); }
 
-  grape::ImmutableCSR<vid_t, nbr_t>* GetOutEdges() { return outEdges.get(); }
+ /// grape::ImmutableCSR<vid_t, nbr_t>* GetOutEdges() { return outEdges.get(); }
 
-  graphx::MutableTypedArray<oid_t>& GetOidArray() { return oidArray_accessor; }
+   graphx::MutableTypedArray<oid_t>& GetOidArray() { return oidArray_accessor; }
 
   void LoadEdges(oid_array_builder_t& src_builder,
                  oid_array_builder_t& dst_builder,
                  edata_array_builder_t& edata_builder) {
-    std::shared_ptr<oid_array_t> edge_src, edge_dst;
-    std::shared_ptr<edata_array_t> edge_data;
     src_builder.Finish(&edge_src);
     dst_builder.Finish(&edge_dst);
     edata_builder.Finish(&edge_data);
@@ -136,8 +132,7 @@ class EdgePartition {
     LOG(INFO) << "Finish lid2oid building, len" << lid2Oid->length();
     oidArray_accessor.Init(lid2Oid);
     LOG(INFO) << "Finish construct accessor: " << oidArray_accessor.GetLength();
-
-    grape::ImmutableCSRBuild<vid_t, nbr_t> ie_builder, oe_builder;
+/*
     ie_builder.init(vnum);
     oe_builder.init(vnum);
     // both in and out
@@ -159,11 +154,15 @@ class EdgePartition {
     ie_builder.finish(*inEdges.get());
     oe_builder.finish(*outEdges.get());
     LOG(INFO) << "Finish build inEdges and out Edges.";
+*/
   }
 
  private:
   vineyard::Client& client_;
-  std::shared_ptr<grape::ImmutableCSR<vid_t, nbr_t>> inEdges, outEdges;
+  std::shared_ptr<oid_array_t> edge_src, edge_dst;
+  std::shared_ptr<edata_array_t> edge_data;
+  //grape::ImmutableCSRBuild<vid_t, nbr_t> ie_builder, oe_builder;
+  //std::shared_ptr<grape::ImmutableCSR<vid_t, nbr_t>> inEdges, outEdges;
   ska::flat_hash_map<oid_t, vid_t> oid2Lid;
   std::shared_ptr<oid_array_t> lid2Oid;
   graphx::MutableTypedArray<oid_t> oidArray_accessor;
