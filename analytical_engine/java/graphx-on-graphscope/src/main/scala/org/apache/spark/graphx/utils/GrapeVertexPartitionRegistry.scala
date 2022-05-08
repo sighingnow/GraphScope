@@ -11,8 +11,8 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
   val vdClz = GrapeUtils.getRuntimeClass[VD].asInstanceOf[Class[VD]]
   val builderForeignName = "gs::VertexPartitionBuilder<int64_t,uint64_t," + GrapeUtils.classToStr(vdClz) + ">"
   val partitionForeignName = "gs::VertexPartition<int64_t,uint64_t," +  GrapeUtils.classToStr(vdClz) + ">"
-  private val builderFactory = FFITypeFactory.getFactory(vdClz, builderForeignName).asInstanceOf[GrapeVertexPartitionBuilder.Factory[Long,Long,VD]]
-  private val partitionFactory = FFITypeFactory.getFactory(vdClz, partitionForeignName).asInstanceOf[GrapeVertexPartition.Factory[Long,Long,VD]]
+  private val builderFactory = FFITypeFactory.getFactory(Class[GrapeVertexPartitionBuilder], builderForeignName).asInstanceOf[GrapeVertexPartitionBuilder.Factory[Long,Long,VD]]
+  private val partitionFactory = FFITypeFactory.getFactory(Class[GrapeVertexPartition], partitionForeignName).asInstanceOf[GrapeVertexPartition.Factory[Long,Long,VD]]
   require(builderFactory != null, s"can not find factory for ${builderForeignName}")
   require(partitionFactory !=null, s"can not find factory for ${partitionForeignName}")
   private var grapeVertexPartition : GrapeVertexPartition[Long,Long,VD] = null.asInstanceOf[GrapeVertexPartition[Long,Long,VD]]
