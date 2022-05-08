@@ -80,24 +80,20 @@ class EdgePartition {
 
  public:
   EdgePartition(vineyard::Client& client, bool directed = true)
-      : client_(client), directed_(directed){};
+      : client_(client), directed_(directed) {
+    inEdges = std::make_shared<grape::ImmutableCSR<vid_t, nbr_t>>();
+    outEdges = std::make_shared<grape::ImmutableCSR<vid_t, nbr_t>>();
+  };
 
-  int64_t GetVerticesNum() {
-    //  return vnum; }
-    return 0;
-  }
+  int64_t GetVerticesNum() { return vnum; }
 
-  int64_t GetEdgesNum() {
-    // return outEdges.edge_num(); }
-    return 0;
-  }
+  int64_t GetEdgesNum() { return outEdges.edge_num(); }
 
-  // grape::ImmutableCSR<vid_t, nbr_t>& GetInEdges() { return inEdges; }
+  grape::ImmutableCSR<vid_t, nbr_t>* GetInEdges() { return inEdges.get(); }
 
-  // grape::ImmutableCSR<vid_t, nbr_t>& GetOutEdges() { return outEdges; }
+  grape::ImmutableCSR<vid_t, nbr_t>* GetOutEdges() { return outEdges.get(); }
 
-  // graphx::MutableTypedArray<oid_t>& GetOidArray() { return oidArray_accessor;
-  // }
+  graphx::MutableTypedArray<oid_t>& GetOidArray() { return oidArray_accessor; }
 
   void LoadEdges(oid_array_builder_t& src_builder,
                  oid_array_builder_t& dst_builder,
@@ -141,33 +137,33 @@ class EdgePartition {
     oidArray_accessor.Init(lid2Oid);
     LOG(INFO) << "Finish construct accessor: " << oidArray_accessor.GetLength();
 
-    // grape::ImmutableCSRBuild<vid_t, nbr_t> ie_builder, oe_builder;
-    // ie_builder.init(vnum);
-    // oe_builder.init(vnum);
-    // // both in and out
-    // for (auto i = 0; i < edge_src->length(); ++i) {
-    //   oid_t srcId = edge_src->Value(i);
-    //   oid_t dstId = edge_dst->Value(i);
-    //   ie_builder.inc_degree(oid2Lid[dstId]);
-    //   oe_builder.inc_degree(oid2Lid[srcId]);
-    // }
-    // ie_builder.build_offsets();
-    // oe_builder.build_offsets();
-    // // now add edges
-    // for (auto i = 0; i < edge_src->length(); ++i) {
-    //   ie_builder.add_edge(edge_dst->Value(i),
-    //                       nbr_t(edge_src->Value(i), edge_data->Value(i)));
-    //   oe_builder.add_edge(edge_src->Value(i),
-    //                       nbr_t(edge_dst->Value(i), edge_data->Value(i)));
-    // }
-    // ie_builder.finish(inEdges);
-    // oe_builder.finish(outEdges);
-    // LOG(INFO) << "Finish build inEdges and out Edges.";
+    grape::ImmutableCSRBuild<vid_t, nbr_t> ie_builder, oe_builder;
+    ie_builder.init(vnum);
+    oe_builder.init(vnum);
+    // both in and out
+    for (auto i = 0; i < edge_src->length(); ++i) {
+      oid_t srcId = edge_src->Value(i);
+      oid_t dstId = edge_dst->Value(i);
+      ie_builder.inc_degree(oid2Lid[dstId]);
+      oe_builder.inc_degree(oid2Lid[srcId]);
+    }
+    ie_builder.build_offsets();
+    oe_builder.build_offsets();
+    // now add edges
+    for (auto i = 0; i < edge_src->length(); ++i) {
+      ie_builder.add_edge(edge_dst->Value(i),
+                          nbr_t(edge_src->Value(i), edge_data->Value(i)));
+      oe_builder.add_edge(edge_src->Value(i),
+                          nbr_t(edge_dst->Value(i), edge_data->Value(i)));
+    }
+    ie_builder.finish(*inEdges.get());
+    oe_builder.finish(*outEdges.get());
+    LOG(INFO) << "Finish build inEdges and out Edges.";
   }
 
  private:
   vineyard::Client& client_;
-  // grape::ImmutableCSR<vid_t, nbr_t> inEdges, outEdges;
+  std::shared_ptr<grape::ImmutableCSR<vid_t, nbr_t>> inEdges, outEdges;
   ska::flat_hash_map<oid_t, vid_t> oid2Lid;
   std::shared_ptr<oid_array_t> lid2Oid;
   graphx::MutableTypedArray<oid_t> oidArray_accessor;
