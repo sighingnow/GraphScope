@@ -85,19 +85,15 @@ object GrapeEdgeRDD extends Logging{
       val (pid, part) = iter.next()
       val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
       Iterator((pid,registry.getEdgePartitionWrapper(pid)))
-    })
+    }).cache()
     //Clear registry
 
-    val rdd =new GrapeEdgeRDDImpl[VD,ED](grapeEdgePartitionWrapper).cache()
+    val rdd =new GrapeEdgeRDDImpl[VD,ED](grapeEdgePartitionWrapper)
     log.info(s"[Driver:] got grape edge Partition Wrapper, total edges count ${rdd.count()}")
 
-    edgePartitions.foreachPartition(_ =>  GrapeEdgePartitionRegistry.clear())
+    // edgePartitions.foreachPartition(_ =>  GrapeEdgePartitionRegistry.clear())
     rdd
 
-    //2. load grape edge partition from shared memory.
-
-    //3. return the java wrapper.
-//    new GrapeEdgeRDDImpl[VD,ED](edgePartitions)
   }
 
 

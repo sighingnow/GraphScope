@@ -5,6 +5,7 @@ import com.alibaba.graphscope.graphx.{GrapeVertexPartition, GrapeVertexPartition
 import org.apache.spark.graphx.impl.{GrapeUtils, GrapeVertexPartitionWrapper}
 import org.apache.spark.internal.Logging
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.ClassTag
 
 class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
@@ -17,7 +18,12 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
   require(partitionFactory !=null, s"can not find factory for ${partitionForeignName}")
   private var grapeVertexPartition : GrapeVertexPartition[Long,Long,VD] = null.asInstanceOf[GrapeVertexPartition[Long,Long,VD]]
   private var grapeVertexPartitionBuilder: GrapeVertexPartitionBuilder[Long, Long, VD] = null.asInstanceOf[GrapeVertexPartitionBuilder[Long, Long, VD]]
+
+  private val partitionNum : AtomicInteger = new AtomicInteger(0)
+  private val partitionCnt : AtomicInteger = new AtomicInteger(0)
+
   def createVertexPartitionBuilder(pid : Int) : Unit = {
+    partitionNum.addAndGet(1)
     if (grapeVertexPartitionBuilder == null){
       synchronized{
         if (grapeVertexPartitionBuilder == null){
@@ -27,7 +33,7 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
         }
       }
     }
-    log.info(s"Partition ${pid} skip creating builder")
+    log.info(s"Partition ${pid} skip creating builder, part num ${partitionNum.get}")
   }
 
   def getVertexPartitionBuilder() : GrapeVertexPartitionBuilder[Long,Long,VD] = {
@@ -37,7 +43,6 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
 
   def build(pid : Int, defaultVal: VD) : Unit = {
     require(grapeVertexPartitionBuilder != null, "builder null")
-    require(grapeVertexPartition == null, "partition is non null")
     if (grapeVertexPartition == null){
       synchronized{
         if (grapeVertexPartition == null){
@@ -54,9 +59,11 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
 
   def getGrapeVertexPartitionWrapper( pid : Int, numPartitions : Int) : GrapeVertexPartitionWrapper[VD] = {
     require(grapeVertexPartition != null, "grape vertex partitoin null")
-    log.info(s"Partitoin ${pid} try to generate vertex partition wrapper out of ${numPartitions} parts")
-    val chunkSize = (grapeVertexPartition.verticesNum() + numPartitions - 1) / numPartitions
-    val startLid = chunkSize * pid
+    val actualPid = partitionCnt.getAndAdd(1)
+    val partInThisProcess = partitionNum.get()
+    log.info(s"Partitoin ${pid} try to generate vertex partition wrapper out of ${numPartitions} parts, arrive at ${actualPid}, total part in this executor ${partInThisProcess}")
+    val chunkSize = (grapeVertexPartition.verticesNum() + partInThisProcess - 1) / partInThisProcess
+    val startLid = chunkSize * actualPid
     val endLid = Math.min(startLid + chunkSize, grapeVertexPartition.verticesNum)
     log.info(s"Partition ${pid}/${numPartitions} got range ${startLid},${endLid}")
     new GrapeVertexPartitionWrapper[VD](pid,numPartitions, startLid, endLid, grapeVertexPartition)

@@ -66,7 +66,8 @@ class VertexPartitionBuilder {
       typename vineyard::ConvertToArrowType<vdata_t>::BuilderType;
 
  public:
-  VertexPartitionBuilder() {}
+  VertexPartitionBuilder() {
+  }
 
   /**
    * @brief Add vertices which receives from certain partition.

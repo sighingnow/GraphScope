@@ -75,6 +75,7 @@ object GrapeVertexRDD extends Logging{
       registry.createVertexPartitionBuilder(ind)
       val vertexPartitionBuilder = registry.getVertexPartitionBuilder()
       //VertexShuffle to std::vector.
+      var cnt = 0
       while (iter.hasNext){
         val (pid,shuffle) = iter.next()
         require(pid == ind)
@@ -82,28 +83,32 @@ object GrapeVertexRDD extends Logging{
         val vec = shuffle.toVector
         log.info(s"Partition ${ind} adding shuffles from ${shuffle.fromPid}, size ${shuffle.size()}")
         vertexPartitionBuilder.addVertex(vec, shuffle.fromPid)
+	cnt += shuffle.size()
       }
-      iter
+      Iterator((ind,cnt))
     })
     log.info(s"total: shuffles ${tmp.cache().count()}")
 
     //Builder
     tmp.foreachPartition(iter => {
-      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
-      registry.build(iter.next()._1, vd)
+      if (iter.hasNext){
+           val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
+          registry.build(iter.next()._1, vd)
+      }
     })
 
     val vertexPartitionsRDD = tmp.mapPartitions(iter => {
-      val firstOne = iter.next()
-      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
-      Iterator((firstOne._1,registry.getGrapeVertexPartitionWrapper(firstOne._1,numPartitions)))
+      if (iter.hasNext){
+          val firstOne = iter.next()
+          val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
+          Iterator((firstOne._1,registry.getGrapeVertexPartitionWrapper(firstOne._1,numPartitions)))
+      }
+      else {
+	Iterator.empty
+      }
     }).cache()
     log.info(s"Finish constructing partition wrappers, num: ${vertexPartitionsRDD.count()}")
 
-    //clear
-    tmp.foreachPartition(_ => {
-      GrapeVertexPartitionRegistry.clear()
-    })
     vertexPartitionsRDD
   }
 }
