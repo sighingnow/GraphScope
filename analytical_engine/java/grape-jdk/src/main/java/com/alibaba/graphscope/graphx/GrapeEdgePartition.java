@@ -6,6 +6,7 @@ import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
+import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder;
 import com.alibaba.graphscope.ds.ImmutableCSR;
 import com.alibaba.graphscope.ds.MutableTypedArray;
 import com.alibaba.graphscope.utils.CppClassName;
@@ -36,4 +37,7 @@ public interface GrapeEdgePartition<OID, VID, ED> extends FFIPointer {
      * @return
      */
     @CXXReference MutableTypedArray<OID> getOidArray();
+
+    void loadEdges(@CXXReference ArrowArrayBuilder<OID> srcOidBuilder, @CXXReference ArrowArrayBuilder<OID> dstOidBuilder,
+        @CXXReference ArrowArrayBuilder<ED> edArrowArrayBuilder);
 }

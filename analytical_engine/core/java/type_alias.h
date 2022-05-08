@@ -92,8 +92,13 @@ template <typename FRAG_T>
 using IntColumn = Column<FRAG_T, uint32_t>;
 
 template <typename VID_T, typename ED_T>
-using DefaultImmutableCSR =
-    grape::ImmutableCSR<VID_T, grape::Nbr<VID_T, ED_T>>;
+using DefaultImmutableCSR = grape::ImmutableCSR<VID_T, grape::Nbr<VID_T, ED_T>>;
+
+template <typename T>
+using ArrowArrayBuilder = vineyard::ConvertToArrowType<T>::BuilderType;
+
+template <typename T>
+using ArrowArray = vineyard::ConvertToArrowType<T>::ArrayType;
 
 namespace graphx {
 template <typename T>
@@ -106,9 +111,10 @@ class MutableTypedArray {
       buffer_ = NULL;
       length = 0;
     } else {
-      auto const_buffer_ = std::dynamic_pointer_cast<
-                    typename vineyard::ConvertToArrowType<T>::ArrayType>(array)
-                    ->raw_values();
+      auto const_buffer_ =
+          std::dynamic_pointer_cast<
+              typename vineyard::ConvertToArrowType<T>::ArrayType>(array)
+              ->raw_values();
       buffer_ = const_cast<T*>(const_buffer_);
       length = array->length();
     }
@@ -119,9 +125,10 @@ class MutableTypedArray {
       buffer_ = NULL;
       length = 0;
     } else {
-      auto const_buffer_ = std::dynamic_pointer_cast<
-                    typename vineyard::ConvertToArrowType<T>::ArrayType>(array)
-                    ->raw_values();
+      auto const_buffer_ =
+          std::dynamic_pointer_cast<
+              typename vineyard::ConvertToArrowType<T>::ArrayType>(array)
+              ->raw_values();
       buffer_ = const_cast<T*>(const_buffer_);
       length = array->length();
     }
