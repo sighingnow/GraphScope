@@ -5,7 +5,7 @@ import com.alibaba.graphscope.graphx.GrapeEdgePartition
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.Partitioner
 import org.apache.spark.graphx.impl.graph.EdgeManagerImpl
-import org.apache.spark.graphx.impl.partition.VertexShuffle
+import org.apache.spark.graphx.impl.partition.{VertexShuffle, VertexShuffleBuilder}
 import org.apache.spark.graphx.traits.{EdgeManager, GraphXVertexIdManager}
 import org.apache.spark.graphx.{Edge, EdgeTriplet, PartitionID, TripletFields, VertexDataManagerCreator, VertexId}
 import org.apache.spark.internal.Logging
@@ -43,9 +43,9 @@ class GrapeEdgePartitionWrapper[VD: ClassTag, ED : ClassTag](
     //iterate over vertices, put them in different array, each for one partition.
     val partitionNum = partitioner.numPartitions
     log.info(s"Partition ${pid} shatter vertices into ${partitionNum} partitions")
-    val pid2Shuffle = new Array[VertexShuffle](partitionNum)
+    val pid2Shuffle = new Array[VertexShuffleBuilder](partitionNum)
     for (ind <- 0 until(partitionNum)){
-      pid2Shuffle(ind) = new VertexShuffle(ind, pid)
+      pid2Shuffle(ind) = new VertexShuffleBuilder(ind, pid)
     }
     var ind = 0
     while (ind < vertexNum){
@@ -54,14 +54,11 @@ class GrapeEdgePartitionWrapper[VD: ClassTag, ED : ClassTag](
       pid2Shuffle(pid).addOid(oid)
       ind += 1
     }
-    for (ind <- 0 until(partitionNum)){
-      pid2Shuffle(ind).finish()
-    }
     for (ind <- 0 until( partitionNum)){
       val shuffle = pid2Shuffle(ind)
       log.info(s"partition ${pid} to dst partition ${ind} ${shuffle.oidArray.array.mkString("Array(", ", ", ")")}")
     }
-    pid2Shuffle.zipWithIndex.map(tuple => (tuple._2, tuple._1)).toIterator
+    pid2Shuffle.zipWithIndex.map(tuple => (tuple._2, tuple._1.finish())).toIterator
   }
 
   def createNewVDManager[VD2 : ClassTag] : Unit = {
