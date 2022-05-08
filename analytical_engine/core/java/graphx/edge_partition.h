@@ -190,6 +190,10 @@ class EdgePartition {
 
       int64_t res = digestEdgesFromMapedFile(data_start, data_len, src_builder,
                                              dst_builder, edata_builder);
+
+      munmap(mmapped_data, mapped_size);
+      close(fd);
+
       numEdges += res;
       LOG(INFO) << " Finish reading " << file_path << " got " << numEdges
                 << " edges";
