@@ -7,29 +7,29 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.PrimitiveVector
 
 
-class VertexShuffle(val dstPid : Int, val fromPid: Int)extends Logging  with Serializable{
-//  val oidArray = new Array[Long](INIT_SIZE)
-  @transient val oidArray = new PrimitiveVector[Long](INIT_SIZE)
-  var resArray : Array[Long] = null.asInstanceOf[Array[Long]]
-
-  def addOid(oid : Long) : Unit = oidArray.+=(oid)
-
-  def finish() : Unit = {
-    resArray = oidArray.array
-  }
-
-  def size() : Int = oidArray.size
+class VertexShuffle(val dstPid : Int, val fromPid: Int, array : Array[Long])extends Logging  with Serializable{
+  def size() : Int = array.size
 
   def toVector() : StdVector[Long] = {
     val vector = vectorFactory.create()
-    vector.reserve(size())
+    vector.resize(size())
     var i = 0;
     log.info(s"Writing vertex shuffle to vector ${vector} size ${size()}")
-    while (i < resArray.size){
-      vector.set(i, resArray(i))
+    while (i < array.size){
+      vector.set(i, array(i))
       i += 1
     }
     vector
+  }
+}
+
+class VertexShuffleBuilder (val dstPid : Int, val fromPid: Int) extends Logging {
+  @transient val oidArray = new PrimitiveVector[Long](INIT_SIZE)
+
+  def addOid(oid : Long) : Unit = oidArray.+=(oid)
+
+  def finish() : VertexShuffle = {
+    new VertexShuffle(dstPid, fromPid, oidArray.array)
   }
 }
 object VertexShuffle{
