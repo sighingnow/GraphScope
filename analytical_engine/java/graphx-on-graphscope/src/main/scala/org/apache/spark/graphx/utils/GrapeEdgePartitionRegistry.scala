@@ -55,7 +55,7 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
             GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[_ <: ED]])
 	          log.info(s"Partition [${pid}] finish constructing edge partition ${grapeEdgePartition.toString}")
           grapeEdgePartition.loadEdges(srcOidBuilder,dstOidBuilder,edataBuilder)
-          log.info(s"Partition [${pid}] finish loading edges")
+          log.info(s"Partition [${pid}] finish loading edges, numEdges ${grapeEdgePartition.getEdgesNum} num vertices: ${grapeEdgePartition.getVerticesNum}")
           return
         }
       }

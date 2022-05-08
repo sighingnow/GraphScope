@@ -36,7 +36,7 @@ public interface GrapeEdgePartition<OID, VID, ED> extends FFIPointer {
      *
      * @return
      */
-    @FFInameAlias("GetOidArray")
+    @FFINameAlias("GetOidArray")
     @CXXReference MutableTypedArray<OID> getOidArray();
 
     @FFINameAlias("LoadEdges")

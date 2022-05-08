@@ -4,6 +4,7 @@ import static com.alibaba.graphscope.utils.CppClassName.GS_ARROW_ARRAY_BUILDER;
 import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_TYPE_ALIAS_H;
 
 import com.alibaba.fastffi.CXXHead;
+import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
@@ -17,7 +18,7 @@ import com.alibaba.graphscope.arrow.Status;
 public interface ArrowArrayBuilder<T> extends FFIPointer {
 
     @FFINameAlias("Reserve")
-    Status reserve(long additionalCapacity);
+    @CXXValue Status reserve(long additionalCapacity);
 
     @FFINameAlias("UnsafeAppend")
     void unsafeAppend(T value);
