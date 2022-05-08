@@ -70,6 +70,7 @@ class VertexPartitionBuilder {
 
   /**
    * @brief Add vertices which receives from certain partition.
+   * //FIXME: more efficient
    * @param oids
    * @param pids
    */
@@ -78,9 +79,14 @@ class VertexPartitionBuilder {
               << " size: " << oids.size();
     oids_builder.Reserve(oids.size());
     for (auto oid : oids) {
-      oids_builder.UnsafeAppend(oid);
       // Theoretically, no duplicate ids should appeal
-      oid2Lid.emplace(oid, static_cast<vid_t>(oid2Lid.size()));
+      if (oid2Lid.find(oid) == oid2Lid.end()) {
+        oids_builder.UnsafeAppend(oid);
+        oid2Lid.emplace(oid, static_cast<vid_t>(oid2Lid.size()));
+      }
+    }
+    lid2Pids.resize(oid2Lid.size());
+    for (auto oid : oids) {
       auto lid = oid2Lid[oid];
       lid2Pids[lid].push_back(fromPid);
     }
