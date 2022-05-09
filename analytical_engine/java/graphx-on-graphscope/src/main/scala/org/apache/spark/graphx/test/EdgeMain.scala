@@ -3,7 +3,7 @@ package org.apache.spark.graphx.test
 import org.apache.spark.graphx.utils.GrapeEdgePartitionRegistry
 import org.apache.spark.internal.Logging
 
-object Main extends Logging{
+object EdgeMain extends Logging{
   def main(array: Array[String]): Unit = {
     val registry = GrapeEdgePartitionRegistry.getOrCreate[Int,Int]
     registry.createArrayBuilder(0)
