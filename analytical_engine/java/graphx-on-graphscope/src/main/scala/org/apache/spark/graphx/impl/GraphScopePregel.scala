@@ -40,6 +40,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     //launch mpi processes. and run.
     val t0 = System.nanoTime()
 
+    /*
     MPIUtils.launchGraphX[MSG,VD,ED](grapeGraph.fragId, initialMsg, msgClass, vdClass, edClass, maxIteration, VPROG_SERIALIZATION_PATH,
       SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH, VDATA_MAPPED_PATH, vdataMappedSize)
     val t1 = System.nanoTime()
@@ -49,5 +50,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     val resVertices = grapeGraph.vertices.withGrapeVertexData(VDATA_MAPPED_PATH, vdataMappedSize).cache()
     GrapeGraphImpl.fromExistingRDDs(resVertices.asInstanceOf[GrapeVertexRDDImpl[VD]],
       grapeGraph.edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]], grapeGraph.fragId).cache()
+	*/
+    null
   }
 }

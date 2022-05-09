@@ -56,6 +56,6 @@ find_package(Threads REQUIRED)
 
 add_library(grape-jni SHARED ${SOURCES})
 target_compile_definitions(grape-jni PUBLIC ENABLE_JAVA_SDK)
-target_link_libraries(grape-jni ${CMAKE_JNI_LINKER_FLAGS}  ${LIBGRAPELITE_LIBRARIES} ${VINEYARD_LIBRARIES} ${GRAPHSCOPE_ANALYTICAL_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(grape-jni ${CMAKE_JNI_LINKER_FLAGS}  ${LIBGRAPELITE_LIBRARIES} ${GRAPHSCOPE_ANALYTICAL_LIBRARIES})
 set_target_properties(grape-jni PROPERTIES LINKER_LANGUAGE CXX)
 target_compile_features(grape-jni PRIVATE cxx_std_14)
