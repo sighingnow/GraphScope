@@ -2,6 +2,7 @@ package org.apache.spark.graphx
 
 import org.apache.spark.graphx.impl.GrapeVertexPartitionWrapper
 import org.apache.spark.graphx.impl.grape.GrapeVertexRDDImpl
+import org.apache.spark.graphx.impl.partition.VertexShuffle
 import org.apache.spark.graphx.utils.GrapeVertexPartitionRegistry
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
@@ -86,7 +87,7 @@ object GrapeVertexRDD extends Logging{
         val (pid,shuffle) = iter.next()
         pid_ = pid
         require(pid == shuffle.dstPid)
-        val vec = shuffle.toVector
+        val vec = VertexShuffle.toVector(shuffle)
         log.info(s"Partition ${pid} adding shuffles from ${shuffle.fromPid}, size ${shuffle.size()}")
         vertexPartitionBuilder.addVertex(vec, shuffle.fromPid)
 	      cnt += shuffle.size()
@@ -104,9 +105,6 @@ object GrapeVertexRDD extends Logging{
       if (iter.hasNext){
            val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
           registry.build(iter.next()._1, vd)
-      }
-      else {
-        Iterator.empty
       }
     })
 
