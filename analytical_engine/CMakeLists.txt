@@ -293,6 +293,10 @@ if (BUILD_TESTS)
         target_compile_definitions(graphx_fragment_loader PUBLIC ENABLE_JAVA_SDK)
         target_link_libraries(graphx_fragment_loader ${CMAKE_DL_LIBS} gs_proto ${VINEYARD_LIBRARIES} ${Boost_LIBRARIES} ${GFLAGS_LIBRARIES}  ${JNI_LIBRARIES} ${LIBRT})
 
+        add_executable(vertex_partition_test test/vertex_partition_test.cc)
+        target_include_directories(graphx_runner PRIVATE core utils apps)
+        target_compile_definitions(vertex_partition_test PUBLIC ENABLE_JAVA_SDK)
+        target_link_libraries(vertex_partition_test ${CMAKE_DL_LIBS} ${VINEYARD_LIBRARIES} ${Boost_LIBRARIES} ${GLOG_LIBRARIES} ${LIBRT})
 
         if (${LIBUNWIND_FOUND})
             # target_link_libraries(run_java_app ${LIBUNWIND_LIBRARIES})
@@ -300,6 +304,7 @@ if (BUILD_TESTS)
             # target_link_libraries(giraph_runner ${LIBUNWIND_LIBRARIES})
             target_link_libraries(graphx_runner ${LIBUNWIND_LIBRARIES})
             target_link_libraries(graphx_fragment_loader ${LIBUNWIND_LIBRARIES})
+            target_link_libraries(vertex_partition_test ${LIBUNWIND_LIBRARIES})
         endif ()
     endif()
 

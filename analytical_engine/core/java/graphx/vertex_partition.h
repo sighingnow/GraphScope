@@ -117,10 +117,10 @@ class VertexPartitionBuilder {
     partition.oid2Lid = std::move(oid2Lid);
     partition.lid2Pids = std::move(lid2Pids);
     partition.vdatas_accessor.Init(partition.vdatas);
-    partition.oids_accessor.Init(partitions.oids);
+    partition.oids_accessor.Init(partition.oids);
     partition.vnums = vnums;
     LOG(INFO) << "Finish constructing vertex partition vertices : "
-              << partition.vnums << ", oid2Lid: " << partittion.oid2Lid.size()
+              << partition.vnums << ", oid2Lid: " << partition.oid2Lid.size()
               << "lid2Pids size: " << partition.lid2Pids.size();
   }
 

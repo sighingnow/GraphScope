@@ -19,14 +19,16 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
   private var dstOidBuilder : ArrowArrayBuilder[Long] = null.asInstanceOf[ArrowArrayBuilder[Long]]
   private var edataBuilder : ArrowArrayBuilder[ED] = null.asInstanceOf[ArrowArrayBuilder[ED]]
 
+          log.info("[NativeUtils:] load jni lib success")
+          log.info(s" builder cl: ${classOf[ArrowArrayBuilder[_]].getClassLoader.toString}")
+          log.info(s" context class loader: ${Thread.currentThread().getContextClassLoader.toString}")
 
   def createArrayBuilder(pid : Int) : Unit = {
     partitionNum.addAndGet(1)
     if (srcOidBuilder == null){
       synchronized{
         if (srcOidBuilder == null){
-          System.loadLibrary("grape-jni")
-          log.info("[NativeUtils:] load jni lib success")
+	  FFITypeFactory.loadClassLoader(Thread.currentThread().getContextClassLoader)
           val factory = FFITypeFactory.getFactory(classOf[ArrowArrayBuilder[_]], "gs::ArrowArrayBuilder<int64_t>").asInstanceOf[ArrowArrayBuilder.Factory[Long]]
           srcOidBuilder = factory.create()
           dstOidBuilder = factory.create()
@@ -82,6 +84,8 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
 }
 
 object GrapeEdgePartitionRegistry extends Logging{
+System.loadLibrary("grape-jni")
+          log.info("[NativeUtils:] load jni lib success")
   private var registry = null.asInstanceOf[GrapeEdgePartitionRegistry[_,_]]
   def getOrCreate[VD: ClassTag,ED : ClassTag] : GrapeEdgePartitionRegistry[VD,ED] = {
     if (registry == null){
