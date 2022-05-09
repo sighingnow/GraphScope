@@ -22,18 +22,32 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
   private val partitionNum : AtomicInteger = new AtomicInteger(0)
   private val partitionCnt : AtomicInteger = new AtomicInteger(0)
 
-  def createVertexPartitionBuilder(pid : Int) : Unit = {
+//  def createVertexPartitionBuilder(pid : Int) : Unit = {
+//    partitionNum.addAndGet(1)
+//    if (grapeVertexPartitionBuilder == null){
+////      synchronized{
+//        if (grapeVertexPartitionBuilder == null){
+//          grapeVertexPartitionBuilder = builderFactory.create()
+//          log.info(s"Partition ${pid} created Builder ${grapeVertexPartitionBuilder}")
+//          return ;
+//        }
+////      }
+//    }
+//    log.info(s"Partition ${pid} skip creating builder, part num ${partitionNum.get}")
+//  }
+
+  def createVertexPartitionBuilder() : Unit = {
     partitionNum.addAndGet(1)
     if (grapeVertexPartitionBuilder == null){
-//      synchronized{
-        if (grapeVertexPartitionBuilder == null){
-          grapeVertexPartitionBuilder = builderFactory.create()
-          log.info(s"Partition ${pid} created Builder ${grapeVertexPartitionBuilder}")
-          return ;
-        }
-//      }
+      //      synchronized{
+      if (grapeVertexPartitionBuilder == null){
+        grapeVertexPartitionBuilder = builderFactory.create()
+        log.info(s"Created Builder ${grapeVertexPartitionBuilder}")
+        return ;
+      }
+      //      }
     }
-    log.info(s"Partition ${pid} skip creating builder, part num ${partitionNum.get}")
+    log.info(s" skip creating builder, part num ${partitionNum.get}")
   }
 
   def getVertexPartitionBuilder() : GrapeVertexPartitionBuilder[Long,Long,VD] = {

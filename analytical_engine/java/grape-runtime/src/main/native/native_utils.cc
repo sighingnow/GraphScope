@@ -132,8 +132,8 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_getArrowProjectedFragment(
 JNIEXPORT jlong JNICALL
 Java_com_alibaba_graphscope_runtime_NativeUtils_nativeCreateEdgePartition(
     JNIEnv* env, jclass clz, jint ed_type) {
-  google::InitGoogleLogging("NativeUtils");
-  google::InstallFailureSignalHandler();
+//  google::InitGoogleLogging("NativeUtils");
+//  google::InstallFailureSignalHandler();
 
 //  std::string ipc_socket = "/tmp/vineyard.sock";
 //  VINEYARD_CHECK_OK(client.Connect(ipc_socket));
