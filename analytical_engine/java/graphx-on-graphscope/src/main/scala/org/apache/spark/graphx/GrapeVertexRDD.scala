@@ -57,7 +57,7 @@ object GrapeVertexRDD extends Logging{
   def fromEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD) : GrapeVertexRDD[VD] = {
     log.info(s"Driver: Creating vertex rdd from edgeRDD of numPartition ${numPartitions}, default val ${defaultVal}")
     //First creating partial vertex map. We may not need to use it in graphx. just pass it to c++ to build.
-    val vertexPartitions = createVertexPartitions(numPartitions, edgeRDD, defaultVal)
+    val vertexPartitions = createVertexPartitions(numPartitions, edgeRDD, defaultVal).cache()
     //Pass to c++ for building
 //    val vertexPartition = GrapeVertexRDD.fromPartitionBuilder(vertexPartitionBuilderRDD, defaultVal)
     fromVertexPartitions(vertexPartitions)
@@ -106,9 +106,7 @@ object GrapeVertexRDD extends Logging{
       else {
 	      Iterator.empty
       }
-    }).cache()
-    log.info(s"Finish constructing partition wrappers, num: ${vertexPartitionsRDD.count()}")
-
+    })
     vertexPartitionsRDD
   }
 }
