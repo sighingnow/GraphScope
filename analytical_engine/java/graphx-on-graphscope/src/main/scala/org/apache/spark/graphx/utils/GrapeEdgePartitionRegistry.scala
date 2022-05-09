@@ -35,6 +35,7 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
           val libs = ClassScope.getLoadedLibraries(GrapeEdgePartitionRegistry.getClass.getClassLoader)
           log.info(s"${libs.mkString("Array(", ", ", ")")}")
           val factory = FFITypeFactory.getFactory(classOf[ArrowArrayBuilder[_]], "gs::ArrowArrayBuilder<int64_t>").asInstanceOf[ArrowArrayBuilder.Factory[Long]]
+ 	  log.info(s"ffi type cl: ${factory.getClass.getClassLoader}")
           srcOidBuilder = factory.create()
           dstOidBuilder = factory.create()
           log.info(s"Partition ${pid} create oid builders ${srcOidBuilder} ${dstOidBuilder}")

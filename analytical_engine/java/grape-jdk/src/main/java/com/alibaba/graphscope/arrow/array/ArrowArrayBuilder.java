@@ -12,7 +12,7 @@ import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.arrow.Status;
 
-@FFIGen
+@FFIGen(library = "grape-jni")
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(GS_ARROW_ARRAY_BUILDER)
 public interface ArrowArrayBuilder<T> extends FFIPointer {

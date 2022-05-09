@@ -51,7 +51,7 @@ object GrapeEdgeRDD extends Logging{
 
     edgePartitions.foreachPartition(iter => {
       val (pid, part) = iter.next()
-      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
+      lazy val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
 //      registry.registerPath(pid, outputFilenamesDedup)
       registry.createArrayBuilder(pid)
     })
@@ -59,7 +59,7 @@ object GrapeEdgeRDD extends Logging{
 
     edgePartitions.foreachPartition(iter => {
       val (pid, part) = iter.next()
-      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
+      lazy val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
       val (srcBuilder,dstBuilder,edataBuilder) = registry.getBuilders()
       srcBuilder.reserve(part.size)
       dstBuilder.reserve(part.size)

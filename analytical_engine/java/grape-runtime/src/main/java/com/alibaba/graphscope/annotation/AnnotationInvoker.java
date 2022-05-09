@@ -42,7 +42,7 @@ import com.alibaba.fastffi.FFIGenBatch;
             @FFIGen(type = "com.alibaba.graphscope.parallel.message.DoubleMsg"),
             @FFIGen(type = "com.alibaba.graphscope.parallel.message.LongMsg"),
             @FFIGen(type = "com.alibaba.graphscope.arrow.Status"),
-            @FFIGen(type = "com.alibaba.graphscope.arrow.array.ArrowArrayBuilder",
+            @FFIGen(library = "grape-jni", type = "com.alibaba.graphscope.arrow.array.ArrowArrayBuilder",
             templates = {
                 @CXXTemplate(cxx = "int64_t", java = "Long"),
                 @CXXTemplate(cxx = "int32_t", java = "Integer"),
