@@ -7,6 +7,9 @@ import com.alibaba.graphscope.utils.ReflectUtils
 import org.apache.spark.graphx.impl.{GrapeEdgePartitionWrapper, GrapeUtils}
 import org.apache.spark.internal.Logging
 
+import java.lang.reflect.Field
+import java.util
+import java.util.Vector
 import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.ClassTag
 
@@ -19,16 +22,18 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
   private var dstOidBuilder : ArrowArrayBuilder[Long] = null.asInstanceOf[ArrowArrayBuilder[Long]]
   private var edataBuilder : ArrowArrayBuilder[ED] = null.asInstanceOf[ArrowArrayBuilder[ED]]
 
-          log.info("[NativeUtils:] load jni lib success")
-          log.info(s" builder cl: ${classOf[ArrowArrayBuilder[_]].getClassLoader.toString}")
-          log.info(s" context class loader: ${Thread.currentThread().getContextClassLoader.toString}")
+
+  log.info(s" builder cl: ${classOf[ArrowArrayBuilder[_]].getClassLoader.toString}")
+  log.info(s" context class loader: ${Thread.currentThread().getContextClassLoader.toString}")
 
   def createArrayBuilder(pid : Int) : Unit = {
     partitionNum.addAndGet(1)
     if (srcOidBuilder == null){
       synchronized{
         if (srcOidBuilder == null){
-	  FFITypeFactory.loadClassLoader(Thread.currentThread().getContextClassLoader)
+	        FFITypeFactory.loadClassLoader(Thread.currentThread().getContextClassLoader)
+          val libs = ClassScope.getLoadedLibraries(GrapeEdgePartitionRegistry.getClass.getClassLoader)
+          log.info(s"${libs.mkString("Array(", ", ", ")")}")
           val factory = FFITypeFactory.getFactory(classOf[ArrowArrayBuilder[_]], "gs::ArrowArrayBuilder<int64_t>").asInstanceOf[ArrowArrayBuilder.Factory[Long]]
           srcOidBuilder = factory.create()
           dstOidBuilder = factory.create()
@@ -84,8 +89,8 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
 }
 
 object GrapeEdgePartitionRegistry extends Logging{
-System.loadLibrary("grape-jni")
-          log.info("[NativeUtils:] load jni lib success")
+  System.loadLibrary("grape-jni")
+  log.info("[NativeUtils:] load jni lib success")
   private var registry = null.asInstanceOf[GrapeEdgePartitionRegistry[_,_]]
   def getOrCreate[VD: ClassTag,ED : ClassTag] : GrapeEdgePartitionRegistry[VD,ED] = {
     if (registry == null){
@@ -103,5 +108,20 @@ System.loadLibrary("grape-jni")
    */
   def clear(): Unit ={
     registry = null
+  }
+}
+object ClassScope {
+  private var LIBRARIES: Field = null
+  try LIBRARIES = classOf[ClassLoader].getDeclaredField("loadedLibraryNames")
+  catch {
+    case e: NoSuchFieldException =>
+      e.printStackTrace()
+  }
+  LIBRARIES.setAccessible(true)
+
+  @throws[IllegalAccessException]
+  def getLoadedLibraries(loader: ClassLoader): Array[String] = {
+    val libraries: java.util.Vector[String] = LIBRARIES.get(loader).asInstanceOf[java.util.Vector[String]]
+    libraries.toArray(new Array[String](libraries.size()))
   }
 }
