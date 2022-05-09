@@ -95,6 +95,9 @@ object GrapeVertexRDD extends Logging{
            val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
           registry.build(iter.next()._1, vd)
       }
+      else {
+        Iterator.empty
+      }
     })
 
     val vertexPartitionsRDD = tmp.mapPartitions(iter => {

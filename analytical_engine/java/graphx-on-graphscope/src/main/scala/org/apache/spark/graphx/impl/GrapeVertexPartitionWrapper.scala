@@ -12,8 +12,11 @@ class GrapeVertexPartitionWrapper[VD : ClassTag](pid: Int, numPartitions: Int,
                                                  val endLid : Long,
                                                  val grapePartition : GrapeVertexPartition[Long,Long,VD],
                                                  var mask : BitSet = null) extends Logging {
+  log.info("Constructing vertex partition wrapper")
   val totalVnum: Long = grapePartition.verticesNum()
+  log.info(s"total vnum : ${totalVnum}")
   val partitionVnum: VertexId = endLid - startLid
+  log.info(s"partition vnum ${partitionVnum}")
 
   if (mask == null){
     mask = new BitSet(partitionVnum.toInt)
