@@ -29,7 +29,7 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
   def createArrayBuilder(pid : Int) : Unit = {
     partitionNum.addAndGet(1)
     if (srcOidBuilder == null){
-      synchronized{
+//      synchronized{
         if (srcOidBuilder == null){
 	        FFITypeFactory.loadClassLoader(Thread.currentThread().getContextClassLoader)
           val libs = ClassScope.getLoadedLibraries(GrapeEdgePartitionRegistry.getClass.getClassLoader)
@@ -44,7 +44,7 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
           log.info(s"Partitoin ${pid} create edata builder ${edataBuilder}")
           return
         }
-      }
+//      }
     }
     log.info(s"Partition ${pid} already has builder ${srcOidBuilder}")
   }
@@ -55,7 +55,7 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
 
   def constructEdgePartition(pid : Int) : Unit = {
     if (grapeEdgePartition == null){
-      synchronized{
+//      synchronized{
         if (grapeEdgePartition == null){
           log.info(s"Partition [${pid}] try to construct grape partition")
           grapeEdgePartition = ReflectUtils.invokeEdgePartitionCreation(
@@ -67,14 +67,14 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
           log.info(s"Partition [${pid}] finish loading edges, numEdges ${grapeEdgePartition.getEdgesNum} num vertices: ${grapeEdgePartition.getVerticesNum}")
           return
         }
-      }
+//      }
     }
     log.info(s"Partition [${pid}] skip construct grape partition")
   }
 
   /** We can not use pid as index, since on one executor the partiton num may be not necessarily consecutive */
   def getEdgePartitionWrapper(pid : Int): GrapeEdgePartitionWrapper[VD,ED] ={
-    synchronized{
+//    synchronized{
     val curPartId = partitionCnt.getAndAdd(1);
     val numParts = partitionNum.get()
     val totalVertices = grapeEdgePartition.getVerticesNum()
@@ -85,8 +85,8 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
     val endLid = Math.min(startLid + chunkSize, grapeEdgePartition.getVerticesNum)
     log.info(s"cur pid ${curPartId} start from ${startLid} to ${endLid}")
     new GrapeEdgePartitionWrapper[VD,ED](pid, startLid, endLid, grapeEdgePartition)
-    }
   }
+//  }
 }
 
 object GrapeEdgePartitionRegistry extends Logging{
@@ -95,11 +95,11 @@ object GrapeEdgePartitionRegistry extends Logging{
   private var registry = null.asInstanceOf[GrapeEdgePartitionRegistry[_,_]]
   def getOrCreate[VD: ClassTag,ED : ClassTag] : GrapeEdgePartitionRegistry[VD,ED] = {
     if (registry == null){
-      synchronized{
+//      synchronized{
         if (registry == null){
           registry = new GrapeEdgePartitionRegistry[VD,ED]
         }
-      }
+//      }
     }
     registry.asInstanceOf[GrapeEdgePartitionRegistry[VD,ED]]
   }

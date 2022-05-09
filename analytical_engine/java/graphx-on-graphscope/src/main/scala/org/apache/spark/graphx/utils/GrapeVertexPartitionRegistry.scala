@@ -25,13 +25,13 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
   def createVertexPartitionBuilder(pid : Int) : Unit = {
     partitionNum.addAndGet(1)
     if (grapeVertexPartitionBuilder == null){
-      synchronized{
+//      synchronized{
         if (grapeVertexPartitionBuilder == null){
           grapeVertexPartitionBuilder = builderFactory.create()
           log.info(s"Partition ${pid} created Builder ${grapeVertexPartitionBuilder}")
           return ;
         }
-      }
+//      }
     }
     log.info(s"Partition ${pid} skip creating builder, part num ${partitionNum.get}")
   }
@@ -44,7 +44,7 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
   def build(pid : Int, defaultVal: VD) : Unit = {
     require(grapeVertexPartitionBuilder != null, "builder null")
     if (grapeVertexPartition == null){
-      synchronized{
+//      synchronized{
         if (grapeVertexPartition == null){
           grapeVertexPartition = partitionFactory.create()
           log.info(s"Partition ${pid} created partition ${grapeVertexPartitionBuilder}")
@@ -52,13 +52,13 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
           log.info(s"after building partition ${grapeVertexPartition.verticesNum()}")
           return
         }
-      }
+//      }
     }
     log.info(s"Partition ${pid} skip creating vertex Partition")
   }
 
   def getGrapeVertexPartitionWrapper( pid : Int) : GrapeVertexPartitionWrapper[VD] = {
-    synchronized{
+//    synchronized{
       require(grapeVertexPartition != null, "grape vertex partitoin null")
       val actualPid = partitionCnt.getAndAdd(1)
       val partInThisProcess = partitionNum.get()
@@ -69,17 +69,17 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
       log.info(s"Partition ${pid}/${partInThisProcess} got range ${startLid},${endLid}")
       new GrapeVertexPartitionWrapper[VD](pid,partInThisProcess, startLid, endLid, grapeVertexPartition)
     }
-  }
+//  }
 }
 object GrapeVertexPartitionRegistry{
   private var registry = null.asInstanceOf[GrapeVertexPartitionRegistry[_]]
   def getOrCreate[VD: ClassTag] : GrapeVertexPartitionRegistry[VD] = {
     if (registry == null){
-      synchronized{
+//      synchronized{
         if (registry == null){
           registry = new GrapeVertexPartitionRegistry[VD]
         }
-      }
+//      }
     }
     registry.asInstanceOf[GrapeVertexPartitionRegistry[VD]]
   }
