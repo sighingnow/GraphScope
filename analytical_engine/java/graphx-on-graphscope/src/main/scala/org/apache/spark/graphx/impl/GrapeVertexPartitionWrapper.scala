@@ -7,7 +7,7 @@ import org.apache.spark.util.collection.BitSet
 
 import scala.reflect.ClassTag
 
-class GrapeVertexPartitionWrapper[VD : ClassTag](pid: Int, numPartitions: Int,
+class GrapeVertexPartitionWrapper[VD : ClassTag](pid: Int, partInThisWorker: Int,
                                                  val startLid : Long,
                                                  val endLid : Long,
                                                  val grapePartition : GrapeVertexPartition[Long,Long,VD],
@@ -232,6 +232,6 @@ class GrapeVertexPartitionWrapper[VD : ClassTag](pid: Int, numPartitions: Int,
     null
   }
 
-  override def toString: String = "VertexPartitionWrapper{" + "pid=" + pid + ",partitions= " + numPartitions + ",startLid=" + startLid + ", endLid=" + endLid + '}'
+  override def toString: String = "VertexPartitionWrapper{" + "pid=" + pid + ",partitions= " + partInThisWorker + ",startLid=" + startLid + ", endLid=" + endLid + '}'
 
 }

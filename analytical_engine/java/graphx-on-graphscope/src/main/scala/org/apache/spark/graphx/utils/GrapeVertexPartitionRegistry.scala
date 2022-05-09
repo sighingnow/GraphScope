@@ -57,17 +57,17 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
     log.info(s"Partition ${pid} skip creating vertex Partition")
   }
 
-  def getGrapeVertexPartitionWrapper( pid : Int, numPartitions : Int) : GrapeVertexPartitionWrapper[VD] = {
+  def getGrapeVertexPartitionWrapper( pid : Int) : GrapeVertexPartitionWrapper[VD] = {
     synchronized{
       require(grapeVertexPartition != null, "grape vertex partitoin null")
       val actualPid = partitionCnt.getAndAdd(1)
       val partInThisProcess = partitionNum.get()
-      log.info(s"Partitoin ${pid} try to generate vertex partition wrapper out of ${numPartitions} parts, arrive at ${actualPid}, total part in this executor ${partInThisProcess}")
+      log.info(s"Partitoin ${pid} try to generate vertex partition wrapper out of ${partInThisProcess} parts, arrive at ${actualPid}, total part in this executor ${partInThisProcess}")
       val chunkSize = (grapeVertexPartition.verticesNum() + partInThisProcess - 1) / partInThisProcess
       val startLid = chunkSize * actualPid
       val endLid = Math.min(startLid + chunkSize, grapeVertexPartition.verticesNum)
-      log.info(s"Partition ${pid}/${numPartitions} got range ${startLid},${endLid}")
-      new GrapeVertexPartitionWrapper[VD](pid,numPartitions, startLid, endLid, grapeVertexPartition)
+      log.info(s"Partition ${pid}/${partInThisProcess} got range ${startLid},${endLid}")
+      new GrapeVertexPartitionWrapper[VD](pid,partInThisProcess, startLid, endLid, grapeVertexPartition)
     }
   }
 }
