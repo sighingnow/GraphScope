@@ -21,7 +21,7 @@ class GrapeEdgePartitionWrapper[VD: ClassTag, ED : ClassTag](
                                                        val pid : PartitionID,
                                                        val startLid : Long,
                                                        val endLid : Long,
-                                                       val grapePartition : GrapeEdgePartition[Long,Long,ED]) extends Logging{
+                                                       @transient val grapePartition : GrapeEdgePartition[Long,Long,ED]) extends Logging{
   log.info("try to load jni library")
   System.loadLibrary("grape-jni")
   log.info("load jni lib success")
