@@ -12,7 +12,7 @@ import com.alibaba.graphscope.stdcxx.StdVector;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
 
-@FFIGen
+@FFIGen(library = "grape-jni")
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_VERTEX_PARTITION_H)
 @CXXHead(system = "stdint.h")
 @FFITypeAlias(CppClassName.GS_VERTEX_PARTITION_BUILDER)

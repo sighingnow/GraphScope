@@ -11,7 +11,7 @@ import com.alibaba.graphscope.ds.MutableTypedArray;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
 
-@FFIGen
+@FFIGen(library = "grape-jni")
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_VERTEX_PARTITION_H)
 @CXXHead(system = "stdint.h")
 @FFITypeAlias(CppClassName.GS_VERTEX_PARTITION)
