@@ -66,7 +66,7 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
 
   /** We can not use pid as index, since on one executor the partiton num may be not necessarily consecutive */
   def getEdgePartitionWrapper(pid : Int): GrapeEdgePartitionWrapper[VD,ED] ={
-    synchronized{   
+    synchronized{
     val curPartId = partitionCnt.getAndAdd(1);
     val numParts = partitionNum.get()
     val totalVertices = grapeEdgePartition.getVerticesNum()

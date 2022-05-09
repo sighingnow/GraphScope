@@ -5,7 +5,7 @@ import org.apache.spark.graphx.impl.grape.GrapeVertexRDDImpl
 import org.apache.spark.graphx.utils.GrapeVertexPartitionRegistry
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{Dependency, HashPartitioner, Partitioner, SparkContext}
+import org.apache.spark.{Dependency, HashPartitioner, SparkContext}
 
 import scala.reflect.ClassTag
 
@@ -101,10 +101,10 @@ object GrapeVertexRDD extends Logging{
       if (iter.hasNext){
           val firstOne = iter.next()
           val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
-          Iterator((firstOne._1,registry.getGrapeVertexPartitionWrapper(firstOne._1,numPartitions)))
+          Iterator((firstOne._1, registry.getGrapeVertexPartitionWrapper(firstOne._1,numPartitions)))
       }
       else {
-	Iterator.empty
+	      Iterator.empty
       }
     }).cache()
     log.info(s"Finish constructing partition wrappers, num: ${vertexPartitionsRDD.count()}")

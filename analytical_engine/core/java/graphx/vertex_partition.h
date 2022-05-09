@@ -43,12 +43,15 @@ class VertexPartition {
     return vdatas_accessor;
   }
 
+  graphx::MutableTypedArray<oid_t>& GetOidArray() { return oids_accessor; }
+
  private:
   std::shared_ptr<oid_array_t> oids;
   std::shared_ptr<vdata_array_t> vdatas;
   ska::flat_hash_map<oid_t, vid_t> oid2Lid;
   vid_t vnums;
   graphx::MutableTypedArray<vdata_t> vdatas_accessor;
+  graphx::MutableTypedArray<oid_t> oids_accessor;
   std::vector<std::vector<int>> lid2Pids;
 
   template <typename _OID_T, typename _VID_T, typename _VD_T>
@@ -66,8 +69,7 @@ class VertexPartitionBuilder {
       typename vineyard::ConvertToArrowType<vdata_t>::BuilderType;
 
  public:
-  VertexPartitionBuilder() {
-  }
+  VertexPartitionBuilder() {}
 
   /**
    * @brief Add vertices which receives from certain partition.
@@ -115,9 +117,10 @@ class VertexPartitionBuilder {
     partition.oid2Lid = std::move(oid2Lid);
     partition.lid2Pids = std::move(lid2Pids);
     partition.vdatas_accessor.Init(partition.vdatas);
+    partition.oids_accessor.Init(partitions.oids);
     partition.vnums = vnums;
     LOG(INFO) << "Finish constructing vertex partition vertices : "
-              << partition.vnums << ", oid2Lid: " << partition.oid2Lid.size()
+              << partition.vnums << ", oid2Lid: " << partittion.oid2Lid.size()
               << "lid2Pids size: " << partition.lid2Pids.size();
   }
 

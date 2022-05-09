@@ -28,6 +28,9 @@ public interface GrapeVertexPartition<OID,VID,VD> extends FFIPointer {
 
     @FFINameAlias("GetVdataArray") @CXXReference MutableTypedArray<VD> getVdataArray();
 
+    @FFINameAlias("GetOidArray") @CXXReference MutableTypedArray<OID> getOidArray();
+
+
     @FFIFactory
     interface Factory<OID,VID,VD>{
 
