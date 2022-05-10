@@ -21,20 +21,21 @@ class GrapeEdgePartitionWrapper[VD: ClassTag, ED : ClassTag](
                                                        val pid : PartitionID,
                                                        val startLid : Long,
                                                        val endLid : Long,
-                                                       @transient val grapePartition : GrapeEdgePartition[Long,Long,ED]) extends Logging{
-  log.info("try to load jni library")
-  System.loadLibrary("grape-jni")
-  log.info("load jni lib success")
+                                                       val grapePartition : GrapeEdgePartition[Long,Long,ED]) extends Logging{
+  log.info("constructing edge partition wrapper")
   val vertexNum = grapePartition.getVerticesNum
   //Edge num in this grapePartition
   val TotalEdgeNum = grapePartition.getEdgesNum
   val oids : MutableTypedArray[Long] = grapePartition.getOidArray
-  val inEdges : ImmutableCSR[Long,ED] = grapePartition.getInEdges
-  val outEdges : ImmutableCSR[Long,ED] = grapePartition.getOutEdges
-  val outPartEdgeNum = outEdges.partialEdgeNum(startLid, endLid)
-  val inPartEdgeNum = inEdges.partialEdgeNum(startLid, endLid)
+  log.info(s" got oid array ${oids}")
+//  val inEdges : ImmutableCSR[Long,ED] = grapePartition.getInEdges
+//  val outEdges : ImmutableCSR[Long,ED] = grapePartition.getOutEdges
+//  log.info(s" got edges ${inEdges}, ${outEdges}")
+//  val outPartEdgeNum = outEdges.partialEdgeNum(startLid, endLid)
+//  val inPartEdgeNum = inEdges.partialEdgeNum(startLid, endLid)
+//  log.info(s" got partial edge num")
   require(vertexNum == oids.getLength, s"length not match: ${vertexNum}, ${oids.getLength}")
-  log.info(s"for partition wrapper from ${startLid} to ${endLid}, partial inEdge nums ${inPartEdgeNum}, partial outEdgeNums: ${outPartEdgeNum}")
+//  log.info(s"for partition wrapper from ${startLid} to ${endLid}, partial inEdge nums ${inPartEdgeNum}, partial outEdgeNums: ${outPartEdgeNum}")
 //  log.info(s"got inEdges : ${inEdges}, vnum: ${inEdges.vertexNum()}, edge num: ${inEdges.edgeNum()}")
 //  log.info(s"got outEdges : ${outEdges}, vnum: ${outEdges.vertexNum()}, edge num: ${outEdges.edgeNum()}")
 

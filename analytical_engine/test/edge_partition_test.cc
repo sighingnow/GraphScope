@@ -19,7 +19,7 @@ limitations under the License.
 
 #include "arrow/array.h"
 #include "arrow/array/builder_primitive.h"
-#include "core/java/graphx/vertex_partition.h"
+#include "core/java/graphx/edge_partition.h"
 #include "glog/logging.h"
 #include "vineyard/client/client.h"
 
@@ -28,7 +28,7 @@ void Run() {
   gs::EdgePartition<int64_t, uint64_t, int32_t>* partition =
       new gs::EdgePartition<int64_t, uint64_t, int32_t>(client);
   arrow::Int64Builder srcBuilder, dstBuilder;
-  arrow::Int32Bulder edBuilder;
+  arrow::Int32Builder edBuilder;
   srcBuilder.Reserve(2);
   dstBuilder.Reserve(2);
   edBuilder.Reserve(2);
@@ -41,8 +41,8 @@ void Run() {
 
   partition->LoadEdges(srcBuilder, dstBuilder, edBuilder);
   LOG(INFO) << "vnum: " << partition->GetVerticesNum() << ", edge num"
-            << partition->GetEdgesNum
-            << " inedges : " << partition->GetInEdges()->vertex_num();
+            << partition->GetEdgesNum()
+            << " inedges : " << partition->GetInEdges().vertex_num();
 }
 
 int main(int argc, char* argv[]) {

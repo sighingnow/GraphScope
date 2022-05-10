@@ -26,10 +26,10 @@ public interface GrapeEdgePartition<OID, VID, ED> extends FFIPointer {
     long getEdgesNum();
 
     @FFINameAlias("GetInEdges")
-    ImmutableCSR<VID, ED> getInEdges();
+    @CXXReference ImmutableCSR<VID, ED> getInEdges();
 
     @FFINameAlias("GetOutEdges")
-    ImmutableCSR<VID, ED> getOutEdges();
+    @CXXReference ImmutableCSR<VID, ED> getOutEdges();
 
     /**
      * get all oids appeared in this edge partition

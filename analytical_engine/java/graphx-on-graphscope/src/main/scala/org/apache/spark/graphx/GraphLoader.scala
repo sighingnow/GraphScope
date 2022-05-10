@@ -16,7 +16,7 @@ object GraphLoader extends Logging {
    numEdgePartitions: Int = -1,
    edgeStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
    vertexStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
-  : Graph[Long, Long] = {
+  : Graph[Int, Int] = {
     val startTimeNs = System.nanoTime()
     // Parse the edge data table directly into edge partitions
     val lines =
@@ -38,6 +38,7 @@ object GraphLoader extends Logging {
           if (canonicalOrientation && srcId > dstId) {
             builder.add(dstId, srcId, 1)
           } else {
+            log.info(s"partition ${pid} receive edge ${srcId},${dstId}")
             builder.add(srcId, dstId, 1)
           }
         }

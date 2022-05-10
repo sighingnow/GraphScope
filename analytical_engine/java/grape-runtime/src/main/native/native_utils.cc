@@ -141,17 +141,17 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_nativeCreateEdgePartition(
 
   if (ed_type == 0) {
     LOG(INFO) << "creating EdgePartition for ed = int64_t," ;
-    static auto edge_partition =
+    static std::shared_ptr<gs::EdgePartition<int64_t, uint64_t, int64_t>> edge_partition =
         std::make_shared<gs::EdgePartition<int64_t, uint64_t, int64_t>>(client);
     return reinterpret_cast<jlong>(edge_partition.get());
   } else if (ed_type == 1) {
     LOG(INFO) << "creating EdgePartition for ed = double, " ;
-    static auto edge_partition =
+    static std::shared_ptr<gs::EdgePartition<int64_t, uint64_t, double>> edge_partition =
         std::make_shared<gs::EdgePartition<int64_t, uint64_t, double>>(client);
     return reinterpret_cast<jlong>(edge_partition.get());
   } else if (ed_type == 2) {
     LOG(INFO) << "creating EdgePartition for ed = int32_t, " ;
-    static auto edge_partition =
+    static std::shared_ptr<gs::EdgePartition<int64_t, uint64_t, int32_t>> edge_partition =
         std::make_shared<gs::EdgePartition<int64_t, uint64_t, int32_t>>(client);
     return reinterpret_cast<jlong>(edge_partition.get());
   } else {

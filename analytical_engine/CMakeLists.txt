@@ -294,7 +294,7 @@ if (BUILD_TESTS)
         target_link_libraries(graphx_fragment_loader ${CMAKE_DL_LIBS} gs_proto ${VINEYARD_LIBRARIES} ${Boost_LIBRARIES} ${GFLAGS_LIBRARIES}  ${JNI_LIBRARIES} ${LIBRT})
 
         add_executable(vertex_partition_test test/vertex_partition_test.cc)
-        target_include_directories(edge_partition_test PRIVATE core utils apps)
+        target_include_directories(vertex_partition_test PRIVATE core utils apps)
         target_compile_definitions(vertex_partition_test PUBLIC ENABLE_JAVA_SDK)
         target_link_libraries(vertex_partition_test ${CMAKE_DL_LIBS} ${VINEYARD_LIBRARIES} ${Boost_LIBRARIES} ${GLOG_LIBRARIES} ${LIBRT})
 
