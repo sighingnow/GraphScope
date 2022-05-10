@@ -57,66 +57,6 @@ object GrapeVertexRDD extends Logging{
     new GrapeVertexRDDImpl[VD](vertexPartition)
   }
 
-  def fromEdgePartitions[VD: ClassTag, ED : ClassTag](edgePartition: RDD[(PartitionID, EdgePartition[ED,VD])]) : GrapeVertexRDDImpl[VD] = {
-    val numPartitions = edgePartition.getNumPartitions
-    log.info(s"Num partitions: ${numPartitions}")
-    val partitioner = new HashPartitioner(numPartitions)
-    val vertexShuffles = edgePartition.mapPartitions(iter => {
-      val tuple = iter.next();
-      val set = new OpenHashSet[VertexId]()
-      val edgePartitionIter = tuple._2.iterator
-      while (edgePartitionIter.hasNext){
-        val edge = edgePartitionIter.next()
-        set.add(edge.srcId)
-        set.add(edge.dstId)
-      }
-      set.iterator.map( id => (id, tuple._1))
-    }).partitionBy(partitioner).cache()
-    log.info("[Driver:] after vertex shuffle")
-
-    vertexShuffles.foreachPartition(iter => {
-      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
-      registry.createVertexPartitionBuilder()
-    })
-
-    val res = vertexShuffles.mapPartitionsWithIndex((ind,iter) => {
-      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
-      val vertexPartitionBuilder = registry.getVertexPartitionBuilder()
-      //VertexShuffle to std::vector.
-      var cnt = 0
-      val pid2vid = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
-      while (iter.hasNext){
-        val (id,from) = iter.next()
-        cnt += 1
-        pid2vid(from).+=(id)
-      }
-      log.info(s"Partition ${ind} Receive: total shuffle size ${cnt}")
-      Iterator((ind, pid2vid.map(_.trim().array)))
-    })
-    log.info(s"res count ${res.count()}")
-    null
-
-    //Builder
-//    vertexShuffles.foreachPartition(iter => {
-//      if (iter.hasNext){
-//        val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
-//        registry.build(iter.next()._1, vd)
-//      }
-//    })
-
-//    val vertexPartitionsRDD = vertexShuffles.mapPartitions(iter => {
-//      if (iter.hasNext){
-//        val firstOne = iter.next()
-//        val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
-//        Iterator((firstOne._1, registry.getGrapeVertexPartitionWrapper(firstOne._1)))
-//      }
-//      else {
-//        Iterator.empty
-//      }
-//    })
-//    vertexPartitionsRDD
-  }
-
   def fromEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD) : GrapeVertexRDDImpl[VD] = {
     log.info(s"Driver: Creating vertex rdd from edgeRDD of numPartition ${numPartitions}, default val ${defaultVal}")
     //First creating partial vertex map. We may not need to use it in graphx. just pass it to c++ to build.

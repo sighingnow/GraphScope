@@ -26,13 +26,15 @@ class GrapeEdgePartitionWrapper[VD: ClassTag, ED : ClassTag](
   System.loadLibrary("grape-jni")
   log.info("load jni lib success")
   val vertexNum = grapePartition.getVerticesNum
-  val edgeNum = grapePartition.getEdgesNum
+  //Edge num in this grapePartition
+  val TotalEdgeNum = grapePartition.getEdgesNum
   val oids : MutableTypedArray[Long] = grapePartition.getOidArray
-//  val inEdges : ImmutableCSR[Long,ED] = grapePartition.getInEdges
-//  val outEdges : ImmutableCSR[Long,ED] = grapePartition.getOutEdges
-//  val oids : MutableTypedArray[Long] = grapePartition.getOidArray
-//  require(vertexNum == oids.getLength, s"length not match: ${vertexNum}, ${oids.getLength}")
-
+  val inEdges : ImmutableCSR[Long,ED] = grapePartition.getInEdges
+  val outEdges : ImmutableCSR[Long,ED] = grapePartition.getOutEdges
+  val outPartEdgeNum = outEdges.partialEdgeNum(startLid, endLid)
+  val inPartEdgeNum = inEdges.partialEdgeNum(startLid, endLid)
+  require(vertexNum == oids.getLength, s"length not match: ${vertexNum}, ${oids.getLength}")
+  log.info(s"for partition wrapper from ${startLid} to ${endLid}, partial inEdge nums ${inPartEdgeNum}, partial outEdgeNums: ${outPartEdgeNum}")
 //  log.info(s"got inEdges : ${inEdges}, vnum: ${inEdges.vertexNum()}, edge num: ${inEdges.edgeNum()}")
 //  log.info(s"got outEdges : ${outEdges}, vnum: ${outEdges.vertexNum()}, edge num: ${outEdges.edgeNum()}")
 

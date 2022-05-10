@@ -84,7 +84,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
 
   //FIXME: count active edges
   override def count(): Long = {
-    grapePartitionsRDD.map(_._2.edgeNum).fold(0)(_ + _)
+    grapePartitionsRDD.map(_._2.TotalEdgeNum).fold(0)(_ + _)
 //    throw new IllegalStateException("fix me")
   }
 

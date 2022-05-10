@@ -50,12 +50,9 @@ object GraphLoader extends Logging {
       " to load the edges")
 
     val edgeRDD = GrapeEdgeRDD.fromEdgePartitions(edges).cache()
-//    val vertexRDD = GrapeVertexRDD.fromEdgeRDD(edgeRDD, edgeRDD.grapePartitionsRDD.getNumPartitions, 1).cache()
-//    log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
-    val vertexRDD = GrapeVertexRDD.fromEdgePartitions(edges).cache()
+    val vertexRDD = GrapeVertexRDD.fromEdgeRDD(edgeRDD, edgeRDD.grapePartitionsRDD.getNumPartitions, 1).cache()
+    log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
     GrapeGraphImpl.fromExistingRDDs(vertexRDD,edgeRDD);
-    null
-//    GrapeGraphImpl.fromGraphXGraph(res)
   }
 
 //  def edgeListFile(
