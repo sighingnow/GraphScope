@@ -4,13 +4,14 @@ import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.graphx.GrapeEdgePartition
 import com.alibaba.graphscope.utils.ReflectUtils
+import org.apache.spark.graphx.impl.partition.EdgeShuffleReceived
 import org.apache.spark.graphx.impl.{GrapeEdgePartitionWrapper, GrapeUtils}
 import org.apache.spark.internal.Logging
 
 import java.lang.reflect.Field
 import java.util
 import java.util.Vector
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 import scala.reflect.ClassTag
 
 class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
@@ -22,9 +23,20 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
   private var dstOidBuilder : ArrowArrayBuilder[Long] = null.asInstanceOf[ArrowArrayBuilder[Long]]
   private var edataBuilder : ArrowArrayBuilder[ED] = null.asInstanceOf[ArrowArrayBuilder[ED]]
 
+  private val edgesNumInThisExecutor = new AtomicLong(0)
 
   log.info(s" builder cl: ${classOf[ArrowArrayBuilder[_]].getClassLoader.toString}")
   log.info(s" context class loader: ${Thread.currentThread().getContextClassLoader.toString}")
+
+
+  def addEdgeNum(pid : Int, size : Long): Unit ={
+    var preValue = 0L;
+    val newValue = preValue + size
+    do{
+      preValue = edgesNumInThisExecutor.get()
+    } while (preValue != newValue && !edgesNumInThisExecutor.compareAndSet(preValue, newValue))
+    log.info(s"After add ${size}, curr capacity ${newValue}")
+  }
 
   def createArrayBuilder(pid : Int) : Unit = {
     partitionNum.addAndGet(1)
@@ -42,6 +54,9 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
           val edataFactory = FFITypeFactory.getFactory(classOf[ArrowArrayBuilder[_]], "gs::ArrowArrayBuilder<" + GrapeUtils.classToStr(edClass) +">").asInstanceOf[ArrowArrayBuilder.Factory[ED]]
           edataBuilder = edataFactory.create()
           log.info(s"Partitoin ${pid} create edata builder ${edataBuilder}")
+          srcOidBuilder.reserve(edgesNumInThisExecutor.get())
+          dstOidBuilder.reserve(edgesNumInThisExecutor.get())
+          edataBuilder.reserve(edgesNumInThisExecutor.get())
           return
         }
       }
@@ -51,6 +66,35 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
 
   def getBuilders() : (ArrowArrayBuilder[Long],ArrowArrayBuilder[Long],ArrowArrayBuilder[ED]) = {
     (srcOidBuilder,dstOidBuilder,edataBuilder)
+  }
+
+  def addEdges(edgeShuffleReceived: EdgeShuffleReceived[ED]) : Unit = {
+    synchronized{
+      log.info(s"start adding edges of size ${edgeShuffleReceived.totalSize()}")
+      val numPartition = edgeShuffleReceived.numPartitions
+      var fromPid = 0
+      val curPid = edgeShuffleReceived.selfPid
+      while (fromPid < numPartition){
+        val edgeShuffle = edgeShuffleReceived.fromPid2Shuffle(fromPid)
+        log.info(s"Partition ${curPid} receive num of shuffles ${edgeShuffle.size()} from ${edgeShuffle.fromPid} == ${fromPid}")
+        var i = 0
+        val limit = edgeShuffle.size()
+        val srcArray = edgeShuffle.srcs
+        val dstArray = edgeShuffle.dsts
+        val attrArray = edgeShuffle.attrs
+        while (i < limit){
+          val srcId = srcArray(i)
+          val dstId = dstArray(i)
+          val attr = attrArray(i)
+          srcOidBuilder.unsafeAppend(srcId)
+          dstOidBuilder.unsafeAppend(dstId)
+          edataBuilder.unsafeAppend(attr)
+          i += 1
+        }
+        fromPid += 1
+      }
+      log.info(s"Partition ${curPid} finish process all edges.")
+    }
   }
 
   def constructEdgePartition(pid : Int) : Unit = {

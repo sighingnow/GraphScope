@@ -3,6 +3,7 @@ package org.apache.spark.graphx
 import org.apache.spark.graphx.impl.GrapeUtils.dedup
 import org.apache.spark.graphx.impl.{EdgePartition, GrapeEdgePartitionWrapper}
 import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
+import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived}
 import org.apache.spark.graphx.utils.{GrapeEdgePartitionRegistry, SharedMemoryUtils}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
@@ -37,6 +38,66 @@ object GrapeEdgeRDD extends Logging{
     //    new EdgeRDDImpl(edgePartitions)
     new GrapeEdgeRDDImpl[VD,ED](edgePartitions)
   }
+
+  private[graphx] def fromEdgeShuffle[VD: ClassTag, ED : ClassTag](edgeShuffles : RDD[(PartitionID, EdgeShuffle[ED])]) : GrapeEdgeRDDImpl[VD,ED] = {
+    //combine edges shuffles to edge Partition
+    val numPartitions = edgeShuffles.getNumPartitions
+    log.info(s"edgeShuffles has ${numPartitions} parts")
+    val edgeShuffleReceived = edgeShuffles.mapPartitionsWithIndex((ind,iter) => {
+      if (iter.hasNext){
+        val edgeShuffleReceived = new EdgeShuffleReceived[ED](numPartitions, ind)
+        while (iter.hasNext){
+          val (pid, shuffle) = iter.next()
+          require(pid == ind)
+          edgeShuffleReceived.set(shuffle.fromPid, shuffle)
+        }
+        log.info(s"Partition ${ind} collect received partitions ${edgeShuffleReceived}")
+        Iterator((ind, edgeShuffleReceived))
+      }
+      else {
+        Iterator.empty
+      }
+    })
+    //now we register each partition's edges num
+    edgeShuffleReceived.foreachPartition(iter => {
+      val (pid, received) = iter.next()
+      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
+      registry.addEdgeNum(pid, received.totalSize)
+      }
+    )
+
+    edgeShuffleReceived.foreachPartition(iter => {
+      val (pid, part) = iter.next()
+      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
+      registry.createArrayBuilder(pid)
+    })
+    log.info(s"[Driver:] Finish create array Builder")
+
+    edgeShuffleReceived.foreachPartition(iter => {
+      val (pid, part) = iter.next()
+      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
+      registry.addEdges(part)
+      log.info(s"Partition ${pid} finish build srcOid array");
+    })
+
+    edgeShuffleReceived.foreachPartition(iter => {
+      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
+      registry.constructEdgePartition(iter.next()._1)
+    })
+
+    log.info(s"[Driver:] Finish construct edge partition")
+
+    val grapeEdgePartitionWrapper = edgeShuffles.mapPartitions(iter => {
+      val (pid, part) = iter.next()
+      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
+      Iterator((pid,registry.getEdgePartitionWrapper(pid)))
+    }).cache()
+
+    val rdd =new GrapeEdgeRDDImpl[VD,ED](grapeEdgePartitionWrapper)
+    log.info(s"[Driver:] got grape edge Partition Wrapper, total edges count ${rdd.count()}")
+    rdd
+  }
+
   private[graphx] def fromEdgePartitions[VD: ClassTag, ED : ClassTag](
                                                           edgePartitions: RDD[(PartitionID, EdgePartition[ED, VD])]): GrapeEdgeRDDImpl[VD, ED] = {
     //1. edgePartition to memory mapped file.
