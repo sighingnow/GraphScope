@@ -122,7 +122,7 @@ object ClassScope {
 
   @throws[IllegalAccessException]
   def getLoadedLibraries(loader: ClassLoader): Array[String] = {
-    val libraries: java.util.Vector[String] = LIBRARIES.get(loader).asInstanceOf[java.util.Vector[String]]
+    val libraries: java.util.HashSet[String] = LIBRARIES.get(loader).asInstanceOf[java.util.HashSet[String]]
     libraries.toArray(new Array[String](libraries.size()))
   }
 }
