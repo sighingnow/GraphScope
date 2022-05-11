@@ -142,7 +142,7 @@ class LocalVertexMapBuilder : public vineyard::ObjectBuilder {
 
     auto& array = vertex_map->lid2Oid;
     array = lid2Oid.GetArray();
-
+    vertex_map->vnum = array->length();
     size_t nbytes = 0;
 
     vertex_map->meta_.AddMember("lid2Oid", lid2Oid.meta());

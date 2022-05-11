@@ -23,8 +23,11 @@ limitations under the License.
 #include "core/java/graphx/local_vertex_map.h"
 #include "glog/logging.h"
 #include "vineyard/client/client.h"
-
-void TestLocalVertexMap(vineyard::Client& client;) {
+void generateData(std::shared_ptr<arrow::UInt64Array>& srcLids,
+                  std::shared_ptr<arrow::UInt64Array>& dstLids,
+                  std::shared_ptr<arrow::Int64Array>& edatas); 
+ 
+void TestLocalVertexMap(vineyard::Client& client) {
   vineyard::ObjectID vmap_id;
   {
     arrow::Int64Builder inner, outer;
@@ -55,13 +58,13 @@ void TestLocalVertexMap(vineyard::Client& client;) {
 void TestGraphXCSR(vineyard::Client& client) {
   vineyard::ObjectID csr_id;
   {
-    uint64_t vnum = 3;
-    std::shared_ptr<arrow::Uint64Array> srcLids, dstLids;
+    uint64_t vnums = 3;
+    std::shared_ptr<arrow::UInt64Array> srcLids, dstLids;
     std::shared_ptr<arrow::Int64Array> edatas;
     generateData(srcLids, dstLids, edatas);
 
     gs::BasicGraphXCSRBuilder<uint64_t, int64_t> builder(client);
-    builder.LoadEdges(vnums, srcBuilder, dstBuilder, edataBuilder);
+    builder.LoadEdges(vnums, srcLids, dstLids, edatas);
     auto csr = std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t, int64_t>>(
         builder.Seal(client));
 
@@ -79,26 +82,26 @@ void TestGraphXCSR(vineyard::Client& client) {
             << csr->GetPartialEdgesNum(0, 1);
 }
 
-void generateData(std::shared_ptr<arrow::Uint64Array>& srcLids,
-                  std::shared_ptr<arrow::Uint64Array>& dstLids,
-                  std::shared_ptr<arrow::int64Array>& edatas) {
-  arrow::Uint64Builder srcBuilder, dstBuilder;
+void generateData(std::shared_ptr<arrow::UInt64Array>& srcLids,
+                  std::shared_ptr<arrow::UInt64Array>& dstLids,
+                  std::shared_ptr<arrow::Int64Array>& edatas) {
+  arrow::UInt64Builder srcBuilder, dstBuilder;
   arrow::Int64Builder edataBuilder;
-  srcLids.Reseve(5);
+  srcBuilder.Reserve(5);
   dstBuilder.Reserve(5);
   edataBuilder.Reserve(5);
 
-  srcBuilder.UnsafeAppend(0);
-  srcBuilder.UnsafeAppend(0);
-  srcBuilder.UnsafeAppend(1);
-  srcBuilder.UnsafeAppend(1);
   srcBuilder.UnsafeAppend(2);
+  srcBuilder.UnsafeAppend(1);
+  srcBuilder.UnsafeAppend(0);
+  srcBuilder.UnsafeAppend(0);
+  srcBuilder.UnsafeAppend(1);
 
   dstBuilder.UnsafeAppend(1);
-  dstBuilder.UnsafeAppend(2);
   dstBuilder.UnsafeAppend(0);
-  dstBuilder.UnsafeAppend(2);
   dstBuilder.UnsafeAppend(1);
+  dstBuilder.UnsafeAppend(2);
+  dstBuilder.UnsafeAppend(2);
 
   edataBuilder.UnsafeAppend(1);
   edataBuilder.UnsafeAppend(2);

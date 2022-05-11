@@ -59,15 +59,18 @@ namespace gs {
 
 template <typename VID_T, typename ED_T>
 class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
+  using eid_t = vineyard::property_graph_types::EID_TYPE;
   using vid_t = VID_T;
   using edata_t = ED_T;
   using vineyard_offset_array_t =
       typename vineyard::InternalType<int64_t>::vineyard_array_type;
-  using vineyard_offset_array_t =
+  using vineyard_edata_array_t =
       typename vineyard::InternalType<edata_t>::vineyard_array_type;
   using vid_array_t = typename vineyard::ConvertToArrowType<vid_t>::ArrayType;
   using edata_array_t =
       typename vineyard::ConvertToArrowType<edata_t>::ArrayType;
+  using nbr_t = vineyard::property_graph_utils::NbrUnit<vid_t, eid_t>;
+  using vineyard_edges_array_t = vineyard::FixedSizeBinaryArray;
 
  public:
   GraphXCSR() {}
@@ -81,7 +84,8 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
 
   int64_t GetDegree(vid_t lid) {
     CHECK_LT(lid, local_vnum_);
-    return offsets_[lid + 1] - offsets[lid];
+    int64_t ind = static_cast<int64_t>(lid);
+    return offsets_->Value(ind + 1) - offsets_->Value(ind);
   }
 
   int64_t GetTotalEdgesNum() { return edges_num_; }
@@ -89,7 +93,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
   int64_t GetPartialEdgesNum(vid_t from, vid_t end) {  //[from,end)
     CHECK_LT(from, end);
     CHECK_LE(end, local_vnum_);
-    return offsets_[end] - offsets_[from];
+    return offsets_->Value(static_cast<int64_t>(end)) - offsets_->Value(static_cast<int>(from));
   }
 
   void Construct(const vineyard::ObjectMeta& meta) override {
@@ -98,7 +102,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
     {
       vineyard_edges_array_t v6d_edges;
       v6d_edges.Construct(meta.GetMemberMeta("edges"));
-      edges_ = v6d_edges.GetArra();
+      edges_ = v6d_edges.GetArray();
     }
 
     {
@@ -112,20 +116,20 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
       edatas_ = array.GetArray();
     }
 
-    local_vnum_ = offset->length() - 1;
+    local_vnum_ = offsets_->length() - 1;
     CHECK_GT(local_vnum_, 0);
     LOG(INFO) << "In constructing graphx csr, local vnum: " << local_vnum_;
-    edge_ptr = reinterpret_cast<const nbr_t*>(edges->GetValue(0));
+    edge_ptr_ = reinterpret_cast<const nbr_t*>(edges_->GetValue(0));
 
-    edges_num_ = offsets->Value(local_vnum_);
+    edges_num_ = offsets_->Value(local_vnum_);
     LOG(INFO) << "total edges: " << edges_num_;
     for (auto i = 0; i < local_vnum_; ++i) {
-      const nbr_t* start = &edge_ptr[offsets->Value(i)];
-      const nbr_t* end = &edge_ptr[offsets->Value(i + 1)];
+      const nbr_t* start = &edge_ptr_[offsets_->Value(i)];
+      const nbr_t* end = &edge_ptr_[offsets_->Value(i + 1)];
       while (start != end) {
-        LOG(INFO) < "Edge (" + i << ", " << start->vid
+        LOG(INFO) << "Edge (" << std::to_string(i) << ", " << start->vid
                                  << ", eid: " << start->eid
-                                 << ", edata:" << edatas->Value(start->eid);
+                                 << ", edata:" << edatas_->Value(start->eid);
         start++;
       }
     }
@@ -142,7 +146,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
 
   template <typename _VID_T, typename _ED_T>
   friend class GraphXCSRBuilder;
-}
+};
 
 template <typename VID_T, typename ED_T>
 class GraphXCSRBuilder : public vineyard::ObjectBuilder {
@@ -153,13 +157,13 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
   explicit GraphXCSRBuilder(vineyard::Client& client) : client_(client) {}
 
   void SetEdges(const vineyard::FixedSizeBinaryArray& edges) {
-    this.edges = edges;
+    this->edges = edges;
   }
   void SetOffsetArray(const vineyard::NumericArray<int64_t>& array) {
-    this.offset = array;
+    this->offsets = array;
   }
   void SetEdataArray(const vineyard::NumericArray<edata_t>& array) {
-    this.edatas = array;
+    this->edatas = array;
   }
   std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) {
     // ensure the builder hasn't been sealed yet.
@@ -170,16 +174,16 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
     graphx_csr->meta_.SetTypeName(type_name<GraphXCSR<vid_t, edata_t>>());
 
     size_t nBytes = 0;
-    graphx_csr->offset = offset.GetArray();
-    nBytes += offset.nbytes();
-    graphx_csr->edges = edges;
+    graphx_csr->offsets_ = offsets.GetArray();
+    nBytes += offsets.nbytes();
+    graphx_csr->edges_ = edges.GetArray();
     nBytes += edges.nbytes();
-    graphx_csr->edatas = edata.GetArray();
+    graphx_csr->edatas_ = edatas.GetArray();
     nBytes += edatas.nbytes();
     LOG(INFO) << "total bytes: " << nBytes;
 
-    graphx_csr->meta_.AddMember("edges", ie.meta());
-    graphx_csr->meta_.AddMember("offsets", offset.meta());
+    graphx_csr->meta_.AddMember("edges", edges.meta());
+    graphx_csr->meta_.AddMember("offsets", offsets.meta());
     graphx_csr->meta_.AddMember("edatas", edatas.meta());
     graphx_csr->meta_.SetNBytes(nBytes);
 
@@ -192,11 +196,11 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
   }
 
  private:
-  vineyard::Client& client;
+  vineyard::Client& client_;
   vineyard::FixedSizeBinaryArray edges;
-  vineyard::NumericArray<int64_t> offset;
+  vineyard::NumericArray<int64_t> offsets;
   vineyard::NumericArray<edata_t> edatas;
-}
+};
 
 template <typename VID_T, typename ED_T>
 class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
@@ -216,11 +220,11 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       typename vineyard::ConvertToArrowType<edata_t>::BuilderType;
   using vineyard_edata_array_builder_t =
       typename vineyard::InternalType<edata_t>::vineyard_builder_type;
-  using vid_array_t = typename vineyard::ConvertToArrowType<int64_t>::ArrayType;
+  using vid_array_t = typename vineyard::ConvertToArrowType<vid_t>::ArrayType;
 
  public:
   explicit BasicGraphXCSRBuilder(vineyard::Client& client)
-      : GraphXCSRBuilder(client) {}
+      : GraphXCSRBuilder<vid_t,edata_t>(client) {}
 
   void LoadEdges(vid_t vnum, const std::shared_ptr<vid_array_t>& srcLids,
                  const std::shared_ptr<vid_array_t>& dstLids,
@@ -230,8 +234,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     vnum_ = vnum;
     degree_.clear();
     degree_.resize(vnum, 0);
-    edge_num_ = srcLids->length();
-    LOG(INFO) << "Loading edges size " << edge_num_
+    edges_num_ = srcLids->length();
+    LOG(INFO) << "Loading edges size " << edges_num_
               << "vertices num: " << vnum_;
     for (auto i = 0; i < edges_num_; ++i) {
       inc_degree(srcLids->Value(i));
@@ -247,23 +251,23 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
   void inc_degree(vid_t i) { ++degree_[i]; }
 
   void build_offsets() {
-    edge_num_ = 0;
+    edges_num_ = 0;
     for (auto d : degree_) {
-      edge_num_ += d;
+      edges_num_ += d;
     }
-    edge_builder.Resize(edge_num_);
+    edge_builder_.Resize(edges_num_);
 
-    offset.resize(vnum + 1);
+    offsets_.resize(vnum_ + 1);
     int64_t length = 0;
-    offset[0] = 0;
+    offsets_[0] = 0;
     for (VID_T i = 0; i < vnum_; ++i) {
-      length += degreee_[i];
-      offset[i + 1] = offset[i] + degree_[i];
+      length += degree_[i];
+      offsets_[i + 1] = offsets_[i] + degree_[i];
     }
-    CHECK_EQ(offset[vnum_], edge_num_);
+    CHECK_EQ(offsets_[vnum_], edges_num_);
     offset_array_builder_t builder;
-    builder.AppendValues(offset);
-    builder.Finish(&offset_array);
+    builder.AppendValues(offsets_);
+    builder.Finish(&offset_array_);
     // We copy to offset_array since later we will modify inplace in <offset>
     {
       std::vector<int> tmp;
@@ -274,28 +278,28 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
   void add_edges(const std::shared_ptr<vid_array_t>& srcLids,
                  const std::shared_ptr<vid_array_t>& dstLids,
                  const std::shared_ptr<edata_array_t>& edatas) {
-    edata_array_builder_t edata_bulider;
-    edata_builder.Reserve(dstLids->length());
+    edata_array_builder_t edata_builder_;
+    edata_builder_.Reserve(dstLids->length());
     auto len = srcLids->length();
     for (auto i = 0; i < len; ++i) {
       vid_t srcLid = srcLids->Value(i);
-      int dstPos = offset[srcLid]++;
-      nbr_t* ptr = edge_builder.MutablePointer(dstPos);
+      int dstPos = offsets_[srcLid]++;
+      nbr_t* ptr = edge_builder_.MutablePointer(dstPos);
       ptr->vid = dstLids->Value(i);
       ptr->eid = static_cast<eid_t>(i);
       LOG(INFO) << "push nbr(src=" << srcLid << ",dstLid=" << dstLids->Value(i)
-                << ", after offset:" << offset[srcLid];
-      edata_builder.UnsafeAppend(edatas->Value(i));
+                << ", after offset:" << offsets_[srcLid];
+      edata_builder_.UnsafeAppend(edatas->Value(i));
     }
-    edata_builder.Finish(&edata_array);
+    edata_builder_.Finish(&edata_array_);
     LOG(INFO) << "Finish adding " << len << "edges";
   }
 
   void sort() {
-    const int64_t* offsets_ptr = offset_array->raw_values();
-    for (VID_T i = 0; i < vnum; ++i) {
-      nbr_t* begin = edge_builder.MutablePointer(offsets_ptr[i]);
-      nbr_t* end = edge_builder.MutablePointer(offsets_ptr[i + 1]);
+    const int64_t* offsets_ptr = offset_array_->raw_values();
+    for (VID_T i = 0; i < vnum_; ++i) {
+      nbr_t* begin = edge_builder_.MutablePointer(offsets_ptr[i]);
+      nbr_t* end = edge_builder_.MutablePointer(offsets_ptr[i + 1]);
       std::sort(begin, end, [](const nbr_t& lhs, const nbr_t& rhs) {
         return lhs.vid < rhs.vid;
       });
@@ -306,7 +310,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
   vineyard::Status Build(vineyard::Client& client) override {
     {
       std::shared_ptr<arrow::FixedSizeBinaryArray> edges;
-      edge_builder.Finish(&edges);
+      edge_builder_.Finish(&edges);
 
       vineyard::FixedSizeBinaryArrayBuilder edge_builder_v6d(client, edges);
       auto res = std::dynamic_pointer_cast<vineyard::FixedSizeBinaryArray>(
@@ -315,10 +319,10 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       LOG(INFO) << "Finish set edges";
     }
 
-    CHECK_EQ(offset_array->length(), vnum);
+    CHECK_EQ(offset_array_->length(), vnum_ + 1);
     {
       vineyard_offset_array_builder_t offset_array_builder(client,
-                                                           offset_array);
+                                                           offset_array_);
       this->SetOffsetArray(
           *std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
               offset_array_builder.Seal(client)));
@@ -326,10 +330,10 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     }
 
     {
-      vineyard_edata_array_builder_t edata_array_builder(client, edata_array);
+      vineyard_edata_array_builder_t edata_array_builder(client, edata_array_);
       this->SetEdataArray(
           *std::dynamic_pointer_cast<vineyard::NumericArray<edata_t>>(
-              offset_array_builder.Seal(client)));
+              edata_array_builder.Seal(client)));
       LOG(INFO) << "FINISh set edata array";
     }
 
@@ -337,12 +341,12 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
   }
 
   vid_t vnum_;
-  size_t edge_num_;
+  size_t edges_num_;
 
   std::vector<int> degree_;
   vineyard::PodArrayBuilder<nbr_t> edge_builder_;
   std::shared_ptr<offset_array_t> offset_array_;  // for output
-  vector<int64_t> offset;  // used for edge iterate in this
+  std::vector<int64_t> offsets_;  // used for edge iterate in this
   std::shared_ptr<edata_array_t> edata_array_;
 };
 }  // namespace gs
