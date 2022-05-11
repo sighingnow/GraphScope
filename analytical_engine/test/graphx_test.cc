@@ -72,8 +72,8 @@ void TestGraphXCSR(vineyard::Client& client) {
     csr_id = csr->id();
     LOG(INFO) << "Persist csr id: " << csr->id();
   }
-  std::shared_ptr<gs::GraphXCSR<int64_t, uint64_t>> csr =
-      std::dynamic_pointer_cast<gs::GraphXCSR<int64_t, uint64_t>>(
+  std::shared_ptr<gs::GraphXCSR<uint64_t, int64_t>> csr =
+      std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t, int64_t>>(
           client.GetObject(csr_id));
   LOG(INFO) << "Got csr " << csr->id();
   LOG(INFO) << "num edges: " << csr->GetTotalEdgesNum() << " vs "
