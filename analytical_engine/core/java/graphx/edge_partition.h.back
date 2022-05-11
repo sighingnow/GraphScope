@@ -1,0 +1,244 @@
+
+// /** Copyright 2020 Alibaba Group Holding Limited.
+//  *
+//  * Licensed under the Apache License, Version 2.0 (the "License");
+//  * you may not use this file except in compliance with the License.
+//  * You may obtain a copy of the License at
+//  *
+//  * 	http://www.apache.org/licenses/LICENSE-2.0
+//  *
+//  * Unless required by applicable law or agreed to in writing, software
+//  * distributed under the License is distributed on an "AS IS" BASIS,
+//  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  * See the License for the specific language governing permissions and
+//  * limitations under the License.
+//  */
+
+// #ifndef ANALYTICAL_ENGINE_CORE_JAVA_EDGE_RDD_H
+// #define ANALYTICAL_ENGINE_CORE_JAVA_EDGE_RDD_H
+
+// #include <fcntl.h>
+// #include <sys/mman.h>
+// #include <sys/stat.h>
+// #include <sys/types.h>
+// #include <algorithm>
+// #include <map>
+// #include <memory>
+// #include <set>
+// #include <sstream>
+// #include <string>
+// #include <unordered_map>
+// #include <utility>
+// #include <vector>
+
+// #include "flat_hash_map/flat_hash_map.hpp"
+
+// #include "grape/graph/adj_list.h"
+// #include "grape/graph/immutable_csr.h"
+// #include "grape/worker/comm_spec.h"
+// #include "vineyard/basic/ds/arrow_utils.h"
+// #include "vineyard/basic/stream/byte_stream.h"
+// #include "vineyard/basic/stream/dataframe_stream.h"
+// #include "vineyard/basic/stream/parallel_stream.h"
+// #include "vineyard/client/client.h"
+// #include "vineyard/common/util/functions.h"
+// #include "vineyard/graph/loader/arrow_fragment_loader.h"
+// #include "vineyard/io/io/i_io_adaptor.h"
+// #include "vineyard/io/io/io_factory.h"
+
+// #include "core/error.h"
+// #include "core/io/property_parser.h"
+// #include "core/java/type_alias.h"
+
+// /**
+//  * @brief Defines the RDD of edges. when data is feed into this, we assume it
+//  is
+//  * already shuffle and partitioned.
+//  *
+//  */
+// namespace gs {
+
+// template <typename OID_T, typename VID_T, typename ED_T>
+// class EdgePartition : public vineyard::Registered<EdgePartition<OID_T,
+// VID_T>> {
+//   using oid_t = OID_T;
+//   using vid_t = VID_T;
+//   using edata_t = ED_T;
+//   using nbr_t = grape::Nbr<vid_t, edata_t>;
+//   using oid_array_t = typename
+//   vineyard::ConvertToArrowType<oid_t>::ArrayType; using vid_array_t =
+//   typename vineyard::ConvertToArrowType<vid_t>::ArrayType; using
+//   edata_array_t =
+//       typename vineyard::ConvertToArrowType<edata_t>::ArrayType;
+//   using vineyard_oid_array_t =
+//       typename InternalType<oid_t>::vineyard_array_type;
+//   using vineyard_edata_array_t =
+//       typename InternalType<edata_t>::vineyard_array_type;
+
+//  public:
+//   EdgePartition(vineyard::Client& client) : client_(client){};
+
+//   void Construct(const vineyard::ObjectMeta& meta) {
+//     this->meta_ = meta;
+//     this->id_ = meta.GetId();
+//     {
+//       vineyard_oid_array_t srcOidArray, dstOidArray;
+//       vineyard_edata_array_t edataArray;
+//       srcOidArray.Construct(meta.GetMemberMeta("src_oid_array"));
+//       dstOidArray.Construct(meta.GetMemberMeta("dst_oid_array"));
+//       edataArray.Construct(meta.GetMemberMeta("edata_array"));
+//       edge_src_ = srcOidArray.GetArray();
+//       edge_dst_ = dstOidArray.GetArray();
+//       edge_data_ = edataArray.GetArray();
+//       CHECK_EQ(edge_src_->length(), edge_dst_->length());
+//       CHEKC_EQ(edge_dst_->length(), edge_data_->length());
+//       edges_num = edge_src_->length();
+//       LOG(INFO) << "Finish construct edges :" << edges_num_;
+//     }
+//   }
+
+//   int64_t GetEdgesNum() { return edge_src_->length(); }
+
+//  private:
+//   int64_t edges_num_;
+//   vineyard::Client& client_;
+//   std::shared_ptr<oid_array_t> edge_src_, edge_dst_;
+//   std::shared_ptr<edata_array_t> edge_data_;
+
+//   template <typename _OID_T, typename _VID_T, typename _ED_T>
+//   friend class EdgePartitionBuilder;
+// };
+
+// template <typename OID_T, typename VID_T, typename ED_T>
+// class EdgePartitionBuilder : public vineyard::ObjectBuilder {
+//   using vid_array_builder_t =
+//       typename vineyard::ConvertToArrowType<vid_t>::BuilderType;
+//   using edata_array_builder_t =
+//       typename vineyard::ConvertToArrowType<edata_t>::BuilderType;
+//   using oid_array_builder_t =
+//       typename vineyard::ConvertToArrowType<oid_t>::BuilderType;
+//   using vid_array_t = typename
+//   vineyard::ConvertToArrowType<vid_t>::ArrayType;
+
+//  public:
+//   EdgePartitionBuilder(vineyard::Client& client) : client_(client){};
+
+//   void SetSrcArray(vineyard::NumericArray<OID_T>& src_array){
+//     this.src_array_ = src_array;
+//   }
+//     void SetDstArray(vineyard::NumericArray<OID_T>& src_array){
+//     this.src_array_ = src_array;
+//   }
+//     void SetSArray(vineyard::NumericArray<OID_T>& src_array){
+//     this.src_array_ = src_array;
+//   }
+//   void Finish(EdgePartition& partition) {
+//     // 0.1 Iterate over all edges, to build index, and count how many
+//     // vertices
+//     // // in this edge partition.
+//     partition.client = client;
+//     partitoin.directed = directed;
+//     auto& edge_src = partition.edge_src;
+//     auto& edge_dst = partition.edge_dst;
+//     auto& edge_data = partition.edge_data;
+//     auto& oid2Lid = partition.oid2Lid;
+//     auto& lid2Oid = partition.lid2Oid;
+//     src_array_builder.Finish(&edge_src);
+//     dst_array_builder.Finish(&edge_dst);
+//     edata_array_builder.Finish(&edge_data);
+
+//     vid_array_builder_t srcLidBuilder, dstLidBuilder;
+//     srcLidBuilder.Reserve(edge_src->length());
+//     dstLidBuilder.Reserve(edge_dst->length());
+
+//     CHECK_EQ(edge_src->length(), edge_dst->length());
+//     for (auto ind = 0; ind < edge_src->length(); ++ind) {
+//       auto srcId = edge_src->Value(ind);
+//       if (oid2Lid.find(srcId) == oid2Lid.end()) {
+//         oid2Lid.emplace(srcId, static_cast<vid_t>(oid2Lid.size()));
+//       }
+//       auto dstId = edge_dst->Value(ind);
+//       if (oid2Lid.find(dstId) == oid2Lid.end()) {
+//         oid2Lid.emplace(dstId, static_cast<vid_t>(oid2Lid.size()));
+//       }
+//       srcLidBuilder.UnsafeAppend(oid2Lid[srcId]);
+//       dstLidBuilder.UnsafeAppend(oid2Lid[dstId]);
+//     }
+//     vid_array_t srcLids, dstLids;
+//     srcLidBuilder.Finish(srcLids);
+//     dstLidBuilder.Finish(dstLids);
+//     LOG(INFO) << "create cached lids size " << srcLids->length() << ", "
+//               << dstLids->length();
+
+//     vnum = oid2Lid.size();
+//     partition.vnum = vnum;
+//     LOG(INFO) << "Found " << vnum << " distince vertices from "
+//               << edge_src->length() << " edges";
+//     {
+//       oid_array_builder_t builder;
+//       builder.Reserve(vnum);
+//       for (auto iter = oid2Lid.begin(); iter != oid2Lid.end(); ++iter) {
+//         builder.UnsafeAppend(iter->second);
+//       }
+//       builder.Finish(&lid2Oid);
+//     }
+//     LOG(INFO) << "Finish lid2oid building, len" << lid2Oid->length();
+//     partition.oidArray_accessor.Init(lid2Oid);
+//     LOG(INFO) << "Finish construct accessor: "
+//               << partition.oidArray_accessor.GetLength();
+
+//     grape::ImmutableCSRBuild<vid_t, nbr_t> ie_builder, oe_builder;
+//     ie_builder.init(vnum);
+//     oe_builder.init(vnum);
+//     // both in and out
+//     for (auto i = 0; i < edge_src->length(); ++i) {
+//       ie_builder.inc_degree(dstLids->Value(i));
+//       oe_builder.inc_degree(srcLids->Value(i));
+//     }
+//     ie_builder.build_offsets();
+//     oe_builder.build_offsets();
+
+//     // now add edges
+//     for (auto i = 0; i < edge_src->length(); ++i) {
+//       auto srcLid = srcLids->Value(i);
+//       auto dstLid = dstLids->Value(i);
+//       ie_builder.add_edge(dstLid, nbr_t(srcLid, edge_data->Value(i)));
+//       oe_builder.add_edge(srcLid, nbr_t(dstLid, edge_data->Value(i)));
+//     }
+//     ie_builder.finish(partition.inEdges);
+//     oe_builder.finish(partition.outEdges);
+//     LOG(INFO) << "Finish build inEdges and out Edges.";
+//   }
+
+//  private:
+//   vineyard::Client& client;
+// };
+
+// template <typename OID_T, typename VID_T, typename ED_T>
+// class BasicEdgePartitionBuilder
+//     : public EdgePartitionBuilder<OID_T, VID_T, ED_T> {
+//  public:
+//   BasicEdgePartitionBuilder(vineyard::Client& client)
+//       : EdgePartitionBuilder(client) {}
+//         void Init(int64_t totalLength) {
+//     src_array_builder.Reserve(totalLength);
+//     dst_array_builder.Reverse(totalLength);
+//     edata_array_builder.Reserve(totalLength);
+//   }
+//   void AddEdges(std::vector<oid_t>& src, std::vector<oid_t>& dst,
+//                 std::vector<edata_t>& edata) {
+//     LOG(INFO) << "Adding loading edges, edge src nums: " << src.size()
+//               << " dst nums: " << dst.size()
+//               << "edge data length: " << edata.size();
+//     src_array_builder.AppendValues(src);
+//     dst_array_builder.AppendValues(dst);
+//     edata_array_builder.UnsafeAppend(edata);
+//   }
+
+//  private:
+//   oid_array_builder_t src_array_builder, dst_array_builder;
+//   edata_array_builder_t edata_array_builder;
+// };
+// }  // namespace gs
+
+// #endif  // ANALYTICAL_ENGINE_CORE_JAVA_VERTEX_RDD_H

@@ -58,31 +58,27 @@ object GrapeEdgeRDD extends Logging{
         Iterator.empty
       }
     })
-    //now we register each partition's edges num
-    edgeShuffleReceived.foreachPartition(iter => {
-      val (pid, received) = iter.next()
-      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
-      registry.addEdgeNum(pid, received.totalSize)
-      }
-    )
 
-    edgeShuffleReceived.foreachPartition(iter => {
+    val builders = edgeShuffleReceived.mapPartitions(iter => {
       val (pid, part) = iter.next()
       val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
-      registry.createArrayBuilder(pid)
+      val builders = registry.createArrayBuilder(pid, part.totalSize())
+      Iterator((pid, builders))
     })
     log.info(s"[Driver:] Finish create array Builder")
 
-    edgeShuffleReceived.foreachPartition(iter => {
-      val (pid, part) = iter.next()
-      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
-      registry.addEdges(part)
-      log.info(s"Partition ${pid} finish build srcOid array");
+    val newBuilders = edgeShuffleReceived.zipPartitions(builders)( (edgeShuffleIter, builderIter) => {
+      val (pid, edgeShuffle) = edgeShuffleIter.next()
+      val (pid2, builders) = builderIter.next()
+      require(pid == pid2)
+      edgeShuffle.feedToBuilder(builders._1, builders._2, builders._3)
+      Iterator((pid2, builders))
     })
 
-    edgeShuffleReceived.foreachPartition(iter => {
+    newBuilders.foreachPartition(iter => {
+      val (pid, builders) = iter.next()
       val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
-      registry.constructEdgePartition(iter.next()._1)
+      registry.constructEdgePartition(pid, builders._1, builders._2, builders._3)
     })
 
     log.info(s"[Driver:] Finish construct edge partition")

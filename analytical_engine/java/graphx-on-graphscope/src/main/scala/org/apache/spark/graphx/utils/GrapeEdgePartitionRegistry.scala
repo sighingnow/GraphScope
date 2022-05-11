@@ -3,15 +3,13 @@ package org.apache.spark.graphx.utils
 import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.graphx.GrapeEdgePartition
+import com.alibaba.graphscope.stdcxx.StdVector
 import com.alibaba.graphscope.utils.ReflectUtils
-import org.apache.spark.graphx.impl.partition.EdgeShuffleReceived
 import org.apache.spark.graphx.impl.{GrapeEdgePartitionWrapper, GrapeUtils}
 import org.apache.spark.internal.Logging
 
 import java.lang.reflect.Field
-import java.util
-import java.util.Vector
-import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
+import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.ClassTag
 
 class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
@@ -19,85 +17,27 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
   private val partitionCnt : AtomicInteger = new AtomicInteger(0)
   val edClass = GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]]
   private var grapeEdgePartition : GrapeEdgePartition[Long,Long,ED]  = null.asInstanceOf[GrapeEdgePartition[Long,Long,ED]]
-  private var srcOidBuilder : ArrowArrayBuilder[Long] = null.asInstanceOf[ArrowArrayBuilder[Long]]
-  private var dstOidBuilder : ArrowArrayBuilder[Long] = null.asInstanceOf[ArrowArrayBuilder[Long]]
-  private var edataBuilder : ArrowArrayBuilder[ED] = null.asInstanceOf[ArrowArrayBuilder[ED]]
 
-  private val edgesNumInThisExecutor = new AtomicLong(0)
+  val longVectorFactory = FFITypeFactory.getFactory(classOf[StdVector[Long]], "std::vector<int64_t>").asInstanceOf[StdVector.Factory[Long]]
+  val edVectorFactory = FFITypeFactory.getFactory(classOf[StdVector[Double]], "std::vector<" + GrapeUtils.classToStr(edClass) +">").asInstanceOf[StdVector.Factory[ED]]
+  val oidBuilderFactory = FFITypeFactory.getFactory(classOf[ArrowArrayBuilder[_]], "gs::ArrowArrayBuilder<int64_t>").asInstanceOf[ArrowArrayBuilder.Factory[Long]]
+  val edataBuilderFactory = FFITypeFactory.getFactory(classOf[ArrowArrayBuilder[_]], "gs::ArrowArrayBuilder<" + GrapeUtils.classToStr(edClass) +">").asInstanceOf[ArrowArrayBuilder.Factory[ED]]
 
-  log.info(s" builder cl: ${classOf[ArrowArrayBuilder[_]].getClassLoader.toString}")
-  log.info(s" context class loader: ${Thread.currentThread().getContextClassLoader.toString}")
-
-
-  def addEdgeNum(pid : Int, size : Long): Unit ={
-    var preValue = 0L;
-    val newValue = preValue + size
-    do{
-      preValue = edgesNumInThisExecutor.get()
-    } while (preValue != newValue && !edgesNumInThisExecutor.compareAndSet(preValue, newValue))
-    log.info(s"After add ${size}, curr capacity ${newValue}")
-  }
-
-  def createArrayBuilder(pid : Int) : Unit = {
+  def createArrayBuilder(pid : Int, numEdges : Long) : (StdVector[Long],StdVector[Long],StdVector[ED]) = {
     partitionNum.addAndGet(1)
-    if (srcOidBuilder == null){
-      synchronized{
-        if (srcOidBuilder == null){
-	        FFITypeFactory.loadClassLoader(Thread.currentThread().getContextClassLoader)
-          val libs = ClassScope.getLoadedLibraries(GrapeEdgePartitionRegistry.getClass.getClassLoader)
-          log.info(s"${libs.mkString("Array(", ", ", ")")}")
-          val factory = FFITypeFactory.getFactory(classOf[ArrowArrayBuilder[_]], "gs::ArrowArrayBuilder<int64_t>").asInstanceOf[ArrowArrayBuilder.Factory[Long]]
- 	  log.info(s"ffi type cl: ${factory.getClass.getClassLoader}")
-          srcOidBuilder = factory.create()
-          dstOidBuilder = factory.create()
-          log.info(s"Partition ${pid} create oid builders ${srcOidBuilder} ${dstOidBuilder}")
-          val edataFactory = FFITypeFactory.getFactory(classOf[ArrowArrayBuilder[_]], "gs::ArrowArrayBuilder<" + GrapeUtils.classToStr(edClass) +">").asInstanceOf[ArrowArrayBuilder.Factory[ED]]
-          edataBuilder = edataFactory.create()
-          log.info(s"Partitoin ${pid} create edata builder ${edataBuilder}")
-          srcOidBuilder.reserve(edgesNumInThisExecutor.get())
-          dstOidBuilder.reserve(edgesNumInThisExecutor.get())
-          edataBuilder.reserve(edgesNumInThisExecutor.get())
-          return
-        }
-      }
-    }
-    log.info(s"Partition ${pid} already has builder ${srcOidBuilder}")
-  }
-
-  def getBuilders() : (ArrowArrayBuilder[Long],ArrowArrayBuilder[Long],ArrowArrayBuilder[ED]) = {
-    (srcOidBuilder,dstOidBuilder,edataBuilder)
-  }
-
-  def addEdges(edgeShuffleReceived: EdgeShuffleReceived[ED]) : Unit = {
     synchronized{
-      log.info(s"start adding edges of size ${edgeShuffleReceived.totalSize()}")
-      val numPartition = edgeShuffleReceived.numPartitions
-      var fromPid = 0
-      val curPid = edgeShuffleReceived.selfPid
-      while (fromPid < numPartition){
-        val edgeShuffle = edgeShuffleReceived.fromPid2Shuffle(fromPid)
-        log.info(s"Partition ${curPid} receive num of shuffles ${edgeShuffle.size()} from ${edgeShuffle.fromPid} == ${fromPid}")
-        var i = 0
-        val limit = edgeShuffle.size()
-        val srcArray = edgeShuffle.srcs
-        val dstArray = edgeShuffle.dsts
-        val attrArray = edgeShuffle.attrs
-        while (i < limit){
-          val srcId = srcArray(i)
-          val dstId = dstArray(i)
-          val attr = attrArray(i)
-          srcOidBuilder.unsafeAppend(srcId)
-          dstOidBuilder.unsafeAppend(dstId)
-          edataBuilder.unsafeAppend(attr)
-          i += 1
-        }
-        fromPid += 1
-      }
-      log.info(s"Partition ${curPid} finish process all edges.")
+      val srcOidBuilder = longVectorFactory.create()
+      val dstOidBuilder = longVectorFactory.create()
+      val edataBuilder = edVectorFactory.create()
+      srcOidBuilder.reserve(numEdges)
+      dstOidBuilder.reserve(numEdges)
+      edataBuilder.reserve(numEdges)
+      (srcOidBuilder,dstOidBuilder,edataBuilder)
     }
   }
 
-  def constructEdgePartition(pid : Int) : Unit = {
+  def constructEdgePartition(pid : Int, srcBuilder : StdVector[Long],
+                             dstBuilder : StdVector[Long], edataBuilder : StdVector[ED]) : Unit = {
     if (grapeEdgePartition == null){
       synchronized{
         if (grapeEdgePartition == null){
@@ -107,7 +47,7 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
             classOf[java.lang.Long].asInstanceOf[Class[_ <: Long]],
             GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[_ <: ED]])
 	          log.info(s"Partition [${pid}] finish constructing edge partition ${grapeEdgePartition.toString}")
-          grapeEdgePartition.loadEdges(srcOidBuilder,dstOidBuilder,edataBuilder)
+          grapeEdgePartition.loadEdges(srcBuilder,dstBuilder,edataBuilder)
           log.info(s"Partition [${pid}] finish loading edges, numEdges ${grapeEdgePartition.getEdgesNum} num vertices: ${grapeEdgePartition.getVerticesNum}")
           return
         }

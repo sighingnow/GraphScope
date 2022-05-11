@@ -20,6 +20,7 @@ class VertexShuffleBuilder (val dstPid : Int, val fromPid: Int) extends Logging 
     new VertexShuffle(dstPid, fromPid, oidArray.trim().array)
   }
 }
+
 object VertexShuffle extends Logging {
   val INIT_SIZE = 4;
   val vectorFactory : StdVector.Factory[Long] = FFITypeFactoryhelper.getStdVectorFactory("std::vector<int64_t>").asInstanceOf[StdVector.Factory[Long]]

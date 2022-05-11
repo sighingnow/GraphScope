@@ -1,5 +1,9 @@
 package org.apache.spark.graphx.impl.partition
 
+import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
+import com.alibaba.graphscope.stdcxx.StdVector
+import org.apache.spark.internal.Logging
+
 import scala.reflect.ClassTag
 
 class EdgeShuffle[ED : ClassTag](val fromPid : Int, val dstPid: Int, val srcs : Array[Long], val dsts : Array[Long], val attrs: Array[ED]) extends Serializable {
@@ -8,7 +12,7 @@ class EdgeShuffle[ED : ClassTag](val fromPid : Int, val dstPid: Int, val srcs : 
   def size() : Long = srcs.length
 }
 
-class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : Int){
+class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : Int) extends Logging{
   val fromPid2Shuffle = new Array[EdgeShuffle[ED]](numPartitions)
 
   def set(ind : Int, edgeShuffle: EdgeShuffle[ED]): Unit ={
@@ -42,4 +46,29 @@ class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : I
     }
     res
   }
+  def feedToBuilder(srcOidBuilder : StdVector[Long], dstOidBuilder : StdVector[Long], edataBuilder : StdVector[ED]) : Unit = {
+      log.info(s"start adding edges of size ${totalSize()}")
+      var fromPid = 0
+      val curPid = selfPid
+      while (fromPid < numPartitions){
+        val edgeShuffle = fromPid2Shuffle(fromPid)
+        log.info(s"Partition ${curPid} receive num of shuffles ${edgeShuffle.size()} from ${edgeShuffle.fromPid} == ${fromPid}")
+        var i = 0
+        val limit = edgeShuffle.size()
+        val srcArray = edgeShuffle.srcs
+        val dstArray = edgeShuffle.dsts
+        val attrArray = edgeShuffle.attrs
+        while (i < limit){
+          val srcId = srcArray(i)
+          val dstId = dstArray(i)
+          val attr = attrArray(i)
+          srcOidBuilder.push_back(srcId)
+          dstOidBuilder.push_back(dstId)
+          edataBuilder.push_back(attr)
+          i += 1
+        }
+        fromPid += 1
+      }
+      log.info(s"Partition ${curPid} finish process all edges.")
+    }
 }

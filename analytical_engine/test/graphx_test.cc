@@ -19,37 +19,35 @@ limitations under the License.
 
 #include "arrow/array.h"
 #include "arrow/array/builder_primitive.h"
-#include "core/java/graphx/edge_partition.h"
+#include "core/java/graphx/local_vertex_map.h"
 #include "glog/logging.h"
 #include "vineyard/client/client.h"
 
 void Run() {
   vineyard::Client client;
-  gs::EdgePartition<int64_t, uint64_t, int32_t>* partition =
-      new gs::EdgePartition<int64_t, uint64_t, int32_t>(client);
-  arrow::Int64Builder srcBuilder, dstBuilder;
-  arrow::Int32Builder edBuilder;
-  srcBuilder.Reserve(2);
-  dstBuilder.Reserve(2);
-  edBuilder.Reserve(2);
-  srcBuilder.UnsafeAppend(0);
-  srcBuilder.UnsafeAppend(1);
-  dstBuilder.UnsafeAppend(2);
-  dstBuilder.UnsafeAppend(3);
-  edBuilder.UnsafeAppend(4);
-  edBuilder.UnsafeAppend(5);
+  VINEYARD_CHECK_OK(client.Connect("/tmp/vineyard.sock"));
+  LOG(INFO) << "Connected to IPCServer: ";
 
-  partition->LoadEdges(srcBuilder, dstBuilder, edBuilder);
-  LOG(INFO) << "vnum: " << partition->GetVerticesNum() << ", edge num"
-            << partition->GetEdgesNum()
-            << " inedges : " << partition->GetInEdges().vertex_num();
+  arrow::Int64Builder inner, outer;
+  inner.Reserve(3);
+  outer.Reserve(2);
+  inner.UnsafeAppend(1, 2, 3);
+  outer.UnsafeAppend(5, 6);
+  gs::BasicLocalVertexMapBuilder<int64_t, uint64_t> builder(client, inner,
+                                                            outer);
+  auto vmap = std::dynamic_pointer_cast<gs::LocalVertexMap<int64_t, uint64_t>>(
+      builder.Seal(client_));
+
+  VINEYARD_CHECK_OK(client_.Persist(vmap->id()));
+  LOG(INFO) << "Persist vmap id: " << vmap->id();
+  LOG(INFO) << "vnum: " << vmap->GetVerticesNum();
 }
 
 int main(int argc, char* argv[]) {
   google::InitGoogleLogging("edge_partition");
   google::InstallFailureSignalHandler();
 
-  Run();
+  TestLocalVertexMap();
   VLOG(1) << "Finish Querying.";
 
   google::ShutdownGoogleLogging();
