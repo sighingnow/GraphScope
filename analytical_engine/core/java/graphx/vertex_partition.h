@@ -99,7 +99,7 @@ class VertexPartitionBuilder {
              vdata_t defaultVal) {
     // get vnums
     LOG(INFO) << "receives totally: " << oid2Lid.size() << " vertices,";
-    for (auto i = 0; i < lid2Pids.size(); ++i) {
+    for (size_t i = 0; i < lid2Pids.size(); ++i) {
       LOG(INFO) << "lid " << i << " is reference in " << lid2Pids[i].size()
                 << " parts";
     }
@@ -109,7 +109,7 @@ class VertexPartitionBuilder {
     oids_builder.Finish(&partition.oids);
 
     vdata_builder.Reserve(vnums);
-    for (auto i = 0; i < vnums; ++i) {
+    for (size_t i = 0; i < vnums; ++i) {
       vdata_builder.UnsafeAppend(defaultVal);
     }
     vdata_builder.Finish(&partition.vdatas);

@@ -31,6 +31,7 @@
 
 #include "flat_hash_map/flat_hash_map.hpp"
 
+#include "grape/grape.h"
 #include "grape/graph/adj_list.h"
 #include "grape/graph/immutable_csr.h"
 #include "grape/worker/comm_spec.h"
@@ -72,6 +73,11 @@ class LocalVertexMap
 
  public:
   LocalVertexMap() {}
+  static std::unique_ptr<vineyard::Object> Create() __attribute__((used)) {
+    return std::static_pointer_cast<vineyard::Object>(
+        std::unique_ptr<LocalVertexMap<OID_T, VID_T>>{
+            new LocalVertexMap<OID_T, VID_T>()});
+  }
 
   void Construct(const vineyard::ObjectMeta& meta) override {
     this->meta_ = meta;
@@ -87,8 +93,7 @@ class LocalVertexMap
     vnum = oid2Lid.size();
 
     oidArray_accessor.Init(lid2Oid);
-    LOG(INFO) << "Finish construct accessor: "
-              << partition.oidArray_accessor.GetLength();
+    LOG(INFO) << "Finish construct accessor: " << oidArray_accessor.GetLength();
   }
 
   int64_t GetVerticesNum() { return vnum; }
@@ -115,14 +120,14 @@ class LocalVertexMapBuilder : public vineyard::ObjectBuilder {
       typename vineyard::InternalType<oid_t>::vineyard_array_type;
 
  public:
-  explicit LocalVertexMap(vineyard::Client& client) : client_(client){};
+  explicit LocalVertexMapBuilder(vineyard::Client& client) : client_(client){};
 
   void SetOidArray(const vineyard_oid_array_t& oid_array) {
-    this.lid2Oid = oid_array;
+    this->lid2Oid = oid_array;
   }
 
   void SetOid2Lid(const vineyard::Hashmap<oid_t, vid_t>& rm) {
-    this.oid2Lid = rm;
+    this->oid2Lid = rm;
   }
 
   std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) {
@@ -140,12 +145,12 @@ class LocalVertexMapBuilder : public vineyard::ObjectBuilder {
 
     size_t nbytes = 0;
 
-    vertex_map->meta_.AddMember("lid2Oid", array.meta());
+    vertex_map->meta_.AddMember("lid2Oid", lid2Oid.meta());
     nbytes += lid2Oid.nbytes();
     vertex_map->meta_.AddMember("oid2Lid", oid2Lid.meta());
     nbytes += oid2Lid.nbytes();
 
-    LOG(INFO) << "total bytes: " << nBytes;
+    LOG(INFO) << "total bytes: " << nbytes;
     vertex_map->meta_.SetNBytes(nbytes);
 
     VINEYARD_CHECK_OK(
@@ -174,23 +179,18 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
   BasicLocalVertexMapBuilder(vineyard::Client& client,
                              oid_array_builder_t& inner_oids_builder,
                              oid_array_builder_t& outer_oids_builder)
-      : LocalVertexMapBuilder<oid_t, vid_t>(client),
-        inner_oids_builder_(inner_oids_builder),
-        outer_oids_builder_(outer_oids_builder) {}
+      : LocalVertexMapBuilder<oid_t, vid_t>(client){
+    inner_oids_builder.Finish(&inner_oids);
+    outer_oids_builder.Finish(&outer_oids);
+  }
 
   vineyard::Status Build(vineyard::Client& client) override {
 #if defined(WITH_PROFILING)
-    auto start_ts = GetCurrentTime();
+    auto start_ts = grape::GetCurrentTime();
 #endif
-    std::shared_ptr<oid_array_t> inner_oids;
-    inner_oids_builder.Finish(&innerOids);
-    std::shared_ptr<oid_array_t> outer_oids;
-    outer_oids_builder.Finish(&outerOids);
-
     vineyard::HashmapBuilder<oid_t, vid_t> builder(client);
+    vid_t lid = static_cast<vid_t>(0);
     {
-      vid_t lid = static_cast<vid_t>(0);
-
       auto vnum = inner_oids->length();
       for (int64_t k = 0; k < vnum; ++k) {
         auto oid = inner_oids->GetView(k);
@@ -207,11 +207,10 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
           builder.emplace(oid, lid++);
         }
       }
-      LOG(INFO) << "total vertices: " << lid;
     }
     LOG(INFO) << "Finish building oid2Lid, distince vertices : "
               << builder.size()
-              << " total vertices encoutered: " << total_lines;
+              << " total vertices encoutered: " << lid;
     this->SetOid2Lid(
         *std::dynamic_pointer_cast<vineyard::Hashmap<oid_t, vid_t>>(
             builder.Seal(client)));
@@ -221,7 +220,7 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
     {
       oid_array_builder_t distinct_oids_builder;
       distinct_oids_builder.Reserve(builder.size());
-      CHECK_EQ(inner_oids->length() + outer_oids->length(), builder.size())
+      CHECK_EQ(inner_oids->length() + outer_oids->length(), builder.size());
       distinct_oids_builder.AppendValues(inner_oids->raw_values(),
                                          inner_oids->length());
       distinct_oids_builder.AppendValues(outer_oids->raw_values(),
@@ -237,7 +236,7 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
     LOG(INFO) << "Finish setting distinct oids";
 
 #if defined(WITH_PROFILING)
-    auto finish_seal_ts = GetCurrentTime();
+    auto finish_seal_ts = grape::GetCurrentTime();
     LOG(INFO) << "Seal hashmaps uses " << (finish_seal_ts - start_ts)
               << " seconds";
 #endif
@@ -245,7 +244,7 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
   }
 
  private:
-  oid_array_builder_t inner_oids_builder_, outer_oids_builder_;
+    std::shared_ptr<oid_array_t> inner_oids, outer_oids;
 };
 
 }  // namespace gs

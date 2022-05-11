@@ -23,28 +23,38 @@ limitations under the License.
 #include "glog/logging.h"
 #include "vineyard/client/client.h"
 
-void Run() {
+void TestLocalVertexMap(){
   vineyard::Client client;
   VINEYARD_CHECK_OK(client.Connect("/tmp/vineyard.sock"));
   LOG(INFO) << "Connected to IPCServer: ";
-
+  vineyard::ObjectID vmap_id;
+ {
   arrow::Int64Builder inner, outer;
   inner.Reserve(3);
   outer.Reserve(2);
-  inner.UnsafeAppend(1, 2, 3);
-  outer.UnsafeAppend(5, 6);
+  inner.UnsafeAppend(1);
+  inner.UnsafeAppend(2);
+  inner.UnsafeAppend(3);
+  outer.UnsafeAppend(5);
+  outer.UnsafeAppend(6);
   gs::BasicLocalVertexMapBuilder<int64_t, uint64_t> builder(client, inner,
                                                             outer);
   auto vmap = std::dynamic_pointer_cast<gs::LocalVertexMap<int64_t, uint64_t>>(
-      builder.Seal(client_));
+      builder.Seal(client));
 
-  VINEYARD_CHECK_OK(client_.Persist(vmap->id()));
+  VINEYARD_CHECK_OK(client.Persist(vmap->id()));
+  vmap_id = vmap->id();
   LOG(INFO) << "Persist vmap id: " << vmap->id();
-  LOG(INFO) << "vnum: " << vmap->GetVerticesNum();
+ }
+   std::shared_ptr<gs::LocalVertexMap<int64_t, uint64_t>> vmap =
+      std::dynamic_pointer_cast<gs::LocalVertexMap<int64_t, uint64_t>>(
+          client.GetObject(vmap_id)); 
+   LOG(INFO) << "Got vmap " << vmap->id();
+   LOG(INFO) << "num vertices: " << vmap->GetVerticesNum(); 
 }
 
 int main(int argc, char* argv[]) {
-  google::InitGoogleLogging("edge_partition");
+  google::InitGoogleLogging("graphx_test");
   google::InstallFailureSignalHandler();
 
   TestLocalVertexMap();

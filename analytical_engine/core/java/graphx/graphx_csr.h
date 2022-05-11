@@ -72,6 +72,13 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<OID_T, VID_T>> {
 
  public:
   GraphXCSR() {}
+
+  static std::unique_ptr<vineyard::Object> Create() __attribute__((used)) {
+    return std::static_pointer_cast<vineyard::Object>(
+        std::unique_ptr<GraphXCSR<OID_T, VID_T, ED_T>>{
+            new GraphXCSR<OID_T, VID_T, ED_T>()});
+  }
+
   ~GraphXCSR() {}
 
   void Construct(const vineyard::ObjectMeta& meta) override {
