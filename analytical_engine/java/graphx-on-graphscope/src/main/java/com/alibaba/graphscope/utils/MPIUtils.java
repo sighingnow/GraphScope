@@ -22,6 +22,7 @@ public class MPIUtils {
     private static String MPI_LOG_FILE = "/tmp/graphx-mpi-log";
     private static final String GRAPHSCOPE_CODE_HOME, SPARK_HOME, GAE_HOME, SPARK_CONF_WORKERS, LAUNCH_GRAPHX_SHELL_SCRIPT, LOAD_GRAPH_SHELL_SCRIPT;
     private static final String LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT;
+    private static final String pattern = "GlobalVertexMapID:";
     static {
         SPARK_HOME = System.getenv("SPARK_HOME");
         if (SPARK_HOME == null || SPARK_HOME.isEmpty()) {
@@ -51,6 +52,7 @@ public class MPIUtils {
             throw new IllegalStateException("script " + LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT + "doesn't exist");
         }
     }
+
     public static String getGAEHome(){
         return GAE_HOME;
     }
@@ -112,9 +114,12 @@ public class MPIUtils {
         try {
             process = processBuilder.start();
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String s;
-            while ((s = stdInput.readLine()) != null) {
-                System.out.println(s);
+            String str;
+            while ((str = stdInput.readLine()) != null) {
+                System.out.println(str);
+                if (str.contains(pattern)){
+                    globalVMID = Long.parseLong(str.substring(str.indexOf(pattern) + pattern.length()).trim());
+                }
                 //FIXME: get vm id from output.
             }
             int exitCode = process.waitFor();
@@ -129,7 +134,7 @@ public class MPIUtils {
         }
         long endTime = System.nanoTime();
         logger.info("Total time spend on Loading global vertex Map : {}ms", (endTime - startTime) / 1000000);
-        return -1;
+        return globalVMID;
     }
 
     public static <OID, VID, GS_VD, GS_ED, GX_VD, GX_ED> String graph2Fragment(
