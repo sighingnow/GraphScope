@@ -27,11 +27,56 @@ limitations under the License.
 #include "glog/logging.h"
 #include "vineyard/client/client.h"
 
+vineyard::ObjectID getLocalVM(vineyard::Client& client,
+                              grape::CommSpec& comm_spec) {
+  vineyard::ObjectID vmap_id;
+  {
+    arrow::Int64Builder inner, outer;
+    if (comm_spec_.worker_id() == 0) {
+      inner.Reserve(2);
+      outer.Reserve(1);
+      inner.UnsafeAppend(1);
+      inner.UnsafeAppend(2);
+      outer.UnsafeAppend(3);
+      gs::BasicLocalVertexMapBuilder<int64_t, uint64_t> builder(client, inner,
+                                                                outer);
+      auto vmap =
+          std::dynamic_pointer_cast<gs::LocalVertexMap<int64_t, uint64_t>>(
+              builder.Seal(client));
+
+      VINEYARD_CHECK_OK(client.Persist(vmap->id()));
+      vmap_id = vmap->id();
+      LOG(INFO) << "Worker [" << comm_spec.worker_id()
+                << "Persist local vmap id: " << vmap->id();
+    } else {
+      inner.Reserve(1);
+      outer.Reserve(2);
+      inner.UnsafeAppend(3);
+      outer.UnsafeAppend(2);
+      outer.UnsafeAppend(1);
+      gs::BasicLocalVertexMapBuilder<int64_t, uint64_t> builder(client, inner,
+                                                                outer);
+      auto vmap =
+          std::dynamic_pointer_cast<gs::LocalVertexMap<int64_t, uint64_t>>(
+              builder.Seal(client));
+
+      VINEYARD_CHECK_OK(client.Persist(vmap->id()));
+      vmap_id = vmap->id();
+      LOG(INFO) << "Worker [" << comm_spec.worker_id()
+                << "Persist local vmap id: " << vmap->id();
+    }
+  }
+  return vmap_id;
+}
 void TestGraphXVertexMap(vineyard::Client& client,
                          const grape::CommSpec& comm_spec) {
+  if (comm_spec.worker_num() != 2) {
+    LOG(ERROR) << "Expect worker num == 2";
+    return;
+  }
   vineyard::ObjectID vm_id;
   {
-    vineyard::ObjectID partial_map = getLocalVM(comm_spec);
+    vineyard::ObjectID partial_map = getLocalVM(client, comm_spec);
     LOG(INFO) << "Worker: " << comm_spec.worker_id()
               << " local vm: " << partial_map;
     gs::BasicGraphXVertexMapBuilder<int64_t, uint64_t> builder(
@@ -49,6 +94,15 @@ void TestGraphXVertexMap(vineyard::Client& client,
           client.GetObject(vm_id));
   LOG(INFO) << "worker " << comm_spec.worker_id() << " Got graphx vm "
             << vm->id();
+  LOG(INFO) << "worker " << comm_spec.worker_id()
+            << " total vnum: " vm->GetTotalVertexSize();
+  vid_t gid;
+  vm->GetGid(1, gid);
+  LOG(INFO) << "worker " << comm_spec.worker_id() << "oid2 gid: 1: " << gid;
+  vm->GetGid(2, gid);
+  LOG(INFO) << "worker " << comm_spec.worker_id() << "oid2 gid: 2: " << gid;
+  vm->GetGid(3, gid);
+  LOG(INFO) << "worker " << comm_spec.worker_id() << "oid2 gid: 3: " << gid;
 }
 
 int main(int argc, char* argv[]) {

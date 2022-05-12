@@ -25,8 +25,8 @@ limitations under the License.
 #include "vineyard/client/client.h"
 void generateData(std::shared_ptr<arrow::UInt64Array>& srcLids,
                   std::shared_ptr<arrow::UInt64Array>& dstLids,
-                  std::shared_ptr<arrow::Int64Array>& edatas); 
- 
+                  std::shared_ptr<arrow::Int64Array>& edatas);
+
 void TestLocalVertexMap(vineyard::Client& client) {
   vineyard::ObjectID vmap_id;
   {

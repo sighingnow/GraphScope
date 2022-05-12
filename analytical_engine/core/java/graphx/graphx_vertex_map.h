@@ -114,6 +114,59 @@ class GraphXVertexMap
     }
   }
 
+  size_t GetTotalVertexSize() const {
+    size_t size = 0;
+    for (const auto& v : oid2Lids_) {
+      size += v.size();
+    }
+    return size;
+  }
+
+  size_t GetInnerVertexSize(fid_t fid) const { return l2o_[fid]->length(); }
+
+  bool GetOid(const VID_T& gid, OID_T& oid) const {
+    fid_t fid = GetFidFromGid(gid);
+    VID_T lid = GetLidFromGid(gid);
+    return GetOid(fid, lid, oid);
+  }
+
+  bool GetOid(fid_t fid, const VID_T& lid, OID_T& oid) const {
+    if (lid >= lid2Oids_[fid]->length()) {
+      return false;
+    }
+    oid = lid2Oids_[fid]->Value(lid);
+    return true;
+  }
+
+  bool GetGid(fid_t fid, const OID_T& oid, VID_T& gid) const {
+    auto& rm = oid2Lids_[fid];
+    auto iter = rm.find(oid);
+    if (iter == rm.end()) {
+      return false;
+    } else {
+      gid = Lid2Gid(fid, iter->second);
+      return true;
+    }
+  }
+
+  bool GetGid(const OID_T& oid, VID_T& gid) const {
+    fid_t fid = static_cast<fid_t>(0);
+    while (fid < fnum_ && !GetGid(fid, oid, gid)) {
+      fid++;
+    }
+    if (fid == fnum_) {
+      return false;
+    }
+    return true;
+  }
+
+  fid_t GetFidFromGid(const VID_T& gid) const {
+    return id_parser_.get_fragment_id(gid);
+  }
+  VID_T Lid2Gid(fid_t fid, const VID_T& lid) const {
+    return id_parser_.generate_global_id(fid, lid);
+  }
+
  private:
   grape::fid_t fnum_, fid_;
   grape::IdParser<vid_t> id_parser_;
