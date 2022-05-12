@@ -9,7 +9,7 @@ object EdgeMain extends Logging{
   def main(array: Array[String]): Unit = {
     ExecutorUtils.registerPartition(0)
     val registry = GrapeEdgePartitionRegistry.getOrCreate[Int,Int]
-    val oids = new OpenHashSet[Int]
+    val oids = new OpenHashSet[Long]
     oids.add(1)
     oids.add(3)
     oids.add(5)
@@ -17,7 +17,7 @@ object EdgeMain extends Logging{
     val dsts = Array(3L, 5L, 5L)
     val attrs = Array(1, 2 ,3)
 
-    val edgeShuffle = new EdgeShuffle[Int](0, 0, oids.getBitSet, srcs, dsts, attrs)
+    val edgeShuffle = new EdgeShuffle[Int](0, 0, oids, srcs, dsts, attrs)
     val edgeShuffleReceived = new EdgeShuffleReceived[Int](1, 0)
     edgeShuffleReceived.set(0, edgeShuffle)
     registry.addEdgesToBuilder(0, edgeShuffleReceived)

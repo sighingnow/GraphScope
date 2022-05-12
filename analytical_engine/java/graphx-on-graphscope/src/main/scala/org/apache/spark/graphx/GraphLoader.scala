@@ -62,7 +62,7 @@ object GraphLoader extends Logging {
           }
         }
         pid2src.zipWithIndex.map({
-          case (srcs, pid) => (pid, new EdgeShuffle(fromPid,pid, pid2Oids(pid).getBitSet, srcs.trim().array, pid2Dst(pid).trim().array, pid2attr(pid).trim().array))
+          case (srcs, pid) => (pid, new EdgeShuffle(fromPid,pid, pid2Oids(pid), srcs.trim().array, pid2Dst(pid).trim().array, pid2attr(pid).trim().array))
         }).toIterator
       }
     }.partitionBy(partitioner).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))

@@ -2,13 +2,13 @@ package org.apache.spark.graphx.impl.partition
 
 import org.apache.spark.graphx.Edge
 import org.apache.spark.internal.Logging
-import org.apache.spark.util.collection.BitSet
+import org.apache.spark.util.collection.{BitSet, OpenHashSet}
 
 import scala.reflect.ClassTag
 
 class EdgeShuffle[ED : ClassTag](val fromPid : Int,
                                  val dstPid: Int,
-                                 val oids : BitSet, // all oids belong to dstPid
+                                 val oids : OpenHashSet[Long], // all oids belong to dstPid
                                  val srcs : Array[Long],
                                  val dsts : Array[Long], val attrs: Array[ED]) extends Serializable {
   require(srcs.length == dsts.length)
