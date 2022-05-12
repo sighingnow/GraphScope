@@ -59,67 +59,68 @@ object GrapeVertexRDD extends Logging{
 
   def fromEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD) : GrapeVertexRDDImpl[VD] = {
     log.info(s"Driver: Creating vertex rdd from edgeRDD of numPartition ${numPartitions}, default val ${defaultVal}")
+    null
     //First creating partial vertex map. We may not need to use it in graphx. just pass it to c++ to build.
-    val vertexPartitions = createVertexPartitions(numPartitions, edgeRDD, defaultVal).cache()
+//    val vertexPartitions = createVertexPartitions(numPartitions, edgeRDD, defaultVal).cache()
     //Pass to c++ for building
 //    val vertexPartition = GrapeVertexRDD.fromPartitionBuilder(vertexPartitionBuilderRDD, defaultVal)
-    fromVertexPartitions(vertexPartitions)
+//    fromVertexPartitions(vertexPartitions)
   }
 
-  def createVertexPartitions[VD: ClassTag](numPartitions : Int, edgeRDD: GrapeEdgeRDD[_], vd: VD): RDD[(PartitionID, GrapeVertexPartitionWrapper[VD])] ={
-    val partitioner = new HashPartitioner(numPartitions)
-    val vertexShuffles = edgeRDD.grapePartitionsRDD.mapPartitions(iter => {
-      val tuple = iter.next();
-      tuple._2.generateVertexShuffles(partitioner)
-    }).partitionBy(partitioner).cache()
-    log.info("[Driver:] after vertex shuffle")
-
-    vertexShuffles.foreachPartition(iter => {
-      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
-      registry.createVertexPartitionBuilder()
-    })
-
-    vertexShuffles.foreachPartition(iter => {
-      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
-      val vertexPartitionBuilder = registry.getVertexPartitionBuilder()
-      //VertexShuffle to std::vector.
-      var cnt = 0
-      var pid_ = -1
-      while (iter.hasNext){
-        val (pid,shuffle) = iter.next()
-        pid_ = pid
-        require(pid == shuffle.dstPid)
-        val vec = VertexShuffle.toVector(shuffle)
-        log.info(s"Partition ${pid} adding shuffles from ${shuffle.fromPid}, size ${shuffle.size()}")
-        vertexPartitionBuilder.addVertex(vec, shuffle.fromPid)
-	      cnt += shuffle.size()
-      }
-      if (pid_ == -1){
-        log.info("empty iter")
-      }
-      else {
-        log.info(s"Partition ${pid_} receive: total shuffle size ${cnt}")
-      }
-    })
-
-    //Builder
-    vertexShuffles.foreachPartition(iter => {
-      if (iter.hasNext){
-           val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
-          registry.build(iter.next()._1, vd)
-      }
-    })
-
-    val vertexPartitionsRDD = vertexShuffles.mapPartitions(iter => {
-      if (iter.hasNext){
-          val firstOne = iter.next()
-          val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
-          Iterator((firstOne._1, registry.getGrapeVertexPartitionWrapper(firstOne._1)))
-      }
-      else {
-	      Iterator.empty
-      }
-    })
-    vertexPartitionsRDD
-  }
+//  def createVertexPartitions[VD: ClassTag](numPartitions : Int, edgeRDD: GrapeEdgeRDD[_], vd: VD): RDD[(PartitionID, GrapeVertexPartitionWrapper[VD])] ={
+//    val partitioner = new HashPartitioner(numPartitions)
+//    val vertexShuffles = edgeRDD.grapePartitionsRDD.mapPartitions(iter => {
+//      val tuple = iter.next();
+//      tuple._2.generateVertexShuffles(partitioner)
+//    }).partitionBy(partitioner).cache()
+//    log.info("[Driver:] after vertex shuffle")
+//
+//    vertexShuffles.foreachPartition(iter => {
+//      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
+//      registry.createVertexPartitionBuilder()
+//    })
+//
+//    vertexShuffles.foreachPartition(iter => {
+//      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
+//      val vertexPartitionBuilder = registry.getVertexPartitionBuilder()
+//      //VertexShuffle to std::vector.
+//      var cnt = 0
+//      var pid_ = -1
+//      while (iter.hasNext){
+//        val (pid,shuffle) = iter.next()
+//        pid_ = pid
+//        require(pid == shuffle.dstPid)
+//        val vec = VertexShuffle.toVector(shuffle)
+//        log.info(s"Partition ${pid} adding shuffles from ${shuffle.fromPid}, size ${shuffle.size()}")
+//        vertexPartitionBuilder.addVertex(vec, shuffle.fromPid)
+//	      cnt += shuffle.size()
+//      }
+//      if (pid_ == -1){
+//        log.info("empty iter")
+//      }
+//      else {
+//        log.info(s"Partition ${pid_} receive: total shuffle size ${cnt}")
+//      }
+//    })
+//
+//    //Builder
+//    vertexShuffles.foreachPartition(iter => {
+//      if (iter.hasNext){
+//           val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
+//          registry.build(iter.next()._1, vd)
+//      }
+//    })
+//
+//    val vertexPartitionsRDD = vertexShuffles.mapPartitions(iter => {
+//      if (iter.hasNext){
+//          val firstOne = iter.next()
+//          val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
+//          Iterator((firstOne._1, registry.getGrapeVertexPartitionWrapper(firstOne._1)))
+//      }
+//      else {
+//	      Iterator.empty
+//      }
+//    })
+//    vertexPartitionsRDD
+//  }
 }

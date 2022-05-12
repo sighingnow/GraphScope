@@ -129,36 +129,36 @@ Java_com_alibaba_graphscope_runtime_NativeUtils_getArrowProjectedFragment(
  * Method:    nativeCreateEdgePartition
  * Signature: (Ljava/lang/String;JI)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_alibaba_graphscope_runtime_NativeUtils_nativeCreateEdgePartition(
-    JNIEnv* env, jclass clz, jint ed_type) {
-//  google::InitGoogleLogging("NativeUtils");
-//  google::InstallFailureSignalHandler();
-
-//  std::string ipc_socket = "/tmp/vineyard.sock";
-//  VINEYARD_CHECK_OK(client.Connect(ipc_socket));
-//  LOG(INFO) << "Connected to " << ipc_socket;
-
-  if (ed_type == 0) {
-    LOG(INFO) << "creating EdgePartition for ed = int64_t," ;
-    static std::shared_ptr<gs::EdgePartition<int64_t, uint64_t, int64_t>> edge_partition =
-        std::make_shared<gs::EdgePartition<int64_t, uint64_t, int64_t>>(client);
-    return reinterpret_cast<jlong>(edge_partition.get());
-  } else if (ed_type == 1) {
-    LOG(INFO) << "creating EdgePartition for ed = double, " ;
-    static std::shared_ptr<gs::EdgePartition<int64_t, uint64_t, double>> edge_partition =
-        std::make_shared<gs::EdgePartition<int64_t, uint64_t, double>>(client);
-    return reinterpret_cast<jlong>(edge_partition.get());
-  } else if (ed_type == 2) {
-    LOG(INFO) << "creating EdgePartition for ed = int32_t, " ;
-    static std::shared_ptr<gs::EdgePartition<int64_t, uint64_t, int32_t>> edge_partition =
-        std::make_shared<gs::EdgePartition<int64_t, uint64_t, int32_t>>(client);
-    return reinterpret_cast<jlong>(edge_partition.get());
-  } else {
-    LOG(ERROR) << "WRONG ed type: " << ed_type;
-    return -1;
-  }
-}
+//JNIEXPORT jlong JNICALL
+//Java_com_alibaba_graphscope_runtime_NativeUtils_nativeCreateEdgePartition(
+//    JNIEnv* env, jclass clz, jint ed_type) {
+////  google::InitGoogleLogging("NativeUtils");
+////  google::InstallFailureSignalHandler();
+//
+////  std::string ipc_socket = "/tmp/vineyard.sock";
+////  VINEYARD_CHECK_OK(client.Connect(ipc_socket));
+////  LOG(INFO) << "Connected to " << ipc_socket;
+//
+//  if (ed_type == 0) {
+//    LOG(INFO) << "creating EdgePartition for ed = int64_t," ;
+//    static std::shared_ptr<gs::EdgePartition<int64_t, uint64_t, int64_t>> edge_partition =
+//        std::make_shared<gs::EdgePartition<int64_t, uint64_t, int64_t>>(client);
+//    return reinterpret_cast<jlong>(edge_partition.get());
+//  } else if (ed_type == 1) {
+//    LOG(INFO) << "creating EdgePartition for ed = double, " ;
+//    static std::shared_ptr<gs::EdgePartition<int64_t, uint64_t, double>> edge_partition =
+//        std::make_shared<gs::EdgePartition<int64_t, uint64_t, double>>(client);
+//    return reinterpret_cast<jlong>(edge_partition.get());
+//  } else if (ed_type == 2) {
+//    LOG(INFO) << "creating EdgePartition for ed = int32_t, " ;
+//    static std::shared_ptr<gs::EdgePartition<int64_t, uint64_t, int32_t>> edge_partition =
+//        std::make_shared<gs::EdgePartition<int64_t, uint64_t, int32_t>>(client);
+//    return reinterpret_cast<jlong>(edge_partition.get());
+//  } else {
+//    LOG(ERROR) << "WRONG ed type: " << ed_type;
+//    return -1;
+//  }
+//}
 
 #ifdef __cplusplus
 }

@@ -1,40 +1,27 @@
 package org.apache.spark.graphx.test
 
-import org.apache.spark.graphx.utils.GrapeEdgePartitionRegistry
+import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived}
+import org.apache.spark.graphx.utils.{ExecutorUtils, GrapeEdgePartitionRegistry}
 import org.apache.spark.internal.Logging
+import org.apache.spark.util.collection.{BitSet, OpenHashSet}
 
 object EdgeMain extends Logging{
   def main(array: Array[String]): Unit = {
+    ExecutorUtils.registerPartition(0)
     val registry = GrapeEdgePartitionRegistry.getOrCreate[Int,Int]
-    registry.createArrayBuilder(0)
-    registry.createArrayBuilder(1)
-    log.info("finish create builders")
+    val oids = new OpenHashSet[Int]
+    oids.add(1)
+    oids.add(3)
+    oids.add(5)
+    val srcs = Array(1L, 1L, 3L)
+    val dsts = Array(3L, 5L, 5L)
+    val attrs = Array(1, 2 ,3)
 
-    val edges = Array((1L,1L,1),(1L,2L,3),(2L,3L,4),(3L,4L,5))
-
-    val (srcBuilder,dstBuilder,edataBuilder) = registry.getBuilders()
-    srcBuilder.reserve(edges.size)
-    dstBuilder.reserve(edges.size)
-    edataBuilder.reserve(edges.size)
-    val partIter = edges.iterator
-    while (partIter.hasNext){
-      val edge = partIter.next()
-      srcBuilder.unsafeAppend(edge._1)
-      dstBuilder.unsafeAppend(edge._2)
-      edataBuilder.unsafeAppend(edge._3)
-    }
-    log.info("finish builders")
-
-    registry.constructEdgePartition(0)
-    registry.constructEdgePartition(1)
-
-    val p1 = registry.getEdgePartitionWrapper(0)
-    val p2 = registry.getEdgePartitionWrapper(1)
-    log.info(s"wrapper 1 : ${p1}, wrapper 2 ${p2}")
-    val oids = p1.oids
-    for (i <- 0 until( oids.getLength.toInt)){
-      log.info(s"oid ${i} is ${oids.get(i)}")
-    }
+    val edgeShuffle = new EdgeShuffle[Int](0, 0, oids.getBitSet, srcs, dsts, attrs)
+    val edgeShuffleReceived = new EdgeShuffleReceived[Int](1, 0)
+    edgeShuffleReceived.set(0, edgeShuffle)
+    registry.addEdgesToBuilder(0, edgeShuffleReceived)
+    registry.build(0)
   }
 
 }

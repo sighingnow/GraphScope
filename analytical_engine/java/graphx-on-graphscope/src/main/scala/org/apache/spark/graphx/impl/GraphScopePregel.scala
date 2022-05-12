@@ -1,9 +1,7 @@
 package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.graphx.SerializationUtils
-import com.alibaba.graphscope.utils.MPIUtils
-import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
-import org.apache.spark.graphx.{EdgeDirection, EdgeTriplet, FragmentRegistry, GrapeVertexRDD, Graph, VertexId}
+import org.apache.spark.graphx.{EdgeDirection, EdgeTriplet, Graph, VertexId}
 import org.apache.spark.internal.Logging
 
 import scala.reflect.{ClassTag, classTag}

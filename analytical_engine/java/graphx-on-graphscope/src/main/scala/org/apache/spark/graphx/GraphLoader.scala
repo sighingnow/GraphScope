@@ -5,7 +5,7 @@ import org.apache.spark.{HashPartitioner, SparkContext}
 import org.apache.spark.graphx.impl.{EdgePartitionBuilder, GrapeGraphImpl, GraphImpl}
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.util.collection.PrimitiveVector
+import org.apache.spark.util.collection.{OpenHashSet, PrimitiveVector}
 
 import java.util.concurrent.TimeUnit
 import scala.reflect.ClassTag
@@ -28,12 +28,14 @@ object GraphLoader extends Logging {
         sc.textFile(path)
       }
     }
+    val numLines = lines.count() / numEdgePartitions
     val partitioner = new HashPartitioner(numEdgePartitions)
     val edgesShuffled = lines.mapPartitionsWithIndex {
       (fromPid, iter) => {
-        val pid2src = Array.fill(numEdgePartitions)(new PrimitiveVector[VertexId])
-        val pid2Dst = Array.fill(numEdgePartitions)(new PrimitiveVector[VertexId])
-        val pid2attr = Array.fill(numEdgePartitions)(new PrimitiveVector[Int])
+        val pid2src = Array.fill(numEdgePartitions)(new PrimitiveVector[VertexId](numLines.toInt))
+        val pid2Dst = Array.fill(numEdgePartitions)(new PrimitiveVector[VertexId](numLines.toInt))
+        val pid2attr = Array.fill(numEdgePartitions)(new PrimitiveVector[Int](numLines.toInt))
+        val pid2Oids = Array.fill(numEdgePartitions)(new OpenHashSet[VertexId](numLines.toInt / 2))
         while (iter.hasNext) {
           val lineArray = iter.next().split("\\s+")
           if (lineArray.length < 2) {
@@ -43,6 +45,8 @@ object GraphLoader extends Logging {
           val dstId = lineArray(1).toLong
           val srcPid = partitioner.getPartition(srcId)
           val dstPid = partitioner.getPartition(dstId)
+          pid2Oids(srcPid).add(srcId)
+          pid2Oids(srcPid).add(dstId)
           if (srcPid == dstPid){
             pid2src(srcPid).+=(srcId)
             pid2Dst(srcPid).+=(dstId)
@@ -58,7 +62,7 @@ object GraphLoader extends Logging {
           }
         }
         pid2src.zipWithIndex.map({
-          case (srcs, pid) => (pid, new EdgeShuffle(fromPid,pid, srcs.trim().array, pid2Dst(pid).trim().array, pid2attr(pid).trim().array))
+          case (srcs, pid) => (pid, new EdgeShuffle(fromPid,pid, pid2Oids(pid).getBitSet, srcs.trim().array, pid2Dst(pid).trim().array, pid2attr(pid).trim().array))
         }).toIterator
       }
     }.partitionBy(partitioner).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
