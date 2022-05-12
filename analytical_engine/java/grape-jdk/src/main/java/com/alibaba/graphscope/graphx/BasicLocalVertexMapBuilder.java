@@ -8,6 +8,7 @@ import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder;
+import com.alibaba.graphscope.stdcxx.StdSharedPtr;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
 
@@ -18,7 +19,7 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 public interface BasicLocalVertexMapBuilder<OID_T,VID_T> extends FFIPointer {
 
     @FFINameAlias("Seal")
-    LocalVertexMap<OID_T,VID_T> seal(@CXXReference VineyardClient client);
+    StdSharedPtr<LocalVertexMap<OID_T,VID_T>> seal(@CXXReference VineyardClient client);
 
     @FFIFactory
     interface Factory<OID_T,VID_T>{

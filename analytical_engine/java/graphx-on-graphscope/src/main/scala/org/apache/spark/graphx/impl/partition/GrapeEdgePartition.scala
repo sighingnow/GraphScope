@@ -61,7 +61,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
       innerOidBuilder.unsafeAppend(iter.next());
     }
     val localVertexMapBuilder = ScalaFFIFactory.newLocalVertexMapBuilder(ExecutorUtils.getVineyarClient, innerOidBuilder)
-    val localVM = localVertexMapBuilder.seal(ExecutorUtils.getVineyarClient);
+    val localVM = localVertexMapBuilder.seal(ExecutorUtils.getVineyarClient).get();
     log.info(s"Finish building ${localVM}, ${localVM.getInnerVerticesNum}");
     built = true
   }
