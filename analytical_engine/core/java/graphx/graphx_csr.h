@@ -82,18 +82,25 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
 
   ~GraphXCSR() {}
 
-  int64_t GetDegree(vid_t lid) {
-    CHECK_LT(lid, local_vnum_);
-    int64_t ind = static_cast<int64_t>(lid);
-    return offsets_->Value(ind + 1) - offsets_->Value(ind);
-  }
+  int64_t GetDegree(vid_t lid) { return getOffset(lid + 1) - getOffset(ind); }
+
+  bool IsEmpty(vid_t lid) { return getOffset(lid + 1) == getOffset(lid); }
+
+  nbr_t* GetBegin(VID_T i) { return &edge_ptr_[getOffset(i)]; }
+  const nbr_t* GetBegin(VID_T i) const { return &edge_ptr_[getOffset(i)]; }
+
+  nbr_t* GetEnd(VID_T i) { return &edge_ptr_[getOffset(i + 1)]; }
+  const nbr_t* GetEnd(VID_T i) const { return &edge_ptr_[getOffset(i + 1)]; }
+
+  vid_t VertexNum() { return local_vnum_; }
 
   int64_t GetTotalEdgesNum() { return edges_num_; }
 
   int64_t GetPartialEdgesNum(vid_t from, vid_t end) {  //[from,end)
     CHECK_LT(from, end);
     CHECK_LE(end, local_vnum_);
-    return offsets_->Value(static_cast<int64_t>(end)) - offsets_->Value(static_cast<int>(from));
+    return offsets_->Value(static_cast<int64_t>(end)) -
+           offsets_->Value(static_cast<int64_t>(from));
   }
 
   void Construct(const vineyard::ObjectMeta& meta) override {
@@ -119,17 +126,18 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
     local_vnum_ = offsets_->length() - 1;
     CHECK_GT(local_vnum_, 0);
     LOG(INFO) << "In constructing graphx csr, local vnum: " << local_vnum_;
-    edge_ptr_ = reinterpret_cast<const nbr_t*>(edges_->GetValue(0));
+    edge_ptr_ =
+        const_cast<nbr*>(reinterpret_cast<const nbr_t*>(edges_->GetValue(0)));
 
-    edges_num_ = offsets_->Value(local_vnum_);
+    edges_num_ = getOffset(local_vnum_);
     LOG(INFO) << "total edges: " << edges_num_;
     for (auto i = 0; i < local_vnum_; ++i) {
-      const nbr_t* start = &edge_ptr_[offsets_->Value(i)];
-      const nbr_t* end = &edge_ptr_[offsets_->Value(i + 1)];
+      nbr_t* start = &edge_ptr_[getOffset(i)];
+      nbr_t* end = &edge_ptr_[getOffset(i + 1)];
       while (start != end) {
         LOG(INFO) << "Edge (" << std::to_string(i) << ", " << start->vid
-                                 << ", eid: " << start->eid
-                                 << ", edata:" << edatas_->Value(start->eid);
+                  << ", eid: " << start->eid
+                  << ", edata:" << edatas_->Value(start->eid);
         start++;
       }
     }
@@ -137,9 +145,13 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
   }
 
  private:
+  inline int64_t getOffset(vid_t lid) {
+    CHECK_LT(lid, local_vnum_);
+    return offsets_->Value(static_cast<int64_t>(lid));
+  }
   vid_t local_vnum_;
   int64_t edges_num_;
-  const nbr_t* edge_ptr_;
+  nbr_t* edge_ptr_;
   std::shared_ptr<arrow::FixedSizeBinaryArray> edges_;
   std::shared_ptr<arrow::Int64Array> offsets_;
   std::shared_ptr<edata_array_t> edatas_;
@@ -224,7 +236,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
 
  public:
   explicit BasicGraphXCSRBuilder(vineyard::Client& client)
-      : GraphXCSRBuilder<vid_t,edata_t>(client) {}
+      : GraphXCSRBuilder<vid_t, edata_t>(client) {}
 
   void LoadEdges(vid_t vnum, const std::shared_ptr<vid_array_t>& srcLids,
                  const std::shared_ptr<vid_array_t>& dstLids,

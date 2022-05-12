@@ -100,6 +100,8 @@ class LocalVertexMap
 
   graphx::MutableTypedArray<oid_t>& GetOidArray() { return oidArray_accessor; }
 
+  std::shared_ptr<oid_array_t> GetLid2Oid() { return lid2Oid; }
+
  private:
   vid_t vnum;
   vineyard::Hashmap<oid_t, vid_t> oid2Lid;
@@ -179,7 +181,7 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
   BasicLocalVertexMapBuilder(vineyard::Client& client,
                              oid_array_builder_t& inner_oids_builder,
                              oid_array_builder_t& outer_oids_builder)
-      : LocalVertexMapBuilder<oid_t, vid_t>(client){
+      : LocalVertexMapBuilder<oid_t, vid_t>(client) {
     inner_oids_builder.Finish(&inner_oids);
     outer_oids_builder.Finish(&outer_oids);
   }
@@ -209,8 +211,7 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
       }
     }
     LOG(INFO) << "Finish building oid2Lid, distince vertices : "
-              << builder.size()
-              << " total vertices encoutered: " << lid;
+              << builder.size() << " total vertices encoutered: " << lid;
     this->SetOid2Lid(
         *std::dynamic_pointer_cast<vineyard::Hashmap<oid_t, vid_t>>(
             builder.Seal(client)));
@@ -244,7 +245,7 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
   }
 
  private:
-    std::shared_ptr<oid_array_t> inner_oids, outer_oids;
+  std::shared_ptr<oid_array_t> inner_oids, outer_oids;
 };
 
 }  // namespace gs
