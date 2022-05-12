@@ -283,6 +283,9 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
 #endif
     return vineyard::Status::OK();
   }
+  std::shared_ptr<LocalVertexMap<oid_t,vid_t>> MySeal(vineyard::Client& client){
+      return std::dynamic_pointer_cast<LocalVertexMap<oid_t,vid_t>>(this->Seal(client));
+  }
 
  private:
   std::shared_ptr<oid_array_t> inner_oids;
