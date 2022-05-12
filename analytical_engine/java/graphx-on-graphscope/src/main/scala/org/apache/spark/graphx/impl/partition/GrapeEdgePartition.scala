@@ -51,7 +51,9 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
     for (edgeShuffleReceive <- lists){
       for (edgeShuffle <- edgeShuffleReceive.fromPid2Shuffle){
         val receivedOids = edgeShuffle.oids
-        innerHashSet.getBitSet.union(receivedOids)
+        log.info(s"Before union with ${receivedOids}, size ${innerHashSet.size}")
+        innerHashSet.union(receivedOids)
+        log.info(s"after ${innerHashSet.size}")
       }
     }
     log.info(s"Found totally ${innerHashSet.size} in ${ExecutorUtils.getHostName}")
