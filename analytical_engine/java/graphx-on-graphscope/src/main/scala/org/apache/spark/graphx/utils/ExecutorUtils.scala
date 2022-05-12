@@ -16,15 +16,17 @@ import scala.collection.mutable
  * - The host name of this executor.
  */
 object ExecutorUtils extends Logging{
-  private val endPoint = "/tmp/vineyard.sock"
+  val endPoint = "/tmp/vineyard.sock"
   private val partitionNum = new AtomicInteger(0)
   private val pid2Ind = new mutable.HashMap[Int,Int]
   private val pids = new PrimitiveVector[Int]
   private val hostName: String = InetAddress.getLocalHost.getHostName
   private val hostIp: String = InetAddress.getLocalHost.getHostAddress
+  private var localVMID : Long = -1L;
+  private var globalVMID : Long = -1L;
 
   private val vineyardClient: VineyardClient = VineyardClientRegistry.connect(endPoint)
-  log.info(s"[GrapeEdgePartitionRegistry]: got vineyard client: ${vineyardClient}")
+  log.info(s"[ExecutorUtils]: got vineyard client: ${vineyardClient}")
 
   def registerPartition(pid : Int) = {
     if (pid2Ind.contains(pid)){
@@ -33,6 +35,22 @@ object ExecutorUtils extends Logging{
     pid2Ind(pid) = partitionNum.get()
     pids.+=(pid)
     partitionNum.getAndAdd(1)
+  }
+
+  def setLocalVMID(vmId : Long) : Unit = {
+    require(localVMID == -1, s"vm already been set ${localVMID}")
+    this.localVMID = vmId
+    log.info(s"[ExecutorUtils]: ${hostName} has local vm id ${this.localVMID}")
+  }
+  def setGlobalVMID(vmId : Long) : Unit = {
+    require(globalVMID == -1, s"vm already been set ${globalVMID}")
+    this.globalVMID = vmId
+    log.info(s"[ExecutorUtils]: ${hostName} has local vm id ${this.globalVMID}")
+  }
+
+  def getHost2LocalVMID() : String = {
+    require(localVMID != -1)
+    getHostName + ":" + localVMID
   }
 
   def getPartitionNum: Int = partitionNum.get()

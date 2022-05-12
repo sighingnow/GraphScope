@@ -21,7 +21,8 @@ object EdgeMain extends Logging{
     val edgeShuffleReceived = new EdgeShuffleReceived[Int](1, 0)
     edgeShuffleReceived.set(0, edgeShuffle)
     registry.addEdgesToBuilder(0, edgeShuffleReceived)
-    registry.build(0)
+    registry.buildLocalVertexMap(0)
+    log.info(s"${ExecutorUtils.getHost2LocalVMID()}")
   }
 
 }

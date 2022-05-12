@@ -1,8 +1,9 @@
 package org.apache.spark.graphx
 
+import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
 import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived, GrapeEdgePartition}
-import org.apache.spark.graphx.utils.{ExecutorUtils, GrapeEdgePartitionRegistry}
+import org.apache.spark.graphx.utils.{ExecutorUtils, GrapeEdgePartitionRegistry, VineyardClientRegistry}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Dependency, SparkContext}
@@ -78,9 +79,18 @@ object GrapeEdgeRDD extends Logging{
 
     edgesShuffles.foreachPartition(iter => {
       val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
-      registry.build(iter.next()._1)
+      registry.buildLocalVertexMap(iter.next()._1)
     })
-    log.info("[GrapeEdgeRDD]: Finish building")
+    log.info("[GrapeEdgeRDD]: Finish building local vmId")
+
+    val localVMIDs = edgesShuffles.mapPartitions(iter => {
+      Iterator(ExecutorUtils.getHost2LocalVMID())
+    }).collect().distinct
+    log.info(s"[GrapeEdgeRDD]: got distinct local vm ids ${localVMIDs.mkString("Array(", ", ", ")")}")
+
+    log.info("[GrapeEdgeRDD]: Start constructing global vm")
+    MPIUtils.constructGlobalVM(localVMIDs.mkString(","), ExecutorUtils.endPoint, "int64_t", "uint64_t")
+    log.info("[GrapeEdgeRDD]: Finish constructing global vm")
 
     val grapeEdgePartitions = edgesShuffles.mapPartitions(iter => {
       val (pid, part) = iter.next()

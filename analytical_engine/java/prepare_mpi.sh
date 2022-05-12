@@ -13,6 +13,7 @@ source  ${SCRIPT_DIR}/grape_jvm_opts
 export USER_JAR_PATH=${SCRIPT_DIR}/grape-demo/target/grape-demo-0.1.jar
 GRAPHX_RUNNER=${SCRIPT_DIR}/../build/graphx_runner
 GRAPHX_FRAGMENT_LOADER=${SCRIPT_DIR}/../build/graphx_fragment_loader
+GRAPHX_GLOBAL_VM_LOADER=${SCRIPT_DIR}/../build/graphx_vertex_map_loader
 
 if [ -f "${USER_JAR_PATH}" ]; then
     echo "user jar exists."

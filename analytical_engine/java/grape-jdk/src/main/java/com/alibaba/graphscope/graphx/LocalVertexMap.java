@@ -13,6 +13,8 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.GS_GRAPHX_LOCAL_VERTEX_MAP)
 public interface LocalVertexMap<OID_T,VID_T> extends FFIPointer {
+    long id();
+
     @FFINameAlias("GetInnerVerticesNum")
     long getInnerVerticesNum();
 }

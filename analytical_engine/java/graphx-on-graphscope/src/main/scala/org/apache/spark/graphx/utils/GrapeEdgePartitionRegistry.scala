@@ -24,10 +24,11 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
       }
   }
 
-  def build(pid : Int) : Unit = {
+  def buildLocalVertexMap(pid : Int) : Unit = {
     synchronized{
-      if (!edgePartitionBuilder.isBuilt){
-        edgePartitionBuilder.build()
+      if (!edgePartitionBuilder.isLocalBuilt()){
+        val localVMID = edgePartitionBuilder.buildLocalVertexMap()
+        ExecutorUtils.setLocalVMID(localVMID)
         log.info(s"[GrapeEdgePartitionRegistry] Partition ${pid} built edge Partition")
       }
     }

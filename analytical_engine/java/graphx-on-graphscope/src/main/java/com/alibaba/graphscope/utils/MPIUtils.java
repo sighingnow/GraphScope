@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ public class MPIUtils {
     private static Logger logger = LoggerFactory.getLogger(MPIUtils.class.getName());
     private static String MPI_LOG_FILE = "/tmp/graphx-mpi-log";
     private static final String GRAPHSCOPE_CODE_HOME, SPARK_HOME, GAE_HOME, SPARK_CONF_WORKERS, LAUNCH_GRAPHX_SHELL_SCRIPT, LOAD_GRAPH_SHELL_SCRIPT;
+    private static final String LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT;
     static {
         SPARK_HOME = System.getenv("SPARK_HOME");
         if (SPARK_HOME == null || SPARK_HOME.isEmpty()) {
@@ -43,6 +45,10 @@ public class MPIUtils {
         LOAD_GRAPH_SHELL_SCRIPT = GAE_HOME + "/java/load_graphx_fragment.sh";
         if (!fileExists(LOAD_GRAPH_SHELL_SCRIPT)) {
             throw new IllegalStateException("script " + LOAD_GRAPH_SHELL_SCRIPT + "doesn't exist");
+        }
+        LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT = GAE_HOME + "/java/load_graphx_vertex_map.sh";
+        if (!fileExists(LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT)) {
+            throw new IllegalStateException("script " + LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT + "doesn't exist");
         }
     }
     public static String getGAEHome(){
@@ -81,6 +87,49 @@ public class MPIUtils {
         }
         long endTime = System.nanoTime();
         logger.info("Total time spend on running mpi processes : {}ms", (endTime - startTime) / 1000000);
+    }
+
+    private static void check(String oidType, String vidType){
+        if (oidType != "int64_t" || vidType != "uint64_t"){
+            throw new IllegalStateException("Not supported: " + oidType + " " + vidType);
+        }
+    }
+
+    public static <MSG,VD,ED> long constructGlobalVM(String localVMIDs, String ipcSocket, String oidType, String vidType){
+        check(oidType, vidType);
+        logger.info("Try to construct global vm from: {}", localVMIDs);
+        int numWorkers = Math.min(localVMIDs.split(",").length, getNumWorker());
+        logger.info("running mpi with {} workers", numWorkers);
+        String[] commands = {"/bin/bash", LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT, String.valueOf(numWorkers),
+            SPARK_CONF_WORKERS, localVMIDs, oidType, vidType, ipcSocket};
+        logger.info("Running with commands: " + String.join(" ", commands));
+        long globalVMID = -1;
+        long startTime = System.nanoTime();
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        processBuilder.command(commands);
+//        processBuilder.inheritIO();
+        Process process = null;
+        try {
+            process = processBuilder.start();
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String s;
+            while ((s = stdInput.readLine()) != null) {
+                System.out.println(s);
+                //FIXME: get vm id from output.
+            }
+            int exitCode = process.waitFor();
+            logger.info("Mpi process exit code {}", exitCode);
+            if (exitCode != 0) {
+                throw new IllegalStateException("Error in mpi process" + exitCode);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        long endTime = System.nanoTime();
+        logger.info("Total time spend on Loading global vertex Map : {}ms", (endTime - startTime) / 1000000);
+        return -1;
     }
 
     public static <OID, VID, GS_VD, GS_ED, GX_VD, GX_ED> String graph2Fragment(

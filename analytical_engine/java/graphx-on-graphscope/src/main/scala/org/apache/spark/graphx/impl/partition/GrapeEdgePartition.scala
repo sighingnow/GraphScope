@@ -2,6 +2,7 @@ package org.apache.spark.graphx.impl.partition
 
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.graphx.VineyardClient
+import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.Edge
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
@@ -34,20 +35,19 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
   val edataBuilder : ArrowArrayBuilder[ED] = ScalaFFIFactory.newArrowArrayBuilder(GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]])
   val innerOidBuilder : ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
   val lists : ArrayBuffer[EdgeShuffleReceived[ED]] = ArrayBuffer.empty[EdgeShuffleReceived[ED]]
-  var built = false
+  var localVMBuilt = false
+  var globalVMBuilt = false
   //Concurrency control should be done by upper level
   def addEdges(edges : EdgeShuffleReceived[ED]) : Unit = {
     lists.+=(edges)
   }
 
-  def build() : Unit = {
-    val edgesNum = lists.map(shuffle => shuffle.totalSize()).sum
-    log.info(s"Got totally ${lists.length}, edges ${edgesNum} in ${ExecutorUtils.getHostName}")
-    srcVidBuilder.reserve(edgesNum)
-    dstVidBuilder.reserve(edgesNum)
-    edataBuilder.reserve(edgesNum)
+  /**
+   * @return the built local vertex map id.
+   */
+  def buildLocalVertexMap() : Long = {
     //We need to get oid->lid mappings in this executor.
-    val innerHashSet = new OpenHashSet[Long](edgesNum.toInt)
+    val innerHashSet = new OpenHashSet[Long]
     for (edgeShuffleReceive <- lists){
       for (edgeShuffle <- edgeShuffleReceive.fromPid2Shuffle){
         val receivedOids = edgeShuffle.oids
@@ -62,11 +62,22 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
     }
     val localVertexMapBuilder = ScalaFFIFactory.newLocalVertexMapBuilder(ExecutorUtils.getVineyarClient, innerOidBuilder)
     val localVM = localVertexMapBuilder.seal(ExecutorUtils.getVineyarClient).get();
-    log.info(s"Finish building ${localVM}, ${localVM.getInnerVerticesNum}");
-    built = true
+    log.info(s"${ExecutorUtils.getHostName}: Finish building local vm: ${localVM.id()}, ${localVM.getInnerVerticesNum}");
+    localVMBuilt = true
+    localVM.id()
   }
 
-  def isBuilt() = built
+  def buildCSR(): Unit = {
+    val edgesNum = lists.map(shuffle => shuffle.totalSize()).sum
+    log.info(s"Got totally ${lists.length}, edges ${edgesNum} in ${ExecutorUtils.getHostName}")
+    srcVidBuilder.reserve(edgesNum)
+    dstVidBuilder.reserve(edgesNum)
+    edataBuilder.reserve(edgesNum)
+  }
+
+  def isLocalBuilt() = localVMBuilt
+
+  def isGlobalBuilt() = globalVMBuilt
 
   def getEdgePartition(pid: Int): GrapeEdgePartition[VD,ED] ={
     var localPartNum = ExecutorUtils.getPartitionNum
