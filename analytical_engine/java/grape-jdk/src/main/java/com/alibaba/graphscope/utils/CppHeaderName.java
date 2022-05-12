@@ -71,5 +71,11 @@ public class CppHeaderName {
 
     public static final String GS_MEMORY_MAPPED_BUFFER_H = "core/java/memory_mapped_buffer.h";
     public static final String CORE_JAVA_GRAPHX_EDGE_PARTITION_H = "core/java/graphx/edge_partition.h";
+    public static final String CORE_JAVA_GRAPHX_GRAPHX_CSR_H = "core/java/graphx/graphx_csr.h";
+    public static final String CORE_JAVA_GRAPHX_LOCAL_VERTEX_MAP_H = "core/java/graphx/local_vertex_map.h";
+    public static final String CORE_JAVA_GRAPHX_GRAPHX_VERTEX_MAP_H = "core/java/graphx/graphx_vertex_map.h";
     public static final String CORE_JAVA_GRAPHX_VERTEX_PARTITION_H = "core/java/graphx/vertex_partition.h";
+
+    public static final String VINEYARD_CLIENT_H = "vineyard/client/client.h";
+    public static final String VINEYARD_STATUS_H = "vineyard/common/util/status.h";
 }

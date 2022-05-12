@@ -1,6 +1,5 @@
 package com.alibaba.graphscope.runtime;
 
-import com.alibaba.graphscope.graphx.GrapeEdgePartition;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import org.slf4j.Logger;
@@ -21,35 +20,36 @@ public class NativeUtils {
 
     public static native long getArrowProjectedFragment(long fragId, String fragName);
 
-    public static native long nativeCreateEdgePartition(int edType);
+//    public static native long nativeCreateEdgePartition(int edType);
 
-    public static <OID, VID, ED> GrapeEdgePartition<OID, VID, ED> createEdgePartition(
-        Class<? extends OID> oidClass, Class<? extends VID> vidClass, Class<? extends ED> edClass)
-        throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        String foreignName = "gs::EdgePartition<int64_t,uint64_t," + clz2Str(edClass) + ">";
-        Class<? extends GrapeEdgePartition> clz = (Class<? extends GrapeEdgePartition>) FFITypeFactory.getType(
-            GrapeEdgePartition.class, foreignName);
-        logger.info("[NativeUtils:] got grapeEdgePartition clz" + clz.getName());
-        long addr = nativeCreateEdgePartition(clz2Int(edClass));
-        if (addr <= 0) {
-            throw new IllegalStateException("Fail to create edge partition");
-        }
-        logger.info("[NativeUtils:] create edge partition for {}, addr {}", foreignName, addr);
-        return createEdgePartition(clz, addr);
-    }
+//    public static <OID, VID, ED> GrapeEdgePartition<OID, VID, ED> createEdgePartition(
+//        Class<? extends OID> oidClass, Class<? extends VID> vidClass, Class<? extends ED> edClass)
+//        throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+//        String foreignName = "gs::EdgePartition<int64_t,uint64_t," + clz2Str(edClass) + ">";
+//        Class<? extends GrapeEdgePartition> clz = (Class<? extends GrapeEdgePartition>) FFITypeFactory.getType(
+//            GrapeEdgePartition.class, foreignName);
+//        logger.info("[NativeUtils:] got grapeEdgePartition clz" + clz.getName());
+//        long addr = nativeCreateEdgePartition(clz2Int(edClass));
+//        if (addr <= 0) {
+//            throw new IllegalStateException("Fail to create edge partition");
+//        }
+//        logger.info("[NativeUtils:] create edge partition for {}, addr {}", foreignName, addr);
+//        return createEdgePartition(clz, addr);
+//    }
 
-    private static GrapeEdgePartition createEdgePartition(Class<? extends GrapeEdgePartition> clz, long addr)
-        throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
-
-        Constructor[] constructors = clz.getConstructors();
-        for (Constructor constructor : constructors) {
-            if (constructor.getParameterCount() == 1
-                && constructor.getParameterTypes()[0].getName().equals("long")) {
-                return clz.cast(constructor.newInstance(addr));
-            }
-        }
-        throw new IllegalStateException("No suitable constructor found");
-    }
+//    private static GrapeEdgePartition createEdgePartition(Class<? extends GrapeEdgePartition> clz,
+//        long addr)
+//        throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+//
+//        Constructor[] constructors = clz.getConstructors();
+//        for (Constructor constructor : constructors) {
+//            if (constructor.getParameterCount() == 1
+//                && constructor.getParameterTypes()[0].getName().equals("long")) {
+//                return clz.cast(constructor.newInstance(addr));
+//            }
+//        }
+//        throw new IllegalStateException("No suitable constructor found");
+//    }
 
     private static String clz2Str(Class<?> clz) {
         if (clz.equals(Long.class) || clz.getName().equals("long")) {

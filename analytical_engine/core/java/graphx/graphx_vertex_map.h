@@ -275,7 +275,7 @@ class BasicGraphXVertexMapBuilder
         client.GetObject(localVertexMapID));
     LOG(INFO) << "Worer [" << comm_spec.worker_id() << " got partial vmap id "
               << localVertexMapID
-              << ", local vnum: " << partial_vmap->GetVerticesNum();
+              << ", local vnum: " << partial_vmap->GetInnerVerticesNum();
   }
 
   vineyard::Status Build(vineyard::Client& client) override {

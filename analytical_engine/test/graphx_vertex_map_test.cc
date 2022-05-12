@@ -34,12 +34,11 @@ vineyard::ObjectID getLocalVM(vineyard::Client& client,
     arrow::Int64Builder inner, outer;
     if (comm_spec.worker_id() == 0) {
       inner.Reserve(2);
-      outer.Reserve(1);
+      // outer.Reserve(1);
       inner.UnsafeAppend(1);
       inner.UnsafeAppend(2);
-      outer.UnsafeAppend(3);
-      gs::BasicLocalVertexMapBuilder<int64_t, uint64_t> builder(client, inner,
-                                                                outer);
+      // outer.UnsafeAppend(3);
+      gs::BasicLocalVertexMapBuilder<int64_t, uint64_t> builder(client, inner);
       auto vmap =
           std::dynamic_pointer_cast<gs::LocalVertexMap<int64_t, uint64_t>>(
               builder.Seal(client));
@@ -50,12 +49,11 @@ vineyard::ObjectID getLocalVM(vineyard::Client& client,
                 << "Persist local vmap id: " << vmap->id();
     } else {
       inner.Reserve(1);
-      outer.Reserve(2);
+      // outer.Reserve(2);
       inner.UnsafeAppend(3);
-      outer.UnsafeAppend(2);
-      outer.UnsafeAppend(1);
-      gs::BasicLocalVertexMapBuilder<int64_t, uint64_t> builder(client, inner,
-                                                                outer);
+      // outer.UnsafeAppend(2);
+      // outer.UnsafeAppend(1);
+      gs::BasicLocalVertexMapBuilder<int64_t, uint64_t> builder(client, inner);
       auto vmap =
           std::dynamic_pointer_cast<gs::LocalVertexMap<int64_t, uint64_t>>(
               builder.Seal(client));

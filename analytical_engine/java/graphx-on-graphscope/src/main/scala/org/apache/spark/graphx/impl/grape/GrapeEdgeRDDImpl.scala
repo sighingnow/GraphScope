@@ -1,14 +1,14 @@
 package org.apache.spark.graphx.impl.grape
 
-import org.apache.spark.graphx.impl.GrapeEdgePartitionWrapper
 import org.apache.spark.graphx._
+import org.apache.spark.graphx.impl.partition.GrapeEdgePartition
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{OneToOneDependency, Partition, Partitioner, TaskContext}
 
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 
-class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient override val grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartitionWrapper[VD, ED])],
+class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient override val grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartition[VD, ED])],
                                                                      val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   extends GrapeEdgeRDD[ED](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
@@ -17,7 +17,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
   override val partitioner: Option[Partitioner] = grapePartitionsRDD.partitioner
 
   override def compute(part: Partition, context: TaskContext): Iterator[Edge[ED]] = {
-    val p = firstParent[(PartitionID, GrapeEdgePartitionWrapper[VD, ED])].iterator(part, context)
+    val p = firstParent[(PartitionID, GrapeEdgePartition[VD, ED])].iterator(part, context)
     if (p.hasNext) {
       p.next()._2.iterator.map(_.copy())
     } else {
@@ -75,7 +75,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
   }
 
   override def isCheckpointed: Boolean = {
-    firstParent[(PartitionID, GrapeEdgePartitionWrapper[VD, ED])].isCheckpointed
+    firstParent[(PartitionID, GrapeEdgePartition[VD, ED])].isCheckpointed
   }
 
   override def getCheckpointFile: Option[String] = {
@@ -84,7 +84,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
 
   //FIXME: count active edges
   override def count(): Long = {
-    grapePartitionsRDD.map(_._2.TotalEdgeNum).fold(0)(_ + _)
+    grapePartitionsRDD.map(_._2.partEdgeNum).fold(0)(_ + _)
 //    throw new IllegalStateException("fix me")
   }
 
@@ -104,21 +104,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
 //  }
 
   override def innerJoin[ED2: ClassTag, ED3: ClassTag](other: EdgeRDD[ED2])(f: (VertexId, VertexId, ED, ED2) => ED3): GrapeEdgeRDD[ED3] = {
-    other match {
-      case other : GrapeEdgeRDDImpl[VD,ED2] if this.partitioner == other.partitioner => {
-        val ed2Tag = classTag[ED2]
-        val ed3Tag = classTag[ED3]
-        this.withPartitionsRDD[VD, ED3](
-          grapePartitionsRDD.zipPartitions(other.grapePartitionsRDD, true) {
-            (thisIter, otherIter) =>
-              val (pid, thisEPart) = thisIter.next()
-              val (_, otherEPart) = otherIter.next()
-              // Iterator((pid, thisEPart.innerJoin(otherEPart)(f)(ed2Tag, ed3Tag)))
-              val newPart = thisEPart.innerJoin[ED2, ED3](otherEPart)(f)
-              Iterator((pid, newPart))
-          })
-      }
-    }
+    null
   }
 
   override private[graphx] def withTargetStorageLevel(newTargetStorageLevel: StorageLevel) = {
@@ -126,7 +112,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
   }
 
   def mapEdgePartitions[VD2: ClassTag, ED2: ClassTag](
-           f: (PartitionID, GrapeEdgePartitionWrapper[VD, ED]) => GrapeEdgePartitionWrapper[VD2, ED2]): GrapeEdgeRDDImpl[VD2, ED2] = {
+           f: (PartitionID, GrapeEdgePartition[VD, ED]) => GrapeEdgePartition[VD2, ED2]): GrapeEdgeRDDImpl[VD2, ED2] = {
     this.withPartitionsRDD[VD2, ED2](grapePartitionsRDD.mapPartitions({ iter =>
       if (iter.hasNext) {
         val (pid, ep) = iter.next()
@@ -138,7 +124,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
   }
 
   def withPartitionsRDD[VD2: ClassTag, ED2: ClassTag](
-          partitionsRDD: RDD[(PartitionID, GrapeEdgePartitionWrapper[VD2, ED2])]): GrapeEdgeRDDImpl[VD2, ED2] = {
+          partitionsRDD: RDD[(PartitionID, GrapeEdgePartition[VD2, ED2])]): GrapeEdgeRDDImpl[VD2, ED2] = {
     new GrapeEdgeRDDImpl[VD2,ED2](partitionsRDD, this.targetStorageLevel)
   }
 }

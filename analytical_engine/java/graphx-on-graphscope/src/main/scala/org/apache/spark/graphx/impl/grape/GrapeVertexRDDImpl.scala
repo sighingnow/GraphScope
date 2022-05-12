@@ -1,10 +1,10 @@
 package org.apache.spark.graphx.impl.grape
 
-import org.apache.spark.graphx.impl.{EdgePartition, EdgeRDDImpl, GrapeEdgePartitionWrapper, GrapeVertexPartitionWrapper, ShippableVertexPartition}
 import org.apache.spark.graphx._
+import org.apache.spark.graphx.impl.{GrapeVertexPartitionWrapper, ShippableVertexPartition}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{HashPartitioner, OneToOneDependency, Partition, Partitioner, TaskContext}
+import org.apache.spark._
 
 import scala.reflect.ClassTag
 

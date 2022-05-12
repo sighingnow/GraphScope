@@ -1,12 +1,16 @@
 package org.apache.spark.graphx.impl.partition
 
-import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
-import com.alibaba.graphscope.stdcxx.StdVector
+import org.apache.spark.graphx.Edge
 import org.apache.spark.internal.Logging
+import org.apache.spark.util.collection.BitSet
 
 import scala.reflect.ClassTag
 
-class EdgeShuffle[ED : ClassTag](val fromPid : Int, val dstPid: Int, val srcs : Array[Long], val dsts : Array[Long], val attrs: Array[ED]) extends Serializable {
+class EdgeShuffle[ED : ClassTag](val fromPid : Int,
+                                 val dstPid: Int,
+                                 val oids : BitSet, // all oids belong to dstPid
+                                 val srcs : Array[Long],
+                                 val dsts : Array[Long], val attrs: Array[ED]) extends Serializable {
   require(srcs.length == dsts.length)
 
   def size() : Long = srcs.length
@@ -46,29 +50,33 @@ class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : I
     }
     res
   }
-  def feedToBuilder(srcOidBuilder : StdVector[Long], dstOidBuilder : StdVector[Long], edataBuilder : StdVector[ED]) : Unit = {
-      log.info(s"start adding edges of size ${totalSize()}")
-      var fromPid = 0
-      val curPid = selfPid
-      while (fromPid < numPartitions){
-        val edgeShuffle = fromPid2Shuffle(fromPid)
-        log.info(s"Partition ${curPid} receive num of shuffles ${edgeShuffle.size()} from ${edgeShuffle.fromPid} == ${fromPid}")
-        var i = 0
-        val limit = edgeShuffle.size()
-        val srcArray = edgeShuffle.srcs
-        val dstArray = edgeShuffle.dsts
-        val attrArray = edgeShuffle.attrs
-        while (i < limit){
-          val srcId = srcArray(i)
-          val dstId = dstArray(i)
-          val attr = attrArray(i)
-          srcOidBuilder.push_back(srcId)
-          dstOidBuilder.push_back(dstId)
-          edataBuilder.push_back(attr)
-          i += 1
-        }
-        fromPid += 1
+
+  def iterator() : Iterator[Edge[ED]] = {
+    new Iterator[Edge[ED]]{
+      var curPid = 0
+      var curInd = 0
+      var curShuffle :EdgeShuffle[ED] = fromPid2Shuffle(curPid)
+      val edge = new Edge[ED](0,0)
+      override def hasNext: Boolean = {
+          if (curInd >= curShuffle.size()){
+            while (curPid < numPartitions && curShuffle.size() <= 0){
+              log.info(s"shuffles from ${curPid} is empty")
+              curPid += 1
+            }
+            if (curPid >= numPartitions) return false
+            curShuffle = fromPid2Shuffle(curPid)
+            curInd = 0
+          }
+          true
       }
-      log.info(s"Partition ${curPid} finish process all edges.")
+
+      override def next(): Edge[ED] = {
+        edge.srcId = curShuffle.srcs(curInd)
+        edge.dstId = curShuffle.dsts(curInd)
+        edge.attr = curShuffle.attrs(curInd)
+        curInd += 1
+        edge
+      }
     }
+  }
 }

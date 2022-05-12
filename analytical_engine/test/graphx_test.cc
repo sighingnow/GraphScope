@@ -32,14 +32,13 @@ void TestLocalVertexMap(vineyard::Client& client) {
   {
     arrow::Int64Builder inner, outer;
     inner.Reserve(3);
-    outer.Reserve(2);
+    // outer.Reserve(2);
     inner.UnsafeAppend(1);
     inner.UnsafeAppend(2);
     inner.UnsafeAppend(3);
-    outer.UnsafeAppend(5);
-    outer.UnsafeAppend(6);
-    gs::BasicLocalVertexMapBuilder<int64_t, uint64_t> builder(client, inner,
-                                                              outer);
+    // outer.UnsafeAppend(5);
+    // outer.UnsafeAppend(6);
+    gs::BasicLocalVertexMapBuilder<int64_t, uint64_t> builder(client, inner);
     auto vmap =
         std::dynamic_pointer_cast<gs::LocalVertexMap<int64_t, uint64_t>>(
             builder.Seal(client));
@@ -52,7 +51,7 @@ void TestLocalVertexMap(vineyard::Client& client) {
       std::dynamic_pointer_cast<gs::LocalVertexMap<int64_t, uint64_t>>(
           client.GetObject(vmap_id));
   LOG(INFO) << "Got vmap " << vmap->id();
-  LOG(INFO) << "num vertices: " << vmap->GetVerticesNum();
+  LOG(INFO) << "num vertices: " << vmap->GetInnerVerticesNum();
 }
 
 void TestGraphXCSR(vineyard::Client& client) {
@@ -115,6 +114,7 @@ void generateData(std::shared_ptr<arrow::UInt64Array>& srcLids,
 }
 
 int main(int argc, char* argv[]) {
+  FLAGS_stderrthreshold = 0;
   google::InitGoogleLogging("graphx_test");
   google::InstallFailureSignalHandler();
   vineyard::Client client;
