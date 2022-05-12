@@ -82,7 +82,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
 
   ~GraphXCSR() {}
 
-  int64_t GetDegree(vid_t lid) { return getOffset(lid + 1) - getOffset(ind); }
+  int64_t GetDegree(vid_t lid) { return getOffset(lid + 1) - getOffset(lid); }
 
   bool IsEmpty(vid_t lid) { return getOffset(lid + 1) == getOffset(lid); }
 
@@ -127,7 +127,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
     CHECK_GT(local_vnum_, 0);
     LOG(INFO) << "In constructing graphx csr, local vnum: " << local_vnum_;
     edge_ptr_ =
-        const_cast<nbr*>(reinterpret_cast<const nbr_t*>(edges_->GetValue(0)));
+        const_cast<nbr_t*>(reinterpret_cast<const nbr_t*>(edges_->GetValue(0)));
 
     edges_num_ = getOffset(local_vnum_);
     LOG(INFO) << "total edges: " << edges_num_;
