@@ -26,6 +26,8 @@ limitations under the License.
 #include "gflags/gflags_declare.h"
 #include "glog/logging.h"
 
+#include "core/java/graphx/graphx_vertex_map.h"
+
 #include "grape/config.h"
 
 DEFINE_string(ipc_socket, "/tmp/vineyard.sock", "vineyard socket addr");
@@ -40,7 +42,31 @@ void Init() {
 }
 
 template <typename OID_T, typename VID_T>
-void Load(const std::string local_vm_ids, const vineyard::Client& client) {}
+void Load(const std::string local_vm_ids, const vineyard::Client& client) {
+  grape::CommSpec comm_spec;
+  comm_spec.Init(MPI_COMM_WORLD);
+
+  std::vector<std::string> splited;
+  boost::split(splited, local_vm_ids, boost::is_any_of(","));
+  CHECK_EQ(splited.size(), comm_spec.worker_num());
+
+  vineyard::ObjectID global_vm_id;
+  {
+    vineyard::ObjectID partial_map = splited[comm_spec.worker_id()];
+    LOG(INFO) << "Worker: [" << comm_spec.worker_id()
+              << "] local vm: " << partial_map;
+    gs::BasicGraphXVertexMapBuilder<int64_t, uint64_t> builder(
+        client, comm_spec, partial_map);
+    auto graphx_vm =
+        std::dynamic_pointer_cast<gs::GraphXVertexMap<int64_t, uint64_t>>(
+            builder.Seal(client));
+
+    VINEYARD_CHECK_OK(client.Persist(graphx_vm->id()));
+    global_vm_id = graphx_vm->id();
+    LOG(INFO) << "Persist csr id: " << graphx_vm->id();
+  }
+  LOG(INFO) << "GlobalVertexMapID:" << global_vm_id;
+}
 
 void Finalize() {
   grape::FinalizeMPIComm();

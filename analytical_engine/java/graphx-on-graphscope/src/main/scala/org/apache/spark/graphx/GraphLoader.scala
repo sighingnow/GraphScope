@@ -1,14 +1,13 @@
 package org.apache.spark.graphx
 
+import org.apache.spark.graphx.impl.GrapeGraphImpl
 import org.apache.spark.graphx.impl.partition.EdgeShuffle
-import org.apache.spark.{HashPartitioner, SparkContext}
-import org.apache.spark.graphx.impl.{EdgePartitionBuilder, GrapeGraphImpl, GraphImpl}
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.collection.{OpenHashSet, PrimitiveVector}
+import org.apache.spark.{HashPartitioner, SparkContext}
 
 import java.util.concurrent.TimeUnit
-import scala.reflect.ClassTag
 
 object GraphLoader extends Logging {
   def edgeListFile

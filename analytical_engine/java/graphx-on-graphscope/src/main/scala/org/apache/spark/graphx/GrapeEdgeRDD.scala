@@ -85,7 +85,7 @@ object GrapeEdgeRDD extends Logging{
 
     val localVMIDs = edgesShuffles.mapPartitions(iter => {
       Iterator(ExecutorUtils.getHost2LocalVMID())
-    }).collect().distinct
+    }).collect().distinct.sorted // sort the ids with respect to hostnames.
     log.info(s"[GrapeEdgeRDD]: got distinct local vm ids ${localVMIDs.mkString("Array(", ", ", ")")}")
 
     log.info("[GrapeEdgeRDD]: Start constructing global vm")

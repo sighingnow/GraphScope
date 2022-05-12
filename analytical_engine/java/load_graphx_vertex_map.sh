@@ -22,6 +22,6 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source ${SCRIPT_DIR}/prepare_mpi.sh
 
 cmd="GLOG_v=10 mpirun --mca btl_tcp_if_include bond0 -n ${NUM_WORKERS} --hostfile ${HOST_FILE} -x LD_PRELOAD -x GLOG_v \
---oid_type ${VD_TYPE} --vid_type ${ED_TYPE} --local_vm_ids ${LOCAL_VM_IDS} --ipc_socket ${IPC_SOCKET}"
+--oid_type ${OID_T} --vid_type ${VID_T} --local_vm_ids ${LOCAL_VM_IDS} --ipc_socket ${IPC_SOCKET}"
 echo "running cmd: "$cmd
 eval $cmd
