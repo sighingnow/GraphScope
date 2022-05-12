@@ -146,7 +146,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
 
  private:
   inline int64_t getOffset(vid_t lid) {
-    CHECK_LT(lid, local_vnum_);
+    CHECK_LE(lid, local_vnum_);
     return offsets_->Value(static_cast<int64_t>(lid));
   }
   vid_t local_vnum_;

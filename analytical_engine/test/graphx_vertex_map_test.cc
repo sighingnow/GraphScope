@@ -32,7 +32,7 @@ vineyard::ObjectID getLocalVM(vineyard::Client& client,
   vineyard::ObjectID vmap_id;
   {
     arrow::Int64Builder inner, outer;
-    if (comm_spec_.worker_id() == 0) {
+    if (comm_spec.worker_id() == 0) {
       inner.Reserve(2);
       outer.Reserve(1);
       inner.UnsafeAppend(1);
@@ -68,8 +68,9 @@ vineyard::ObjectID getLocalVM(vineyard::Client& client,
   }
   return vmap_id;
 }
-void TestGraphXVertexMap(vineyard::Client& client,
-                         const grape::CommSpec& comm_spec) {
+void TestGraphXVertexMap(vineyard::Client& client) {
+  grape::CommSpec comm_spec;
+  comm_spec.Init(MPI_COMM_WORLD);
   if (comm_spec.worker_num() != 2) {
     LOG(ERROR) << "Expect worker num == 2";
     return;
@@ -95,8 +96,8 @@ void TestGraphXVertexMap(vineyard::Client& client,
   LOG(INFO) << "worker " << comm_spec.worker_id() << " Got graphx vm "
             << vm->id();
   LOG(INFO) << "worker " << comm_spec.worker_id()
-            << " total vnum: " vm->GetTotalVertexSize();
-  vid_t gid;
+            << " total vnum: "<< vm->GetTotalVertexSize();
+  uint64_t gid;
   vm->GetGid(1, gid);
   LOG(INFO) << "worker " << comm_spec.worker_id() << "oid2 gid: 1: " << gid;
   vm->GetGid(2, gid);
@@ -104,18 +105,22 @@ void TestGraphXVertexMap(vineyard::Client& client,
   vm->GetGid(3, gid);
   LOG(INFO) << "worker " << comm_spec.worker_id() << "oid2 gid: 3: " << gid;
 }
+void Init(){
+  grape::InitMPIComm();
+  grape::CommSpec comm_spec;
+  comm_spec.Init(MPI_COMM_WORLD);
+}
 
 int main(int argc, char* argv[]) {
-  google::InitGoogleLogging("graphx_test");
+  FLAGS_stderrthreshold = 0;
+  google::InitGoogleLogging("graphx_vertex_map_test");
   google::InstallFailureSignalHandler();
   vineyard::Client client;
   VINEYARD_CHECK_OK(client.Connect("/tmp/vineyard.sock"));
   LOG(INFO) << "Connected to IPCServer: ";
-  grape::InitMPIComm();
-  grape::CommSpec comm_spec;
-  comm_spec.Init(MPI_COMM_WORLD);
+  Init();
 
-  TestGraphXVertexMap(client, comm_spec);
+  TestGraphXVertexMap(client);
   VLOG(1) << "Finish Querying.";
 
   google::ShutdownGoogleLogging();

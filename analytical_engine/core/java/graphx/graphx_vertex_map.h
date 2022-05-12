@@ -96,6 +96,7 @@ class GraphXVertexMap
     id_parser_.init(fnum_);
 
     lid2Oids_.resize(fnum_);
+    oid2Lids_.resize(fnum_);
     for (fid_t i = 0; i < fnum_; ++i) {
       vineyard_array_t array;
       array.Construct(meta.GetMemberMeta("lid2Oids_" + std::to_string(i)));
@@ -121,7 +122,7 @@ class GraphXVertexMap
     return size;
   }
 
-  size_t GetInnerVertexSize(fid_t fid) const { return l2o_[fid]->length(); }
+  size_t GetInnerVertexSize(fid_t fid) const { return oid2Lids_[fid]->length(); }
 
   bool GetOid(const VID_T& gid, OID_T& oid) const {
     fid_t fid = GetFidFromGid(gid);
@@ -269,7 +270,7 @@ class BasicGraphXVertexMapBuilder
       : GraphXVertexMapBuilder<oid_t, vid_t>(client, comm_spec.worker_num(),
                                              comm_spec.worker_id()),
         comm_spec_(comm_spec) {
-    comm_spec.Dup();
+    comm_spec_.Dup();
     partial_vmap = std::dynamic_pointer_cast<LocalVertexMap<oid_t, vid_t>>(
         client.GetObject(localVertexMapID));
     LOG(INFO) << "Worer [" << comm_spec.worker_id() << " got partial vmap id "
@@ -282,7 +283,7 @@ class BasicGraphXVertexMapBuilder
     auto start_ts = grape::GetCurrentTime();
 #endif
     std::vector<std::shared_ptr<oid_array_t>> collected_oids;
-    std::shared_ptr<oid_array_t> our_oids = partial_vmap->GetLid2Oid();
+    std::shared_ptr<oid_array_t> our_oids = partial_vmap->GetInnerLid2Oid();
 
     vineyard::FragmentAllGatherArray<oid_t>(comm_spec_, our_oids, collected_oids);
     CHECK_EQ(collected_oids.size(), comm_spec_.worker_num());
@@ -318,7 +319,7 @@ class BasicGraphXVertexMapBuilder
                   *std::dynamic_pointer_cast<vineyard::NumericArray<oid_t>>(
                       array_builder.Seal(client)));
 
-              this->SetOid2Gid(
+              this->SetOid2Lid(
                   cur_fid,
                   *std::dynamic_pointer_cast<vineyard::Hashmap<oid_t, vid_t>>(
                       builder.Seal(client)));
