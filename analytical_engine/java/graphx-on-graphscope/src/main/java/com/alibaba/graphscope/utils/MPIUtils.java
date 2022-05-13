@@ -114,7 +114,7 @@ public class MPIUtils {
         Process process = null;
         try {
             process = processBuilder.start();
-            BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getErrorStream()));
             String str;
             while ((str = stdInput.readLine()) != null) {
                 System.out.println(str);

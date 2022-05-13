@@ -1,6 +1,7 @@
 package com.alibaba.graphscope.graphx;
 
 import com.alibaba.fastffi.CXXHead;
+import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
@@ -17,7 +18,7 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @FFITypeAlias(CppClassName.GS_GRAPHX_GRAPHX_VERTEX_MAP_GETTER)
 public interface GraphXVertexMapGetter<OID_T,VID_T> extends FFIPointer {
     @FFINameAlias("Get")
-    StdSharedPtr<GraphXVertexMap<OID_T,VID_T>> get(@CXXReference VineyardClient client, long globalVMID);
+    @CXXValue StdSharedPtr<GraphXVertexMap<OID_T,VID_T>> get(@CXXReference VineyardClient client, long globalVMID);
 
     @FFIFactory
     interface Factory<OID_T,VID_T>{

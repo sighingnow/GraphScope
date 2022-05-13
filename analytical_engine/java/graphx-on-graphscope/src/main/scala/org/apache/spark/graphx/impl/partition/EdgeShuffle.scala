@@ -59,12 +59,18 @@ class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : I
       val edge = new Edge[ED](0,0)
       override def hasNext: Boolean = {
           if (curInd >= curShuffle.size()){
-            while (curPid < numPartitions && curShuffle.size() <= 0){
-              log.info(s"shuffles from ${curPid} is empty")
-              curPid += 1
+            curPid += 1
+	    var flag = true
+            while (curPid < numPartitions && flag){
+              curShuffle = fromPid2Shuffle(curPid)
+              if (curShuffle.size() > 0){
+  		 flag = false
+	      }
+	      else {
+                 curPid += 1
+	      }
             }
             if (curPid >= numPartitions) return false
-            curShuffle = fromPid2Shuffle(curPid)
             curInd = 0
           }
           true

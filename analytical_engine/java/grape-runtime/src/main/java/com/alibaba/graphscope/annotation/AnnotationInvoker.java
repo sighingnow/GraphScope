@@ -81,16 +81,25 @@ import com.alibaba.fastffi.FFIGenBatch;
                     include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_CSR_H)),
                 @CXXTemplate(
                     cxx = "gs::GraphXCSR<uint64_t,int32_t>",
-                    java = "com.alibaba.graphscope.graphx.GraphXCSR<java.lang.Long,java.lang.Integer>"),
+                    java = "com.alibaba.graphscope.graphx.GraphXCSR<java.lang.Long,java.lang.Integer>",
+                    include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_CSR_H)),
                 @CXXTemplate(
                     cxx = "gs::GraphXCSR<uint64_t,double>",
-                    java = "com.alibaba.graphscope.graphx.GraphXCSR<java.lang.Long,java.lang.Double>")
+                    java = "com.alibaba.graphscope.graphx.GraphXCSR<java.lang.Long,java.lang.Double>",
+                    include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_CSR_H))
             }
         ),
         @FFIGen(
             type = "com.alibaba.graphscope.graphx.BasicLocalVertexMapBuilder",
             templates = {
                 @CXXTemplate(cxx = {"int64_t", "uint64_t"}, java = {"Long", "Long"})
+            }),
+        @FFIGen(
+            type = "com.alibaba.graphscope.graphx.BasicGraphXCSRBuilder",
+            templates = {
+                @CXXTemplate(cxx = {"int64_t", "uint64_t", "int32_t"}, java = {"Long", "Long", "Integer"}),
+                @CXXTemplate(cxx = {"int64_t", "uint64_t", "int64_t"}, java = {"Long", "Long", "Long"}),
+                @CXXTemplate(cxx = {"int64_t", "uint64_t", "double"}, java = {"Long", "Long", "Double"})
             }),
         @FFIGen(
             type = "com.alibaba.graphscope.graphx.GraphXVertexMapGetter",

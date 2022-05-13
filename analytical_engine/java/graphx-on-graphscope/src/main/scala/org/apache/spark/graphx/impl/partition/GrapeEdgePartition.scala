@@ -88,7 +88,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
         val edge = iter.next()
         log.info(s"processing edge ${edge.srcId}->${edge.dstId}, ${edge.attr}")
         srcOidBuilder.unsafeAppend(edge.srcId)
-        srcOidBuilder.unsafeAppend(edge.dstId)
+        dstOidBuilder.unsafeAppend(edge.dstId)
         edataBuilder.unsafeAppend(edge.attr)
       }
     }
