@@ -75,6 +75,7 @@ object ExecutorUtils extends Logging{
         log.info(s"Setting global vmID ${globalVMID}")
         i = vmIds.size()
       }
+      i += 1
     }
     require(globalVMID != -1)
     log.info(s"[ExecutorUtils]: ${hostName} has global vm id ${this.globalVMID}")

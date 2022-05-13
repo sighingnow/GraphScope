@@ -19,6 +19,7 @@ limitations under the License.
 #include <string>
 #include <utility>
 
+#include <boost/asio.hpp>
 #include <boost/leaf/error.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -26,12 +27,11 @@ limitations under the License.
 #include "gflags/gflags_declare.h"
 #include "glog/logging.h"
 
-#include "grape/grape.h"
 #include "grape/config.h"
+#include "grape/grape.h"
 #include "vineyard/client/client.h"
 
 #include "core/java/graphx/graphx_vertex_map.h"
-
 
 DEFINE_string(ipc_socket, "/tmp/vineyard.sock", "vineyard socket addr");
 DEFINE_string(local_vm_ids, "", "local vm ids");
@@ -43,6 +43,8 @@ void Init() {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
 }
+
+std::string getHostName() { return boost::asio::ip::host_name(); }
 
 template <typename OID_T, typename VID_T>
 void Load(const std::string local_vm_ids, vineyard::Client& client) {
@@ -56,9 +58,9 @@ void Load(const std::string local_vm_ids, vineyard::Client& client) {
   vineyard::ObjectID global_vm_id;
   {
     auto raw = splited[comm_spec.worker_id()];
-    if (raw.find(":") != std::string::npos){
-        raw = raw.substr(raw.find(":") + 1, std::string::npos);
-        LOG(INFO) << ": found, trimed to "<< raw;
+    if (raw.find(":") != std::string::npos) {
+      raw = raw.substr(raw.find(":") + 1, std::string::npos);
+      LOG(INFO) << ": found, trimed to " << raw;
     }
     vineyard::ObjectID partial_map = std::stoull(raw);
     LOG(INFO) << "Worker: [" << comm_spec.worker_id()
@@ -73,7 +75,7 @@ void Load(const std::string local_vm_ids, vineyard::Client& client) {
     global_vm_id = graphx_vm->id();
     LOG(INFO) << "Persist csr id: " << graphx_vm->id();
   }
-  LOG(INFO) << "GlobalVertexMapID:" << global_vm_id;
+  LOG(INFO) << "GlobalVertexMapID:" << getHostName() << ":" << global_vm_id;
 }
 
 void Finalize() {
