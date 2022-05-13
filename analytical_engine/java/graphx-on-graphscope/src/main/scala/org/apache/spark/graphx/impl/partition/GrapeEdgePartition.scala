@@ -35,6 +35,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
   val dstOidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
   val edataBuilder : ArrowArrayBuilder[ED] = ScalaFFIFactory.newArrowArrayBuilder(GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]])
   val innerOidBuilder : ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
+  val outerOidBuilder : ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
   val lists : ArrayBuffer[EdgeShuffleReceived[ED]] = ArrayBuffer.empty[EdgeShuffleReceived[ED]]
   var localVMBuilt = false
   var globalVMBuilt = false
@@ -64,7 +65,28 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
     while (iter.hasNext){
       innerOidBuilder.unsafeAppend(iter.next());
     }
-    val localVertexMapBuilder = ScalaFFIFactory.newLocalVertexMapBuilder(ExecutorUtils.getVineyarClient, innerOidBuilder)
+    //Build outer oids
+    val outerHashSet = new OpenHashSet[Long]
+    for (shuffle <- lists){
+      log.info(s"Extract outer vertices from ${shuffle}")
+      val iter = shuffle.iterator()
+      while (iter.hasNext){
+        val edge = iter.next()
+        log.info(s"processing edge ${edge.srcId}->${edge.dstId}, ${edge.attr}")
+        if (!innerHashSet.contains(edge.srcId)){
+          outerHashSet.add(edge.srcId)
+        }
+        if (!innerHashSet.contains(edge.dstId)){
+          outerHashSet.add(edge.dstId)
+        }
+      }
+    }
+    outerOidBuilder.reserve(outerHashSet.size)
+    val outerIter = outerHashSet.iterator
+    while (outerIter.hasNext){
+      outerOidBuilder.unsafeAppend(outerIter.next())
+    }
+    val localVertexMapBuilder = ScalaFFIFactory.newLocalVertexMapBuilder(ExecutorUtils.getVineyarClient, innerOidBuilder, outerOidBuilder)
     val localVM = localVertexMapBuilder.seal(ExecutorUtils.getVineyarClient).get();
     log.info(s"${ExecutorUtils.getHostName}: Finish building local vm: ${localVM.id()}, ${localVM.getInnerVerticesNum}");
     localVMBuilt = true

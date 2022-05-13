@@ -2,7 +2,7 @@ package org.apache.spark.graphx.utils
 
 import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
-import com.alibaba.graphscope.graphx.{BasicGraphXCSRBuilder, BasicLocalVertexMapBuilder, GraphXVertexMapGetter, LocalVertexMap, VineyardClient}
+import com.alibaba.graphscope.graphx.{BasicGraphXCSRBuilder, BasicLocalVertexMapBuilder, GraphXVertexMapGetter, LocalVertexMap, VertexDataBuilder, VineyardClient}
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.internal.Logging
 
@@ -11,9 +11,10 @@ import scala.reflect.ClassTag
 
 object ScalaFFIFactory extends Logging{
   private val arrowArrayBuilderMap = new HashMap[String, ArrowArrayBuilder.Factory[_]]
-  def newLocalVertexMapBuilder(client : VineyardClient, innerOids : ArrowArrayBuilder[Long]): BasicLocalVertexMapBuilder[Long,Long] ={
+  def newLocalVertexMapBuilder(client : VineyardClient, innerOids : ArrowArrayBuilder[Long],
+                               outerOids : ArrowArrayBuilder[Long]): BasicLocalVertexMapBuilder[Long,Long] ={
      val localVertexMapBuilderFactory = FFITypeFactory.getFactory(classOf[BasicLocalVertexMapBuilder[Long,Long]], "gs::BasicLocalVertexMapBuilder<int64_t,uint64_t>").asInstanceOf[BasicLocalVertexMapBuilder.Factory[Long,Long]]
-    localVertexMapBuilderFactory.create(client, innerOids)
+    localVertexMapBuilderFactory.create(client, innerOids, outerOids)
   }
 
   def getArrowArrayBuilderFactory(foreignTypeName: String): ArrowArrayBuilder.Factory[_] = {
@@ -56,5 +57,11 @@ object ScalaFFIFactory extends Logging{
     val factory = FFITypeFactory.getFactory(classOf[BasicGraphXCSRBuilder[Long,Long,ED]],
       "gs::BasicGraphXCSRBuilder<int64_t,uint64_t," + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[ED]) +">").asInstanceOf[BasicGraphXCSRBuilder.Factory[Long,Long,ED]]
     factory.create(client, true)
+  }
+
+  def newVertexDataBuilder[VD: ClassTag]() : VertexDataBuilder[Long,VD] = {
+    val factory = FFITypeFactory.getFactory(classOf[VertexDataBuilder[Long,VD]],
+      "gs::VertexDataBuilder<uint64_t," + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[VD]) +">").asInstanceOf[VertexDataBuilder.Factory[Long,VD]]
+    factory.create()
   }
 }

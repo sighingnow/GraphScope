@@ -24,6 +24,7 @@ public interface BasicLocalVertexMapBuilder<OID_T,VID_T> extends FFIPointer {
 
     @FFIFactory
     interface Factory<OID_T,VID_T>{
-        BasicLocalVertexMapBuilder<OID_T,VID_T> create(@CXXReference VineyardClient client, @CXXReference ArrowArrayBuilder<OID_T> innerOids);
+        BasicLocalVertexMapBuilder<OID_T,VID_T> create(@CXXReference VineyardClient client,
+            @CXXReference ArrowArrayBuilder<OID_T> innerOids,@CXXReference ArrowArrayBuilder<OID_T> outerOids);
     }
 }
