@@ -48,8 +48,8 @@
 
 #include "core/error.h"
 #include "core/io/property_parser.h"
-#include "core/java/type_alias.h"
 #include "core/java/graphx/graphx_vertex_map.h"
+#include "core/java/type_alias.h"
 /**
  * @brief Defines the RDD of edges. when data is feed into this, we assume it is
  * already shuffle and partitioned.
@@ -143,12 +143,12 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
     }
     LOG(INFO) << "Finish construct GraphXCSR: ";
   }
-
- private:
   inline int64_t getOffset(vid_t lid) {
     CHECK_LE(lid, local_vnum_);
     return offsets_->Value(static_cast<int64_t>(lid));
   }
+
+ private:
   vid_t local_vnum_;
   int64_t edges_num_;
   nbr_t* edge_ptr_;
@@ -193,6 +193,11 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
     graphx_csr->edatas_ = edatas.GetArray();
     nBytes += edatas.nbytes();
     LOG(INFO) << "total bytes: " << nBytes;
+
+    graphx_csr->edge_ptr_ = const_cast<nbr_t*>(
+        reinterpret_cast<const nbr_t*>(graphx_csr->edges_->GetValue(0)));
+    graphx_csr->local_vnum_ = graphx_csr->offsets_->length();
+    graphx_csr->edges_num_ = graphx_csr->getOffset(graphx_csr->local_vnum_);
 
     graphx_csr->meta_.AddMember("edges", edges.meta());
     graphx_csr->meta_.AddMember("offsets", offsets.meta());
