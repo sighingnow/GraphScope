@@ -31,7 +31,6 @@
 
 #include "flat_hash_map/flat_hash_map.hpp"
 
-#include "grape/fragment/partitioner.h"
 #include "grape/grape.h"
 #include "grape/graph/adj_list.h"
 #include "grape/graph/immutable_csr.h"
@@ -374,7 +373,7 @@ class GraphXVertexMapGetter {
   GraphXVertexMapGetter() {}
   ~GraphXVertexMapGetter() {}
   std::shared_ptr<GraphXVertexMap<oid_t, vid_t>> Get(
-      vineyard::ObjectID globalVMID, vineyard::Client& client) {
+       vineyard::Client& client, vineyard::ObjectID globalVMID) {
     auto globalVM = std::dynamic_pointer_cast<GraphXVertexMap<oid_t, vid_t>>(
         client.GetObject(globalVMID));
     LOG(INFO) << "Got global vm: " << globalVMID

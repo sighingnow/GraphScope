@@ -246,7 +246,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
 
   void LoadEdges(oid_array_builder_t& srcOidsBuilder,
                  oid_array_builder_t& dstOidsBuilder,
-                 oid_array_builder_t& edatasBuilder,
+                 edata_array_builder_t& edatasBuilder,
                  GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map) {
     std::shared_ptr<oid_array_t> srcOids, dstOids;
     std::shared_ptr<edata_array_t> edatas;

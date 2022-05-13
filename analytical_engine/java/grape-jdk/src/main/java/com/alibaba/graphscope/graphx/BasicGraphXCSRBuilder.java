@@ -1,6 +1,7 @@
 package com.alibaba.graphscope.graphx;
 
 import com.alibaba.fastffi.CXXHead;
+import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
@@ -23,7 +24,7 @@ public interface BasicGraphXCSRBuilder<OID_T,VID_T,ED_T> extends FFIPointer {
         @CXXReference GraphXVertexMap<OID_T,VID_T> graphXVertexMap);
 
     @FFINameAlias("MySeal")
-    StdSharedPtr<GraphXCSR<VID_T,ED_T>> seal(@CXXReference VineyardClient client);
+    @CXXValue StdSharedPtr<GraphXCSR<VID_T,ED_T>> seal(@CXXReference VineyardClient client);
 
     @FFIFactory
     interface Factory<OID_T,VID_T,ED_T> {

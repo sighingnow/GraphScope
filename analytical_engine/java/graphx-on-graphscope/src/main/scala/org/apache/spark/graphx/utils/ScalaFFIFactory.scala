@@ -54,7 +54,7 @@ object ScalaFFIFactory extends Logging{
 
   def newGraphXCSRBuilder[ED: ClassTag](client : VineyardClient) : BasicGraphXCSRBuilder[Long,Long,ED] = {
     val factory = FFITypeFactory.getFactory(classOf[BasicGraphXCSRBuilder[Long,Long,ED]],
-      "gs::GraphXVertexMapGetter<int64_t,uint64_t," + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[ED]) +">").asInstanceOf[BasicGraphXCSRBuilder.Factory[Long,Long,ED]]
+      "gs::BasicGraphXCSRBuilder<int64_t,uint64_t," + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[ED]) +">").asInstanceOf[BasicGraphXCSRBuilder.Factory[Long,Long,ED]]
     factory.create(client, true)
   }
 }
