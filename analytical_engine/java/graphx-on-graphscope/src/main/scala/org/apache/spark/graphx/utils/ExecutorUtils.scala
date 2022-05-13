@@ -66,19 +66,32 @@ object ExecutorUtils extends Logging{
     log.info(s"[ExecutorUtils]: ${hostName} has local vm id ${this.globalVMID}")
   }
   def setGlobalVMIDs(vmIds : java.util.List[String]) : Unit = {
-    require(this.globalVMID == -1, s"vm already been set ${globalVMID}")
+    synchronized {
+      val res = filterHostGlobalVMIDs(vmIds)
+      if (this.globalVMID == -1L){
+        this.globalVMID = res
+        log.info(s"[ExecutorUtils]: ${hostName} set global vm id ${this.globalVMID}")
+      }
+      else {
+        require(this.globalVMID == res, "two different set for global vm id")
+        log.info(s"[ExecutorUtils]: ${hostName} already set global vm id to ${this.globalVMID}, this set is same with previous")
+      }
+      require(globalVMID != -1)
+    }
+  }
+
+  def filterHostGlobalVMIDs(vmIds : java.util.List[String]) : Long = {
     var i = 0
     while (i < vmIds.size()){
       val v = vmIds.get(i)
       if (v.contains(hostName)){
         globalVMID = v.substring(v.indexOf(hostName) + hostName.size + 1).toLong
-        log.info(s"Setting global vmID ${globalVMID}")
-        i = vmIds.size()
+        log.info(s"parsed global vmID ${globalVMID}")
+        return globalVMID
       }
       i += 1
     }
-    require(globalVMID != -1)
-    log.info(s"[ExecutorUtils]: ${hostName} has global vm id ${this.globalVMID}")
+    throw new IllegalStateException(s"No global vm id parsed out from ${vmIds}")
   }
 
   def setGlobalVM(vm : GraphXVertexMap[Long,Long]) : Unit = {
