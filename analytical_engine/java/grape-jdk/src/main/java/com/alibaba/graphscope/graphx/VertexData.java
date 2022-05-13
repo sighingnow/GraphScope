@@ -1,6 +1,7 @@
 package com.alibaba.graphscope.graphx;
 
 import com.alibaba.fastffi.CXXHead;
+import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFIPointer;
@@ -24,5 +25,5 @@ public interface VertexData<VID, VD> extends FFIPointer {
     VD getData(VID lid);
 
     @FFINameAlias("GetVdataArray")
-    MutableTypedArray<VD> getVdataArray();
+    @CXXReference MutableTypedArray<VD> getVdataArray();
 }
