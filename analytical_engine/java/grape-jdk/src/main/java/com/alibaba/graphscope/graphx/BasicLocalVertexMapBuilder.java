@@ -1,6 +1,7 @@
 package com.alibaba.graphscope.graphx;
 
 import com.alibaba.fastffi.CXXHead;
+import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
@@ -18,8 +19,8 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @FFITypeAlias(CppClassName.GS_GRAPHX_LOCAL_VERTEX_MAP_BUILDER)
 public interface BasicLocalVertexMapBuilder<OID_T,VID_T> extends FFIPointer {
 
-    @FFINameAlias("Seal")
-    StdSharedPtr<LocalVertexMap<OID_T,VID_T>> seal(@CXXReference VineyardClient client);
+    @FFINameAlias("MySeal")
+    @CXXValue StdSharedPtr<LocalVertexMap<OID_T,VID_T>> seal(@CXXReference VineyardClient client);
 
     @FFIFactory
     interface Factory<OID_T,VID_T>{

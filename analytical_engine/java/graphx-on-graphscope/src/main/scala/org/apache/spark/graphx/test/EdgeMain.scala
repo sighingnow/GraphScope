@@ -14,6 +14,7 @@ object EdgeMain extends Logging{
     oids.add(1)
     oids.add(3)
     oids.add(5)
+    log.info(s"oids size: ${oids.size}")
     val srcs = Array(1L, 1L, 3L)
     val dsts = Array(3L, 5L, 5L)
     val attrs = Array(1, 2 ,3)

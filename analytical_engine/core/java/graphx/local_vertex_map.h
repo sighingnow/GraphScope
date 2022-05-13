@@ -83,6 +83,7 @@ class LocalVertexMap
     this->meta_ = meta;
     this->id_ = meta.GetId();
     this->ivnum_ = meta.GetKeyValue<fid_t>("ivnum");
+    LOG(INFO) << "ivnum: " << ivnum_;
 //    this->ovnum_ = meta.GetKeyValue<fid_t>("ovnum");
     inner_oid2Lid_.Construct(meta.GetMemberMeta("inner_oid2Lid"));
     // outer_oid2Lid_.Construct(meta.GetMemberMeta("outer_oid2Lid"));
@@ -282,6 +283,9 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
               << " seconds";
 #endif
     return vineyard::Status::OK();
+  }
+  std::shared_ptr<LocalVertexMap<oid_t,vid_t>> MySeal(vineyard::Client& client){
+      return std::dynamic_pointer_cast<LocalVertexMap<oid_t,vid_t>>(this->Seal(client));
   }
 
  private:

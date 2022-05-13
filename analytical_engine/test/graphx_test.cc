@@ -72,7 +72,7 @@ gs::GraphXVertexMap<int64_t, uint64_t> TestGraphXVertexMap(
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
   if (comm_spec.worker_num() != 2) {
-    LOG(FATAl) << "Expect worker num == 2";
+    LOG(FATAL) << "Expect worker num == 2";
   }
   vineyard::ObjectID vm_id;
   {
@@ -107,7 +107,7 @@ gs::GraphXVertexMap<int64_t, uint64_t> TestGraphXVertexMap(
 }
 
 void TestGraphXCSR(vineyard::Client& client,
-                   GraphXVertexMap<int64_t, uint64_t, int64_t>& graphx_vm) {
+                   gs::GraphXVertexMap<int64_t, uint64_t>& graphx_vm) {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
   vineyard::ObjectID csr_id;
@@ -117,7 +117,7 @@ void TestGraphXCSR(vineyard::Client& client,
     generateData(srcBuilder, dstBuilder, edataBuilder, comm_spec);
 
     gs::BasicGraphXCSRBuilder<int64_t, uint64_t, int64_t> builder(client);
-    builder.LoadEdges(srcLids, dstLids, edatas, graphx_vm);
+    builder.LoadEdges(srcBuilder, dstBuilder, edataBuilder, graphx_vm);
     auto csr = std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t, int64_t>>(
         builder.Seal(client));
 
@@ -130,7 +130,7 @@ void TestGraphXCSR(vineyard::Client& client,
           client.GetObject(csr_id));
   LOG(INFO) << "Got csr " << csr->id();
   LOG(INFO) << "num edges: " << csr->GetTotalEdgesNum() << " vs "
-            << csr->GetPartialEdgesNum(0, 3);
+            << csr->GetPartialEdgesNum(0, graphx_vm.GetInnerVertexSize(comm_spec.fid()));
   LOG(INFO) << "lid 0 degreee: " << csr->GetDegree(0) << ", "
             << csr->GetPartialEdgesNum(0, 1);
 }
