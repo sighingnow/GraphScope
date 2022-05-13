@@ -58,9 +58,9 @@ class VertexData : public vineyard::Registered<VertexData<VID_T, VD_T>> {
     LOG(INFO) << "frag_vnums: " << frag_vnums_;
     vineyard::NumericArray<vdata_t> vineyard_array;
     vineyard_array.Construct(meta.GetMemberMeta("vdatas"));
-    vdatas_ = array.GetArray();
+    vdatas_ = vineyard_array.GetArray();
 
-    CHECK_EQ(vdatas_.size(), frag_vnums_);
+    CHECK_EQ(vdatas_->length(), frag_vnums_);
 
     vdatas_accessor_.Init(vdatas_);
     LOG(INFO) << "Finish construct vertex data, frag vnums: " << frag_vnums_;
@@ -125,11 +125,11 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
     vertex_data->vdatas_ = vineyard_array.GetArray();
     vertex_data->frag_vnums_ = frag_vnums_;
     vertex_data->vdatas_accessor_.Init(vertex_data->vdatas_);
-    vertex_data->meta_.AddKeyValue("frag_vnums", frag_vnums);
+    vertex_data->meta_.AddKeyValue("frag_vnums", frag_vnums_);
     vertex_data->meta_.AddMember("vdatas", vineyard_array.meta());
     nBytes += vineyard_array.nbytes();
-    LOG(INFO) << "total bytes: " << nbytes;
-    vertex_data->meta_.SetNBytes(nbytes);
+    LOG(INFO) << "total bytes: " << nBytes;
+    vertex_data->meta_.SetNBytes(nBytes);
     VINEYARD_CHECK_OK(
         client.CreateMetaData(vertex_data->meta_, vertex_data->id_));
     // mark the builder as sealed
@@ -143,8 +143,9 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
     typename vineyard::InternalType<vdata_t>::vineyard_builder_type
         vdata_builder(client, vdata_array);
     vineyard_array = *std::dynamic_pointer_cast<vineyard::NumericArray<vdata_t>>(
-            vdata_builder.Seal(client)));
+            vdata_builder.Seal(client));
     LOG(INFO) << "Finish building vertex data;";
+    return vineyard::Status::OK();
   }
 
  private:

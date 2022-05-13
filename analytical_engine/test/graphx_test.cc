@@ -138,19 +138,19 @@ void TestGraphXCSR(vineyard::Client& client,
             << csr->GetPartialEdgesNum(0, 1);
 }
 
-def TestGraphXVertexData(vineyard::Client& client) {
+void TestGraphXVertexData(vineyard::Client& client) {
   vineyard::ObjectID id;
   {
     gs::VertexDataBuilder<uint64_t, int64_t> builder;
     builder.Init(3, 2);
-    auto vd = bulider.MySeal(client);
+    auto vd = builder.MySeal(client);
     id = vd->id();
   }
 
   std::shared_ptr<gs::VertexData<uint64_t, int64_t>> vd =
       std::dynamic_pointer_cast<gs::VertexData<uint64_t, int64_t>>(
           client.GetObject(id));
-  LOG(INFO) << "vnum: " vd->VerticesNum();
+  LOG(INFO) << "vnum: "<< vd->VerticesNum();
   LOG(INFO) << "vdata : " << vd->GetData(0);
 }
 
