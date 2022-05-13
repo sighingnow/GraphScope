@@ -162,8 +162,10 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
 
 template <typename VID_T, typename ED_T>
 class GraphXCSRBuilder : public vineyard::ObjectBuilder {
+  using eid_t = vineyard::property_graph_types::EID_TYPE;
   using vid_t = VID_T;
   using edata_t = ED_T;
+  using nbr_t = vineyard::property_graph_utils::NbrUnit<vid_t, eid_t>;
 
  public:
   explicit GraphXCSRBuilder(vineyard::Client& client) : client_(client) {}
@@ -196,7 +198,7 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
 
     graphx_csr->edge_ptr_ = const_cast<nbr_t*>(
         reinterpret_cast<const nbr_t*>(graphx_csr->edges_->GetValue(0)));
-    graphx_csr->local_vnum_ = graphx_csr->offsets_->length();
+    graphx_csr->local_vnum_ = graphx_csr->offsets_->length() - 1;
     graphx_csr->edges_num_ = graphx_csr->getOffset(graphx_csr->local_vnum_);
 
     graphx_csr->meta_.AddMember("edges", edges.meta());
