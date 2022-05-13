@@ -30,13 +30,14 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int, val localNum
 }
 
 class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : VineyardClient) extends Logging{
-  val srcVidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newUnsignedLongArrayBuilder()
-  val dstVidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newUnsignedLongArrayBuilder()
+  val srcOidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
+  val dstOidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
   val edataBuilder : ArrowArrayBuilder[ED] = ScalaFFIFactory.newArrowArrayBuilder(GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]])
   val innerOidBuilder : ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
   val lists : ArrayBuffer[EdgeShuffleReceived[ED]] = ArrayBuffer.empty[EdgeShuffleReceived[ED]]
   var localVMBuilt = false
   var globalVMBuilt = false
+  var csrBuilt = false
   //Concurrency control should be done by upper level
   def addEdges(edges : EdgeShuffleReceived[ED]) : Unit = {
     lists.+=(edges)
@@ -72,14 +73,34 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
   def buildCSR(): Unit = {
     val edgesNum = lists.map(shuffle => shuffle.totalSize()).sum
     log.info(s"Got totally ${lists.length}, edges ${edgesNum} in ${ExecutorUtils.getHostName}")
-    srcVidBuilder.reserve(edgesNum)
-    dstVidBuilder.reserve(edgesNum)
+    srcOidBuilder.reserve(edgesNum)
+    dstOidBuilder.reserve(edgesNum)
     edataBuilder.reserve(edgesNum)
+    val globalVMID = ExecutorUtils.getGlobalVMID
+    log.info(s"Constructing csr with global vm ${globalVMID}")
+    val graphxVertexMapGetter = ScalaFFIFactory.newVertexMapGetter()
+    val graphxVertexMap = graphxVertexMapGetter.get(ExecutorUtils.getVineyarClient, globalVMID).get()
+    log.info(s"Got graphx vertex map: ${graphxVertexMap}, total vnum ${graphxVertexMap.getTotalVertexSize}, fid ${graphxVertexMap.fid()}/${graphxVertexMap.fnum()}")
+    for (shuffle <- lists){
+      log.info(s"Processing ${shuffle}")
+      val iter = shuffle.iterator()
+      while (iter.hasNext){
+        val edge = iter.next()
+        log.info(s"processing edge ${edge.srcId}->${edge.dstId}, ${edge.attr}")
+        srcOidBuilder.unsafeAppend(edge.srcId)
+        srcOidBuilder.unsafeAppend(edge.dstId)
+        edataBuilder.unsafeAppend(edge.attr)
+      }
+    }
+    val graphxCSRBuilder = ScalaFFIFactory.newGraphXCSRBuilder()
+    csrBuilt = true
   }
 
   def isLocalBuilt() = localVMBuilt
 
   def isGlobalBuilt() = globalVMBuilt
+
+  def isCSRBuilt() = csrBuilt
 
   def getEdgePartition(pid: Int): GrapeEdgePartition[VD,ED] ={
     var localPartNum = ExecutorUtils.getPartitionNum

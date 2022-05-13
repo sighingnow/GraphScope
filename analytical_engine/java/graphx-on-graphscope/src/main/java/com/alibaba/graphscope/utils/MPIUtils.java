@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.apache.spark.graphx.impl.GrapeUtils;
+import org.apache.spark.graphx.utils.ExecutorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,7 +98,7 @@ public class MPIUtils {
         }
     }
 
-    public static <MSG,VD,ED> long constructGlobalVM(String localVMIDs, String ipcSocket, String oidType, String vidType){
+    public static <MSG,VD,ED> List<String> constructGlobalVM(String localVMIDs, String ipcSocket, String oidType, String vidType){
         check(oidType, vidType);
         logger.info("Try to construct global vm from: {}", localVMIDs);
         int numWorkers = Math.min(localVMIDs.split(",").length, getNumWorker());
@@ -105,7 +106,7 @@ public class MPIUtils {
         String[] commands = {"/bin/bash", LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT, String.valueOf(numWorkers),
             SPARK_CONF_WORKERS, localVMIDs, oidType, vidType, ipcSocket};
         logger.info("Running with commands: " + String.join(" ", commands));
-        long globalVMID = -1;
+        List<String> globalVMIDs = new ArrayList<>(numWorkers);
         long startTime = System.nanoTime();
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command(commands);
@@ -118,7 +119,7 @@ public class MPIUtils {
             while ((str = stdInput.readLine()) != null) {
                 System.out.println(str);
                 if (str.contains(pattern)){
-                    globalVMID = Long.parseLong(str.substring(str.indexOf(pattern) + pattern.length()).trim());
+                    globalVMIDs.add((str.substring(str.indexOf(pattern) + pattern.length()).trim()));
                 }
                 //FIXME: get vm id from output.
             }
@@ -134,7 +135,7 @@ public class MPIUtils {
         }
         long endTime = System.nanoTime();
         logger.info("Total time spend on Loading global vertex Map : {}ms", (endTime - startTime) / 1000000);
-        return globalVMID;
+        return globalVMIDs;
     }
 
     public static <OID, VID, GS_VD, GS_ED, GX_VD, GX_ED> String graph2Fragment(

@@ -89,8 +89,16 @@ object GrapeEdgeRDD extends Logging{
     log.info(s"[GrapeEdgeRDD]: got distinct local vm ids ${localVMIDs.mkString("Array(", ", ", ")")}")
 
     log.info("[GrapeEdgeRDD]: Start constructing global vm")
-    MPIUtils.constructGlobalVM(localVMIDs.mkString(","), ExecutorUtils.endPoint, "int64_t", "uint64_t")
-    log.info("[GrapeEdgeRDD]: Finish constructing global vm")
+    val globalVMIDs = MPIUtils.constructGlobalVM(localVMIDs.mkString(","), ExecutorUtils.endPoint, "int64_t", "uint64_t")
+    log.info(s"[GrapeEdgeRDD]: Finish constructing global vm ${globalVMIDs}")
+    edgesShuffles.foreachPartition(iter => {
+      ExecutorUtils.setGlobalVMIDs(globalVMIDs)
+    })
+
+    edgesShuffles.foreachPartition(iter => {
+      val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
+      registry.buildCSR()
+    })
 
     val grapeEdgePartitions = edgesShuffles.mapPartitions(iter => {
       val (pid, part) = iter.next()
