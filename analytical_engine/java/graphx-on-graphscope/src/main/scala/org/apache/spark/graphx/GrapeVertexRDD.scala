@@ -7,6 +7,7 @@ import org.apache.spark.graphx.util.collection.GraphXPrimitiveKeyOpenHashMap
 import org.apache.spark.graphx.utils.GrapeVertexPartitionRegistry
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.collection.{OpenHashSet, PrimitiveVector}
 import org.apache.spark.{Dependency, HashPartitioner, SparkContext}
 
@@ -57,7 +58,7 @@ object GrapeVertexRDD extends Logging{
     new GrapeVertexRDDImpl[VD](vertexPartition)
   }
 
-  def fromEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD) : GrapeVertexRDDImpl[VD] = {
+  def fromEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD, storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
     log.info(s"Driver: Creating vertex rdd from edgeRDD of numPartition ${numPartitions}, default val ${defaultVal}")
     edgeRDD.grapePartitionsRDD.foreachPartition(
       iter => {
@@ -65,9 +66,21 @@ object GrapeVertexRDD extends Logging{
         registry.checkPrerequisite(iter.next()._1)
       }
     )
-    edgeRDD.grapePartitionsRDD.foreachPartition(
+    log.info("[GrapeVertexRDD]: Prerequisite satisfied")
+    edgeRDD.grapePartitionsRDD.foreachPartition(iter => {
       val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
-
-    )
+      registry.init(iter.next()._1, defaultVal)
+    })
+    edgeRDD.grapePartitionsRDD.foreachPartition(iter => {
+      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
+      registry.build(iter.next()._1)
+    })
+    log.info("[GrapeVertexRDD]: Finish building vertex data")
+    val vertexPartitionRDD = edgeRDD.grapePartitionsRDD.mapPartitions(iter => {
+      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
+      val pid = iter.next()._1
+      Iterator((pid, registry.getVertexPartition(pid)))
+    })
+    new GrapeVertexRDDImpl[VD](vertexPartitionRDD,storageLevel)
   }
 }

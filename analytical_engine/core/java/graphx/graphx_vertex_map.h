@@ -68,7 +68,6 @@ class GraphXVertexMap
   using vid_array_builder_t =
       typename vineyard::ConvertToArrowType<vid_t>::BuilderType;
 
-
  public:
   GraphXVertexMap() {}
   ~GraphXVertexMap() {}
@@ -132,6 +131,10 @@ class GraphXVertexMap
   size_t GetInnerVertexSize(fid_t fid) const { return oid2Lids_[fid].size(); }
 
   size_t GetOuterVertexSize() const { return outer_lid2Oids_->length(); }
+
+  size_t GetVertexSize() const {
+    return GetInnerVertexSize(fid_) + GetOuterVertexSize();
+  }
 
   bool GetOid(const VID_T& gid, OID_T& oid) const {
     fid_t fid = GetFidFromGid(gid);
@@ -328,6 +331,7 @@ class BasicGraphXVertexMapBuilder
   using oid_array_t = typename vineyard::ConvertToArrowType<oid_t>::ArrayType;
   using oid_array_builder_t =
       typename vineyard::ConvertToArrowType<oid_t>::BuilderType;
+
  public:
   BasicGraphXVertexMapBuilder(vineyard::Client& client,
                               grape::CommSpec& comm_spec,
@@ -348,7 +352,8 @@ class BasicGraphXVertexMapBuilder
     auto start_ts = grape::GetCurrentTime();
 #endif
     std::vector<std::shared_ptr<oid_array_t>> collected_oids;
-    std::shared_ptr<oid_array_t> our_oids = partial_vmap->GetInnerLid2Oid().GetArray();
+    std::shared_ptr<oid_array_t> our_oids =
+        partial_vmap->GetInnerLid2Oid().GetArray();
 
     vineyard::FragmentAllGatherArray<oid_t>(comm_spec_, our_oids,
                                             collected_oids);

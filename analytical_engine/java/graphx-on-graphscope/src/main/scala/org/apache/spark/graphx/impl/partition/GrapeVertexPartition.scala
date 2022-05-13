@@ -2,14 +2,15 @@ package org.apache.spark.graphx.impl.partition
 
 import com.alibaba.graphscope.graphx.{GraphXVertexMap, VertexData, VertexDataBuilder}
 import org.apache.spark.graphx.VertexId
-import org.apache.spark.graphx.utils.ScalaFFIFactory
+import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 
 import scala.reflect.ClassTag
 
 class GrapeVertexPartition[VD : ClassTag](val pid : Int, val startLid : Long, val endLid : Long,
-                                          val vm : GraphXVertexMap[Long,Long]){
+                                          val vm : GraphXVertexMap[Long,Long],
+                                          val vertexData: VertexData[Long,VD]){
   def partVnum : Long = endLid - startLid
   def iterator : Iterator[(VertexId,VD)] = {
     null
@@ -214,7 +215,9 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int, val startLid : Long, va
 
 class GrapeVertexPartitionBuilder[VD: ClassTag] extends Logging{
   private val vertexDataBuilder : VertexDataBuilder[Long,VD] = ScalaFFIFactory.newVertexDataBuilder[VD]()
+  private var vertexData : VertexData[Long,VD] = null.asInstanceOf[VertexData[Long,VD]]
   private var initialized = false;
+  private var built = false
   /** Concurrency constrol should be done in registry level */
   def init(fragVnums : Long, value : VD): Unit ={
     vertexDataBuilder.init(fragVnums,value)
@@ -222,5 +225,32 @@ class GrapeVertexPartitionBuilder[VD: ClassTag] extends Logging{
     initialized = true
   }
 
+  def build(pid : Int) : Unit = {
+    vertexData = vertexDataBuilder.seal(ExecutorUtils.getVineyarClient).get()
+    log.info(s"Partition ${pid} built vertex data ${vertexData}")
+    built = true
+  }
+
+  def getResult : VertexData[Long,VD] = {
+    require(vertexData != null)
+    vertexData
+  }
+
+  def getVertexPartition(pid : Int) : GrapeVertexPartition[VD] = {
+    val localPartNum = ExecutorUtils.getPartitionNum
+    val grapePartId = ExecutorUtils.graphXPid2GrapePid(pid)
+    log.info(s"got partition ${pid}'s corresponding grape partition ${grapePartId}")
+    val vertexMap = ExecutorUtils.getGlobalVM
+    require(vertexMap.getVertexSize == vertexData.verticesNum(), s"csr inner vertex should equal to vmap ${vertexMap.innerVertexSize()}, ${vertexData.verticesNum()}")
+    val ivnum = vertexMap.innerVertexSize()
+    val chunkSize = (ivnum + localPartNum - 1) / localPartNum
+    val begin = chunkSize * grapePartId
+    val end = Math.min(begin + chunkSize, ivnum)
+    log.info(s"Part ${pid}, grape Pid ${grapePartId} got range (${begin}, ${end})")
+    new GrapeVertexPartition[VD](pid, begin, end, vertexMap,vertexData)
+  }
+
   def isInitialized :Boolean = initialized
+
+  def isBuilt : Boolean = built
 }
