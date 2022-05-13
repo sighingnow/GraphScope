@@ -26,14 +26,17 @@ limitations under the License.
 #include "gflags/gflags_declare.h"
 #include "glog/logging.h"
 
+#include "grape/grape.h"
+#include "grape/config.h"
+#include "vineyard/client/client.h"
+
 #include "core/java/graphx/graphx_vertex_map.h"
 
-#include "grape/config.h"
 
 DEFINE_string(ipc_socket, "/tmp/vineyard.sock", "vineyard socket addr");
 DEFINE_string(local_vm_ids, "", "local vm ids");
-DEFINE_string(oid_type, "int64_t");
-DEFINE_string(vid_type."uint64_t");
+DEFINE_string(oid_type, "int64_t", "oid type");
+DEFINE_string(vid_type, "uint64_t", "vid type");
 
 void Init() {
   grape::InitMPIComm();
@@ -42,7 +45,7 @@ void Init() {
 }
 
 template <typename OID_T, typename VID_T>
-void Load(const std::string local_vm_ids, const vineyard::Client& client) {
+void Load(const std::string local_vm_ids, vineyard::Client& client) {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
 
@@ -52,7 +55,12 @@ void Load(const std::string local_vm_ids, const vineyard::Client& client) {
 
   vineyard::ObjectID global_vm_id;
   {
-    vineyard::ObjectID partial_map = splited[comm_spec.worker_id()];
+    auto raw = splited[comm_spec.worker_id()];
+    if (raw.find(":") != std::string::npos){
+        raw = raw.substr(raw.find(":") + 1, std::string::npos);
+        LOG(INFO) << ": found, trimed to "<< raw;
+    }
+    vineyard::ObjectID partial_map = std::stoull(raw);
     LOG(INFO) << "Worker: [" << comm_spec.worker_id()
               << "] local vm: " << partial_map;
     gs::BasicGraphXVertexMapBuilder<int64_t, uint64_t> builder(
@@ -93,7 +101,7 @@ int main(int argc, char* argv[]) {
   client.Connect(FLAGS_ipc_socket);
   LOG(INFO) << "Connected to " << FLAGS_ipc_socket;
 
-  if (FLAGS_oid_type == "int64_t" & 7 FLAGS_vid_type == "uint64_t") {
+  if (FLAGS_oid_type == "int64_t" && FLAGS_vid_type == "uint64_t") {
     Load<int64_t, uint64_t>(FLAGS_local_vm_ids, client);
   } else {
     LOG(ERROR) << "Unrecognized " << FLAGS_vid_type << ", " << FLAGS_oid_type;

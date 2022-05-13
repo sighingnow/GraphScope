@@ -311,7 +311,7 @@ if (BUILD_TESTS)
         add_executable(graphx_vertex_map_loader test/graphx_vertex_map_loader.cc)
         target_include_directories(graphx_vertex_map_loader PRIVATE core utils apps)
         target_compile_definitions(graphx_vertex_map_loader PUBLIC ENABLE_JAVA_SDK)
-        target_link_libraries(graphx_vertex_map_loader ${CMAKE_DL_LIBS} ${VINEYARD_LIBRARIES} ${Boost_LIBRARIES} ${GLOG_LIBRARIES} ${LIBRT})
+        target_link_libraries(graphx_vertex_map_loader ${CMAKE_DL_LIBS} ${VINEYARD_LIBRARIES} ${Boost_LIBRARIES} ${GLOG_LIBRARIES} ${LIBRT} ${GFLAGS_LIBRARIES})
 
         if (${LIBUNWIND_FOUND})
             # target_link_libraries(run_java_app ${LIBUNWIND_LIBRARIES})
