@@ -70,7 +70,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
     localVM.id()
   }
 
-  def buildCSR(): Unit = {
+  def buildCSR(): Long = {
     val edgesNum = lists.map(shuffle => shuffle.totalSize()).sum
     log.info(s"Got totally ${lists.length}, edges ${edgesNum} in ${ExecutorUtils.getHostName}")
     srcOidBuilder.reserve(edgesNum)
@@ -92,8 +92,14 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
         edataBuilder.unsafeAppend(edge.attr)
       }
     }
-    val graphxCSRBuilder = ScalaFFIFactory.newGraphXCSRBuilder()
+    log.info("Finish adding edges to builders")
+    val graphxCSRBuilder = ScalaFFIFactory.newGraphXCSRBuilder[ED](ExecutorUtils.getVineyarClient)
+    graphxCSRBuilder.loadEdges(srcOidBuilder,dstOidBuilder,edataBuilder,graphxVertexMap)
+    val graphxCSR = graphxCSRBuilder.seal(ExecutorUtils.getVineyarClient).get()
+    ExecutorUtils.setGraphXCSR(graphxCSR)
+    ExecutorUtils.setGlobalVM(graphxVertexMap)
     csrBuilt = true
+    graphxCSR.id()
   }
 
   def isLocalBuilt() = localVMBuilt

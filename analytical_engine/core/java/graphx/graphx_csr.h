@@ -287,6 +287,43 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     sort();
     LOG(INFO) << "Finish loading edges";
   }
+  vineyard::Status Build(vineyard::Client& client) override {
+    {
+      std::shared_ptr<arrow::FixedSizeBinaryArray> edges;
+      edge_builder_.Finish(&edges);
+
+      vineyard::FixedSizeBinaryArrayBuilder edge_builder_v6d(client, edges);
+      auto res = std::dynamic_pointer_cast<vineyard::FixedSizeBinaryArray>(
+          edge_builder_v6d.Seal(client));
+      this->SetEdges(*res);
+      LOG(INFO) << "Finish set edges";
+    }
+
+    CHECK_EQ(offset_array_->length(), vnum_ + 1);
+    {
+      vineyard_offset_array_builder_t offset_array_builder(client,
+                                                           offset_array_);
+      this->SetOffsetArray(
+          *std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
+              offset_array_builder.Seal(client)));
+      LOG(INFO) << "FINISh set offset array";
+    }
+
+    {
+      vineyard_edata_array_builder_t edata_array_builder(client, edata_array_);
+      this->SetEdataArray(
+          *std::dynamic_pointer_cast<vineyard::NumericArray<edata_t>>(
+              edata_array_builder.Seal(client)));
+      LOG(INFO) << "FINISh set edata array";
+    }
+
+    return vineyard::Status::OK();
+  }
+
+  std::shared_ptr<GraphXCSR<vid_t, edata_t>> MySeal(vineyard::Client& client) {
+    return std::dynamic_pointer_cast<GraphXCSR<vid_t, edata_t>>(
+        this->Seal(client));
+  }
 
  private:
   void inc_degree(vid_t i) { ++degree_[i]; }
@@ -346,39 +383,6 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       });
     }
     LOG(INFO) << "After sort";
-  }
-
-  vineyard::Status Build(vineyard::Client& client) override {
-    {
-      std::shared_ptr<arrow::FixedSizeBinaryArray> edges;
-      edge_builder_.Finish(&edges);
-
-      vineyard::FixedSizeBinaryArrayBuilder edge_builder_v6d(client, edges);
-      auto res = std::dynamic_pointer_cast<vineyard::FixedSizeBinaryArray>(
-          edge_builder_v6d.Seal(client));
-      this->SetEdges(*res);
-      LOG(INFO) << "Finish set edges";
-    }
-
-    CHECK_EQ(offset_array_->length(), vnum_ + 1);
-    {
-      vineyard_offset_array_builder_t offset_array_builder(client,
-                                                           offset_array_);
-      this->SetOffsetArray(
-          *std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
-              offset_array_builder.Seal(client)));
-      LOG(INFO) << "FINISh set offset array";
-    }
-
-    {
-      vineyard_edata_array_builder_t edata_array_builder(client, edata_array_);
-      this->SetEdataArray(
-          *std::dynamic_pointer_cast<vineyard::NumericArray<edata_t>>(
-              edata_array_builder.Seal(client)));
-      LOG(INFO) << "FINISh set edata array";
-    }
-
-    return vineyard::Status::OK();
   }
 
   vid_t vnum_;

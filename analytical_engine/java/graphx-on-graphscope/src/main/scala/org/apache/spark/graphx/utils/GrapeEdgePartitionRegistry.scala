@@ -37,8 +37,9 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
   def buildCSR(pid : Int) : Unit = {
     synchronized{
       if (!edgePartitionBuilder.isCSRBuilt()){
-        val localVMID = edgePartitionBuilder.buildCSR()
-        log.info(s"[GrapeEdgePartitionRegistry] Partition ${pid} built CSR")
+        val csrID = edgePartitionBuilder.buildCSR()
+        log.info(s"[GrapeEdgePartitionRegistry] Partition ${pid} built CSR ${csrID}")
+        ExecutorUtils.setCSRID(csrID)
       }
     }
   }

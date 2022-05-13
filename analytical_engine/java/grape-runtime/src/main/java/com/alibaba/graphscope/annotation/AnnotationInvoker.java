@@ -65,7 +65,17 @@ import com.alibaba.fastffi.FFIGenBatch;
                 @CXXTemplate(
                     cxx = "gs::GraphXVertexMap<int64_t,uint64_t>",
                     java = "com.alibaba.graphscope.graphx.GraphXVertexMap<java.lang.Long,java.lang.Long>",
-                    include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_VERTEX_MAP_H))
+                    include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_VERTEX_MAP_H)),
+                @CXXTemplate(
+                    cxx = "gs::GraphXCSR<uint64_t,int64_t>",
+                    java = "com.alibaba.graphscope.graphx.GraphXCSR<java.lang.Long,java.lang.Long>",
+                    include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_VERTEX_MAP_H)),
+                @CXXTemplate(
+                    cxx = "gs::GraphXCSR<uint64_t,int32_t>",
+                    java = "com.alibaba.graphscope.graphx.GraphXCSR<java.lang.Long,java.lang.Integer>"),
+                @CXXTemplate(
+                    cxx = "gs::GraphXCSR<uint64_t,double>",
+                    java = "com.alibaba.graphscope.graphx.GraphXCSR<java.lang.Long,java.lang.Double>")
             }
         ),
         @FFIGen(

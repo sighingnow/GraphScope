@@ -3,6 +3,7 @@ package org.apache.spark.graphx.utils
 import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.graphx.{BasicGraphXCSRBuilder, BasicLocalVertexMapBuilder, GraphXVertexMapGetter, LocalVertexMap, VineyardClient}
+import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.internal.Logging
 
 import java.util.HashMap
@@ -51,5 +52,9 @@ object ScalaFFIFactory extends Logging{
     factory.create()
   }
 
-  def newGraphXCSRBuilder() : BasicGraphXCSRBuilder[Long,Long]
+  def newGraphXCSRBuilder[ED: ClassTag](client : VineyardClient) : BasicGraphXCSRBuilder[Long,Long,ED] = {
+    val factory = FFITypeFactory.getFactory(classOf[BasicGraphXCSRBuilder[Long,Long,ED]],
+      "gs::GraphXVertexMapGetter<int64_t,uint64_t," + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[ED]) +">").asInstanceOf[BasicGraphXCSRBuilder.Factory[Long,Long,ED]]
+    factory.create(client, true)
+  }
 }

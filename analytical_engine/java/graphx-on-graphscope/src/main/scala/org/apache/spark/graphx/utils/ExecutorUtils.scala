@@ -1,6 +1,6 @@
 package org.apache.spark.graphx.utils
 
-import com.alibaba.graphscope.graphx.VineyardClient
+import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXVertexMap, VineyardClient}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.PrimitiveVector
 
@@ -23,7 +23,10 @@ object ExecutorUtils extends Logging{
   private val hostName: String = InetAddress.getLocalHost.getHostName
   private val hostIp: String = InetAddress.getLocalHost.getHostAddress
   private var localVMID : Long = -1L;
+  private var csrID : Long = -1L;
   private var globalVMID : Long = -1L;
+  private var graphXCSR : GraphXCSR[Long,_] = null.asInstanceOf[GraphXCSR[Long,_]]
+  private var graphXVertexMap : GraphXVertexMap[Long,Long] = null.asInstanceOf[GraphXVertexMap[Long,Long]]
 
   private val vineyardClient: VineyardClient = VineyardClientRegistry.connect(endPoint)
   log.info(s"[ExecutorUtils]: got vineyard client: ${vineyardClient}")
@@ -38,17 +41,32 @@ object ExecutorUtils extends Logging{
   }
 
   def setLocalVMID(vmId : Long) : Unit = {
-    require(localVMID == -1, s"vm already been set ${localVMID}")
+    require(this.localVMID == -1, s"vm already been set ${localVMID}")
     this.localVMID = vmId
     log.info(s"[ExecutorUtils]: ${hostName} has local vm id ${this.localVMID}")
   }
+  def setCSRID(csrId : Long) : Unit = {
+    require(this.csrID == -1, s"vm already been set ${localVMID}")
+    this.csrID = csrId
+    log.info(s"[ExecutorUtils]: ${hostName} set csr id ${this.csrID}")
+  }
+  def setGraphXCSR(csr : GraphXCSR[Long,_]) : Unit = {
+    require(this.graphXCSR == null)
+    this.graphXCSR = csr
+    log.info(s"[ExecutorUtils]: ${hostName} set csr to ${this.graphXCSR}")
+  }
+  def getGraphXCSR : GraphXCSR[Long,_] = {
+    require(graphXCSR != null)
+    graphXCSR
+  }
+
   def setGlobalVMID(vmId : Long) : Unit = {
-    require(globalVMID == -1, s"vm already been set ${globalVMID}")
+    require(this.globalVMID == -1, s"vm already been set ${globalVMID}")
     this.globalVMID = vmId
     log.info(s"[ExecutorUtils]: ${hostName} has local vm id ${this.globalVMID}")
   }
   def setGlobalVMIDs(vmIds : java.util.List[String]) : Unit = {
-    require(globalVMID == -1, s"vm already been set ${globalVMID}")
+    require(this.globalVMID == -1, s"vm already been set ${globalVMID}")
     var i = 0
     while (i < vmIds.size()){
       val v = vmIds.get(i)
@@ -59,7 +77,17 @@ object ExecutorUtils extends Logging{
       }
     }
     require(globalVMID != -1)
-    log.info(s"[ExecutorUtils]: ${hostName} has local vm id ${this.globalVMID}")
+    log.info(s"[ExecutorUtils]: ${hostName} has global vm id ${this.globalVMID}")
+  }
+
+  def setGlobalVM(vm : GraphXVertexMap[Long,Long]) : Unit = {
+    require(this.graphXVertexMap == null)
+    this.graphXVertexMap = vm
+    log.info(s"[ExecutorUtils]: ${hostName} set glbal vm to ${this.graphXVertexMap}")
+  }
+  def getGlobalVM : GraphXVertexMap[Long,Long] = {
+    require(graphXVertexMap != null)
+    graphXVertexMap
   }
 
   def getGlobalVMID : Long = {

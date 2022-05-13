@@ -1,5 +1,6 @@
 package org.apache.spark.graphx.test
 
+import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived}
 import org.apache.spark.graphx.utils.{ExecutorUtils, GrapeEdgePartitionRegistry}
 import org.apache.spark.internal.Logging
@@ -22,7 +23,12 @@ object EdgeMain extends Logging{
     edgeShuffleReceived.set(0, edgeShuffle)
     registry.addEdgesToBuilder(0, edgeShuffleReceived)
     registry.buildLocalVertexMap(0)
-    log.info(s"${ExecutorUtils.getHost2LocalVMID()}")
+    log.info(s"local vm: ${ExecutorUtils.getHost2LocalVMID()}")
+    val res = MPIUtils.constructGlobalVM(ExecutorUtils.getHost2LocalVMID(),ExecutorUtils.endPoint, "int64_t", "uint64_t")
+    ExecutorUtils.setGlobalVMIDs(res)
+    log.info(s"global vm: ${ExecutorUtils.getGlobalVMID}")
+    registry.buildCSR(0)
+    log.info(s"csr id ${ExecutorUtils.getGraphXCSR.id()}")
+    log.info(s"csr id ${ExecutorUtils.getGlobalVM.id()}");
   }
-
 }
