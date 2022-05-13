@@ -131,7 +131,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
 
     edges_num_ = getOffset(local_vnum_);
     LOG(INFO) << "total edges: " << edges_num_;
-    for (auto i = 0; i < local_vnum_; ++i) {
+    for (size_t i = 0; i < local_vnum_; ++i) {
       nbr_t* start = &edge_ptr_[getOffset(i)];
       nbr_t* end = &edge_ptr_[getOffset(i + 1)];
       while (start != end) {
@@ -388,7 +388,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
   }
 
   vid_t vnum_;
-  size_t edges_num_;
+  int64_t edges_num_;
   bool outEdges_;
 
   std::vector<int> degree_;

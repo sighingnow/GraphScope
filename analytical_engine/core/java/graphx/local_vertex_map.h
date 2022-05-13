@@ -86,7 +86,7 @@ class LocalVertexMap
 
     outer_lid2Oid_.Construct(meta.GetMemberMeta("outer_lid2Oid"));
 
-    CHECK_EQ(inner_oid2Lid_.size(), inner_lid2Oid_->size());
+    CHECK_EQ(inner_oid2Lid_.size(), inner_lid2Oid_.GetArray()->length());
     // CHECK_EQ(outer_oid2Lid_.size(), outer_lid2Oid_->length());
 
     // inner_oidArray_accessor.Init(inner_lid2Oid_);
@@ -165,15 +165,13 @@ class LocalVertexMapBuilder : public vineyard::ObjectBuilder {
     // vertex_map->outer_oid2Lid_ = outer_oid2Lid_;
 
     {
-      auto& inner_array = vertex_map->inner_lid2Oid_;
-      inner_array = inner_lid2Oid_.GetArray();
-      vertex_map->ivnum_ = inner_array->length();
-      vertex_map->meta_.AddKeyValue("ivnum", inner_array->length());
+      vertex_map->inner_lid2Oid_ = inner_lid2Oid_;
+      vertex_map->ivnum_ = inner_lid2Oid_.GetArray()->length();
+      vertex_map->meta_.AddKeyValue("ivnum", vertex_map->ivnum_);
 
-      auto& outer_array = vertex_map->outer_lid2Oid_;
-      outer_array = outer_lid2Oid_.GetArray();
-      vertex_map->ovnum_ = outer_array->length();
-      vertex_map->meta_.AddKeyValue("ovnum", outer_array->length());
+      vertex_map->outer_lid2Oid_ = outer_lid2Oid_;
+      vertex_map->ovnum_ = outer_lid2Oid_.GetArray()->length();
+      vertex_map->meta_.AddKeyValue("ovnum", vertex_map->ovnum_);
     }
     size_t nbytes = 0;
 

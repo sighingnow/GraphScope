@@ -65,6 +65,9 @@ class GraphXVertexMap
   using vid_array_t = typename vineyard::ConvertToArrowType<vid_t>::ArrayType;
   using vineyard_array_t =
       typename vineyard::InternalType<oid_t>::vineyard_array_type;
+  using vid_array_builder_t =
+      typename vineyard::ConvertToArrowType<vid_t>::BuilderType;
+
 
  public:
   GraphXVertexMap() {}
@@ -100,7 +103,7 @@ class GraphXVertexMap
       array.Construct(meta.GetMemberMeta("outerLid2Oids"));
       outer_lid2Oids_ = array.GetArray();
     }
-    initOuterGids();
+    InitOuterGids();
     // {
     //   vineyard_array_t array;
     //   array.Construct(meta.GetMemberMeta("outerLid2Gids"));
@@ -108,10 +111,10 @@ class GraphXVertexMap
     // }
 
     LOG(INFO) << "Finish constructing global vertex map";
-    for (auto i = 0; i < oid2Lids_.size(); ++i) {
+    for (size_t i = 0; i < oid2Lids_.size(); ++i) {
       LOG(INFO) << "oid2Lids_" << i << ", size " << oid2Lids_[i].size();
     }
-    for (auto i = 0; i < lid2Oids_.size(); ++i) {
+    for (size_t i = 0; i < lid2Oids_.size(); ++i) {
       LOG(INFO) << "lid2Oids_" << i << ", size " << lid2Oids_[i]->length();
     }
   }
@@ -185,7 +188,7 @@ class GraphXVertexMap
     return id_parser_.generate_global_id(fid, lid);
   }
 
-  void initOuterGids() {
+  void InitOuterGids() {
     vid_array_builder_t gid_builder;
 
     auto ovnum = outer_lid2Oids_->length();
@@ -272,7 +275,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     vertex_map->oid2Lids_ = oid2Lids_;
     vertex_map->outer_lid2Oids_ = outer_oid_array_.GetArray();
     // Initiate outer gids rather than sealing them
-    vertex_map->InitOutGids();
+    vertex_map->InitOuterGids();
     // vertex_map->outer_lid2Gids_ = outer_gid_array_.GetArray();
 
     vertex_map->meta_.SetTypeName(type_name<GraphXVertexMap<oid_t, vid_t>>());
@@ -325,9 +328,6 @@ class BasicGraphXVertexMapBuilder
   using oid_array_t = typename vineyard::ConvertToArrowType<oid_t>::ArrayType;
   using oid_array_builder_t =
       typename vineyard::ConvertToArrowType<oid_t>::BuilderType;
-  using vid_array_builder_t =
-      typename vineyard::ConvertToArrowType<vid_t>::BuilderType;
-
  public:
   BasicGraphXVertexMapBuilder(vineyard::Client& client,
                               grape::CommSpec& comm_spec,
@@ -348,7 +348,7 @@ class BasicGraphXVertexMapBuilder
     auto start_ts = grape::GetCurrentTime();
 #endif
     std::vector<std::shared_ptr<oid_array_t>> collected_oids;
-    std::shared_ptr<oid_array_t> our_oids = partial_vmap->GetInnerLid2Oid();
+    std::shared_ptr<oid_array_t> our_oids = partial_vmap->GetInnerLid2Oid().GetArray();
 
     vineyard::FragmentAllGatherArray<oid_t>(comm_spec_, our_oids,
                                             collected_oids);
@@ -359,7 +359,7 @@ class BasicGraphXVertexMapBuilder
                 << array->length() << "from worker: " << i;
     }
 
-    int curFid = comm_spec_.worker_id();
+    grape::fid_t curFid = comm_spec_.fid();
     int thread_num = comm_spec_.worker_num();
     std::vector<std::thread> threads(thread_num);
     for (int i = 0; i < thread_num; ++i) {
