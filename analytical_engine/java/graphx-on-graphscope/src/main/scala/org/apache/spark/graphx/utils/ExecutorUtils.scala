@@ -16,7 +16,7 @@ import scala.collection.mutable
  * - The host name of this executor.
  */
 object ExecutorUtils extends Logging{
-  val endPoint = "/tmp/vineyard.sock"
+  val endPoint = Constant.vineyardEndpoint
   private val partitionNum = new AtomicInteger(0)
   private val pid2Ind = new mutable.HashMap[Int,Int]
   private val pids = new PrimitiveVector[Int]
