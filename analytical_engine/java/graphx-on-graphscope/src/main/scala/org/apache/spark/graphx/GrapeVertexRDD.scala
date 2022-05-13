@@ -1,15 +1,13 @@
 package org.apache.spark.graphx
 
-import org.apache.spark.graphx.impl.{EdgePartition, GrapeVertexPartitionWrapper}
+
 import org.apache.spark.graphx.impl.grape.GrapeVertexRDDImpl
-import org.apache.spark.graphx.impl.partition.{GrapeVertexPartition, VertexShuffle}
-import org.apache.spark.graphx.util.collection.GraphXPrimitiveKeyOpenHashMap
+import org.apache.spark.graphx.impl.partition.GrapeVertexPartition
 import org.apache.spark.graphx.utils.GrapeVertexPartitionRegistry
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.util.collection.{OpenHashSet, PrimitiveVector}
-import org.apache.spark.{Dependency, HashPartitioner, SparkContext}
+import org.apache.spark.{Dependency, SparkContext}
 
 import scala.reflect.ClassTag
 

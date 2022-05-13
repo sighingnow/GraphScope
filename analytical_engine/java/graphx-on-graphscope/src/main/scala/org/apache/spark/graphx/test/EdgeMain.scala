@@ -2,7 +2,7 @@ package org.apache.spark.graphx.test
 
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived}
-import org.apache.spark.graphx.utils.{ExecutorUtils, GrapeEdgePartitionRegistry}
+import org.apache.spark.graphx.utils.{ExecutorUtils, GrapeEdgePartitionRegistry, GrapeVertexPartitionRegistry}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.{BitSet, OpenHashSet}
 
@@ -30,6 +30,13 @@ object EdgeMain extends Logging{
     log.info(s"global vm: ${ExecutorUtils.getGlobalVMID}")
     registry.buildCSR(0)
     log.info(s"csr id ${ExecutorUtils.getGraphXCSR.id()}")
-    log.info(s"csr id ${ExecutorUtils.getGlobalVM.id()}");
+    log.info(s"graphx vm id ${ExecutorUtils.getGlobalVM.id()}");
+
+    val vertexRegistry = GrapeVertexPartitionRegistry.getOrCreate[Int]
+    vertexRegistry.checkPrerequisite(0)
+    vertexRegistry.init(0, 1)
+    vertexRegistry.build(0)
+    val vertexPartition = vertexRegistry.getVertexPartition(0)
+    log.info(s"${vertexPartition}")
   }
 }
