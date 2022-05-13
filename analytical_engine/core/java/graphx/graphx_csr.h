@@ -49,7 +49,7 @@
 #include "core/error.h"
 #include "core/io/property_parser.h"
 #include "core/java/type_alias.h"
-
+#include "core/java/graphx/graphx_vertex_map.h"
 /**
  * @brief Defines the RDD of edges. when data is feed into this, we assume it is
  * already shuffle and partitioned.
@@ -236,6 +236,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
   using vid_array_t = typename vineyard::ConvertToArrowType<vid_t>::ArrayType;
   using oid_array_builder_t =
       typename vineyard::ConvertToArrowType<oid_t>::BuilderType;
+  using vid_array_builder_t =
+      typename vineyard::ConvertToArrowType<vid_t>::BuilderType;
   using oid_array_t = typename vineyard::ConvertToArrowType<oid_t>::ArrayType;
 
  public:
@@ -257,7 +259,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     CHECK_EQ(dstOids->length(), edatas->length());
     vnum_ = graphx_vertex_map.GetInnerVertexSize(graphx_vertex_map.fid());
     LOG(INFO) << "inner vnum : " << vnum_;
-    edges_num_ = srcLids->length();
+    edges_num_ = srcOids->length();
     std::shared_ptr<vid_array_t> srcLids, dstLids;
     auto curFid = graphx_vertex_map.fid();
     LOG(INFO) << "fid: " << curFid;
@@ -267,14 +269,14 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       dstLidBuilder.Reserve(edges_num_);
       for (auto i = 0; i < edges_num_; ++i) {
         srcLidBuilder.UnsafeAppend(graphx_vertex_map.GetLid(srcOids->Value(i)));
-        dstLidBuider.UnsafeAppend(graphx_vertex_map.GetLid(dstOids->Value(i)));
+        dstLidBuilder.UnsafeAppend(graphx_vertex_map.GetLid(dstOids->Value(i)));
       }
       srcLidBuilder.Finish(&srcLids);
       dstLidBuilder.Finish(&dstLids);
     }
     LOG(INFO) << "Finish building lid array";
     degree_.clear();
-    degree_.resize(vnum, 0);
+    degree_.resize(vnum_, 0);
 
     LOG(INFO) << "Loading edges size " << edges_num_
               << "vertices num: " << vnum_;
