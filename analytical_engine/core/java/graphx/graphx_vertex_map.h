@@ -142,6 +142,18 @@ class GraphXVertexMap
     return true;
   }
 
+  VID_T GetLid(OID_T& oid) const {
+    fid_t fid = static_cast<fid_t>(0);
+    while (fid < fnum_ && oid2Lids[fid].find(oid) == oid2Lids[fid].end()) {
+      fid += 1;
+    }
+    if (fid == fnum_) {
+      LOG(ERROR) << "oid2lid failed: " << oid;
+      return static_cast<vid_t>(0);
+    }
+    return oid2Lids[fid][oid];
+  }
+
   bool GetGid(fid_t fid, const OID_T& oid, VID_T& gid) const {
     auto& rm = oid2Lids_[fid];
     auto iter = rm.find(oid);
