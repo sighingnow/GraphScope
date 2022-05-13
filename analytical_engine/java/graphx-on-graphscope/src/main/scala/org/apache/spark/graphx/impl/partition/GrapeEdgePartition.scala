@@ -1,7 +1,7 @@
 package org.apache.spark.graphx.impl.partition
 
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
-import com.alibaba.graphscope.graphx.VineyardClient
+import com.alibaba.graphscope.graphx.{GraphXCSR, VineyardClient}
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.Edge
 import org.apache.spark.graphx.impl.GrapeUtils
@@ -102,15 +102,20 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
     graphxCSR.id()
   }
 
+  def getEdgePartition(pid: Int): GrapeEdgePartition[VD,ED] ={
+    val localPartNum = ExecutorUtils.getPartitionNum
+    val grapePartId = ExecutorUtils.graphXPid2GrapePid(pid)
+    log.info(s"got partition ${pid}'s corresponding grape partition ${grapePartId}")
+    val graphXCSR = ExecutorUtils.getGraphXCSR.asInstanceOf[GraphXCSR[Long,ED]]
+    val vertexMap = ExecutorUtils.getGlobalVM
+    val chunkSize =
+    null
+  }
+
+
   def isLocalBuilt() = localVMBuilt
 
   def isGlobalBuilt() = globalVMBuilt
 
   def isCSRBuilt() = csrBuilt
-
-  def getEdgePartition(pid: Int): GrapeEdgePartition[VD,ED] ={
-    var localPartNum = ExecutorUtils.getPartitionNum
-    log.info(s"got partition ${pid}'s corresponding grape partition'")
-    null
-  }
 }

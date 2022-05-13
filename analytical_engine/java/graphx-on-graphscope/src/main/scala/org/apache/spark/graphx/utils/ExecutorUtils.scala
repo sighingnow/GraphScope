@@ -40,6 +40,13 @@ object ExecutorUtils extends Logging{
     partitionNum.getAndAdd(1)
   }
 
+  def graphXPid2GrapePid(pid : Int) : Int = {
+    if (!pid2Ind.contains(pid)){
+      throw new IllegalStateException(s"try to get grape pid for a not registered graphx partition: ${pid}")
+    }
+    pid2Ind.get(pid).get
+  }
+
   def setLocalVMID(vmId : Long) : Unit = {
     require(this.localVMID == -1, s"vm already been set ${localVMID}")
     this.localVMID = vmId
