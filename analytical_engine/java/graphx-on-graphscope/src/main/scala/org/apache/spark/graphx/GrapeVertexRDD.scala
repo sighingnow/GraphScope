@@ -2,7 +2,7 @@ package org.apache.spark.graphx
 
 import org.apache.spark.graphx.impl.{EdgePartition, GrapeVertexPartitionWrapper}
 import org.apache.spark.graphx.impl.grape.GrapeVertexRDDImpl
-import org.apache.spark.graphx.impl.partition.VertexShuffle
+import org.apache.spark.graphx.impl.partition.{GrapeVertexPartition, VertexShuffle}
 import org.apache.spark.graphx.util.collection.GraphXPrimitiveKeyOpenHashMap
 import org.apache.spark.graphx.utils.GrapeVertexPartitionRegistry
 import org.apache.spark.internal.Logging
@@ -19,10 +19,10 @@ abstract class GrapeVertexRDD[VD](
                                    sc: SparkContext, deps: Seq[Dependency[_]]) extends VertexRDD[VD](sc, deps) {
 
   private[graphx] def mapGrapeVertexPartitions[VD2: ClassTag](
-                                                   f: GrapeVertexPartitionWrapper[VD] => GrapeVertexPartitionWrapper[VD2])
+                                                   f: GrapeVertexPartition[VD] => GrapeVertexPartition[VD2])
   : GrapeVertexRDD[VD2];
 
-  private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartitionWrapper[VD2])])
+  private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])])
   : GrapeVertexRDD[VD2]
 
   /**
@@ -53,13 +53,21 @@ object GrapeVertexRDD extends Logging{
     null
   }
 
-  def fromVertexPartitions[VD : ClassTag](vertexPartition : RDD[(PartitionID, GrapeVertexPartitionWrapper[VD])]): GrapeVertexRDDImpl[VD] ={
+  def fromVertexPartitions[VD : ClassTag](vertexPartition : RDD[(PartitionID, GrapeVertexPartition[VD])]): GrapeVertexRDDImpl[VD] ={
     new GrapeVertexRDDImpl[VD](vertexPartition)
   }
 
   def fromEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD) : GrapeVertexRDDImpl[VD] = {
     log.info(s"Driver: Creating vertex rdd from edgeRDD of numPartition ${numPartitions}, default val ${defaultVal}")
-    null
+    edgeRDD.grapePartitionsRDD.foreachPartition(
+      iter => {
+        val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
+        registry.checkPrerequisite(iter.next()._1)
+      }
+    )
+    edgeRDD.grapePartitionsRDD.foreachPartition(
+      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
 
+    )
   }
 }

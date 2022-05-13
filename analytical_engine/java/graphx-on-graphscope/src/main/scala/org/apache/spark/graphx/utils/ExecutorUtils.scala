@@ -31,6 +31,18 @@ object ExecutorUtils extends Logging{
   private val vineyardClient: VineyardClient = VineyardClientRegistry.connect(endPoint)
   log.info(s"[ExecutorUtils]: got vineyard client: ${vineyardClient}")
 
+  def isPartitionRegistered(pid : Int) : Boolean = {
+    pid2Ind.contains(pid)
+  }
+
+  def checkBeforeVertexPartition(pid : Int) : Boolean = {
+    require(globalVMID != -1)
+    require(graphXVertexMap != null)
+    require(csrID != -1)
+    require(graphXCSR != null)
+    true
+  }
+
   def registerPartition(pid : Int) = {
     if (pid2Ind.contains(pid)){
       throw new IllegalStateException(s"Try to register a already registered partition ${pid}")

@@ -5,12 +5,9 @@ import org.apache.spark.graphx.impl.partition.{EdgeShuffleReceived, GrapeEdgePar
 import org.apache.spark.internal.Logging
 
 import java.lang.reflect.Field
-import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.ClassTag
 
 class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
-
-  private val partitionCnt : AtomicInteger = new AtomicInteger(0)
   val edClass: Class[ED] = GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]]
 
   var edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](ExecutorUtils.getVineyarClient)
