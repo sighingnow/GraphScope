@@ -97,7 +97,7 @@ object GrapeEdgeRDD extends Logging{
 
     edgesShuffles.foreachPartition(iter => {
       val registry = GrapeEdgePartitionRegistry.getOrCreate[VD,ED]
-      registry.buildCSR()
+      registry.buildCSR(iter.next()._1)
     })
 
     val grapeEdgePartitions = edgesShuffles.mapPartitions(iter => {
