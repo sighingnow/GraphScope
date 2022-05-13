@@ -2,7 +2,7 @@ package org.apache.spark.graphx.utils
 
 import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
-import com.alibaba.graphscope.graphx.{BasicLocalVertexMapBuilder, LocalVertexMap, VineyardClient}
+import com.alibaba.graphscope.graphx.{BasicGraphXCSRBuilder, BasicLocalVertexMapBuilder, GraphXVertexMapGetter, LocalVertexMap, VineyardClient}
 import org.apache.spark.internal.Logging
 
 import java.util.HashMap
@@ -45,4 +45,11 @@ object ScalaFFIFactory extends Logging{
   def newSignedLongArrayBuilder(): ArrowArrayBuilder[Long] ={
     getArrowArrayBuilderFactory("gs::ArrowArrayBuilder<int64_t>").create().asInstanceOf[ArrowArrayBuilder[Long]]
   }
+
+  def newVertexMapGetter() : GraphXVertexMapGetter[Long,Long] = {
+    val factory = FFITypeFactory.getFactory(classOf[GraphXVertexMapGetter[Long,Long]], "gs::GraphXVertexMapGetter<int64_t,uint64_t>").asInstanceOf[GraphXVertexMapGetter.Factory[Long,Long]]
+    factory.create()
+  }
+
+  def newGraphXCSRBuilder() : BasicGraphXCSRBuilder[Long,Long]
 }

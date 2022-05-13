@@ -21,6 +21,7 @@ import static com.alibaba.graphscope.utils.CppClassName.DOUBLE_MSG;
 import static com.alibaba.graphscope.utils.CppClassName.GS_VERTEX_ARRAY;
 import static com.alibaba.graphscope.utils.CppClassName.LONG_MSG;
 import static com.alibaba.graphscope.utils.CppHeaderName.ARROW_PROJECTED_FRAGMENT_H;
+import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_GRAPHX_GRAPHX_VERTEX_MAP_H;
 import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_GRAPHX_LOCAL_VERTEX_MAP_H;
 
 import com.alibaba.fastffi.CXXHead;
@@ -43,23 +44,37 @@ import com.alibaba.fastffi.FFIGenBatch;
         @FFIGen(type = "com.alibaba.graphscope.parallel.message.DoubleMsg"),
         @FFIGen(type = "com.alibaba.graphscope.parallel.message.LongMsg"),
         @FFIGen(type = "com.alibaba.graphscope.arrow.Status"),
+        @FFIGen(type = "com.alibaba.graphscope.graphx.VineyardClient"),
+        @FFIGen(type = "com.alibaba.graphscope.graphx.V6dStatus"),
         @FFIGen(
             type = "com.alibaba.graphscope.graphx.LocalVertexMap",
             templates = {
                 @CXXTemplate(cxx = {"int64_t", "uint64_t"}, java = {"Long", "Long"})
             }),
         @FFIGen(
+            type = "com.alibaba.graphscope.graphx.GraphXVertexMap",
+            templates = {@CXXTemplate(cxx = {"int64_t", "uint64_t"}, java = {"Long", "Long"})}
+        ),
+        @FFIGen(
             type = "com.alibaba.graphscope.stdcxx.StdSharedPtr",
             templates = {
                 @CXXTemplate(
                     cxx = "gs::LocalVertexMap<int64_t,uint64_t>",
                     java = "com.alibaba.graphscope.graphx.LocalVertexMap<java.lang.Long,java.lang.Long>",
-                    include = @CXXHead(CORE_JAVA_GRAPHX_LOCAL_VERTEX_MAP_H))}
+                    include = @CXXHead(CORE_JAVA_GRAPHX_LOCAL_VERTEX_MAP_H)),
+                @CXXTemplate(
+                    cxx = "gs::GraphXVertexMap<int64_t,uint64_t>",
+                    java = "com.alibaba.graphscope.graphx.GraphXVertexMap<java.lang.Long,java.lang.Long>",
+                    include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_VERTEX_MAP_H))
+            }
         ),
-        @FFIGen(type = "com.alibaba.graphscope.graphx.VineyardClient"),
-        @FFIGen(type = "com.alibaba.graphscope.graphx.V6dStatus"),
         @FFIGen(
             type = "com.alibaba.graphscope.graphx.BasicLocalVertexMapBuilder",
+            templates = {
+                @CXXTemplate(cxx = {"int64_t", "uint64_t"}, java = {"Long", "Long"})
+            }),
+        @FFIGen(
+            type = "com.alibaba.graphscope.graphx.GraphXVertexMapGetter",
             templates = {
                 @CXXTemplate(cxx = {"int64_t", "uint64_t"}, java = {"Long", "Long"})
             }),

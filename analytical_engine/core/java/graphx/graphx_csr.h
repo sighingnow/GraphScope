@@ -214,8 +214,9 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
   vineyard::NumericArray<edata_t> edatas;
 };
 
-template <typename VID_T, typename ED_T>
+template <typename OID_T, typename VID_T, typename ED_T>
 class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
+  using oid_t = OID_T;
   using vid_t = VID_T;
   using edata_t = ED_T;
   using eid_t = vineyard::property_graph_types::EID_TYPE;
@@ -233,20 +234,48 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
   using vineyard_edata_array_builder_t =
       typename vineyard::InternalType<edata_t>::vineyard_builder_type;
   using vid_array_t = typename vineyard::ConvertToArrowType<vid_t>::ArrayType;
+  using oid_array_builder_t =
+      typename vineyard::ConvertToArrowType<oid_t>::BuilderType;
+  using oid_array_t = typename vineyard::ConvertToArrowType<oid_t>::ArrayType;
 
  public:
-  explicit BasicGraphXCSRBuilder(vineyard::Client& client)
-      : GraphXCSRBuilder<vid_t, edata_t>(client) {}
+  explicit BasicGraphXCSRBuilder(vineyard::Client& client, bool outEdges = true)
+      : GraphXCSRBuilder<vid_t, edata_t>(client), outEdges_(outEdges) {}
 
-  void LoadEdges(vid_t vnum, const std::shared_ptr<vid_array_t>& srcLids,
-                 const std::shared_ptr<vid_array_t>& dstLids,
-                 const std::shared_ptr<edata_array_t>& edatas) {
-    CHECK_EQ(srcLids->length(), dstLids->length());
-    CHECK_EQ(dstLids->length(), edatas->length());
-    vnum_ = vnum;
+  void LoadEdges(oid_array_builder_t& srcOidsBuilder,
+                 oid_array_builder_t& dstOidsBuilder,
+                 oid_array_builder_t& edatasBuilder,
+                 GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map) {
+    std::shared_ptr<oid_array_t> srcOids, dstOids;
+    std::shared_ptr<edata_array_t> edatas;
+    {
+      srcOidsBuilder.Finish(&srcOids);
+      dstOidsBuilder.Finish(&dstOids);
+      edatasBuilder.Finish(&edatas);
+    }
+    CHECK_EQ(srcOids->length(), dstOids->length());
+    CHECK_EQ(dstOids->length(), edatas->length());
+    vnum_ = graphx_vertex_map.GetInnerVertexSize(graphx_vertex_map.fid());
+    LOG(INFO) << "inner vnum : " << vnum_;
+    edges_num_ = srcLids->length();
+    std::shared_ptr<vid_array_t> srcLids, dstLids;
+    auto curFid = graphx_vertex_map.fid();
+    LOG(INFO) << "fid: " << curFid;
+    {
+      vid_array_builder_t srcLidBuilder, dstLidBuilder;
+      srcLidBuilder.Reserve(edges_num_);
+      dstLidBuilder.Reserve(edges_num_);
+      for (auto i = 0; i < edges_num_; ++i) {
+        srcLidBuilder.UnsafeAppend(graphx_vertex_map.GetLid(srcOids->Value(i)));
+        dstLidBuider.UnsafeAppend(graphx_vertex_map.GetLid(dstOids->Value(i)));
+      }
+      srcLidBuilder.Finish(&srcLids);
+      dstLidBuilder.Finish(&dstLids);
+    }
+    LOG(INFO) << "Finish building lid array";
     degree_.clear();
     degree_.resize(vnum, 0);
-    edges_num_ = srcLids->length();
+
     LOG(INFO) << "Loading edges size " << edges_num_
               << "vertices num: " << vnum_;
     for (auto i = 0; i < edges_num_; ++i) {
@@ -354,6 +383,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
 
   vid_t vnum_;
   size_t edges_num_;
+  bool outEdges_;
 
   std::vector<int> degree_;
   vineyard::PodArrayBuilder<nbr_t> edge_builder_;

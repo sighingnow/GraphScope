@@ -47,6 +47,25 @@ object ExecutorUtils extends Logging{
     this.globalVMID = vmId
     log.info(s"[ExecutorUtils]: ${hostName} has local vm id ${this.globalVMID}")
   }
+  def setGlobalVMIDs(vmIds : java.util.List[String]) : Unit = {
+    require(globalVMID == -1, s"vm already been set ${globalVMID}")
+    var i = 0
+    while (i < vmIds.size()){
+      val v = vmIds.get(i)
+      if (v.contains(hostName)){
+        globalVMID = v.substring(v.indexOf(hostName) + hostName.size + 1).toLong
+        log.info(s"Setting global vmID ${globalVMID}")
+        i = vmIds.size()
+      }
+    }
+    require(globalVMID != -1)
+    log.info(s"[ExecutorUtils]: ${hostName} has local vm id ${this.globalVMID}")
+  }
+
+  def getGlobalVMID : Long = {
+    require(globalVMID != -1)
+    globalVMID
+  }
 
   def getHost2LocalVMID() : String = {
     require(localVMID != -1)

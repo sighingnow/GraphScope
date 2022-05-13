@@ -77,7 +77,7 @@ class GraphXVertexMap
       typename vineyard::InternalType<oid_t>::vineyard_array_type;
 
  public:
-  GraphXVertexMap(){}
+  GraphXVertexMap() {}
   ~GraphXVertexMap() {}
 
   static std::unique_ptr<vineyard::Object> Create() __attribute__((used)) {
@@ -113,6 +113,8 @@ class GraphXVertexMap
       LOG(INFO) << "lid2Oids_" << i << ", size " << lid2Oids_[i]->length();
     }
   }
+  fid_t fid() { return fid_; }
+  fid_t fnum() { return fnum_; }
 
   size_t GetTotalVertexSize() const {
     size_t size = 0;
@@ -122,7 +124,9 @@ class GraphXVertexMap
     return size;
   }
 
-  size_t GetInnerVertexSize(fid_t fid) const { return oid2Lids_[fid]->length(); }
+  size_t GetInnerVertexSize(fid_t fid) const {
+    return oid2Lids_[fid]->length();
+  }
 
   bool GetOid(const VID_T& gid, OID_T& oid) const {
     fid_t fid = GetFidFromGid(gid);
@@ -285,7 +289,8 @@ class BasicGraphXVertexMapBuilder
     std::vector<std::shared_ptr<oid_array_t>> collected_oids;
     std::shared_ptr<oid_array_t> our_oids = partial_vmap->GetInnerLid2Oid();
 
-    vineyard::FragmentAllGatherArray<oid_t>(comm_spec_, our_oids, collected_oids);
+    vineyard::FragmentAllGatherArray<oid_t>(comm_spec_, our_oids,
+                                            collected_oids);
     CHECK_EQ(collected_oids.size(), comm_spec_.worker_num());
     for (auto i = 0; i < comm_spec_.worker_num(); ++i) {
       auto array = collected_oids[i];
@@ -312,8 +317,8 @@ class BasicGraphXVertexMapBuilder
             }
             // may be reuse local vm.
             {
-              typename vineyard::InternalType<oid_t>::vineyard_builder_type array_builder(
-                  client, array);
+              typename vineyard::InternalType<oid_t>::vineyard_builder_type
+                  array_builder(client, array);
               this->SetOidArray(
                   cur_fid,
                   *std::dynamic_pointer_cast<vineyard::NumericArray<oid_t>>(
@@ -345,6 +350,26 @@ class BasicGraphXVertexMapBuilder
   //   grape::IdParser id_parser_;
 };
 
+template <typename OID_T, typename VID_T>
+class GraphXVertexMapGetter {
+  using oid_t = OID_T;
+  using vid_t = VID_T;
+  using oid_array_t = typename vineyard::ConvertToArrowType<oid_t>::ArrayType;
+  using oid_array_builder_t =
+      typename vineyard::ConvertToArrowType<oid_t>::BuilderType;
+
+ public:
+  GraphXVertexMapGetter() {}
+  ~GraphXVertexMapGetter() {}
+  std::shared_ptr<GraphXVertexMap<oid_t, vid_t>> Get(
+      vineyard::ObjectID globalVMID, vineyard::Client& client) {
+    auto globalVM = std::dynamic_pointer_cast<GraphXVertexMap<oid_t, vid_t>>(
+        client.GetObject(globalVMID));
+    LOG(INFO) << "Got global vm: " << globalVMID
+              << " total vnum: " << globalVM->GetTotalVertexSize();
+    return globalVM;
+  }
+};
 }  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_VERTEX_MAP_H

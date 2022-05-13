@@ -11,6 +11,6 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_GRAPHX_CSR_H)
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.GS_BASIC_GRAPHX_CSR_BUILDER)
-public interface BasicGraphXCSRBuilder extends FFIPointer {
+public interface BasicGraphXCSRBuilder<OID_T,VID_T> extends FFIPointer {
 
 }
