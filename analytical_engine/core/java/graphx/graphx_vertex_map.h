@@ -32,27 +32,18 @@
 #include "flat_hash_map/flat_hash_map.hpp"
 
 #include "grape/grape.h"
-#include "grape/graph/adj_list.h"
-#include "grape/graph/immutable_csr.h"
-#include "grape/vertex_map/vertex_map_base.h"
 #include "grape/worker/comm_spec.h"
 #include "vineyard/basic/ds/array.h"
 #include "vineyard/basic/ds/arrow.h"
 #include "vineyard/basic/ds/arrow_utils.h"
 #include "vineyard/basic/ds/hashmap.h"
-#include "vineyard/basic/stream/byte_stream.h"
-#include "vineyard/basic/stream/dataframe_stream.h"
-#include "vineyard/basic/stream/parallel_stream.h"
 #include "vineyard/client/client.h"
 #include "vineyard/common/util/functions.h"
 #include "vineyard/common/util/typename.h"
 #include "vineyard/graph/fragment/property_graph_types.h"
 #include "vineyard/graph/fragment/property_graph_utils.h"
-#include "vineyard/graph/loader/arrow_fragment_loader.h"
 #include "vineyard/graph/utils/error.h"
 #include "vineyard/graph/utils/table_shuffler.h"
-#include "vineyard/io/io/i_io_adaptor.h"
-#include "vineyard/io/io/io_factory.h"
 
 #include "core/error.h"
 #include "core/io/property_parser.h"
@@ -123,9 +114,7 @@ class GraphXVertexMap
     return size;
   }
 
-  size_t GetInnerVertexSize(fid_t fid) const {
-    return oid2Lids_[fid].size();
-  }
+  size_t GetInnerVertexSize(fid_t fid) const { return oid2Lids_[fid].size(); }
 
   bool GetOid(const VID_T& gid, OID_T& oid) const {
     fid_t fid = GetFidFromGid(gid);
@@ -373,7 +362,7 @@ class GraphXVertexMapGetter {
   GraphXVertexMapGetter() {}
   ~GraphXVertexMapGetter() {}
   std::shared_ptr<GraphXVertexMap<oid_t, vid_t>> Get(
-       vineyard::Client& client, vineyard::ObjectID globalVMID) {
+      vineyard::Client& client, vineyard::ObjectID globalVMID) {
     auto globalVM = std::dynamic_pointer_cast<GraphXVertexMap<oid_t, vid_t>>(
         client.GetObject(globalVMID));
     LOG(INFO) << "Got global vm: " << globalVMID

@@ -49,8 +49,8 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
     synchronized{
       val res = edgePartitionBuilder.getEdgePartition(pid)
       log.info(s"[GrapeEdgePartitionRegistry] Part ${pid} got edgePartition ${res}")
+      res
     }
-    null
   }
 }
 

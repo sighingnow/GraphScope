@@ -127,16 +127,16 @@ import com.alibaba.fastffi.FFIGenBatch;
 //                    @CXXTemplate(cxx = {"int64_t","uint64_t","double"}, java = {"Long","Long","Double"}),
 //                    @CXXTemplate(cxx = {"int64_t","uint64_t","int32_t"}, java = {"Long","Long","Integer"})
 //                }),
-        @FFIGen(
-            type = "com.alibaba.graphscope.graphx.GrapeVertexPartition",
-            templates = {
-                @CXXTemplate(cxx = {"int64_t", "uint64_t", "int64_t"}, java = {"Long", "Long",
-                    "Long"}),
-                @CXXTemplate(cxx = {"int64_t", "uint64_t", "double"}, java = {"Long", "Long",
-                    "Double"}),
-                @CXXTemplate(cxx = {"int64_t", "uint64_t", "int32_t"}, java = {"Long", "Long",
-                    "Integer"})
-            }),
+//        @FFIGen(
+//            type = "com.alibaba.graphscope.graphx.GrapeVertexPartition",
+//            templates = {
+//                @CXXTemplate(cxx = {"int64_t", "uint64_t", "int64_t"}, java = {"Long", "Long",
+//                    "Long"}),
+//                @CXXTemplate(cxx = {"int64_t", "uint64_t", "double"}, java = {"Long", "Long",
+//                    "Double"}),
+//                @CXXTemplate(cxx = {"int64_t", "uint64_t", "int32_t"}, java = {"Long", "Long",
+//                    "Integer"})
+//            }),
         @FFIGen(
             library = "grape-jni",
             type = "com.alibaba.graphscope.graphx.GrapeVertexPartitionBuilder",

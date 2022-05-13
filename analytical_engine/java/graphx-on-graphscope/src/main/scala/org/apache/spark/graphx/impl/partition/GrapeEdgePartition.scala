@@ -1,8 +1,7 @@
 package org.apache.spark.graphx.impl.partition
 
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
-import com.alibaba.graphscope.graphx.{GraphXCSR, VineyardClient}
-import com.alibaba.graphscope.utils.MPIUtils
+import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXVertexMap, VineyardClient}
 import org.apache.spark.graphx.Edge
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
@@ -12,8 +11,10 @@ import org.apache.spark.util.collection.OpenHashSet
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
-class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int, val localNum : Int) {
-  def partEdgeNum : Long = 0
+class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int, val startLid : Long, val endLid : Long,
+                                                     val csr : GraphXCSR[Long,ED],
+                                                     val vm : GraphXVertexMap[Long,Long]) {
+  def partEdgeNum : Long = csr.getPartialEdgesNum(startLid, endLid)
 
   def iterator : Iterator[Edge[ED]] = {
     null
@@ -108,10 +109,14 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
     log.info(s"got partition ${pid}'s corresponding grape partition ${grapePartId}")
     val graphXCSR = ExecutorUtils.getGraphXCSR.asInstanceOf[GraphXCSR[Long,ED]]
     val vertexMap = ExecutorUtils.getGlobalVM
-    val chunkSize =
-    null
+    require(vertexMap.innerVertexSize.equals(graphXCSR.vertexNum()), s"csr inner vertex should equal to vmap ${vertexMap.innerVertexSize()}, ${graphXCSR.vertexNum()}")
+    val ivnum = vertexMap.innerVertexSize()
+    val chunkSize = (ivnum + localPartNum - 1) / localPartNum
+    val begin = chunkSize * grapePartId
+    val end = Math.min(begin + chunkSize, ivnum)
+    log.info(s"Part ${pid}, grape Pid ${grapePartId} got range (${begin}, ${end})")
+    new GrapeEdgePartition[VD,ED](pid, begin, end, graphXCSR, vertexMap)
   }
-
 
   def isLocalBuilt() = localVMBuilt
 

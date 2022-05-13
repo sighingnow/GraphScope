@@ -21,8 +21,10 @@ limitations under the License.
 #include "arrow/array/builder_primitive.h"
 #include "core/java/graphx/graphx_csr.h"
 #include "core/java/graphx/local_vertex_map.h"
+#include "core/java/graphx/vertex_data.h"
 #include "glog/logging.h"
 #include "vineyard/client/client.h"
+
 void generateData(arrow::Int64Builder& srcBuilder,
                   arrow::Int64Builder& dstBuilder,
                   arrow::Int64Builder& edataBuilder,
@@ -121,7 +123,7 @@ void TestGraphXCSR(vineyard::Client& client,
     auto csr = std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t, int64_t>>(
         builder.Seal(client));
 
-    VINEYARD_CHECK_OK(client.Persist(csr->id()));
+    // VINEYARD_CHECK_OK(client.Persist(csr->id()));
     csr_id = csr->id();
     LOG(INFO) << "Persist csr id: " << csr->id();
   }
@@ -130,9 +132,26 @@ void TestGraphXCSR(vineyard::Client& client,
           client.GetObject(csr_id));
   LOG(INFO) << "Got csr " << csr->id();
   LOG(INFO) << "num edges: " << csr->GetTotalEdgesNum() << " vs "
-            << csr->GetPartialEdgesNum(0, graphx_vm.GetInnerVertexSize(comm_spec.fid()));
+            << csr->GetPartialEdgesNum(
+                   0, graphx_vm.GetInnerVertexSize(comm_spec.fid()));
   LOG(INFO) << "lid 0 degreee: " << csr->GetDegree(0) << ", "
             << csr->GetPartialEdgesNum(0, 1);
+}
+
+def TestGraphXVertexData(vineyard::Client& client) {
+  vineyard::ObjectID id;
+  {
+    gs::VertexDataBuilder<uint64_t, int64_t> builder;
+    builder.Init(3, 2);
+    auto vd = bulider.MySeal(client);
+    id = vd->id();
+  }
+
+  std::shared_ptr<gs::VertexData<uint64_t, int64_t>> vd =
+      std::dynamic_pointer_cast<gs::VertexData<uint64_t, int64_t>>(
+          client.GetObject(id));
+  LOG(INFO) << "vnum: " vd->VerticesNum();
+  LOG(INFO) << "vdata : " << vd->GetData(0);
 }
 
 void generateData(arrow::Int64Builder& srcBuilder,
@@ -178,6 +197,7 @@ int main(int argc, char* argv[]) {
   // TestLocalVertexMap(client);
   auto graphx_vm = TestGraphXVertexMap(client);
   TestGraphXCSR(client, graphx_vm);
+  TestGraphXVertexData(client);
   VLOG(1) << "Finish Querying.";
 
   grape::FinalizeMPIComm();

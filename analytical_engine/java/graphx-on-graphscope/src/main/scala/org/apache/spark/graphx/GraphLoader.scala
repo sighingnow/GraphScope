@@ -72,6 +72,7 @@ object GraphLoader extends Logging {
       " to load the edges")
 
     val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[Int,Int](edgesShuffled).cache()
+    log.info(s"[Driver:] Got edge RDD ${edgeRDD}")
     val vertexRDD = GrapeVertexRDD.fromEdgeRDD[Int](edgeRDD, edgeRDD.grapePartitionsRDD.getNumPartitions, 1).cache()
     log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
     GrapeGraphImpl.fromExistingRDDs(vertexRDD,edgeRDD);

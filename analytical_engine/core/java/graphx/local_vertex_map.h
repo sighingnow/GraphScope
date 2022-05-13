@@ -32,24 +32,16 @@
 #include "flat_hash_map/flat_hash_map.hpp"
 
 #include "grape/grape.h"
-#include "grape/graph/adj_list.h"
-#include "grape/graph/immutable_csr.h"
 #include "grape/worker/comm_spec.h"
 #include "vineyard/basic/ds/array.h"
 #include "vineyard/basic/ds/arrow.h"
 #include "vineyard/basic/ds/arrow_utils.h"
 #include "vineyard/basic/ds/hashmap.h"
-#include "vineyard/basic/stream/byte_stream.h"
-#include "vineyard/basic/stream/dataframe_stream.h"
-#include "vineyard/basic/stream/parallel_stream.h"
 #include "vineyard/client/client.h"
 #include "vineyard/common/util/functions.h"
 #include "vineyard/common/util/typename.h"
 #include "vineyard/graph/fragment/property_graph_types.h"
 #include "vineyard/graph/fragment/property_graph_utils.h"
-#include "vineyard/graph/loader/arrow_fragment_loader.h"
-#include "vineyard/io/io/i_io_adaptor.h"
-#include "vineyard/io/io/io_factory.h"
 
 #include "core/error.h"
 #include "core/io/property_parser.h"
@@ -84,7 +76,7 @@ class LocalVertexMap
     this->id_ = meta.GetId();
     this->ivnum_ = meta.GetKeyValue<fid_t>("ivnum");
     LOG(INFO) << "ivnum: " << ivnum_;
-//    this->ovnum_ = meta.GetKeyValue<fid_t>("ovnum");
+    //    this->ovnum_ = meta.GetKeyValue<fid_t>("ovnum");
     inner_oid2Lid_.Construct(meta.GetMemberMeta("inner_oid2Lid"));
     // outer_oid2Lid_.Construct(meta.GetMemberMeta("outer_oid2Lid"));
 
@@ -187,12 +179,12 @@ class LocalVertexMapBuilder : public vineyard::ObjectBuilder {
 
     vertex_map->meta_.AddMember("inner_lid2Oid", inner_lid2Oid_.meta());
     nbytes += inner_lid2Oid_.nbytes();
-//    vertex_map->meta_.AddMember("outer_lid2Oid", outer_lid2Oid_.meta());
-//    nbytes += outer_lid2Oid_.nbytes();
+    //    vertex_map->meta_.AddMember("outer_lid2Oid", outer_lid2Oid_.meta());
+    //    nbytes += outer_lid2Oid_.nbytes();
     vertex_map->meta_.AddMember("inner_oid2Lid", inner_oid2Lid_.meta());
     nbytes += inner_oid2Lid_.nbytes();
-//    vertex_map->meta_.AddMember("outer_oid2Lid", outer_oid2Lid_.meta());
-//    nbytes += outer_oid2Lid_.nbytes();
+    //    vertex_map->meta_.AddMember("outer_oid2Lid", outer_oid2Lid_.meta());
+    //    nbytes += outer_oid2Lid_.nbytes();
 
     LOG(INFO) << "total bytes: " << nbytes;
     vertex_map->meta_.SetNBytes(nbytes);
@@ -249,22 +241,22 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
           *std::dynamic_pointer_cast<vineyard::Hashmap<oid_t, vid_t>>(
               innerBuilder.Seal(client)));
     }
-/*
-    {
-      vineyard::HashmapBuilder<oid_t, vid_t> outerBuilder(client);
-      auto vnum = outer_oids->length();
-      for (int64_t k = 0; k < vnum; ++k) {
-        auto oid = outer_oids->GetView(k);
-        if (outerBuilder.find(oid) == outerBuilder.end()) {
-          outerBuilder.emplace(oid, lid++);
+    /*
+        {
+          vineyard::HashmapBuilder<oid_t, vid_t> outerBuilder(client);
+          auto vnum = outer_oids->length();
+          for (int64_t k = 0; k < vnum; ++k) {
+            auto oid = outer_oids->GetView(k);
+            if (outerBuilder.find(oid) == outerBuilder.end()) {
+              outerBuilder.emplace(oid, lid++);
+            }
+          }
+          LOG(INFO) << "outer vertices: " << vnum;
+          this->SetOuterOid2Lid(
+              *std::dynamic_pointer_cast<vineyard::Hashmap<oid_t, vid_t>>(
+                  outerBuilder.Seal(client)));
         }
-      }
-      LOG(INFO) << "outer vertices: " << vnum;
-      this->SetOuterOid2Lid(
-          *std::dynamic_pointer_cast<vineyard::Hashmap<oid_t, vid_t>>(
-              outerBuilder.Seal(client)));
-    }
-*/
+    */
     typename vineyard::InternalType<oid_t>::vineyard_builder_type
         inner_array_builder(client, inner_oids);
     this->SetInnerOidArray(
@@ -284,8 +276,10 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
 #endif
     return vineyard::Status::OK();
   }
-  std::shared_ptr<LocalVertexMap<oid_t,vid_t>> MySeal(vineyard::Client& client){
-      return std::dynamic_pointer_cast<LocalVertexMap<oid_t,vid_t>>(this->Seal(client));
+  std::shared_ptr<LocalVertexMap<oid_t, vid_t>> MySeal(
+      vineyard::Client& client) {
+    return std::dynamic_pointer_cast<LocalVertexMap<oid_t, vid_t>>(
+        this->Seal(client));
   }
 
  private:
