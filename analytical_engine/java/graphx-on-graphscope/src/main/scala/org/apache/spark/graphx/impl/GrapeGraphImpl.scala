@@ -2,6 +2,7 @@ package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.HashPartitioner
+import org.apache.spark.graphx.impl
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
 import org.apache.spark.graphx.impl.graph.{EdgeManagerImpl, VertexDataManagerImpl}
 //import com.alibaba.graphscope.utils.FragmentRegistry
@@ -107,7 +108,9 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     throw new IllegalStateException("Currently grape graph doesn't support partition")
   }
 
-  override def mapVertices[VD2 : ClassTag](map: (VertexId, VD) => VD2)(implicit eq: VD =:= VD2): Graph[VD2, ED] = ???
+  override def mapVertices[VD2 : ClassTag](map: (VertexId, VD) => VD2)(implicit eq: VD =:= VD2): Graph[VD2, ED] = {
+    new GrapeGraphImpl[VD2,ED](vertices.mapVertices(map), edges)
+  }
 
   override def mapEdges[ED2](map: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2])(implicit evidence$5: ClassTag[ED2]): Graph[VD, ED2] = ???
 

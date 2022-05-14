@@ -4,6 +4,7 @@ import org.apache.spark._
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.impl.ShippableVertexPartition
 import org.apache.spark.graphx.impl.partition.GrapeVertexPartition
+import org.apache.spark.graphx.utils.GrapeVertexPartitionRegistry
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
@@ -39,6 +40,37 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     }
   }
 
+  def createNewPartitions[VD2: ClassTag](map: (VertexId, VD) => VD2) : RDD[(PartitionID, GrapeVertexPartition[VD2])] = {
+    grapePartitionsRDD.foreachPartition(
+      iter => {
+        val pid = iter.next()._1
+        val registry = GrapeVertexPartitionRegistry.getOrCreate
+        registry.clear(pid)
+        registry.checkPrerequisite(pid)
+      }
+    )
+    log.info("[GrapeVertexRDDImpl]: Prerequisite satisfied")
+    grapePartitionsRDD.foreachPartition(iter => {
+      val (pid, vPart) = iter.next()
+      val registry = GrapeVertexPartitionRegistry.getOrCreate
+      registry.init(pid, vPart, map)
+    })
+    grapePartitionsRDD.foreachPartition(iter => {
+      val registry = GrapeVertexPartitionRegistry.getOrCreate
+      registry.build(iter.next()._1)
+    })
+    log.info("[GrapeVertexRDD]: Finish building vertex data")
+    grapePartitionsRDD.mapPartitions(iter => {
+      val registry = GrapeVertexPartitionRegistry.getOrCreate
+      val pid = iter.next()._1
+      Iterator((pid, registry.getVertexPartition(pid)))
+    })
+  }
+
+  def mapVertices[VD2: ClassTag](map: (VertexId, VD) => VD2) : GrapeVertexRDD[VD2] = {
+    this.withGrapePartitionsRDD(createNewPartitions(map))
+  }
+
   override def count(): Long = {
     grapePartitionsRDD.map(_._2.partVnum).fold(0)(_ + _)
   }
@@ -65,11 +97,13 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   }
 
   override def mapValues[VD2](f: VD => VD2)(implicit evidence$2: ClassTag[VD2]): VertexRDD[VD2] = {
-    this.mapGrapeVertexPartitions(_.map((vid, attr) => f(attr)))
+//    this.mapGrapeVertexPartitions(_.map((vid, attr) => f(attr)))
+    this.mapVertices((_,vd)=>f(vd))
   }
 
   override def mapValues[VD2](f: (VertexId, VD) => VD2)(implicit evidence$3: ClassTag[VD2]): VertexRDD[VD2] = {
-    this.mapGrapeVertexPartitions(_.map(f))
+//    this.mapGrapeVertexPartitions(_.map(f))
+    this.mapVertices(f)
   }
 
   override def minus(other: RDD[(VertexId, VD)]): VertexRDD[VD] = {

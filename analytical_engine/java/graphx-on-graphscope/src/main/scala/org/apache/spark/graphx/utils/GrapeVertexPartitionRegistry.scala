@@ -1,14 +1,23 @@
 package org.apache.spark.graphx.utils
 
+import org.apache.spark.graphx.VertexId
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.impl.partition.{GrapeVertexPartition, GrapeVertexPartitionBuilder}
 import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag
 
-class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
-  val vdClz = GrapeUtils.getRuntimeClass[VD].asInstanceOf[Class[VD]]
-  val vertexPartitionBuilder = new GrapeVertexPartitionBuilder[VD]
+class GrapeVertexPartitionRegistry extends Logging{
+//  val vdClz = GrapeUtils.getRuntimeClass[VD].asInstanceOf[Class[VD]]
+  var vertexPartitionBuilder = null.asInstanceOf[GrapeVertexPartitionBuilder[_]]
+
+  def clear(pid : Int) : Unit = {
+    synchronized{
+      if (vertexPartitionBuilder != null){
+        vertexPartitionBuilder = null
+      }
+    }
+  }
 
   def checkPrerequisite(pid : Int) : Unit = {
     synchronized{
@@ -17,12 +26,23 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
     }
   }
 
-  def init(pid : Int, initVal : VD) : Unit = {
+  def init[VD: ClassTag](pid : Int, initVal : VD) : Unit = {
     synchronized{
-      if (!vertexPartitionBuilder.isInitialized){
+      if (vertexPartitionBuilder == null){
+        vertexPartitionBuilder = new GrapeVertexPartitionBuilder[VD]
         val fragVertices = ExecutorUtils.getGlobalVM.getVertexSize
         log.info(s"Partition ${pid} doing initialization with default value ${initVal}, frag vertices ${fragVertices}")
-        vertexPartitionBuilder.init(fragVertices, initVal)
+        vertexPartitionBuilder.asInstanceOf[GrapeVertexPartitionBuilder[VD]].init(fragVertices, initVal)
+      }
+    }
+  }
+  /** Create a new vertexPartition with original partition and transformation function */
+  def init[VD : ClassTag, VD2 : ClassTag](pid : Int, vertexPartition : GrapeVertexPartition[VD], map : (VertexId, VD) => VD2) : Unit = {
+    synchronized{
+      if (vertexPartition == null){
+        vertexPartitionBuilder = new GrapeVertexPartitionBuilder[VD2]
+        log.info(s"Partition ${pid} create new Vertex Data from original Vd type ${GrapeUtils.getRuntimeClass[VD].toString} to ${GrapeUtils.getRuntimeClass[VD2].toString}")
+        vertexPartitionBuilder.asInstanceOf[GrapeVertexPartitionBuilder[VD2]].init(vertexPartition, map)
       }
     }
   }
@@ -36,25 +56,25 @@ class GrapeVertexPartitionRegistry[VD : ClassTag] extends Logging{
     }
   }
 
-  def getVertexPartition(pid : Int) : GrapeVertexPartition[VD] = {
+  def getVertexPartition[VD : ClassTag](pid : Int) : GrapeVertexPartition[VD] = {
     synchronized{
-      val res = vertexPartitionBuilder.getVertexPartition(pid)
+      val res = vertexPartitionBuilder.asInstanceOf[GrapeVertexPartitionBuilder[VD]].getVertexPartition(pid)
       log.info(s"[GrapeVertexPartitionRegistry] Part ${pid} got edgePartition ${res}")
       res
     }
   }
 }
 object GrapeVertexPartitionRegistry{
-  private var registry = null.asInstanceOf[GrapeVertexPartitionRegistry[_]]
-  def getOrCreate[VD: ClassTag] : GrapeVertexPartitionRegistry[VD] = {
+  private var registry = null.asInstanceOf[GrapeVertexPartitionRegistry]
+  def getOrCreate : GrapeVertexPartitionRegistry = {
     if (registry == null){
       synchronized{
         if (registry == null){
-          registry = new GrapeVertexPartitionRegistry[VD]
+          registry = new GrapeVertexPartitionRegistry
         }
       }
     }
-    registry.asInstanceOf[GrapeVertexPartitionRegistry[VD]]
+    registry
   }
 
   /**

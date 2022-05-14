@@ -24,6 +24,7 @@ abstract class GrapeVertexRDD[VD](
   private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])])
   : GrapeVertexRDD[VD2]
 
+  def mapVertices[VD2: ClassTag](map: (VertexId, VD) => VD2) : GrapeVertexRDD[VD2]
   /**
    * Write the updated vertex data to memory mapped region.
    */
@@ -60,24 +61,24 @@ object GrapeVertexRDD extends Logging{
     log.info(s"Driver: Creating vertex rdd from edgeRDD of numPartition ${numPartitions}, default val ${defaultVal}")
     edgeRDD.grapePartitionsRDD.foreachPartition(
       iter => {
-        val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
+        val registry = GrapeVertexPartitionRegistry.getOrCreate
         registry.checkPrerequisite(iter.next()._1)
       }
     )
     log.info("[GrapeVertexRDD]: Prerequisite satisfied")
     edgeRDD.grapePartitionsRDD.foreachPartition(iter => {
-      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
-      registry.init(iter.next()._1, defaultVal)
+      val registry = GrapeVertexPartitionRegistry.getOrCreate
+      registry.init[VD](iter.next()._1, defaultVal)
     })
     edgeRDD.grapePartitionsRDD.foreachPartition(iter => {
-      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
+      val registry = GrapeVertexPartitionRegistry.getOrCreate
       registry.build(iter.next()._1)
     })
     log.info("[GrapeVertexRDD]: Finish building vertex data")
     val vertexPartitionRDD = edgeRDD.grapePartitionsRDD.mapPartitions(iter => {
-      val registry = GrapeVertexPartitionRegistry.getOrCreate[VD]
+      val registry = GrapeVertexPartitionRegistry.getOrCreate
       val pid = iter.next()._1
-      Iterator((pid, registry.getVertexPartition(pid)))
+      Iterator((pid, registry.getVertexPartition[VD](pid)))
     })
     new GrapeVertexRDDImpl[VD](vertexPartitionRDD,storageLevel)
   }

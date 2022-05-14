@@ -14,6 +14,7 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_VERTEX_DATA_H)
 @FFITypeAlias(CppClassName.GS_VERTEX_DATA)
 public interface VertexData<VID, VD> extends FFIPointer {
+    long id();
     /**
      * Could contain outer vertices data
      * @return nums

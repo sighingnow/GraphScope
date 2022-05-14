@@ -1,6 +1,7 @@
 package org.apache.spark.graphx.test
 
 import com.alibaba.graphscope.utils.MPIUtils
+import org.apache.spark.graphx.VertexId
 import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived}
 import org.apache.spark.graphx.utils.{ExecutorUtils, GrapeEdgePartitionRegistry, GrapeVertexPartitionRegistry}
 import org.apache.spark.internal.Logging
@@ -32,11 +33,19 @@ object EdgeMain extends Logging{
     log.info(s"csr id ${ExecutorUtils.getGraphXCSR.id()}")
     log.info(s"graphx vm id ${ExecutorUtils.getGlobalVM.id()}");
 
-    val vertexRegistry = GrapeVertexPartitionRegistry.getOrCreate[Int]
+    val vertexRegistry = GrapeVertexPartitionRegistry.getOrCreate
     vertexRegistry.checkPrerequisite(0)
-    vertexRegistry.init(0, 1)
+    vertexRegistry.init[Int](0, 1)
     vertexRegistry.build(0)
-    val vertexPartition = vertexRegistry.getVertexPartition(0)
+    val vertexPartition = vertexRegistry.getVertexPartition[Int](0)
     log.info(s"${vertexPartition}")
+
+    //create new vdata from old.
+    vertexRegistry.clear(0)
+    vertexRegistry.checkPrerequisite(0)
+    vertexRegistry.init(0,vertexPartition, (a : VertexId, b : Int) => b.toDouble)
+    vertexRegistry.build(0)
+    val newVertexPartition = vertexRegistry.getVertexPartition[Double](0)
+    log.info(s"${newVertexPartition.vertexData.getData(0)}")
   }
 }

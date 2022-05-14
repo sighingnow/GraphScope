@@ -26,6 +26,12 @@ public interface GraphXVertexMap<OID_T,VID_T> extends FFIPointer {
     @FFINameAlias("GetInnerVertexSize")
     long getInnerVertexSize(int fid);
 
+    @FFINameAlias("InnerVertexLid2Oid")
+    OID_T innerVertexLid2Oid(VID_T lid);
+
+    @FFINameAlias("OuterVertexLid2Oid")
+    OID_T outerVertexLid2Oid(VID_T lid);
+
     @FFINameAlias("GetOuterVertexSize")
     long getOuterVertexSize();
 

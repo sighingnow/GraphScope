@@ -1,6 +1,6 @@
 package org.apache.spark.graphx.utils
 
-import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXVertexMap, VineyardClient}
+import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXVertexMap, VertexData, VineyardClient}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.PrimitiveVector
 
@@ -27,6 +27,7 @@ object ExecutorUtils extends Logging{
   private var globalVMID : Long = -1L;
   private var graphXCSR : GraphXCSR[Long,_] = null.asInstanceOf[GraphXCSR[Long,_]]
   private var graphXVertexMap : GraphXVertexMap[Long,Long] = null.asInstanceOf[GraphXVertexMap[Long,Long]]
+  private var vertexData : VertexData[Long,_] = null.asInstanceOf[VertexData[Long,_]]
 
   private val vineyardClient: VineyardClient = VineyardClientRegistry.connect(endPoint)
   log.info(s"[ExecutorUtils]: got vineyard client: ${vineyardClient}")
@@ -97,6 +98,13 @@ object ExecutorUtils extends Logging{
       }
       require(globalVMID != -1)
     }
+  }
+
+  def setVertexData(vd : VertexData[Long,_]) : Unit = {
+    if (vd != null){
+      log.warn(s"Try to override ${vertexData} with new value ${vd}")
+    }
+    vertexData = vd
   }
 
   def filterHostGlobalVMIDs(vmIds : java.util.List[String]) : Long = {

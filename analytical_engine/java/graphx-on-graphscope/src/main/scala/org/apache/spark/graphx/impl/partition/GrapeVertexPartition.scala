@@ -1,8 +1,10 @@
 package org.apache.spark.graphx.impl.partition
 
+import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.graphx.{GraphXVertexMap, VertexData, VertexDataBuilder}
 import org.apache.spark.graphx.VertexId
-import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
+import org.apache.spark.graphx.impl.GrapeUtils
+import org.apache.spark.graphx.utils.{ExecutorUtils, GrapeVertexPartitionRegistry, ScalaFFIFactory}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 
@@ -13,10 +15,6 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int, val startLid : Long, va
                                           val vertexData: VertexData[Long,VD]){
   def partVnum : Long = endLid - startLid
   def iterator : Iterator[(VertexId,VD)] = {
-    null
-  }
-
-  def map[VD2: ClassTag](f: (VertexId, VD) => VD2): GrapeVertexPartition[VD2] = {
     null
   }
 
@@ -214,20 +212,62 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int, val startLid : Long, va
 }
 
 class GrapeVertexPartitionBuilder[VD: ClassTag] extends Logging{
-  private val vertexDataBuilder : VertexDataBuilder[Long,VD] = ScalaFFIFactory.newVertexDataBuilder[VD]()
+  private var vertexDataBuilder : VertexDataBuilder[Long,VD] = ScalaFFIFactory.newVertexDataBuilder[VD]()
   private var vertexData : VertexData[Long,VD] = null.asInstanceOf[VertexData[Long,VD]]
-  private var initialized = false;
+//  private var initialized = false;
   private var built = false
+//  private var cleared = false
+
+  /** this func should be called when we need to reset this vertex builder, and a build a new vertex
+   * partition. */
+//  def clear(pid : Int) : Unit = {
+//    if (cleared){
+//      log.info(s"Partition ${pid} want to clear, but already cleared");
+//      return ;
+//    }
+//    cleared = true
+//    built = false
+//    initialized = false
+//    vertexData = null
+//    vertexDataBuilder = ScalaFFIFactory.newVertexDataBuilder[VD]()
+//    log.info(s"Partition ${pid} create new vd builder ${vertexDataBuilder}")
+//  }
+
   /** Concurrency constrol should be done in registry level */
   def init(fragVnums : Long, value : VD): Unit ={
     vertexDataBuilder.init(fragVnums,value)
     log.info(s"Init vertex data with ${fragVnums} ${value}")
-    initialized = true
+  }
+
+  def init[VD_OLD: ClassTag](vertexPartition : GrapeVertexPartition[VD_OLD], map : (VertexId, VD_OLD) => VD) : Unit = {
+    val vm = vertexPartition.vm
+    val oldVdArray = vertexPartition.vertexData.getVdataArray
+    require(vm.getVertexSize == oldVdArray.getLength, s"vm frag vnum not equal to vd array len ${vm.getVertexSize} vs ${oldVdArray.getLength}")
+    val newVdArrayBuilder = ScalaFFIFactory.newArrowArrayBuilder(GrapeUtils.getRuntimeClass[VD]).asInstanceOf[ArrowArrayBuilder[VD]]
+    newVdArrayBuilder.reserve(vm.getVertexSize)
+    var i = 0L;
+    val ivnum = vm.innerVertexSize()
+    while (i < ivnum){
+      val oid = vm.innerVertexLid2Oid(i)
+      val oldVD = oldVdArray.get(i)
+      newVdArrayBuilder.unsafeAppend(map(oid,oldVD))
+      i += 1
+    }
+    val fragVnum = vm.getVertexSize
+    while (i < fragVnum){
+      val oid = vm.outerVertexLid2Oid(i)
+      val oldVD = oldVdArray.get(i)
+      newVdArrayBuilder.unsafeAppend(map(oid,oldVD))
+      i += 1
+    }
+    log.info("Finish building new vd array")
+    vertexDataBuilder.init(newVdArrayBuilder)
   }
 
   def build(pid : Int) : Unit = {
     vertexData = vertexDataBuilder.seal(ExecutorUtils.getVineyarClient).get()
     log.info(s"Partition ${pid} built vertex data ${vertexData}")
+    ExecutorUtils.setVertexData(vertexData)
     built = true
   }
 
@@ -250,7 +290,9 @@ class GrapeVertexPartitionBuilder[VD: ClassTag] extends Logging{
     new GrapeVertexPartition[VD](pid, begin, end, vertexMap,vertexData)
   }
 
-  def isInitialized :Boolean = initialized
+//  def isInitialized :Boolean = initialized
 
   def isBuilt : Boolean = built
+
+//  def isCleared : Boolean = cleared
 }

@@ -19,7 +19,6 @@ object PageRank extends Logging{
     val eFilePath = args(0);
     val numPartitions = args(1).toInt;
     log.info(s"Running for efile ${eFilePath}")
-    //    val graph = GraphLoader.edgeListFile[Long, Long](sc, eFilePath, 1L, false, numPartitions)
     val graph = GraphLoader.edgeListFile(sc, eFilePath,canonicalOrientation = false,numPartitions)
     graph.cache()
     log.info(s"[GraphLoader: ] Load graph ${graph.numEdges}, ${graph.numVertices}")

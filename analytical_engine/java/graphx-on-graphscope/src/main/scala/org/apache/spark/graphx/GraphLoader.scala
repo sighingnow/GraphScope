@@ -75,6 +75,6 @@ object GraphLoader extends Logging {
     log.info(s"[Driver:] Got edge RDD ${edgeRDD}")
     val vertexRDD = GrapeVertexRDD.fromEdgeRDD[Int](edgeRDD, edgeRDD.grapePartitionsRDD.getNumPartitions, 1,vertexStorageLevel).cache()
     log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
-    GrapeGraphImpl.fromExistingRDDs(vertexRDD,edgeRDD);
+    GrapeGraphImpl.fromExistingRDDs(vertexRDD,edgeRDD)
   }
 }

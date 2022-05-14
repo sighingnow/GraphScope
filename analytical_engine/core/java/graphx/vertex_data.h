@@ -100,13 +100,21 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
   ~VertexDataBuilder() {}
 
   void Init(vid_t frag_vnums, vdata_t initValue) {
+    vdata_array_builder_t vdata_builder;
     this->frag_vnums_ = frag_vnums;
-    this->vdata_builder_.Reserve(static_cast<int64_t>(frag_vnums_));
+    vdata_builder.Reserve(static_cast<int64_t>(frag_vnums_));
     for (auto i = 0; i < static_cast<size_t>(frag_vnums_); ++i) {
-      this->vdata_builder_.UnsafeAppend(initValue);
+      vdata_builder.UnsafeAppend(initValue);
     }
+    vdata_builder.Finish(&(this->vdata_array_));
     LOG(INFO) << "Init vertex data with " << frag_vnums_
               << " vertices, init val : " << initValue;
+  }
+
+  void Init(vdata_array_builder_t& vdata_builder) {
+    this->frag_vnums_ = vdata_builder.length();
+    vdata_builder.Finish(&(this->vdata_array_));
+    LOG(INFO) << "Init vertex data with " << frag_vnums_;
   }
 
   std::shared_ptr<VertexData<vid_t, vdata_t>> MySeal(vineyard::Client& client) {
@@ -138,11 +146,10 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
   }
 
   vineyard::Status Build(vineyard::Client& client) override {
-    std::shared_ptr<vdata_array_t> vdata_array;
-    vdata_builder_.Finish(&vdata_array);
     typename vineyard::InternalType<vdata_t>::vineyard_builder_type
-        vdata_builder(client, vdata_array);
-    vineyard_array = *std::dynamic_pointer_cast<vineyard::NumericArray<vdata_t>>(
+        vdata_builder(client, this->vdata_array_);
+    vineyard_array =
+        *std::dynamic_pointer_cast<vineyard::NumericArray<vdata_t>>(
             vdata_builder.Seal(client));
     LOG(INFO) << "Finish building vertex data;";
     return vineyard::Status::OK();
@@ -150,7 +157,7 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
 
  private:
   vid_t frag_vnums_;
-  vdata_array_builder_t vdata_builder_;
+  std::shared_ptr<vdata_array_t> vdata_array_;
   vineyard::NumericArray<vdata_t> vineyard_array;
 };
 }  // namespace gs
