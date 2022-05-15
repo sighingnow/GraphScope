@@ -64,6 +64,7 @@ public class CppClassName {
             "gs::ParallelPropertyMessageManager";
     public static final String GRAPE_COMMUNICATOR = "grape::Communicator";
     public static final String ARROW_PROJECTED_FRAGMENT = "gs::ArrowProjectedFragment";
+    public static final String GRAPHX_FRAGMENT = "gs::GraphXFragment";
     public static final String PROJECTED_ADJ_LIST =
             "gs::arrow_projected_fragment_impl::AdjListDefault";
     public static final String PROJECTED_NBR = "gs::arrow_projected_fragment_impl::NbrDefault";

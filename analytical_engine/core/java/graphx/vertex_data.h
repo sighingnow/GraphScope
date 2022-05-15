@@ -18,6 +18,7 @@
 #define ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_VERTEX_DATA_H
 
 #include "grape/grape.h"
+#include "grape/utils/vertex_array.h"
 #include "grape/worker/comm_spec.h"
 #include "vineyard/basic/ds/array.h"
 #include "vineyard/basic/ds/arrow.h"
@@ -41,6 +42,7 @@ class VertexData : public vineyard::Registered<VertexData<VID_T, VD_T>> {
   using vid_array_t = typename vineyard::ConvertToArrowType<vid_t>::ArrayType;
   using vdata_array_t =
       typename vineyard::ConvertToArrowType<vdata_t>::ArrayType;
+  using vertex_t = grape::Vertex<VID_T>;
 
  public:
   VertexData() {}
@@ -68,10 +70,11 @@ class VertexData : public vineyard::Registered<VertexData<VID_T, VD_T>> {
 
   vid_t VerticesNum() { return frag_vnums_; }
 
-  VD_T GetData(vid_t lid) {
+  VD_T& GetData(vid_t& lid) {
     CHECK_LT(lid, frag_vnums_);
-    return vdatas_->Value(static_cast<int64_t>(lid));
+    return vdatas_->Value(lid);
   }
+  VD_T& GetData(const vertex_t& v) { return GetData(v.GetValue()); }
 
   graphx::MutableTypedArray<vdata_t>& GetVdataArray() {
     return vdatas_accessor_;

@@ -26,7 +26,14 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
     public static <VD,ED,M> GraphXAdaptorContext<VD,ED,M> create(String vdClass, String edClass, String msgClass){
         if (vdClass.equals("int64_t") && edClass.equals("int64_t") && msgClass.equals("int64_t")){
             return (GraphXAdaptorContext<VD, ED, M>) new GraphXAdaptorContext<Long, Long, Long>();
-        } else if (vdClass.equals("double") && edClass.equals("double") && msgClass.equals("double")){
+        }
+        else if (vdClass.equals("int64_t") && edClass.equals("int32_t") && msgClass.equals("int64_t")){
+            return (GraphXAdaptorContext<VD, ED, M>) new GraphXAdaptorContext<Long, Integer, Long>();
+        }
+        else if (vdClass.equals("double") && edClass.equals("int32_t") && msgClass.equals("double")){
+            return (GraphXAdaptorContext<VD, ED, M>) new GraphXAdaptorContext<Double, Integer, Double>();
+        }
+        else if (vdClass.equals("double") && edClass.equals("double") && msgClass.equals("double")){
             return (GraphXAdaptorContext<VD, ED, M>) new GraphXAdaptorContext<Double, Double, Double>();
         }
         else throw new IllegalStateException("not supported classes: " + vdClass + "," +  edClass + "," +  msgClass);
