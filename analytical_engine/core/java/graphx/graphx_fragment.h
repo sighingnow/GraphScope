@@ -63,19 +63,17 @@ namespace gs {
 template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
 class GraphXFragment
     : public vineyard::Registered<GraphXFragment<OID_T, VID_T, VD_T, ED_T>> {
+  using eid_t = vineyard::property_graph_types::EID_TYPE;
   using oid_t = OID_T;
   using vid_t = VID_T;
   using vdata_t = VD_T;
   using edata_t = ED_T;
   using csr_t = GraphXCSR<VID_T, ED_T>;
   using vm_t = GraphXVertexMap<OID_T, VID_T>;
-<<<<<<< HEAD
   using graphx_vdata_t = VertexData<VID_T, VD_T>;
-=======
-  using vdata_t = VertexData<VID_T, VD_T>;
   using vertices_t = grape::VertexRange<VID_T>;
   using vertex_t = grape::Vertex<VID_T>;
->>>>>>> ccec332e54e969b8953d8f30c79897b6d631c929
+  using nbr_t = vineyard::property_graph_utils::NbrUnit<vid_t, eid_t>;
 
  public:
   GraphXFragment() {}
@@ -185,7 +183,14 @@ class GraphXFragment
   }
 
   inline vdata_t& GetData(const vertex_t& v) { return vdata_.GetData(v); }
+  inline void SetData(const vertex_t& v, vdata_t vd) { vdata_.SetData(v, vd); }
 
+  inline nbr_t* GetBegin(VID_T lid) {
+    return csr_.GetBegin(lid);
+  }
+  inline nbr_t* GetEnd(VID_T lid) {
+    return csr_.GetEnd(lid);
+  }
  private:
   grape::fid_t fnum_, fid_;
   // FIXME: in edgs.

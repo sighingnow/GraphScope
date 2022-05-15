@@ -70,11 +70,14 @@ class VertexData : public vineyard::Registered<VertexData<VID_T, VD_T>> {
 
   vid_t VerticesNum() { return frag_vnums_; }
 
-  VD_T& GetData(vid_t& lid) {
+  VD_T& GetData(const vid_t& lid) {
     CHECK_LT(lid, frag_vnums_);
-    return vdatas_->Value(lid);
+    return vdatas_accessor_[lid];
   }
+
   VD_T& GetData(const vertex_t& v) { return GetData(v.GetValue()); }
+
+  void SetData(const vertex_t& v, vdata_t vd) { return vdatas_accessor_.Set(v.GetValue(), vd); }
 
   graphx::MutableTypedArray<vdata_t>& GetVdataArray() {
     return vdatas_accessor_;

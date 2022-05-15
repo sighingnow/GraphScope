@@ -40,6 +40,7 @@
 #include "vineyard/basic/stream/byte_stream.h"
 #include "vineyard/basic/stream/dataframe_stream.h"
 #include "vineyard/basic/stream/parallel_stream.h"
+#include "vineyard/graph/fragment/property_graph_utils.h"
 #include "vineyard/client/client.h"
 #include "vineyard/common/util/functions.h"
 #include "vineyard/io/io/i_io_adaptor.h"

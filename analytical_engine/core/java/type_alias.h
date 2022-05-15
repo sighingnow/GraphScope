@@ -163,7 +163,7 @@ class MutableTypedArray {
     }
   }
 
-  value_type operator[](size_t loc) const { return buffer_[loc]; }
+  value_type& operator[](size_t loc) const { return buffer_[loc]; }
 
   value_type Get(size_t loc) const { return buffer_[loc]; }
 

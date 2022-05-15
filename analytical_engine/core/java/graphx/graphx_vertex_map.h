@@ -106,7 +106,7 @@ class GraphXVertexMap
     InitOuterGids();
     this->ivnum_ = lid2Oids_[fid_]->length();
     this->ovnum_ = outer_lid2Oids_->length();
-    this->tvnum_ = this->ivnum_ + this.ovnum_;
+    this->tvnum_ = this->ivnum_ + this->ovnum_;
     // {
     //   vineyard_array_t array;
     //   array.Construct(meta.GetMemberMeta("outerLid2Gids"));
@@ -114,7 +114,7 @@ class GraphXVertexMap
     // }
 
     LOG(INFO) << "Finish constructing global vertex map, ivnum: " << ivnum_
-              << "ovnum: " << ovnum << " tvnum: " << tnum_;
+              << "ovnum: " << ovnum_ << " tvnum: " << tvnum_;
 
     for (size_t i = 0; i < oid2Lids_.size(); ++i) {
       LOG(INFO) << "oid2Lids_" << i << ", size " << oid2Lids_[i].size();
@@ -183,7 +183,7 @@ class GraphXVertexMap
     return true;
   }
 
-  bool Gid2Vertex(const vid_t& gid, vertex_t& v) const override {
+  bool Gid2Vertex(const vid_t& gid, vertex_t& v) const {
     return IsInnerVertexGid(gid) ? InnerVertexGid2Vertex(gid, v)
                                  : OuterVertexGid2Vertex(gid, v);
   }
@@ -216,7 +216,7 @@ class GraphXVertexMap
   }
 
   inline VID_T Vertex2Gid(const vertex_t& v) {
-    return IsInnerVertex(v) ? GetInnerVertexGid(v) : GetOuterVertexGid(gid, v);
+    return IsInnerVertex(v) ? GetInnerVertexGid(v) : GetOuterVertexGid(v);
   }
   inline VID_T GetInnerVertexGid(const vertex_t& v) const {
     return id_parser_.generate_global_id(fid(), v.GetValue());
@@ -231,8 +231,8 @@ class GraphXVertexMap
   }
   OID_T GetOuterVertexId(const vertex_t& v) const {
     assert(v.GetValue() >= ivnum_);
-    assert(v.GetValue() < tvnum_;);
-    return outer_lid2Oids_->Value(v.GetValue() - ivnum_;);
+    assert(v.GetValue() < tvnum_);
+    return outer_lid2Oids_->Value(v.GetValue() - ivnum_);
   }
 
   inline bool IsInnerVertex(const vertex_t& v) { return v.GetValue() < ivnum_; }
@@ -297,7 +297,7 @@ class GraphXVertexMap
   OID_T OuterVertexLid2Oid(const VID_T& lid) const {
     CHECK_GE(lid, ivnum_);
     CHECK_LT(lid, tvnum_);
-    return outer_lid2Oids_[fid_]->Value(lid - ivnum_);
+    return outer_lid2Oids_->Value(lid - ivnum_);
   }
 
   bool GetGid(fid_t fid, const OID_T& oid, VID_T& gid) const {
@@ -428,7 +428,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     // vertex_map->outer_lid2Gids_ = outer_gid_array_.GetArray();
     vertex_map->ivnum_ = vertex_map->lid2Oids_[fid_]->length();
     vertex_map->ovnum_ = vertex_map->outer_lid2Oids_->length();
-    vertex_map->tvnum_ = vertex_map->ivnum_ + vertex_map.ovnum_;
+    vertex_map->tvnum_ = vertex_map->ivnum_ + vertex_map->ovnum_;
 
     vertex_map->meta_.SetTypeName(type_name<GraphXVertexMap<oid_t, vid_t>>());
 
