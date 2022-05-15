@@ -16,10 +16,21 @@ public class GraphXAdaptor<VDATA_T, EDATA_T,MSG> extends Communicator implements
     private static String gsRuntimeJar = "local:/opt/graphscope/lib/grape-runtime-0.1-shaded.jar";
     private static String gsLibPath = "/opt/graphscope/lib";
 
+    /**
+     * With this ugly method, we can ensure runtime class infos
+     * @return
+     */
     public static <VD,ED,M> GraphXAdaptor<VD,ED,M> create(String vdClass, String edClass, String msgClass){
         if (vdClass.equals("int64_t") && edClass.equals("int64_t") && msgClass.equals("int64_t")){
             return (GraphXAdaptor<VD, ED, M>) new GraphXAdaptor<Long, Long, Long>();
-        }else if (vdClass.equals("double") && edClass.equals("double") && msgClass.equals("double")){
+        }
+        else if (vdClass.equals("int64_t") && edClass.equals("int32_t") && msgClass.equals("int64_t")){
+            return (GraphXAdaptor<VD, ED, M>) new GraphXAdaptor<Long, Integer, Long>();
+        }
+        else if (vdClass.equals("double") && edClass.equals("int32_t") && msgClass.equals("double")){
+            return (GraphXAdaptor<VD, ED, M>) new GraphXAdaptor<Double, Integer, Double>();
+        }
+        else if (vdClass.equals("double") && edClass.equals("double") && msgClass.equals("double")){
             return (GraphXAdaptor<VD, ED, M>) new GraphXAdaptor<Double, Double, Double>();
         }
         else throw new IllegalStateException("not supported classes: " + vdClass + "," +  edClass + "," +  msgClass);

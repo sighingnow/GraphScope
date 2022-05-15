@@ -67,6 +67,7 @@ class GraphXVertexMap
       typename vineyard::InternalType<oid_t>::vineyard_array_type;
   using vid_array_builder_t =
       typename vineyard::ConvertToArrowType<vid_t>::BuilderType;
+  using vertex_t = grape::Vertex<VID_T>;
 
  public:
   GraphXVertexMap() {}
@@ -103,13 +104,18 @@ class GraphXVertexMap
       outer_lid2Oids_ = array.GetArray();
     }
     InitOuterGids();
+    this->ivnum_ = lid2Oids_[fid_]->length();
+    this->ovnum_ = outer_lid2Oids_->length();
+    this->tvnum_ = this->ivnum_ + this.ovnum_;
     // {
     //   vineyard_array_t array;
     //   array.Construct(meta.GetMemberMeta("outerLid2Gids"));
     //   outer_lid2Gids_ = array.GetArray();
     // }
 
-    LOG(INFO) << "Finish constructing global vertex map";
+    LOG(INFO) << "Finish constructing global vertex map, ivnum: " << ivnum_
+              << "ovnum: " << ovnum << " tvnum: " << tnum_;
+
     for (size_t i = 0; i < oid2Lids_.size(); ++i) {
       LOG(INFO) << "oid2Lids_" << i << ", size " << oid2Lids_[i].size();
     }
@@ -120,7 +126,15 @@ class GraphXVertexMap
   fid_t fid() { return fid_; }
   fid_t fnum() { return fnum_; }
 
-  size_t GetTotalVertexSize() const {
+  inline fid_t GetFragId(vertex_t& v) {
+    if (v.GetValue() > ivnum_) {
+      auto gid = outer_lid2Gids_->Value(v.GetValue());
+      return id_parser_.get_fragment_id(gid);
+    }
+    return fid_;
+  }
+
+  inline VID_T GetTotalVertexSize() const {
     size_t size = 0;
     for (const auto& v : oid2Lids_) {
       size += v.size();
@@ -128,15 +142,120 @@ class GraphXVertexMap
     return size;
   }
 
-  size_t GetInnerVertexSize(fid_t fid) const { return oid2Lids_[fid].size(); }
+  VID_T GetInnerVertexSize(fid_t fid) const { return oid2Lids_[fid].size(); }
 
-  size_t GetOuterVertexSize() const { return outer_lid2Oids_->length(); }
+  VID_T GetInnerVertexSize() const { return ivnum_; }
 
-  size_t GetVertexSize() const {
-    return GetInnerVertexSize(fid_) + GetOuterVertexSize();
+  VID_T GetOuterVertexSize() const { return ovnum_; }
+
+  VID_T GetVertexSize() const { return tvnum_; }
+
+  bool GetVertex(const oid_t& oid, vertex_t& v) {
+    vid_t gid;
+    if (!GetGid(oid, gid)) {
+      LOG(ERROR) << "worker " << fid_ << "Get gid from oid faild: oid" << oid;
+      return false;
+    }
+    Gid2Vertex(gid, v);
+    return true;
   }
 
-  bool GetOid(const VID_T& gid, OID_T& oid) const {
+  bool GetInnerVertex(const oid_t& oid, vertex_t& v) {
+    auto iter = lid2Oids_[fid_].find(oid);
+    if (iter == lid2Oids_[fid_].end()) {
+      LOG(ERROR) << "No match for oid " << oid << "found in frag: " << fid_;
+      return false;
+    }
+    v.SetValue(iter->second);
+    return true;
+  }
+
+  bool GetOuterVertex(const oid_t& oid, vertex_t& v) {
+    vid_t gid;
+    assert(GetGid(oid, gid));
+    auto iter = outer_gid2Lids_.find(gid);
+    if (iter == outer_gid2Lids_.end()) {
+      LOG(ERROR) << "No outer vertex with oid: " << oid << "found in frag "
+                 << fid_;
+      return false;
+    }
+    v.SetValue(iter->second);
+    return true;
+  }
+
+  bool Gid2Vertex(const vid_t& gid, vertex_t& v) const override {
+    return IsInnerVertexGid(gid) ? InnerVertexGid2Vertex(gid, v)
+                                 : OuterVertexGid2Vertex(gid, v);
+  }
+  inline bool IsInnerVertexGid(const VID_T& gid) const {
+    return id_parser_.get_fragment_id(gid) == fid();
+  }
+
+  inline bool InnerVertexGid2Vertex(const VID_T& gid, vertex_t& v) const {
+    v.SetValue(id_parser_.get_local_id(gid));
+    return true;
+  }
+
+  inline bool OuterVertexGid2Vertex(const VID_T& gid, vertex_t& v) const {
+    vid_t lid;
+    if (OuterVertexGid2Lid(gid, lid)) {
+      v.SetValue(lid);
+      return true;
+    }
+    return false;
+  }
+
+  inline bool OuterVertexGid2Lid(const VID_T gid, VID_T& lid) const {
+    auto iter = outer_gid2Lids_.find(gid);
+    if (iter == outer_gid2Lids_.end()) {
+      LOG(ERROR) << "worker [" << fid_ << "find no lid for outer gid" << gid;
+      return false;
+    }
+    lid = iter->second;
+    return true;
+  }
+
+  inline VID_T Vertex2Gid(const vertex_t& v) {
+    return IsInnerVertex(v) ? GetInnerVertexGid(v) : GetOuterVertexGid(gid, v);
+  }
+  inline VID_T GetInnerVertexGid(const vertex_t& v) const {
+    return id_parser_.generate_global_id(fid(), v.GetValue());
+  }
+  inline VID_T GetOuterVertexGid(const vertex_t& v) const {
+    return outer_lid2Gids_[v.GetValue() - ivnum_];
+  }
+
+  OID_T GetInnerVertexId(const vertex_t& v) const {
+    assert(v.GetValue() < ivnum_);
+    return lid2Oids_[fid_]->Value(v.GetValue());
+  }
+  OID_T GetOuterVertexId(const vertex_t& v) const {
+    assert(v.GetValue() >= ivnum_);
+    assert(v.GetValue() < tvnum_;);
+    return outer_lid2Oids_->Value(v.GetValue() - ivnum_;);
+  }
+
+  inline bool IsInnerVertex(const vertex_t& v) { return v.GetValue() < ivnum_; }
+
+  inline bool InnerVertexGid2Lid(VID_T gid, VID_T& lid) const {
+    lid = id_parser_.get_local_id(gid);
+    return true;
+  }
+
+  inline VID_T GetInnererVertexGid(const vertex_t& v) {
+    assert(v.GetValue() < ivnum_);
+    return id_parser_.generate_global_id(fid_, v.GetValue());
+  }
+
+  OID_T GetId(const vertex_t& v) const {
+    if (v.GetValue() >= ivnum_) {
+      return OuterVertexLid2Oid(v.GetValue());
+    } else {
+      return InnerVertexLid2Oid(v.GetValue());
+    }
+  }
+
+  inline bool GetOid(const VID_T& gid, OID_T& oid) const {
     fid_t fid = GetFidFromGid(gid);
     VID_T lid = GetLidFromGid(gid);
     return GetOid(fid, lid, oid);
@@ -155,8 +274,8 @@ class GraphXVertexMap
    *
    * @param oid
    * @return VID_T
-   */
-  VID_T GetLid(const OID_T& oid) const {
+*/
+  inline VID_T GetLid(const OID_T& oid) const {
     vid_t gid;
     CHECK(GetGid(oid, gid));
     if (GetFidFromGid(gid) == fid_) {
@@ -169,24 +288,16 @@ class GraphXVertexMap
       }
       return iter->second;
     }
-    // fid_t fid = static_cast<fid_t>(0);
-    // while (fid < fnum_ && oid2Lids_[fid].find(oid) == oid2Lids_[fid].end()) {
-    //   fid += 1;
-    // }
-    // if (fid == fnum_) {
-    //   LOG(ERROR) << "oid2lid failed: " << oid;
-    //   return static_cast<vid_t>(0);
-    // }
-    // return oid2Lids_[fid].at(oid);
   }
 
   OID_T InnerVertexLid2Oid(const VID_T& lid) const {
-    CHECK_LT(lid, lid2Oids_[fid_]->length());
+    CHECK_LT(lid, ivnum_);
     return lid2Oids_[fid_]->Value(lid);
   }
   OID_T OuterVertexLid2Oid(const VID_T& lid) const {
-    CHECK_GE(lid, lid2Oids_[fid_]->length());
-    return outer_lid2Oids_->Value(lid);
+    CHECK_GE(lid, ivnum_);
+    CHECK_LT(lid, tvnum_);
+    return outer_lid2Oids_[fid_]->Value(lid - ivnum_);
   }
 
   bool GetGid(fid_t fid, const OID_T& oid, VID_T& gid) const {
@@ -242,6 +353,7 @@ class GraphXVertexMap
 
  private:
   grape::fid_t fnum_, fid_;
+  vid_t ivnum_, ovnum_, tvnum_;
   grape::IdParser<vid_t> id_parser_;
   std::vector<vineyard::Hashmap<oid_t, vid_t>> oid2Lids_;
   std::vector<std::shared_ptr<oid_array_t>> lid2Oids_;
@@ -314,6 +426,9 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     // Initiate outer gids rather than sealing them
     vertex_map->InitOuterGids();
     // vertex_map->outer_lid2Gids_ = outer_gid_array_.GetArray();
+    vertex_map->ivnum_ = vertex_map->lid2Oids_[fid_]->length();
+    vertex_map->ovnum_ = vertex_map->outer_lid2Oids_->length();
+    vertex_map->tvnum_ = vertex_map->ivnum_ + vertex_map.ovnum_;
 
     vertex_map->meta_.SetTypeName(type_name<GraphXVertexMap<oid_t, vid_t>>());
 

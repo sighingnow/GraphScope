@@ -32,6 +32,7 @@
 #include "flat_hash_map/flat_hash_map.hpp"
 
 #include "grape/grape.h"
+#include "grape/utils/vertex_array.h"
 #include "grape/worker/comm_spec.h"
 #include "vineyard/basic/ds/array.h"
 #include "vineyard/basic/ds/arrow.h"
@@ -68,7 +69,13 @@ class GraphXFragment
   using edata_t = ED_T;
   using csr_t = GraphXCSR<VID_T, ED_T>;
   using vm_t = GraphXVertexMap<OID_T, VID_T>;
+<<<<<<< HEAD
   using graphx_vdata_t = VertexData<VID_T, VD_T>;
+=======
+  using vdata_t = VertexData<VID_T, VD_T>;
+  using vertices_t = grape::VertexRange<VID_T>;
+  using vertex_t = grape::Vertex<VID_T>;
+>>>>>>> ccec332e54e969b8953d8f30c79897b6d631c929
 
  public:
   GraphXFragment() {}
@@ -96,13 +103,93 @@ class GraphXFragment
     this->vm_.Construct(meta.GetMemberMeta("vm"));
     this->vdata_.Construct(meta.GetMemberMeta("vdata"));
     CHECK_EQ(vm_.GetVertexSize(), vdata_.VerticesNum());
+    this->inner_vertices_.SetRange(0, vm_.GetInnerVertexSize());
+    this->outer_vertices_.SetRange(vm_.GetInnerVertexSize(),
+                                   vm_.GetVertexSize());
+    this->vertices_.SetRange(0, vm_.GetVertexSize());
     LOG(INFO) << "GraphXFragment finish construction : " << fid_;
   }
-  fid_t fid() { return fid_; }
-  fid_t fnum() { return fnum_; }
+  inline fid_t fid() { return fid_; }
+  inline fid_t fnum() { return fnum_; }
+
+  inline int64_t GetEdgeNum() { return csr_.GetTotalEdgesNum(); }
+
+  inline VID_T GetInnerVerticesNum() { return vm_.GetInnerVertexSize(); }
+  inline VID_T GetOuterVerticesNum() { return vm_.GetOuterVertexSize(); }
+  inline VID_T GetVerticesNum() { return vm_.GetVertexSize(); }
+  inline VID_T GetTotalVerticesNum() { return vm_.GetTotalVertexSize(); }
+
+  inline vertices_t Vertices() { return vertices_; }
+  inline vertices_t InnerVertices() { return inner_vertices_; }
+  inline vertices_t OuterVertices() { return outer_vertices_; }
+
+  inline bool GetVertex(oid_t& oid, vertex_t& v) {
+    return vm_.GetVertex(oid, v);
+  }
+
+  inline OID_T GetId(const vertex_t& v) { return vm_.GetId(v); }
+
+  inline fid_t GetFragId(const vertex_t& v) { return vm_.GetFragId(v); }
+
+  inline int GetLocalInDegree(const vertex_t& v) {
+    assert(IsInnerVertex(v));
+    return 0;
+  }
+  inline int GetLocalOutDegree(const vertex_t& v) {
+    assert(IsInnerVertex(v));
+    return csr_.GetDegree(v.GetValue());
+  }
+
+  inline bool Gid2Vertex(const vid_t& gid, vertex_t& v) {
+    return vm_.Gid2Vertex(gid, v);
+  }
+
+  inline vid_t Vertex2Gid(const vertex_t& v) { return vm_.Vertex2Gid(v); }
+
+  inline bool IsInnerVertex(const vertex_t& v) {
+    return inner_vertices_.Contain(v);
+  }
+  inline bool IsOuterVertex(const vertex_t& v) {
+    return outer_vertices_.Contain(v);
+  }
+
+  // Try to get iv lid from oid
+  inline bool GetInnerVertex(const OID_T& oid, vertex_t& v) {
+    return vm_.GetInnerVertex(oid, v);
+  }
+
+  inline bool GetOuterVertex(const OID_T& oid, vertex_t& v) {
+    return vm_.GetOuterVertex(oid, v);
+  }
+
+  inline OID_T GetInnerVertexId(const vertex_t& v) const {
+    return vm_.GetInnerVertexId(v);
+  }
+
+  inline OID_T GetOuterVertexId(const vertex_t& v) const {
+    return vm_.GetOuterVertexId(v);
+  }
+
+  inline bool InnerVertexGid2Vertex(const vid_t& gid, vertex_t& v) {
+    return vm_.InnerVertexGid2Vertex(gid, v);
+  }
+  inline bool OuterVertexGid2Vertex(const vid_t& gid, vertex_t& v) {
+    return vm_.OuterVertexGid2Vertex(gid, v);
+  }
+
+  inline VID_T GetInnererVertexGid(const vertex_t& v) {
+    return vm_.GetInnererVertexGid(v);
+  }
+  inline VID_T GetOuterVertexGid(const vertex_t& v) {
+    return vm_.GetOuterVertexGid(v);
+  }
+
+  inline vdata_t& GetData(const vertex_t& v) { return vdata_.GetData(v); }
 
  private:
   grape::fid_t fnum_, fid_;
+  // FIXME: in edgs.
+  vertices_t inner_vertices_, outer_vertices_, vertices_;
   csr_t csr_;
   vm_t vm_;
   graphx_vdata_t vdata_;
@@ -167,6 +254,11 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
     fragment->meta_.AddMember("vdata", vdata_.meta());
     fragment->meta_.AddMember("csr", csr_.meta());
     fragment->meta_.AddMember("vm", vm_.meta());
+
+    fragment->inner_vertices_.SetRange(0, vm_.GetInnerVertexSize());
+    fragment->outer_vertices_.SetRange(vm_.GetInnerVertexSize(),
+                                       vm_.GetVertexSize());
+    fragment->vertices_.SetRange(0, vm_.GetVertexSize());
 
     size_t nBytes = 0;
     nBytes += vdata_.nbytes();
