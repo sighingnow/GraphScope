@@ -82,7 +82,7 @@ object GrapeVertexRDD extends Logging{
       val registry = GrapeVertexPartitionRegistry.getOrCreate
       val pid = iter.next()._1
       Iterator((pid, registry.getVertexPartition[VD](pid)))
-    })
+    }).cache()
     new GrapeVertexRDDImpl[VD](vertexPartitionRDD,storageLevel)
   }
 }

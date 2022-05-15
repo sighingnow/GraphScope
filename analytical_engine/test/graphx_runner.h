@@ -82,7 +82,7 @@ vineyard::ObjectID splitAndGet(grape::CommSpec& comm_spec,
   auto my_host_name = getHostName();
   for (auto str : splited) {
     if (str.find(my_host_name) != std::string::npos) {
-      auto trimed = str.substr(str.find(my_host_name) + my_host_name.size());
+      auto trimed = str.substr(str.find(my_host_name) + my_host_name.size() + 1);
       LOG(INFO) << "trimed: " << trimed;
       return std::stoull(trimed.c_str(), NULL, 10);
     }
@@ -138,7 +138,6 @@ void Query(grape::CommSpec& comm_spec, std::shared_ptr<FRAG_T> fragment,
 
 template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
 void CreateAndQuery(std::string params, const std::string& frag_name) {
-  grape::InitMPIComm();
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
   using GraphXFragmentType = gs::GraphXFragment<OID_T, VID_T, VD_T, ED_T>;

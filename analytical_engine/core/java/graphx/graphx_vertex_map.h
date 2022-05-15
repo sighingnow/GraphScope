@@ -162,7 +162,12 @@ class GraphXVertexMap
     if (GetFidFromGid(gid) == fid_) {
       return id_parser_.get_local_id(gid);
     } else {
-      return outer_gid2Lids_[gid];
+      auto iter = outer_gid2Lids_.find(gid);
+      if (iter == outer_gid2Lids_.end()){
+          LOG(ERROR) << "worker [" << fid_ << "find no lid for outer gid" << gid;
+          return -1;
+      }
+      return iter->second;
     }
     // fid_t fid = static_cast<fid_t>(0);
     // while (fid < fnum_ && oid2Lids_[fid].find(oid) == oid2Lids_[fid].end()) {

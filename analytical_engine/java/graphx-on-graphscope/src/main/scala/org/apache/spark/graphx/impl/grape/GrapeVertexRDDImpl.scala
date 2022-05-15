@@ -290,8 +290,4 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   override private[graphx] def shipVertexIds() = {
     throw new IllegalStateException("Inherited but not implemented, should not be used")
     }
-
-  override private[graphx] def partitionsRDD = {
-    throw new IllegalStateException("Inherited but not implemented, should not be used")
-  }
 }

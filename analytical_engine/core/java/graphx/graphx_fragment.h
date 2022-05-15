@@ -164,7 +164,7 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
 
     fragment->meta_.AddKeyValue("fid", fid_);
     fragment->meta_.AddKeyValue("fnum", fnum_);
-    fragment->meta_.AddMember("vdatas", vdata_.meta());
+    fragment->meta_.AddMember("vdata", vdata_.meta());
     fragment->meta_.AddMember("csr", csr_.meta());
     fragment->meta_.AddMember("vm", vm_.meta());
 

@@ -14,8 +14,8 @@ object SSSP extends Logging{
       .appName(s"${this.getClass.getSimpleName}")
       .getOrCreate()
     val sc = spark.sparkContext
-    if (args.length < 4){
-      println("Expect 2 args")
+    if (args.length < 3){
+      println("Expect 3 args")
       return 0;
     }
     val efilePath = args(0)

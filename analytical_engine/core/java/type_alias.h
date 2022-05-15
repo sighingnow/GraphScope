@@ -119,6 +119,15 @@ template <>
 struct TypeName<double> {
   static std::string Get() { return "double"; }
 };
+template <>
+struct TypeName<uint32_t> {
+  static std::string Get() { return "uint32_t"; }
+};
+template <>
+struct TypeName<uint64_t> {
+  static std::string Get() { return "uint64_t"; }
+};
+
 
 namespace graphx {
 template <typename T>

@@ -36,7 +36,6 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
       if (!edgePartitionBuilder.isCSRBuilt()){
         val csr = edgePartitionBuilder.buildCSR()
         log.info(s"[GrapeEdgePartitionRegistry] Partition ${pid} built CSR ${csr}")
-        ExecutorUtils.setGraphXCSR(csr)
       }
     }
   }
