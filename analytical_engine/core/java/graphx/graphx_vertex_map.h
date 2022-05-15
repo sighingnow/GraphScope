@@ -150,16 +150,29 @@ class GraphXVertexMap
     return true;
   }
 
+  /**
+   * @brief For a oid, get the lid in this frag.
+   *
+   * @param oid
+   * @return VID_T
+   */
   VID_T GetLid(const OID_T& oid) const {
-    fid_t fid = static_cast<fid_t>(0);
-    while (fid < fnum_ && oid2Lids_[fid].find(oid) == oid2Lids_[fid].end()) {
-      fid += 1;
+    vid_t gid;
+    CHECK(GetGid(oid, gid));
+    if (GetFidFromGid(gid) == fid_) {
+      return id_parser_.get_local_id(gid);
+    } else {
+      return outer_gid2Lids_[gid];
     }
-    if (fid == fnum_) {
-      LOG(ERROR) << "oid2lid failed: " << oid;
-      return static_cast<vid_t>(0);
-    }
-    return oid2Lids_[fid].at(oid);
+    // fid_t fid = static_cast<fid_t>(0);
+    // while (fid < fnum_ && oid2Lids_[fid].find(oid) == oid2Lids_[fid].end()) {
+    //   fid += 1;
+    // }
+    // if (fid == fnum_) {
+    //   LOG(ERROR) << "oid2lid failed: " << oid;
+    //   return static_cast<vid_t>(0);
+    // }
+    // return oid2Lids_[fid].at(oid);
   }
 
   OID_T InnerVertexLid2Oid(const VID_T& lid) const {
@@ -214,6 +227,12 @@ class GraphXVertexMap
                 << " gid: " << gid;
     }
     gid_builder.Finish(&outer_lid2Gids_);
+
+    vid_t lid = lid2Oids_[fid_]->length();
+    for (int64_t i = 0; i < ovnum; ++i) {
+      outer_gid2Lids_.emplace(outer_lid2Gids_->Value(i), lid);
+      lid++;
+    }
   }
 
  private:
@@ -223,6 +242,7 @@ class GraphXVertexMap
   std::vector<std::shared_ptr<oid_array_t>> lid2Oids_;
   std::shared_ptr<oid_array_t> outer_lid2Oids_;
   std::shared_ptr<vid_array_t> outer_lid2Gids_;
+  ska::flat_hash_map<vid_t, vid_t> outer_gid2Lids_;
 
   template <typename _OID_T, typename _VID_T>
   friend class GraphXVertexMapBuilder;
