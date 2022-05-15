@@ -182,5 +182,4 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
         }
         throw new IllegalStateException("Unrecoginizable :" + name);
     }
-
 }

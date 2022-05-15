@@ -3,9 +3,11 @@ package com.alibaba.graphscope.runtime;
 import static com.alibaba.graphscope.runtime.GraphScopeClassLoader.getTypeArgumentFromInterface;
 
 import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
+import com.alibaba.graphscope.fragment.GraphXFragment;
 import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.fragment.ImmutableEdgecutFragment;
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor;
+import com.alibaba.graphscope.fragment.adaptor.GraphXFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.ImmutableEdgecutFragmentAdaptor;
 
 import org.slf4j.Logger;
@@ -42,7 +44,18 @@ public class IFragmentHelper {
             }
             return createImmutableFragmentAdaptor(
                     classes[0], classes[1], classes[2], classes[3], immutableEdgecutFragment);
-        } else {
+        }
+        else if (fragmentImpl instanceof GraphXFragment){
+            GraphXFragment graphXFragment = (GraphXFragment) fragmentImpl;
+            Class<?>[] classes = getTypeArgumentFromInterface(GraphXFragment.class, graphXFragment.getClass());
+            if (classes.length != 4) {
+                logger.error("Expected 4 actural type arguments, received: " + classes.length);
+                return null;
+            }
+            return createGraphXFragmentAdaptor(
+                classes[0], classes[1], classes[2], classes[3], graphXFragment);
+        }
+        else {
             logger.info(
                     "Provided fragment is neither a projected fragment nor a immutable fragment.");
             return null;
@@ -96,5 +109,15 @@ public class IFragmentHelper {
                             Class<? extends EDATA_T> edataClass,
                             ImmutableEdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> fragment) {
         return new ImmutableEdgecutFragmentAdaptor<>(fragment);
+    }
+
+    private static <OID_T,VID_T,VDATA_T,EDATA_T> GraphXFragmentAdaptor<OID_T,VID_T,VDATA_T,EDATA_T> createGraphXFragmentAdaptor(
+        Class<? extends OID_T> oidClass,
+        Class<? extends VID_T> vidClass,
+        Class<? extends VDATA_T> vdClass,
+        Class<? extends EDATA_T> edClass,
+        GraphXFragment<OID_T,VID_T,VDATA_T,EDATA_T> fragment
+    ){
+        return new GraphXFragmentAdaptor<>(fragment);
     }
 }

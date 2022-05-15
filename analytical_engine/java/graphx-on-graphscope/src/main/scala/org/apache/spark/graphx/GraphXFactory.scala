@@ -44,6 +44,7 @@ object GraphXFactory extends Logging{
                                 idManager : GraphXVertexIdManager, vertexDataManager : VertexDataManager[VD], mergeMsg : (MSG,MSG) => MSG): DefaultMessageStore[VD,MSG] = {
     new DefaultMessageStore[VD,MSG](conf, fragment, idManager, vertexDataManager, mergeMsg);
   }
+
   def createEdgeTriplet[VD: ClassTag, ED : ClassTag](conf: GraphXConf[VD,ED]): GSEdgeTriplet[VD, ED] = {
     new GSEdgeTripletImpl[VD,ED]
   }

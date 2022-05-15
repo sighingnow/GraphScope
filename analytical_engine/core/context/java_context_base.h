@@ -218,8 +218,8 @@ class JavaContextBase : public grape::ContextBase {
             context_class_name_.find(
                 "com.alibaba.graphscope.context.GraphXAdaptorContext") !=
                 std::string::npos) {
-          context_object_ =
-              LoadAndCreate(env, url_class_loader_object_, context_class_name_.c_str());
+          context_object_ = LoadAndCreate(env, url_class_loader_object_,
+                                          context_class_name_.c_str());
           VLOG(1) << "Succcessfully loaded graphx context: " << context_object_;
         } else {
           std::string _context_class_name_str =
@@ -244,7 +244,8 @@ class JavaContextBase : public grape::ContextBase {
           reinterpret_cast<jlong>(&fragment_));
       CHECK_NOTNULL(fragObject);
       if (graph_type_str_.find("Immutable") != std::string::npos ||
-          graph_type_str_.find("ArrowProjected") != std::string::npos) {
+          graph_type_str_.find("ArrowProjected") != std::string::npos ||
+          graph_type_str_find("GraphXFragment") != std::string::npos) {
         VLOG(1) << "Creating IFragment";
         // jobject fragment_object_impl_ = env->NewGlobalRef(fragObject);
         // For immutableFragment and ArrowProjectedFragment, we use a wrapper

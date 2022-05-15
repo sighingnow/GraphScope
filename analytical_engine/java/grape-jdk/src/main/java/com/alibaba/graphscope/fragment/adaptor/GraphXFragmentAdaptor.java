@@ -18,6 +18,10 @@ public class GraphXFragmentAdaptor<OID_T, VID_T, VDATA_T, EDATA_T> implements
     public static String fragmentType = "GraphXFragment";
     private GraphXFragment<OID_T, VID_T, VDATA_T, EDATA_T> fragment;
 
+    public GraphXFragmentAdaptor(GraphXFragment<OID_T,VID_T,VDATA_T,EDATA_T> fragment){
+        this.fragment = fragment;
+    }
+
     /**
      * Return the underlying fragment type,i.e. ArrowProjected or Simple.
      *

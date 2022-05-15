@@ -234,7 +234,7 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex Input vertex.
      * @return The incoming edge destination fragment ID list.
      */
-    DestList inEdgeDests(@CXXReference Vertex<VID_T> vertex);
+//    DestList inEdgeDests(@CXXReference Vertex<VID_T> vertex);
 
     /**
      * Return the outgoing edge destination fragment ID list of a inner vertex.
@@ -250,7 +250,7 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex Input vertex.
      * @return The outgoing edge destination fragment ID list.
      */
-    DestList outEdgeDests(@CXXReference Vertex<VID_T> vertex);
+//    DestList outEdgeDests(@CXXReference Vertex<VID_T> vertex);
 
     /**
      * Get both the in edges and out edges.
@@ -258,7 +258,7 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex query vertex.
      * @return The outgoing and incoming edge destination fragment ID list.
      */
-    DestList inOutEdgeDests(@CXXReference Vertex<VID_T> vertex);
+//    DestList inOutEdgeDests(@CXXReference Vertex<VID_T> vertex);
 
     @FFINameAlias("GetIncomingAdjList")
     @CXXValue
