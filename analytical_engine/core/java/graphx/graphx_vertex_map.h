@@ -168,7 +168,7 @@ class GraphXVertexMap
   }
   OID_T OuterVertexLid2Oid(const VID_T& lid) const {
     CHECK_GE(lid, lid2Oids_[fid_]->length());
-    return outer_lid2Oids_[fid_]->Value(lid);
+    return outer_lid2Oids_->Value(lid);
   }
 
   bool GetGid(fid_t fid, const OID_T& oid, VID_T& gid) const {

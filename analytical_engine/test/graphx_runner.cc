@@ -114,46 +114,34 @@ int main(int argc, char* argv[]) {
   //      std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
   if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
       std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
-    gs::Run<int64_t, int64_t>(params);
+    gs::Run<int64_t,uint64_t,int64_t, int64_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int32_t") == 0) {
-    gs::Run<int64_t, int32_t>(params);
+    gs::Run<int64_t,uint64_t,int64_t, int32_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
-    gs::Run<int64_t, double>(params);
+    gs::Run<int64_t,uint64_t,int64_t, double>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int32_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
-    gs::Run<int32_t, int64_t>(params);
+    gs::Run<int64_t,uint64_t,int32_t, int64_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int32_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int32_t") == 0) {
-    gs::Run<int32_t, int32_t>(params);
+    gs::Run<int64_t,uint64_t,int32_t, int32_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int32_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
-    gs::Run<int32_t, double>(params);
+    gs::Run<int64_t,uint64_t,int32_t, double>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
-    gs::Run<double, int64_t>(params);
+    gs::Run<int64_t,uint64_t,double, int64_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int32_t") == 0) {
-    gs::Run<double, int32_t>(params);
+    gs::Run<int64_t,uint64_t,double, int32_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
-    gs::Run<double, double>(params);
+    gs::Run<int64_t,uint64_t,double, double>(params);
   } else {
     LOG(ERROR) << "current not supported: " << FLAGS_vd_class << ", "
                << FLAGS_ed_class;
-  }
-  if (true) {
-  } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
-             std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
-    using ProjectedFragmentType =
-        gs::ArrowProjectedFragment<int64_t, uint64_t, double, double>;
-    std::string frag_name =
-        "gs::ArrowProjectedFragment<int64_t,uint64_t,double,double>";
-    gs::CreateAndQuery<ProjectedFragmentType>(params, frag_name);
-    gs::Finalize();
-  } else {
-    LOG(ERROR) << "Unrecognized: " << FLAGS_vd_class << ", " << FLAGS_ed_class;
   }
 
   VLOG(1) << "Finish Querying.";

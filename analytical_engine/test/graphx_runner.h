@@ -31,6 +31,7 @@ limitations under the License.
 
 #include "grape/config.h"
 #include "grape/grape.h"
+#include "grape/util.h"
 
 #include <boost/asio.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -88,7 +89,7 @@ vineyard::ObjectID splitAndGet(grape::CommSpec& comm_spec,
   }
   LOG(ERROR) << "No available res could be found in " << ids << " on "
              << my_host_name;
-  return vineyard::invalidObjectID();
+  return vineyard::InvalidObjectID();
 }
 
 template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
@@ -144,15 +145,12 @@ void CreateAndQuery(std::string params, const std::string& frag_name) {
   boost::property_tree::ptree pt;
   string2ptree(params, pt);
 
-  VLOG(10) << "user_lib_path: " << FLAGS_user_lib_path
-           << ", directed: " << FLAGS_directed << ", vdata_path "
-           << FLAGS_vdata_path << ", vdata size" << FLAGS_vdata_size;
   vineyard::Client client;
   VINEYARD_CHECK_OK(client.Connect(FLAGS_ipc_socket));
   VLOG(1) << "Connected to IPCServer: " << FLAGS_ipc_socket;
 
   auto fragment_id = LoadFragment<OID_T, VID_T, VD_T, ED_T>(
-      client, FLAGS_vm_ids, FLAGS_csr_ids, FLAGS_vdata_ids);
+      client, comm_spec, FLAGS_vm_ids, FLAGS_csr_ids, FLAGS_vdata_ids);
 
   VLOG(10) << "[worker " << comm_spec.worker_id()
            << "] loaded frag id: " << fragment_id;
@@ -189,7 +187,7 @@ void CreateAndQuery(std::string params, const std::string& frag_name) {
 template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
 void Run(std::string& params) {
   std::string frag_name = "gs::GraphXFragment<" + TypeName<OID_T>::Get() + "," +
-                          TypeName<VID_T>::Get() + "," + Typename<VD_T>::Get() +
+                          TypeName<VID_T>::Get() + "," + TypeName<VD_T>::Get() +
                           "," + TypeName<ED_T>::Get() + ">";
 
   LOG(INFO) << "Running for: " << frag_name;

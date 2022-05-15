@@ -22,6 +22,7 @@ limitations under the License.
 #include "core/java/graphx/graphx_csr.h"
 #include "core/java/graphx/local_vertex_map.h"
 #include "core/java/graphx/vertex_data.h"
+#include "core/java/graphx/graphx_fragment.h"
 #include "glog/logging.h"
 #include "vineyard/client/client.h"
 
@@ -110,7 +111,7 @@ gs::GraphXVertexMap<int64_t, uint64_t> TestGraphXVertexMap(
   return *vm;
 }
 
-void TestGraphXCSR(vineyard::Client& client,
+vineyard::ObjectID TestGraphXCSR(vineyard::Client& client,
                    gs::GraphXVertexMap<int64_t, uint64_t>& graphx_vm) {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
@@ -161,10 +162,10 @@ vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
 void TestGraphXFragment(vineyard::Client& client, vineyard::ObjectID vm_id,
                         vineyard::ObjectID csr_id,
                         vineyard::ObjectID vdata_id) {
-  gs::FragmentBuilder<int64_t, uint64_t, int64_t, int64_t> builder(
+  gs::GraphXFragmentBuilder<int64_t, uint64_t, int64_t, int64_t> builder(
       client, vm_id, csr_id, vdata_id);
   auto res =
-      std::dynamic_pointer_cast<gs::GraphXFragment<OID_T, VID_T, VD_T, ED_T>>(
+      std::dynamic_pointer_cast<gs::GraphXFragment<int64_t,uint64_t,int64_t,int64_t>>(
           builder.Seal(client));
   LOG(INFO) << "Succesfully construct fragment: " << res->id();
 }

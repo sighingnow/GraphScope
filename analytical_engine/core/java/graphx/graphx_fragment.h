@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_VERTEX_MAP_H
-#define ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_VERTEX_MAP_H
+#ifndef ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H
+#define ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H
 
 #define WITH_PROFILING
 
@@ -48,6 +48,9 @@
 #include "core/error.h"
 #include "core/io/property_parser.h"
 #include "core/java/graphx/local_vertex_map.h"
+#include "core/java/graphx/graphx_vertex_map.h"
+#include "core/java/graphx/graphx_csr.h"
+#include "core/java/graphx/vertex_data.h"
 #include "core/java/type_alias.h"
 
 /**
@@ -65,7 +68,7 @@ class GraphXFragment
   using edata_t = ED_T;
   using csr_t = GraphXCSR<VID_T, ED_T>;
   using vm_t = GraphXVertexMap<OID_T, VID_T>;
-  using vdata_t = VertexData<VID_T, VD_T>;
+  using graphx_vdata_t = VertexData<VID_T, VD_T>;
 
  public:
   GraphXFragment() {}
@@ -73,8 +76,13 @@ class GraphXFragment
 
   static std::unique_ptr<vineyard::Object> Create() __attribute__((used)) {
     return std::static_pointer_cast<vineyard::Object>(
-        std::unique_ptr<GraphXFragment<OID_T, VID_T>>{
-            new GraphXFragment<OID_T, VID_T, VD_T, EDATA_T>()});
+        std::unique_ptr<GraphXFragment<OID_T, VID_T,VD_T,ED_T>>{
+            new GraphXFragment<OID_T, VID_T, VD_T, ED_T>()});
+  }
+
+  void PrepareToRunApp(const grape::CommSpec& comm_spec,
+                       grape::PrepareConf conf) {
+    LOG(INFO) << "no preparation";
   }
 
   void Construct(const vineyard::ObjectMeta& meta) override {
@@ -87,7 +95,7 @@ class GraphXFragment
     this->csr_.Construct(meta.GetMemberMeta("csr"));
     this->vm_.Construct(meta.GetMemberMeta("vm"));
     this->vdata_.Construct(meta.GetMemberMeta("vdata"));
-    CHECK_EQ(vm_->GetVertexSize(), vdata_->VerticesNum());
+    CHECK_EQ(vm_.GetVertexSize(), vdata_.VerticesNum());
     LOG(INFO) << "GraphXFragment finish construction : " << fid_;
   }
   fid_t fid() { return fid_; }
@@ -97,7 +105,7 @@ class GraphXFragment
   grape::fid_t fnum_, fid_;
   csr_t csr_;
   vm_t vm_;
-  vdata_t vdata_;
+  graphx_vdata_t vdata_;
 
   template <typename _OID_T, typename _VID_T, typename _VD_T, typename _ED_T>
   friend class GraphXFragmentBuilder;
@@ -111,7 +119,7 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
   using edata_t = ED_T;
   using csr_t = GraphXCSR<VID_T, ED_T>;
   using vm_t = GraphXVertexMap<OID_T, VID_T>;
-  using vdata_t = VertexData<VID_T, VD_T>;
+  using graphx_vdata_t = VertexData<VID_T, VD_T>;
 
  public:
   explicit GraphXFragmentBuilder(vineyard::Client& client,
@@ -131,11 +139,11 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
                                  vineyard::ObjectID csr_id,
                                  vineyard::ObjectID vdata_id)
       : client_(client) {
-    fid_ = vm.fid();
-    fnum_ = vm.fnum();
-    vm_ = std::dynamic_pointer_cast<vm_t>(client.GetObject(vm_id));
-    csr_ = std::dynamic_pointer_cast<csr_t>(client.GetObject(csr_id));
-    vdata_ = std::dynamic_pointer_cast<vdata_t>(client.GetObject(vdata_id));
+    vm_ = *std::dynamic_pointer_cast<vm_t>(client.GetObject(vm_id));
+    fid_ = vm_.fid();
+    fnum_ = vm_.fnum();
+    csr_ = *std::dynamic_pointer_cast<csr_t>(client.GetObject(csr_id));
+    vdata_ = *std::dynamic_pointer_cast<graphx_vdata_t>(client.GetObject(vdata_id));
   };
 
   std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) {
@@ -183,10 +191,10 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
   grape::fid_t fnum_, fid_;
   csr_t csr_;
   vm_t vm_;
-  vdata_t vdata_;
+  graphx_vdata_t vdata_;
   vineyard::Client& client_;
 };
 
 }  // namespace gs
 
-#endif  // ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_VERTEX_MAP_H
+#endif  // ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H

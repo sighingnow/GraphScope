@@ -39,7 +39,7 @@ class GrapeVertexPartitionRegistry extends Logging{
   /** Create a new vertexPartition with original partition and transformation function */
   def init[VD : ClassTag, VD2 : ClassTag](pid : Int, vertexPartition : GrapeVertexPartition[VD], map : (VertexId, VD) => VD2) : Unit = {
     synchronized{
-      if (vertexPartition == null){
+      if (vertexPartitionBuilder == null){
         vertexPartitionBuilder = new GrapeVertexPartitionBuilder[VD2]
         log.info(s"Partition ${pid} create new Vertex Data from original Vd type ${GrapeUtils.getRuntimeClass[VD].toString} to ${GrapeUtils.getRuntimeClass[VD2].toString}")
         vertexPartitionBuilder.asInstanceOf[GrapeVertexPartitionBuilder[VD2]].init(vertexPartition, map)

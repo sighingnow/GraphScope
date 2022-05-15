@@ -103,7 +103,7 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
     vdata_array_builder_t vdata_builder;
     this->frag_vnums_ = frag_vnums;
     vdata_builder.Reserve(static_cast<int64_t>(frag_vnums_));
-    for (auto i = 0; i < static_cast<size_t>(frag_vnums_); ++i) {
+    for (size_t i = 0; i < static_cast<size_t>(frag_vnums_); ++i) {
       vdata_builder.UnsafeAppend(initValue);
     }
     vdata_builder.Finish(&(this->vdata_array_));
