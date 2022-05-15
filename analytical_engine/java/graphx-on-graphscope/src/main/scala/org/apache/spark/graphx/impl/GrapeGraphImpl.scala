@@ -5,6 +5,7 @@ import org.apache.spark.HashPartitioner
 import org.apache.spark.graphx.impl
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
 import org.apache.spark.graphx.impl.graph.{EdgeManagerImpl, VertexDataManagerImpl}
+import org.apache.spark.graphx.utils.ExecutorUtils
 //import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.impl.GrapeUtils.{classToStr, generateForeignFragName, scalaClass2JavaClass}
@@ -49,6 +50,26 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   def numVertices: Long = vertices.count()
 
   def numEdges: Long = edges.count()
+
+  def generateGlobalVMIds() : Array[String] = {
+    edges.grapePartitionsRDD.mapPartitions(iter => {
+//      Iterator(iter.next()._2.vm.id())
+      Iterator(ExecutorUtils.getHostName + ":" + iter.next()._2.vm.id())
+    }).collect().distinct
+  }
+
+  def generateCSRIds() : Array[String] = {
+    edges.grapePartitionsRDD.mapPartitions(iter => {
+//      Iterator(ExecutorUtils.getHost2CSRID)
+      Iterator(ExecutorUtils.getHostName + ":" + iter.next()._2.csr.id())
+    }).collect().distinct
+  }
+
+  def generateVdataIds() : Array[String] = {
+    vertices.grapePartitionsRDD.mapPartitions(iter => {
+      Iterator(ExecutorUtils.getHostName + ":" + iter.next()._2.vertexData.id())
+    }).collect().distinct
+  }
 
   val sc = vertices.sparkContext
 

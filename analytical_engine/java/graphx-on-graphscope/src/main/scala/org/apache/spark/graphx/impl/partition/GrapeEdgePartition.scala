@@ -1,7 +1,7 @@
 package org.apache.spark.graphx.impl.partition
 
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
-import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXVertexMap, VineyardClient}
+import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXVertexMap, LocalVertexMap, VineyardClient}
 import org.apache.spark.graphx.Edge
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
@@ -48,7 +48,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
   /**
    * @return the built local vertex map id.
    */
-  def buildLocalVertexMap() : Long = {
+  def buildLocalVertexMap() : LocalVertexMap[Long,Long] = {
     //We need to get oid->lid mappings in this executor.
     val innerHashSet = new OpenHashSet[Long]
     for (edgeShuffleReceive <- lists){
@@ -90,10 +90,10 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
     val localVM = localVertexMapBuilder.seal(ExecutorUtils.getVineyarClient).get();
     log.info(s"${ExecutorUtils.getHostName}: Finish building local vm: ${localVM.id()}, ${localVM.getInnerVerticesNum}");
     localVMBuilt = true
-    localVM.id()
+    localVM
   }
 
-  def buildCSR(): Long = {
+  def buildCSR(): GraphXCSR[Long,_] = {
     val edgesNum = lists.map(shuffle => shuffle.totalSize()).sum
     log.info(s"Got totally ${lists.length}, edges ${edgesNum} in ${ExecutorUtils.getHostName}")
     srcOidBuilder.reserve(edgesNum)
@@ -122,7 +122,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
     ExecutorUtils.setGraphXCSR(graphxCSR)
     ExecutorUtils.setGlobalVM(graphxVertexMap)
     csrBuilt = true
-    graphxCSR.id()
+    graphxCSR
   }
 
   def getEdgePartition(pid: Int): GrapeEdgePartition[VD,ED] ={

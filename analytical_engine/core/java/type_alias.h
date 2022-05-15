@@ -100,6 +100,26 @@ using ArrowArrayBuilder = typename vineyard::ConvertToArrowType<T>::BuilderType;
 template <typename T>
 using ArrowArray = typename vineyard::ConvertToArrowType<T>::ArrayType;
 
+template <typename T>
+struct TypeName {
+  static std::string Get() { return "NULL"; }
+};
+
+// a specialization for each type of those you want to support
+// and don't like the string returned by typeid
+template <>
+struct TypeName<int32_t> {
+  static std::string Get() { return "int32_t"; }
+};
+template <>
+struct TypeName<int64_t> {
+  static std::string Get() { return "int64_t"; }
+};
+template <>
+struct TypeName<double> {
+  static std::string Get() { return "double"; }
+};
+
 namespace graphx {
 template <typename T>
 class MutableTypedArray {

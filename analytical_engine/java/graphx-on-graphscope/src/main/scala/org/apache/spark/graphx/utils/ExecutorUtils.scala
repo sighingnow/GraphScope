@@ -1,6 +1,6 @@
 package org.apache.spark.graphx.utils
 
-import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXVertexMap, VertexData, VineyardClient}
+import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXVertexMap, LocalVertexMap, VertexData, VineyardClient}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.PrimitiveVector
 
@@ -22,9 +22,10 @@ object ExecutorUtils extends Logging{
   private val pids = new PrimitiveVector[Int]
   private val hostName: String = InetAddress.getLocalHost.getHostName
   private val hostIp: String = InetAddress.getLocalHost.getHostAddress
-  private var localVMID : Long = -1L;
-  private var csrID : Long = -1L;
+//  private var localVMID : Long = -1L;
+//  private var csrID : Long = -1L;
   private var globalVMID : Long = -1L;
+  private var localVM : LocalVertexMap[Long,Long] = null.asInstanceOf[LocalVertexMap[Long,Long]]
   private var graphXCSR : GraphXCSR[Long,_] = null.asInstanceOf[GraphXCSR[Long,_]]
   private var graphXVertexMap : GraphXVertexMap[Long,Long] = null.asInstanceOf[GraphXVertexMap[Long,Long]]
   private var vertexData : VertexData[Long,_] = null.asInstanceOf[VertexData[Long,_]]
@@ -37,9 +38,9 @@ object ExecutorUtils extends Logging{
   }
 
   def checkBeforeVertexPartition(pid : Int) : Boolean = {
-    require(globalVMID != -1)
+//    require(globalVMID != -1)
     require(graphXVertexMap != null)
-    require(csrID != -1)
+//    require(csrID != -1)
     require(graphXCSR != null)
     true
   }
@@ -60,21 +61,18 @@ object ExecutorUtils extends Logging{
     pid2Ind.get(pid).get
   }
 
-  def setLocalVMID(vmId : Long) : Unit = {
-    require(this.localVMID == -1, s"vm already been set ${localVMID}")
-    this.localVMID = vmId
-    log.info(s"[ExecutorUtils]: ${hostName} has local vm id ${this.localVMID}")
+  def setLocalVM(localVM : LocalVertexMap[Long,Long]) : Unit = {
+    require(this.localVM == null, s"vm already been set ${localVM}")
+    this.localVM = localVM
+    log.info(s"[ExecutorUtils]: ${hostName} has local vm ${this.localVM}")
   }
-  def setCSRID(csrId : Long) : Unit = {
-    require(this.csrID == -1, s"vm already been set ${localVMID}")
-    this.csrID = csrId
-    log.info(s"[ExecutorUtils]: ${hostName} set csr id ${this.csrID}")
-  }
+
   def setGraphXCSR(csr : GraphXCSR[Long,_]) : Unit = {
     require(this.graphXCSR == null)
     this.graphXCSR = csr
     log.info(s"[ExecutorUtils]: ${hostName} set csr to ${this.graphXCSR}")
   }
+
   def getGraphXCSR : GraphXCSR[Long,_] = {
     require(graphXCSR != null)
     graphXCSR
@@ -136,9 +134,17 @@ object ExecutorUtils extends Logging{
     globalVMID
   }
 
-  def getHost2LocalVMID() : String = {
-    require(localVMID != -1)
-    getHostName + ":" + localVMID
+  def getHost2LocalVMID: String = {
+    require(localVM != null)
+    getHostName + ":" + localVM.id()
+  }
+  def getHost2GlobalVMID: String = {
+    require(globalVMID != -1)
+    getHostName + ":" + globalVMID
+  }
+  def getHost2CSRID: String = {
+    require(graphXCSR != null)
+    getHostName + ":" + graphXCSR.id()
   }
 
   def getPartitionNum: Int = partitionNum.get()

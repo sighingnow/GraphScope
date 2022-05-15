@@ -138,9 +138,10 @@ void TestGraphXCSR(vineyard::Client& client,
                    0, graphx_vm.GetInnerVertexSize(comm_spec.fid()));
   LOG(INFO) << "lid 0 degreee: " << csr->GetDegree(0) << ", "
             << csr->GetPartialEdgesNum(0, 1);
+  return csr->id();
 }
 
-void TestGraphXVertexData(vineyard::Client& client) {
+vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
   vineyard::ObjectID id;
   {
     gs::VertexDataBuilder<uint64_t, int64_t> builder;
@@ -152,8 +153,20 @@ void TestGraphXVertexData(vineyard::Client& client) {
   std::shared_ptr<gs::VertexData<uint64_t, int64_t>> vd =
       std::dynamic_pointer_cast<gs::VertexData<uint64_t, int64_t>>(
           client.GetObject(id));
-  LOG(INFO) << "vnum: "<< vd->VerticesNum();
+  LOG(INFO) << "vnum: " << vd->VerticesNum();
   LOG(INFO) << "vdata : " << vd->GetData(0);
+  return vd->id();
+}
+
+void TestGraphXFragment(vineyard::Client& client, vineyard::ObjectID vm_id,
+                        vineyard::ObjectID csr_id,
+                        vineyard::ObjectID vdata_id) {
+  gs::FragmentBuilder<int64_t, uint64_t, int64_t, int64_t> builder(
+      client, vm_id, csr_id, vdata_id);
+  auto res =
+      std::dynamic_pointer_cast<gs::GraphXFragment<OID_T, VID_T, VD_T, ED_T>>(
+          builder.Seal(client));
+  LOG(INFO) << "Succesfully construct fragment: " << res->id();
 }
 
 void generateData(arrow::Int64Builder& srcBuilder,
@@ -198,8 +211,9 @@ int main(int argc, char* argv[]) {
 
   // TestLocalVertexMap(client);
   auto graphx_vm = TestGraphXVertexMap(client);
-  TestGraphXCSR(client, graphx_vm);
-  TestGraphXVertexData(client);
+  auto csr_id = TestGraphXCSR(client, graphx_vm);
+  auto vdata_id = TestGraphXVertexData(client);
+  TestGraphXFragment(client, graphx_vm.id(), csr_id, vdata_id);
   VLOG(1) << "Finish Querying.";
 
   grape::FinalizeMPIComm();

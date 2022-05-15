@@ -30,15 +30,17 @@ limitations under the License.
 #include <vector>
 
 #include "grape/config.h"
-#include "grape/fragment/immutable_edgecut_fragment.h"
-#include "grape/fragment/loader.h"
 #include "grape/grape.h"
 
+#include <boost/asio.hpp>
+#include <boost/property_tree/ptree.hpp>
+
 #include "apps/java_pie/java_pie_projected_default_app.h"
-#include "core/fragment/arrow_projected_fragment.h"
 #include "core/io/property_parser.h"
 // #include "core/java/utils.h"
+#include "core/java/graphx/graphx_fragment.h"
 #include "core/java/javasdk.h"
+#include "core/java/type_alias.h"
 #include "core/loader/arrow_fragment_loader.h"
 
 DECLARE_string(ipc_socket);
@@ -49,23 +51,64 @@ DECLARE_string(context_class);  // graphx_driver_class
 DECLARE_string(vprog_path);
 DECLARE_string(send_msg_path);
 DECLARE_string(merge_msg_path);
-DECLARE_string(vdata_path);
 DECLARE_string(vd_class);
 DECLARE_string(ed_class);
 DECLARE_string(msg_class);
 DECLARE_string(initial_msg);
-DECLARE_int64(vdata_size);
 DECLARE_int32(max_iterations);
-DECLARE_string(frag_ids);
+DECLARE_string(vm_ids);
+DECLARE_string(csr_ids);
+DECLARE_string(vdata_ids);
 
 namespace gs {
 
-// static constexpr const char* IPC_SOCKET = "ipc_socket";
-// static constexpr const char* DIRECTED = "directed";
-// static constexpr const char* USER_LIB_PATH = "user_lib_path";
-// static constexpr const char* MAPPED_SIZE = "mapped_size";
-using FragmentType =
-    vineyard::ArrowFragment<int64_t, vineyard::property_graph_types::VID_TYPE>;
+void Init() {
+  grape::InitMPIComm();
+  grape::CommSpec comm_spec;
+  comm_spec.Init(MPI_COMM_WORLD);
+}
+void Finalize() {
+  grape::FinalizeMPIComm();
+  VLOG(1) << "Workers finalized.";
+}
+std::string getHostName() { return boost::asio::ip::host_name(); }
+
+vineyard::ObjectID splitAndGet(grape::CommSpec& comm_spec,
+                               const std::string& ids) {
+  std::vector<std::string> splited;
+  boost::split(splited, ids, boost::is_any_of(","));
+  CHECK_EQ(splited.size(), comm_spec.worker_num());
+  auto my_host_name = getHostName();
+  for (auto str : splited) {
+    if (str.find(my_host_name) != std::string::npos) {
+      auto trimed = str.substr(str.find(my_host_name) + my_host_name.size());
+      LOG(INFO) << "trimed: " << trimed;
+      return std::stoull(trimed.c_str(), NULL, 10);
+    }
+  }
+  LOG(ERROR) << "No available res could be found in " << ids << " on "
+             << my_host_name;
+  return vineyard::invalidObjectID();
+}
+
+template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
+vineyard::ObjectID LoadFragment(vineyard::Client& client,
+                                grape::CommSpec& comm_spec, std::string& vm_ids,
+                                std::string& csr_ids, std::string& vdata_ids) {
+  auto cur_frag_vm_id = splitAndGet(comm_spec, vm_ids);
+  auto cur_frag_csr_id = splitAndGet(comm_spec, csr_ids);
+  auto cur_frag_vdata_id = splitAndGet(comm_spec, vdata_ids);
+  LOG(INFO) << "Worker [" << comm_spec.worker_id()
+            << "] create graphx fragment from vmd id: " << cur_frag_vm_id
+            << " csr id: " << cur_frag_csr_id
+            << ", vdata id: " << cur_frag_vdata_id;
+  gs::GraphXFragmentBuilder<OID_T, VID_T, VD_T, ED_T> builder(
+      client, cur_frag_vm_id, cur_frag_csr_id, cur_frag_vdata_id);
+  auto res =
+      std::dynamic_pointer_cast<gs::GraphXFragment<OID_T, VID_T, VD_T, ED_T>>(
+          builder.Seal(client));
+  return res->id();
+}
 
 template <typename FRAG_T>
 void Query(grape::CommSpec& comm_spec, std::shared_ptr<FRAG_T> fragment,
@@ -92,12 +135,12 @@ void Query(grape::CommSpec& comm_spec, std::shared_ptr<FRAG_T> fragment,
   unused_stream.close();
 }
 
-template <typename ProjectedFragmentType>
+template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
 void CreateAndQuery(std::string params, const std::string& frag_name) {
   grape::InitMPIComm();
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
-
+  using GraphXFragmentType = gs::GraphXFragment<OID_T, VID_T, VD_T, ED_T>;
   boost::property_tree::ptree pt;
   string2ptree(params, pt);
 
@@ -108,18 +151,14 @@ void CreateAndQuery(std::string params, const std::string& frag_name) {
   VINEYARD_CHECK_OK(client.Connect(FLAGS_ipc_socket));
   VLOG(1) << "Connected to IPCServer: " << FLAGS_ipc_socket;
 
-  std::vector<std::string> frags_splited;
-  boost::split(frags_splited, FLAGS_frag_ids, boost::is_any_of(","));
-
-  CHECK_EQ(frags_splited.size(), comm_spec.worker_num());
-  auto fragment_id =
-      std::stoull(frags_splited[comm_spec.worker_id()].c_str(), NULL, 10);
+  auto fragment_id = LoadFragment<OID_T, VID_T, VD_T, ED_T>(
+      client, FLAGS_vm_ids, FLAGS_csr_ids, FLAGS_vdata_ids);
 
   VLOG(10) << "[worker " << comm_spec.worker_id()
            << "] loaded frag id: " << fragment_id;
 
-  std::shared_ptr<ProjectedFragmentType> fragment =
-      std::dynamic_pointer_cast<ProjectedFragmentType>(
+  std::shared_ptr<GraphXFragmentType> fragment =
+      std::dynamic_pointer_cast<GraphXFragmentType>(
           client.GetObject(fragment_id));
 
   pt.put("frag_name", frag_name);
@@ -138,17 +177,25 @@ void CreateAndQuery(std::string params, const std::string& frag_name) {
   double t0 = grape::GetCurrentTime();
 
   for (int i = 0; i < 1; ++i) {
-    Query<ProjectedFragmentType>(comm_spec, fragment, new_params,
-                                 FLAGS_user_lib_path);
+    Query<GraphXFragmentType>(comm_spec, fragment, new_params,
+                              FLAGS_user_lib_path);
   }
   double t1 = grape::GetCurrentTime();
   if (comm_spec.worker_id() == grape::kCoordinatorRank) {
     VLOG(1) << "[Total Query time]: " << (t1 - t0);
   }
-}  // namespace gs
-void Finalize() {
-  grape::FinalizeMPIComm();
-  VLOG(1) << "Workers finalized.";
+}
+
+template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
+void Run(std::string& params) {
+  std::string frag_name = "gs::GraphXFragment<" + TypeName<OID_T>::Get() + "," +
+                          TypeName<VID_T>::Get() + "," + Typename<VD_T>::Get() +
+                          "," + TypeName<ED_T>::Get() + ">";
+
+  LOG(INFO) << "Running for: " << frag_name;
+  gs::Init();
+  gs::CreateAndQuery<OID_T, VID_T, VD_T, ED_T>(params, frag_name);
+  gs::Finalize();
 }
 }  // namespace gs
 

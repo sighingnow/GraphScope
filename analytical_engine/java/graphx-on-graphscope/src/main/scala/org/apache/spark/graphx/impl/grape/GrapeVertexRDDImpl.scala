@@ -18,7 +18,7 @@ import scala.reflect.ClassTag
  * @tparam VD
  */
 class GrapeVertexRDDImpl[VD] private[graphx](
-                                              @transient val grapePartitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD])],
+                                              @transient override val grapePartitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD])],
                                               val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
                                             (implicit override protected val vdTag: ClassTag[VD])
   extends GrapeVertexRDD[VD](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {

@@ -24,8 +24,8 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
   def buildLocalVertexMap(pid : Int) : Unit = {
     synchronized{
       if (!edgePartitionBuilder.isLocalBuilt()){
-        val localVMID = edgePartitionBuilder.buildLocalVertexMap()
-        ExecutorUtils.setLocalVMID(localVMID)
+        val localVM = edgePartitionBuilder.buildLocalVertexMap()
+        ExecutorUtils.setLocalVM(localVM)
         log.info(s"[GrapeEdgePartitionRegistry] Partition ${pid} built edge Partition")
       }
     }
@@ -34,9 +34,9 @@ class GrapeEdgePartitionRegistry[VD: ClassTag, ED: ClassTag] extends Logging{
   def buildCSR(pid : Int) : Unit = {
     synchronized{
       if (!edgePartitionBuilder.isCSRBuilt()){
-        val csrID = edgePartitionBuilder.buildCSR()
-        log.info(s"[GrapeEdgePartitionRegistry] Partition ${pid} built CSR ${csrID}")
-        ExecutorUtils.setCSRID(csrID)
+        val csr = edgePartitionBuilder.buildCSR()
+        log.info(s"[GrapeEdgePartitionRegistry] Partition ${pid} built CSR ${csr}")
+        ExecutorUtils.setGraphXCSR(csr)
       }
     }
   }

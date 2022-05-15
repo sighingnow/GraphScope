@@ -57,19 +57,30 @@ public class MPIUtils {
     public static String getGAEHome(){
         return GAE_HOME;
     }
+    private static int checkIds(String[]vmdIds, String[]csrIds, String[]vdataIds){
+        if (vmdIds.length != csrIds.length || csrIds.length != vdataIds.length){
+            throw new IllegalStateException("length not equal: " + Arrays.toString(vmdIds) + Arrays.toString(
+                csrIds) + Arrays.toString(vdataIds));
+        }
+        if (vmdIds.length != getNumWorker()){
+            throw new IllegalStateException("distinct ids " + vmdIds.length +", but in conf/workers we have" + getNumWorker());
+        }
+        return vmdIds.length;
+    }
 
-    public static <MSG,VD,ED> void launchGraphX(String fragIds, MSG initialMsg,Class<? extends MSG> msgClass,
-        Class<? extends VD> vdClass, Class<? extends ED> edClass, int maxIteration,
-        String vprogPath, String sendMsgPath, String mergeMsgpath, String vdataPath, long size){
-        logger.info("[Driver:] {}", fragIds);
-        int numWorkers = Math.min(fragIds.split(",").length, getNumWorker());
+    public static <MSG,VD,ED> void launchGraphX(
+        String[] vmIds, String []csrIds, String[] vdataIds,
+        Class<? extends MSG> msgClass, Class<? extends VD> vdClass, Class<? extends ED> edClass,
+        String vprogPath, String sendMsgPath, String mergeMsgpath,
+        MSG initialMsg, int maxIteration){
+        int numWorkers = checkIds(vmIds, csrIds, vdataIds);
         logger.info("running mpi with {} workers", numWorkers);
-//        MappedBuffer buffer = SharedMemoryRegistry.getOrCreate().mapFor(vdataPath, size);
-        String[] commands = {"/bin/bash", LAUNCH_GRAPHX_SHELL_SCRIPT, String.valueOf(numWorkers),
-            SPARK_CONF_WORKERS,fragIds, initialMsg.toString(), GrapeUtils.classToStr(msgClass),
-            GrapeUtils.classToStr(vdClass), GrapeUtils.classToStr(edClass),
-            String.valueOf(maxIteration), vprogPath, sendMsgPath, mergeMsgpath,vdataPath,
-            String.valueOf(size)};
+        String[] commands = {"/bin/bash", LAUNCH_GRAPHX_SHELL_SCRIPT, String.valueOf(numWorkers), SPARK_CONF_WORKERS,
+            String.join(",", vmIds),String.join(",", csrIds), String.join(",",vdataIds),
+            GrapeUtils.classToStr(msgClass), GrapeUtils.classToStr(vdClass), GrapeUtils.classToStr(edClass),
+            vprogPath, sendMsgPath, mergeMsgpath,
+            initialMsg.toString(), String.valueOf(maxIteration)};
+
         logger.info("Running with commands: " + String.join(" ", commands));
         long startTime = System.nanoTime();
         ProcessBuilder processBuilder = new ProcessBuilder();

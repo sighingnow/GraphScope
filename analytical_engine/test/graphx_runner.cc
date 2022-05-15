@@ -50,15 +50,15 @@ DEFINE_string(vd_class, "", "int64_t,int32_t,double");
 DEFINE_string(ed_class, "", "int64_t,int32_t,double");
 DEFINE_string(msg_class, "", "int64_t,int32_t,double");
 DEFINE_string(initial_msg, "", "the initial msg");
-DEFINE_int64(vdata_size, 10 * 1024 * 1024,
-             "mapped size fo vdata shared memroy");
-DEFINE_int32(max_iterations, 100000, "max iterations");
-DEFINE_string(frag_ids, "", "frag ids got, should be in order");
+DEFINE_int32(max_iterations, 100, "max iterations");
+DEFINE_string(vm_ids, "", "vertex map ids");
+DEFINE_string(csr_ids, "", "csr ids");
+DEFINE_string(vdata_ids, "", "vdata ids");
 
 std::string build_generic_class(const std::string& base_class,
-                            const std::string& vd_class,
-                            const std::string& ed_class,
-                            const std::string& msg_class) {
+                                const std::string& vd_class,
+                                const std::string& ed_class,
+                                const std::string& msg_class) {
   std::stringstream ss;
   ss << base_class << "<" << vd_class << "," << ed_class << "," << msg_class
      << ">";
@@ -75,9 +75,10 @@ std::string flags2JsonStr() {
   // Different from other type of apps, we need to specify
   // vd and ed type in app_class for generic class creations
   pt.put("app_class", build_generic_class(FLAGS_app_class, FLAGS_vd_class,
-                                      FLAGS_ed_class, FLAGS_msg_class));
-  pt.put("context_class", build_generic_class(FLAGS_context_class, FLAGS_vd_class,
-                                      FLAGS_ed_class, FLAGS_msg_class));
+                                          FLAGS_ed_class, FLAGS_msg_class));
+  pt.put("context_class",
+         build_generic_class(FLAGS_context_class, FLAGS_vd_class,
+                             FLAGS_ed_class, FLAGS_msg_class));
   pt.put("msg_class", FLAGS_msg_class);
   pt.put("vd_class", FLAGS_vd_class);
   pt.put("ed_class", FLAGS_ed_class);
@@ -86,8 +87,6 @@ std::string flags2JsonStr() {
   pt.put("vprog_path", FLAGS_vprog_path);
   pt.put("send_msg_path", FLAGS_send_msg_path);
   pt.put("merge_msg_path", FLAGS_merge_msg_path);
-  pt.put("vdata_path", FLAGS_vdata_path);
-  pt.put("vdata_size", FLAGS_vdata_size);
 
   std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);
@@ -111,18 +110,40 @@ int main(int argc, char* argv[]) {
 
   std::string params = flags2JsonStr();
   VLOG(1) << "Finish option parsing" << params;
-//  if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
-//      std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
-  if (true){
-    using ProjectedFragmentType =
-        gs::ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
-    // using APP_TYPE = JavaPIEProjectedDefaultApp<ProjectedFragmentType>;
-    std::string frag_name =
-        "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>";
-
-    LOG(INFO) << "Running for int64_t, int64_t";
-    gs::CreateAndQuery<ProjectedFragmentType>(params, frag_name);
-    gs::Finalize();
+  //  if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
+  //      std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
+  if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
+      std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
+    gs::Run<int64_t, int64_t>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "int32_t") == 0) {
+    gs::Run<int64_t, int32_t>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
+    gs::Run<int64_t, double>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "int32_t") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
+    gs::Run<int32_t, int64_t>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "int32_t") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "int32_t") == 0) {
+    gs::Run<int32_t, int32_t>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "int32_t") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
+    gs::Run<int32_t, double>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
+    gs::Run<double, int64_t>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "int32_t") == 0) {
+    gs::Run<double, int32_t>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
+    gs::Run<double, double>(params);
+  } else {
+    LOG(ERROR) << "current not supported: " << FLAGS_vd_class << ", "
+               << FLAGS_ed_class;
+  }
+  if (true) {
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
     using ProjectedFragmentType =

@@ -56,17 +56,16 @@
  */
 namespace gs {
 
-template <typename OID_T, typename VID_T>
+template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
 class GraphXFragment
-    : public vineyard::Registered<GraphXFragment<OID_T, VID_T>> {
+    : public vineyard::Registered<GraphXFragment<OID_T, VID_T, VD_T, ED_T>> {
   using oid_t = OID_T;
   using vid_t = VID_T;
-  using oid_array_t = typename vineyard::ConvertToArrowType<oid_t>::ArrayType;
-  using vid_array_t = typename vineyard::ConvertToArrowType<vid_t>::ArrayType;
-  using vineyard_array_t =
-      typename vineyard::InternalType<oid_t>::vineyard_array_type;
-  using vid_array_builder_t =
-      typename vineyard::ConvertToArrowType<vid_t>::BuilderType;
+  using vdata_t = VD_T;
+  using edata_t = ED_T;
+  using csr_t = GraphXCSR<VID_T, ED_T>;
+  using vm_t = GraphXVertexMap<OID_T, VID_T>;
+  using vdata_t = VertexData<VID_T, VD_T>;
 
  public:
   GraphXFragment() {}
@@ -75,7 +74,7 @@ class GraphXFragment
   static std::unique_ptr<vineyard::Object> Create() __attribute__((used)) {
     return std::static_pointer_cast<vineyard::Object>(
         std::unique_ptr<GraphXFragment<OID_T, VID_T>>{
-            new GraphXFragment<OID_T, VID_T>()});
+            new GraphXFragment<OID_T, VID_T, VD_T, EDATA_T>()});
   }
 
   void Construct(const vineyard::ObjectMeta& meta) override {
@@ -84,36 +83,59 @@ class GraphXFragment
 
     this->fnum_ = meta.GetKeyValue<fid_t>("fnum");
     this->fid_ = meta.GetKeyValue<fid_t>("fid");
+
+    this->csr_.Construct(meta.GetMemberMeta("csr"));
+    this->vm_.Construct(meta.GetMemberMeta("vm"));
+    this->vdata_.Construct(meta.GetMemberMeta("vdata"));
+    CHECK_EQ(vm_->GetVertexSize(), vdata_->VerticesNum());
+    LOG(INFO) << "GraphXFragment finish construction : " << fid_;
   }
   fid_t fid() { return fid_; }
   fid_t fnum() { return fnum_; }
 
  private:
   grape::fid_t fnum_, fid_;
+  csr_t csr_;
+  vm_t vm_;
+  vdata_t vdata_;
 
-  template <typename _OID_T, typename _VID_T>
+  template <typename _OID_T, typename _VID_T, typename _VD_T, typename _ED_T>
   friend class GraphXFragmentBuilder;
 };
 
-template <typename OID_T, typename VID_T>
+template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
 class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
   using oid_t = OID_T;
   using vid_t = VID_T;
-  using oid_array_t = typename vineyard::ConvertToArrowType<oid_t>::ArrayType;
-  using vid_array_t = typename vineyard::ConvertToArrowType<vid_t>::ArrayType;
-  using vineyard_oid_array_t =
-      typename vineyard::InternalType<oid_t>::vineyard_array_type;
-  using vineyard_vid_array_t =
-      typename vineyard::InternalType<vid_t>::vineyard_array_type;
+  using vdata_t = VD_T;
+  using edata_t = ED_T;
+  using csr_t = GraphXCSR<VID_T, ED_T>;
+  using vm_t = GraphXVertexMap<OID_T, VID_T>;
+  using vdata_t = VertexData<VID_T, VD_T>;
 
  public:
-  explicit GraphXFragmentBuilder(vineyard::Client& client, grape::fid_t fnum,
-                                 grape::fid_t fid)
+  explicit GraphXFragmentBuilder(vineyard::Client& client,
+                                 GraphXVertexMap<OID_T, VID_T>& vm,
+                                 GraphXCSR<VID_T, ED_T>& csr,
+                                 VertexData<VID_T, VD_T>& vdata)
       : client_(client) {
-    lid2Oids_.resize(fnum);
-    oid2Lids_.resize(fnum);
-    fnum_ = fnum;
-    fid_ = fid;
+    fid_ = vm.fid();
+    fnum_ = vm.fnum();
+    vm_ = vm;
+    csr_ = csr;
+    vdata_ = vdata;
+  };
+
+  explicit GraphXFragmentBuilder(vineyard::Client& client,
+                                 vineyard::ObjectID vm_id,
+                                 vineyard::ObjectID csr_id,
+                                 vineyard::ObjectID vdata_id)
+      : client_(client) {
+    fid_ = vm.fid();
+    fnum_ = vm.fnum();
+    vm_ = std::dynamic_pointer_cast<vm_t>(client.GetObject(vm_id));
+    csr_ = std::dynamic_pointer_cast<csr_t>(client.GetObject(csr_id));
+    vdata_ = std::dynamic_pointer_cast<vdata_t>(client.GetObject(vdata_id));
   };
 
   std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) {
@@ -121,7 +143,29 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
     ENSURE_NOT_SEALED(this);
     VINEYARD_CHECK_OK(this->Build(client));
 
-    auto fragment = std::make_shared<GraphXFragment<oid_t, vid_t>>();
+    auto fragment =
+        std::make_shared<GraphXFragment<oid_t, vid_t, vdata_t, edata_t>>();
+    fragment->meta_.SetTypeName(
+        type_name<GraphXFragment<oid_t, vid_t, vdata_t, edata_t>>());
+
+    fragment->fid_ = fid_;
+    fragment->fnum_ = fnum_;
+    fragment->csr_ = csr_;
+    fragment->vm_ = vm_;
+    fragment->vdata_ = vdata_;
+
+    fragment->meta_.AddKeyValue("fid", fid_);
+    fragment->meta_.AddKeyValue("fnum", fnum_);
+    fragment->meta_.AddMember("vdatas", vdata_.meta());
+    fragment->meta_.AddMember("csr", csr_.meta());
+    fragment->meta_.AddMember("vm", vm_.meta());
+
+    size_t nBytes = 0;
+    nBytes += vdata_.nbytes();
+    nBytes += csr_.nbytes();
+    nBytes += vm_.nbytes();
+    LOG(INFO) << "total bytes: " << nBytes;
+    fragment->meta_.SetNBytes(nBytes);
 
     VINEYARD_CHECK_OK(client.CreateMetaData(fragment->meta_, fragment->id_));
     // mark the builder as sealed
@@ -131,20 +175,15 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
   }
 
   vineyard::Status Build(vineyard::Client& client) override {
-#if defined(WITH_PROFILING)
-    auto start_ts = grape::GetCurrentTime();
-#endif
-
-#if defined(WITH_PROFILING)
-    auto finish_seal_ts = grape::GetCurrentTime();
-    LOG(INFO) << "Buillding GraphX fragment cost" << (finish_seal_ts - start_ts)
-              << " seconds";
-#endif
+    LOG(INFO) << "no need for build";
     return vineyard::Status::OK();
   }
 
  private:
   grape::fid_t fnum_, fid_;
+  csr_t csr_;
+  vm_t vm_;
+  vdata_t vdata_;
   vineyard::Client& client_;
 };
 
