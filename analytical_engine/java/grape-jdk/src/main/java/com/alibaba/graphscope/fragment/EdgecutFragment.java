@@ -196,9 +196,9 @@ public interface EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T>
      * @param vertex Input vertex.
      * @return The incoming edge destination fragment ID list.
      */
-    @FFINameAlias("IEDests")
-    @CXXValue
-    DestList inEdgeDests(@CXXReference Vertex<VID_T> vertex);
+//    @FFINameAlias("IEDests")
+//    @CXXValue
+//    DestList inEdgeDests(@CXXReference Vertex<VID_T> vertex);
 
     /**
      * Return the outgoing edge destination fragment ID list of a inner vertex.
@@ -214,9 +214,9 @@ public interface EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T>
      * @param vertex Input vertex.
      * @return The outgoing edge destination fragment ID list.
      */
-    @FFINameAlias("OEDests")
-    @CXXValue
-    DestList outEdgeDests(@CXXReference Vertex<VID_T> vertex);
+//    @FFINameAlias("OEDests")
+//    @CXXValue
+//    DestList outEdgeDests(@CXXReference Vertex<VID_T> vertex);
 
     /**
      * Get both the in edges and out edges.
@@ -224,9 +224,9 @@ public interface EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T>
      * @param vertex query vertex.
      * @return The outgoing and incoming edge destination fragment ID list.
      */
-    @FFINameAlias("IOEDests")
-    @CXXValue
-    DestList inOutEdgeDests(@CXXReference Vertex<VID_T> vertex);
+//    @FFINameAlias("IOEDests")
+//    @CXXValue
+//    DestList inOutEdgeDests(@CXXReference Vertex<VID_T> vertex);
 
     //    /**
     //     * Returns the incoming adjacent inner vertices of v.

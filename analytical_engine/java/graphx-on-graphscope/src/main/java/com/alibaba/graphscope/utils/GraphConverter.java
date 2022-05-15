@@ -468,40 +468,6 @@ public class GraphConverter<VD, ED> {
          * @param vertex Input vertex.
          * @return The incoming edge destination fragment ID list.
          */
-        @Override
-        public DestList inEdgeDests(Vertex vertex) {
-            return null;
-        }
-
-        /**
-         * Return the outgoing edge destination fragment ID list of a inner vertex.
-         *
-         * <p>For inner vertex v of fragment-0, if outer vertex u and w are children of v. u
-         * belongs to fragment-1 and w belongs to fragment-2, then 1 and 2 are in outgoing edge
-         * destination fragment ID list of v.
-         *
-         * <p>This method is encapsulated in the corresponding sending message API,
-         * SendMsgThroughOEdges, so it is not recommended to use this method directly in application
-         * programs.
-         *
-         * @param vertex Input vertex.
-         * @return The outgoing edge destination fragment ID list.
-         */
-        @Override
-        public DestList outEdgeDests(Vertex vertex) {
-            return null;
-        }
-
-        /**
-         * Get both the in edges and out edges.
-         *
-         * @param vertex query vertex.
-         * @return The outgoing and incoming edge destination fragment ID list.
-         */
-        @Override
-        public DestList inOutEdgeDests(Vertex vertex) {
-            return null;
-        }
 
         @Override
         public Object getData(Vertex vertex) {

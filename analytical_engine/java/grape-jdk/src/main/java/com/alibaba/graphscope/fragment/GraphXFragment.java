@@ -27,13 +27,6 @@ public interface GraphXFragment<OID_T, VID_T, VD_T, ED_T> extends
 
     @FFINameAlias("GetEnd")
     @CXXReference PropertyNbrUnit<VID_T> getEnd(@CXXReference Vertex<VID_T> vertex);
-//    @FFINameAlias("GetIncomingAdjList")
-//    @CXXReference
-//    PropertyRawAdjList<VID_T> getRawAdjList(@CXXReference Vertex<VID_T> vertex);
-//
-//    @FFINameAlias("GetOutgoingAdjList")
-//    @CXXValue
-//    PropertyRawAdjList<VID_T> getOutgoingAdjList(@CXXReference Vertex<VID_T> vertex);
 
     @FFINameAlias("SetData")
     void setData(@CXXReference Vertex<VID_T> vertex, @CXXReference VD_T val);
