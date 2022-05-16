@@ -179,21 +179,6 @@ public class ArrowProjectedAdaptor<OID_T, VID_T, VDATA_T, EDATA_T>
     }
 
     @Override
-    public DestList inEdgeDests(Vertex<VID_T> vertex) {
-        return inEdgeDests(vertex);
-    }
-
-    @Override
-    public DestList outEdgeDests(Vertex<VID_T> vertex) {
-        return outEdgeDests(vertex);
-    }
-
-    @Override
-    public DestList inOutEdgeDests(Vertex<VID_T> vertex) {
-        return inOutEdgeDests(vertex);
-    }
-
-    @Override
     public AdjList<VID_T, EDATA_T> getIncomingAdjList(Vertex<VID_T> vertex) {
         return new ProjectedAdjListAdaptor<>(fragment.getIncomingAdjList(vertex));
     }
