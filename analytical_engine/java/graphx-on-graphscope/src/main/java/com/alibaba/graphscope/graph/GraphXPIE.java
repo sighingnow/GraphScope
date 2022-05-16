@@ -117,6 +117,15 @@ public class GraphXPIE<VD, ED, MSG_T> {
     /** During query, updates are saved to on-heap array, after calculation, we persist them out*/
     newVdataArray = PrimitiveArray.create(conf.getVdClass(), (int) oldVdataArray.getLength());
     newEdataArray = PrimitiveArray.create(conf.getEdClass(), (int) oldEdataArray.getLength());
+    {
+      long time0 = System.nanoTime();
+      long len = oldEdataArray.getLength();
+      for (int i = 0 ; i < len; ++i){
+        newEdataArray.set(i, oldEdataArray.get(i));
+      }
+      long time1 = System.nanoTime();
+      logger.info("[Coping edata array cost: ] {}ms", (time1 - time0) / 1000000);
+    }
     this.messageManager = messageManager;
     this.initialMessage = initialMessage;
     this.maxIterations = maxIterations;
@@ -178,7 +187,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
                   edgeTriplet.attr);
       while (msgs.hasNext()) {
         Tuple2<Long, MSG_T> msg = msgs.next();
-        graphXFragment.getVertex(msg._1, vertex);
+        graphXFragment.getVertex(msg._1(), vertex);
         logger.info("Oid {} to vertex {}", msg._1, vertex.GetValue());
 
         // FIXME: currently we assume msg type equal to vdata type

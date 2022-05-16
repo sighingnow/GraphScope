@@ -22,7 +22,9 @@ object SSSP extends Logging{
     val numParition = args(1).toInt
     val sourceId: VertexId = args(2).toLong // The ultimate source
     log.info(s"efile path ${efilePath}, numPartition ${numParition}, sourceId ${sourceId}")
-    val graph = GraphLoader.edgeListFile(sc, efilePath,canonicalOrientation = false,numParition)
+    val loadGraph0 = System.nanoTime();
+    val graph = GraphLoader.edgeListFile(sc, efilePath,canonicalOrientation = false,numParition).cache()
+    val loadGraph1 = System.nanoTime();
     log.info(s"[GraphLoader: ] Load graph ${graph.numEdges}, ${graph.numVertices}")
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, vdata) =>
@@ -38,7 +40,7 @@ object SSSP extends Logging{
     val sssp = initialGraph.pregel(Double.PositiveInfinity, 10)( //avoid overflow
       (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
-        println(triplet.srcId + ", to  " + triplet.dstId + ", data "+ (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
+//        println(triplet.srcId + ", to  " + triplet.dstId + ", data "+ (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)
         if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
           Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
         } else {
@@ -49,6 +51,7 @@ object SSSP extends Logging{
     )
     val endTIme = System.nanoTime()
     println("[Pregel running time ] : " + ((endTIme - startTime) / 1000000) + "ms")
+    println("[Load graph time ]: " + ((loadGraph1 - loadGraph0) / 1000000) + "ms")
     sc.stop()
   }
 }
