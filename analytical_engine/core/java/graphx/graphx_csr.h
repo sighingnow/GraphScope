@@ -59,6 +59,7 @@ namespace gs {
 
 template <typename VID_T, typename ED_T>
 class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
+ public:
   using eid_t = vineyard::property_graph_types::EID_TYPE;
   using vid_t = VID_T;
   using edata_t = ED_T;
@@ -72,7 +73,6 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
   using nbr_t = vineyard::property_graph_utils::NbrUnit<vid_t, eid_t>;
   using vineyard_edges_array_t = vineyard::FixedSizeBinaryArray;
 
- public:
   GraphXCSR() {}
 
   static std::unique_ptr<vineyard::Object> Create() __attribute__((used)) {
@@ -92,11 +92,11 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
   nbr_t* GetEnd(VID_T i) { return &edge_ptr_[getOffset(i + 1)]; }
   const nbr_t* GetEnd(VID_T i) const { return &edge_ptr_[getOffset(i + 1)]; }
 
-  vid_t VertexNum() { return local_vnum_; }
+  vid_t VertexNum() const { return local_vnum_; }
 
-  int64_t GetTotalEdgesNum() { return edges_num_; }
+  int64_t GetTotalEdgesNum() const { return edges_num_; }
 
-  int64_t GetPartialEdgesNum(vid_t from, vid_t end) {  //[from,end)
+  int64_t GetPartialEdgesNum(vid_t from, vid_t end) const {  //[from,end)
     CHECK_LT(from, end);
     CHECK_LE(end, local_vnum_);
     return offsets_->Value(static_cast<int64_t>(end)) -

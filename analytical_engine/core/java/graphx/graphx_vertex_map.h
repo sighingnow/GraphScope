@@ -59,6 +59,7 @@ namespace gs {
 template <typename OID_T, typename VID_T>
 class GraphXVertexMap
     : public vineyard::Registered<GraphXVertexMap<OID_T, VID_T>> {
+public:
   using oid_t = OID_T;
   using vid_t = VID_T;
   using oid_array_t = typename vineyard::ConvertToArrowType<oid_t>::ArrayType;
@@ -69,7 +70,6 @@ class GraphXVertexMap
       typename vineyard::ConvertToArrowType<vid_t>::BuilderType;
   using vertex_t = grape::Vertex<VID_T>;
 
- public:
   GraphXVertexMap() {}
   ~GraphXVertexMap() {}
 
@@ -126,7 +126,7 @@ class GraphXVertexMap
   fid_t fid() const { return fid_; }
   fid_t fnum() const { return fnum_; }
 
-  inline fid_t GetFragId(vertex_t& v) {
+  inline fid_t GetFragId(const vertex_t& v) const {
     if (v.GetValue() > ivnum_) {
       auto gid = outer_lid2Gids_->Value(v.GetValue());
       return id_parser_.get_fragment_id(gid);
@@ -161,8 +161,8 @@ class GraphXVertexMap
   }
 
   bool GetInnerVertex(const oid_t& oid, vertex_t& v) {
-    auto iter = lid2Oids_[fid_].find(oid);
-    if (iter == lid2Oids_[fid_].end()) {
+    auto iter = oid2Lids_[fid_].find(oid);
+    if (iter == oid2Lids_[fid_].end()) {
       LOG(ERROR) << "No match for oid " << oid << "found in frag: " << fid_;
       return false;
     }

@@ -63,6 +63,7 @@ namespace gs {
 template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
 class GraphXFragment
     : public vineyard::Registered<GraphXFragment<OID_T, VID_T, VD_T, ED_T>> {
+public:
   using eid_t = vineyard::property_graph_types::EID_TYPE;
   using oid_t = OID_T;
   using vid_t = VID_T;
@@ -75,7 +76,9 @@ class GraphXFragment
   using vertex_t = grape::Vertex<VID_T>;
   using nbr_t = vineyard::property_graph_utils::NbrUnit<vid_t, eid_t>;
 
- public:
+  template <typename T>
+  using vertex_array_t = grape::VertexArray<vertices_t, T>;
+
   GraphXFragment() {}
   ~GraphXFragment() {}
 
@@ -117,9 +120,9 @@ class GraphXFragment
   inline VID_T GetVerticesNum() const { return vm_.GetVertexSize(); }
   inline VID_T GetTotalVerticesNum() const { return vm_.GetTotalVertexSize(); }
 
-  inline vertices_t Vertices() { return vertices_; }
-  inline vertices_t InnerVertices() { return inner_vertices_; }
-  inline vertices_t OuterVertices() { return outer_vertices_; }
+  inline vertices_t Vertices() const { return vertices_; }
+  inline vertices_t InnerVertices() const { return inner_vertices_; }
+  inline vertices_t OuterVertices() const { return outer_vertices_; }
 
   inline bool GetVertex(oid_t& oid, vertex_t& v) {
     return vm_.GetVertex(oid, v);
@@ -127,7 +130,7 @@ class GraphXFragment
 
   inline OID_T GetId(const vertex_t& v) { return vm_.GetId(v); }
 
-  inline fid_t GetFragId(const vertex_t& v) { return vm_.GetFragId(v); }
+  inline fid_t GetFragId(const vertex_t& v) const { return vm_.GetFragId(v); }
 
   inline int GetLocalInDegree(const vertex_t& v) {
     assert(IsInnerVertex(v));
@@ -138,7 +141,7 @@ class GraphXFragment
     return csr_.GetDegree(v.GetValue());
   }
 
-  inline bool Gid2Vertex(const vid_t& gid, vertex_t& v) {
+  inline bool Gid2Vertex(const vid_t& gid, vertex_t& v) const{
     return vm_.Gid2Vertex(gid, v);
   }
 
@@ -175,10 +178,10 @@ class GraphXFragment
     return vm_.OuterVertexGid2Vertex(gid, v);
   }
 
-  inline VID_T GetInnererVertexGid(const vertex_t& v) {
-    return vm_.GetInnererVertexGid(v);
+  inline VID_T GetInnerVertexGid(const vertex_t& v) const {
+    return vm_.GetInnerVertexGid(v);
   }
-  inline VID_T GetOuterVertexGid(const vertex_t& v) {
+  inline VID_T GetOuterVertexGid(const vertex_t& v) const {
     return vm_.GetOuterVertexGid(v);
   }
 

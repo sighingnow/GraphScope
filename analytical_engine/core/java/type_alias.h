@@ -167,7 +167,9 @@ class MutableTypedArray {
 
   value_type Get(size_t loc) const { return buffer_[loc]; }
 
-  void Set(size_t loc, value_type newValue) { buffer_[loc] = newValue; }
+  void Set(size_t loc, value_type newValue) {
+     LOG(INFO) << "set " << loc << " with val:" << newValue;
+ buffer_[loc] = newValue; }
   size_t GetLength() const { return length; }
 
  private:

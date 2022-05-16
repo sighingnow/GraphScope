@@ -135,6 +135,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG> extends
         }
 //        graphXProxy = create(messageManager, vdClass,  edClass, msgClass, (IFragment) frag, mergeMsgFilePath, vprogFilePath, sendMsgFilePath, maxIterations, numCores,initialMsg);
         graphXProxy = new GraphXPIE<>(conf, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, classLoader);
+        graphXProxy.init(frag, messageManager, initialMsg, maxIterations);
         logger.info("create graphx proxy: {}", graphXProxy);
         System.gc();
     }

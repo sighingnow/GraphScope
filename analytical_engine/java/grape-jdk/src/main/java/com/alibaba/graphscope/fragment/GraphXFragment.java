@@ -24,10 +24,10 @@ public interface GraphXFragment<OID_T, VID_T, VD_T, ED_T> extends
     EdgecutFragment<OID_T, VID_T, VD_T, ED_T> {
 
     @FFINameAlias("GetBegin")
-    @CXXReference PropertyNbrUnit<VID_T> getBegin(@CXXReference Vertex<VID_T> vertex);
+    PropertyNbrUnit<VID_T> getBegin(@CXXReference Vertex<VID_T> vertex);
 
     @FFINameAlias("GetEnd")
-    @CXXReference PropertyNbrUnit<VID_T> getEnd(@CXXReference Vertex<VID_T> vertex);
+    PropertyNbrUnit<VID_T> getEnd(@CXXReference Vertex<VID_T> vertex);
 
     @FFINameAlias("SetData")
     void setData(@CXXReference Vertex<VID_T> vertex, @CXXReference VD_T val);

@@ -156,6 +156,11 @@ vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
           client.GetObject(id));
   LOG(INFO) << "vnum: " << vd->VerticesNum();
   LOG(INFO) << "vdata : " << vd->GetData(0);
+  grape::Vertex<uint64_t> v;
+  v.SetValue(0);
+  LOG(INFO) <<"set vdata: ";
+   vd->SetData(v,1);
+  LOG(INFO) << "vdata : " << vd->GetData(0);
   return vd->id();
 }
 
