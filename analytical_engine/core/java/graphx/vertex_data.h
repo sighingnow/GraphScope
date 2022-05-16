@@ -77,18 +77,18 @@ class VertexData : public vineyard::Registered<VertexData<VID_T, VD_T>> {
 
   VD_T& GetData(const vertex_t& v) { return GetData(v.GetValue()); }
 
-  void SetData(const vertex_t& v, vdata_t vd) {
-    return vdatas_accessor_.Set(v.GetValue(), vd);
-  }
+  // void SetData(const vertex_t& v, vdata_t vd) {
+  //   return vdatas_accessor_.Set(v.GetValue(), vd);
+  // }
 
-  graphx::MutableTypedArray<vdata_t>& GetVdataArray() {
+  graphx::ImmutableTypedArray<vdata_t>& GetVdataArray() {
     return vdatas_accessor_;
   }
 
  private:
   vid_t frag_vnums_;
   std::shared_ptr<vdata_array_t> vdatas_;
-  graphx::MutableTypedArray<vdata_t> vdatas_accessor_;
+  graphx::ImmutableTypedArray<vdata_t> vdatas_accessor_;
 
   template <typename _VID_T, typename _VD_T>
   friend class VertexDataBuilder;

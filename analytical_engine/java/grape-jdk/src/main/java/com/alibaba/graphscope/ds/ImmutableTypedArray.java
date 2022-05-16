@@ -13,14 +13,10 @@ import com.alibaba.fastffi.FFITypeAlias;
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @CXXHead(system = "cstdint")
 @FFITypeAlias(GS_MUTABLE_TYPE_ARRAY)
-public interface MutableTypedArray<T> extends FFIPointer {
+public interface ImmutableTypedArray<T> extends FFIPointer {
+  @FFINameAlias("Get") T get(long ind);
 
-    @FFINameAlias("Get")
-    T get(long ind);
+  @FFINameAlias("Set") void set(long ind, T value);
 
-    @FFINameAlias("Set")
-    void set(long ind, T value);
-
-    @FFINameAlias("GetLength")
-    long getLength();
+  @FFINameAlias("GetLength") long getLength();
 }

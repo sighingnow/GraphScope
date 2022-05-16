@@ -148,7 +148,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
     CHECK_LE(lid, local_vnum_);
     return offsets_->Value(static_cast<int64_t>(lid));
   }
-  inline graphx::MutableTypedArray<edata_t>& GetEdataArray() {
+  inline graphx::ImmutableTypedArray<edata_t>& GetEdataArray() {
     return edatas_accessor_;
   }
 
@@ -159,7 +159,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
   std::shared_ptr<arrow::FixedSizeBinaryArray> edges_;
   std::shared_ptr<arrow::Int64Array> offsets_;
   std::shared_ptr<edata_array_t> edatas_;
-  graphx::MutableTypedArray<edata_t> edatas_accessor_;
+  graphx::ImmutableTypedArray<edata_t> edatas_accessor_;
 
   template <typename _VID_T, typename _ED_T>
   friend class GraphXCSRBuilder;

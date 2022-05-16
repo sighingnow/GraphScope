@@ -99,10 +99,10 @@ class LocalVertexMap
   int64_t GetInnerVerticesNum() { return ivnum_; }
   // int64_t GetOuterVerticesNum() { return ovnum_; }
 
-  // graphx::MutableTypedArray<oid_t>& GetInnerOidArray() {
+  // graphx::ImmutableTypedArray<oid_t>& GetInnerOidArray() {
   //   return inner_oidArray_accessor;
   // }
-  // graphx::MutableTypedArray<oid_t>& GetOuterOidArray() {
+  // graphx::ImmutableTypedArray<oid_t>& GetOuterOidArray() {
   //   return outer_oidArray_accessor;
   // }
 
@@ -120,8 +120,8 @@ class LocalVertexMap
   // outer_oid2Lid_;
   // std::shared_ptr<oid_array_t> inner_lid2Oid_, outer_lid2Oid_;
   vineyard_oid_array_t inner_lid2Oid_, outer_lid2Oid_;
-  // graphx::MutableTypedArray<oid_t> inner_oidArray_accessor;
-  // graphx::MutableTypedArray<oid_t> outer_oidArray_accessor;
+  // graphx::ImmutableTypedArray<oid_t> inner_oidArray_accessor;
+  // graphx::ImmutableTypedArray<oid_t> outer_oidArray_accessor;
 
   template <typename _OID_T, typename _VID_T>
   friend class LocalVertexMapBuilder;

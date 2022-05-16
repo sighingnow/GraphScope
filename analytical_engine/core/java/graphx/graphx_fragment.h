@@ -186,16 +186,17 @@ public:
   }
 
   inline vdata_t& GetData(const vertex_t& v) { return vdata_.GetData(v); }
-  inline void SetData(const vertex_t& v, vdata_t vd) { vdata_.SetData(v, vd); }
+  // inline void SetData(const vertex_t& v, vdata_t vd) { vdata_.SetData(v, vd);
+  // }
 
   inline nbr_t* GetBegin(const vertex_t& v) {
     return csr_.GetBegin(v.GetValue());
   }
   inline nbr_t* GetEnd(const vertex_t& v) { return csr_.GetEnd(v.GetValue()); }
-  inline graphx::MutableTypedArray<edata_t>& GetEdataArray() {
+  inline graphx::ImmutableTypedArray<edata_t>& GetEdataArray() {
     return csr_.GetEdataArray();
   }
-  inline graphx::MutableTypedArray<vdata_t>& GetVdataArray() {
+  inline graphx::ImmutableTypedArray<vdata_t>& GetVdataArray() {
     return vdata_.GetVdataArray();
   }
 

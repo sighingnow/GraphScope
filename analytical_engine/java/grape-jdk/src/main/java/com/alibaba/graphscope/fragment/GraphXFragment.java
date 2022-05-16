@@ -8,7 +8,7 @@ import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFITypeAlias;
-import com.alibaba.graphscope.ds.MutableTypedArray;
+import com.alibaba.graphscope.ds.ImmutableTypedArray;
 import com.alibaba.graphscope.ds.PropertyNbrUnit;
 import com.alibaba.graphscope.ds.Vertex;
 
@@ -20,21 +20,16 @@ import com.alibaba.graphscope.ds.Vertex;
 @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)
 @CXXHead(system = "stdint.h")
 @FFITypeAlias(GRAPHX_FRAGMENT)
-public interface GraphXFragment<OID_T, VID_T, VD_T, ED_T> extends
-    EdgecutFragment<OID_T, VID_T, VD_T, ED_T> {
+public interface GraphXFragment<OID_T, VID_T, VD_T, ED_T>
+    extends EdgecutFragment<OID_T, VID_T, VD_T, ED_T> {
 
-    @FFINameAlias("GetBegin")
+     @FFINameAlias("GetBegin")
     PropertyNbrUnit<VID_T> getBegin(@CXXReference Vertex<VID_T> vertex);
 
     @FFINameAlias("GetEnd")
     PropertyNbrUnit<VID_T> getEnd(@CXXReference Vertex<VID_T> vertex);
 
-    @FFINameAlias("SetData")
-    void setData(@CXXReference Vertex<VID_T> vertex, @CXXReference VD_T val);
+  @FFINameAlias("GetEdataArray") @CXXReference ImmutableTypedArray<ED_T> getEdataArray();
 
-    @FFINameAlias("GetEdataArray")
-    @CXXReference MutableTypedArray<ED_T> getEdataArray();
-
-    @FFINameAlias("GetVdataArray")
-    @CXXReference MutableTypedArray<VD_T> getVdataArray();
+  @FFINameAlias("GetVdataArray") @CXXReference ImmutableTypedArray<VD_T> getVdataArray();
 }
