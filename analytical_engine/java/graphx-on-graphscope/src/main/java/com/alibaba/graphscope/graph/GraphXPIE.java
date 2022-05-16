@@ -188,7 +188,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
       while (msgs.hasNext()) {
         Tuple2<Long, MSG_T> msg = msgs.next();
         graphXFragment.getVertex(msg._1(), vertex);
-        logger.info("Oid {} to vertex {}", msg._1(), vertex.GetValue());
+//        logger.info("Oid {} to vertex {}", msg._1(), vertex.GetValue());
 
         // FIXME: currently we assume msg type equal to vdata type
         MSG_T original_MSG = (MSG_T) newVdataArray.get(vertex.GetValue());
