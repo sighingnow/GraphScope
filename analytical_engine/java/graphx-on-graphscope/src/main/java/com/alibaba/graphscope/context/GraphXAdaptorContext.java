@@ -37,6 +37,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
       throw new IllegalStateException("not supported classes: " + vdClass + "," + edClass + ","
                                       + msgClass);
     }
+  }
   private static Logger logger = LoggerFactory.getLogger(GraphXAdaptorContext.class.getName());
   private static String VPROG_SERIALIZATION = "vprog_path";
   private static String SEND_MSG_SERIALIZATION = "send_msg_path";

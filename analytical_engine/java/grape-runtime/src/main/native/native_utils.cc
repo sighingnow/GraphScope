@@ -1,7 +1,6 @@
 #include <jni.h>
 #include <string>
 #include "core/fragment/arrow_projected_fragment.h"
-#include "core/java/graphx/edge_partition.h"
 #include "core/loader/arrow_fragment_loader.h"
 #include "glog/logging.h"
 #include "grape/config.h"

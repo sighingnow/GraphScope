@@ -382,6 +382,6 @@ public class GraphXFragmentAdaptor<OID_T, VID_T, VDATA_T, EDATA_T> implements
      */
     @Override
     public void setData(Vertex<VID_T> vertex, VDATA_T vdata) {
-        fragment.setData(vertex, vdata);
+	throw new IllegalStateException("Not implemented");
     }
 }
