@@ -72,7 +72,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
       val iter = shuffle.iterator()
       while (iter.hasNext){
         val edge = iter.next()
-        log.info(s"processing edge ${edge.srcId}->${edge.dstId}, ${edge.attr}")
+ //       log.info(s"processing edge ${edge.srcId}->${edge.dstId}, ${edge.attr}")
         if (!innerHashSet.contains(edge.srcId)){
           outerHashSet.add(edge.srcId)
         }
@@ -109,7 +109,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
       val iter = shuffle.iterator()
       while (iter.hasNext){
         val edge = iter.next()
-        log.info(s"processing edge ${edge.srcId}->${edge.dstId}, ${edge.attr}")
+//        log.info(s"processing edge ${edge.srcId}->${edge.dstId}, ${edge.attr}")
         srcOidBuilder.unsafeAppend(edge.srcId)
         dstOidBuilder.unsafeAppend(edge.dstId)
         edataBuilder.unsafeAppend(edge.attr)

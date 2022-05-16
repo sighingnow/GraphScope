@@ -167,3 +167,4 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
       throw new IllegalStateException("Not recognized name:" + name);
     }
   }
+}

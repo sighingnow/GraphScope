@@ -380,8 +380,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       nbr_t* ptr = edge_builder_.MutablePointer(dstPos);
       ptr->vid = dstLids->Value(i);
       ptr->eid = static_cast<eid_t>(i);
-      LOG(INFO) << "push nbr(src=" << srcLid << ",dstLid=" << dstLids->Value(i)
-                << ", after offset:" << offsets_[srcLid];
+      //LOG(INFO) << "push nbr(src=" << srcLid << ",dstLid=" << dstLids->Value(i)
+      //          << ", after offset:" << offsets_[srcLid];
       edata_builder_.UnsafeAppend(edatas->Value(i));
     }
     edata_builder_.Finish(&edata_array_);

@@ -279,7 +279,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         bitSet.set(receiveVertex.GetValue().intValue());
       }
     } else {
-      logger.info("Not supported msg type");
+      logger.info("Not supported msg type " + conf.getMsgClass().getName());
     }
     logger.info("frag {} received msg from others {}", graphXFragment.fid(), msgReceived);
     return msgReceived > 0;
