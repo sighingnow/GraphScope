@@ -20,7 +20,7 @@ class Serialization extends FunSuite{
       (a,b,c) => a + value
     }
     SerializationUtils.write(vprog, "/tmp/vprog-tmp")
-    val func = SerializationUtils.read("/tmp-vprog-tmp")
+    val func = SerializationUtils.read(getClass.getClassLoader,"/tmp-vprog-tmp")
     val funcCasted = func.asInstanceOf[(Long,Long,Long)=>Long]
     assert(funcCasted(1,1,1).equals(2), s"not equal ${funcCasted(1,1,1)}")
   }

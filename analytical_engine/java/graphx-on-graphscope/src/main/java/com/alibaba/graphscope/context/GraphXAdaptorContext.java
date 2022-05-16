@@ -12,6 +12,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URLClassLoader;
 import java.util.concurrent.ExecutorService;
 import org.apache.spark.graphx.GraphXConf;
 import org.slf4j.Logger;
@@ -58,6 +59,10 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG> extends
     private MSG initialMsg;
     private int maxIterations;
     public ExecutorService executor;
+    private URLClassLoader classLoader;
+    public void setClassLoader(URLClassLoader classLoader) {
+        this.classLoader = classLoader;
+    }
 
     public GraphXConf getConf() {
         return conf;
@@ -90,18 +95,19 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG> extends
         maxIterations = jsonObject.getInteger("max_iterations");
         logger.info("Max iterations: " + maxIterations);
 
-        vdClass = (Class<? extends VDATA_T>) loadClassWithName(this.getClass().getClassLoader(),
+        //TODO: support loading user specified class(in user_jar_path)
+        vdClass = (Class<? extends VDATA_T>) loadClassWithName(classLoader,
             vdClassStr);
-        edClass = (Class<? extends EDATA_T>) loadClassWithName(this.getClass().getClassLoader(),
+        edClass = (Class<? extends EDATA_T>) loadClassWithName(classLoader,
             edClassStr);
-        msgClass = (Class<? extends MSG>) loadClassWithName(this.getClass().getClassLoader(),
+        msgClass = (Class<? extends MSG>) loadClassWithName(classLoader,
             msgClassStr);
         //FIXME: create conf
 
         conf = new GraphXConf<>(
-            (scala.reflect.ClassTag<VDATA_T>) scala.reflect.ClassTag.apply(vdClass),
-            (scala.reflect.ClassTag<EDATA_T>) scala.reflect.ClassTag.apply(edClass),
-            (scala.reflect.ClassTag<MSG>) scala.reflect.ClassTag.apply(msgClass));
+            scala.reflect.ClassTag.apply(vdClass),
+            scala.reflect.ClassTag.apply(edClass),
+            scala.reflect.ClassTag.apply(msgClass));
         //TODO: get vdata class from conf
         createFFIContext(frag, conf.getVdClass(), false);
 
@@ -128,7 +134,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG> extends
             throw new IllegalStateException("unmatched msg class " + msgClass.getName());
         }
 //        graphXProxy = create(messageManager, vdClass,  edClass, msgClass, (IFragment) frag, mergeMsgFilePath, vprogFilePath, sendMsgFilePath, maxIterations, numCores,initialMsg);
-        graphXProxy = new GraphXPIE<>(conf, vprogFilePath, sendMsgFilePath, mergeMsgFilePath);
+        graphXProxy = new GraphXPIE<>(conf, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, classLoader);
         logger.info("create graphx proxy: {}", graphXProxy);
         System.gc();
     }

@@ -29,7 +29,7 @@ public class SerializationTest {
         SerializationUtils<Long, Long, Long> serializationUtils = new SerializationUtils<>();
         Function3<Long, Long, Long, Long> vprog = serializationUtils.vprog();
         SerializationUtils.write(vprog, "tmp-vprog");
-        Function3<Long, Long, Long, Long> vprogRecovered = (Function3<Long, Long, Long, Long>) SerializationUtils.read(
+        Function3<Long, Long, Long, Long> vprogRecovered = (Function3<Long, Long, Long, Long>) SerializationUtils.read(getClass().getClassLoader(),
             "tmp-vprog");
         Assert.assertTrue(vprogRecovered.apply(1L, 2L, 3L).equals(1L));
     }
@@ -42,7 +42,7 @@ public class SerializationTest {
         Function3<?, ?, ?, ?> vprog = Wrapper$.MODULE$.vprog();
         ClosureCleaner.clean(vprog, true, true);
         SerializationUtils.write(vprog, "tmp-vprog2");
-        Function3<Long, Double, Double, Double> vprogRecovered = (Function3<Long, Double, Double, Double>) SerializationUtils.read(
+        Function3<Long, Double, Double, Double> vprogRecovered = (Function3<Long, Double, Double, Double>) SerializationUtils.read(getClass().getClassLoader(),
             "tmp-vprog2");
 //        System.out.println(vprogRecovered.apply(1L, 2.0, 3.0));
         Assert.assertTrue(vprogRecovered.apply(1L, 2.0, 3.0).equals(3.2));

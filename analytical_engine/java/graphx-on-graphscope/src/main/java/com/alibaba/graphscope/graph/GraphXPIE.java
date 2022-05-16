@@ -13,6 +13,7 @@ import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.parallel.message.DoubleMsg;
 import com.alibaba.graphscope.parallel.message.LongMsg;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
+import java.net.URLClassLoader;
 import java.util.BitSet;
 import java.util.concurrent.ExecutorService;
 import org.apache.spark.graphx.EdgeTriplet;
@@ -56,19 +57,21 @@ public class GraphXPIE<VD, ED, MSG_T> {
     private MutableTypedArray<VD> vdataArray;
     private long innerVerticesNum, verticesNum;
     private BitSet bitSet;
+    private URLClassLoader classLoader;
 
     public MutableTypedArray<VD> getVdataArray() {
         return vdataArray;
     }
 
     public GraphXPIE(GraphXConf<VD, ED, MSG_T> conf, String vprogPath, String sendMsgPath,
-        String mergeMsgPath) {
+        String mergeMsgPath, URLClassLoader classLoader) {
         this.conf = conf;
+        this.classLoader = classLoader;
         try {
-            this.vprog = (Function3<Long, VD, MSG_T, VD>) SerializationUtils.read(vprogPath);
-            this.sendMsg = (Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>>) SerializationUtils.read(
+            this.vprog = (Function3<Long, VD, MSG_T, VD>) SerializationUtils.read(classLoader,vprogPath);
+            this.sendMsg = (Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>>) SerializationUtils.read(classLoader,
                 sendMsgPath);
-            this.mergeMsg = (Function2<MSG_T, MSG_T, MSG_T>) SerializationUtils.read(mergeMsgPath);
+            this.mergeMsg = (Function2<MSG_T, MSG_T, MSG_T>) SerializationUtils.read(classLoader,mergeMsgPath);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -77,8 +80,9 @@ public class GraphXPIE<VD, ED, MSG_T> {
 
     public GraphXPIE(GraphXConf<VD, ED, MSG_T> conf, Function3<Long, VD, MSG_T, VD> vprog,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> sendMsg,
-        Function2<MSG_T, MSG_T, MSG_T> mergeMsg) {
+        Function2<MSG_T, MSG_T, MSG_T> mergeMsg, URLClassLoader classLoader) {
         this.conf = conf;
+        this.classLoader = classLoader;
         this.vprog = vprog;
         this.sendMsg = sendMsg;
         this.mergeMsg = mergeMsg;

@@ -3,7 +3,7 @@ package com.alibaba.graphscope.graphx
 import org.apache.spark.graphx.{EdgeTriplet, VertexId}
 import org.slf4j.{Logger, LoggerFactory}
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, FileInputStream, FileOutputStream, IOException, ObjectInputStream, ObjectOutputStream, ObjectStreamClass}
 
 class SerializationUtils[VD,ED,A]{
   //provide some demo functions to test
@@ -40,41 +40,29 @@ object SerializationUtils{
   }
 
   @throws[ClassNotFoundException]
-  def read(filepath : String): Any = {
-    logger.info("Reading from file path: " + filepath)
-    new ObjectInputStream(new FileInputStream(new File(filepath))).readObject
+  def read(classLoader: ClassLoader,filepath : String): Any = {
+    logger.info("Reading from file path: " + filepath + ", with class loader: " + classLoader)
+    val objectInputStream = new ObjectInputStream(new FileInputStream(new File(filepath))){
+      @throws[IOException]
+      @throws[ClassNotFoundException]
+      protected override def resolveClass(desc: ObjectStreamClass): Class[_] = {
+//        val cl = Thread.currentThread.getContextClassLoader
+//        if (cl == null) return super.resolveClass(desc)
+        Class.forName(desc.getName, false, classLoader)
+      }
+    }
+    objectInputStream.readObject()
   }
 
-  private def deserializeVprog[VD, ED, MSG](vprogFilePath: String) : (Long,VD,MSG) => VD = {
-    try {
-      val res = SerializationUtils.read(vprogFilePath).asInstanceOf[(Long, VD, MSG) => VD]
-      res
-    } catch {
-      case e: ClassNotFoundException =>
-        e.printStackTrace()
-        throw new IllegalStateException("deserialization vprog failed")
-    }
-  }
+//  private def deserializeVprog[VD, ED, MSG](vprogFilePath: String) : (Long,VD,MSG) => VD = {
+//    try {
+//      val res = SerializationUtils.read(vprogFilePath).asInstanceOf[(Long, VD, MSG) => VD]
+//      res
+//    } catch {
+//      case e: ClassNotFoundException =>
+//        e.printStackTrace()
+//        throw new IllegalStateException("deserialization vprog failed")
+//    }
+//  }
 
-  private def deserializeSendMsg[VD, ED, MSG](sendMsgFilePath: String) :(EdgeTriplet[VD, ED]) => Iterator[(VertexId, MSG)] = {
-    try {
-      val res = SerializationUtils.read(sendMsgFilePath).asInstanceOf[EdgeTriplet[VD, ED] => Iterator[(VertexId, MSG)]]
-      res
-    } catch {
-      case e: ClassNotFoundException =>
-        e.printStackTrace()
-        throw new IllegalStateException("deserialization send msg failed")
-    }
-  }
-
-  private def deserializeMergeMsg[VD, ED, MSG](mergeMsgFilePath: String): (MSG,MSG) => MSG = {
-    try {
-      val res = SerializationUtils.read(mergeMsgFilePath).asInstanceOf[(MSG, MSG) => MSG]
-      res
-    } catch {
-      case e: ClassNotFoundException =>
-        e.printStackTrace()
-        throw new IllegalStateException("deserialization merge msg failed")
-    }
-  }
 }
