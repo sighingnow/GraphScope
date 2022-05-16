@@ -120,7 +120,8 @@ void SetupEnv(const int local_num) {
   int mnPerWorker = std::max(systemMemoryPerWorker * 9 / 12, 1);
 
   VLOG(1) << "Xmx: " << systemMemoryPerWorker
-          << "g,Xms: " << systemMemoryPerWorker << "g,-Xmn: " << mnPerWorker << "g";
+          << "g,Xms: " << systemMemoryPerWorker << "g,-Xmn: " << mnPerWorker
+          << "g";
   char kvPair[32000];
   snprintf(kvPair, sizeof(kvPair), "-Xmx%dg -Xms%dg -Xmn%dg",
            systemMemoryPerWorker, systemMemoryPerWorker, mnPerWorker);
@@ -166,7 +167,7 @@ JavaVM* CreateJavaVM() {
     return NULL;
   }
 
-  VLOG(1) << "Jvm opts str: " << jvm_opts_str;
+  // VLOG(1) << "Jvm opts str: " << jvm_opts_str;
 
   if (*jvm_opts == '\0')
     return NULL;

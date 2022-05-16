@@ -143,8 +143,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
       Long oid = graphXFragment.getId(vertex);
       VD originalVD = oldVdataArray.get(lid);
       newVdataArray.set(lid, vprog.apply(oid, originalVD, initialMessage));
-      logger.info("Running vprog on {}, oid {}, original vd {}, cur vd {}", lid,
-                  graphXFragment.getId(vertex), originalVD, newVdataArray.get(lid));
+//      logger.info("Running vprog on {}, oid {}, original vd {}, cur vd {}", lid,
+//                  graphXFragment.getId(vertex), originalVD, newVdataArray.get(lid));
     }
 
     for (long lid = 0; lid < innerVerticesNum; ++lid) {
@@ -164,8 +164,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
       v.SetValue((long) i);
       messageManager.syncStateOnOuterVertexGraphX(graphXFragment, v, newVdataArray.get(i),
                                                   newVdataArray.get(i));
-      logger.info("Frag {} send msg {} to outer v {}", graphXFragment.fid(), newVdataArray.get(i),
-                  v.GetValue());
+//      logger.info("Frag {} send msg {} to outer v {}", graphXFragment.fid(), newVdataArray.get(i),
+//                  v.GetValue());
     }
     bitSet.clear();
   }
@@ -176,15 +176,15 @@ public class GraphXPIE<VD, ED, MSG_T> {
     int cnt = 0;
     Vertex<Long> nbrVertex = FFITypeFactoryhelper.newVertexLong();
     while (begin.getAddress() != end.getAddress()) {
-      logger.info("Visiting edge {} of vertex {}", cnt, vertex.GetValue());
+//      logger.info("Visiting edge {} of vertex {}", cnt, vertex.GetValue());
       Long nbrVid = begin.vid();
       nbrVertex.SetValue(nbrVid);
       edgeTriplet.setDstOid(graphXFragment.getId(nbrVertex), newVdataArray.get(nbrVid));
       edgeTriplet.setAttr(newEdataArray.get(begin.eid()));
       Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
-      logger.info("for edge: {}({}) -> {}({}), edge attr {}", edgeTriplet.srcId(),
-                  edgeTriplet.srcAttr(), edgeTriplet.dstId(), edgeTriplet.dstAttr(),
-                  edgeTriplet.attr);
+//      logger.info("for edge: {}({}) -> {}({}), edge attr {}", edgeTriplet.srcId(),
+//                  edgeTriplet.srcAttr(), edgeTriplet.dstId(), edgeTriplet.dstAttr(),
+//                  edgeTriplet.attr);
       while (msgs.hasNext()) {
         Tuple2<Long, MSG_T> msg = msgs.next();
         graphXFragment.getVertex(msg._1(), vertex);
@@ -193,7 +193,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         // FIXME: currently we assume msg type equal to vdata type
         MSG_T original_MSG = (MSG_T) newVdataArray.get(vertex.GetValue());
         VD res = (VD) mergeMsg.apply(original_MSG, msg._2());
-        logger.info("Merge msg ori {} new {} res {}", original_MSG, msg._2(), res);
+//        logger.info("Merge msg ori {} new {} res {}", original_MSG, msg._2(), res);
         newVdataArray.set(vertex.GetValue(), res);
 
         if (vertex.GetValue() >= innerVerticesNum) {
@@ -220,8 +220,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
         Long oid = graphXFragment.getId(vertex);
         VD originalVD = newVdataArray.get(i);
         newVdataArray.set(i, vprog.apply(oid, originalVD, initialMessage));
-        logger.info("Running vprog on {}, oid {}, original vd {}, cur vd {}", i,
-                    graphXFragment.getId(vertex), originalVD, newVdataArray.get(i));
+//        logger.info("Running vprog on {}, oid {}, original vd {}, cur vd {}", i,
+//                    graphXFragment.getId(vertex), originalVD, newVdataArray.get(i));
       }
       bitSet.clear();
       for (long lid = 0; lid < innerVerticesNum; ++lid) {
