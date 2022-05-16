@@ -57,12 +57,24 @@ void Load(const std::string local_vm_ids, vineyard::Client& client) {
 
   vineyard::ObjectID global_vm_id;
   {
-    auto raw = splited[comm_spec.worker_id()];
-    if (raw.find(":") != std::string::npos) {
-      raw = raw.substr(raw.find(":") + 1, std::string::npos);
-      LOG(INFO) << ": found, trimed to " << raw;
+    std::string host_name = getHostName();
+    // auto raw = splited[comm_spec.worker_id()];
+    std::string local_vm_id = "";
+    for (auto raw : splited) {
+      if (raw.find(host_name) != std::string::npos) {
+        local_vm_id = raw.substr(raw.find(":") + 1, std::string::npos);
+        LOG(INFO) << "Worker [" << comm_spec.worker_id()
+                  << "](" + host_name + "): found local id, trimed to "
+                  << local_vm_id;
+        break;
+      }
     }
-    vineyard::ObjectID partial_map = std::stoull(raw);
+    if (local_vm_id.size() == 0) {
+      LOG(ERROR) << "Worker [" << comm_spec.worker_id() << "](" + host_name
+                 << ") find no suitable ids from" << local_vm_ids;
+    }
+
+    vineyard::ObjectID partial_map = std::stoull(local_vm_id);
     LOG(INFO) << "Worker: [" << comm_spec.worker_id()
               << "] local vm: " << partial_map;
     gs::BasicGraphXVertexMapBuilder<int64_t, uint64_t> builder(
