@@ -95,14 +95,14 @@ import com.alibaba.fastffi.FFIGenBatch;
             }
         ),
         @FFIGen(
-            type = "com.alibaba.graphscope.graphx.GraphXFragment",
+            type = "com.alibaba.graphscope.fragment.GraphXFragment",
             templates = {
-                @CXXTemplate(cxx = {"uint64_t", "int64_t", "int64_t", "int64_t"}, java = {"Long", "Long", "Long", "Long"}),
-                @CXXTemplate(cxx = {"uint64_t", "int64_t", "int32_t", "int64_t"}, java = {"Long", "Long", "Integer", "Long"}),
-                @CXXTemplate(cxx = {"uint64_t", "int64_t", "double", "int64_t"}, java = {"Long", "Long", "Double", "Long"}),
-                @CXXTemplate(cxx = {"uint64_t", "int64_t", "int64_t", "int32_t"}, java = {"Long", "Long", "Long", "Integer"}),
-                @CXXTemplate(cxx = {"uint64_t", "int64_t", "int32_t", "int32_t"}, java = {"Long", "Long", "Integer", "Integer"}),
-                @CXXTemplate(cxx = {"uint64_t", "int64_t", "double", "int32_t"}, java = {"Long", "Long", "Double", "Integer"}),
+                @CXXTemplate(cxx = {"int64_t", "uint64_t", "int64_t", "int64_t"}, java = {"Long", "Long", "Long", "Long"}),
+                @CXXTemplate(cxx = {"int64_t", "uint64_t", "int32_t", "int64_t"}, java = {"Long", "Long", "Integer", "Long"}),
+                @CXXTemplate(cxx = {"int64_t", "uint64_t", "double", "int64_t"}, java = {"Long", "Long", "Double", "Long"}),
+                @CXXTemplate(cxx = {"int64_t", "uint64_t", "int64_t", "int32_t"}, java = {"Long", "Long", "Long", "Integer"}),
+                @CXXTemplate(cxx = {"int64_t", "uint64_t", "int32_t", "int32_t"}, java = {"Long", "Long", "Integer", "Integer"}),
+                @CXXTemplate(cxx = {"int64_t", "uint64_t", "double", "int32_t"}, java = {"Long", "Long", "Double", "Integer"}),
             }
         ),
         @FFIGen(
@@ -142,27 +142,27 @@ import com.alibaba.fastffi.FFIGenBatch;
                     include = @CXXHead(CORE_JAVA_GRAPHX_VERTEX_DATA_H)),
                 @CXXTemplate(
                     cxx = "gs::GraphXFragment<int64_t,uint64_t,int64_t,int64_t>",
-                    java = "com.alibaba.graphscope.graphx.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                    java = "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
                     include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)),
                 @CXXTemplate(
                     cxx = "gs::GraphXFragment<int64_t,uint64_t,int64_t,int32_t>",
-                    java = "com.alibaba.graphscope.graphx.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Integer>",
+                    java = "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Integer>",
                     include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)),
                 @CXXTemplate(
                     cxx = "gs::GraphXFragment<int64_t,uint64_t,int64_t,double>",
-                    java = "com.alibaba.graphscope.graphx.VertexData<java.lang.Long,java.lang.Double,java.lang.Long,java.lang.Double>",
+                    java = "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Double>",
                     include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)),
                 @CXXTemplate(
                     cxx = "gs::GraphXFragment<int64_t,uint64_t,int32_t,int64_t>",
-                    java = "com.alibaba.graphscope.graphx.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Integer,java.lang.Long>",
+                    java = "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Integer,java.lang.Long>",
                     include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)),
                 @CXXTemplate(
                     cxx = "gs::GraphXFragment<int64_t,uint64_t,int32_t,int32_t>",
-                    java = "com.alibaba.graphscope.graphx.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Integer,java.lang.Integer>",
+                    java = "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Integer,java.lang.Integer>",
                     include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)),
                 @CXXTemplate(
                     cxx = "gs::GraphXFragment<int64_t,uint64_t,int32_t,double>",
-                    java = "com.alibaba.graphscope.graphx.VertexData<java.lang.Long,java.lang.Double,java.lang.Integer,java.lang.Double>",
+                    java = "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Double,java.lang.Integer,java.lang.Double>",
                     include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H))
             }
         ),

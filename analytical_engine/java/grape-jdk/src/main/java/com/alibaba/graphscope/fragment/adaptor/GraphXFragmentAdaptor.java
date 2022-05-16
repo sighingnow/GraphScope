@@ -330,11 +330,6 @@ public class GraphXFragmentAdaptor<OID_T, VID_T, VDATA_T, EDATA_T> implements
      * @param vertex Input vertex.
      * @return The incoming edge destination fragment ID list.
      */
-    @Override
-    public DestList inEdgeDests(Vertex<VID_T> vertex) {
-        throw new IllegalStateException("Not implemented");
-//        return null;
-    }
 
     /**
      * Return the outgoing edge destination fragment ID list of a inner vertex.
@@ -350,10 +345,6 @@ public class GraphXFragmentAdaptor<OID_T, VID_T, VDATA_T, EDATA_T> implements
      * @param vertex Input vertex.
      * @return The outgoing edge destination fragment ID list.
      */
-    @Override
-    public DestList outEdgeDests(Vertex<VID_T> vertex) {
-        throw new IllegalStateException("Not implemented");
-    }
 
     /**
      * Get both the in edges and out edges.
@@ -361,10 +352,6 @@ public class GraphXFragmentAdaptor<OID_T, VID_T, VDATA_T, EDATA_T> implements
      * @param vertex query vertex.
      * @return The outgoing and incoming edge destination fragment ID list.
      */
-    @Override
-    public DestList inOutEdgeDests(Vertex<VID_T> vertex) {
-        throw new IllegalStateException("Not implemented");
-    }
 
     @Override
     public AdjList<VID_T, EDATA_T> getIncomingAdjList(Vertex<VID_T> vertex) {

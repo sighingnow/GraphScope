@@ -245,7 +245,7 @@ class JavaContextBase : public grape::ContextBase {
       CHECK_NOTNULL(fragObject);
       if (graph_type_str_.find("Immutable") != std::string::npos ||
           graph_type_str_.find("ArrowProjected") != std::string::npos ||
-          graph_type_str_find("GraphXFragment") != std::string::npos) {
+          graph_type_str_.find("GraphXFragment") != std::string::npos) {
         VLOG(1) << "Creating IFragment";
         // jobject fragment_object_impl_ = env->NewGlobalRef(fragObject);
         // For immutableFragment and ArrowProjectedFragment, we use a wrapper
