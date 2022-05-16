@@ -21,12 +21,13 @@ import org.slf4j.LoggerFactory;
 public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
     extends VertexDataContext<IFragment<Long, Long, VDATA_T, EDATA_T>, VDATA_T>
     implements DefaultContextBase<Long, Long, VDATA_T, EDATA_T> {
+
   public static <VD, ED, M> GraphXAdaptorContext<VD, ED, M> create(String vdClass, String edClass,
-                                                                   String msgClass) {
+      String msgClass) {
     if (vdClass.equals("int64_t") && edClass.equals("int64_t") && msgClass.equals("int64_t")) {
       return (GraphXAdaptorContext<VD, ED, M>) new GraphXAdaptorContext<Long, Long, Long>();
     } else if (vdClass.equals("int64_t") && edClass.equals("int32_t")
-               && msgClass.equals("int64_t")) {
+        && msgClass.equals("int64_t")) {
       return (GraphXAdaptorContext<VD, ED, M>) new GraphXAdaptorContext<Long, Integer, Long>();
     } else if (vdClass.equals("double") && edClass.equals("int32_t") && msgClass.equals("double")) {
       return (GraphXAdaptorContext<VD, ED, M>) new GraphXAdaptorContext<Double, Integer, Double>();
@@ -34,7 +35,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
       return (GraphXAdaptorContext<VD, ED, M>) new GraphXAdaptorContext<Double, Double, Double>();
     } else {
       throw new IllegalStateException("not supported classes: " + vdClass + "," + edClass + ","
-                                      + msgClass);
+          + msgClass);
     }
   }
 
@@ -83,7 +84,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
    */
   @Override
   public void Init(IFragment<Long, Long, VDATA_T, EDATA_T> frag,
-                   DefaultMessageManager messageManager, JSONObject jsonObject) {
+      DefaultMessageManager messageManager, JSONObject jsonObject) {
     String vdClassStr = jsonObject.getString(VD_CLASS);
     String edClassStr = jsonObject.getString(ED_CLASS);
     String msgClassStr = jsonObject.getString(MSG_CLASS);
@@ -100,8 +101,8 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
     // FIXME: create conf
 
     conf = new GraphXConf<>(scala.reflect.ClassTag.apply(vdClass),
-                            scala.reflect.ClassTag.apply(edClass),
-                            scala.reflect.ClassTag.apply(msgClass));
+        scala.reflect.ClassTag.apply(edClass),
+        scala.reflect.ClassTag.apply(msgClass));
     // TODO: get vdata class from conf
     createFFIContext(frag, conf.getVdClass(), false);
 
@@ -112,7 +113,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
         || this.sendMsgFilePath.isEmpty() || this.mergeMsgFilePath == null
         || this.mergeMsgFilePath.isEmpty()) {
       throw new IllegalStateException("file path empty " + vprogFilePath + ", " + sendMsgFilePath
-                                      + "," + mergeMsgFilePath);
+          + "," + mergeMsgFilePath);
     }
     String msgStr = jsonObject.getString(INITIAL_MSG);
     logger.info("Initial msg in str: " + msgStr);
@@ -153,7 +154,9 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
         bufferedWriter.write(cur.GetValue() + "\t" + oid + "\t" + vdArray.get(index) + "\n");
       }
       bufferedWriter.close();
-    } catch (IOException e) { e.printStackTrace(); }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   private Class<?> loadClassWithName(ClassLoader cl, String name) {

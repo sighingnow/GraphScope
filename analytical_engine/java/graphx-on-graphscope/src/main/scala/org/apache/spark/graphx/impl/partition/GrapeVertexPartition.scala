@@ -15,7 +15,19 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int, val startLid : Long, va
                                           val vertexData: VertexData[Long,VD]){
   def partVnum : Long = endLid - startLid
   def iterator : Iterator[(VertexId,VD)] = {
-    null
+    new Iterator[(VertexId,VD)]{
+      var lid = 0
+      val limit = vm.innerVertexSize()
+      override def hasNext: Boolean = {
+        lid < limit
+      }
+
+      override def next(): (VertexId, VD) = {
+        val res = (vm.innerVertexLid2Oid(lid), vertexData.getData(lid))
+        lid += 1;
+        res
+      }
+    }
   }
 
   def filter(pred: (VertexId, VD) => Boolean): GrapeVertexPartition[VD] = {
