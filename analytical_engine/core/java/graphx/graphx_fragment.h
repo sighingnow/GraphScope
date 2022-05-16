@@ -48,9 +48,9 @@
 
 #include "core/error.h"
 #include "core/io/property_parser.h"
-#include "core/java/graphx/local_vertex_map.h"
-#include "core/java/graphx/graphx_vertex_map.h"
 #include "core/java/graphx/graphx_csr.h"
+#include "core/java/graphx/graphx_vertex_map.h"
+#include "core/java/graphx/local_vertex_map.h"
 #include "core/java/graphx/vertex_data.h"
 #include "core/java/type_alias.h"
 
@@ -81,7 +81,7 @@ class GraphXFragment
 
   static std::unique_ptr<vineyard::Object> Create() __attribute__((used)) {
     return std::static_pointer_cast<vineyard::Object>(
-        std::unique_ptr<GraphXFragment<OID_T, VID_T,VD_T,ED_T>>{
+        std::unique_ptr<GraphXFragment<OID_T, VID_T, VD_T, ED_T>>{
             new GraphXFragment<OID_T, VID_T, VD_T, ED_T>()});
   }
 
@@ -185,12 +185,15 @@ class GraphXFragment
   inline vdata_t& GetData(const vertex_t& v) { return vdata_.GetData(v); }
   inline void SetData(const vertex_t& v, vdata_t vd) { vdata_.SetData(v, vd); }
 
-  inline nbr_t* GetBegin(VID_T lid) {
-    return csr_.GetBegin(lid);
+  inline nbr_t* GetBegin(VID_T lid) { return csr_.GetBegin(lid); }
+  inline nbr_t* GetEnd(VID_T lid) { return csr_.GetEnd(lid); }
+  inline graphx::MutableTypedArray<edata_t>& GetEdataArray() {
+    return csr_.GetEdataArray();
   }
-  inline nbr_t* GetEnd(VID_T lid) {
-    return csr_.GetEnd(lid);
+  inline graphx::MutableTypedArray<vdata_t>& GetVdataArray() {
+    return vdata_.GetVdataArray();
   }
+
  private:
   grape::fid_t fnum_, fid_;
   // FIXME: in edgs.
@@ -235,7 +238,8 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
     fid_ = vm_.fid();
     fnum_ = vm_.fnum();
     csr_ = *std::dynamic_pointer_cast<csr_t>(client.GetObject(csr_id));
-    vdata_ = *std::dynamic_pointer_cast<graphx_vdata_t>(client.GetObject(vdata_id));
+    vdata_ =
+        *std::dynamic_pointer_cast<graphx_vdata_t>(client.GetObject(vdata_id));
   };
 
   std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) {

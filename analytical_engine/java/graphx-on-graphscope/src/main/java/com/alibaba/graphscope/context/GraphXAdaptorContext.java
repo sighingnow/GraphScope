@@ -2,9 +2,11 @@ package com.alibaba.graphscope.context;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.graphscope.app.GraphXAdaptor;
+import com.alibaba.graphscope.ds.MutableTypedArray;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.ds.VertexRange;
 import com.alibaba.graphscope.fragment.IFragment;
+import com.alibaba.graphscope.graph.GraphXPIE;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
 import java.io.BufferedWriter;
@@ -43,19 +45,17 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
     private static String VPROG_SERIALIZATION = "vprog_path";
     private static String SEND_MSG_SERIALIZATION = "send_msg_path";
     private static String MERGE_MSG_SERIALIZATION = "merge_msg_path";
-    private static String VDATA_SERIALIZATION = "vdata_path";
-    private static String VDATA_SIZE = "vdata_size";
     private static String VD_CLASS = "vd_class";
     private static String ED_CLASS = "ed_class";
     private static String MSG_CLASS = "msg_class";
     private static String INITIAL_MSG = "initial_msg";
     private static int numCores = 8;
-    private String vprogFilePath, sendMsgFilePath, mergeMsgFilePath, vdataFilePath;
+    private String vprogFilePath, sendMsgFilePath, mergeMsgFilePath;
     private Class< ? extends VDATA_T> vdClass;
     private Class<? extends EDATA_T>  edClass;
     private Class<? extends MSG> msgClass;
-    private GraphXConf<VDATA_T,EDATA_T> conf;
-    private GraphXProxy<VDATA_T,EDATA_T,MSG> graphXProxy;
+    private GraphXConf<VDATA_T,EDATA_T,MSG> conf;
+    private GraphXPIE<VDATA_T,EDATA_T,MSG> graphXProxy;
     private MSG initialMsg;
     private int maxIterations;
     public ExecutorService executor;
@@ -64,11 +64,11 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
         return conf;
     }
 
-    public GraphXProxy getGraphXProxy() {
+    public GraphXPIE<VDATA_T,EDATA_T,MSG> getGraphXProxy() {
         return graphXProxy;
     }
 
-    public Object getInitialMsg() {
+    public MSG getInitialMsg() {
         return initialMsg;
     }
 
@@ -95,19 +95,15 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
         edClass = (Class<? extends EDATA_T>)loadClassWithName(this.getClass().getClassLoader(), edClassStr);
         msgClass = (Class<? extends MSG>) loadClassWithName(this.getClass().getClassLoader(), msgClassStr);
         //FIXME: create conf
-//        conf = GraphXFactory.createGraphxConf(vdClass, edClass);
-//        conf = GraphXFactory.createGraphxConf(vdClass, edClass, scala.reflect.ClassTag.apply( vdClass),
-//            scala.reflect.ClassTag.apply(edClass));
-        conf = GraphXFactory.createGraphxConf((scala.reflect.ClassTag<VDATA_T>) scala.reflect.ClassTag.apply(vdClass),
-            (scala.reflect.ClassTag<EDATA_T>) scala.reflect.ClassTag.apply(edClass));
+
+        conf = new GraphXConf<>((scala.reflect.ClassTag<VDATA_T>) scala.reflect.ClassTag.apply(vdClass),
+            (scala.reflect.ClassTag<EDATA_T>) scala.reflect.ClassTag.apply(edClass), (scala.reflect.ClassTag<MSG>) scala.reflect.ClassTag.apply(msgClass));
         //TODO: get vdata class from conf
         createFFIContext(frag, conf.getVdClass(), false);
 
         this.vprogFilePath = jsonObject.getString(VPROG_SERIALIZATION);
         this.sendMsgFilePath = jsonObject.getString(SEND_MSG_SERIALIZATION);
         this.mergeMsgFilePath = jsonObject.getString(MERGE_MSG_SERIALIZATION);
-        this.vdataFilePath = jsonObject.getString(VDATA_SERIALIZATION);
-        long vdataSize = jsonObject.getLong(VDATA_SIZE);
         if (this.vprogFilePath == null || this.vprogFilePath.isEmpty() ||
             this.sendMsgFilePath == null || this.sendMsgFilePath.isEmpty() ||
             this.mergeMsgFilePath == null || this.mergeMsgFilePath.isEmpty()) {
@@ -127,31 +123,19 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
         } else {
             throw new IllegalStateException("unmatched msg class " + msgClass.getName());
         }
-        graphXProxy = create(messageManager, vdClass,  edClass, msgClass, (IFragment) frag, mergeMsgFilePath, vprogFilePath, sendMsgFilePath, mergeMsgFilePath, vdataFilePath, maxIterations, numCores, vdataSize,initialMsg);
+//        graphXProxy = create(messageManager, vdClass,  edClass, msgClass, (IFragment) frag, mergeMsgFilePath, vprogFilePath, sendMsgFilePath, maxIterations, numCores,initialMsg);
+        graphXProxy = new GraphXPIE<>(conf, vprogFilePath, sendMsgFilePath, mergeMsgFilePath);
         logger.info("create graphx proxy: {}", graphXProxy);
         System.gc();
     }
 
-    private GraphXProxy create(DefaultMessageManager mm, Class<? extends VDATA_T> vdClass, Class<? extends EDATA_T> edClass, Class<? extends MSG> msgClass,
-        IFragment frag, String mergeMsgFilePath, String vprogFilePath, String sendMsgFilePath, String mergeMsgFilePath1,
-        String vdataFilePath, int maxIterations, int numCores, long vdataSize, MSG cast) {
-//        throw new IllegalStateException("Not implemented");
-        return GraphXFactory.createGraphxProxy(conf, frag, mm, vprogFilePath, sendMsgFilePath,
-            mergeMsgFilePath,vdataFilePath, maxIterations, numCores,vdataSize,initialMsg,
-            scala.reflect.ClassTag.apply(vdClass), scala.reflect.ClassTag.apply(edClass), scala.reflect.ClassTag.apply(msgClass));
-    }
 
     @Override
     public void Output(IFragment<Long, Long, VDATA_T, EDATA_T> frag) {
         String prefix = "/tmp/graphx_output";
         String filePath = prefix + "_frag_" + String.valueOf(frag.fid());
-        /**
-         * In order to return the computing result back to graphx, we write back vertex data, to the
-         * mapped buffer.
-         */
-        graphXProxy.persistVdata();
+        MutableTypedArray<VDATA_T> vdArray = graphXProxy.getVdataArray();
 
-        VertexDataManager<VDATA_T> vertexDataManager = graphXProxy.getVertexDataManager();
         try {
             FileWriter fileWritter = new FileWriter(new File(filePath));
             BufferedWriter bufferedWriter = new BufferedWriter(fileWritter);
@@ -162,7 +146,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
                 cur.SetValue(index);
                 Long oid = frag.getId(cur);
                 bufferedWriter.write(
-                    cur.GetValue() + "\t" + oid + "\t" + vertexDataManager.getVertexData(index)
+                    cur.GetValue() + "\t" + oid + "\t" + vdArray.get(index)
                         + "\n");
             }
             bufferedWriter.close();

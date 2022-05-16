@@ -8,6 +8,7 @@ import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFITypeAlias;
+import com.alibaba.graphscope.ds.MutableTypedArray;
 import com.alibaba.graphscope.ds.PropertyNbrUnit;
 import com.alibaba.graphscope.ds.Vertex;
 
@@ -30,4 +31,10 @@ public interface GraphXFragment<OID_T, VID_T, VD_T, ED_T> extends
 
     @FFINameAlias("SetData")
     void setData(@CXXReference Vertex<VID_T> vertex, @CXXReference VD_T val);
+
+    @FFINameAlias("GetEdataArray")
+    @CXXReference MutableTypedArray<ED_T> getEdataArray();
+
+    @FFINameAlias("GetVdataArray")
+    @CXXReference MutableTypedArray<VD_T> getVdataArray();
 }

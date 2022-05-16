@@ -40,9 +40,9 @@
 #include "vineyard/basic/stream/byte_stream.h"
 #include "vineyard/basic/stream/dataframe_stream.h"
 #include "vineyard/basic/stream/parallel_stream.h"
-#include "vineyard/graph/fragment/property_graph_utils.h"
 #include "vineyard/client/client.h"
 #include "vineyard/common/util/functions.h"
+#include "vineyard/graph/fragment/property_graph_utils.h"
 #include "vineyard/io/io/i_io_adaptor.h"
 #include "vineyard/io/io/io_factory.h"
 
@@ -121,6 +121,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
       vineyard_edata_array_t array;
       array.Construct(meta.GetMemberMeta("edatas"));
       edatas_ = array.GetArray();
+      edatas_accessor_.Init(edatas_);
     }
 
     local_vnum_ = offsets_->length() - 1;
@@ -147,6 +148,9 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
     CHECK_LE(lid, local_vnum_);
     return offsets_->Value(static_cast<int64_t>(lid));
   }
+  inline graphx::MutableTypedArray<edata_t>& GetEdataArray() {
+    return csr_.GetEdataArray();
+  }
 
  private:
   vid_t local_vnum_;
@@ -155,6 +159,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
   std::shared_ptr<arrow::FixedSizeBinaryArray> edges_;
   std::shared_ptr<arrow::Int64Array> offsets_;
   std::shared_ptr<edata_array_t> edatas_;
+  graphx::MutableTypedArray<edata_t> edatas_accessor_;
 
   template <typename _VID_T, typename _ED_T>
   friend class GraphXCSRBuilder;
@@ -193,6 +198,7 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
     graphx_csr->edges_ = edges.GetArray();
     nBytes += edges.nbytes();
     graphx_csr->edatas_ = edatas.GetArray();
+    graphx_csr->edatas_accessor_.Init(graphx_csr->edatas_);
     nBytes += edatas.nbytes();
     LOG(INFO) << "total bytes: " << nBytes;
 

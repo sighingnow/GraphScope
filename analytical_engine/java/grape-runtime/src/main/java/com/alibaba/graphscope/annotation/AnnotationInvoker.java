@@ -18,6 +18,7 @@ package com.alibaba.graphscope.annotation;
 
 import static com.alibaba.graphscope.utils.CppClassName.ARROW_PROJECTED_FRAGMENT;
 import static com.alibaba.graphscope.utils.CppClassName.DOUBLE_MSG;
+import static com.alibaba.graphscope.utils.CppClassName.GRAPHX_FRAGMENT;
 import static com.alibaba.graphscope.utils.CppClassName.GS_VERTEX_ARRAY;
 import static com.alibaba.graphscope.utils.CppClassName.LONG_MSG;
 import static com.alibaba.graphscope.utils.CppHeaderName.ARROW_PROJECTED_FRAGMENT_H;
@@ -610,53 +611,91 @@ import com.alibaba.fastffi.FFIGenBatch;
                             java = {"com.alibaba.graphscope.stdcxx.FFIByteVector"})
                     }),
                 @FFIFunGen(
-                    name = "getMessageArrowProjected",
+                    name = "getMessageGraphX",
                     returnType = "boolean",
                     parameterTypes = {"FRAG_T", "com.alibaba.graphscope.ds.Vertex", "MSG_T",
                         "SKIP_T"},
                     templates = {
                         @CXXTemplate(
-                            cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
-                                LONG_MSG, "int64_t"
+                            cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,double,int32_t>",
+                                LONG_MSG,
+                                "int64_t"
                             },
                             java = {
-                                "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                                "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Integer>",
                                 "com.alibaba.graphscope.parallel.message.LongMsg",
-                                "java.lang.Long"
+                                "java.lang.Long",
                             }
                         ),
                         @CXXTemplate(
-                            cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
-                                DOUBLE_MSG, "double"
+                            cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,double,int32_t>",
+                                DOUBLE_MSG,
+                                "double"
                             },
                             java = {
-                                "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                                "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Integer>",
                                 "com.alibaba.graphscope.parallel.message.DoubleMsg",
-                                "java.lang.Double"
+                                "java.lang.Double",
                             }
                         )
                     }
                 ),
                 @FFIFunGen(
-                    name = "syncStateOnOuterVertexArrowProjected",
+                    name = "syncStateOnOuterVertexGraphX",
                     returnType = "void",
                     parameterTypes = {"FRAG_T", "com.alibaba.graphscope.ds.Vertex", "MSG_T"}, //
                     templates = {
                         @CXXTemplate(
-                            cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
+                            cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
                                 "int64_t"
                             },
                             java = {
-                                "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                                "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
                                 "java.lang.Long",
                             }
                         ),
                         @CXXTemplate(
-                            cxx = {ARROW_PROJECTED_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
+                            cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
+                                "int32_t"
+                            },
+                            java = {
+                                "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                                "java.lang.Integer",
+                            }
+                        ),
+                        @CXXTemplate(
+                            cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>",
                                 "double"
                             },
                             java = {
-                                "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                                "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                                "java.lang.Double",
+                            }
+                        ),
+                        @CXXTemplate(
+                            cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,double,int32_t>",
+                                "int64_t"
+                            },
+                            java = {
+                                "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Integer>",
+                                "java.lang.Long",
+                            }
+                        ),
+                        @CXXTemplate(
+                            cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,double,int32_t>",
+                                "int32_t"
+                            },
+                            java = {
+                                "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Integer>",
+                                "java.lang.Integer",
+                            }
+                        ),
+                        @CXXTemplate(
+                            cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,double,int32_t>",
+                                "double"
+                            },
+                            java = {
+                                "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Integer>",
                                 "java.lang.Double",
                             }
                         )

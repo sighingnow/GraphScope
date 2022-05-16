@@ -77,7 +77,9 @@ class VertexData : public vineyard::Registered<VertexData<VID_T, VD_T>> {
 
   VD_T& GetData(const vertex_t& v) { return GetData(v.GetValue()); }
 
-  void SetData(const vertex_t& v, vdata_t vd) { return vdatas_accessor_.Set(v.GetValue(), vd); }
+  void SetData(const vertex_t& v, vdata_t vd) {
+    return vdatas_accessor_.Set(v.GetValue(), vd);
+  }
 
   graphx::MutableTypedArray<vdata_t>& GetVdataArray() {
     return vdatas_accessor_;

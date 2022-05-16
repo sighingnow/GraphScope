@@ -4,6 +4,7 @@ import com.alibaba.graphscope.communication.Communicator;
 import com.alibaba.graphscope.context.DefaultContextBase;
 import com.alibaba.graphscope.context.GraphXAdaptorContext;
 import com.alibaba.graphscope.fragment.IFragment;
+import com.alibaba.graphscope.graph.GraphXPIE;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import org.apache.spark.graphx.impl.graph.GraphXProxy;
 import org.slf4j.Logger;
@@ -41,9 +42,9 @@ public class GraphXAdaptor<VDATA_T, EDATA_T,MSG> extends Communicator implements
         DefaultContextBase<Long, Long, VDATA_T, EDATA_T> context,
         DefaultMessageManager messageManager) {
         GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T,MSG>) context;
-        GraphXProxy proxy = ctx.getGraphXProxy();
+        GraphXPIE<VDATA_T,EDATA_T,MSG> proxy = ctx.getGraphXProxy();
 //        proxy.init(graph, messageManager, ctx.getInitialMsg());//fix initial msg
-        proxy.ParallelPEval();
+        proxy.PEval();
         messageManager.ForceContinue();
     }
 
@@ -53,9 +54,9 @@ public class GraphXAdaptor<VDATA_T, EDATA_T,MSG> extends Communicator implements
         DefaultMessageManager messageManager) {
         GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T,MSG>) context;
 	//if (ctx.round > 5) return ;
-        GraphXProxy proxy = ctx.getGraphXProxy();
-        boolean maxIterationReached = proxy.ParallelIncEval();
-        if (!maxIterationReached && proxy.getOutgoingMessageStore().hasMessages()){
+        GraphXPIE<VDATA_T,EDATA_T,MSG> proxy = ctx.getGraphXProxy();
+        boolean maxIterationReached = proxy.IncEval();
+        if (!maxIterationReached){
             messageManager.ForceContinue();
         }
     }

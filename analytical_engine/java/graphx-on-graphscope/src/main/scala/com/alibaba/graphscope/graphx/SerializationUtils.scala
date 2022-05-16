@@ -1,6 +1,6 @@
 package com.alibaba.graphscope.graphx
 
-import org.apache.spark.graphx.VertexId
+import org.apache.spark.graphx.{EdgeTriplet, VertexId}
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
@@ -43,5 +43,38 @@ object SerializationUtils{
   def read(filepath : String): Any = {
     logger.info("Reading from file path: " + filepath)
     new ObjectInputStream(new FileInputStream(new File(filepath))).readObject
+  }
+
+  private def deserializeVprog[VD, ED, MSG](vprogFilePath: String) : (Long,VD,MSG) => VD = {
+    try {
+      val res = SerializationUtils.read(vprogFilePath).asInstanceOf[(Long, VD, MSG) => VD]
+      res
+    } catch {
+      case e: ClassNotFoundException =>
+        e.printStackTrace()
+        throw new IllegalStateException("deserialization vprog failed")
+    }
+  }
+
+  private def deserializeSendMsg[VD, ED, MSG](sendMsgFilePath: String) :(EdgeTriplet[VD, ED]) => Iterator[(VertexId, MSG)] = {
+    try {
+      val res = SerializationUtils.read(sendMsgFilePath).asInstanceOf[EdgeTriplet[VD, ED] => Iterator[(VertexId, MSG)]]
+      res
+    } catch {
+      case e: ClassNotFoundException =>
+        e.printStackTrace()
+        throw new IllegalStateException("deserialization send msg failed")
+    }
+  }
+
+  private def deserializeMergeMsg[VD, ED, MSG](mergeMsgFilePath: String): (MSG,MSG) => MSG = {
+    try {
+      val res = SerializationUtils.read(mergeMsgFilePath).asInstanceOf[(MSG, MSG) => MSG]
+      res
+    } catch {
+      case e: ClassNotFoundException =>
+        e.printStackTrace()
+        throw new IllegalStateException("deserialization merge msg failed")
+    }
   }
 }
