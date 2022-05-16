@@ -1,15 +1,9 @@
 package org.apache.spark.graphx.impl
 
-import com.alibaba.graphscope.utils.MPIUtils
-import org.apache.spark.HashPartitioner
-import org.apache.spark.graphx.impl
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
-import org.apache.spark.graphx.impl.graph.{EdgeManagerImpl, VertexDataManagerImpl}
 import org.apache.spark.graphx.utils.ExecutorUtils
 //import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
-import org.apache.spark.graphx.impl.GrapeUtils.{classToStr, generateForeignFragName, scalaClass2JavaClass}
-import org.apache.spark.graphx.utils.SharedMemoryUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 

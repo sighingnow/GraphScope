@@ -207,10 +207,11 @@ public interface DefaultMessageManager extends MessageManagerBase {
         @CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex,
         @CXXReference MSG_T msg);
 
-    @FFINameAlias("SyncStateOnOuterVertex") <FRAG_T extends GraphXFragment, MSG_T> void syncStateOnOuterVertexGraphX(
+    @FFINameAlias("SyncStateOnOuterVertex") <FRAG_T extends GraphXFragment, MSG_T,@FFISkip SKIP_T> void syncStateOnOuterVertexGraphX(
         @CXXReference FRAG_T frag,
         @CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex,
-        @CXXReference MSG_T msg);
+        @CXXReference MSG_T msg,
+        @FFISkip SKIP_T skip);
 
     /**
      * Send the a vertex's data to other fragment througn outgoing edges.

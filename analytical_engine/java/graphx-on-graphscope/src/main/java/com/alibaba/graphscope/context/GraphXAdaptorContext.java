@@ -1,7 +1,6 @@
 package com.alibaba.graphscope.context;
 
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.graphscope.app.GraphXAdaptor;
 import com.alibaba.graphscope.ds.MutableTypedArray;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.ds.VertexRange;
@@ -15,30 +14,30 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import org.apache.spark.graphx.GraphXConf;
-import org.apache.spark.graphx.GraphXFactory;
-import org.apache.spark.graphx.impl.graph.GraphXProxy;
-import org.apache.spark.graphx.traits.VertexDataManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
+public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG> extends
     VertexDataContext<IFragment<Long, Long, VDATA_T, EDATA_T>, VDATA_T> implements
     DefaultContextBase<Long, Long, VDATA_T, EDATA_T> {
 
-    public static <VD,ED,M> GraphXAdaptorContext<VD,ED,M> create(String vdClass, String edClass, String msgClass){
-        if (vdClass.equals("int64_t") && edClass.equals("int64_t") && msgClass.equals("int64_t")){
+    public static <VD, ED, M> GraphXAdaptorContext<VD, ED, M> create(String vdClass, String edClass,
+        String msgClass) {
+        if (vdClass.equals("int64_t") && edClass.equals("int64_t") && msgClass.equals("int64_t")) {
             return (GraphXAdaptorContext<VD, ED, M>) new GraphXAdaptorContext<Long, Long, Long>();
-        }
-        else if (vdClass.equals("int64_t") && edClass.equals("int32_t") && msgClass.equals("int64_t")){
+        } else if (vdClass.equals("int64_t") && edClass.equals("int32_t") && msgClass.equals(
+            "int64_t")) {
             return (GraphXAdaptorContext<VD, ED, M>) new GraphXAdaptorContext<Long, Integer, Long>();
-        }
-        else if (vdClass.equals("double") && edClass.equals("int32_t") && msgClass.equals("double")){
+        } else if (vdClass.equals("double") && edClass.equals("int32_t") && msgClass.equals(
+            "double")) {
             return (GraphXAdaptorContext<VD, ED, M>) new GraphXAdaptorContext<Double, Integer, Double>();
-        }
-        else if (vdClass.equals("double") && edClass.equals("double") && msgClass.equals("double")){
+        } else if (vdClass.equals("double") && edClass.equals("double") && msgClass.equals(
+            "double")) {
             return (GraphXAdaptorContext<VD, ED, M>) new GraphXAdaptorContext<Double, Double, Double>();
+        } else {
+            throw new IllegalStateException(
+                "not supported classes: " + vdClass + "," + edClass + "," + msgClass);
         }
-        else throw new IllegalStateException("not supported classes: " + vdClass + "," +  edClass + "," +  msgClass);
     }
 
     private static Logger logger = LoggerFactory.getLogger(GraphXAdaptorContext.class.getName());
@@ -51,11 +50,11 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
     private static String INITIAL_MSG = "initial_msg";
     private static int numCores = 8;
     private String vprogFilePath, sendMsgFilePath, mergeMsgFilePath;
-    private Class< ? extends VDATA_T> vdClass;
-    private Class<? extends EDATA_T>  edClass;
+    private Class<? extends VDATA_T> vdClass;
+    private Class<? extends EDATA_T> edClass;
     private Class<? extends MSG> msgClass;
-    private GraphXConf<VDATA_T,EDATA_T,MSG> conf;
-    private GraphXPIE<VDATA_T,EDATA_T,MSG> graphXProxy;
+    private GraphXConf<VDATA_T, EDATA_T, MSG> conf;
+    private GraphXPIE<VDATA_T, EDATA_T, MSG> graphXProxy;
     private MSG initialMsg;
     private int maxIterations;
     public ExecutorService executor;
@@ -64,7 +63,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
         return conf;
     }
 
-    public GraphXPIE<VDATA_T,EDATA_T,MSG> getGraphXProxy() {
+    public GraphXPIE<VDATA_T, EDATA_T, MSG> getGraphXProxy() {
         return graphXProxy;
     }
 
@@ -91,13 +90,18 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T,MSG> extends
         maxIterations = jsonObject.getInteger("max_iterations");
         logger.info("Max iterations: " + maxIterations);
 
-        vdClass = (Class<? extends VDATA_T>)loadClassWithName(this.getClass().getClassLoader(), vdClassStr);
-        edClass = (Class<? extends EDATA_T>)loadClassWithName(this.getClass().getClassLoader(), edClassStr);
-        msgClass = (Class<? extends MSG>) loadClassWithName(this.getClass().getClassLoader(), msgClassStr);
+        vdClass = (Class<? extends VDATA_T>) loadClassWithName(this.getClass().getClassLoader(),
+            vdClassStr);
+        edClass = (Class<? extends EDATA_T>) loadClassWithName(this.getClass().getClassLoader(),
+            edClassStr);
+        msgClass = (Class<? extends MSG>) loadClassWithName(this.getClass().getClassLoader(),
+            msgClassStr);
         //FIXME: create conf
 
-        conf = new GraphXConf<>((scala.reflect.ClassTag<VDATA_T>) scala.reflect.ClassTag.apply(vdClass),
-            (scala.reflect.ClassTag<EDATA_T>) scala.reflect.ClassTag.apply(edClass), (scala.reflect.ClassTag<MSG>) scala.reflect.ClassTag.apply(msgClass));
+        conf = new GraphXConf<>(
+            (scala.reflect.ClassTag<VDATA_T>) scala.reflect.ClassTag.apply(vdClass),
+            (scala.reflect.ClassTag<EDATA_T>) scala.reflect.ClassTag.apply(edClass),
+            (scala.reflect.ClassTag<MSG>) scala.reflect.ClassTag.apply(msgClass));
         //TODO: get vdata class from conf
         createFFIContext(frag, conf.getVdClass(), false);
 

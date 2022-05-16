@@ -149,7 +149,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
     return offsets_->Value(static_cast<int64_t>(lid));
   }
   inline graphx::MutableTypedArray<edata_t>& GetEdataArray() {
-    return csr_.GetEdataArray();
+    return edatas_accessor_;
   }
 
  private:
