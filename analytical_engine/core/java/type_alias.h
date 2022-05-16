@@ -128,14 +128,13 @@ struct TypeName<uint64_t> {
   static std::string Get() { return "uint64_t"; }
 };
 
-
 namespace graphx {
 template <typename T>
-class MutableTypedArray {
+class ImmutableTypedArray {
  public:
   using value_type = T;
-  MutableTypedArray() : buffer_(NULL), length(0) {}
-  explicit MutableTypedArray(std::shared_ptr<arrow::Array> array) {
+  ImmutableTypedArray() : buffer_(NULL), length(0) {}
+  explicit ImmutableTypedArray(std::shared_ptr<arrow::Array> array) {
     if (array == nullptr) {
       buffer_ = NULL;
       length = 0;
@@ -167,7 +166,7 @@ class MutableTypedArray {
 
   value_type Get(size_t loc) const { return buffer_[loc]; }
 
-  void Set(size_t loc, value_type newValue) { buffer_[loc] = newValue; }
+  // void Set(size_t loc, value_type newValue) { buffer_[loc] = newValue; }
   size_t GetLength() const { return length; }
 
  private:
