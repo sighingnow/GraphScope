@@ -107,15 +107,15 @@ class GraphXFragment
     this->vertices_.SetRange(0, vm_.GetVertexSize());
     LOG(INFO) << "GraphXFragment finish construction : " << fid_;
   }
-  inline fid_t fid() { return fid_; }
-  inline fid_t fnum() { return fnum_; }
+  inline fid_t fid() const { return fid_; }
+  inline fid_t fnum() const { return fnum_; }
 
-  inline int64_t GetEdgeNum() { return csr_.GetTotalEdgesNum(); }
+  inline int64_t GetEdgeNum() const { return csr_.GetTotalEdgesNum(); }
 
-  inline VID_T GetInnerVerticesNum() { return vm_.GetInnerVertexSize(); }
-  inline VID_T GetOuterVerticesNum() { return vm_.GetOuterVertexSize(); }
-  inline VID_T GetVerticesNum() { return vm_.GetVertexSize(); }
-  inline VID_T GetTotalVerticesNum() { return vm_.GetTotalVertexSize(); }
+  inline VID_T GetInnerVerticesNum() const { return vm_.GetInnerVertexSize(); }
+  inline VID_T GetOuterVerticesNum() const { return vm_.GetOuterVertexSize(); }
+  inline VID_T GetVerticesNum() const { return vm_.GetVertexSize(); }
+  inline VID_T GetTotalVerticesNum() const { return vm_.GetTotalVertexSize(); }
 
   inline vertices_t Vertices() { return vertices_; }
   inline vertices_t InnerVertices() { return inner_vertices_; }
@@ -185,8 +185,10 @@ class GraphXFragment
   inline vdata_t& GetData(const vertex_t& v) { return vdata_.GetData(v); }
   inline void SetData(const vertex_t& v, vdata_t vd) { vdata_.SetData(v, vd); }
 
-  inline nbr_t* GetBegin(VID_T lid) { return csr_.GetBegin(lid); }
-  inline nbr_t* GetEnd(VID_T lid) { return csr_.GetEnd(lid); }
+  inline nbr_t* GetBegin(const vertex_t& v) {
+    return csr_.GetBegin(v.GetValue());
+  }
+  inline nbr_t* GetEnd(const vertex_t& v) { return csr_.GetEnd(v.GetValue()); }
   inline graphx::MutableTypedArray<edata_t>& GetEdataArray() {
     return csr_.GetEdataArray();
   }

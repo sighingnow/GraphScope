@@ -19,6 +19,7 @@ package com.alibaba.graphscope.parallel;
 import static com.alibaba.graphscope.utils.CppClassName.GRAPE_DEFAULT_MESSAGE_MANAGER;
 import static com.alibaba.graphscope.utils.CppClassName.GRAPE_LONG_VERTEX;
 import static com.alibaba.graphscope.utils.CppHeaderName.ARROW_PROJECTED_FRAGMENT_H;
+import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H;
 import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_JAVA_MESSAGES_H;
 import static com.alibaba.graphscope.utils.CppHeaderName.GRAPE_ADJ_LIST_H;
 import static com.alibaba.graphscope.utils.CppHeaderName.GRAPE_FRAGMENT_IMMUTABLE_EDGECUT_FRAGMENT_H;
@@ -50,7 +51,8 @@ import com.alibaba.graphscope.fragment.adaptor.ImmutableEdgecutFragmentAdaptor;
     GRAPE_PARALLEL_DEFAULT_MESSAGE_MANAGER_H,
     GRAPE_FRAGMENT_IMMUTABLE_EDGECUT_FRAGMENT_H,
     ARROW_PROJECTED_FRAGMENT_H,
-    CORE_JAVA_JAVA_MESSAGES_H
+    CORE_JAVA_JAVA_MESSAGES_H,
+    CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H
 })
 public interface DefaultMessageManager extends MessageManagerBase {
 

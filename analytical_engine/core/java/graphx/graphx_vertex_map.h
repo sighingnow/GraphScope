@@ -123,8 +123,8 @@ class GraphXVertexMap
       LOG(INFO) << "lid2Oids_" << i << ", size " << lid2Oids_[i]->length();
     }
   }
-  fid_t fid() { return fid_; }
-  fid_t fnum() { return fnum_; }
+  fid_t fid() const { return fid_; }
+  fid_t fnum() const { return fnum_; }
 
   inline fid_t GetFragId(vertex_t& v) {
     if (v.GetValue() > ivnum_) {
@@ -222,7 +222,7 @@ class GraphXVertexMap
     return id_parser_.generate_global_id(fid(), v.GetValue());
   }
   inline VID_T GetOuterVertexGid(const vertex_t& v) const {
-    return outer_lid2Gids_[v.GetValue() - ivnum_];
+    return outer_lid2Gids_->Value(v.GetValue() - ivnum_);
   }
 
   OID_T GetInnerVertexId(const vertex_t& v) const {
@@ -274,7 +274,7 @@ class GraphXVertexMap
    *
    * @param oid
    * @return VID_T
-*/
+   */
   inline VID_T GetLid(const OID_T& oid) const {
     vid_t gid;
     CHECK(GetGid(oid, gid));
@@ -282,9 +282,9 @@ class GraphXVertexMap
       return id_parser_.get_local_id(gid);
     } else {
       auto iter = outer_gid2Lids_.find(gid);
-      if (iter == outer_gid2Lids_.end()){
-          LOG(ERROR) << "worker [" << fid_ << "find no lid for outer gid" << gid;
-          return -1;
+      if (iter == outer_gid2Lids_.end()) {
+        LOG(ERROR) << "worker [" << fid_ << "find no lid for outer gid" << gid;
+        return -1;
       }
       return iter->second;
     }
