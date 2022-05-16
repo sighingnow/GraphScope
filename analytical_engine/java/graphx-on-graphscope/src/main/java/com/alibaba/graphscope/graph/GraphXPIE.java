@@ -120,7 +120,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
     {
       long time0 = System.nanoTime();
       long len = oldEdataArray.getLength();
-      for (int i = 0 ; i < len; ++i){
+      for (int i = 0; i < len; ++i) {
         newEdataArray.set(i, oldEdataArray.get(i));
       }
       long time1 = System.nanoTime();
@@ -188,12 +188,12 @@ public class GraphXPIE<VD, ED, MSG_T> {
       while (msgs.hasNext()) {
         Tuple2<Long, MSG_T> msg = msgs.next();
         graphXFragment.getVertex(msg._1(), vertex);
-        logger.info("Oid {} to vertex {}", msg._1, vertex.GetValue());
+        logger.info("Oid {} to vertex {}", msg._1(), vertex.GetValue());
 
         // FIXME: currently we assume msg type equal to vdata type
         MSG_T original_MSG = (MSG_T) newVdataArray.get(vertex.GetValue());
-        VD res = (VD) mergeMsg.apply(original_MSG, msg._2);
-        logger.info("Merge msg ori {} new {} res {}", original_MSG, msg._2, res);
+        VD res = (VD) mergeMsg.apply(original_MSG, msg._2());
+        logger.info("Merge msg ori {} new {} res {}", original_MSG, msg._2(), res);
         newVdataArray.set(vertex.GetValue(), res);
 
         if (vertex.GetValue() >= innerVerticesNum) {

@@ -16,7 +16,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 public interface ImmutableTypedArray<T> extends FFIPointer {
   @FFINameAlias("Get") T get(long ind);
 
-  @FFINameAlias("Set") void set(long ind, T value);
+//  @FFINameAlias("Set") void set(long ind, T value);
 
   @FFINameAlias("GetLength") long getLength();
 }
