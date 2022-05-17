@@ -75,11 +75,10 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
       while (i < outerArrayLimit){
         var j = 0
         val innerLimit = srcArrays(i).length
-        require(dstArrays.length == innerLimit)
-        require(attrArrays.length == innerLimit)
+        require(dstArrays(i).length == innerLimit)
+        require(attrArrays(i).length == innerLimit)
         val srcArray = srcArrays(i)
         val dstArray = dstArrays(i)
-        val attrArray = attrArrays(i)
         while (j < innerLimit){
           if (!innerHashSet.contains(srcArray(j))){
             outerHashSet.add(srcArray(j))
@@ -123,8 +122,8 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
       while (i < outerArrayLimit){
         var j = 0
         val innerLimit = srcArrays(i).length
-        require(dstArrays.length == innerLimit)
-        require(attrArrays.length == innerLimit)
+        require(dstArrays(i).length == innerLimit)
+        require(attrArrays(i).length == innerLimit)
         val srcArray = srcArrays(i)
         val dstArray = dstArrays(i)
         val attrArray = attrArrays(i)
