@@ -22,10 +22,11 @@ object GraphLoader extends Logging {
     // Parse the edge data table directly into edge partitions
     val lines = {
       if (numEdgePartitions > 0) {
-//        sc.textFile(path, numEdgePartitions).coalesce(numEdgePartitions)
-        sc.sequenceFile(path, classOf[Long],classOf[Long], numEdgePartitions).coalesce(numEdgePartitions)
+        sc.textFile(path, numEdgePartitions).coalesce(numEdgePartitions)
+//        sc.sequenceFile(path, classOf[Long],classOf[Long], numEdgePartitions).coalesce(numEdgePartitions)
       } else {
-        sc.sequenceFile(path, classOf[Long],classOf[Long])
+//        sc.sequenceFile(path, classOf[Long],classOf[Long])
+        sc.textFile(path)
       }
     }
     lines.cache()
@@ -42,15 +43,15 @@ object GraphLoader extends Logging {
         val pid2Oids = Array.fill(numEdgePartitions)(new OpenHashSet[VertexId](numLines.toInt / 2))
         val time0 = System.nanoTime();
         while (iter.hasNext) {
-//          val lineArray = iter.next().split("\\s+")
-//          if (lineArray.length < 2) {
-//            throw new IllegalArgumentException("Invalid line: ")
-//          }
-//          val srcId = lineArray(0).toLong
-//          val dstId = lineArray(1).toLong
-          val line = iter.next()
-          val srcId = line._1
-          val dstId = line._2
+          val lineArray = iter.next().split("\\s+")
+          if (lineArray.length < 2) {
+            throw new IllegalArgumentException("Invalid line: ")
+          }
+          val srcId = lineArray(0).toLong
+          val dstId = lineArray(1).toLong
+//          val line = iter.next()
+//          val srcId = line._1
+//          val dstId = line._2
           val srcPid = partitioner.getPartition(srcId)
           val dstPid = partitioner.getPartition(dstId)
           pid2Oids(srcPid).add(srcId)
