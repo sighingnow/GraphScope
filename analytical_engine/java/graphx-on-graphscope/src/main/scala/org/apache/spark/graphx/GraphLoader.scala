@@ -22,9 +22,10 @@ object GraphLoader extends Logging {
     // Parse the edge data table directly into edge partitions
     val lines = {
       if (numEdgePartitions > 0) {
-        sc.textFile(path, numEdgePartitions).coalesce(numEdgePartitions)
+//        sc.textFile(path, numEdgePartitions).coalesce(numEdgePartitions)
+        sc.sequenceFile(path, classOf[Long],classOf[Long], numEdgePartitions).coalesce(numEdgePartitions)
       } else {
-        sc.textFile(path)
+        sc.sequenceFile(path, classOf[Long],classOf[Long])
       }
     }
     lines.cache()
@@ -32,20 +33,24 @@ object GraphLoader extends Logging {
     log.info("[GraphLoader]: load partitions cost " + (linesTime - startTimeNs) / 1000000 + "ms")
     val numLines = lines.count() / numEdgePartitions
     val partitioner = new HashPartitioner(numEdgePartitions)
-    val edgesShuffled = lines.mapPartitionsWithIndex {
+    val edgesPartitioned = lines.mapPartitionsWithIndex {
       (fromPid, iter) => {
+//        iter.toArray
         val pid2src = Array.fill(numEdgePartitions)(new PrimitiveVector[VertexId](numLines.toInt))
         val pid2Dst = Array.fill(numEdgePartitions)(new PrimitiveVector[VertexId](numLines.toInt))
         val pid2attr = Array.fill(numEdgePartitions)(new PrimitiveVector[Int](numLines.toInt))
         val pid2Oids = Array.fill(numEdgePartitions)(new OpenHashSet[VertexId](numLines.toInt / 2))
         val time0 = System.nanoTime();
         while (iter.hasNext) {
-          val lineArray = iter.next().split("\\s+")
-          if (lineArray.length < 2) {
-            throw new IllegalArgumentException("Invalid line: ")
-          }
-          val srcId = lineArray(0).toLong
-          val dstId = lineArray(1).toLong
+//          val lineArray = iter.next().split("\\s+")
+//          if (lineArray.length < 2) {
+//            throw new IllegalArgumentException("Invalid line: ")
+//          }
+//          val srcId = lineArray(0).toLong
+//          val dstId = lineArray(1).toLong
+          val line = iter.next()
+          val srcId = line._1
+          val dstId = line._2
           val srcPid = partitioner.getPartition(srcId)
           val dstPid = partitioner.getPartition(dstId)
           pid2Oids(srcPid).add(srcId)
@@ -70,10 +75,13 @@ object GraphLoader extends Logging {
           case (srcs, pid) => (pid, new EdgeShuffle(fromPid,pid, pid2Oids(pid), srcs.trim().array, pid2Dst(pid).trim().array, pid2attr(pid).trim().array))
         }).toIterator
       }
-    }.partitionBy(partitioner).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
+    }.cache()
+    val edgesPartitionTime = System.nanoTime();
+    log.info(s"[GraphLoader:] Partition time ${(edgesPartitionTime - linesTime)/ 1000000} ms")
+    val edgesShuffled = edgesPartitioned.partitionBy(partitioner).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
     val edgeShufflesNum = edgesShuffled.cache().count()
     val edgeShuffleTime = System.nanoTime()
-    log.info(s"total edge shuffles invoked ${edgeShufflesNum}, cost ${(edgeShuffleTime - linesTime)/ 1000000} ms ")
+    log.info(s"Repartition ${edgeShufflesNum} edges cost ${(edgeShuffleTime - edgesPartitionTime)/ 1000000} ms ")
 
     logInfo(s"It took ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTimeNs)} ms" +
       " to load the edges")

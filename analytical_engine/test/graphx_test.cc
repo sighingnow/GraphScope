@@ -164,6 +164,8 @@ vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
           client.GetObject(id));
   LOG(INFO) << "vnum: " << vd->VerticesNum();
   LOG(INFO) << "vdata : " << vd->GetData(0);
+  auto vdArray = vd->GetVdataArray();
+  LOG(INFO) << "vd length: " << vdArray.GetLength();
   return vd->id();
 }
 
