@@ -41,7 +41,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     val vmIds = grapeGraph.generateGlobalVMIds()
     val csrIds = grapeGraph.generateCSRIds()
     val vdataIds = grapeGraph.generateVdataIds()
-    log.info(s"[GraphScopePregel]: collect distinct ids vm: ${vmIds}, csr: ${csrIds}, vdata: ${vdataIds}")
+    log.info(s"[GraphScopePregel]: collect distinct ids vm: ${vmIds.mkString("Array(", ", ", ")")}, csr: ${csrIds.mkString("Array(", ", ", ")")}, vdata: ${vdataIds.mkString("Array(", ", ", ")")}")
 
     MPIUtils.launchGraphX[MSG,VD,ED](vmIds,csrIds,vdataIds,
       msgClass, vdClass, edClass,

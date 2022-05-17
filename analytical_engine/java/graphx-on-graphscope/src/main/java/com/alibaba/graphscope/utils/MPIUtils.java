@@ -29,7 +29,8 @@ public class MPIUtils {
         if (SPARK_HOME == null || SPARK_HOME.isEmpty()) {
             throw new IllegalStateException("SPARK_HOME need");
         }
-        SPARK_CONF_WORKERS = SPARK_HOME + "/conf/workers";
+        //Use a customized hostfile for slots=1 settings
+        SPARK_CONF_WORKERS = SPARK_HOME + "/conf/grape-workers";
 
         GRAPHSCOPE_CODE_HOME = System.getenv("GRAPHSCOPE_CODE_HOME");
         if (GRAPHSCOPE_CODE_HOME != null && fileExists(GRAPHSCOPE_CODE_HOME)) {

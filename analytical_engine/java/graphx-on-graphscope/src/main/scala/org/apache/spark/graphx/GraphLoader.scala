@@ -38,6 +38,7 @@ object GraphLoader extends Logging {
         val pid2Dst = Array.fill(numEdgePartitions)(new PrimitiveVector[VertexId](numLines.toInt))
         val pid2attr = Array.fill(numEdgePartitions)(new PrimitiveVector[Int](numLines.toInt))
         val pid2Oids = Array.fill(numEdgePartitions)(new OpenHashSet[VertexId](numLines.toInt / 2))
+        val time0 = System.nanoTime();
         while (iter.hasNext) {
           val lineArray = iter.next().split("\\s+")
           if (lineArray.length < 2) {
@@ -63,12 +64,14 @@ object GraphLoader extends Logging {
             pid2attr(dstPid).+=(1)
           }
         }
+        val time1 = System.nanoTime();
+        log.info("[GraphLoader: ] iterating over edge cost " + (time1 - time0) / 1000000 + "ms")
         pid2src.zipWithIndex.map({
           case (srcs, pid) => (pid, new EdgeShuffle(fromPid,pid, pid2Oids(pid), srcs.trim().array, pid2Dst(pid).trim().array, pid2attr(pid).trim().array))
         }).toIterator
       }
     }.partitionBy(partitioner).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
-    val edgeShufflesNum = edgesShuffled.count()
+    val edgeShufflesNum = edgesShuffled.cache().count()
     val edgeShuffleTime = System.nanoTime()
     log.info(s"total edge shuffles invoked ${edgeShufflesNum}, cost ${(edgeShuffleTime - linesTime)/ 1000000} ms ")
 
