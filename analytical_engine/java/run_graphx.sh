@@ -60,5 +60,5 @@ cmd="GLOG_v=10 mpirun --mca btl_tcp_if_include bond0 -n ${NUM_WORKERS} -hostfile
 --msg_class ${MSG_CLASS} --vd_class ${VD_CLASS} --ed_class ${ED_CLASS} \
 --vm_ids ${VM_IDS} --csr_ids ${CSR_IDS} --vdata_ids ${VDATA_IDS} \
 --initial_msg ${INIT_MSG}  --max_iterations ${MAX_ITERATION}"
-echo "running cmd: "$cmd
+echo "running cmd: "$cmd >&2
 eval $cmd

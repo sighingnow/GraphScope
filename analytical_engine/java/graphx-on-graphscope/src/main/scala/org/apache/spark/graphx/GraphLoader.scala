@@ -45,7 +45,7 @@ object GraphLoader extends Logging {
           val srcPid = partitioner.getPartition(srcId)
           val dstPid = partitioner.getPartition(dstId)
           pid2Oids(srcPid).add(srcId)
-          pid2Oids(srcPid).add(dstId)
+          pid2Oids(dstPid).add(dstId)
           if (srcPid == dstPid){
             pid2src(srcPid).+=(srcId)
             pid2Dst(srcPid).+=(dstId)
@@ -55,9 +55,9 @@ object GraphLoader extends Logging {
             pid2src(srcPid).+=(srcId)
             pid2Dst(srcPid).+=(dstId)
             pid2attr(srcPid).+=(1)
-            pid2src(dstPid).+=(srcId)
-            pid2Dst(dstPid).+=(dstId)
-            pid2attr(dstPid).+=(1)
+            //pid2src(dstPid).+=(srcId)
+            //pid2Dst(dstPid).+=(dstId)
+            //pid2attr(dstPid).+=(1)
           }
         }
         pid2src.zipWithIndex.map({

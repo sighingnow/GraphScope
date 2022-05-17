@@ -37,11 +37,14 @@ vineyard::ObjectID getLocalVM(vineyard::Client& client,
   {
     arrow::Int64Builder inner, outer;
     if (comm_spec.worker_id() == 0) {
-      inner.Reserve(2);
-      outer.Reserve(1);
-      inner.UnsafeAppend(1);
+      inner.Reserve(3);
+      outer.Reserve(3);
       inner.UnsafeAppend(2);
+      inner.UnsafeAppend(4);
+      inner.UnsafeAppend(6);
+      outer.UnsafeAppend(1);
       outer.UnsafeAppend(3);
+      outer.UnsafeAppend(5);
       gs::BasicLocalVertexMapBuilder<int64_t, uint64_t> builder(client, inner,
                                                                 outer);
       auto vmap =
@@ -53,11 +56,14 @@ vineyard::ObjectID getLocalVM(vineyard::Client& client,
       LOG(INFO) << "Worker [" << comm_spec.worker_id()
                 << "Persist local vmap id: " << vmap->id();
     } else {
-      inner.Reserve(1);
-      outer.Reserve(2);
+      inner.Reserve(3);
+      outer.Reserve(3);
+      inner.UnsafeAppend(1);
       inner.UnsafeAppend(3);
+      inner.UnsafeAppend(5);
       outer.UnsafeAppend(2);
-      outer.UnsafeAppend(1);
+      outer.UnsafeAppend(4);
+      outer.UnsafeAppend(6);
       gs::BasicLocalVertexMapBuilder<int64_t, uint64_t> builder(client, inner,
                                                                 outer);
       auto vmap =
@@ -147,7 +153,7 @@ vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
   vineyard::ObjectID id;
   {
     gs::VertexDataBuilder<uint64_t, int64_t> builder;
-    builder.Init(3, 2);
+    builder.Init(6, 2);
     auto vd = builder.MySeal(client);
     id = vd->id();
   }
@@ -176,24 +182,33 @@ void generateData(arrow::Int64Builder& srcBuilder,
                   arrow::Int64Builder& edataBuilder,
                   grape::CommSpec& comm_spec) {
   if (comm_spec.worker_id() == 0) {
-    srcBuilder.Reserve(2);
-    dstBuilder.Reserve(2);
-    edataBuilder.Reserve(2);
+    srcBuilder.Reserve(3);
+    dstBuilder.Reserve(3);
+    edataBuilder.Reserve(3);
     srcBuilder.UnsafeAppend(2);
-    srcBuilder.UnsafeAppend(1);
+    srcBuilder.UnsafeAppend(4);
+    srcBuilder.UnsafeAppend(6);
 
     dstBuilder.UnsafeAppend(1);
     dstBuilder.UnsafeAppend(3);
+    dstBuilder.UnsafeAppend(5);
 
     edataBuilder.UnsafeAppend(1);
     edataBuilder.UnsafeAppend(2);
-  } else {
-    srcBuilder.Reserve(1);
-    dstBuilder.Reserve(1);
-    edataBuilder.Reserve(1);
-    srcBuilder.UnsafeAppend(3);
-    dstBuilder.UnsafeAppend(2);
     edataBuilder.UnsafeAppend(3);
+  } else {
+    srcBuilder.Reserve(3);
+    dstBuilder.Reserve(3);
+    edataBuilder.Reserve(3);
+    srcBuilder.UnsafeAppend(1);
+    srcBuilder.UnsafeAppend(3);
+    srcBuilder.UnsafeAppend(5);
+    dstBuilder.UnsafeAppend(4);
+    dstBuilder.UnsafeAppend(6);
+    dstBuilder.UnsafeAppend(2);
+    edataBuilder.UnsafeAppend(4);
+    edataBuilder.UnsafeAppend(5);
+    edataBuilder.UnsafeAppend(6);
   }
 }
 void Init() {

@@ -339,8 +339,8 @@ public:
     for (auto i = 0; i < ovnum; ++i) {
       CHECK(GetGid(outer_lid2Oids_->Value(i), gid));
       gid_builder.UnsafeAppend(gid);
-      LOG(INFO) << "outer oid: " << outer_lid2Oids_->Value(i)
-                << " gid: " << gid;
+      //LOG(INFO) << "outer oid: " << outer_lid2Oids_->Value(i)
+      //          << " gid: " << gid;
     }
     gid_builder.Finish(&outer_lid2Gids_);
 

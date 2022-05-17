@@ -28,7 +28,7 @@ object SSSP extends Logging{
     log.info(s"[GraphLoader: ] Load graph ${graph.numEdges}, ${graph.numVertices}")
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, vdata) =>
-      if (id == sourceId) 0.0 else vdata.toDouble)
+      if (id == sourceId) 0.0 else Double.PositiveInfinity)
 //    println(initialGraph.vertices.collect().mkString("Array(", ", ", ")"))
 //    println(initialGraph.edges.collect().mkString("Array(", ", ", ")"))
     val edgesNum = initialGraph.numEdges
@@ -49,6 +49,7 @@ object SSSP extends Logging{
       },
       (a, b) => math.min(a, b) // Merge Message
     )
+    sssp.vertices.saveAsTextFile("/tmp/graphx_sssp_output")
     val endTIme = System.nanoTime()
     println("[Pregel running time ] : " + ((endTIme - startTime) / 1000000) + "ms")
     println("[Load graph time ]: " + ((loadGraph1 - loadGraph0) / 1000000) + "ms")
