@@ -150,7 +150,8 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
       edatas_accessor_.Init(edatas_);
     }
 
-    local_vnum_ = offsets_->length() - 1;
+    local_vnum_ = ie_offsets_->length() - 1;
+    CHECK_EQ(ie_offsets_->length(), oe_offsets_->length());
     CHECK_GT(local_vnum_, 0);
     LOG(INFO) << "In constructing graphx csr, local vnum: " << local_vnum_;
     out_edge_ptr_ = const_cast<nbr_t*>(
@@ -322,8 +323,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     }
     CHECK_EQ(srcOids->length(), dstOids->length());
     CHECK_EQ(dstOids->length(), edatas->length());
-    vnum_ = graphx_vertex_map.GetVertexSize(graphx_vertex_map.fid());
-    LOG(INFO) << "total vnum : " << vnum_;
+    vnum_ = graphx_vertex_map.GetVertexSize();
+    LOG(INFO) << "frag vnum : " << vnum_;
     auto edges_num_ = srcOids->length();
     std::shared_ptr<vid_array_t> srcLids, dstLids;
     auto curFid = graphx_vertex_map.fid();
@@ -344,13 +345,13 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     ie_degree_.clear();
     oe_degree_.clear();
     ie_degree_.resize(vnum_, 0);
-    oe_degreee_.resize(vnum_, 0);
+    oe_degree_.resize(vnum_, 0);
 
     LOG(INFO) << "Loading edges size " << edges_num_
               << "vertices num: " << vnum_;
     for (auto i = 0; i < edges_num_; ++i) {
       ++ie_degree_[dstLids->Value(i)];
-      ++oe_degree_[srcLid->Value(i)];
+      ++oe_degree_[srcLids->Value(i)];
     }
     build_offsets();
     LOG(INFO) << "finish offset building";
@@ -534,7 +535,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
   }
 
   vid_t vnum_;
-  int64_t in_edges_num_, out_edges_num;
+  int64_t in_edges_num_, out_edges_num_;
 
   std::vector<int> ie_degree_, oe_degree_;
   vineyard::PodArrayBuilder<nbr_t> in_edge_builder_, out_edge_builder_;
