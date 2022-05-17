@@ -140,8 +140,6 @@ object Pregel extends Logging {
      *
      *    So after computation, we can use shared memory to pass the updated vertex data.
      */
-    graph.vertices.count()
-    graph.edges.count()
     val sc = SparkContext.getOrCreate()
     val vprogCleaned = sc.clean(vprog,true)
     val sendMsgCleaned = sc.clean(sendMsg, true)

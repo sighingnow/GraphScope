@@ -32,15 +32,15 @@ object GraphLoader extends Logging {
     lines.cache()
     val linesTime = System.nanoTime()
     log.info("[GraphLoader]: load partitions cost " + (linesTime - startTimeNs) / 1000000 + "ms")
-    val numLines = lines.count() / numEdgePartitions
+//    val numLines = lines.count() / numEdgePartitions
     val partitioner = new HashPartitioner(numEdgePartitions)
     val edgesPartitioned = lines.mapPartitionsWithIndex {
       (fromPid, iter) => {
 //        iter.toArray
-        val pid2src = Array.fill(numEdgePartitions)(new PrimitiveVector[VertexId](numLines.toInt))
-        val pid2Dst = Array.fill(numEdgePartitions)(new PrimitiveVector[VertexId](numLines.toInt))
-        val pid2attr = Array.fill(numEdgePartitions)(new PrimitiveVector[Int](numLines.toInt))
-        val pid2Oids = Array.fill(numEdgePartitions)(new OpenHashSet[VertexId](numLines.toInt / 2))
+        val pid2src = Array.fill(numEdgePartitions)(new PrimitiveVector[VertexId])
+        val pid2Dst = Array.fill(numEdgePartitions)(new PrimitiveVector[VertexId])
+        val pid2attr = Array.fill(numEdgePartitions)(new PrimitiveVector[Int])
+        val pid2Oids = Array.fill(numEdgePartitions)(new OpenHashSet[VertexId])
         val time0 = System.nanoTime();
         while (iter.hasNext) {
           val lineArray = iter.next().split("\\s+")
