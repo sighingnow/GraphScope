@@ -106,6 +106,8 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
 
   int64_t GetOutEdgesNum() const { return out_edges_num_; }
 
+  int64_t GetTotalEdgesNum() const { return in_edges_num_ + out_edges_num_; }
+
   int64_t GetPartialInEdgesNum(vid_t from, vid_t end) const {  //[from,end)
     CHECK_LT(from, end);
     CHECK_LE(end, local_vnum_);

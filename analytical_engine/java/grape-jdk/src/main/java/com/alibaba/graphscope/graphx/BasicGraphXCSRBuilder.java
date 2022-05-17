@@ -28,6 +28,6 @@ public interface BasicGraphXCSRBuilder<OID_T,VID_T,ED_T> extends FFIPointer {
 
     @FFIFactory
     interface Factory<OID_T,VID_T,ED_T> {
-        BasicGraphXCSRBuilder<OID_T,VID_T,ED_T> create(@CXXReference VineyardClient vineyardClient, boolean outEdges);
+        BasicGraphXCSRBuilder<OID_T,VID_T,ED_T> create(@CXXReference VineyardClient vineyardClient);
     }
 }
