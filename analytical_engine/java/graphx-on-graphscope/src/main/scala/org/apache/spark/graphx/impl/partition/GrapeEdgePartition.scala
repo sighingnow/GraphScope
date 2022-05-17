@@ -14,7 +14,7 @@ import scala.reflect.ClassTag
 class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int, val startLid : Long, val endLid : Long,
                                                      val csr : GraphXCSR[Long,ED],
                                                      val vm : GraphXVertexMap[Long,Long]) {
-  def partEdgeNum : Long = csr.getPartialEdgesNum(startLid, endLid)
+  def partEdgeNum : Long = csr.getPartialOutEdgesNum(startLid, endLid)
 
   def iterator : Iterator[Edge[ED]] = {
     null
