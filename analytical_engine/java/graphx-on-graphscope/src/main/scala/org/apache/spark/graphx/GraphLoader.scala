@@ -68,7 +68,7 @@ object GraphLoader extends Logging {
         }).toIterator
       }
     }.partitionBy(partitioner).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
-    val edgeShufflesNum = edgesShuffled.count()
+    val edgeShufflesNum = edgesShuffled.cache().count()
     val edgeShuffleTime = System.nanoTime()
     log.info(s"total edge shuffles invoked ${edgeShufflesNum}, cost ${(edgeShuffleTime - linesTime)/ 1000000} ms ")
 
