@@ -302,6 +302,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     sort();
     LOG(INFO) << "Finish loading edges";
   }
+
   vineyard::Status Build(vineyard::Client& client) override {
     {
       std::shared_ptr<arrow::FixedSizeBinaryArray> edges;
