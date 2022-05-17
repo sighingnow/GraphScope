@@ -30,6 +30,20 @@ class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : I
     fromPid2Shuffle(ind)
   }
 
+  def getArrays: (Array[Array[Long]], Array[Array[Long]], Array[Array[ED]]) = {
+    val srcArrays = new Array[Array[Long]](numPartitions)
+    val dstArrays = new Array[Array[Long]](numPartitions)
+    val attrArrays = new Array[Array[ED]](numPartitions)
+    var i = 0
+    while (i < numPartitions){
+      srcArrays(i) = fromPid2Shuffle(i).srcs
+      dstArrays(i) = fromPid2Shuffle(i).dsts
+      attrArrays(i) = fromPid2Shuffle(i).attrs
+      i += 1
+    }
+    (srcArrays,dstArrays,attrArrays)
+  }
+
   /**
    * How many edges in received by us
    */
@@ -60,15 +74,15 @@ class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : I
       override def hasNext: Boolean = {
           if (curInd >= curShuffle.size()){
             curPid += 1
-	    var flag = true
+	          var flag = true
             while (curPid < numPartitions && flag){
               curShuffle = fromPid2Shuffle(curPid)
               if (curShuffle.size() > 0){
-  		 flag = false
-	      }
-	      else {
+  		          flag = false
+              }
+	            else {
                  curPid += 1
-	      }
+	            }
             }
             if (curPid >= numPartitions) return false
             curInd = 0

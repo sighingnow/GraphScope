@@ -16,17 +16,29 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 public interface GraphXCSR<VID_T,ED_T> extends FFIPointer {
     long id();
 
-    @FFINameAlias("GetDegree")
-    long getDegree(VID_T vid);
+    @FFINameAlias("GetInDegree")
+    long getInDegree(VID_T vid);
 
-    @FFINameAlias("IsEmpty")
-    boolean isEmpty(VID_T vid);
+    @FFINameAlias("GetOutDegree")
+    long getOutDegree(VID_T vid);
 
-    @FFINameAlias("GetBegin")
-    PropertyNbrUnit<VID_T> getBegin(VID_T lid);
+    @FFINameAlias("IsIEEmpty")
+    boolean isInEdgesEmpty(VID_T vid);
 
-    @FFINameAlias("GetEnd")
-    PropertyNbrUnit<VID_T> getEnd(VID_T lid);
+    @FFINameAlias("IsOEEmpty")
+    boolean isOutEdgesEmpty(VID_T vid);
+
+    @FFINameAlias("GetIEBegin")
+    PropertyNbrUnit<VID_T> getIEBegin(VID_T lid);
+
+    @FFINameAlias("GetIEEnd")
+    PropertyNbrUnit<VID_T> getIEEnd(VID_T lid);
+
+    @FFINameAlias("GetOEBegin")
+    PropertyNbrUnit<VID_T> getOEBegin(VID_T lid);
+
+    @FFINameAlias("GetOEEnd")
+    PropertyNbrUnit<VID_T> getOEEnd(VID_T lid);
 
     /**
      * Inner vnum
@@ -35,15 +47,20 @@ public interface GraphXCSR<VID_T,ED_T> extends FFIPointer {
     @FFINameAlias("VertexNum")
     VID_T vertexNum();
 
-    @FFINameAlias("GetTotalEdgesNum")
-    long getTotalEdgesNum();
+    @FFINameAlias("GetInEdgesNum")
+    long getInEdgesNum();
 
+    @FFINameAlias("GetOutEdgesNum")
+    long getOutEdgesNum();
     /**
      *
      * @param begin inclusive
      * @param end exclusive
      * @return
      */
-    @FFINameAlias("GetPartialEdgesNum")
-    long getPartialEdgesNum(VID_T begin, VID_T end);
+    @FFINameAlias("GetPartialInEdgesNum")
+    long getPartialInEdgesNum(VID_T begin, VID_T end);
+
+    @FFINameAlias("GetPartialOutEdgesNum")
+    long getPartialOutEdgesNum(VID_T begin, VID_T end);
 }

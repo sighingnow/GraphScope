@@ -141,11 +141,12 @@ vineyard::ObjectID TestGraphXCSR(
       std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t, int64_t>>(
           client.GetObject(csr_id));
   LOG(INFO) << "Got csr " << csr->id();
-  LOG(INFO) << "num edges: " << csr->GetTotalEdgesNum() << " vs "
-            << csr->GetPartialEdgesNum(
+  LOG(INFO) << "in num edges: " << csr->GetInEdgesNum()
+            << "out num edges: " << csr->GetOutEdgesNum() << " vs "
+            << csr->GetPartialOutEdgesNum(
                    0, graphx_vm.GetInnerVertexSize(comm_spec.fid()));
-  LOG(INFO) << "lid 0 degreee: " << csr->GetDegree(0) << ", "
-            << csr->GetPartialEdgesNum(0, 1);
+  LOG(INFO) << "lid 0 degreee: " << csr->GetOutDegree(0) << ", "
+            << csr->GetPartialOutEdgesNum(0, 1);
   return csr->id();
 }
 

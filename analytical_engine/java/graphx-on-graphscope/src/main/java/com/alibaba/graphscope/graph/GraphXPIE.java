@@ -171,8 +171,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
   }
 
   void iterateOnEdges(Vertex<Long> vertex, GSEdgeTripletImpl<VD, ED> edgeTriplet) {
-    PropertyNbrUnit<Long> begin = graphXFragment.getBegin(vertex);
-    PropertyNbrUnit<Long> end = graphXFragment.getEnd(vertex);
+    PropertyNbrUnit<Long> begin = graphXFragment.geOEBegin(vertex);
+    PropertyNbrUnit<Long> end = graphXFragment.getOEEnd(vertex);
     int cnt = 0;
     Vertex<Long> nbrVertex = FFITypeFactoryhelper.newVertexLong();
     while (begin.getAddress() != end.getAddress()) {

@@ -55,9 +55,9 @@ object GraphLoader extends Logging {
             pid2src(srcPid).+=(srcId)
             pid2Dst(srcPid).+=(dstId)
             pid2attr(srcPid).+=(1)
-            //pid2src(dstPid).+=(srcId)
-            //pid2Dst(dstPid).+=(dstId)
-            //pid2attr(dstPid).+=(1)
+            pid2src(dstPid).+=(srcId)
+            pid2Dst(dstPid).+=(dstId)
+            pid2attr(dstPid).+=(1)
           }
         }
         pid2src.zipWithIndex.map({

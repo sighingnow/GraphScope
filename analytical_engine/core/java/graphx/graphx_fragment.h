@@ -63,7 +63,7 @@ namespace gs {
 template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
 class GraphXFragment
     : public vineyard::Registered<GraphXFragment<OID_T, VID_T, VD_T, ED_T>> {
-public:
+ public:
   using eid_t = vineyard::property_graph_types::EID_TYPE;
   using oid_t = OID_T;
   using vid_t = VID_T;
@@ -134,14 +134,14 @@ public:
 
   inline int GetLocalInDegree(const vertex_t& v) {
     assert(IsInnerVertex(v));
-    return 0;
+    return csr_.GetInDegree(v.GetValue());
   }
   inline int GetLocalOutDegree(const vertex_t& v) {
     assert(IsInnerVertex(v));
-    return csr_.GetDegree(v.GetValue());
+    return csr_.GetOutDegree(v.GetValue());
   }
 
-  inline bool Gid2Vertex(const vid_t& gid, vertex_t& v) const{
+  inline bool Gid2Vertex(const vid_t& gid, vertex_t& v) const {
     return vm_.Gid2Vertex(gid, v);
   }
 
@@ -189,10 +189,18 @@ public:
   // inline void SetData(const vertex_t& v, vdata_t vd) { vdata_.SetData(v, vd);
   // }
 
-  inline nbr_t* GetBegin(const vertex_t& v) {
-    return csr_.GetBegin(v.GetValue());
+  inline nbr_t* GetIEBegin(const vertex_t& v) {
+    return csr_.GetIEBegin(v.GetValue());
   }
-  inline nbr_t* GetEnd(const vertex_t& v) { return csr_.GetEnd(v.GetValue()); }
+  inline nbr_t* GetOEBegin(const vertex_t& v) {
+    return csr_.GetOEBegin(v.GetValue());
+  }
+  inline nbr_t* GetIEEnd(const vertex_t& v) {
+    return csr_.GetIEEnd(v.GetValue());
+  }
+  inline nbr_t* GetOEEnd(const vertex_t& v) {
+    return csr_.GetOEEnd(v.GetValue());
+  }
   inline graphx::ImmutableTypedArray<edata_t>& GetEdataArray() {
     return csr_.GetEdataArray();
   }

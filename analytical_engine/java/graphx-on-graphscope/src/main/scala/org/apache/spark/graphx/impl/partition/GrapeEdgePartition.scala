@@ -69,16 +69,27 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
     val outerHashSet = new OpenHashSet[Long]
     for (shuffle <- lists){
       log.info(s"Extract outer vertices from ${shuffle}")
-      val iter = shuffle.iterator()
-      while (iter.hasNext){
-        val edge = iter.next()
- //       log.info(s"processing edge ${edge.srcId}->${edge.dstId}, ${edge.attr}")
-        if (!innerHashSet.contains(edge.srcId)){
-          outerHashSet.add(edge.srcId)
+      val (srcArrays, dstArrays, attrArrays) = shuffle.getArrays
+      var i = 0
+      val outerArrayLimit = srcArrays.length
+      while (i < outerArrayLimit){
+        var j = 0
+        val innerLimit = srcArrays(i).length
+        require(dstArrays.length == innerLimit)
+        require(attrArrays.length == innerLimit)
+        val srcArray = srcArrays(i)
+        val dstArray = dstArrays(i)
+        val attrArray = attrArrays(i)
+        while (j < innerLimit){
+          if (!innerHashSet.contains(srcArray(j))){
+            outerHashSet.add(srcArray(j))
+          }
+          if (!innerHashSet.contains(dstArray(j))){
+            outerHashSet.add(dstArray(j))
+          }
+          j += 1
         }
-        if (!innerHashSet.contains(edge.dstId)){
-          outerHashSet.add(edge.dstId)
-        }
+        i += 1
       }
     }
     outerOidBuilder.reserve(outerHashSet.size)
@@ -106,14 +117,33 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
     log.info(s"Got graphx vertex map: ${graphxVertexMap}, total vnum ${graphxVertexMap.getTotalVertexSize}, fid ${graphxVertexMap.fid()}/${graphxVertexMap.fnum()}")
     for (shuffle <- lists){
       log.info(s"Processing ${shuffle}")
-      val iter = shuffle.iterator()
-      while (iter.hasNext){
-        val edge = iter.next()
-//        log.info(s"processing edge ${edge.srcId}->${edge.dstId}, ${edge.attr}")
-        srcOidBuilder.unsafeAppend(edge.srcId)
-        dstOidBuilder.unsafeAppend(edge.dstId)
-        edataBuilder.unsafeAppend(edge.attr)
+      val (srcArrays, dstArrays, attrArrays) = shuffle.getArrays
+      var i = 0
+      val outerArrayLimit = srcArrays.length
+      while (i < outerArrayLimit){
+        var j = 0
+        val innerLimit = srcArrays(i).length
+        require(dstArrays.length == innerLimit)
+        require(attrArrays.length == innerLimit)
+        val srcArray = srcArrays(i)
+        val dstArray = dstArrays(i)
+        val attrArray = attrArrays(i)
+        while (j < innerLimit){
+          srcOidBuilder.unsafeAppend(srcArray(j))
+          dstOidBuilder.unsafeAppend(dstArray(j))
+          edataBuilder.unsafeAppend(attrArray(j))
+          j += 1
+        }
+        i += 1
       }
+//      val iter = shuffle.iterator()
+//      while (iter.hasNext){
+//        val edge = iter.next()
+////        log.info(s"processing edge ${edge.srcId}->${edge.dstId}, ${edge.attr}")
+//        srcOidBuilder.unsafeAppend(edge.srcId)
+//        dstOidBuilder.unsafeAppend(edge.dstId)
+//        edataBuilder.unsafeAppend(edge.attr)
+//      }
     }
     log.info("Finish adding edges to builders")
     val graphxCSRBuilder = ScalaFFIFactory.newGraphXCSRBuilder[ED](ExecutorUtils.getVineyarClient)
