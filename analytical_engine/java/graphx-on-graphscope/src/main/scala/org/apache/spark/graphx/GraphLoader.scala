@@ -27,6 +27,9 @@ object GraphLoader extends Logging {
         sc.textFile(path)
       }
     }
+    lines.cache()
+    val linesTime = System.nanoTime()
+    log.info("[GraphLoader]: load partitions cost " + (linesTime - startTimeNs) / 1000000 + "ms")
     val numLines = lines.count() / numEdgePartitions
     val partitioner = new HashPartitioner(numEdgePartitions)
     val edgesShuffled = lines.mapPartitionsWithIndex {
@@ -66,7 +69,8 @@ object GraphLoader extends Logging {
       }
     }.partitionBy(partitioner).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
     val edgeShufflesNum = edgesShuffled.count()
-    log.info(s"total edge shuffles invoked ${edgeShufflesNum}")
+    val edgeShuffleTime = System.nanoTime()
+    log.info(s"total edge shuffles invoked ${edgeShufflesNum}, cost ${(edgeShuffleTime - linesTime)/ 1000000} ms ")
 
     logInfo(s"It took ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTimeNs)} ms" +
       " to load the edges")

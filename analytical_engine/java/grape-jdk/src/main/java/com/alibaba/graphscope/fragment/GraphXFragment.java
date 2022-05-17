@@ -23,7 +23,7 @@ import com.alibaba.graphscope.ds.Vertex;
 public interface GraphXFragment<OID_T, VID_T, VD_T, ED_T>
     extends EdgecutFragment<OID_T, VID_T, VD_T, ED_T> {
 
-     @FFINameAlias("GetIEBegin")
+    @FFINameAlias("GetIEBegin")
     PropertyNbrUnit<VID_T> getIEBegin(@CXXReference Vertex<VID_T> vertex);
 
     @FFINameAlias("GetIEEnd")
@@ -35,7 +35,7 @@ public interface GraphXFragment<OID_T, VID_T, VD_T, ED_T>
     @FFINameAlias("GetOEEnd")
     PropertyNbrUnit<VID_T> getOEEnd(@CXXReference Vertex<VID_T> vertex);
 
-  @FFINameAlias("GetEdataArray") @CXXReference ImmutableTypedArray<ED_T> getEdataArray();
+    @FFINameAlias("GetEdataArray") @CXXReference ImmutableTypedArray<ED_T> getEdataArray();
 
-  @FFINameAlias("GetVdataArray") @CXXReference ImmutableTypedArray<VD_T> getVdataArray();
+    @FFINameAlias("GetVdataArray") @CXXReference ImmutableTypedArray<VD_T> getVdataArray();
 }
