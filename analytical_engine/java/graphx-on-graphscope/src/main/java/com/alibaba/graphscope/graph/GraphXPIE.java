@@ -102,7 +102,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
     oldEdataArray = graphXFragment.getEdataArray();
     logger.info("edata array size {}, edge num{}", oldEdataArray.getLength(),
                 graphXFragment.getEdgeNum());
-    if (oldEdataArray.getLength() != graphXFragment.getEdgeNum()) {
+    if (oldEdataArray.getLength() * 2 != graphXFragment.getEdgeNum()) {
       throw new IllegalStateException("not equal" + oldEdataArray.getLength() + ","
                                       + graphXFragment.getEdgeNum());
     }
