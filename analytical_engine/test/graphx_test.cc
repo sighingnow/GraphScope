@@ -182,35 +182,44 @@ void generateData(arrow::Int64Builder& srcBuilder,
                   arrow::Int64Builder& dstBuilder,
                   arrow::Int64Builder& edataBuilder,
                   grape::CommSpec& comm_spec) {
-  if (comm_spec.worker_id() == 0) {
-    srcBuilder.Reserve(3);
-    dstBuilder.Reserve(3);
-    edataBuilder.Reserve(3);
-    srcBuilder.UnsafeAppend(2);
-    srcBuilder.UnsafeAppend(4);
-    srcBuilder.UnsafeAppend(6);
+  // if (comm_spec.worker_id() == 0) {
+  srcBuilder.Reserve(6);
+  dstBuilder.Reserve(6);
+  edataBuilder.Reserve(6);
+  srcBuilder.UnsafeAppend(1);
+  srcBuilder.UnsafeAppend(1);
+  srcBuilder.UnsafeAppend(2);
+  srcBuilder.UnsafeAppend(3);
+  srcBuilder.UnsafeAppend(4);
+  srcBuilder.UnsafeAppend(5);
 
-    dstBuilder.UnsafeAppend(1);
-    dstBuilder.UnsafeAppend(3);
-    dstBuilder.UnsafeAppend(5);
+  dstBuilder.UnsafeAppend(2);
+  dstBuilder.UnsafeAppend(3);
+  dstBuilder.UnsafeAppend(3);
+  dstBuilder.UnsafeAppend(4);
+  dstBuilder.UnsafeAppend(6);
+  dstBuilder.UnsafeAppend(4);
 
-    edataBuilder.UnsafeAppend(1);
-    edataBuilder.UnsafeAppend(2);
-    edataBuilder.UnsafeAppend(3);
-  } else {
-    srcBuilder.Reserve(3);
-    dstBuilder.Reserve(3);
-    edataBuilder.Reserve(3);
-    srcBuilder.UnsafeAppend(1);
-    srcBuilder.UnsafeAppend(3);
-    srcBuilder.UnsafeAppend(5);
-    dstBuilder.UnsafeAppend(4);
-    dstBuilder.UnsafeAppend(6);
-    dstBuilder.UnsafeAppend(2);
-    edataBuilder.UnsafeAppend(4);
-    edataBuilder.UnsafeAppend(5);
-    edataBuilder.UnsafeAppend(6);
-  }
+  edataBuilder.UnsafeAppend(1);
+  edataBuilder.UnsafeAppend(2);
+  edataBuilder.UnsafeAppend(3);
+  edataBuilder.UnsafeAppend(4);
+  edataBuilder.UnsafeAppend(5);
+  edataBuilder.UnsafeAppend(6);
+  // } else {
+  //   srcBuilder.Reserve(3);
+  //   dstBuilder.Reserve(3);
+  //   edataBuilder.Reserve(3);
+  //   srcBuilder.UnsafeAppend(1);
+  //   srcBuilder.UnsafeAppend(3);
+  //   srcBuilder.UnsafeAppend(5);
+  //   dstBuilder.UnsafeAppend(4);
+  //   dstBuilder.UnsafeAppend(6);
+  //   dstBuilder.UnsafeAppend(2);
+  //   edataBuilder.UnsafeAppend(4);
+  //   edataBuilder.UnsafeAppend(5);
+  //   edataBuilder.UnsafeAppend(6);
+  // }
 }
 void Init() {
   grape::InitMPIComm();

@@ -17,6 +17,7 @@
 #ifndef ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_CSR_H
 #define ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_CSR_H
 
+#define WITH_PROFILING
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -35,6 +36,7 @@
 
 #include "grape/graph/adj_list.h"
 #include "grape/graph/immutable_csr.h"
+#include "grape/utils/bitset.h"
 #include "grape/worker/comm_spec.h"
 #include "vineyard/basic/ds/arrow_utils.h"
 #include "vineyard/basic/stream/byte_stream.h"
@@ -325,8 +327,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     }
     CHECK_EQ(srcOids->length(), dstOids->length());
     CHECK_EQ(dstOids->length(), edatas->length());
-    vnum_ = graphx_vertex_map.GetVertexSize();
-    LOG(INFO) << "frag vnum : " << vnum_;
+    vnum_ = graphx_vertex_map.GetInnerVertexSize();
+    // LOG(INFO) << "fr vnum : " << vnum_;
     auto edges_num_ = srcOids->length();
     std::shared_ptr<vid_array_t> srcLids, dstLids;
     auto curFid = graphx_vertex_map.fid();
@@ -351,13 +353,29 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
 
     LOG(INFO) << "Loading edges size " << edges_num_
               << "vertices num: " << vnum_;
+    const vid_t* src_lid_accessor_ = srcLids->raw_values();
+    const vid_t* dst_lid_accessor_ = dstLids->raw_values();
+    grape::BitSet in_edge_active, out_edge_active;
+    in_edge_active.init(edges_num);
+    out_edge_active.init(edges_num);
     for (auto i = 0; i < edges_num_; ++i) {
-      ++ie_degree_[dstLids->Value(i)];
-      ++oe_degree_[srcLids->Value(i)];
+      auto src_lid = src_lid_accessor_[i];
+      if (src_lid < vnum_) {
+        ++oe_degree_[src_lid];
+        out_edge_active.set_bit(i);
+      }
     }
+    for (auto i = 0; i < edges_num_; ++i) {
+      auto dst_lid = dst_lid_accessor_[i];
+      if (dst_lid < vnum_) {
+        ++ie_degree_[dst_lid];
+        in_edge_active.set_bit(i);
+      }
+    }
+
     build_offsets();
     LOG(INFO) << "finish offset building";
-    add_edges(srcLids, dstLids, edatas);
+    add_edges(srcLids, dstLids, edatas, in_edge_active, out_edge_active);
     sort();
     LOG(INFO) << "Finish loading edges";
   }
@@ -469,33 +487,44 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
 
   void add_edges(const std::shared_ptr<vid_array_t>& srcLids,
                  const std::shared_ptr<vid_array_t>& dstLids,
-                 const std::shared_ptr<edata_array_t>& edatas) {
+                 const std::shared_ptr<edata_array_t>& edatas,
+                 const grape::BitSet& in_edge_active,
+                 const grape::BitSet& out_edge_active) {
 #if defined(WITH_PROFILING)
     auto start_ts = grape::GetCurrentTime();
 #endif
     edata_array_builder_t edata_builder_;
     auto len = srcLids->length();
     edata_builder_.Reserve(len);
+    const edata_t* edata_accessor = edatas->raw_values();
 
     for (auto i = 0; i < len; ++i) {
-      edata_builder_.UnsafeAppend(edatas->Value(i));
+      edata_builder_.UnsafeAppend(edata_accessor[i]);
     }
     edata_builder_.Finish(&edata_array_);
 
+    const vid_t* src_accessor = srcLids->raw_values();
+    const vid_t* dst_accessor = dstLids->raw_values();
+    const nbr_t* ie_mutable_ptr_begin = in_edge_builder_.MutablePointer(0);
+    const nbr_t* oe_mutable_ptr_begin = out_edge_builder_.MutablePointer(0);
     for (auto i = 0; i < len; ++i) {
-      vid_t srcLid = srcLids->Value(i);
-      vid_t dstLid = dstLids->Value(i);
+      vid_t srcLid = src_accessor[i];
+      vid_t dstLid = dst_accessor[i];
       {
-        int dstPos = oe_offsets_[srcLid]++;
-        nbr_t* ptr = out_edge_builder_.MutablePointer(dstPos);
-        ptr->vid = dstLid;
-        ptr->eid = static_cast<eid_t>(i);
+        if (out_edge_active.get_bit(i)) {
+          int dstPos = oe_offsets_[srcLid]++;
+          nbr_t* ptr = oe_mutable_ptr_begin + dstPos;
+          ptr->vid = dstLid;
+          ptr->eid = static_cast<eid_t>(i);
+        }
       }
       {
-        int dstPos = ie_offsets_[dstLid]++;
-        nbr_t* ptr = in_edge_builder_.MutablePointer(dstPos);
-        ptr->vid = srcLid;
-        ptr->eid = static_cast<eid_t>(i);
+        if (in_edge_active.get_bit(i)) {
+          int dstPos = ie_offsets_[dstLid]++;
+          nbr_t* ptr = ie_mutable_ptr_begin + dstPos;
+          ptr->vid = srcLid;
+          ptr->eid = static_cast<eid_t>(i);
+        }
       }
     }
     LOG(INFO) << "Finish adding " << len << "edges";

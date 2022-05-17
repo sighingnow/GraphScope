@@ -59,7 +59,7 @@ namespace gs {
 template <typename OID_T, typename VID_T>
 class GraphXVertexMap
     : public vineyard::Registered<GraphXVertexMap<OID_T, VID_T>> {
-public:
+ public:
   using oid_t = OID_T;
   using vid_t = VID_T;
   using oid_array_t = typename vineyard::ConvertToArrowType<oid_t>::ArrayType;
@@ -89,11 +89,13 @@ public:
     id_parser_.init(fnum_);
 
     lid2Oids_.resize(fnum_);
+    lid2Oids_accessor_.resize(fnum_);
     oid2Lids_.resize(fnum_);
     for (fid_t i = 0; i < fnum_; ++i) {
       vineyard_array_t array;
       array.Construct(meta.GetMemberMeta("lid2Oids_" + std::to_string(i)));
       lid2Oids_[i] = array.GetArray();
+      lid2Oids_accessor_[i] = lid2Oids_[i]->raw_values();
 
       oid2Lids_[i].Construct(
           meta.GetMemberMeta("oid2Lids_" + std::to_string(i)));
@@ -102,6 +104,7 @@ public:
       vineyard_array_t array;
       array.Construct(meta.GetMemberMeta("outerLid2Oids"));
       outer_lid2Oids_ = array.GetArray();
+      outer_lid2Oids_accessor_ = outer_lid2Oids_->raw_values();
     }
     InitOuterGids();
     this->ivnum_ = lid2Oids_[fid_]->length();
@@ -227,12 +230,13 @@ public:
 
   OID_T GetInnerVertexId(const vertex_t& v) const {
     assert(v.GetValue() < ivnum_);
-    return lid2Oids_[fid_]->Value(v.GetValue());
+    // return lid2Oids_[fid_]->Value(v.GetValue());
+    return lid2Oids_accessor_[fid_][v.GetValue()];
   }
   OID_T GetOuterVertexId(const vertex_t& v) const {
     assert(v.GetValue() >= ivnum_);
     assert(v.GetValue() < tvnum_);
-    return outer_lid2Oids_->Value(v.GetValue() - ivnum_);
+    return outer_lid2Oids_accessor_[v.GetValue() - ivnum_];
   }
 
   inline bool IsInnerVertex(const vertex_t& v) { return v.GetValue() < ivnum_; }
@@ -265,7 +269,7 @@ public:
     if (lid >= lid2Oids_[fid]->length()) {
       return false;
     }
-    oid = lid2Oids_[fid]->Value(lid);
+    oid = lid2Oids_accessor_[fid][lid];
     return true;
   }
 
@@ -292,12 +296,12 @@ public:
 
   OID_T InnerVertexLid2Oid(const VID_T& lid) const {
     CHECK_LT(lid, ivnum_);
-    return lid2Oids_[fid_]->Value(lid);
+    return lid2Oids_accessor_[fid_][lid];
   }
   OID_T OuterVertexLid2Oid(const VID_T& lid) const {
     CHECK_GE(lid, ivnum_);
     CHECK_LT(lid, tvnum_);
-    return outer_lid2Oids_->Value(lid - ivnum_);
+    return outer_lid2Oids_accessor_[lid - ivnum_];
   }
 
   bool GetGid(fid_t fid, const OID_T& oid, VID_T& gid) const {
@@ -337,12 +341,13 @@ public:
     gid_builder.Reserve(ovnum);
     vid_t gid;
     for (auto i = 0; i < ovnum; ++i) {
-      CHECK(GetGid(outer_lid2Oids_->Value(i), gid));
+      CHECK(GetGid(outer_lid2Oids_accessor_[i]), gid));
       gid_builder.UnsafeAppend(gid);
-      //LOG(INFO) << "outer oid: " << outer_lid2Oids_->Value(i)
-      //          << " gid: " << gid;
+      // LOG(INFO) << "outer oid: " << outer_lid2Oids_->Value(i)
+      //           << " gid: " << gid;
     }
     gid_builder.Finish(&outer_lid2Gids_);
+    outer_lid2Gids_accessor_ = outer_lid2Gids_->raw_values();
 
     vid_t lid = lid2Oids_[fid_]->length();
     for (int64_t i = 0; i < ovnum; ++i) {
@@ -357,7 +362,10 @@ public:
   grape::IdParser<vid_t> id_parser_;
   std::vector<vineyard::Hashmap<oid_t, vid_t>> oid2Lids_;
   std::vector<std::shared_ptr<oid_array_t>> lid2Oids_;
+  std::vector<const oid_t*> lid2Oids_accessor_;
   std::shared_ptr<oid_array_t> outer_lid2Oids_;
+  const oid_t* outer_lid2Oids_accessor_;
+  const vid_t* outer_lid2Gids_accessor_;
   std::shared_ptr<vid_array_t> outer_lid2Gids_;
   ska::flat_hash_map<vid_t, vid_t> outer_gid2Lids_;
 
@@ -416,13 +424,18 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     vertex_map->id_parser_.init(fnum_);
 
     vertex_map->lid2Oids_.resize(fnum_);
+    vertex_map->lid2Oids_accessor_.resize(fnum_);
     for (grape::fid_t i = 0; i < fnum_; ++i) {
       auto& array = vertex_map->lid2Oids_[i];
       array = lid2Oids_[i].GetArray();
+      vertex_map->lid2Oids_accessor_[i] = array->raw_values();
     }
 
     vertex_map->oid2Lids_ = oid2Lids_;
     vertex_map->outer_lid2Oids_ = outer_oid_array_.GetArray();
+    vertex_map->outer_lid2Oids_accessor_ =
+        outer_oid_array_.GetArray()->raw_values();
+
     // Initiate outer gids rather than sealing them
     vertex_map->InitOuterGids();
     // vertex_map->outer_lid2Gids_ = outer_gid_array_.GetArray();
