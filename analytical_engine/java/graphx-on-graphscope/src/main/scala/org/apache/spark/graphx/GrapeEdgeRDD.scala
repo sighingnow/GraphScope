@@ -38,18 +38,18 @@ object GrapeEdgeRDD extends Logging{
     new GrapeEdgeRDDImpl[VD,ED](edgePartitions)
   }
 
-  private [graphx] def initExecutorUtils[ED: ClassTag](shuffles : RDD[(PartitionID,EdgeShuffle[ED])]) : Unit = {
-    shuffles.foreachPartition(iter => {
-      val pid = iter.next()._1
-      ExecutorUtils.registerPartition(pid)
-    })
-  }
+//  private [graphx] def initExecutorUtils[ED: ClassTag](shuffles : RDD[(PartitionID,EdgeShuffle[ED])]) : Unit = {
+//    shuffles.foreachPartition(iter => {
+//      val pid = iter.next()._1
+//      ExecutorUtils.registerPartition(pid)
+//    })
+//  }
 
   private[graphx] def fromEdgeShuffle[VD: ClassTag, ED : ClassTag](edgeShuffles : RDD[(PartitionID, EdgeShuffle[ED])]) : GrapeEdgeRDDImpl[VD,ED] = {
     //combine edges shuffles to edge Partition
     val numPartitions = edgeShuffles.getNumPartitions
     log.info(s"edgeShuffles has ${numPartitions} parts")
-    initExecutorUtils(edgeShuffles)
+//    initExecutorUtils(edgeShuffles)
 
     val edgeShuffleReceived = edgeShuffles.mapPartitionsWithIndex((ind, iter) => {
       if (iter.hasNext) {

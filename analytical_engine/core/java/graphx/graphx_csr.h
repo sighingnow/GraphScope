@@ -330,19 +330,47 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     vnum_ = graphx_vertex_map.GetInnerVertexSize();
     // LOG(INFO) << "fr vnum : " << vnum_;
     auto edges_num_ = srcOids->length();
-    std::shared_ptr<vid_array_t> srcLids, dstLids;
+    const oid_t* src_oid_ptr = srcOids->raw_values();
+    const oid_t* dst_oid_ptr = dstOids->raw_values();
+    // std::shared_ptr<vid_array_t> srcLids, dstLids;
+    std::vector<vid_t> srcLids, dstLids;
+    srcLids.resize(edges_num_);
+    dstLids.resize(edges_num_);
     auto curFid = graphx_vertex_map.fid();
     LOG(INFO) << "fid: " << curFid;
     {
-      vid_array_builder_t srcLidBuilder, dstLidBuilder;
-      srcLidBuilder.Reserve(edges_num_);
-      dstLidBuilder.Reserve(edges_num_);
-      for (auto i = 0; i < edges_num_; ++i) {
-        srcLidBuilder.UnsafeAppend(graphx_vertex_map.GetLid(srcOids->Value(i)));
-        dstLidBuilder.UnsafeAppend(graphx_vertex_map.GetLid(dstOids->Value(i)));
+      int thread_num = 16;
+      std::atomic<int> current_chunk(0);
+      int64_t chunkSize = 4096;
+      int64_t num_chunks = (edges_num_ + chunkSize - 1) / chunkSize;
+      LOG(INFO) << "thread num 4, chunk size: " << chunkSize << "num chunks "
+                << num_chunks;
+      std::vector<std::thread> work_threads(thread_num);
+      for (int tid = 0; tid < thread_num; ++tid) {
+        work_threads[tid] = std::thread([&] {
+          int got;
+          int64_t begin, end;
+          while (true) {
+            got = current_fid.fetch_add(1, std::memory_order_relaxed);
+            if (got >= num_chunks) {
+              break;
+            }
+            begin = min(edges_num_, got * chunkSize);
+            end = min(edges_num_, begin + chunkSize);
+            for (auto cur = begin; cur < end; ++cur) {
+              auto src_lid = graphx_vertex_map.GetLid(src_oid_ptr[cur]);
+              srcLids[cur] = src_lid;
+            }
+            for (auto cur = begin; cur < end; ++cur) {
+              auto dst_lid = graphx_vertex_map.GetLid(dst_oid_ptr[cur]);
+              dstLids[cur] = dst_lid;
+            }
+          }
+        });
       }
-      srcLidBuilder.Finish(&srcLids);
-      dstLidBuilder.Finish(&dstLids);
+      for (auto& thrd : work_threads) {
+        thrd.join();
+      }
     }
     LOG(INFO) << "Finish building lid array";
 
@@ -353,20 +381,20 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
 
     LOG(INFO) << "Loading edges size " << edges_num_
               << "vertices num: " << vnum_;
-    const vid_t* src_lid_accessor_ = srcLids->raw_values();
-    const vid_t* dst_lid_accessor_ = dstLids->raw_values();
+    // const vid_t* src_lid_accessor_ = srcLids->raw_values();
+    // const vid_t* dst_lid_accessor_ = dstLids->raw_values();
     grape::BitSet in_edge_active, out_edge_active;
-    in_edge_active.init(edges_num);
-    out_edge_active.init(edges_num);
+    in_edge_active.init(edges_num_);
+    out_edge_active.init(edges_num_);
     for (auto i = 0; i < edges_num_; ++i) {
-      auto src_lid = src_lid_accessor_[i];
+      auto src_lid = srcLids[i];
       if (src_lid < vnum_) {
         ++oe_degree_[src_lid];
         out_edge_active.set_bit(i);
       }
     }
     for (auto i = 0; i < edges_num_; ++i) {
-      auto dst_lid = dst_lid_accessor_[i];
+      auto dst_lid = dstLids[i];
       if (dst_lid < vnum_) {
         ++ie_degree_[dst_lid];
         in_edge_active.set_bit(i);
@@ -485,8 +513,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     }
   }
 
-  void add_edges(const std::shared_ptr<vid_array_t>& srcLids,
-                 const std::shared_ptr<vid_array_t>& dstLids,
+  void add_edges(const std::vector<vid_t>& src_accessor,
+                 const std::vector<vid_t>& dst_accessor,
                  const std::shared_ptr<edata_array_t>& edatas,
                  const grape::BitSet& in_edge_active,
                  const grape::BitSet& out_edge_active) {
@@ -494,7 +522,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     auto start_ts = grape::GetCurrentTime();
 #endif
     edata_array_builder_t edata_builder_;
-    auto len = srcLids->length();
+    auto len = edatas->length();
     edata_builder_.Reserve(len);
     const edata_t* edata_accessor = edatas->raw_values();
 
@@ -503,28 +531,58 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     }
     edata_builder_.Finish(&edata_array_);
 
-    const vid_t* src_accessor = srcLids->raw_values();
-    const vid_t* dst_accessor = dstLids->raw_values();
+    // const vid_t* src_accessor = srcLids->raw_values();
+    // const vid_t* dst_accessor = dstLids->raw_values();
     const nbr_t* ie_mutable_ptr_begin = in_edge_builder_.MutablePointer(0);
     const nbr_t* oe_mutable_ptr_begin = out_edge_builder_.MutablePointer(0);
-    for (auto i = 0; i < len; ++i) {
-      vid_t srcLid = src_accessor[i];
-      vid_t dstLid = dst_accessor[i];
-      {
-        if (out_edge_active.get_bit(i)) {
-          int dstPos = oe_offsets_[srcLid]++;
-          nbr_t* ptr = oe_mutable_ptr_begin + dstPos;
-          ptr->vid = dstLid;
-          ptr->eid = static_cast<eid_t>(i);
-        }
+    {
+      int thread_num = 16;
+      std::atomic<int> current_chunk(0);
+      int64_t chunkSize = 4096;
+      int64_t num_chunks = (len + chunkSize - 1) / chunkSize;
+      LOG(INFO) << "thread num 4, chunk size: " << chunkSize << "num chunks "
+                << num_chunks;
+      std::vector<std::thread> work_threads(thread_num);
+      for (int tid = 0; tid < thread_num; ++tid) {
+        work_threads[tid] = std::thread([&] {
+          int got;
+          int64_t begin, end;
+          while (true) {
+            got = current_fid.fetch_add(1, std::memory_order_relaxed);
+            if (got >= num_chunks) {
+              break;
+            }
+            begin = min(len, got * chunkSize);
+            end = min(len, begin + chunkSize);
+            for (auto i = begin; i < end; ++i) {
+              vid_t srcLid = src_accessor[i];
+              vid_t dstLid = dst_accessor[i];
+              {
+                if (out_edge_active.get_bit(i)) {
+                  int dstPos = oe_offsets_[srcLid]++;
+                  nbr_t* ptr = oe_mutable_ptr_begin + dstPos;
+                  ptr->vid = dstLid;
+                  ptr->eid = static_cast<eid_t>(i);
+                }
+              }
+            }
+            for (auto i = begin; i < end; ++i) {
+              vid_t srcLid = src_accessor[i];
+              vid_t dstLid = dst_accessor[i];
+              {
+                if (in_edge_active.get_bit(i)) {
+                  int dstPos = ie_offsets_[dstLid]++;
+                  nbr_t* ptr = ie_mutable_ptr_begin + dstPos;
+                  ptr->vid = srcLid;
+                  ptr->eid = static_cast<eid_t>(i);
+                }
+              }
+            }
+          }
+        });
       }
-      {
-        if (in_edge_active.get_bit(i)) {
-          int dstPos = ie_offsets_[dstLid]++;
-          nbr_t* ptr = ie_mutable_ptr_begin + dstPos;
-          ptr->vid = srcLid;
-          ptr->eid = static_cast<eid_t>(i);
-        }
+      for (auto& thrd : work_threads) {
+        thrd.join();
       }
     }
     LOG(INFO) << "Finish adding " << len << "edges";

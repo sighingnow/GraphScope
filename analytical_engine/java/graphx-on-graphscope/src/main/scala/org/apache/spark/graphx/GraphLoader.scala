@@ -70,7 +70,7 @@ object GraphLoader extends Logging {
             pid2attr(dstPid).+=(1)
           }
         }
-        val time1 = System.nanoTime();
+        val time1 = System.nanoTime()
         log.info("[GraphLoader: ] iterating over edge cost " + (time1 - time0) / 1000000 + "ms")
         pid2src.zipWithIndex.map({
           case (srcs, pid) => (pid, new EdgeShuffle(fromPid,pid, pid2Oids(pid), srcs.trim().array, pid2Dst(pid).trim().array, pid2attr(pid).trim().array))
