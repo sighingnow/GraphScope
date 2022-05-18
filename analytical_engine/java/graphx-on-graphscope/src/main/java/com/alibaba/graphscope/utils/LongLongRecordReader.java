@@ -16,7 +16,7 @@ public class LongLongRecordReader extends RecordReader<LongWritable, LongLong> {
 
     private Logger logger = LoggerFactory.getLogger(LongLongRecordReader.class.getName());
     private LineRecordReader lineRecordReader = new LineRecordReader();
-    private LongLong value;
+    private LongLong value = new LongLong();
 
     @Override
     public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
