@@ -1,13 +1,17 @@
 package org.apache.spark.graphx
 
+import com.alibaba.graphscope.utils.{LongLongInputFormat, LongLongRecordReader}
+import org.apache.hadoop.io.LongWritable
 import org.apache.spark.graphx.impl.GrapeGraphImpl
 import org.apache.spark.graphx.impl.partition.EdgeShuffle
+import org.apache.spark.graphx.utils.EdgeShuffleToMe
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.collection.{OpenHashSet, PrimitiveVector}
 import org.apache.spark.{HashPartitioner, SparkContext}
 
 import java.util.concurrent.TimeUnit
+import scala.collection.mutable.ArrayBuffer
 
 object GraphLoader extends Logging {
   def edgeListFile
@@ -22,11 +26,10 @@ object GraphLoader extends Logging {
     // Parse the edge data table directly into edge partitions
     val lines = {
       if (numEdgePartitions > 0) {
-        sc.textFile(path, numEdgePartitions).coalesce(numEdgePartitions)
-//        sc.sequenceFile(path, classOf[Long],classOf[Long], numEdgePartitions).coalesce(numEdgePartitions)
+//        sc.textFile(path, numEdgePartitions).coalesce(numEdgePartitions)
+        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongWritable],numEdgePartitions).setName(path).coalesce(numEdgePartitions)
       } else {
-//        sc.sequenceFile(path, classOf[Long],classOf[Long])
-        sc.textFile(path)
+        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongWritable],numEdgePartitions).setName(path)
       }
     }
     lines.cache()
@@ -43,15 +46,15 @@ object GraphLoader extends Logging {
         val pid2Oids = Array.fill(numEdgePartitions)(new OpenHashSet[VertexId])
         val time0 = System.nanoTime();
         while (iter.hasNext) {
-          val lineArray = iter.next().split("\\s+")
-          if (lineArray.length < 2) {
-            throw new IllegalArgumentException("Invalid line: ")
-          }
-          val srcId = lineArray(0).toLong
-          val dstId = lineArray(1).toLong
-//          val line = iter.next()
-//          val srcId = line._1
-//          val dstId = line._2
+//          val lineArray = iter.next().split("\\s+")
+//          if (lineArray.length < 2) {
+//            throw new IllegalArgumentException("Invalid line: ")
+//          }
+//          val srcId = lineArray(0).toLong
+//          val dstId = lineArray(1).toLong
+          val line = iter.next()
+          val srcId = line._1.get()
+          val dstId = line._2.get()
           val srcPid = partitioner.getPartition(srcId)
           val dstPid = partitioner.getPartition(dstId)
           pid2Oids(srcPid).add(srcId)
@@ -72,9 +75,18 @@ object GraphLoader extends Logging {
         }
         val time1 = System.nanoTime()
         log.info("[GraphLoader: ] iterating over edge cost " + (time1 - time0) / 1000000 + "ms")
-        pid2src.zipWithIndex.map({
-          case (srcs, pid) => (pid, new EdgeShuffle(fromPid,pid, pid2Oids(pid), srcs.trim().array, pid2Dst(pid).trim().array, pid2attr(pid).trim().array))
-        }).toIterator
+        val res = new ArrayBuffer[(PartitionID,EdgeShuffle[Int])]
+        var ind = 0
+        while (ind < numEdgePartitions){
+          if (ind != fromPid){
+            res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array, pid2attr(ind).trim().array)))
+          }
+          ind += 1
+        }
+        require(res.length == numEdgePartitions - 1)
+        EdgeShuffleToMe.set(fromPid, new EdgeShuffle[Int](fromPid, fromPid, pid2Oids(fromPid),
+          pid2src(fromPid).trim().array, pid2Dst(fromPid).trim().array, pid2attr(fromPid).trim().array))
+        res.toIterator
       }
     }.cache()
     val edgesPartitionTime = System.nanoTime();

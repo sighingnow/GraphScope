@@ -1,0 +1,47 @@
+package com.alibaba.graphscope.utils;
+
+import java.io.IOException;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.io.compress.SplittableCompressionCodec;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.FileSplit;
+import org.apache.hadoop.mapred.InputSplit;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.JobConfigurable;
+import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.thirdparty.com.google.common.base.Charsets;
+
+public class LongLongInputFormat extends FileInputFormat<LongWritable, LongWritable> implements
+    JobConfigurable {
+
+    private CompressionCodecFactory compressionCodecs = null;
+
+    public LongLongInputFormat() {
+    }
+
+    public void configure(JobConf conf) {
+        this.compressionCodecs = new CompressionCodecFactory(conf);
+    }
+
+    protected boolean isSplitable(FileSystem fs, Path file) {
+        CompressionCodec codec = this.compressionCodecs.getCodec(file);
+        return null == codec ? true : codec instanceof SplittableCompressionCodec;
+    }
+
+    @Override
+    public RecordReader<LongWritable, LongWritable> getRecordReader(InputSplit genericSplit,
+        JobConf job, Reporter reporter) throws IOException {
+        reporter.setStatus(genericSplit.toString());
+        String delimiter = job.get("textinputformat.record.delimiter");
+        byte[] recordDelimiterBytes = null;
+        if (null != delimiter) {
+            recordDelimiterBytes = delimiter.getBytes(Charsets.UTF_8);
+        }
+        return new LongLongRecordReader(job, (FileSplit) genericSplit, recordDelimiterBytes);
+    }
+}

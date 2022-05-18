@@ -3,7 +3,7 @@ package org.apache.spark.graphx
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
 import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived, GrapeEdgePartition}
-import org.apache.spark.graphx.utils.{Constant, ExecutorUtils, GrapeEdgePartitionRegistry, VineyardClientRegistry}
+import org.apache.spark.graphx.utils.{Constant, EdgeShuffleToMe, ExecutorUtils, GrapeEdgePartitionRegistry, VineyardClientRegistry}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Dependency, SparkContext}
@@ -38,18 +38,18 @@ object GrapeEdgeRDD extends Logging{
     new GrapeEdgeRDDImpl[VD,ED](edgePartitions)
   }
 
-//  private [graphx] def initExecutorUtils[ED: ClassTag](shuffles : RDD[(PartitionID,EdgeShuffle[ED])]) : Unit = {
-//    shuffles.foreachPartition(iter => {
-//      val pid = iter.next()._1
-//      ExecutorUtils.registerPartition(pid)
-//    })
-//  }
+  private [graphx] def initExecutorUtils[ED: ClassTag](shuffles : RDD[(PartitionID,EdgeShuffle[ED])]) : Unit = {
+    shuffles.foreachPartition(iter => {
+      val pid = iter.next()._1
+      ExecutorUtils.registerPartition(pid)
+    })
+  }
 
   private[graphx] def fromEdgeShuffle[VD: ClassTag, ED : ClassTag](edgeShuffles : RDD[(PartitionID, EdgeShuffle[ED])]) : GrapeEdgeRDDImpl[VD,ED] = {
     //combine edges shuffles to edge Partition
     val numPartitions = edgeShuffles.getNumPartitions
     log.info(s"edgeShuffles has ${numPartitions} parts")
-//    initExecutorUtils(edgeShuffles)
+    initExecutorUtils(edgeShuffles)
 
     val edgeShuffleReceived = edgeShuffles.mapPartitionsWithIndex((ind, iter) => {
       if (iter.hasNext) {
@@ -59,6 +59,8 @@ object GrapeEdgeRDD extends Logging{
           require(pid == ind)
           edgeShuffleReceived.set(shuffle.fromPid, shuffle)
         }
+        require(edgeShuffleReceived.get(ind) == null)
+        edgeShuffleReceived.set(ind, EdgeShuffleToMe.get(ind).asInstanceOf[EdgeShuffle[ED]])
         log.info(s"Partition ${ind} collect received partitions ${edgeShuffleReceived}")
         Iterator((ind, edgeShuffleReceived))
       }
