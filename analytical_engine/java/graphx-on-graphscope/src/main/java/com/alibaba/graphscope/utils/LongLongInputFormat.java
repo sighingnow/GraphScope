@@ -18,7 +18,7 @@ import org.apache.hadoop.thirdparty.com.google.common.base.Charsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LongLongInputFormat extends FileInputFormat<LongWritable, LongWritable> implements
+public class LongLongInputFormat extends FileInputFormat<LongWritable, LongLong> implements
     JobConfigurable {
     private Logger logger = LoggerFactory.getLogger(LongLongInputFormat.class.getName());
 
@@ -37,7 +37,7 @@ public class LongLongInputFormat extends FileInputFormat<LongWritable, LongWrita
     }
 
     @Override
-    public RecordReader<LongWritable, LongWritable> getRecordReader(InputSplit genericSplit,
+    public RecordReader<LongWritable, LongLong> getRecordReader(InputSplit genericSplit,
         JobConf job, Reporter reporter) throws IOException {
         reporter.setStatus(genericSplit.toString());
         String delimiter = job.get("textinputformat.record.delimiter");

@@ -1,6 +1,6 @@
 package org.apache.spark.graphx
 
-import com.alibaba.graphscope.utils.LongLongInputFormat
+import com.alibaba.graphscope.utils.{LongLong, LongLongInputFormat}
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.graphx.impl.GrapeGraphImpl
 import org.apache.spark.graphx.impl.partition.EdgeShuffle
@@ -27,11 +27,11 @@ object GraphLoader extends Logging {
     val lines = {
       if (numEdgePartitions > 0) {
 //        sc.textFile(path, numEdgePartitions).coalesce(numEdgePartitions)
-        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongWritable],numEdgePartitions).setName(path).coalesce(numEdgePartitions)
+        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong],numEdgePartitions).setName(path).coalesce(numEdgePartitions)
       } else {
-        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongWritable],numEdgePartitions).setName(path)
+        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong],numEdgePartitions).setName(path)
       }
-    }
+    }.map(pair => pair._2)
     lines.cache()
     val linesTime = System.nanoTime()
     log.info("[GraphLoader]: load partitions cost " + (linesTime - startTimeNs) / 1000000 + "ms")
@@ -53,8 +53,8 @@ object GraphLoader extends Logging {
 //          val srcId = lineArray(0).toLong
 //          val dstId = lineArray(1).toLong
           val line = iter.next()
-          val srcId = line._1.get()
-          val dstId = line._2.get()
+          val srcId = line.first
+          val dstId = line.second
           val srcPid = partitioner.getPartition(srcId)
           val dstPid = partitioner.getPartition(dstId)
           pid2Oids(srcPid).add(srcId)

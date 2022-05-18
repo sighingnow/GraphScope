@@ -13,7 +13,7 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LongLongRecordReader implements RecordReader<LongWritable,LongWritable> {
+public class LongLongRecordReader implements RecordReader<LongWritable,LongLong> {
     private Logger logger = LoggerFactory.getLogger(LongLongRecordReader.class.getName());
     LineRecordReader lineRecordReader;
     LongWritable key = new LongWritable();
@@ -23,15 +23,15 @@ public class LongLongRecordReader implements RecordReader<LongWritable,LongWrita
         lineRecordReader = new LineRecordReader(job,split,recordDelimiter);
     }
     @Override
-    public boolean next(LongWritable longWritable, LongWritable longWritable2) throws IOException {
+    public boolean next(LongWritable longWritable, LongLong longWritable2) throws IOException {
         boolean res = lineRecordReader.next(key,tmpValue);
-        logger.info("next line {}, {}", key, tmpValue);
+//        logger.info("next line {}, {}", key, tmpValue);
         if (!res) return false;
         longWritable.set(key.get());
         String str = tmpValue.toString();
         Iterator<String> iter = Splitter.on(CharMatcher.breakingWhitespace()).split(str).iterator();
-        iter.next();
-        longWritable2.set(Long.parseLong(iter.next()));
+        longWritable2.first = Long.parseLong(iter.next());
+        longWritable2.second = Long.parseLong(iter.next());
         logger.info("parsed res: " + longWritable + ", " + longWritable2);
         return true;
     }
@@ -42,8 +42,8 @@ public class LongLongRecordReader implements RecordReader<LongWritable,LongWrita
     }
 
     @Override
-    public LongWritable createValue() {
-        return new LongWritable();
+    public LongLong createValue() {
+        return new LongLong();
     }
 
     @Override
