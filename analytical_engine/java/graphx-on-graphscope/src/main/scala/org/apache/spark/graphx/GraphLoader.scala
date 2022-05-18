@@ -79,20 +79,21 @@ object GraphLoader extends Logging {
         val res = new ArrayBuffer[(PartitionID,EdgeShuffle[Int])]
         var ind = 0
         while (ind < numEdgePartitions){
-          if (ind != fromPid){
+//          if (ind != fromPid){
             res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array, pid2attr(ind).trim().array)))
-          }
+//          }
           ind += 1
         }
-        require(res.length == numEdgePartitions - 1)
-        log.info(s"from pid ${fromPid}, curInd ${ind}, hash value for ${fromPid} is ${partitioner.getPartition(fromPid)}")
-        EdgeShuffleToMe.set(fromPid, new EdgeShuffle[Int](fromPid, fromPid, pid2Oids(fromPid),
-          pid2src(fromPid).trim().array, pid2Dst(fromPid).trim().array, pid2attr(fromPid).trim().array))
-        val newIter = res.toIterator
-        if (newIter.isEmpty){
-          Iterator((fromPid, null.asInstanceOf[EdgeShuffle[Int]]))
-        }
-        else newIter
+        res.toIterator
+//        require(res.length == numEdgePartitions - 1)
+//        log.info(s"from pid ${fromPid}, curInd ${ind}, hash value for ${fromPid} is ${partitioner.getPartition(fromPid)}")
+//        EdgeShuffleToMe.set(fromPid, new EdgeShuffle[Int](fromPid, fromPid, pid2Oids(fromPid),
+//          pid2src(fromPid).trim().array, pid2Dst(fromPid).trim().array, pid2attr(fromPid).trim().array))
+//        val newIter = res.toIterator
+//        if (newIter.isEmpty){
+//          Iterator((fromPid, null.asInstanceOf[EdgeShuffle[Int]]))
+//        }
+//        else newIter
       }
     ).partitionBy(partitioner).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
     val edgeShufflesNum = edgesShuffled.count()
