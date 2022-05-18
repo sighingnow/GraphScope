@@ -27,9 +27,10 @@ object GraphLoader extends Logging {
     val lines = {
       if (numEdgePartitions > 0) {
 //        sc.textFile(path, numEdgePartitions).coalesce(numEdgePartitions)
-        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong],numEdgePartitions).setName(path).coalesce(numEdgePartitions)
+//        sc.newAPIHadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong],numEdgePartitions).setName(path).coalesce(numEdgePartitions)
+        sc.newAPIHadoopFile[LongWritable,LongLong,LongLongInputFormat](path).coalesce(numEdgePartitions).setName(path)
       } else {
-        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong],numEdgePartitions).setName(path)
+        sc.newAPIHadoopFile[LongWritable,LongLong,LongLongInputFormat](path)
       }
     }.map(pair => pair._2)
     lines.cache()
