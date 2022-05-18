@@ -86,7 +86,12 @@ object GraphLoader extends Logging {
         require(res.length == numEdgePartitions - 1)
         EdgeShuffleToMe.set(fromPid, new EdgeShuffle[Int](fromPid, fromPid, pid2Oids(fromPid),
           pid2src(fromPid).trim().array, pid2Dst(fromPid).trim().array, pid2attr(fromPid).trim().array))
-        res.toIterator
+        val iter = res.toIterator
+        if (iter.isEmpty){
+//          Iterator((fromPid, new EdgeShuffle[Int](0,0,new OpenHashSet[VertexId](), Array.empty, Array.empty, Array.empty)))
+          Iterator((fromPid, EdgeShuffle.empty))
+        }
+        else iter
       }
     }.cache()
     val edgesPartitionTime = System.nanoTime();

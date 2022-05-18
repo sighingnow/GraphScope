@@ -15,6 +15,9 @@ class EdgeShuffle[ED : ClassTag](val fromPid : Int,
 
   def size() : Long = srcs.length
 }
+object EdgeShuffle{
+  val empty = new EdgeShuffle[scala.Nothing](-1, -1, null,null,null,null)
+}
 
 class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : Int) extends Logging{
   val fromPid2Shuffle = new Array[EdgeShuffle[ED]](numPartitions)
