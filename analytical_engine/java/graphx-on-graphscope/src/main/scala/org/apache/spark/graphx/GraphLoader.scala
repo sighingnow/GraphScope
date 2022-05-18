@@ -55,6 +55,7 @@ object GraphLoader extends Logging {
           val line = iter.next()
           val srcId = line.first
           val dstId = line.second
+          log.info(s"process edge (${srcId},${dstId})")
           val srcPid = partitioner.getPartition(srcId)
           val dstPid = partitioner.getPartition(dstId)
           pid2Oids(srcPid).add(srcId)

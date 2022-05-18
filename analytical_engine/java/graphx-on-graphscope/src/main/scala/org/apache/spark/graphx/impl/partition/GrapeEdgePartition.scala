@@ -53,8 +53,9 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
     val innerHashSet = new OpenHashSet[Long]
     for (edgeShuffleReceive <- lists){
       for (edgeShuffle <- edgeShuffleReceive.fromPid2Shuffle){
+        log.info(s"edge shuffle ${edgeShuffle} size ${edgeShuffle.size()}")
         val receivedOids = edgeShuffle.oids
-        log.info(s"Before union with ${receivedOids}, size ${innerHashSet.size}")
+        log.info(s"Before union with ${receivedOids.size}, size ${innerHashSet.size}")
         innerHashSet.union(receivedOids)
         log.info(s"after ${innerHashSet.size}")
       }
