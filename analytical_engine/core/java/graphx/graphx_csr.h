@@ -379,7 +379,6 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     }
     LOG(INFO) << "Finish building lid array";
 
-
     ie_degree_.clear();
     oe_degree_.clear();
     ie_degree_.resize(vnum_, 0);
@@ -540,60 +539,43 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     nbr_t* ie_mutable_ptr_begin = in_edge_builder_.MutablePointer(0);
     nbr_t* oe_mutable_ptr_begin = out_edge_builder_.MutablePointer(0);
     {
-      int thread_num = 16;
-      std::atomic<int> current_chunk(0);
-      int64_t chunkSize = 4096;
-      int64_t num_chunks = (len + chunkSize - 1) / chunkSize;
-      LOG(INFO) << "thread num 4, chunk size: " << chunkSize << "num chunks "
-                << num_chunks;
-      std::vector<std::thread> work_threads(thread_num);
-      std::vector<int> cnt(thread_num);
-      for (int tid = 0; tid < thread_num; ++tid) {
-        work_threads[tid] = std::thread([&] {
-          int got;
-          int64_t begin, end;
-          while (true) {
-            got = current_chunk.fetch_add(1, std::memory_order_relaxed);
-            if (got >= num_chunks) {
-              break;
-            }
-            begin = std::min(len, got * chunkSize);
-            end = std::min(len, begin + chunkSize);
-            for (auto i = begin; i < end; ++i) {
-              vid_t srcLid = src_accessor[i];
-              vid_t dstLid = dst_accessor[i];
-              {
-                if (out_edge_active.get_bit(i)) {
-                  int dstPos = oe_offsets_[srcLid]++;
-                  nbr_t* ptr = oe_mutable_ptr_begin + dstPos;
-                  ptr->vid = dstLid;
-                  ptr->eid = static_cast<eid_t>(i);
-                }
-              }
-            }
-            for (auto i = begin; i < end; ++i) {
-              vid_t srcLid = src_accessor[i];
-              vid_t dstLid = dst_accessor[i];
-              {
-                if (in_edge_active.get_bit(i)) {
-                  int dstPos = ie_offsets_[dstLid]++;
-                  nbr_t* ptr = ie_mutable_ptr_begin + dstPos;
-                  ptr->vid = srcLid;
-                  ptr->eid = static_cast<eid_t>(i);
-                }
-              }
-            }
-            cnt[tid] += (end - begin);
+      // int thread_num = 16;
+      // std::atomic<int> current_chunk(0);
+      // int64_t chunkSize = 4096;
+      // int64_t num_chunks = (len + chunkSize - 1) / chunkSize;
+      // LOG(INFO) << "thread num 4, chunk size: " << chunkSize << "num chunks "
+      //           << num_chunks;
+      std::vector<std::thread> work_threads(2);
+      // std::vector<int> cnt(thread_num);
+      work_threads[0] = std::thread([&] {
+        for (auto i = 0; i < len; ++i) {
+          vid_t srcLid = src_accessor[i];
+          vid_t dstLid = dst_accessor[i];
+          if (out_edge_active.get_bit(i)) {
+            int dstPos = oe_offsets_[srcLid]++;
+            nbr_t* ptr = oe_mutable_ptr_begin + dstPos;
+            ptr->vid = dstLid;
+            ptr->eid = static_cast<eid_t>(i);
           }
-        });
-      }
+        }
+      });
+      work_threads[1] = std::thread([&] {
+        for (auto i = 0; i < end; ++i) {
+          vid_t srcLid = src_accessor[i];
+          vid_t dstLid = dst_accessor[i];
+          if (in_edge_active.get_bit(i)) {
+            int dstPos = ie_offsets_[dstLid]++;
+            nbr_t* ptr = ie_mutable_ptr_begin + dstPos;
+            ptr->vid = srcLid;
+            ptr->eid = static_cast<eid_t>(i);
+          }
+        }
+      });
       for (auto& thrd : work_threads) {
         thrd.join();
       }
-      for (auto i = 0; i < thread_num; ++i) {
-        LOG(INFO) << "Thread " << i << " processed: " << cnt[i] << " edges";
-      }
     }
+
     LOG(INFO) << "Finish adding " << len << "edges";
 
 #if defined(WITH_PROFILING)
