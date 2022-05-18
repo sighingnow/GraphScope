@@ -28,11 +28,11 @@ object GraphLoader extends Logging {
       if (numEdgePartitions > 0) {
 //        sc.textFile(path, numEdgePartitions).coalesce(numEdgePartitions)
 //        sc.newAPIHadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong],numEdgePartitions).setName(path).coalesce(numEdgePartitions)
-        sc.newAPIHadoopFile[LongWritable,LongLong,LongLongInputFormat](path).coalesce(numEdgePartitions).setName(path)
+        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong]).coalesce(numEdgePartitions).setName(path)
       } else {
-        sc.newAPIHadoopFile[LongWritable,LongLong,LongLongInputFormat](path)
+        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong]).setName(path)
       }
-    }.map(pair => pair._2)
+    }.map(pair => (pair._2.first, pair._2.second))
     lines.cache()
     val linesTime = System.nanoTime()
     log.info("[GraphLoader]: load partitions cost " + (linesTime - startTimeNs) / 1000000 + "ms")
@@ -54,9 +54,8 @@ object GraphLoader extends Logging {
 //          val srcId = lineArray(0).toLong
 //          val dstId = lineArray(1).toLong
           val line = iter.next()
-          val srcId = line.first
-          val dstId = line.second
-          log.info(s"process edge (${srcId},${dstId})")
+          val srcId = line._1
+          val dstId = line._2
           val srcPid = partitioner.getPartition(srcId)
           val dstPid = partitioner.getPartition(dstId)
           pid2Oids(srcPid).add(srcId)
