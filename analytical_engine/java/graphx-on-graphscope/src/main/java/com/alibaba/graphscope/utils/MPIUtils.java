@@ -63,9 +63,10 @@ public class MPIUtils {
             throw new IllegalStateException("length not equal: " + Arrays.toString(vmdIds) + Arrays.toString(
                 csrIds) + Arrays.toString(vdataIds));
         }
-        if (vmdIds.length != getNumWorker()){
-            throw new IllegalStateException("distinct ids " + vmdIds.length +", but in conf/workers we have" + getNumWorker());
-        }
+        //FIXME: No checking now.
+//        if (vmdIds.length != getNumWorker()){
+//            throw new IllegalStateException("distinct ids " + vmdIds.length +", but in conf/workers we have" + getNumWorker());
+//        }
         return vmdIds.length;
     }
 

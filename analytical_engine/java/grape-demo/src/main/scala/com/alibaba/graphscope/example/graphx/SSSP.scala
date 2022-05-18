@@ -37,7 +37,7 @@ object SSSP extends Logging{
 
     val startTime = System.nanoTime();
     println("[Start pregel]")
-    val sssp = initialGraph.pregel(Double.PositiveInfinity, 10)( //avoid overflow
+    val sssp = initialGraph.pregel(Double.PositiveInfinity, 100)( //avoid overflow
       (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
 //        println(triplet.srcId + ", to  " + triplet.dstId + ", data "+ (triplet.srcAttr + triplet.attr) + ", " + triplet.dstAttr)

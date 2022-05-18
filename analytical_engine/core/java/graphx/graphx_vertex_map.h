@@ -130,8 +130,8 @@ class GraphXVertexMap
   fid_t fnum() const { return fnum_; }
 
   inline fid_t GetFragId(const vertex_t& v) const {
-    if (v.GetValue() > ivnum_) {
-      auto gid = outer_lid2Gids_->Value(v.GetValue());
+    if (v.GetValue() >= ivnum_) {
+      auto gid = outer_lid2Gids_accessor_[v.GetValue() - ivnum_];
       return id_parser_.get_fragment_id(gid);
     }
     return fid_;
