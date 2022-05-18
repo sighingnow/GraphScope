@@ -41,6 +41,7 @@ object GrapeEdgeRDD extends Logging{
   private [graphx] def initExecutorUtils[ED: ClassTag](shuffles : RDD[(PartitionID,EdgeShuffle[ED])]) : Unit = {
     shuffles.foreachPartition(iter => {
       val pid = iter.next()._1
+      //It is possible next()._2 is null, see GraphLoader.scala
       ExecutorUtils.registerPartition(pid)
     })
   }
@@ -59,7 +60,7 @@ object GrapeEdgeRDD extends Logging{
           require(pid == ind)
           edgeShuffleReceived.set(shuffle.fromPid, shuffle)
         }
-        require(edgeShuffleReceived.get(ind) == null)
+        //require(edgeShuffleReceived.get(ind) == null)
         edgeShuffleReceived.set(ind, EdgeShuffleToMe.get(ind).asInstanceOf[EdgeShuffle[ED]])
         log.info(s"Partition ${ind} collect received partitions ${edgeShuffleReceived}")
         Iterator((ind, edgeShuffleReceived))

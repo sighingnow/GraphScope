@@ -130,8 +130,8 @@ class GraphXVertexMap
   fid_t fnum() const { return fnum_; }
 
   inline fid_t GetFragId(const vertex_t& v) const {
-    if (v.GetValue() > ivnum_) {
-      auto gid = outer_lid2Gids_->Value(v.GetValue());
+    if (v.GetValue() >= ivnum_) {
+      auto gid = outer_lid2Gids_accessor_[v.GetValue() - ivnum_];
       return id_parser_.get_fragment_id(gid);
     }
     return fid_;
@@ -341,7 +341,7 @@ class GraphXVertexMap
     gid_builder.Reserve(ovnum);
     vid_t gid;
     for (auto i = 0; i < ovnum; ++i) {
-      CHECK(GetGid(outer_lid2Oids_accessor_[i]), gid));
+      CHECK(GetGid(outer_lid2Oids_accessor_[i], gid));
       gid_builder.UnsafeAppend(gid);
       // LOG(INFO) << "outer oid: " << outer_lid2Oids_->Value(i)
       //           << " gid: " << gid;
