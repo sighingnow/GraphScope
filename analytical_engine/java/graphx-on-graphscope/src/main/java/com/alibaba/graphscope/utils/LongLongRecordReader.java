@@ -1,6 +1,9 @@
 package com.alibaba.graphscope.utils;
 
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Splitter;
 import java.io.IOException;
+import java.util.Iterator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -21,7 +24,10 @@ public class LongLongRecordReader implements RecordReader<LongWritable,LongWrita
         boolean res = lineRecordReader.next(key,tmpValue);
         if (!res) return false;
         longWritable.set(key.get());
-        longWritable2.set(Long.parseLong(tmpValue.toString()));
+        String str = tmpValue.toString();
+        Iterator<String> iter = Splitter.on(CharMatcher.breakingWhitespace()).split(str).iterator();
+        iter.next();
+        longWritable2.set(Long.parseLong(iter.next()));
         return true;
     }
 
