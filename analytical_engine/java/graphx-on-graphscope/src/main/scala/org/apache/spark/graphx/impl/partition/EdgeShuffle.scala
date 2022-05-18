@@ -14,6 +14,8 @@ class EdgeShuffle[ED : ClassTag](val fromPid : Int,
   require(srcs.length == dsts.length)
 
   def size() : Long = srcs.length
+
+  override def toString: String = "EdgeShuffle:{oids:"+ oids.size + ",srcs: " + srcs.length + ",dsts: " + dsts.length + ",attrs:" + attrs.length;
 }
 
 class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : Int) extends Logging{

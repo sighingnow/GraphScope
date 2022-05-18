@@ -13,14 +13,15 @@ import org.apache.hadoop.mapred.RecordReader;
 
 public class LongLongRecordReader implements RecordReader<LongWritable,LongWritable> {
     LineRecordReader lineRecordReader;
-    private LongWritable key = new LongWritable();
-    private Text tmpValue = new Text();
+
     public LongLongRecordReader(Configuration job, FileSplit split, byte[] recordDelimiter)
         throws IOException {
         lineRecordReader = new LineRecordReader(job,split,recordDelimiter);
     }
     @Override
     public boolean next(LongWritable longWritable, LongWritable longWritable2) throws IOException {
+        LongWritable key = new LongWritable();
+        Text tmpValue = new Text();
         boolean res = lineRecordReader.next(key,tmpValue);
         if (!res) return false;
         longWritable.set(key.get());

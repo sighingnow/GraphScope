@@ -60,7 +60,7 @@ object GrapeEdgeRDD extends Logging{
           require(pid == ind)
           if (shuffle != null){
               edgeShuffleReceived.set(shuffle.fromPid, shuffle)
-	  }
+	        }
         }
         //require(edgeShuffleReceived.get(ind) == null)
         edgeShuffleReceived.set(ind, EdgeShuffleToMe.get(ind).asInstanceOf[EdgeShuffle[ED]])
