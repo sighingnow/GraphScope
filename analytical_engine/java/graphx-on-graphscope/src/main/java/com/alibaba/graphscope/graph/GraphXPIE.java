@@ -58,7 +58,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
   private PrimitiveArray<VD> newVdataArray;
   private PrimitiveArray<ED> newEdataArray;
   private long innerVerticesNum, verticesNum;
-  private BitSet bitSet;
+  private BitSet curSet,nextSet;
   private URLClassLoader classLoader;
 
   public PrimitiveArray<VD> getNewVdataArray() {
@@ -131,7 +131,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
     this.maxIterations = maxIterations;
     innerVerticesNum = graphXFragment.getInnerVerticesNum();
     verticesNum = graphXFragment.getVerticesNum();
-    bitSet = new BitSet((int) verticesNum);
+    curSet = new BitSet((int) verticesNum);
+    nextSet = new BitSet((int) verticesNum);
     round = 0;
     msgSendTime = vprogTime = receiveTime = flushTime = 0;
   }
@@ -166,14 +167,15 @@ public class GraphXPIE<VD, ED, MSG_T> {
 
   void flushOutMessage() {
     Vertex<Long> v = FFITypeFactoryhelper.newVertexLong();
-    for (int i = bitSet.nextSetBit((int) innerVerticesNum); i >= 0; i = bitSet.nextSetBit(i + 1)) {
+    int cnt = 0;
+    for (int i = nextSet.nextSetBit((int) innerVerticesNum); i >= 0; i = nextSet.nextSetBit(i + 1)) {
       v.SetValue((long) i);
       messageManager.syncStateOnOuterVertexGraphX(graphXFragment, v, newVdataArray.get(i),
                                                   newVdataArray.get(i));
-//      logger.info("Frag {} send msg {} to outer v {}", graphXFragment.fid(), newVdataArray.get(i),
-//                  v.GetValue());
+      cnt += 1;
     }
-    bitSet.clear((int) innerVerticesNum, (int) verticesNum);
+    logger.info("Frag [{}] try to send {} msg to outer vertices", graphXFragment.fid(), cnt);
+    nextSet.clear((int) innerVerticesNum, (int) verticesNum);
   }
 
   void iterateOnEdges(Vertex<Long> vertex, GSEdgeTripletImpl<VD, ED> edgeTriplet) {
@@ -201,7 +203,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         VD res = (VD) mergeMsg.apply(original_MSG, msg._2());
 //        logger.info("Merge msg ({} + {}) = {}", original_MSG, msg._2(), res);
         newVdataArray.set(vertex.GetValue(), res);
-        bitSet.set(Math.toIntExact(vertex.GetValue()));
+        nextSet.set(Math.toIntExact(vertex.GetValue()));
       }
 //      begin.nextV();
       begin.addV(16);
@@ -213,11 +215,15 @@ public class GraphXPIE<VD, ED, MSG_T> {
     if (round >= maxIterations) {
       return true;
     }
+    //set nextSet(0, ivnum) to curSet(0, ivnum).
+    curSet.clear();
+    curSet.or(nextSet);
+    nextSet.clear();
     receiveMessage();
-    logger.info("Before running round {}, frag [{}] has {} active vertices", round, graphXFragment.fid(), bitSet.cardinality());
-    if (bitSet.cardinality() > 0) {
+    logger.info("Before running round {}, frag [{}] has {} active vertices", round, graphXFragment.fid(), curSet.cardinality());
+    if (curSet.cardinality() > 0) {
       Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
-      vprogTime -= System.nanoTime();
+
 //      for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
 //        if (i >= innerVerticesNum) {
 //          throw new IllegalStateException("Not possible to receive a msg send to outer vertex");
@@ -227,11 +233,9 @@ public class GraphXPIE<VD, ED, MSG_T> {
 //        VD originalVD = newVdataArray.get(i);
 //        newVdataArray.set(i, vprog.apply(oid, originalVD, initialMessage));
 //      }
-      vprogTime += System.nanoTime();
-      bitSet.clear();
       msgSendTime -= System.nanoTime();
-      for (long lid = 0; lid < innerVerticesNum; ++lid) {
-        vertex.SetValue(lid);
+      for (int lid = curSet.nextSetBit(0); lid >= 0; lid = curSet.nextSetBit(lid + 1)){
+        vertex.SetValue((long) lid);
         Long oid = graphXFragment.getId(vertex);
         edgeTriplet.setSrcOid(oid, newVdataArray.get(lid));
         iterateOnEdges(vertex, edgeTriplet);
@@ -264,6 +268,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
    */
   private void receiveMessage() {
     Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
+          vprogTime -= System.nanoTime();
     int msgReceived = 0;
 //    bitSet.clear();
     // receive message
@@ -278,7 +283,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         Long lid = receiveVertex.GetValue();
         newVdataArray.set(lid, vprog.apply(graphXFragment.getId(receiveVertex), newVdataArray.get(lid), (MSG_T) (Double) msg.getData()));
         msgReceived += 1;
-        bitSet.set(receiveVertex.GetValue().intValue());
+        curSet.set(receiveVertex.GetValue().intValue());
       }
     } else if (conf.getMsgClass().equals(Long.class) || conf.getMsgClass().equals(long.class)) {
       LongMsg msg = FFITypeFactoryhelper.newLongMsg();
@@ -290,11 +295,12 @@ public class GraphXPIE<VD, ED, MSG_T> {
         Long lid = receiveVertex.GetValue();
         newVdataArray.set(lid, vprog.apply(graphXFragment.getId(receiveVertex), newVdataArray.get(lid), (MSG_T) (Long) msg.getData()));
         msgReceived += 1;
-        bitSet.set(receiveVertex.GetValue().intValue());
+        curSet.set(receiveVertex.GetValue().intValue());
       }
     } else {
       logger.info("Not supported msg type " + conf.getMsgClass().getName());
     }
+    vprogTime += System.nanoTime();
     logger.info("frag {} received msg from others {}", graphXFragment.fid(), msgReceived);
 //    return msgReceived > 0;
   }
