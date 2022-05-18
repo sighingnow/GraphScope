@@ -126,6 +126,12 @@ public class GraphXPIE<VD, ED, MSG_T> {
       long time1 = System.nanoTime();
       logger.info("[Coping edata array cost: ] {}ms", (time1 - time0) / 1000000);
     }
+    {
+      long len = oldVdataArray.getLength();
+      for (int i = 0; i < len; ++i){
+        newVdataArray.set(i, oldVdataArray.get(i));
+      }
+    }
     this.messageManager = messageManager;
     this.initialMessage = initialMessage;
     this.maxIterations = maxIterations;
@@ -144,17 +150,20 @@ public class GraphXPIE<VD, ED, MSG_T> {
     for (long lid = 0; lid < innerVerticesNum; ++lid) {
       vertex.SetValue(lid);
       Long oid = graphXFragment.getId(vertex);
-      VD originalVD = oldVdataArray.get(lid);
+      VD originalVD = newVdataArray.get(lid);
       newVdataArray.set(lid, vprog.apply(oid, originalVD, initialMessage));
+      if (!originalVD.equals(newVdataArray.get(lid))){
+        curSet.set((int) lid);
+      }
 //      logger.info("Running vprog on {}, oid {}, original vd {}, cur vd {}", lid,
 //                  graphXFragment.getId(vertex), originalVD, newVdataArray.get(lid));
     }
     vprogTime += System.nanoTime();
 
     msgSendTime -= System.nanoTime();
-    for (long lid = 0; lid < innerVerticesNum; ++lid) {
-      vertex.SetValue(lid);
-      Long oid = graphXFragment.getId(vertex);
+    for (int lid = curSet.nextSetBit(0); lid >= 0; lid = curSet.nextSetBit(lid + 1)) {
+      vertex.SetValue((long)lid);
+      Long oid = graphXFragment.getInnerVertexId(vertex);
       edgeTriplet.setSrcOid(oid, newVdataArray.get(lid));
       iterateOnEdges(vertex, edgeTriplet);
     }
