@@ -85,6 +85,7 @@ object GraphLoader extends Logging {
           ind += 1
         }
         require(res.length == numEdgePartitions - 1)
+        log.info(s"from pid ${fromPid}, curInd ${ind}, hash value for ${fromPid} is ${partitioner.getPartition(fromPid)}")
         EdgeShuffleToMe.set(fromPid, new EdgeShuffle[Int](fromPid, fromPid, pid2Oids(fromPid),
           pid2src(fromPid).trim().array, pid2Dst(fromPid).trim().array, pid2attr(fromPid).trim().array))
         val newIter = res.toIterator
@@ -92,7 +93,7 @@ object GraphLoader extends Logging {
           Iterator((fromPid, null.asInstanceOf[EdgeShuffle[Int]]))
         }
         else newIter
-      },true
+      }
     ).partitionBy(partitioner).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
     val edgeShufflesNum = edgesShuffled.count()
     val edgeShuffleTime = System.nanoTime()

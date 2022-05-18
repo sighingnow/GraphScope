@@ -15,7 +15,7 @@ class EdgeShuffle[ED : ClassTag](val fromPid : Int,
 
   def size() : Long = srcs.length
 
-  override def toString: String = "EdgeShuffle:{oids:"+ oids.size + ",srcs: " + srcs.length + ",dsts: " + dsts.length + ",attrs:" + attrs.length;
+  override def toString: String = "EdgeShuffle:{from "+ fromPid +",to "+ dstPid + ", oids:"+ oids.size + ",srcs: " + srcs.length + ",dsts: " + dsts.length + ",attrs:" + attrs.length;
 }
 
 class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : Int) extends Logging{
@@ -60,9 +60,9 @@ class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : I
   }
 
   override def toString: String ={
-    var res = s"EdgeShuffleReceived by ${selfPid}: "
+    var res = s"EdgeShuffleReceived @Partition${selfPid}: "
     for (shuffle <- fromPid2Shuffle){
-      res += s"from ${shuffle.fromPid}, receive size ${shuffle.srcs.length};"
+      res += s"(from ${shuffle.fromPid}, receive size ${shuffle.srcs.length});"
     }
     res
   }
