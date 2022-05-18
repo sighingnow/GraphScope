@@ -14,11 +14,11 @@ object EdgeShuffleToMe extends Logging{
     require(this.shuffle == null)
     this.pid = pid
     this.shuffle = shuffle
-    log.info(s"Seting edge shuffle ${shuffle} on Partition {pid}")  
+    log.info(s"Seting edge shuffle ${shuffle} on Partition ${pid}")  
   }
 
   def get(pid : Int) : EdgeShuffle[_] = {
-    require(pid != -1 && this.pid == pid)
+  //  require(pid != -1 && this.pid == pid, s"quering ${pid} stored ${this.pid}")
     shuffle
   }
 }

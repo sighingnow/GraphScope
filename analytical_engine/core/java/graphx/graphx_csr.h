@@ -373,11 +373,12 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       for (auto& thrd : work_threads) {
         thrd.join();
       }
+      for (auto i = 0; i < thread_num; ++i) {
+        LOG(INFO) << "Thread " << i << "processed: " << cnt[i] << "vertices";
+      }
     }
     LOG(INFO) << "Finish building lid array";
-    for (auto i = 0; i < thread_num; ++i) {
-      LOG(INFO) << "Thread " << i << "processed: " << cnt[i] << "vertices";
-    }
+
 
     ie_degree_.clear();
     oe_degree_.clear();
@@ -589,11 +590,12 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       for (auto& thrd : work_threads) {
         thrd.join();
       }
+      for (auto i = 0; i < thread_num; ++i) {
+        LOG(INFO) << "Thread " << i << " processed: " << cnt[i] << " edges";
+      }
     }
     LOG(INFO) << "Finish adding " << len << "edges";
-    for (auto i = 0; i < thread_num; ++i) {
-      LOG(INFO) << "Thread " << i << " processed: " << cnt[i] << " edges";
-    }
+
 #if defined(WITH_PROFILING)
     auto finish_seal_ts = grape::GetCurrentTime();
     LOG(INFO) << "adding edges cost" << (finish_seal_ts - start_ts)

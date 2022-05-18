@@ -58,7 +58,9 @@ object GrapeEdgeRDD extends Logging{
         while (iter.hasNext) {
           val (pid, shuffle) = iter.next()
           require(pid == ind)
-          edgeShuffleReceived.set(shuffle.fromPid, shuffle)
+          if (shuffle != null){
+              edgeShuffleReceived.set(shuffle.fromPid, shuffle)
+	  }
         }
         //require(edgeShuffleReceived.get(ind) == null)
         edgeShuffleReceived.set(ind, EdgeShuffleToMe.get(ind).asInstanceOf[EdgeShuffle[ED]])

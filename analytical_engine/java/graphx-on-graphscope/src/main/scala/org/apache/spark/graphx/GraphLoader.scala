@@ -37,7 +37,7 @@ object GraphLoader extends Logging {
     log.info("[GraphLoader]: load partitions cost " + (linesTime - startTimeNs) / 1000000 + "ms")
 //    val numLines = lines.count() / numEdgePartitions
     val partitioner = new HashPartitioner(numEdgePartitions)
-    val edgesShuffled = lines.mapPartitionsWithIndex {
+    val edgesShuffled = lines.mapPartitionsWithIndex (
       (fromPid, iter) => {
 //        iter.toArray
         val pid2src = Array.fill(numEdgePartitions)(new PrimitiveVector[VertexId])
@@ -91,8 +91,8 @@ object GraphLoader extends Logging {
           Iterator((fromPid, null.asInstanceOf[EdgeShuffle[Int]]))
         }
         else newIter
-      }
-    }.partitionBy(partitioner).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
+      },true
+    ).partitionBy(partitioner).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
     val edgeShufflesNum = edgesShuffled.count()
     val edgeShuffleTime = System.nanoTime()
     log.info(s"Repartition ${edgeShufflesNum} edges cost ${(edgeShuffleTime - linesTime)/ 1000000} ms ")
