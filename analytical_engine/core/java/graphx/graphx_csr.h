@@ -346,6 +346,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       LOG(INFO) << "thread num 4, chunk size: " << chunkSize << "num chunks "
                 << num_chunks;
       std::vector<std::thread> work_threads(thread_num);
+      std::vector<int> cnt(thread_num);
       for (int tid = 0; tid < thread_num; ++tid) {
         work_threads[tid] = std::thread([&] {
           int got;
@@ -365,6 +366,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
               auto dst_lid = graphx_vertex_map.GetLid(dst_oid_ptr[cur]);
               dstLids[cur] = dst_lid;
             }
+            cnt[tid] += (end - begin);
           }
         });
       }
@@ -373,6 +375,9 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       }
     }
     LOG(INFO) << "Finish building lid array";
+    for (auto i = 0; i < thread_num; ++i) {
+      LOG(INFO) << "Thread " << i << "processed: " << cnt[i] << "vertices";
+    }
 
     ie_degree_.clear();
     oe_degree_.clear();
@@ -541,6 +546,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       LOG(INFO) << "thread num 4, chunk size: " << chunkSize << "num chunks "
                 << num_chunks;
       std::vector<std::thread> work_threads(thread_num);
+      std::vector<int> cnt(thread_num);
       for (int tid = 0; tid < thread_num; ++tid) {
         work_threads[tid] = std::thread([&] {
           int got;
@@ -576,6 +582,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
                 }
               }
             }
+            cnt[tid] += (end - begin);
           }
         });
       }
@@ -584,6 +591,9 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       }
     }
     LOG(INFO) << "Finish adding " << len << "edges";
+    for (auto i = 0; i < thread_num; ++i) {
+      LOG(INFO) << "Thread " << i << " processed: " << cnt[i] << " edges";
+    }
 #if defined(WITH_PROFILING)
     auto finish_seal_ts = grape::GetCurrentTime();
     LOG(INFO) << "adding edges cost" << (finish_seal_ts - start_ts)
