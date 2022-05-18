@@ -15,9 +15,12 @@ import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.thirdparty.com.google.common.base.Charsets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LongLongInputFormat extends FileInputFormat<LongWritable, LongWritable> implements
     JobConfigurable {
+    private Logger logger = LoggerFactory.getLogger(LongLongInputFormat.class.getName());
 
     private CompressionCodecFactory compressionCodecs = null;
 
@@ -42,6 +45,7 @@ public class LongLongInputFormat extends FileInputFormat<LongWritable, LongWrita
         if (null != delimiter) {
             recordDelimiterBytes = delimiter.getBytes(Charsets.UTF_8);
         }
+        System.err.println("Create record reader with " + genericSplit.toString());
         return new LongLongRecordReader(job, (FileSplit) genericSplit, recordDelimiterBytes);
     }
 }
