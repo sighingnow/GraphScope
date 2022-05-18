@@ -34,7 +34,7 @@
 
 #include "flat_hash_map/flat_hash_map.hpp"
 
-#include "grape/graph/adj_list.h"
+#include "grape/grape.h"
 #include "grape/graph/immutable_csr.h"
 #include "grape/utils/bitset.h"
 #include "grape/worker/comm_spec.h"
@@ -355,9 +355,9 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
               << "vertices num: " << vnum_;
     const vid_t* src_lid_accessor_ = srcLids->raw_values();
     const vid_t* dst_lid_accessor_ = dstLids->raw_values();
-    grape::BitSet in_edge_active, out_edge_active;
-    in_edge_active.init(edges_num);
-    out_edge_active.init(edges_num);
+    grape::Bitset in_edge_active, out_edge_active;
+    in_edge_active.init(edges_num_);
+    out_edge_active.init(edges_num_);
     for (auto i = 0; i < edges_num_; ++i) {
       auto src_lid = src_lid_accessor_[i];
       if (src_lid < vnum_) {
@@ -488,8 +488,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
   void add_edges(const std::shared_ptr<vid_array_t>& srcLids,
                  const std::shared_ptr<vid_array_t>& dstLids,
                  const std::shared_ptr<edata_array_t>& edatas,
-                 const grape::BitSet& in_edge_active,
-                 const grape::BitSet& out_edge_active) {
+                 const grape::Bitset& in_edge_active,
+                 const grape::Bitset& out_edge_active) {
 #if defined(WITH_PROFILING)
     auto start_ts = grape::GetCurrentTime();
 #endif
@@ -505,8 +505,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
 
     const vid_t* src_accessor = srcLids->raw_values();
     const vid_t* dst_accessor = dstLids->raw_values();
-    const nbr_t* ie_mutable_ptr_begin = in_edge_builder_.MutablePointer(0);
-    const nbr_t* oe_mutable_ptr_begin = out_edge_builder_.MutablePointer(0);
+    nbr_t* ie_mutable_ptr_begin = in_edge_builder_.MutablePointer(0);
+    nbr_t* oe_mutable_ptr_begin = out_edge_builder_.MutablePointer(0);
     for (auto i = 0; i < len; ++i) {
       vid_t srcLid = src_accessor[i];
       vid_t dstLid = dst_accessor[i];

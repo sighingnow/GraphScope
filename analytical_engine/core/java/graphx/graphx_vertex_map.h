@@ -341,7 +341,7 @@ class GraphXVertexMap
     gid_builder.Reserve(ovnum);
     vid_t gid;
     for (auto i = 0; i < ovnum; ++i) {
-      CHECK(GetGid(outer_lid2Oids_accessor_[i]), gid));
+      CHECK(GetGid(outer_lid2Oids_accessor_[i], gid));
       gid_builder.UnsafeAppend(gid);
       // LOG(INFO) << "outer oid: " << outer_lid2Oids_->Value(i)
       //           << " gid: " << gid;

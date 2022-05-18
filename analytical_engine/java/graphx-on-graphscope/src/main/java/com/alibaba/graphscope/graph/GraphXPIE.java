@@ -131,6 +131,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
     this.maxIterations = maxIterations;
     innerVerticesNum = graphXFragment.getInnerVerticesNum();
     verticesNum = graphXFragment.getVerticesNum();
+    logger.info("ivnum {}, tvnum {}", innerVerticesNum, verticesNum);
     curSet = new BitSet((int) verticesNum);
     nextSet = new BitSet((int) verticesNum);
     round = 0;
@@ -184,25 +185,33 @@ public class GraphXPIE<VD, ED, MSG_T> {
     int cnt = 0;
     Vertex<Long> nbrVertex = FFITypeFactoryhelper.newVertexLong();
     while (begin.getAddress() != end.getAddress()) {
-//      logger.info("Visiting edge {} of vertex {}", cnt, vertex.GetValue());
+      logger.info("Visiting edge {} of vertex {}", cnt, vertex.GetValue());
       Long nbrVid = begin.vid();
       nbrVertex.SetValue(nbrVid);
       edgeTriplet.setDstOid(graphXFragment.getId(nbrVertex), newVdataArray.get(nbrVid));
       edgeTriplet.setAttr(newEdataArray.get(begin.eid()));
       Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
-//      logger.info("for edge: {}({}) -> {}({}), edge attr {}", edgeTriplet.srcId(),
-//                  edgeTriplet.srcAttr(), edgeTriplet.dstId(), edgeTriplet.dstAttr(),
-//                  edgeTriplet.attr);
+      logger.info("for edge: {}({}) -> {}({}), edge attr {}", edgeTriplet.srcId(),
+                  edgeTriplet.srcAttr(), edgeTriplet.dstId(), edgeTriplet.dstAttr(),
+                  edgeTriplet.attr);
       while (msgs.hasNext()) {
         Tuple2<Long, MSG_T> msg = msgs.next();
-        graphXFragment.getVertex(msg._1(), vertex);
-    //    logger.info("Oid {} to vertex {}", msg._1(), vertex.GetValue());
+        if (!graphXFragment.getVertex(msg._1(), vertex)){
+           throw new IllegalStateException("get vertex for oid failed: " + msg._1());
+        }
+	if (vertex.GetValue() > innerVerticesNum){
+           logger.info("got outer vertex: {}",vertex.GetValue()); 
+	}
+        logger.info("Oid {} to vertex {}", msg._1(), vertex.GetValue());
 
         // FIXME: currently we assume msg type equal to vdata type
         MSG_T original_MSG = (MSG_T) newVdataArray.get(vertex.GetValue());
         VD res = (VD) mergeMsg.apply(original_MSG, msg._2());
-//        logger.info("Merge msg ({} + {}) = {}", original_MSG, msg._2(), res);
+        logger.info("Merge msg ({} + {}) = {}", original_MSG, msg._2(), res);
         newVdataArray.set(vertex.GetValue(), res);
+        if (vertex.GetValue() > innerVerticesNum){
+            logger.info("frag {} send {} to outer vertex {}", graphXFragment.fid(), newVdataArray.get(vertex.GetValue()), vertex.GetValue());
+        }
         nextSet.set(Math.toIntExact(vertex.GetValue()));
       }
 //      begin.nextV();
