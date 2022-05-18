@@ -100,12 +100,12 @@ public class GraphXPIE<VD, ED, MSG_T> {
     this.graphXFragment =
         ((GraphXFragmentAdaptor<Long, Long, VD, ED>) iFragment).getGraphXFragment();
     oldEdataArray = graphXFragment.getEdataArray();
-    logger.info("edata array size {}, edge num{}", oldEdataArray.getLength(),
-                graphXFragment.getEdgeNum());
-    if (oldEdataArray.getLength() * 2 != graphXFragment.getEdgeNum()) {
-      throw new IllegalStateException("not equal" + oldEdataArray.getLength() + ","
-                                      + graphXFragment.getEdgeNum());
-    }
+//    logger.info("edata array size {}, edge num{}", oldEdataArray.getLength(),
+//                graphXFragment.getEdgeNum());
+//    if (oldEdataArray.getLength() * 2 != graphXFragment.getEdgeNum()) {
+//      throw new IllegalStateException("not equal" + oldEdataArray.getLength() + ","
+//                                      + graphXFragment.getEdgeNum());
+//    }
 
     oldVdataArray = graphXFragment.getVdataArray();
     logger.info("vdata array size {}, frag vnum{}", oldVdataArray.getLength(),
