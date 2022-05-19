@@ -101,7 +101,7 @@ object GrapeEdgeRDD extends Logging{
     log.info(s"[GrapeEdgeRDD]: Finish constructing global vm ${globalVMIDs}")
     require(globalVMIDs.size() == numPartitions)
 
-    edgesShuffleWithMeta.foreachPartition(iter => {
+    val metaUpdated = edgesShuffleWithMeta.mapPartitions(iter => {
       if (iter.hasNext) {
         var i = 0
         val hostName = ExecutorUtils.getHostName
@@ -121,20 +121,24 @@ object GrapeEdgeRDD extends Logging{
         }
         require(res != null, s"after iterate over received global ids, no suitable found for ${meta.partitionID} : ${globalVMIDs}")
         meta.setGlobalVM(res.toLong)
+        Iterator((meta, part))
       }
+      else Iterator.empty
     })
 
-    edgesShuffleWithMeta.foreachPartition(iter => {
+    val metaUpdated2 = metaUpdated.mapPartitions(iter => {
       if (iter.hasNext) {
-        val meta = iter.next()._1
+        val (meta,part) = iter.next()
         require(meta.globalVMId != -1)
         val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId)
         meta.setGlobalVM(vm)
         meta.setCSR(csr)
+        Iterator((meta, part))
       }
+      else Iterator.empty
     })
 
-    val grapeEdgePartitions = edgesShuffleWithMeta.mapPartitions(iter => {
+    val grapeEdgePartitions = metaUpdated2.mapPartitions(iter => {
       if (iter.hasNext) {
         val (meta, part) = iter.next()
         Iterator((meta.partitionID, new GrapeEdgePartition[VD, ED](meta.partitionID, meta.graphxCSR, meta.globalVM, meta.vineyardClient)))
