@@ -19,11 +19,11 @@ object SSSP extends Logging{
       return 0;
     }
     val efilePath = args(0)
-    val numParition = args(1).toInt
+    val numPartition = args(1).toInt
     val sourceId: VertexId = args(2).toLong // The ultimate source
-    log.info(s"efile path ${efilePath}, numPartition ${numParition}, sourceId ${sourceId}")
+    log.info(s"efile path ${efilePath}, numPartition ${numPartition}, sourceId ${sourceId}")
     val loadGraph0 = System.nanoTime();
-    val graph = GraphLoader.edgeListFile(sc, efilePath,canonicalOrientation = false,numParition).cache()
+    val graph = GraphLoader.edgeListFile(sc, efilePath,canonicalOrientation = false,numPartition).cache()
     val loadGraph1 = System.nanoTime();
     log.info(s"[GraphLoader: ] Load graph ${graph.numEdges}, ${graph.numVertices}")
     // Initialize the graph such that all vertices except the root have distance infinity.
