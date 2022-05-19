@@ -318,14 +318,14 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
                  GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map) {
     LOG(INFO) << "start loading edges";
     std::shared_ptr<oid_array_t> srcOids, dstOids;
-    std::shared_ptr<edata_array_t> edatas;
+    // std::shared_ptr<edata_array_t> edatas;
     {
       srcOidsBuilder.Finish(&srcOids);
       dstOidsBuilder.Finish(&dstOids);
-      edatasBuilder.Finish(&edatas);
+      edatasBuilder.Finish(&edata_array_);
     }
     CHECK_EQ(srcOids->length(), dstOids->length());
-    CHECK_EQ(dstOids->length(), edatas->length());
+    CHECK_EQ(dstOids->length(), edata_array_->length());
     vnum_ = graphx_vertex_map.GetInnerVertexSize();
     // LOG(INFO) << "fr vnum : " << vnum_;
     auto edges_num_ = srcOids->length();
