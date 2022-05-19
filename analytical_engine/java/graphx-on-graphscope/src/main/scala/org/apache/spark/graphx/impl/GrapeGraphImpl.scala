@@ -1,7 +1,9 @@
 package org.apache.spark.graphx.impl
 
+import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
+import com.alibaba.graphscope.graphx.VertexDataBuilder
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
-import org.apache.spark.graphx.utils.ExecutorUtils
+import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
 //import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
 import org.apache.spark.rdd.RDD
@@ -47,22 +49,59 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   def generateGlobalVMIds() : Array[String] = {
     edges.grapePartitionsRDD.mapPartitions(iter => {
-//      Iterator(iter.next()._2.vm.id())
-      Iterator(ExecutorUtils.getHostName + ":" + iter.next()._2.vm.id())
-    }).collect().distinct
+      if (iter.hasNext){
+        val tuple = iter.next()
+
+        Iterator(ExecutorUtils.getHostName + ":" + tuple._1 +":" + tuple._2.vm.id())
+      }
+      else {
+        Iterator.empty
+      }
+    }).collect()
   }
 
   def generateCSRIds() : Array[String] = {
     edges.grapePartitionsRDD.mapPartitions(iter => {
-//      Iterator(ExecutorUtils.getHost2CSRID)
-      Iterator(ExecutorUtils.getHostName + ":" + iter.next()._2.csr.id())
-    }).collect().distinct
+      if (iter.hasNext){
+        val tuple = iter.next()
+        val ePart = tuple._2
+        val pid = tuple._1
+        //build new edge data.
+        //FIXME: support output the modified data to mpi processes.
+        Iterator(ExecutorUtils.getHostName + ":"  + pid + ":" + ePart.csr.id())
+      } else {
+        Iterator.empty
+      }
+    }).collect()
   }
 
   def generateVdataIds() : Array[String] = {
     vertices.grapePartitionsRDD.mapPartitions(iter => {
-      Iterator(ExecutorUtils.getHostName + ":" + iter.next()._2.vertexData.id())
-    }).collect().distinct
+      if (iter.hasNext){
+        val tuple = iter.next()
+        val vPart = tuple._2
+        val pid = tuple._1
+        if (vPart.vertexData ==null){
+          Iterator(ExecutorUtils.getHostName + ":" + pid + ":" + vPart.vertexData.id())
+        }
+        else {
+          val newVdataBuilder = ScalaFFIFactory.newVertexDataBuilder[VD]()
+          val arrowArrayBuilder = ScalaFFIFactory.newArrowArrayBuilder[VD](GrapeUtils.getRuntimeClass[VD].asInstanceOf[Class[VD]])
+          arrowArrayBuilder.reserve(vPart.partVnum)
+          var i = 0
+          while (i < vPart.partVnum){
+            arrowArrayBuilder.unsafeAppend(vPart.getData(i))
+            i += 1
+          }
+          newVdataBuilder.init(arrowArrayBuilder)
+          val res = newVdataBuilder.seal(vPart.client).get()
+          Iterator(ExecutorUtils.getHostName + ":"+ pid + ":" + res.id())
+        }
+      }
+      else {
+        Iterator.empty
+      }
+    }).collect()
   }
 
   val sc = vertices.sparkContext
@@ -122,12 +161,17 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   override def partitionBy(partitionStrategy: PartitionStrategy, numPartitions: PartitionID): Graph[VD, ED] = {
     throw new IllegalStateException("Currently grape graph doesn't support partition")
   }
-
-  override def mapVertices[VD2 : ClassTag](map: (VertexId, VD) => VD2)(implicit eq: VD =:= VD2): Graph[VD2, ED] = {
-    new GrapeGraphImpl[VD2,ED](vertices.mapVertices(map), edges)
+  def mapVertices[VD2: ClassTag](map: (VertexId, VD) => VD2)
+                                (implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
+    new GrapeGraphImpl[VD2,ED](vertices.mapVertices[VD2](map), edges)
   }
 
-  override def mapEdges[ED2](map: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2])(implicit evidence$5: ClassTag[ED2]): Graph[VD, ED2] = ???
+
+//  override def mapVertices[VD2](map: (VertexId, VD) => VD2)(implicit eq: VD =:= VD2): Graph[VD2, ED] = {
+//      new GrapeGraphImpl[VD2,ED](vertices.mapVertices[VD2](map), edges)
+//  }
+
+    override def mapEdges[ED2](map: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2])(implicit evidence$5: ClassTag[ED2]): Graph[VD, ED2] = ???
 
   override def mapTriplets[ED2](map: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], tripletFields: TripletFields)(implicit evidence$8: ClassTag[ED2]): Graph[VD, ED2] = ???
 

@@ -2,7 +2,7 @@
 
 NUM_WORKERS=$1
 shift
-HOST_FILE=$1
+HOST_SLOT=$1
 shift
 VM_IDS=$1
 shift
@@ -35,7 +35,7 @@ echo "vdClass             "${VD_CLASS}
 echo "edClass             "${ED_CLASS}
 echo "initial msg         "${INIT_MSG}
 echo "num workers:        "${NUM_WORKERS}
-echo "host file           "${HOST_FILE}
+echo "host file           "${HOST_SLOT}
 echo "vm ids:             "${VM_IDS}
 echo "csr ids:            "${CSR_IDS}
 echo "vdata ids:          "${VDATA_IDS}
@@ -54,7 +54,7 @@ do
 done
 
 #cmd="GLOG_v=10 mpirun -n 1 -hostfile ${SPARK_CONF_WORKER} -x GLOG_v -x GRAPHSCOPE_CODE_HOME -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} --user_class ${USER_CLASS} --vertex_mm_file_prefix ${V_FILE_PREFIX} --edge_mm_file_prefix ${E_FILE_PREFIX}"
-cmd="GLOG_v=10 mpirun --mca btl_tcp_if_include bond0 -n ${NUM_WORKERS} -hostfile ${HOST_FILE} -x LD_PRELOAD -x GLOG_v \
+cmd="GLOG_v=10 mpirun --mca btl_tcp_if_include bond0 -n ${NUM_WORKERS} -host ${HOST_SLOT} -x LD_PRELOAD -x GLOG_v \
 -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} \
 --vprog_path ${VPROG_SERIALIZATION} --send_msg_path ${SEND_MSG_SERIALIZATION} --merge_msg_path ${MERGE_MSG_SERIALIZATION} \
 --msg_class ${MSG_CLASS} --vd_class ${VD_CLASS} --ed_class ${ED_CLASS} \

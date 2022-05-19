@@ -14,9 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import jnr.ffi.annotations.In;
 import org.apache.spark.graphx.impl.GrapeUtils;
-import org.apache.spark.graphx.utils.ExecutorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,10 +63,6 @@ public class MPIUtils {
             throw new IllegalStateException("length not equal: " + Arrays.toString(vmdIds) + Arrays.toString(
                 csrIds) + Arrays.toString(vdataIds));
         }
-        //FIXME: No checking now.
-//        if (vmdIds.length != getNumWorker()){
-//            throw new IllegalStateException("distinct ids " + vmdIds.length +", but in conf/workers we have" + getNumWorker());
-//        }
         return vmdIds.length;
     }
 
@@ -78,8 +72,9 @@ public class MPIUtils {
         String vprogPath, String sendMsgPath, String mergeMsgpath,
         MSG initialMsg, int maxIteration){
         int numWorkers = checkIds(vmIds, csrIds, vdataIds);
+        String hostNameSlots = generateHostNameAndSlotsFromIDs(vmIds);
         logger.info("running mpi with {} workers", numWorkers);
-        String[] commands = {"/bin/bash", LAUNCH_GRAPHX_SHELL_SCRIPT, String.valueOf(numWorkers), SPARK_CONF_WORKERS,
+        String[] commands = {"/bin/bash", LAUNCH_GRAPHX_SHELL_SCRIPT, String.valueOf(numWorkers), hostNameSlots,
             String.join(",", vmIds),String.join(",", csrIds), String.join(",",vdataIds),
             GrapeUtils.classToStr(msgClass), GrapeUtils.classToStr(vdClass), GrapeUtils.classToStr(edClass),
             vprogPath, sendMsgPath, mergeMsgpath,
@@ -119,13 +114,12 @@ public class MPIUtils {
      * @param localVMIDs
      * @return
      */
-    private static String generateHostNameAndSlotsFromLocalVMIDs(String localVMIDs){
-        String[] strs = localVMIDs.split(",");
+    private static String generateHostNameAndSlotsFromIDs(String[] localVMIDs){
         HashMap<String,Integer> map = new HashMap<>();
-        for (String str : strs){
+        for (String str : localVMIDs){
             String[] splited = str.split(":");
             if (splited.length != 3){
-                throw new IllegalStateException("Unexpected input " + Arrays.toString(strs));
+                throw new IllegalStateException("Unexpected input " + Arrays.toString(localVMIDs));
             }
             if (map.containsKey(splited[0])){
                 map.put(splited[0], map.get(splited[0]) + 1);
@@ -144,14 +138,14 @@ public class MPIUtils {
         return sb.toString();
     }
 
-    public static <MSG,VD,ED> List<String> constructGlobalVM(String localVMIDs, String ipcSocket, String oidType, String vidType){
+    public static <MSG,VD,ED> List<String> constructGlobalVM(String[] localVMIDs, String ipcSocket, String oidType, String vidType){
         check(oidType, vidType);
-        logger.info("Try to construct global vm from: {}", localVMIDs);
-        int numWorkers = localVMIDs.split(",").length;
+        logger.info("Try to construct global vm from: {}", Arrays.toString(localVMIDs));
+        int numWorkers = localVMIDs.length;
         logger.info("running mpi with {} workers", numWorkers);
-        String hostNameAndSlots = generateHostNameAndSlotsFromLocalVMIDs(localVMIDs);
+        String hostNameAndSlots = generateHostNameAndSlotsFromIDs(localVMIDs);
         String[] commands = {"/bin/bash", LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT, String.valueOf(numWorkers),
-            hostNameAndSlots, localVMIDs, oidType, vidType, ipcSocket};
+            hostNameAndSlots, String.join(",",localVMIDs), oidType, vidType, ipcSocket};
         logger.info("Running with commands: " + String.join(" ", commands));
         List<String> globalVMIDs = new ArrayList<>(numWorkers);
         long startTime = System.nanoTime();

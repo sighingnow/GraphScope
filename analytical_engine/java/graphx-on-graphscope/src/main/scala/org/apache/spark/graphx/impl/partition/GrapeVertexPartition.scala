@@ -13,6 +13,7 @@ import scala.reflect.ClassTag
 class GrapeVertexPartition[VD : ClassTag](val pid : Int,
                                           val vm : GraphXVertexMap[Long,Long],
                                           val vertexData: VertexData[Long,VD],
+                                          val client : VineyardClient,
                                           var bitSet: BitSet = null){
   val startLid = 0
   val endLid = vm.innerVertexSize()
@@ -186,7 +187,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
   def withNewValues[VD2 : ClassTag](vds: PrimitiveArray[VD2]) : GrapeVertexPartition[VD2] = {
 //        new GrapeVertexPartition[VD2](pid, numPartitions, idManager, vds, startLid, endLid, mask)
-    new GrapeVertexPartitionWithDataCache[VD2](pid, vm, vds, bitSet)
+    new GrapeVertexPartitionWithDataCache[VD2](pid, vm, vds,client, bitSet)
   }
 
   def withNewValues[VD2 : ClassTag](vdataMappedPath : String, size : Long) : GrapeVertexPartition[VD2] = {
@@ -283,6 +284,6 @@ class GrapeVertexPartitionBuilder[VD: ClassTag] extends Logging{
     val vertexData = vertexDataBuilder.seal(client).get()
     log.info(s"Partition ${pid} built vertex data ${vertexData}")
     require(vertexMap.getVertexSize == vertexData.verticesNum(), s"csr inner vertex should equal to vmap ${vertexMap.innerVertexSize()}, ${vertexData.verticesNum()}")
-    new GrapeVertexPartition[VD](pid, vertexMap,vertexData)
+    new GrapeVertexPartition[VD](pid, vertexMap,vertexData, client)
   }
 }
