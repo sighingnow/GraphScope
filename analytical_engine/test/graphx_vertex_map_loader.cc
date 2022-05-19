@@ -47,12 +47,12 @@ void Init() {
 std::string getHostName() { return boost::asio::ip::host_name(); }
 
 template <typename OID_T, typename VID_T>
-void Load(const std::string local_vm_ids, vineyard::Client& client) {
+void Load(const std::string local_vm_ids_str, vineyard::Client& client) {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
 
   std::vector<std::string> splited;
-  boost::split(splited, local_vm_ids, boost::is_any_of(","));
+  boost::split(splited, local_vm_ids_str, boost::is_any_of(","));
   CHECK_EQ(splited.size(), comm_spec.worker_num());
 
   vineyard::ObjectID global_vm_id;
@@ -60,7 +60,7 @@ void Load(const std::string local_vm_ids, vineyard::Client& client) {
   {
     std::string host_name = getHostName();
     // auto raw = splited[comm_spec.worker_id()];
-    std::vector<std::string> local_vm_ids = "";
+    std::vector<std::string> local_vm_ids;
     for (auto raw : splited) {
       if (raw.find(host_name) != std::string::npos) {
         // shoud find first
@@ -68,15 +68,15 @@ void Load(const std::string local_vm_ids, vineyard::Client& client) {
             raw.substr(raw.find(":") + 1, std::string::npos));
         LOG(INFO) << "Worker [" << comm_spec.worker_id()
                   << "](" + host_name + "): found local id, trimed to "
-                  << local_vm_id;
+                  << local_vm_ids.back();
         break;
       }
     }
-    if (local_vm_id.size() == 0) {
+    if (local_vm_ids.size() == 0) {
       LOG(ERROR) << "Worker [" << comm_spec.worker_id() << "](" + host_name
-                 << ") find no suitable ids from" << local_vm_ids;
+                 << ") find no suitable ids from" << local_vm_ids_str;
     }
-    CHECK_EQ(local_vm_ids.size() == comm_spec.local_num());
+    CHECK_EQ(local_vm_ids.size(), comm_spec.local_num());
 
     vineyard::ObjectID partial_map;
 
@@ -102,7 +102,7 @@ void Load(const std::string local_vm_ids, vineyard::Client& client) {
     global_vm_id = graphx_vm->id();
     LOG(INFO) << "Persist csr id: " << graphx_vm->id();
   }
-  LOG(INFO) << "GlobalVertexMapID:" << getHostName() << ":" graphx_pid << ":"
+  LOG(INFO) << "GlobalVertexMapID:" << getHostName() << ":"<< graphx_pid << ":"
             << global_vm_id;
 }
 

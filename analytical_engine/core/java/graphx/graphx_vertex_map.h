@@ -260,9 +260,9 @@ class GraphXVertexMap
   }
   OID_T GetId(const vid_t lid) const {
     if (lid >= ivnum_) {
-      return OuterVertexLid2Oid(v.GetValue());
+      return OuterVertexLid2Oid(lid);
     } else {
-      return InnerVertexLid2Oid(v.GetValue());
+      return InnerVertexLid2Oid(lid);
     }
   }
 
