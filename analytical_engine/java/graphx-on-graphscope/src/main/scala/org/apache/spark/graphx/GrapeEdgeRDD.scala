@@ -1,5 +1,6 @@
 package org.apache.spark.graphx
 
+import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
 import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived, GrapeEdgePartition, GrapeEdgePartitionBuilder}
@@ -68,6 +69,9 @@ object GrapeEdgeRDD extends Logging{
     val edgesShuffleWithMeta = edgesShuffles.mapPartitionsWithIndex((pid, iter) => {
       if (iter.hasNext){
         val vineyardClient = ScalaFFIFactory.newVineyardClient()
+        val ffiByteString = FFITypeFactory.newByteString()
+        ffiByteString.copyFrom(Constant.vineyardEndpoint)
+        vineyardClient.connect(ffiByteString)
         val (_pid, shuffleReceived) = iter.next()
         require(pid == _pid, s"not possible ${pid}, ${_pid}")
         val grapeMeta = new GrapeMeta[VD,ED](pid, numPartitions,vineyardClient,ExecutorUtils.getHostName)
