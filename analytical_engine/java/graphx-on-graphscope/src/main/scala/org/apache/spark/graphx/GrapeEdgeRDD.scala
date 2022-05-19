@@ -60,7 +60,7 @@ object GrapeEdgeRDD extends Logging{
       else {
         Iterator.empty
       }
-    })
+    }).cache()
     fromEdgeShuffleReceived(edgeShuffleReceived)
   }
 
@@ -78,7 +78,7 @@ object GrapeEdgeRDD extends Logging{
         Iterator((grapeMeta, shuffleReceived))
       }
       else Iterator.empty
-    },true)
+    },true).cache()
 
     val localVertexMapIdss = edgesShuffleWithMeta.mapPartitions(iter => {
       if (iter.hasNext){
@@ -124,7 +124,7 @@ object GrapeEdgeRDD extends Logging{
         Iterator((meta, part))
       }
       else Iterator.empty
-    })
+    }).cache()
 
     val metaUpdated2 = metaUpdated.mapPartitions(iter => {
       if (iter.hasNext) {
@@ -136,7 +136,7 @@ object GrapeEdgeRDD extends Logging{
         Iterator((meta, part))
       }
       else Iterator.empty
-    })
+    }).cache()
 
     val grapeEdgePartitions = metaUpdated2.mapPartitions(iter => {
       if (iter.hasNext) {
