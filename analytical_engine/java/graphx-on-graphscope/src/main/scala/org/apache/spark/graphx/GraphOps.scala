@@ -69,12 +69,7 @@ class GraphOps[VD: ClassTag, ED: ClassTag](graph: Graph[VD, ED]) extends Seriali
   private def degreesRDD(edgeDirection: EdgeDirection): VertexRDD[Int] = {
     if (graph.isInstanceOf[GrapeGraphImpl[VD,ED]]){
       val grapeGraph = graph.asInstanceOf[GrapeGraphImpl[VD,ED]]
-      if (edgeDirection == EdgeDirection.Out){
-        grapeGraph.edges.generateDegreeRDD(grapeGraph.vertices)
-      }
-      else {
-        throw new IllegalStateException("Currently only support out direction")
-      }
+        grapeGraph.edges.generateDegreeRDD(grapeGraph.vertices, edgeDirection)
     }
     else {
       if (edgeDirection == EdgeDirection.In) {

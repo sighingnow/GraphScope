@@ -56,13 +56,16 @@ void Load(const std::string local_vm_ids, vineyard::Client& client) {
   CHECK_EQ(splited.size(), comm_spec.worker_num());
 
   vineyard::ObjectID global_vm_id;
+  int graphx_pid;
   {
     std::string host_name = getHostName();
     // auto raw = splited[comm_spec.worker_id()];
-    std::string local_vm_id = "";
+    std::vector<std::string> local_vm_ids = "";
     for (auto raw : splited) {
       if (raw.find(host_name) != std::string::npos) {
-        local_vm_id = raw.substr(raw.find(":") + 1, std::string::npos);
+        // shoud find first
+        local_vm_ids.push_back(
+            raw.substr(raw.find(":") + 1, std::string::npos));
         LOG(INFO) << "Worker [" << comm_spec.worker_id()
                   << "](" + host_name + "): found local id, trimed to "
                   << local_vm_id;
@@ -73,12 +76,24 @@ void Load(const std::string local_vm_ids, vineyard::Client& client) {
       LOG(ERROR) << "Worker [" << comm_spec.worker_id() << "](" + host_name
                  << ") find no suitable ids from" << local_vm_ids;
     }
+    CHECK_EQ(local_vm_ids.size() == comm_spec.local_num());
 
-    vineyard::ObjectID partial_map = std::stoull(local_vm_id);
-    LOG(INFO) << "Worker: [" << comm_spec.worker_id()
-              << "] local vm: " << partial_map;
+    vineyard::ObjectID partial_map;
+
+    {
+      std::vector<std::string> graphx_pid_vm_id;
+      boost::split(graphx_pid_vm_id, local_vm_ids[comm_spec.local_id()],
+                   boost::is_any_of(":"));
+      CHECK_EQ(graphx_pid_vm_id.size(), 2);
+      partial_map = std::stoull(graphx_pid_vm_id[1]);
+      graphx_pid = std::stoi(graphx_pid_vm_id[0]);
+    }
+
+    LOG(INFO) << "Worker: [" << comm_spec.worker_id() << "], local id ["
+              << comm_spec.local_id() << "] local vm: " << partial_map
+              << ", graphx pid: " << graphx_pid;
     gs::BasicGraphXVertexMapBuilder<int64_t, uint64_t> builder(
-        client, comm_spec, partial_map);
+        client, comm_spec, graphx_pid, partial_map);
     auto graphx_vm =
         std::dynamic_pointer_cast<gs::GraphXVertexMap<int64_t, uint64_t>>(
             builder.Seal(client));
@@ -87,7 +102,8 @@ void Load(const std::string local_vm_ids, vineyard::Client& client) {
     global_vm_id = graphx_vm->id();
     LOG(INFO) << "Persist csr id: " << graphx_vm->id();
   }
-  LOG(INFO) << "GlobalVertexMapID:" << getHostName() << ":" << global_vm_id;
+  LOG(INFO) << "GlobalVertexMapID:" << getHostName() << ":" graphx_pid << ":"
+            << global_vm_id;
 }
 
 void Finalize() {

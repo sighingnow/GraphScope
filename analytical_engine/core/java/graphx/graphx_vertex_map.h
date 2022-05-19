@@ -258,6 +258,13 @@ class GraphXVertexMap
       return InnerVertexLid2Oid(v.GetValue());
     }
   }
+  OID_T GetId(const vid_t lid) const {
+    if (lid >= ivnum_) {
+      return OuterVertexLid2Oid(v.GetValue());
+    } else {
+      return InnerVertexLid2Oid(v.GetValue());
+    }
+  }
 
   inline bool GetOid(const VID_T& gid, OID_T& oid) const {
     fid_t fid = GetFidFromGid(gid);
@@ -496,7 +503,7 @@ class BasicGraphXVertexMapBuilder
 
  public:
   BasicGraphXVertexMapBuilder(vineyard::Client& client,
-                              grape::CommSpec& comm_spec,
+                              grape::CommSpec& comm_spec, int graphx_pid,
                               vineyard::ObjectID localVertexMapID)
       : GraphXVertexMapBuilder<oid_t, vid_t>(client, comm_spec.worker_num(),
                                              comm_spec.worker_id()),
@@ -506,7 +513,8 @@ class BasicGraphXVertexMapBuilder
         client.GetObject(localVertexMapID));
     LOG(INFO) << "Worer [" << comm_spec.worker_id() << " got partial vmap id "
               << localVertexMapID
-              << ", local vnum: " << partial_vmap->GetInnerVerticesNum();
+              << ", local vnum: " << partial_vmap->GetInnerVerticesNum()
+              << ", graphx pid: " << graphx_pid;
   }
 
   vineyard::Status Build(vineyard::Client& client) override {

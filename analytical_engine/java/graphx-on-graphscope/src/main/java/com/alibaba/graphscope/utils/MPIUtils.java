@@ -10,9 +10,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import jnr.ffi.annotations.In;
 import org.apache.spark.graphx.impl.GrapeUtils;
 import org.apache.spark.graphx.utils.ExecutorUtils;
 import org.slf4j.Logger;
@@ -111,13 +113,45 @@ public class MPIUtils {
         }
     }
 
+    /**
+     * Input : d50:0:123457,d51:1:1232431
+     * Output d50:1,d51:1
+     * @param localVMIDs
+     * @return
+     */
+    private static String generateHostNameAndSlotsFromLocalVMIDs(String localVMIDs){
+        String[] strs = localVMIDs.split(",");
+        HashMap<String,Integer> map = new HashMap<>();
+        for (String str : strs){
+            String[] splited = str.split(":");
+            if (splited.length != 3){
+                throw new IllegalStateException("Unexpected input " + Arrays.toString(strs));
+            }
+            if (map.containsKey(splited[0])){
+                map.put(splited[0], map.get(splited[0]) + 1);
+            }
+            else map.put(splited[0], 1);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String key : map.keySet()){
+            Integer value = map.get(key);
+            sb.append(key);
+            sb.append(":");
+            sb.append(value);
+            sb.append(",");
+        }
+        sb.deleteCharAt(sb.length()-1);
+        return sb.toString();
+    }
+
     public static <MSG,VD,ED> List<String> constructGlobalVM(String localVMIDs, String ipcSocket, String oidType, String vidType){
         check(oidType, vidType);
         logger.info("Try to construct global vm from: {}", localVMIDs);
-        int numWorkers = Math.min(localVMIDs.split(",").length, getNumWorker());
+        int numWorkers = localVMIDs.split(",").length;
         logger.info("running mpi with {} workers", numWorkers);
+        String hostNameAndSlots = generateHostNameAndSlotsFromLocalVMIDs(localVMIDs);
         String[] commands = {"/bin/bash", LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT, String.valueOf(numWorkers),
-            SPARK_CONF_WORKERS, localVMIDs, oidType, vidType, ipcSocket};
+            hostNameAndSlots, localVMIDs, oidType, vidType, ipcSocket};
         logger.info("Running with commands: " + String.join(" ", commands));
         List<String> globalVMIDs = new ArrayList<>(numWorkers);
         long startTime = System.nanoTime();

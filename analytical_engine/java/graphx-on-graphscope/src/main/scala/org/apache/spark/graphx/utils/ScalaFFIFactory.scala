@@ -10,7 +10,9 @@ import java.util.HashMap
 import scala.reflect.ClassTag
 
 object ScalaFFIFactory extends Logging{
+  System.loadLibrary("grape-jni")
   private val arrowArrayBuilderMap = new HashMap[String, ArrowArrayBuilder.Factory[_]]
+  val clientFactory : VineyardClient.Factory = FFITypeFactory.getFactory(classOf[VineyardClient],"vineyard::Client").asInstanceOf[VineyardClient.Factory]
   def newLocalVertexMapBuilder(client : VineyardClient, innerOids : ArrowArrayBuilder[Long],
                                outerOids : ArrowArrayBuilder[Long]): BasicLocalVertexMapBuilder[Long,Long] ={
      val localVertexMapBuilderFactory = FFITypeFactory.getFactory(classOf[BasicLocalVertexMapBuilder[Long,Long]], "gs::BasicLocalVertexMapBuilder<int64_t,uint64_t>").asInstanceOf[BasicLocalVertexMapBuilder.Factory[Long,Long]]
@@ -63,5 +65,11 @@ object ScalaFFIFactory extends Logging{
     val factory = FFITypeFactory.getFactory(classOf[VertexDataBuilder[Long,VD]],
       "gs::VertexDataBuilder<uint64_t," + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[VD]) +">").asInstanceOf[VertexDataBuilder.Factory[Long,VD]]
     factory.create()
+  }
+
+  def newVineyardClient() : VineyardClient = {
+    synchronized{
+      clientFactory.create()
+    }
   }
 }

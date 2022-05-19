@@ -4,7 +4,6 @@ import com.alibaba.graphscope.utils.{LongLong, LongLongInputFormat}
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.graphx.impl.GrapeGraphImpl
 import org.apache.spark.graphx.impl.partition.EdgeShuffle
-import org.apache.spark.graphx.utils.EdgeShuffleToMe
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.collection.{OpenHashSet, PrimitiveVector}

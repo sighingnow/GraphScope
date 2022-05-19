@@ -35,7 +35,8 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
   }
   setName("OffHeapGrapeEdgeRDD")
 
-  override def generateDegreeRDD(originalVertexRDD : GrapeVertexRDD[_]) : GrapeVertexRDD[Int] = {
+  override def generateDegreeRDD(originalVertexRDD : GrapeVertexRDD[_],
+                                 edgeDirection: EdgeDirection) : GrapeVertexRDD[Int] = {
     val grapeVertexRDDImpl = originalVertexRDD.asInstanceOf[GrapeVertexRDDImpl[_]]
 //    val newVertexPartitionRDD = this.grapePartitionsRDD.zipPartitions(grapeVertexRDDImpl.grapePartitionsRDD, true){
 //      (thisIter, otherIter) => {
@@ -84,12 +85,12 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
 
   //FIXME: count active edges
   override def count(): Long = {
-    grapePartitionsRDD.map(_._2.partEdgeNum).fold(0)(_ + _)
-//    throw new IllegalStateException("fix me")
+    grapePartitionsRDD.map(_._2.partOutEdgeNum).fold(0)(_ + _)
   }
 
   override def mapValues[ED2 :ClassTag](f: Edge[ED] => ED2): GrapeEdgeRDDImpl[VD,ED2] = {
     mapEdgePartitions((pid, part) => part.map(f))
+    null
   }
 
   override def reverse: EdgeRDD[ED] = {

@@ -85,21 +85,20 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
   ~GraphXCSR() {}
 
   int64_t GetInDegree(vid_t lid) {
-    return getIEOffset(lid + 1) - getIEOffset(lid);
+    return GetIEOffset(lid + 1) - GetIEOffset(lid);
   }
 
   int64_t GetOutDegree(vid_t lid) {
-    return getOEOffset(lid + 1) - getOEOffset(lid);
+    return GetOEOffset(lid + 1) - GetOEOffset(lid);
   }
-  bool IsIEEmpty(vid_t lid) { return getIEOffset(lid + 1) == getIEOffset(lid); }
-  bool IsOEEmpty(vid_t lid) { return getOEOffset(lid + 1) == getOEOffset(lid); }
+  bool IsIEEmpty(vid_t lid) { return GetIEOffset(lid + 1) == GetIEOffset(lid); }
+  bool IsOEEmpty(vid_t lid) { return GetOEOffset(lid + 1) == GetOEOffset(lid); }
 
-  nbr_t* GetIEBegin(VID_T i) { return &in_edge_ptr_[getIEOffset(i)]; }
-  nbr_t* GetOEBegin(VID_T i) { return &out_edge_ptr_[getOEOffset(i)]; }
+  nbr_t* GetIEBegin(VID_T i) { return &in_edge_ptr_[GetIEOffset(i)]; }
+  nbr_t* GetOEBegin(VID_T i) { return &out_edge_ptr_[GetOEOffset(i)]; }
 
-  nbr_t* GetIEEnd(VID_T i) { return &in_edge_ptr_[getIEOffset(i + 1)]; }
-
-  nbr_t* GetOEEnd(VID_T i) { return &out_edge_ptr_[getOEOffset(i + 1)]; }
+  nbr_t* GetIEEnd(VID_T i) { return &in_edge_ptr_[GetIEOffset(i + 1)]; }
+  nbr_t* GetOEEnd(VID_T i) { return &out_edge_ptr_[GetOEOffset(i + 1)]; }
 
   // verticesNum
   vid_t VertexNum() const { return local_vnum_; }
@@ -162,8 +161,8 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
         reinterpret_cast<const nbr_t*>(out_edges_->GetValue(0)));
     in_edge_ptr_ = const_cast<nbr_t*>(
         reinterpret_cast<const nbr_t*>(in_edges_->GetValue(0)));
-    in_edges_num_ = getIEOffset(local_vnum_);
-    out_edges_num_ = getOEOffset(local_vnum_);
+    in_edges_num_ = GetIEOffset(local_vnum_);
+    out_edges_num_ = GetOEOffset(local_vnum_);
     LOG(INFO) << "total in edges: " << in_edges_num_
               << " out edges : " << out_edges_num_;
     // for (size_t i = 0; i < local_vnum_; ++i) {
@@ -178,11 +177,11 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
     // }
     LOG(INFO) << "Finish construct GraphXCSR: ";
   }
-  inline int64_t getIEOffset(vid_t lid) {
+  inline int64_t GetIEOffset(vid_t lid) {
     CHECK_LE(lid, local_vnum_);
     return ie_offsets_->Value(static_cast<int64_t>(lid));
   }
-  inline int64_t getOEOffset(vid_t lid) {
+  inline int64_t GetOEOffset(vid_t lid) {
     CHECK_LE(lid, local_vnum_);
     return oe_offsets_->Value(static_cast<int64_t>(lid));
   }
@@ -256,9 +255,9 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
         reinterpret_cast<const nbr_t*>(graphx_csr->out_edges_->GetValue(0)));
     graphx_csr->local_vnum_ = graphx_csr->ie_offsets_->length() - 1;
     graphx_csr->in_edges_num_ =
-        graphx_csr->getIEOffset(graphx_csr->local_vnum_);
+        graphx_csr->GetIEOffset(graphx_csr->local_vnum_);
     graphx_csr->out_edges_num_ =
-        graphx_csr->getOEOffset(graphx_csr->local_vnum_);
+        graphx_csr->GetOEOffset(graphx_csr->local_vnum_);
 
     graphx_csr->meta_.AddMember("in_edges", in_edges.meta());
     graphx_csr->meta_.AddMember("out_edges", out_edges.meta());
@@ -406,7 +405,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
 
     build_offsets();
     LOG(INFO) << "finish offset building";
-    add_edges(srcLids, dstLids, edatas, in_edge_active, out_edge_active);
+    add_edges(srcLids, dstLids, in_edge_active, out_edge_active);
     sort();
     LOG(INFO) << "Finish loading edges";
   }
@@ -518,21 +517,20 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
 
   void add_edges(const std::vector<vid_t>& src_accessor,
                  const std::vector<vid_t>& dst_accessor,
-                 const std::shared_ptr<edata_array_t>& edatas,
                  const grape::Bitset& in_edge_active,
                  const grape::Bitset& out_edge_active) {
 #if defined(WITH_PROFILING)
     auto start_ts = grape::GetCurrentTime();
 #endif
-    edata_array_builder_t edata_builder_;
-    auto len = edatas->length();
-    edata_builder_.Reserve(len);
-    const edata_t* edata_accessor = edatas->raw_values();
+    // edata_array_builder_t edata_builder_;
+    auto len = src_accessor.size();
+    // edata_builder_.Reserve(len);
+    // const edata_t* edata_accessor = edatas->raw_values();
 
-    for (auto i = 0; i < len; ++i) {
-      edata_builder_.UnsafeAppend(edata_accessor[i]);
-    }
-    edata_builder_.Finish(&edata_array_);
+    // for (auto i = 0; i < len; ++i) {
+    // edata_builder_.UnsafeAppend(edata_accessor[i]);
+    // }
+    // edata_builder_.Finish(&edata_array_);
 
     // const vid_t* src_accessor = srcLids->raw_values();
     // const vid_t* dst_accessor = dstLids->raw_values();

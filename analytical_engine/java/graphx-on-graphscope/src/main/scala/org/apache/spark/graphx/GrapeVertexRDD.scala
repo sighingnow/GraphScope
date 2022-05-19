@@ -2,8 +2,7 @@ package org.apache.spark.graphx
 
 
 import org.apache.spark.graphx.impl.grape.GrapeVertexRDDImpl
-import org.apache.spark.graphx.impl.partition.GrapeVertexPartition
-import org.apache.spark.graphx.utils.GrapeVertexPartitionRegistry
+import org.apache.spark.graphx.impl.partition.{GrapeVertexPartition, GrapeVertexPartitionBuilder}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -62,27 +61,18 @@ object GrapeVertexRDD extends Logging{
 
   def fromEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD, storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
     log.info(s"Driver: Creating vertex rdd from edgeRDD of numPartition ${numPartitions}, default val ${defaultVal}")
-    edgeRDD.grapePartitionsRDD.foreachPartition(
+    val grapePartition = edgeRDD.grapePartitionsRDD.mapPartitions(
       iter => {
-        val registry = GrapeVertexPartitionRegistry.getOrCreate
-        registry.checkPrerequisite(iter.next()._1)
+        val tuple = iter.next()
+        val epart = tuple._2
+        val vertexPartitionBuilder = new GrapeVertexPartitionBuilder[VD]
+        val fragVertices = epart.vm.getVertexSize
+        log.info(s"Partition ${tuple._1} doing initialization with default value ${defaultVal}, frag vertices ${fragVertices}")
+        vertexPartitionBuilder.init(fragVertices, defaultVal)
+        val grapeVertexPartition = vertexPartitionBuilder.build(tuple._1, epart.client, epart.vm)
+        Iterator((tuple._1, grapeVertexPartition))
       }
     )
-    log.info("[GrapeVertexRDD]: Prerequisite satisfied")
-    edgeRDD.grapePartitionsRDD.foreachPartition(iter => {
-      val registry = GrapeVertexPartitionRegistry.getOrCreate
-      registry.init[VD](iter.next()._1, defaultVal)
-    })
-    edgeRDD.grapePartitionsRDD.foreachPartition(iter => {
-      val registry = GrapeVertexPartitionRegistry.getOrCreate
-      registry.build(iter.next()._1)
-    })
-    log.info("[GrapeVertexRDD]: Finish building vertex data")
-    val vertexPartitionRDD = edgeRDD.grapePartitionsRDD.mapPartitions(iter => {
-      val registry = GrapeVertexPartitionRegistry.getOrCreate
-      val pid = iter.next()._1
-      Iterator((pid, registry.getVertexPartition[VD](pid)))
-    }).cache()
-    new GrapeVertexRDDImpl[VD](vertexPartitionRDD,storageLevel)
+    new GrapeVertexRDDImpl[VD](grapePartition,storageLevel)
   }
 }
