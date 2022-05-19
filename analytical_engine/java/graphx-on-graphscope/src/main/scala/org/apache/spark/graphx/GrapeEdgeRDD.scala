@@ -97,7 +97,7 @@ object GrapeEdgeRDD extends Logging{
     require(localVertexMapIdss.length == numPartitions, s"${localVertexMapIdss.length} neq to num partitoins ${numPartitions}")
 
     log.info("[GrapeEdgeRDD]: Start constructing global vm")
-    val globalVMIDs = MPIUtils.constructGlobalVM(localVertexMapIdss.mkString(","), Constant.vineyardEndpoint, "int64_t", "uint64_t")
+    val globalVMIDs = MPIUtils.constructGlobalVM(localVertexMapIdss, Constant.vineyardEndpoint, "int64_t", "uint64_t")
     log.info(s"[GrapeEdgeRDD]: Finish constructing global vm ${globalVMIDs}")
     require(globalVMIDs.size() == numPartitions)
 

@@ -76,13 +76,12 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
   using vineyard_edges_array_t = vineyard::FixedSizeBinaryArray;
 
   GraphXCSR() {}
+  ~GraphXCSR() {}
 
   static std::unique_ptr<vineyard::Object> Create() __attribute__((used)) {
     return std::static_pointer_cast<vineyard::Object>(
         std::unique_ptr<GraphXCSR<VID_T, ED_T>>{new GraphXCSR<VID_T, ED_T>()});
   }
-
-  ~GraphXCSR() {}
 
   int64_t GetInDegree(vid_t lid) {
     return GetIEOffset(lid + 1) - GetIEOffset(lid);

@@ -15,7 +15,7 @@ import scala.reflect.ClassTag
  */
 abstract class GrapeVertexRDD[VD](
                                    sc: SparkContext, deps: Seq[Dependency[_]]) extends VertexRDD[VD](sc, deps) {
-  private[graphx] def grapePartitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD])] forSome { type VD }
+  private[graphx] def grapePartitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD])]
 
   override def partitionsRDD = null
 
