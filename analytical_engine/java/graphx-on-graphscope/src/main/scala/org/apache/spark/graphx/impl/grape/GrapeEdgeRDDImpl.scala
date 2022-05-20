@@ -55,7 +55,6 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
     originalVertexRDD.withGrapePartitionsRDD(newVertexPartitionRDD)
   }
 
-
   override def collect(): Array[Edge[ED]] = this.map(_.copy()).collect()
 
   override def persist(newLevel: StorageLevel): this.type = {

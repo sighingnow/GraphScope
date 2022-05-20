@@ -28,6 +28,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   val endLid : Long = vm.innerVertexSize()
   def partOutEdgeNum : Long = csr.getPartialOutEdgesNum(startLid, endLid)
   def partInEdgeNum : Long = csr.getPartialInEdgesNum(startLid, endLid)
+
   if (activeEdgeSet == null){
     activeEdgeSet = new BitSet(csr.getOEOffset(endLid).toInt) // just need to control out edges
     activeEdgeSet.setUntil(csr.getOEOffset(endLid).toInt)
@@ -48,33 +49,45 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       getInOutDegreeArray
     }
   }
+
   def getOutDegreeArray : PrimitiveArray[Int] = {
-    val len = (endLid - startLid).toInt
+    val len = vm.innerVertexSize().toInt
     val res = PrimitiveArray.create(classOf[Int], len)
     var i = 0;
-    while (i < len){
+    while (i < endLid){
       res.set(i, csr.getOutDegree(i).toInt)
       i += 1
     }
-    res
-  }
-  def getInDegreeArray : PrimitiveArray[Int] = {
-    val len = (endLid - startLid).toInt
-    val res = PrimitiveArray.create(classOf[Int], len)
-    var i = 0;
     while (i < len){
-      res.set(i, csr.getInDegree(i).toInt)
-      i += 1
+      res.set(i, 0)
     }
     res
   }
-  def getInOutDegreeArray : PrimitiveArray[Int] = {
-    val len = (endLid - startLid).toInt
+
+  def getInDegreeArray : PrimitiveArray[Int] = {
+    val len = vm.innerVertexSize().toInt
     val res = PrimitiveArray.create(classOf[Int], len)
     var i = 0;
-    while (i < len){
+    while (i < endLid){
       res.set(i, csr.getInDegree(i).toInt)
       i += 1
+    }
+    while (i < len){
+      res.set(i, 0)
+    }
+    res
+  }
+
+  def getInOutDegreeArray : PrimitiveArray[Int] = {
+    val len = vm.innerVertexSize().toInt
+    val res = PrimitiveArray.create(classOf[Int], len)
+    var i = 0
+    while (i < endLid) {
+      res.set(i, csr.getInDegree(i).toInt)
+      i += 1
+    }
+    while (i < len) {
+      res.set(i, 0)
     }
     res
   }
@@ -118,7 +131,6 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
         edge.attr = edata
         edge.index = offset
         offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
-//        curNbr.addV(NBR_SIZE)
         edge
       }
     }
@@ -134,7 +146,6 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     var offset : Long = activeEdgeSet.nextSetBit(0)
     val offsetLimit : Long = csr.getOEOffset(endLid)
     curNbr.setAddress(beginAddr + offset * NBR_SIZE)
-//    var edgeTriplet: GSEdgeTriplet[VD,ED] = null.asInstanceOf[GSEdgeTriplet[VD,ED]]
 
     def createTriplet : GSEdgeTriplet[VD,ED] = {
       if (edgeReversed){
