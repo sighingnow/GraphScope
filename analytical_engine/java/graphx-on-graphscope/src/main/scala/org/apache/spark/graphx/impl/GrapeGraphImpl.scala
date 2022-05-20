@@ -81,7 +81,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         val tuple = iter.next()
         val vPart = tuple._2
         val pid = tuple._1
-        if (vPart.vertexData ==null){
+        if (vPart.vertexData != null){
           Iterator(ExecutorUtils.getHostName + ":" + pid + ":" + vPart.vertexData.id())
         }
         else {
@@ -104,7 +104,6 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     }).collect()
   }
 
-  val sc = vertices.sparkContext
 
   /**
    * We need to combiner vertex attribute with edges to construct triplet, however, as vertex

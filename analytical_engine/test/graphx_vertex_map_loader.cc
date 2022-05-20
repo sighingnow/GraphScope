@@ -69,7 +69,6 @@ void Load(const std::string local_vm_ids_str, vineyard::Client& client) {
         LOG(INFO) << "Worker [" << comm_spec.worker_id()
                   << "](" + host_name + "): found local id, trimed to "
                   << local_vm_ids.back();
-        break;
       }
     }
     if (local_vm_ids.size() == 0) {
