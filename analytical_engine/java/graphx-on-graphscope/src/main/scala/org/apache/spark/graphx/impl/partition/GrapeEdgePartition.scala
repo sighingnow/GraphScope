@@ -51,7 +51,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def getOutDegreeArray : PrimitiveArray[Int] = {
-    val len = vm.innerVertexSize().toInt
+    val len = vm.getVertexSize.toInt
     val res = PrimitiveArray.create(classOf[Int], len)
     var i = 0;
     while (i < endLid){
@@ -65,7 +65,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def getInDegreeArray : PrimitiveArray[Int] = {
-    val len = vm.innerVertexSize().toInt
+    val len = vm.getVertexSize.toInt
     val res = PrimitiveArray.create(classOf[Int], len)
     var i = 0;
     while (i < endLid){
@@ -79,7 +79,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def getInOutDegreeArray : PrimitiveArray[Int] = {
-    val len = vm.innerVertexSize().toInt
+    val len = vm.getVertexSize.toInt
     val res = PrimitiveArray.create(classOf[Int], len)
     var i = 0
     while (i < endLid) {
