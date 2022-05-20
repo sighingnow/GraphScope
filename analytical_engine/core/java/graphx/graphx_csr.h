@@ -545,7 +545,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       std::vector<std::thread> work_threads(2);
       // std::vector<int> cnt(thread_num);
       work_threads[0] = std::thread([&] {
-        for (auto i = 0; i < len; ++i) {
+        for (size_t i = 0; i < len; ++i) {
           vid_t srcLid = src_accessor[i];
           vid_t dstLid = dst_accessor[i];
           if (out_edge_active.get_bit(i)) {
@@ -557,7 +557,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
         }
       });
       work_threads[1] = std::thread([&] {
-        for (auto i = 0; i < len; ++i) {
+        for (size_t i = 0; i < len; ++i) {
           vid_t srcLid = src_accessor[i];
           vid_t dstLid = dst_accessor[i];
           if (in_edge_active.get_bit(i)) {

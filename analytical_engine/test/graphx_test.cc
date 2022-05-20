@@ -91,7 +91,7 @@ gs::GraphXVertexMap<int64_t, uint64_t> TestGraphXVertexMap(
     LOG(INFO) << "Worker: " << comm_spec.worker_id()
               << " local vm: " << partial_map;
     gs::BasicGraphXVertexMapBuilder<int64_t, uint64_t> builder(
-        client, comm_spec, partial_map);
+        client, comm_spec, 0, partial_map);
     auto graphx_vm =
         std::dynamic_pointer_cast<gs::GraphXVertexMap<int64_t, uint64_t>>(
             builder.Seal(client));

@@ -3,10 +3,11 @@ package org.apache.spark.graphx.utils
 import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXVertexMap, LocalVertexMap, VineyardClient}
 import org.apache.spark.graphx.impl.EdgePartitionBuilder
 import org.apache.spark.graphx.impl.partition.GrapeEdgePartitionBuilder
+import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag
 
-class GrapeMeta[VD: ClassTag, ED: ClassTag](val partitionID: Int, val partitionNum : Int, val vineyardClient : VineyardClient, val hostName : String) {
+class GrapeMeta[VD: ClassTag, ED: ClassTag](val partitionID: Int, val partitionNum : Int, val vineyardClient : VineyardClient, val hostName : String) extends Logging {
 
   var localVertexMap : LocalVertexMap[Long,Long] = null.asInstanceOf[LocalVertexMap[Long,Long]]
   var edgePartitionBuilder : GrapeEdgePartitionBuilder[VD,ED] = null.asInstanceOf[GrapeEdgePartitionBuilder[VD,ED]]
@@ -22,6 +23,7 @@ class GrapeMeta[VD: ClassTag, ED: ClassTag](val partitionID: Int, val partitionN
   }
 
   def setGlobalVM(globalVMId : Long) : Unit = {
+    log.info(s"setting global vm id ${globalVMId}")
     this.globalVMId = globalVMId
   }
   def setGlobalVM(globalVM : GraphXVertexMap[Long,Long]) : Unit = {
