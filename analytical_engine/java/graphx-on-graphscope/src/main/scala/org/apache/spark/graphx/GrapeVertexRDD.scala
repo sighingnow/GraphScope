@@ -72,7 +72,7 @@ object GrapeVertexRDD extends Logging{
         val grapeVertexPartition = vertexPartitionBuilder.build(tuple._1, epart.client, epart.vm)
         Iterator((tuple._1, grapeVertexPartition))
       }
-    )
+    ).cache()
     new GrapeVertexRDDImpl[VD](grapePartition,storageLevel)
   }
 }

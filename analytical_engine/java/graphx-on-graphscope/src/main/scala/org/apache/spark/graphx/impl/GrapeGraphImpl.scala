@@ -104,7 +104,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     }).collect()
   }
 
-  val sc = vertices.sparkContext
+//  val sc = vertices.sparkContext
 
   /**
    * We need to combiner vertex attribute with edges to construct triplet, however, as vertex
