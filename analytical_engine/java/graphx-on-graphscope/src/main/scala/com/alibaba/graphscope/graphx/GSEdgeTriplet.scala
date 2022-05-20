@@ -3,6 +3,7 @@ package com.alibaba.graphscope.graphx
 import org.apache.spark.graphx.EdgeTriplet
 
 abstract class GSEdgeTriplet[VD,ED] extends EdgeTriplet[VD,ED]{
+  var index : Long = -1
   def getSrcOid : Long = srcId
   def getSrcAttr : VD = srcAttr
   def getDstOid : Long = dstId

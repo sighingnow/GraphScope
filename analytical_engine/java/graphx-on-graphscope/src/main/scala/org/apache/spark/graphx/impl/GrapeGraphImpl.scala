@@ -4,6 +4,7 @@ import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.graphx.VertexDataBuilder
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
 import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
+import org.slf4j.{Logger, LoggerFactory}
 //import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
 import org.apache.spark.rdd.RDD
@@ -34,6 +35,7 @@ import scala.reflect.{ClassTag, classTag}
 class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
                                                             @transient val vertices: GrapeVertexRDD[VD],
                                                             @transient val edges: GrapeEdgeRDD[ED]) extends Graph[VD, ED] with Serializable {
+  val logger: Logger = LoggerFactory.getLogger(classOf[GrapeGraphImpl[_,_]].toString)
 
   protected def this(vertices : GrapeVertexRDDImpl[VD], edges : GrapeEdgeRDDImpl[VD,ED], fragId : String) =
     this(vertices.asInstanceOf[GrapeVertexRDD[VD]],edges.asInstanceOf[GrapeEdgeRDD[ED]])
@@ -51,7 +53,6 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     edges.grapePartitionsRDD.mapPartitions(iter => {
       if (iter.hasNext){
         val tuple = iter.next()
-
         Iterator(ExecutorUtils.getHostName + ":" + tuple._1 +":" + tuple._2.vm.id())
       }
       else {
@@ -81,22 +82,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         val tuple = iter.next()
         val vPart = tuple._2
         val pid = tuple._1
-        if (vPart.vertexData != null){
-          Iterator(ExecutorUtils.getHostName + ":" + pid + ":" + vPart.vertexData.id())
-        }
-        else {
-          val newVdataBuilder = ScalaFFIFactory.newVertexDataBuilder[VD]()
-          val arrowArrayBuilder = ScalaFFIFactory.newArrowArrayBuilder[VD](GrapeUtils.getRuntimeClass[VD].asInstanceOf[Class[VD]])
-          arrowArrayBuilder.reserve(vPart.partVnum)
-          var i = 0
-          while (i < vPart.partVnum){
-            arrowArrayBuilder.unsafeAppend(vPart.getData(i))
-            i += 1
-          }
-          newVdataBuilder.init(arrowArrayBuilder)
-          val res = newVdataBuilder.seal(vPart.client).get()
-          Iterator(ExecutorUtils.getHostName + ":"+ pid + ":" + res.id())
-        }
+        Iterator(ExecutorUtils.getHostName + ":" + pid + ":" + vPart.vertexData.vineyardID)
       }
       else {
         Iterator.empty
@@ -105,13 +91,14 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
 
-  /**
-   * We need to combiner vertex attribute with edges to construct triplet, however, as vertex
-   * attrs are split into different parttions, thus we need to gather them into one same holder,
-   * vertex data manager.
-   */
   @transient override lazy val triplets: RDD[EdgeTriplet[VD, ED]] = {
-    null
+    grapeEdges.grapePartitionsRDD.zipPartitions(grapeVertices.grapePartitionsRDD){
+      (edgeIter, vertexIter) => {
+        val (pid, edgePart) = edgeIter.next()
+        val (_, vertexPart) = vertexIter.next()
+        edgePart.tripletIterator(vertexPart.vertexData)
+      }
+    }
   }
 
   override def persist(newLevel: StorageLevel): Graph[VD, ED] = {
@@ -154,37 +141,76 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
   override def partitionBy(partitionStrategy: PartitionStrategy): Graph[VD, ED] = {
-    throw new IllegalStateException("Currently grape graph doesn't support partition")
+    logger.warn("Currently grape graph doesn't support partition")
+    this
   }
 
   override def partitionBy(partitionStrategy: PartitionStrategy, numPartitions: PartitionID): Graph[VD, ED] = {
-    throw new IllegalStateException("Currently grape graph doesn't support partition")
+    logger.warn("Currently grape graph doesn't support partition")
+    this
   }
   def mapVertices[VD2: ClassTag](map: (VertexId, VD) => VD2)
                                 (implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
     new GrapeGraphImpl[VD2,ED](vertices.mapVertices[VD2](map), edges)
   }
 
+  override def mapEdges[ED2](f: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2])(implicit evidence$5: ClassTag[ED2]): Graph[VD, ED2] = {
+    val newEdges = grapeEdges.mapEdgePartitions((pid,part) => part.map(f(pid, part.iterator)))
+    new GrapeGraphImpl[VD,ED2](vertices,newEdges)
+  }
 
-//  override def mapVertices[VD2](map: (VertexId, VD) => VD2)(implicit eq: VD =:= VD2): Graph[VD2, ED] = {
-//      new GrapeGraphImpl[VD2,ED](vertices.mapVertices[VD2](map), edges)
-//  }
+  override def mapTriplets[ED2](f: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], tripletFields: TripletFields)(implicit evidence$8: ClassTag[ED2]): Graph[VD, ED2] = {
+    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(grapeVertices.grapePartitionsRDD){
+      (eIter,vIter) => {
+        val (pid, vPart) = vIter.next()
+        val (_, epart) = eIter.next()
+        Iterator((pid,epart.map(f(pid, epart.tripletIterator(vPart.vertexData, tripletFields.useSrc, tripletFields.useDst)))))
+      }
+    }
+    val newEdges = grapeEdges.withPartitionsRDD(newEdgePartitions)
+    new GrapeGraphImpl[VD,ED2](vertices,newEdges)
+  }
 
-    override def mapEdges[ED2](map: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2])(implicit evidence$5: ClassTag[ED2]): Graph[VD, ED2] = ???
+  override def reverse: Graph[VD, ED] = {
+    new GrapeGraphImpl(vertices, grapeEdges.reverse)
+  }
 
-  override def mapTriplets[ED2](map: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], tripletFields: TripletFields)(implicit evidence$8: ClassTag[ED2]): Graph[VD, ED2] = ???
+  override def subgraph(epred: EdgeTriplet[VD, ED] => Boolean, vpred: (VertexId, VD) => Boolean): Graph[VD, ED] = {
+    val newVertices = grapeVertices.mapGrapeVertexPartitions(_.filter(vpred))
+    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD){
+      (eIter,vIter) => {
+        val (pid, vPart) = vIter.next()
+        val (_, ePart) = eIter.next()
+        Iterator((pid, ePart.filter(epred,vpred, vPart.vertexData)))
+      }
+    }
+    val newEdges = grapeEdges.withPartitionsRDD(newEdgePartitions)
+    new GrapeGraphImpl(newVertices, newEdges)
+  }
 
-  override def reverse: Graph[VD, ED] = ???
+  override def mask[VD2 : ClassTag, ED2 : ClassTag](other: Graph[VD2, ED2]): Graph[VD, ED] = {
+    val newVertices = grapeVertices.innerJoin(other.asInstanceOf[GrapeGraphImpl[VD,ED]].grapeVertices){ (oid, v1, v2)=> v1}
+    val newEdges = grapeEdges.innerJoin(other.asInstanceOf[GrapeGraphImpl[VD,ED]].grapeEdges){ (src,dst,e1,e2) => e1}
+    new GrapeGraphImpl(newVertices,newEdges)
+  }
 
-  override def subgraph(epred: EdgeTriplet[VD, ED] => Boolean, vpred: (VertexId, VD) => Boolean): Graph[VD, ED] = ???
+  override def groupEdges(merge: (ED, ED) => ED): Graph[VD, ED] = {
+    new GrapeGraphImpl(vertices, grapeEdges.withPartitionsRDD(
+      grapeEdges.grapePartitionsRDD.mapPartitions(iter => {
+        val (pid, part) = iter.next()
+        Iterator((pid, part.groupEdges(merge)))
+      })
+    ))
+  }
 
-  override def mask[VD2, ED2](other: Graph[VD2, ED2])(implicit evidence$9: ClassTag[VD2], evidence$10: ClassTag[ED2]): Graph[VD, ED] = ???
+  override private[graphx] def aggregateMessagesWithActiveSet[A: ClassTag](sendMsg: EdgeContext[VD, ED, A] => Unit, mergeMsg: (A, A) => A, tripletFields: TripletFields, activeSetOpt: Option[(VertexRDD[_], EdgeDirection)]) : GrapeVertexRDD[A] = {
+    throw new IllegalStateException("Not implemented")
+  }
 
-  override def groupEdges(merge: (ED, ED) => ED): Graph[VD, ED] = ???
-
-  override private[graphx] def aggregateMessagesWithActiveSet[A](sendMsg: EdgeContext[VD, ED, A] => Unit, mergeMsg: (A, A) => A, tripletFields: TripletFields, activeSetOpt: Option[(VertexRDD[_], EdgeDirection)])(implicit evidence$12: ClassTag[A]) = ???
-
-  override def outerJoinVertices[U, VD2](other: RDD[(VertexId, U)])(mapFunc: (VertexId, VD, Option[U]) => VD2)(implicit evidence$13: ClassTag[U], evidence$14: ClassTag[VD2], eq: VD =:= VD2): Graph[VD2, ED] = ???
+  override def outerJoinVertices[U : ClassTag, VD2 : ClassTag](other: RDD[(VertexId, U)])(mapFunc: (VertexId, VD, Option[U]) => VD2)(implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
+    val newVertices = vertices.leftJoin(other)(mapFunc)
+    new GrapeGraphImpl[VD2,ED](newVertices,edges)
+  }
 }
 
 
@@ -203,19 +229,4 @@ object GrapeGraphImpl {
     new GrapeGraphImpl[VD,ED](vertices.asInstanceOf[GrapeVertexRDDImpl[VD]], edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]], fragId);
   }
 
-
-  def getFragId(fragIds : String): String = {
-    val fragsStrs = fragIds.split(",")
-    println(s"frag str ${fragsStrs}")
-    val hostName = GrapeUtils.getSelfHostName
-    for (frag <- fragsStrs){
-      println(s"for frag ${frag}")
-      if (frag.startsWith(hostName)){
-        val fragId = frag.substring(frag.indexOf(":") + 1, frag.size)
-        println(s"matched ${fragId}")
-        return fragId
-      }
-    }
-    throw new IllegalStateException("Empty string found")
-  }
 }

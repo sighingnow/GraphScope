@@ -3,6 +3,7 @@ package org.apache.spark.graphx
 import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
+import org.apache.spark.graphx.impl.partition.data.GrapeEdataStore
 import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived, GrapeEdgePartition, GrapeEdgePartitionBuilder}
 import org.apache.spark.graphx.utils.{Constant, ExecutorUtils, GrapeMeta, ScalaFFIFactory}
 import org.apache.spark.internal.Logging
@@ -22,6 +23,8 @@ abstract class GrapeEdgeRDD[ED](sc: SparkContext,
 
   override def innerJoin[ED2: ClassTag, ED3: ClassTag](other: EdgeRDD[ED2])
   (f: (VertexId, VertexId, ED, ED2) => ED3): GrapeEdgeRDD[ED3]
+
+  override def reverse: GrapeEdgeRDD[ED];
 
   def generateDegreeRDD(originalVertexRDD : GrapeVertexRDD[_], edgeDirection : EdgeDirection) : GrapeVertexRDD[Int]
 }
@@ -141,7 +144,7 @@ object GrapeEdgeRDD extends Logging{
     val grapeEdgePartitions = metaUpdated2.mapPartitions(iter => {
       if (iter.hasNext) {
         val (meta, part) = iter.next()
-        Iterator((meta.partitionID, new GrapeEdgePartition[VD, ED](meta.partitionID, meta.graphxCSR, meta.globalVM, meta.vineyardClient)))
+        Iterator((meta.partitionID, new GrapeEdgePartition[VD, ED](meta.partitionID, meta.graphxCSR, meta.globalVM,new GrapeEdataStore[ED](meta.graphxCSR), meta.vineyardClient)))
       }
       else Iterator.empty
     }).cache()
@@ -150,5 +153,4 @@ object GrapeEdgeRDD extends Logging{
     log.info(s"[GrapeEdgeRDD:] Finish Construct EdgeRDD, total edges count ${rdd.count()}")
     rdd
   }
-
 }

@@ -20,22 +20,23 @@ abstract class GrapeVertexRDD[VD](
   override def partitionsRDD = null
 
   private[graphx] def mapGrapeVertexPartitions[VD2: ClassTag](
-                                                   f: GrapeVertexPartition[VD] => GrapeVertexPartition[VD2])
+                                                               f: GrapeVertexPartition[VD] => GrapeVertexPartition[VD2])
   : GrapeVertexRDD[VD2];
 
-  private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])])
+  private[graphx] def withGrapePartitionsRDD[VD2: ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])])
   : GrapeVertexRDD[VD2]
 
-  def mapVertices[VD2: ClassTag](map: (VertexId, VD) => VD2) : GrapeVertexRDD[VD2]
-  /**
-   * Write the updated vertex data to memory mapped region.
-   */
-//  def writeBackVertexData(vdataMappedPath : String, size : Long): Unit
+  def mapVertices[VD2: ClassTag](map: (VertexId, VD) => VD2): GrapeVertexRDD[VD2]
 
-  /**
-   * Create a new vertex rdd which contains the data updated from shared memeory
-   */
-  def withGrapeVertexData(vdataMappedPath: String, size : Long) : GrapeVertexRDD[VD]
+  override def innerZipJoin[U: ClassTag, VD2: ClassTag](other: VertexRDD[U])
+                                              (f: (VertexId, VD, U) => VD2): GrapeVertexRDD[VD2]
+
+  override def innerJoin[U : ClassTag, VD2 : ClassTag](other: RDD[(VertexId, U)])(f: (VertexId, VD, U) => VD2): GrapeVertexRDD[VD2]
+
+  override def leftJoin[VD2: ClassTag, VD3: ClassTag](other: RDD[(VertexId, VD2)])(f: (VertexId, VD, Option[VD2]) => VD3)
+  : GrapeVertexRDD[VD3]
+  override def leftZipJoin[VD2: ClassTag, VD3: ClassTag]
+  (other: VertexRDD[VD2])(f: (VertexId, VD, Option[VD2]) => VD3): VertexRDD[VD3]
 }
 
 object GrapeVertexRDD extends Logging{

@@ -24,6 +24,9 @@ public interface GraphXVertexMap<OID_T,VID_T> extends FFIPointer {
     @CXXValue
     OID_T getId(VID_T vertex);
 
+    @FFINameAlias("GetVertex")
+    boolean getVertex(OID_T oid, @CXXReference Vertex<OID_T> vertex);
+
     @FFINameAlias("GetTotalVertexSize")
     long getTotalVertexSize();
 

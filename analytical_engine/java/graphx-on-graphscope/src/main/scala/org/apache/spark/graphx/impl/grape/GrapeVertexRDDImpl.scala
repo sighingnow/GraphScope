@@ -22,8 +22,9 @@ class GrapeVertexRDDImpl[VD] private[graphx](
                                             (implicit override protected val vdTag: ClassTag[VD])
   extends GrapeVertexRDD[VD](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
+  setName("GrapeVertexRDDImpl")
   override def reindex(): VertexRDD[VD] = {
-    throw new IllegalStateException("Not implemented")
+    this
   }
   override protected def getPartitions: Array[Partition] = grapePartitionsRDD.partitions
 
@@ -32,7 +33,6 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   override def compute(part: Partition, context: TaskContext): Iterator[(VertexId,VD)] = {
     val p = firstParent[(PartitionID, GrapeVertexPartition[VD])].iterator(part, context)
     if (p.hasNext) {
-      //      p.next()._2.iterator.map(_.copy())
       p.next()._2.iterator.map(_.copy())
     } else {
       Iterator.empty
@@ -40,12 +40,11 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   }
 
   def mapVertices[VD2: ClassTag](map: (VertexId, VD) => VD2) : GrapeVertexRDD[VD2] = {
-//    this.withGrapePartitionsRDD(createNewPartitions(map))
     this.mapGrapeVertexPartitions(_.map(map))
   }
 
   override def count(): Long = {
-    grapePartitionsRDD.map(_._2.partVnum).fold(0)(_ + _)
+    grapePartitionsRDD.map(_._2.bitSet.cardinality()).fold(0)(_ + _)
   }
 
   override private[graphx] def mapVertexPartitions[VD2](f: ShippableVertexPartition[VD] => ShippableVertexPartition[VD2])(implicit evidence$1: ClassTag[VD2]) = {
@@ -71,12 +70,10 @@ class GrapeVertexRDDImpl[VD] private[graphx](
 
   override def mapValues[VD2](f: VD => VD2)(implicit evidence$2: ClassTag[VD2]): VertexRDD[VD2] = {
     this.mapGrapeVertexPartitions(_.map((vid, attr) => f(attr)))
-//    this.mapVertices((_,vd)=>f(vd))
   }
 
   override def mapValues[VD2](f: (VertexId, VD) => VD2)(implicit evidence$3: ClassTag[VD2]): VertexRDD[VD2] = {
     this.mapGrapeVertexPartitions(_.map(f))
-    this.mapVertices(f)
   }
 
   override def minus(other: RDD[(VertexId, VD)]): VertexRDD[VD] = {
@@ -122,7 +119,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     this.withGrapePartitionsRDD(newPartitionsRDD)
   }
 
-  override def leftZipJoin[VD2 : ClassTag, VD3 : ClassTag](other: VertexRDD[VD2])(f: (VertexId, VD, Option[VD2]) => VD3): VertexRDD[VD3] = {
+  override def leftZipJoin[VD2 : ClassTag, VD3 : ClassTag](other: VertexRDD[VD2])(f: (VertexId, VD, Option[VD2]) => VD3): GrapeVertexRDD[VD3] = {
     val newPartitionsRDD = other match {
       case other : GrapeVertexRDDImpl[VD2] => {
         grapePartitionsRDD.zipPartitions(
@@ -137,16 +134,16 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     this.withGrapePartitionsRDD(newPartitionsRDD)
   }
 
-  override def leftJoin[VD2, VD3](other: RDD[(VertexId, VD2)])(f: (VertexId, VD, Option[VD2]) => VD3)(implicit evidence$6: ClassTag[VD2], evidence$7: ClassTag[VD3]): VertexRDD[VD3] = {
+  override def leftJoin[VD2 : ClassTag, VD3 : ClassTag](other: RDD[(VertexId, VD2)])(f: (VertexId, VD, Option[VD2]) => VD3): GrapeVertexRDD[VD3] = {
     other match {
-      case other: GrapeVertexRDDImpl[_] =>
+      case other: GrapeVertexRDDImpl[VD2] =>
         leftZipJoin(other)(f)
       case _ =>
         throw new IllegalArgumentException("currently not support to join with non-grape vertex rdd")
     }
   }
 
-  override def innerZipJoin[U : ClassTag, VD2 : ClassTag](other: VertexRDD[U])(f: (VertexId, VD, U) => VD2): VertexRDD[VD2] = {
+  override def innerZipJoin[U : ClassTag, VD2 : ClassTag](other: VertexRDD[U])(f: (VertexId, VD, U) => VD2): GrapeVertexRDD[VD2] = {
     val newPartitionsRDD = other match {
       case other : GrapeVertexRDDImpl[U] => {
         grapePartitionsRDD.zipPartitions(
@@ -161,10 +158,9 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     this.withGrapePartitionsRDD(newPartitionsRDD)
   }
 
-  override def innerJoin[U, VD2](other: RDD[(VertexId, U)])(f: (VertexId, VD, U) => VD2)(implicit evidence$10: ClassTag[U], evidence$11: ClassTag[VD2]): VertexRDD[VD2] = {
+  override def innerJoin[U: ClassTag, VD2: ClassTag](other: RDD[(VertexId, U)])(f: (VertexId, VD, U) => VD2): GrapeVertexRDD[VD2] = {
     other match {
-      case other: GrapeVertexRDDImpl[U] if this.partitioner == other.partitioner =>
-        innerZipJoin(other)(f)
+      case other: GrapeVertexRDDImpl[U] => innerZipJoin(other)(f)
       case _ =>
           throw new IllegalArgumentException("Current only support join with grape vertex rdd");
     }
@@ -199,41 +195,6 @@ class GrapeVertexRDDImpl[VD] private[graphx](
       }
     }
     this.withGrapePartitionsRDD[VD2](newPartitionsRDD)
-  }
-
-//  override def writeBackVertexData(vdataMappedPath : String, vdataMappedSize : Long): Unit = {
-//    grapePartitionsRDD.foreachPartition(iter => {
-//      if (iter.hasNext){
-//        val tuple = iter.next()
-//        val pid = tuple._1
-//        val part = tuple._2
-//        FragmentRegistry.updateVertexPartition(pid, part)
-//      }
-//    })
-//    grapePartitionsRDD.foreachPartition(iter => {
-//      if (iter.hasNext){
-//        val tuple = iter.next()
-//        val pid = tuple._1
-//        val part = tuple._2
-//        FragmentRegistry.mapVertexData(pid, vdataMappedPath, vdataMappedSize)
-//      }
-//    })
-//  }
-
-  override def withGrapeVertexData(vdataMappedPath: String, size : Long) : GrapeVertexRDD[VD] = {
-    val newPartitionRDD = grapePartitionsRDD.mapPartitions(iter => {
-      if (iter.hasNext){
-        val tuple = iter.next();
-        val pid = tuple._1
-        val part = tuple._2
-        //For every part, we read new data from the shared memroy
-        Iterator((pid, part.withNewValues(vdataMappedPath, size)))
-      }
-      else {
-        Iterator.empty
-      }
-    })
-    this.withGrapePartitionsRDD(newPartitionRDD)
   }
 
   override def reverseRoutingTables(): VertexRDD[VD] = {

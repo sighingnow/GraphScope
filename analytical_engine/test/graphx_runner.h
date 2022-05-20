@@ -80,16 +80,34 @@ vineyard::ObjectID splitAndGet(grape::CommSpec& comm_spec,
   boost::split(splited, ids, boost::is_any_of(","));
   CHECK_EQ(splited.size(), comm_spec.worker_num());
   auto my_host_name = getHostName();
-  for (auto str : splited) {
-    if (str.find(my_host_name) != std::string::npos) {
-      auto trimed = str.substr(str.find(my_host_name) + my_host_name.size() + 1);
-      LOG(INFO) << "trimed: " << trimed;
-      return std::stoull(trimed.c_str(), NULL, 10);
+  std::vector<std::string> pid_vineyard_id;
+  {
+    for (auto str : splited) {
+      if (str.find(my_host_name) != std::string::npos) {
+        auto trimed =
+            str.substr(str.find(my_host_name) + my_host_name.size() + 1);
+        // LOG(INFO) << "trimed: " << trimed;
+        pid_vineyard_id.push_back(trimed);
+      }
     }
   }
-  LOG(ERROR) << "No available res could be found in " << ids << " on "
-             << my_host_name;
-  return vineyard::InvalidObjectID();
+  CHECK_EQ(pid_vineyard_id.size(), comm_spec.local_num());
+  vineyard::ObjectID res_id;
+  int graphx_pid;
+
+  {
+    std::vector<std::string> graphx_pid_vm_id;
+    boost::split(graphx_pid_vm_id, pid_vineyard_id[comm_spec.local_id()],
+                 boost::is_any_of(":"));
+    CHECK_EQ(graphx_pid_vm_id.size(), 2);
+    res_id = std::stoull(graphx_pid_vm_id[1]);
+    graphx_pid = std::stoi(graphx_pid_vm_id[0]);
+  }
+
+  LOG(ERROR) << "worker [" << comm_spec.worker_id() << "], local id ["
+             << comm_spec.local_id() << "] got pid " << graphx_pid << ", id "
+             << res_id;
+  return res;
 }
 
 template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
