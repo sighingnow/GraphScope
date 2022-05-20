@@ -259,13 +259,14 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 
   def map[ED2: ClassTag](iter: Iterator[ED2]): GrapeEdgePartition[VD, ED2] = {
     val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], edataStore.size.toInt).asInstanceOf[PrimitiveArray[ED2]]
-    var ind = 0
+    var ind = activeEdgeSet.nextSetBit(0)
     val limit = edataStore.size.toInt
     while (iter.hasNext) {
       newData.set(ind, iter.next())
-      ind += 1
+      require(ind != -1, s"mapping edges: received edge iterator length neq to cur active edges ${activeEdgeSet.cardinality()}")
+      ind = activeEdgeSet.nextSetBit(ind + 1)
     }
-    require(ind == limit, s"after map new edata, ind ${ind}, expect edata size ${limit}")
+    require(ind == activeEdgeSet.cardinality(), s"after map new edata, ind ${ind}, expect edata size ${activeEdgeSet.cardinality()}")
     this.withNewEdata(newData)
   }
 
