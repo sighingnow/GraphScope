@@ -4,7 +4,7 @@ import org.apache.spark.graphx.{EdgeTriplet, GraphLoader, VertexId}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 
-class GraphTransform extends Logging{
+object GraphTransform extends Logging{
   def main(args: Array[String]) : Unit = {
     val spark = SparkSession
       .builder

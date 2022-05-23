@@ -107,7 +107,7 @@ vineyard::ObjectID splitAndGet(grape::CommSpec& comm_spec,
   LOG(ERROR) << "worker [" << comm_spec.worker_id() << "], local id ["
              << comm_spec.local_id() << "] got pid " << graphx_pid << ", id "
              << res_id;
-  return res;
+  return res_id;
 }
 
 template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
