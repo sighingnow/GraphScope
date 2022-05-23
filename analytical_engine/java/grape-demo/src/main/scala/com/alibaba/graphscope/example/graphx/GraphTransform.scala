@@ -31,7 +31,6 @@ object GraphTransform extends Logging{
     val graph3 = graph2.outDegrees.mapValues(_ => 0)
     val degreeSum = graph3.values.sum()
     log.info(s"after filter ${degreeSum}")
-    /*
     val graph5 = graph.groupEdges((a,b) => a +b)
     val inDegreeSum = graph5.inDegrees.values.sum()
     val outDegreeSum = graph5.outDegrees.values.sum()
@@ -42,7 +41,8 @@ object GraphTransform extends Logging{
     for (triplet <- triplets){
       log.info(s"triplet: ${triplet}")
     }
-
+    log.info(s" num of triplets ${triplets.length}")
+    /*
     val graph7 = graph.reverse
     val graph8 = graph7.filter(_.mapVertices((_, vd)=> vd.toInt).mapEdges(edge=>edge.attr), epred = (trip : EdgeTriplet[Int,Int]) => true, vpred = (vid:VertexId, vd: Int) => vid== 1)
     graph8.numVertices
