@@ -233,7 +233,7 @@ import com.alibaba.fastffi.FFIGenBatch;
                   @CXXTemplate(
                       cxx = "gs::GraphXFragment<int64_t,uint64_t,std::string,double>",
                       java =
-                          "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,com.alibaba.fastffi.impl.CXXStdString.lang.Double>",
+                          "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,com.alibaba.fastffi.impl.CXXStdString,java.lang.Double>",
                       include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H))
               }),
           @FFIGen(type = "com.alibaba.graphscope.graphx.BasicLocalVertexMapBuilder",

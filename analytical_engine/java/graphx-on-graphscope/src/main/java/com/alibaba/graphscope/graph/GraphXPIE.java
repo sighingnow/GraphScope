@@ -59,40 +59,24 @@ public class GraphXPIE<VD, ED, MSG_T> {
   private PrimitiveArray<ED> newEdataArray;
   private long innerVerticesNum, verticesNum;
   private BitSet curSet,nextSet;
-  private URLClassLoader classLoader;
 
   public PrimitiveArray<VD> getNewVdataArray() {
     return newVdataArray;
   }
 
-  public GraphXPIE(GraphXConf<VD, ED, MSG_T> conf, String vprogPath, String sendMsgPath,
-                   String mergeMsgPath, URLClassLoader classLoader) {
-    this.conf = conf;
-    this.classLoader = classLoader;
-    try {
-      this.vprog = (Function3<Long, VD, MSG_T, VD>) SerializationUtils.read(classLoader, vprogPath);
-      this.sendMsg =
-          (Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>>) SerializationUtils.read(
-              classLoader, sendMsgPath);
-      this.mergeMsg =
-          (Function2<MSG_T, MSG_T, MSG_T>) SerializationUtils.read(classLoader, mergeMsgPath);
-    } catch (ClassNotFoundException e) { e.printStackTrace(); }
-    this.edgeTriplet = new GSEdgeTripletImpl<>();
-  }
-
   public GraphXPIE(GraphXConf<VD, ED, MSG_T> conf, Function3<Long, VD, MSG_T, VD> vprog,
                    Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> sendMsg,
-                   Function2<MSG_T, MSG_T, MSG_T> mergeMsg, URLClassLoader classLoader) {
+                   Function2<MSG_T, MSG_T, MSG_T> mergeMsg,MSG_T initialMessage) {
     this.conf = conf;
-    this.classLoader = classLoader;
     this.vprog = vprog;
     this.sendMsg = sendMsg;
     this.mergeMsg = mergeMsg;
     this.edgeTriplet = new GSEdgeTripletImpl<>();
+    this.initialMessage = initialMessage;
   }
 
   public void init(IFragment<Long, Long, VD, ED> fragment, DefaultMessageManager messageManager,
-                   MSG_T initialMessage, int maxIterations) {
+                    int maxIterations) {
     this.iFragment = fragment;
     if (iFragment.fragmentType() != GraphXFragmentAdaptor.fragmentType) {
       throw new IllegalStateException("Only support graphx fragment");
@@ -100,12 +84,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
     this.graphXFragment =
         ((GraphXFragmentAdaptor<Long, Long, VD, ED>) iFragment).getGraphXFragment();
     oldEdataArray = graphXFragment.getEdataArray();
-//    logger.info("edata array size {}, edge num{}", oldEdataArray.getLength(),
-//                graphXFragment.getEdgeNum());
-//    if (oldEdataArray.getLength() * 2 != graphXFragment.getEdgeNum()) {
-//      throw new IllegalStateException("not equal" + oldEdataArray.getLength() + ","
-//                                      + graphXFragment.getEdgeNum());
-//    }
 
     oldVdataArray = graphXFragment.getVdataArray();
     logger.info("vdata array size {}, frag vnum{}", oldVdataArray.getLength(),

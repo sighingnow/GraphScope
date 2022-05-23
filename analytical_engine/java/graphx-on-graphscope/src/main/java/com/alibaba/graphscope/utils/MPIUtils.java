@@ -68,17 +68,15 @@ public class MPIUtils {
 
     public static <MSG,VD,ED> void launchGraphX(
         String[] vmIds, String []csrIds, String[] vdataIds,
-        Class<? extends MSG> msgClass, Class<?extends VD> vdClass, Class<? extends ED> edClass, String vdPath,
-        String vprogPath, String sendMsgPath, String mergeMsgpath,
-        MSG initialMsg, int maxIteration){
+        Class<? extends VD> vdClass, Class<?extends ED> edClass, Class<? extends MSG> msgClass,
+        String serialPath, int maxIteration){
         int numWorkers = checkIds(vmIds, csrIds, vdataIds);
         String hostNameSlots = generateHostNameAndSlotsFromIDs(vmIds);
         logger.info("running mpi with {} workers", numWorkers);
         String[] commands = {"/bin/bash", LAUNCH_GRAPHX_SHELL_SCRIPT, String.valueOf(numWorkers), hostNameSlots,
+            GrapeUtils.classToStr(vdClass), GrapeUtils.classToStr(edClass), GrapeUtils.classToStr(msgClass),
             String.join(",", vmIds),String.join(",", csrIds), String.join(",",vdataIds),
-            GrapeUtils.classToStr(msgClass), GrapeUtils.classToStr(vdClass), GrapeUtils.classToStr(edClass), vdPath,
-            vprogPath, sendMsgPath, mergeMsgpath,
-            initialMsg.toString(), String.valueOf(maxIteration)};
+            serialPath, String.valueOf(maxIteration)};
 
         logger.info("Running with commands: " + String.join(" ", commands));
         long startTime = System.nanoTime();

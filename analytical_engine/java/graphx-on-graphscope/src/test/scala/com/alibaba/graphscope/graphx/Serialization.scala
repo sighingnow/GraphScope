@@ -10,7 +10,7 @@ class Serialization extends FunSuite{
     val vprog : (Long,Long,Long) => Long = {
       (a,b,c) => a
     }
-    SerializationUtils.write(vprog, "/tmp/vprog-tmp")
+    SerializationUtils.write("/tmp/vprog-tmp",vprog)
     println("success in serialization")
   }
 
@@ -19,9 +19,9 @@ class Serialization extends FunSuite{
     val vprog : (Long,Long,Long) => Long = {
       (a,b,c) => a + value
     }
-    SerializationUtils.write(vprog, "/tmp/vprog-tmp")
+    SerializationUtils.write("/tmp/vprog-tmp",vprog)
     val func = SerializationUtils.read(getClass.getClassLoader,"/tmp-vprog-tmp")
-    val funcCasted = func.asInstanceOf[(Long,Long,Long)=>Long]
+    val funcCasted = func(0).asInstanceOf[(Long,Long,Long)=>Long]
     assert(funcCasted(1,1,1).equals(2), s"not equal ${funcCasted(1,1,1)}")
   }
 }
