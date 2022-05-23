@@ -54,6 +54,7 @@ object GrapeEdgeRDD extends Logging{
           val (pid, shuffle) = iter.next()
           require(pid == ind)
           if (shuffle != null){
+              log.info(s"partition ${ind} receives msg from ${shuffle.fromPid}")
               edgeShuffleReceived.set(shuffle.fromPid, shuffle)
 	        }
         }

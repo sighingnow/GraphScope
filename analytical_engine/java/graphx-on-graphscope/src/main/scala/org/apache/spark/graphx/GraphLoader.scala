@@ -79,6 +79,7 @@ object GraphLoader extends Logging {
         var ind = 0
         while (ind < numEdgePartitions){
 //          if (ind != fromPid){
+            log.info(s"partition ${fromPid} send msg to ${ind}")
             res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array, pid2attr(ind).trim().array)))
 //          }
           ind += 1
