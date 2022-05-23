@@ -129,6 +129,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
         curNbr.setAddress(beginAddr + offset * NBR_SIZE)
         val dstLid = curNbr.vid()
         val edata = edataStore.getData(curNbr.eid())
+        edge.eid = curNbr.eid()
         edge.srcId = vm.getId(curLid)
         edge.dstId = vm.getId(dstLid)
         edge.attr = edata
@@ -151,7 +152,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     curNbr.setAddress(beginAddr + offset * NBR_SIZE)
 
     def createTriplet : GSEdgeTriplet[VD,ED] = {
-      if (edgeReversed){
+      if (!edgeReversed){
         new GSEdgeTripletImpl[VD,ED];
       }
       else {
@@ -177,6 +178,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       curNbr.setAddress(beginAddr + offset * NBR_SIZE)
       val dstLid = curNbr.vid()
       val edata = edataStore.getData(curNbr.eid())
+      edgeTriplet.eid = curNbr.eid()
       edgeTriplet.index = offset
       edgeTriplet.srcId = vm.getId(curLid)
       edgeTriplet.dstId = vm.getId(dstLid)
@@ -248,10 +250,11 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
     val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], edataStore.size.toInt).asInstanceOf[PrimitiveArray[ED2]]
-    val iter = iterator
+    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     var ind = 0;
     while (iter.hasNext){
-      newData.set(ind, f(iter.next()))
+      val edge = iter.next()
+      newData.set(edge.eid, f(edge))
       ind += 1
     }
     this.withNewEdata(newData)
@@ -260,9 +263,13 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   def map[ED2: ClassTag](iter: Iterator[ED2]): GrapeEdgePartition[VD, ED2] = {
     val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], edataStore.size.toInt).asInstanceOf[PrimitiveArray[ED2]]
     var ind = activeEdgeSet.nextSetBit(0)
-    val limit = edataStore.size.toInt
+    val curNbr: PropertyNbrUnit[VertexId] = csr.getOEBegin(0)
+    val beginAddr = curNbr.getAddress
     while (iter.hasNext) {
-      newData.set(ind, iter.next())
+      val curAddr = beginAddr + ind * NBR_SIZE
+      curNbr.setAddress(curAddr)
+      val eid = curNbr.eid()
+      newData.set(eid, iter.next())
       require(ind != -1, s"mapping edges: received edge iterator length neq to cur active edges ${activeEdgeSet.cardinality()}")
       ind = activeEdgeSet.nextSetBit(ind + 1)
     }
