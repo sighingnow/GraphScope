@@ -54,7 +54,7 @@ object GrapeEdgeRDD extends Logging{
           val (pid, shuffle) = iter.next()
           require(pid == ind)
           if (shuffle != null){
-              edgeShuffleReceived.set(shuffle.fromPid, shuffle)
+              edgeShuffleReceived.add(shuffle)
 	        }
         }
         log.info(s"Partition ${ind} collect received partitions ${edgeShuffleReceived}")
