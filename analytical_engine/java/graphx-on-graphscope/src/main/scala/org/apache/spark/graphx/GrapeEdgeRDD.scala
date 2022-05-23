@@ -49,13 +49,13 @@ object GrapeEdgeRDD extends Logging{
 
     val edgeShuffleReceived = edgeShuffles.mapPartitionsWithIndex((ind, iter) => {
       if (iter.hasNext) {
-        val edgeShuffleReceived = new EdgeShuffleReceived[ED](numPartitions, ind)
+        val edgeShuffleReceived = new EdgeShuffleReceived[ED](ind)
         while (iter.hasNext) {
           val (pid, shuffle) = iter.next()
           require(pid == ind)
           if (shuffle != null){
               log.info(s"partition ${ind} receives msg from ${shuffle.fromPid}")
-              edgeShuffleReceived.set(shuffle.fromPid, shuffle)
+              edgeShuffleReceived.add(shuffle)
 	        }
         }
         log.info(s"Partition ${ind} collect received partitions ${edgeShuffleReceived}")
