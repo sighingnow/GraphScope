@@ -1,5 +1,6 @@
 package com.alibaba.graphscope.app;
 
+import com.alibaba.fastffi.FFIByteString;
 import com.alibaba.graphscope.communication.Communicator;
 import com.alibaba.graphscope.context.DefaultContextBase;
 import com.alibaba.graphscope.context.GraphXAdaptorContext;
@@ -34,7 +35,14 @@ public class GraphXAdaptor<VDATA_T, EDATA_T, MSG> extends Communicator implement
         } else if (vdClass.equals("double") && edClass.equals("double") && msgClass.equals(
             "double")) {
             return (GraphXAdaptor<VD, ED, M>) new GraphXAdaptor<Double, Double, Double>();
-        } else {
+        } else if (vdClass.equals("std::string") && edClass.equals("int64_t") && msgClass.equals(
+            "double")) {
+            return (GraphXAdaptor<VD, ED, M>) new GraphXAdaptor<FFIByteString, Long, Double>();
+        } else if (vdClass.equals("std::string") && edClass.equals("double") && msgClass.equals(
+            "double")) {
+            return (GraphXAdaptor<VD, ED, M>) new GraphXAdaptor<FFIByteString, Double, Double>();
+        }
+        else {
             throw new IllegalStateException(
                 "not supported classes: " + vdClass + "," + edClass + "," + msgClass);
         }

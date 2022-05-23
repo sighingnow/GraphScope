@@ -173,6 +173,32 @@ class ImmutableTypedArray {
   T* buffer_;
   size_t length;
 };
+template <>
+struct ImmutableTypedArray<std::string> {
+ public:
+  using value_type = arrow::util::string_view;
+  TypedArray() : array_(NULL) {}
+  explicit TypedArray(std::shared_ptr<arrow::Array> array) {
+    if (array == nullptr) {
+      array_ = NULL;
+    } else {
+      array_ = std::dynamic_pointer_cast<arrow::LargeStringArray>(array).get();
+    }
+  }
+
+  void Init(std::shared_ptr<arrow::Array> array) {
+    if (array == nullptr) {
+      array_ = NULL;
+    } else {
+      array_ = std::dynamic_pointer_cast<arrow::LargeStringArray>(array).get();
+    }
+  }
+
+  value_type operator[](size_t loc) const { return array_->GetView(loc); }
+
+ private:
+  arrow::LargeStringArray* array_;
+};
 }  // namespace graphx
 }  // namespace gs
 

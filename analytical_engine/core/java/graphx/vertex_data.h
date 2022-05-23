@@ -94,6 +94,66 @@ class VertexData : public vineyard::Registered<VertexData<VID_T, VD_T>> {
   friend class VertexDataBuilder;
 };
 
+template <typename VID_T>
+class VertexData<VID_T, std::string>
+    : public vineyard::Registered<VertexData<VID_T, std::string>> {
+  using vid_t = VID_T;
+  using vdata_t = std::string;
+  using vid_array_t = typename vineyard::ConvertToArrowType<vid_t>::ArrayType;
+  using vdata_array_t =
+      typename vineyard::ConvertToArrowType<vdata_t>::ArrayType;
+  using vertex_t = grape::Vertex<VID_T>;
+
+ public:
+  VertexData() {}
+  ~VertexData() {}
+  static std::unique_ptr<vineyard::Object> Create() __attribute__((used)) {
+    return std::static_pointer_cast<vineyard::Object>(
+        std::unique_ptr<VertexData<VID_T, VD_T>>{
+            new VertexData<VID_T, VD_T>()});
+  }
+
+  void Construct(const vineyard::ObjectMeta& meta) override {
+    this->meta_ = meta;
+    this->id_ = meta.GetId();
+    this->frag_vnums_ = meta.GetKeyValue<fid_t>("frag_vnums");
+    LOG(INFO) << "frag_vnums: " << frag_vnums_;
+    vineyard::NumericArray<vdata_t> vineyard_array;
+    vineyard_array.Construct(meta.GetMemberMeta("vdatas"));
+    vdatas_ = vineyard_array.GetArray();
+
+    CHECK_EQ(vdatas_->length(), frag_vnums_);
+
+    vdatas_accessor_.Init(vdatas_);
+    LOG(INFO) << "Finish construct vertex data, frag vnums: " << frag_vnums_;
+  }
+
+  vid_t VerticesNum() { return frag_vnums_; }
+
+  VD_T& GetData(const vid_t& lid) {
+    CHECK_LT(lid, frag_vnums_);
+    return vdatas_accessor_[lid];
+  }
+
+  VD_T& GetData(const vertex_t& v) { return GetData(v.GetValue()); }
+
+  // void SetData(const vertex_t& v, vdata_t vd) {
+  //   return vdatas_accessor_.Set(v.GetValue(), vd);
+  // }
+
+  graphx::ImmutableTypedArray<vdata_t>& GetVdataArray() {
+    return vdatas_accessor_;
+  }
+
+ private:
+  vid_t frag_vnums_;
+  std::shared_ptr<vdata_array_t> vdatas_;
+  graphx::ImmutableTypedArray<vdata_t> vdatas_accessor_;
+
+  // template <typename _VID_T, typename _VD_T>
+  // friend class VertexDataBuilder;
+};
+
 template <typename VID_T, typename VD_T>
 class VertexDataBuilder : public vineyard::ObjectBuilder {
   using vid_t = VID_T;
@@ -123,6 +183,11 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
     this->frag_vnums_ = vdata_builder.length();
     vdata_builder.Finish(&(this->vdata_array_));
     LOG(INFO) << "Init vertex data with " << frag_vnums_;
+  }
+
+  void Init(std::vector<char>& vdata_builder) {
+    LOG(FATAL)
+        << "Initialization with vector char is only available for string vdata";
   }
 
   std::shared_ptr<VertexData<vid_t, vdata_t>> MySeal(vineyard::Client& client) {
@@ -167,6 +232,80 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
   vid_t frag_vnums_;
   std::shared_ptr<vdata_array_t> vdata_array_;
   vineyard::NumericArray<vdata_t> vineyard_array;
+};
+
+template <typename VID_T>
+class VertexDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
+  using vid_t = VID_T;
+  using vdata_t = std::string;
+  using vdata_array_builder_t =
+      typename vineyard::ConvertToArrowType<vdata_t>::BuilderType;
+  using vdata_array_t =
+      typename vineyard::ConvertToArrowType<vdata_t>::ArrayType;
+
+ public:
+  VertexDataBuilder() {}
+  ~VertexDataBuilder() {}
+
+  void Init(vid_t frag_vnums, vdata_t initValue) {
+    LOG(FATAL) << "Not implemented";
+  }
+
+  void Init(vdata_array_builder_t& vdata_builder) {
+    LOG(FATAL) << "Not implemented";
+  }
+
+  void Init(vid_t frag_vnums, std::vector<char>& vdata_buffer) {
+    this->frag_vnums_ = frag_vnums;
+    vdata_array_builder_t builder;
+    LOG(INFO) << "Vdata buffer has " << vdata_buffer.size() << " bytes";
+    builder.Reserve(vdata_buffer.size())
+        builder.AppendValues(vdata_buffer.data(), vdata_buffer.size());
+    builder.Finish(&vdata_array_) LOG(INFO)
+        << "Init vertex data with " << frag_vnums_;
+  }
+
+  std::shared_ptr<VertexData<vid_t, vdata_t>> MySeal(vineyard::Client& client) {
+    return std::dynamic_pointer_cast<VertexData<vid_t, vdata_t>>(
+        this->Seal(client));
+  }
+
+  std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) {
+    // ensure the builder hasn't been sealed yet.
+    ENSURE_NOT_SEALED(this);
+    VINEYARD_CHECK_OK(this->Build(client));
+    auto vertex_data = std::make_shared<VertexData<vid_t, vdata_t>>();
+    vertex_data->meta_.SetTypeName(type_name<VertexData<vid_t, vdata_t>>());
+
+    size_t nBytes = 0;
+    vertex_data->vdatas_ = vineyard_array.GetArray();
+    vertex_data->frag_vnums_ = frag_vnums_;
+    vertex_data->vdatas_accessor_.Init(vertex_data->vdatas_);
+    vertex_data->meta_.AddKeyValue("frag_vnums", frag_vnums_);
+    vertex_data->meta_.AddMember("vdatas", vineyard_array.meta());
+    nBytes += vineyard_array.nbytes();
+    LOG(INFO) << "total bytes: " << nBytes;
+    vertex_data->meta_.SetNBytes(nBytes);
+    VINEYARD_CHECK_OK(
+        client.CreateMetaData(vertex_data->meta_, vertex_data->id_));
+    // mark the builder as sealed
+    this->set_sealed(true);
+    return std::static_pointer_cast<vineyard::Object>(vertex_data);
+  }
+
+  vineyard::Status Build(vineyard::Client& client) override {
+    typename vineyard::InternalType<vdata_t>::vineyard_builder_type
+        vdata_builder(client, this->vdata_array_);
+    vineyard_array = *std::dynamic_pointer_cast<vineyard::LargeStringArray>(
+        vdata_builder.Seal(client));
+    LOG(INFO) << "Finish building vertex data;";
+    return vineyard::Status::OK();
+  }
+
+ private:
+  vid_t frag_vnums_;
+  std::shared_ptr<vdata_array_t> vdata_array_;
+  vineyard::LargeStringArray vineyard_array;
 };
 }  // namespace gs
 #endif  // ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_VERTEX_DATA_H

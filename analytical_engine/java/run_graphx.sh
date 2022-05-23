@@ -15,6 +15,8 @@ shift
 VD_CLASS=$1
 shift
 ED_CLASS=$1
+shift 
+VD_SERIALIZATION=$1
 shift
 VPROG_SERIALIZATION=$1
 shift
@@ -27,6 +29,7 @@ shift
 MAX_ITERATION=$1
 shift
 
+echo "vd serialization    "${VD_SERIALIZATION}
 echo "vprog               "${VPROG_SERIALIZATION}
 echo "send_msg            "${SEND_MSG_SERIALIZATION}
 echo "merge msg           "${MERGE_MSG_SERIALIZATION}
@@ -56,7 +59,7 @@ done
 #cmd="GLOG_v=10 mpirun -n 1 -hostfile ${SPARK_CONF_WORKER} -x GLOG_v -x GRAPHSCOPE_CODE_HOME -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} --user_class ${USER_CLASS} --vertex_mm_file_prefix ${V_FILE_PREFIX} --edge_mm_file_prefix ${E_FILE_PREFIX}"
 cmd="GLOG_v=10 mpirun --mca btl_tcp_if_include bond0 -n ${NUM_WORKERS} -host ${HOST_SLOT} -x LD_PRELOAD -x GLOG_v \
 -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} \
---vprog_path ${VPROG_SERIALIZATION} --send_msg_path ${SEND_MSG_SERIALIZATION} --merge_msg_path ${MERGE_MSG_SERIALIZATION} \
+--vd_path ${VD_SERIALIZATION} --vprog_path ${VPROG_SERIALIZATION} --send_msg_path ${SEND_MSG_SERIALIZATION} --merge_msg_path ${MERGE_MSG_SERIALIZATION} \
 --msg_class ${MSG_CLASS} --vd_class ${VD_CLASS} --ed_class ${ED_CLASS} \
 --vm_ids ${VM_IDS} --csr_ids ${CSR_IDS} --vdata_ids ${VDATA_IDS} \
 --initial_msg ${INIT_MSG}  --max_iterations ${MAX_ITERATION}"

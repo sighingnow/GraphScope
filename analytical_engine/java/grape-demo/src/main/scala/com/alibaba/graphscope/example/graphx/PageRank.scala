@@ -22,12 +22,12 @@ object PageRank extends Logging{
     val graph = GraphLoader.edgeListFile(sc, eFilePath,canonicalOrientation = false,numPartitions)
     graph.cache()
     log.info(s"[GraphLoader: ] Load graph ${graph.numEdges}, ${graph.numVertices}")
-//    val ranks = graph.pageRank(0.0001).vertices
-    // Join the ranks with the usernames
-    // Print the result
-//    println(ranks.collect().mkString("\n"))
+    val ranks = graph.pageRank(0.0001).vertices
+//     Join the ranks with the usernames
+//     Print the result
+    println(ranks.collect().mkString("\n"))
 
-//    log.info(s"Finish query, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
+    log.info(s"Finish query, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
 
     sc.stop()
   }

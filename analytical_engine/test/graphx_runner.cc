@@ -44,9 +44,9 @@ DEFINE_string(send_msg_path, "/tmp/graphx-sendMsg",
               "path to the serialization file for sendMsg");
 DEFINE_string(merge_msg_path, "/tmp/graphx-mergeMsg",
               "path to the serialization file for Merge msg");
-DEFINE_string(vdata_path, "/tmp/graphx-vdata",
-              "path to serialization for vdata array");
-DEFINE_string(vd_class, "", "int64_t,int32_t,double");
+DEFINE_string(vd_path, "/tmp/graphx-vd",
+              "path to serialization for vdata class");
+DEFINE_string(vd_class, "", "int64_t,int32_t,double,std::string");
 DEFINE_string(ed_class, "", "int64_t,int32_t,double");
 DEFINE_string(msg_class, "", "int64_t,int32_t,double");
 DEFINE_string(initial_msg, "", "the initial msg");
@@ -84,6 +84,7 @@ std::string flags2JsonStr() {
   pt.put("ed_class", FLAGS_ed_class);
   pt.put("initial_msg", FLAGS_initial_msg);
   pt.put("max_iterations", FLAGS_max_iterations);
+  pt.put("vd_path", FLAGS_vd_path);
   pt.put("vprog_path", FLAGS_vprog_path);
   pt.put("send_msg_path", FLAGS_send_msg_path);
   pt.put("merge_msg_path", FLAGS_merge_msg_path);
@@ -114,31 +115,34 @@ int main(int argc, char* argv[]) {
   //      std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
   if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
       std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
-    gs::Run<int64_t,uint64_t,int64_t, int64_t>(params);
+    gs::Run<int64_t, uint64_t, int64_t, int64_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int32_t") == 0) {
-    gs::Run<int64_t,uint64_t,int64_t, int32_t>(params);
+    gs::Run<int64_t, uint64_t, int64_t, int32_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
-    gs::Run<int64_t,uint64_t,int64_t, double>(params);
+    gs::Run<int64_t, uint64_t, int64_t, double>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int32_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
-    gs::Run<int64_t,uint64_t,int32_t, int64_t>(params);
+    gs::Run<int64_t, uint64_t, int32_t, int64_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int32_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int32_t") == 0) {
-    gs::Run<int64_t,uint64_t,int32_t, int32_t>(params);
+    gs::Run<int64_t, uint64_t, int32_t, int32_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int32_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
-    gs::Run<int64_t,uint64_t,int32_t, double>(params);
+    gs::Run<int64_t, uint64_t, int32_t, double>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
-    gs::Run<int64_t,uint64_t,double, int64_t>(params);
+    gs::Run<int64_t, uint64_t, double, int64_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int32_t") == 0) {
-    gs::Run<int64_t,uint64_t,double, int32_t>(params);
+    gs::Run<int64_t, uint64_t, double, int32_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
-    gs::Run<int64_t,uint64_t,double, double>(params);
+    gs::Run<int64_t, uint64_t, double, double>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "std::string") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
+    gs::Run<int64_t, uint64_t, std::string, double>(params);
   } else {
     LOG(ERROR) << "current not supported: " << FLAGS_vd_class << ", "
                << FLAGS_ed_class;

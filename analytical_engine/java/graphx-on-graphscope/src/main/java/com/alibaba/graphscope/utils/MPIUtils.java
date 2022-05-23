@@ -68,7 +68,7 @@ public class MPIUtils {
 
     public static <MSG,VD,ED> void launchGraphX(
         String[] vmIds, String []csrIds, String[] vdataIds,
-        Class<? extends MSG> msgClass, Class<? extends VD> vdClass, Class<? extends ED> edClass,
+        Class<? extends MSG> msgClass, Class<?extends VD> vdClass, Class<? extends ED> edClass, String vdPath,
         String vprogPath, String sendMsgPath, String mergeMsgpath,
         MSG initialMsg, int maxIteration){
         int numWorkers = checkIds(vmIds, csrIds, vdataIds);
@@ -76,7 +76,7 @@ public class MPIUtils {
         logger.info("running mpi with {} workers", numWorkers);
         String[] commands = {"/bin/bash", LAUNCH_GRAPHX_SHELL_SCRIPT, String.valueOf(numWorkers), hostNameSlots,
             String.join(",", vmIds),String.join(",", csrIds), String.join(",",vdataIds),
-            GrapeUtils.classToStr(msgClass), GrapeUtils.classToStr(vdClass), GrapeUtils.classToStr(edClass),
+            GrapeUtils.classToStr(msgClass), GrapeUtils.classToStr(vdClass), GrapeUtils.classToStr(edClass), vdPath,
             vprogPath, sendMsgPath, mergeMsgpath,
             initialMsg.toString(), String.valueOf(maxIteration)};
 

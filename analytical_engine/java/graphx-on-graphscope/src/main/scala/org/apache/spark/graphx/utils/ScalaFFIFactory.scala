@@ -67,6 +67,12 @@ object ScalaFFIFactory extends Logging{
     factory.create()
   }
 
+  def newStringVertexDataBuilder() : VertexDataBuilder[Long,_] = {
+    val factory = FFITypeFactory.getFactory(classOf[VertexDataBuilder[Long,_]],
+      "gs::VertexDataBuilder<uint64_t,std::string>").asInstanceOf[VertexDataBuilder.Factory[Long,_]]
+    factory.create()
+  }
+
   def newVineyardClient() : VineyardClient = {
     synchronized{
       clientFactory.create()

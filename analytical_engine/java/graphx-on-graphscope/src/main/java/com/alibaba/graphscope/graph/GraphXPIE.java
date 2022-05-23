@@ -8,6 +8,7 @@ import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.fragment.adaptor.GraphXFragmentAdaptor;
 import com.alibaba.graphscope.graphx.GSEdgeTriplet;
 import com.alibaba.graphscope.graphx.GSEdgeTripletImpl;
+import com.alibaba.graphscope.graphx.GraphXConf;
 import com.alibaba.graphscope.graphx.SerializationUtils;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.parallel.message.DoubleMsg;
@@ -18,7 +19,6 @@ import java.net.URLClassLoader;
 import java.util.BitSet;
 import java.util.concurrent.ExecutorService;
 import org.apache.spark.graphx.EdgeTriplet;
-import org.apache.spark.graphx.GraphXConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Function1;
@@ -42,14 +42,14 @@ public class GraphXPIE<VD, ED, MSG_T> {
   /**
    * (A, A) => A)
    */
-  private Function2<MSG_T, MSG_T, MSG_T> mergeMsg;
-  private IFragment<Long, Long, VD, ED> iFragment; // different from c++ frag
-  private GraphXFragment<Long, Long, VD, ED> graphXFragment;
+  protected Function2<MSG_T, MSG_T, MSG_T> mergeMsg;
+  protected IFragment<Long, Long, VD, ED> iFragment; // different from c++ frag
+  protected GraphXFragment<Long, Long, VD, ED> graphXFragment;
   private MSG_T initialMessage;
   private ExecutorService executorService;
   private int numCores, maxIterations, round;
   private long vprogTime, msgSendTime, receiveTime, flushTime;
-  private GraphXConf<VD, ED, MSG_T> conf;
+  private GraphXConf<VD,ED,MSG_T> conf;
   private GSEdgeTriplet<VD, ED>[] edgeTriplets;
   private GSEdgeTripletImpl<VD, ED> edgeTriplet;
   DefaultMessageManager messageManager;

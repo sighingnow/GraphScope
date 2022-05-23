@@ -15,6 +15,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
   val VPROG_SERIALIZATION_PATH = "/tmp/graphx-vprog"
   val SEND_MSG_SERIALIZATION_PATH = "/tmp/graphx-sendMsg"
   val MERGE_MSG_SERIALIZATION_PATH = "/tmp/graphx-mergeMsg"
+  val VD_CLASS_SERIAL_PATH = "/tmp/graphx-vd"
   val VDATA_MAPPED_PATH = "graphx-vdata"
   val msgClass: Class[MSG] = classTag[MSG].runtimeClass.asInstanceOf[java.lang.Class[MSG]]
   val vdClass: Class[VD] = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
@@ -32,6 +33,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     SerializationUtils.write(vprog, VPROG_SERIALIZATION_PATH)
     SerializationUtils.write(sendMsg, SEND_MSG_SERIALIZATION_PATH)
     SerializationUtils.write(mergeMsg, MERGE_MSG_SERIALIZATION_PATH)
+    SerializationUtils.write(GrapeUtils.getRuntimeClass[VD], VD_CLASS_SERIAL_PATH)
 
     //launch mpi processes. and run.
     val t0 = System.nanoTime()
@@ -44,7 +46,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     log.info(s"[GraphScopePregel]: collect distinct ids vm: ${vmIds.mkString("Array(", ", ", ")")}, csr: ${csrIds.mkString("Array(", ", ", ")")}, vdata: ${vdataIds.mkString("Array(", ", ", ")")}")
 
     MPIUtils.launchGraphX[MSG,VD,ED](vmIds,csrIds,vdataIds,
-      msgClass, vdClass, edClass,
+      msgClass,vdClass, edClass, VD_CLASS_SERIAL_PATH,
       VPROG_SERIALIZATION_PATH, SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH,
       initialMsg,maxIteration)
     //FIXME: reconstruct the graph from result ids.
