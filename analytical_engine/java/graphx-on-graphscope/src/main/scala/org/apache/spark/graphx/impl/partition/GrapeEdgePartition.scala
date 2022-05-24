@@ -41,7 +41,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   def initSrcLid() : Unit = {
     val time0 = System.nanoTime()
     if (srcLids == null){
-      srcLids = PrimitiveArray.create(classOf[Long], (endLid - startLid).toInt)
+      srcLids = PrimitiveArray.create(classOf[Long], partOutEdgeNum.toInt)
       var curLid = 0
       while (curLid < endLid){
         val startNbrOffset = csr.getOEOffset(curLid)
