@@ -23,8 +23,8 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
                                                      val client : VineyardClient,
                                                      val edgeReversed : Boolean = false,
                                                      var activeEdgeSet : BitSet = null,
-                                                     val srcLids : PrimitiveArray[Long] = null,
-                                                     val dstLids : PrimitiveArray[Long] = null,
+                                                     var srcLids : PrimitiveArray[Long] = null,
+                                                     var dstLids : PrimitiveArray[Long] = null,
                                                      var srcOids : PrimitiveArray[Long] = null,
                                                      var dstOids : PrimitiveArray[Long] = null,
                                                      var edatas : PrimitiveArray[ED] = null) extends Logging {
@@ -45,6 +45,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val time0 = System.nanoTime()
     if (srcOids == null){
       srcOids = PrimitiveArray.create(classOf[Long], partOutEdgeNum.toInt)
+      srcLids = PrimitiveArray.create(classOf[Long], partOutEdgeNum.toInt)
       var curLid = 0
       while (curLid < endLid){
         val curOid = vm.getId(curLid)
@@ -62,6 +63,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     if (dstOids == null){
       require(edatas == null, "dstOids equals to null but edatas non null")
       dstOids = PrimitiveArray.create(classOf[Long], partOutEdgeNum.toInt)
+      dstLids = PrimitiveArray.create(classOf[Long], partOutEdgeNum.toInt)
       edatas = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], partOutEdgeNum.toInt).asInstanceOf[PrimitiveArray[ED]]
       val nbr = csr.getOEBegin(0)
       var offset = 0
