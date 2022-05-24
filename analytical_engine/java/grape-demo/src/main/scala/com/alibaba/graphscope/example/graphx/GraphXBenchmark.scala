@@ -48,9 +48,9 @@ object GraphXBenchmark extends Logging{
     /**
      * test map triplet
      */
-    val graph13 = graph12.mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr + triplet.attr)
-    val graph14 = graph13.mapTriplets(triplet => triplet.attr + 1)
-    val graph15 = graph14.mapTriplets(triplet => triplet.attr * 2)
+    val graph15 = graph12.mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr + triplet.attr)
+//    val graph14 = graph13.mapTriplets(triplet => triplet.attr + 1)
+//    val graph15 = graph14.mapTriplets(triplet => triplet.attr * 2)
     log.info(s"After transform edge triplet ${graph15.numVertices} ${graph15.numEdges}")
     val time3 = System.nanoTime()
     log.info(s"[Summary: ] Load graph cost ${(loadGraph1 - loadGraph0) / 1000000}ms")
