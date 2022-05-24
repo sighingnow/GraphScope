@@ -4,7 +4,7 @@ import org.apache.spark.graphx.GraphLoader
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 
-class GraphXBenchmark extends Logging{
+object GraphXBenchmark extends Logging{
   def main(args: Array[String]) : Unit = {
     val spark = SparkSession
       .builder
