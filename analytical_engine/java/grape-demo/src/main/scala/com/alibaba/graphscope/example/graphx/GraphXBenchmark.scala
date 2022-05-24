@@ -54,6 +54,16 @@ object GraphXBenchmark extends Logging{
     log.info(s"After transform edge triplet ${graph15.numVertices} ${graph15.numEdges}")
     val time3 = System.nanoTime()
 
+    /**
+     * test join
+     */
+    val outDegree = graph15.outDegrees
+    val inDegree = graph15.inDegrees
+    val graph16 = graph15.outerJoinVertices(outDegree)((_,_,degree) => degree)
+    val graph17 = graph16.outerJoinVertices(inDegree)((_,_,degree)=>degree)
+    log.info(s"after outer join ${graph17.vertices.map(tuple => tuple._2).count()}")
+    val time4 = System.nanoTime()
+
 //    log.info(s"s[Summary: ] graph6 vertices${graph6.vertices.collect().map(tuple => tuple._2).sum}")
 //    log.info(s"s[Summary: ] graph12 edges ${graph12.vertices.collect().map(tuple => tuple._2).sum}")
 //    log.info(s"s[Summary: ] graph15 triplets ${graph15.vertices.collect().map(tuple => tuple._2).sum}")
@@ -64,5 +74,7 @@ object GraphXBenchmark extends Logging{
     log.info(s"[Summary: ] map vertices cost ${(time1 - loadGraph1) / 1000000}ms")
     log.info(s"[Summary: ] map edges cost ${(time2 - time1) / 1000000}ms")
     log.info(s"[Summary: ] map edge triplets cost ${(time3 - time2) / 1000000}ms")
+    log.info(s"[Summary: ] join vertices cost ${(time4 - time3) / 1000000}ms")
+
   }
 }
