@@ -262,7 +262,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       }
       flag = true
     }
-    new GrapeEdgePartition[VD,ED](pid, csr, vm, new InHeapEdataStore[ED](newEdata), client, edgeReversed, newMask)
+    new GrapeEdgePartition[VD,ED](pid, csr, vm, new InHeapEdataStore[ED](newEdata), client, edgeReversed, newMask, srcLids)
   }
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
@@ -295,15 +295,15 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def reverse: GrapeEdgePartition[VD, ED] = {
-    new GrapeEdgePartition[VD,ED](pid, csr, vm, edataStore, client,!edgeReversed, activeEdgeSet)
+    new GrapeEdgePartition[VD,ED](pid, csr, vm, edataStore, client,!edgeReversed, activeEdgeSet,srcLids)
   }
 
   def withNewEdata[ED2: ClassTag](newEdata : PrimitiveArray[ED2]): GrapeEdgePartition[VD, ED2] = {
-    new GrapeEdgePartition[VD,ED2](pid, csr.asInstanceOf[GraphXCSR[Long,ED2]],vm, new InHeapEdataStore[ED2](newEdata) ,client,edgeReversed,activeEdgeSet)
+    new GrapeEdgePartition[VD,ED2](pid, csr.asInstanceOf[GraphXCSR[Long,ED2]],vm, new InHeapEdataStore[ED2](newEdata) ,client,edgeReversed,activeEdgeSet,srcLids)
   }
 
   def withNewMask(newActiveSet: BitSet) : GrapeEdgePartition[VD,ED] = {
-    new GrapeEdgePartition[VD,ED](pid, csr, vm, edataStore, client, edgeReversed, newActiveSet)
+    new GrapeEdgePartition[VD,ED](pid, csr, vm, edataStore, client, edgeReversed, newActiveSet,srcLids)
   }
 
   /**  currently we only support inner join with same vertex map*/
@@ -326,7 +326,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       }
     }
 
-    new GrapeEdgePartition[VD,ED3](pid, csr.asInstanceOf[GraphXCSR[Long,ED3]], vm, new InHeapEdataStore[ED3](newEdata), client,edgeReversed, newMask)
+    new GrapeEdgePartition[VD,ED3](pid, csr.asInstanceOf[GraphXCSR[Long,ED3]], vm, new InHeapEdataStore[ED3](newEdata), client,edgeReversed, newMask,srcLids)
   }
 
   override def toString: String = "GrapeEdgePartition(pid=" + pid +
