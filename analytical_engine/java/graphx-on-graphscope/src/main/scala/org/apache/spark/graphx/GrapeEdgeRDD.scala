@@ -145,7 +145,7 @@ object GrapeEdgeRDD extends Logging{
     val grapeEdgePartitions = metaUpdated2.mapPartitions(iter => {
       if (iter.hasNext) {
         val (meta, part) = iter.next()
-        Iterator((meta.partitionID, new GrapeEdgePartition[VD, ED](meta.partitionID, meta.graphxCSR, meta.globalVM, new GrapeEdataStore[ED](meta.graphxCSR), meta.vineyardClient)))
+        Iterator((meta.partitionID, new GrapeEdgePartition[VD, ED](meta.partitionID, meta.graphxCSR, meta.globalVM, meta.vineyardClient)))
       }
       else Iterator.empty
     }).cache()
