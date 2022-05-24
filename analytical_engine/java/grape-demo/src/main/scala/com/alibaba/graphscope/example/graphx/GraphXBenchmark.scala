@@ -57,12 +57,12 @@ class GraphXBenchmark extends Logging{
     log.info(s"[Summary: ] map vertices cost ${(time1 - loadGraph1) / 1000000}ms")
     log.info(s"[Summary: ] map edges cost ${(time2 - time1) / 1000000}ms")
     log.info(s"[Summary: ] map edge triplets cost ${(time3 - time2) / 1000000}ms")
-    log.info(s"s[Summary: ] graph6 vertices${graph6.vertices.collect().mkString("Array(", ", ", ")")}")
-    log.info(s"s[Summary: ] graph12 edges ${graph12.vertices.collect().mkString("Array(", ", ", ")")}")
-    log.info(s"s[Summary: ] graph15 triplets ${graph15.vertices.collect().mkString("Array(", ", ", ")")}")
-    log.info(s"s[Summary: ] graph6 vertices ${graph6.triplets.collect().mkString("Array(", ", ", ")")}")
-    log.info(s"s[Summary: ] graph12 edges ${graph12.triplets.collect().mkString("Array(", ", ", ")")}")
-    log.info(s"s[Summary: ] graph15 triplets ${graph15.triplets.collect().mkString("Array(", ", ", ")")}")
+    log.info(s"s[Summary: ] graph6 vertices${graph6.vertices.collect().map(tuple => tuple._2).sum}")
+    log.info(s"s[Summary: ] graph12 edges ${graph12.vertices.collect().map(tuple => tuple._2).sum}")
+    log.info(s"s[Summary: ] graph15 triplets ${graph15.vertices.collect().map(tuple => tuple._2).sum}")
+    log.info(s"s[Summary: ] graph6 vertices ${graph6.triplets.collect().map(tuple => tuple.attr).sum}")
+    log.info(s"s[Summary: ] graph12 edges ${graph12.triplets.collect().map(tuple => tuple.attr).sum}")
+    log.info(s"s[Summary: ] graph15 triplets ${graph15.triplets.collect().map(tuple => tuple.attr).sum}")
 
   }
 }
