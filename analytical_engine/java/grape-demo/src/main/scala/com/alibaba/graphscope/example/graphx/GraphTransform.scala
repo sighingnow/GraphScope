@@ -43,11 +43,10 @@ object GraphTransform extends Logging{
 //      log.info(s"triplet: ${triplet}")
 //    }
     log.info(s" num of triplets ${triplets.map(triplet => triplet.attr).sum}")
-    /*
     val graph7 = graph.reverse
     val graph8 = graph7.filter(_.mapVertices((_, vd)=> vd.toInt).mapEdges(edge=>edge.attr), epred = (trip : EdgeTriplet[Int,Int]) => true, vpred = (vid:VertexId, vd: Int) => vid== 1)
-    graph8.numVertices
-    */
+    log.info(s"${graph8.vertices.collect()}")
+    log.info(s"num vertices ${graph8.numVertices}")
     val endTime = System.nanoTime()
     println("[Query time ] : " + ((endTime - startTime) / 1000000) + "ms")
     println("[Load graph time ]: " + ((loadGraph1 - loadGraph0) / 1000000) + "ms")

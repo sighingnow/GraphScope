@@ -4,7 +4,7 @@ import org.apache.spark.graphx.GraphLoader
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 
-class GraphXBenchmark extends Logging{
+object GraphXBenchmark extends Logging{
   def main(args: Array[String]) : Unit = {
     val spark = SparkSession
       .builder
@@ -48,21 +48,21 @@ class GraphXBenchmark extends Logging{
     /**
      * test map triplet
      */
-    val graph15 = graph12.mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr + triplet.attr)
-//    val graph14 = graph13.mapTriplets(triplet => triplet.attr + 1)
-//    val graph15 = graph14.mapTriplets(triplet => triplet.attr * 2)
+    val graph13 = graph12.mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr + triplet.attr)
+    val graph14 = graph13.mapTriplets(triplet => triplet.attr + 1)
+    val graph15 = graph14.mapTriplets(triplet => triplet.attr * 2)
     log.info(s"After transform edge triplet ${graph15.numVertices} ${graph15.numEdges}")
     val time3 = System.nanoTime()
+
+//    log.info(s"s[Summary: ] graph6 vertices${graph6.vertices.collect().map(tuple => tuple._2).sum}")
+//    log.info(s"s[Summary: ] graph12 edges ${graph12.vertices.collect().map(tuple => tuple._2).sum}")
+//    log.info(s"s[Summary: ] graph15 triplets ${graph15.vertices.collect().map(tuple => tuple._2).sum}")
+//    log.info(s"s[Summary: ] graph6 vertices ${graph6.triplets.collect().map(tuple => tuple.attr).sum}")
+//    log.info(s"s[Summary: ] graph12 edges ${graph12.triplets.collect().map(tuple => tuple.attr).sum}")
+//    log.info(s"s[Summary: ] graph15 triplets ${graph15.triplets.collect().mkString("Array(", ", ", ")")}")
     log.info(s"[Summary: ] Load graph cost ${(loadGraph1 - loadGraph0) / 1000000}ms")
     log.info(s"[Summary: ] map vertices cost ${(time1 - loadGraph1) / 1000000}ms")
     log.info(s"[Summary: ] map edges cost ${(time2 - time1) / 1000000}ms")
     log.info(s"[Summary: ] map edge triplets cost ${(time3 - time2) / 1000000}ms")
-    log.info(s"s[Summary: ] graph6 vertices${graph6.vertices.collect().map(tuple => tuple._2).sum}")
-    log.info(s"s[Summary: ] graph12 edges ${graph12.vertices.collect().map(tuple => tuple._2).sum}")
-    log.info(s"s[Summary: ] graph15 triplets ${graph15.vertices.collect().map(tuple => tuple._2).sum}")
-    log.info(s"s[Summary: ] graph6 vertices ${graph6.triplets.collect().map(tuple => tuple.attr).sum}")
-    log.info(s"s[Summary: ] graph12 edges ${graph12.triplets.collect().map(tuple => tuple.attr).sum}")
-    log.info(s"s[Summary: ] graph15 triplets ${graph15.triplets.collect().mkString("Array(", ", ", ")")}")
-
   }
 }
