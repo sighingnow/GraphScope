@@ -23,7 +23,8 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
                                                      val edataStore : EdgeDataStore[ED],
                                                      val client : VineyardClient,
                                                      val edgeReversed : Boolean = false,
-                                                     var activeEdgeSet : BitSet = null) extends Logging {
+                                                     var activeEdgeSet : BitSet = null,
+                                                     var srcLids : PrimitiveArray[Long] = null) extends Logging {
   val startLid = 0
   val endLid : Long = vm.innerVertexSize()
   def partOutEdgeNum : Long = csr.getPartialOutEdgesNum(startLid, endLid)
@@ -34,6 +35,28 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     activeEdgeSet.setUntil(csr.getOEOffset(endLid).toInt)
   }
   val NBR_SIZE = 16L
+  //to avoid the difficult to get srcLid in iterating over edges.
+
+  initSrcLid()
+  def initSrcLid() : Unit = {
+    val time0 = System.nanoTime()
+    if (srcLids == null){
+      srcLids = PrimitiveArray.create(classOf[Long], (endLid - startLid).toInt)
+      var curLid = 0
+      while (curLid < endLid){
+        val startNbrOffset = csr.getOEOffset(curLid)
+        val endNbrOffset = csr.getOEOffset(curLid + 1)
+        var j = startNbrOffset
+        while (j < endNbrOffset){
+          j += 1
+          srcLids.set(j, curLid)
+        }
+        curLid += 1
+      }
+    }
+    val time1 = System.nanoTime()
+    log.info(s"[Initializing srcLids cost ]: ${(time1 - time0) / 1000000} ms")
+  }
 
   log.info(s"Got edge partition ${this.toString}")
 
@@ -100,7 +123,6 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     new Iterator[Edge[ED]]{
       val curNbr: PropertyNbrUnit[VertexId] = csr.getOEBegin(startLid)
       val beginAddr = curNbr.getAddress
-      var curLid: Int = startLid
       var offset : Long = activeEdgeSet.nextSetBit(0)
       val offsetLimit : Long = csr.getOEOffset(endLid)
       curNbr.setAddress(beginAddr + offset * NBR_SIZE)
@@ -115,18 +137,15 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       log.info(s"Initiate iterator on partition ${pid} ,reversed ${edgeReversed}")
 
       override def hasNext: Boolean = {
-        log.info(s"has next offset: ${offset}, limit ${offsetLimit}")
+//        log.info(s"has next offset: ${offset}, limit ${offsetLimit}")
         if (offset >= 0 && offset < offsetLimit) true
         else false
       }
 
       override def next() : Edge[ED] = {
-        //Find srcLid of curNbr
-        while (csr.getOEOffset(curLid + 1) <= offset){
-          curLid += 1
-        }
 //        log.info(s"curLid ${curLid},offset ${offset}, offset limit${offsetLimit}")
         curNbr.setAddress(beginAddr + offset * NBR_SIZE)
+        val curLid = srcLids.get(offset)
         val dstLid = curNbr.vid()
         val edata = edataStore.getData(curNbr.eid())
         edge.eid = curNbr.eid()
@@ -146,7 +165,6 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 
     val curNbr: PropertyNbrUnit[VertexId] = csr.getOEBegin(startLid)
     val beginAddr = curNbr.getAddress
-    var curLid: Int = startLid
     var offset : Long = activeEdgeSet.nextSetBit(0)
     val offsetLimit : Long = csr.getOEOffset(endLid)
     curNbr.setAddress(beginAddr + offset * NBR_SIZE)
@@ -171,11 +189,9 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     override def next() : EdgeTriplet[VD,ED] = {
       //Find srcLid of curNbr
       val edgeTriplet = createTriplet
-      while (csr.getOEOffset(curLid + 1) <= offset){
-        curLid += 1
-      }
-      log.info(s"curLid ${curLid},offset ${offset}, offset limit${offsetLimit}")
+//      log.info(s"curLid ${curLid},offset ${offset}, offset limit${offsetLimit}")
       curNbr.setAddress(beginAddr + offset * NBR_SIZE)
+      val curLid = srcLids.get(offset)
       val dstLid = curNbr.vid()
       val edata = edataStore.getData(curNbr.eid())
       edgeTriplet.eid = curNbr.eid()
