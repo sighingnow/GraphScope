@@ -125,7 +125,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
         while (csr.getOEOffset(curLid + 1) <= offset){
           curLid += 1
         }
-        log.info(s"curLid ${curLid},offset ${offset}, offset limit${offsetLimit}")
+//        log.info(s"curLid ${curLid},offset ${offset}, offset limit${offsetLimit}")
         curNbr.setAddress(beginAddr + offset * NBR_SIZE)
         val dstLid = curNbr.vid()
         val edata = edataStore.getData(curNbr.eid())
@@ -163,7 +163,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     log.info(s"Initiate iterator on partition ${pid} ,reversed ${edgeReversed}")
 
     override def hasNext: Boolean = {
-      log.info(s"has next offset: ${offset}, limit ${offsetLimit}")
+//      log.info(s"has next offset: ${offset}, limit ${offsetLimit}")
       if (offset >= 0 && offset < offsetLimit) true
       else false
     }

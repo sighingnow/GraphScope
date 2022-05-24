@@ -39,10 +39,10 @@ object GraphTransform extends Logging{
 
     val graph6 = graph.mapEdges(edge => edge.srcId)
     val triplets = graph6.triplets.collect()
-    for (triplet <- triplets){
-      log.info(s"triplet: ${triplet}")
-    }
-    log.info(s" num of triplets ${triplets.length}")
+//    for (triplet <- triplets){
+//      log.info(s"triplet: ${triplet}")
+//    }
+    log.info(s" num of triplets ${triplets.map(triplet => triplet.attr).sum}")
     /*
     val graph7 = graph.reverse
     val graph8 = graph7.filter(_.mapVertices((_, vd)=> vd.toInt).mapEdges(edge=>edge.attr), epred = (trip : EdgeTriplet[Int,Int]) => true, vpred = (vid:VertexId, vd: Int) => vid== 1)
