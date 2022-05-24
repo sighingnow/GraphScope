@@ -191,6 +191,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       }
       offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
       //        curNbr.addV(NBR_SIZE)
+      log.info(s"Produce edge Triplet: ${edgeTriplet}")
       edgeTriplet
     }
   }

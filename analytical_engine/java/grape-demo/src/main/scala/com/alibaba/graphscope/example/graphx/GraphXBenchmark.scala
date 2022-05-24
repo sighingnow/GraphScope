@@ -62,7 +62,7 @@ object GraphXBenchmark extends Logging{
     log.info(s"s[Summary: ] graph15 triplets ${graph15.vertices.collect().map(tuple => tuple._2).sum}")
     log.info(s"s[Summary: ] graph6 vertices ${graph6.triplets.collect().map(tuple => tuple.attr).sum}")
     log.info(s"s[Summary: ] graph12 edges ${graph12.triplets.collect().map(tuple => tuple.attr).sum}")
-    log.info(s"s[Summary: ] graph15 triplets ${graph15.triplets.collect().map(tuple => tuple.attr).sum}")
+    log.info(s"s[Summary: ] graph15 triplets ${graph15.triplets.collect().mkString("Array(", ", ", ")")}")
 
   }
 }

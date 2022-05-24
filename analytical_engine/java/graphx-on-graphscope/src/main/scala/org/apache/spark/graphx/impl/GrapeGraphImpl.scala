@@ -178,7 +178,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       (eIter,vIter) => {
         val (pid, vPart) = vIter.next()
         val (_, epart) = eIter.next()
-        Iterator((pid,epart.map(f(pid, epart.tripletIterator(vPart.vertexData, tripletFields.useSrc, tripletFields.useDst)))))
+        Iterator((pid, epart.map(f(pid, epart.tripletIterator(vPart.vertexData, tripletFields.useSrc, tripletFields.useDst)))))
       }
     }
     val newEdges = grapeEdges.withPartitionsRDD(newEdgePartitions)
