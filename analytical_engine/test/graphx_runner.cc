@@ -90,7 +90,7 @@ std::string flags2JsonStr() {
 
   std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);
-  return std::move(ss.str());
+  return ss.str();
 }
 
 int main(int argc, char* argv[]) {
@@ -114,31 +114,31 @@ int main(int argc, char* argv[]) {
   //      std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
   if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
       std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
-    gs::Run<int64_t,uint64_t,int64_t, int64_t>(params);
+    gs::Run<int64_t, uint64_t, int64_t, int64_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int32_t") == 0) {
-    gs::Run<int64_t,uint64_t,int64_t, int32_t>(params);
+    gs::Run<int64_t, uint64_t, int64_t, int32_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
-    gs::Run<int64_t,uint64_t,int64_t, double>(params);
+    gs::Run<int64_t, uint64_t, int64_t, double>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int32_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
-    gs::Run<int64_t,uint64_t,int32_t, int64_t>(params);
+    gs::Run<int64_t, uint64_t, int32_t, int64_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int32_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int32_t") == 0) {
-    gs::Run<int64_t,uint64_t,int32_t, int32_t>(params);
+    gs::Run<int64_t, uint64_t, int32_t, int32_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "int32_t") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
-    gs::Run<int64_t,uint64_t,int32_t, double>(params);
+    gs::Run<int64_t, uint64_t, int32_t, double>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
-    gs::Run<int64_t,uint64_t,double, int64_t>(params);
+    gs::Run<int64_t, uint64_t, double, int64_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int32_t") == 0) {
-    gs::Run<int64_t,uint64_t,double, int32_t>(params);
+    gs::Run<int64_t, uint64_t, double, int32_t>(params);
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
-    gs::Run<int64_t,uint64_t,double, double>(params);
+    gs::Run<int64_t, uint64_t, double, double>(params);
   } else {
     LOG(ERROR) << "current not supported: " << FLAGS_vd_class << ", "
                << FLAGS_ed_class;

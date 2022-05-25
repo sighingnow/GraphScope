@@ -256,7 +256,7 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
         *std::dynamic_pointer_cast<graphx_vdata_t>(client.GetObject(vdata_id));
   };
 
-  std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) {
+  std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) override {
     // ensure the builder hasn't been sealed yet.
     ENSURE_NOT_SEALED(this);
     VINEYARD_CHECK_OK(this->Build(client));

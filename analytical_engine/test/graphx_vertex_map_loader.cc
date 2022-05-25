@@ -101,7 +101,7 @@ void Load(const std::string local_vm_ids_str, vineyard::Client& client) {
     global_vm_id = graphx_vm->id();
     LOG(INFO) << "Persist csr id: " << graphx_vm->id();
   }
-  LOG(INFO) << "GlobalVertexMapID:" << getHostName() << ":"<< graphx_pid << ":"
+  LOG(INFO) << "GlobalVertexMapID:" << getHostName() << ":" << graphx_pid << ":"
             << global_vm_id;
 }
 
@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
 
   Init();
   vineyard::Client client;
-  client.Connect(FLAGS_ipc_socket);
+  VINEYARD_CHECK_OK(client.Connect(FLAGS_ipc_socket));
   LOG(INFO) << "Connected to " << FLAGS_ipc_socket;
 
   if (FLAGS_oid_type == "int64_t" && FLAGS_vid_type == "uint64_t") {

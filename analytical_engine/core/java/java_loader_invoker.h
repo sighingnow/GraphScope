@@ -30,11 +30,11 @@
 #include <thread>
 #include <vector>
 
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/split.hpp>
 #include "arrow/array.h"
 #include "arrow/array/builder_binary.h"
 #include "arrow/builder.h"
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/split.hpp>
 
 #include "grape/communication/communicator.h"
 #include "grape/grape.h"
@@ -69,9 +69,9 @@ void BuildArray(std::shared_ptr<arrow::Array>& array,
   for (size_t i = 0; i < offset_arr.size(); ++i) {
     total_length += offset_arr[i].size();
   }
-  array_builder.AppendNulls(total_length);
+  ARROW_OK_OR_RAISE(array_builder.AppendNulls(total_length));
 
-  array_builder.Finish(&array);
+  ARROW_OK_OR_RAISE(array_builder.Finish(&array));
 }
 template <typename T,
           typename std::enable_if<(!std::is_same<T, std::string>::value &&
@@ -88,7 +88,8 @@ void BuildArray(std::shared_ptr<arrow::Array>& array,
   for (size_t i = 0; i < offset_arr.size(); ++i) {
     total_length += offset_arr[i].size();
   }
-  array_builder.Reserve(total_length);  // the number of elements
+  ARROW_OK_OR_RAISE(
+      array_builder.Reserve(total_length));  // the number of elements
 
   for (size_t i = 0; i < data_arr.size(); ++i) {
     auto ptr = reinterpret_cast<const elementType*>(data_arr[i].data());
@@ -100,7 +101,7 @@ void BuildArray(std::shared_ptr<arrow::Array>& array,
       ptr += 1;  // We have convert to T*, so plus 1 is ok.
     }
   }
-  array_builder.Finish(&array);
+  ARROW_OK_OR_RAISE(array_builder.Finish(&array));
 }
 
 template <typename T,
@@ -116,8 +117,9 @@ void BuildArray(std::shared_ptr<arrow::Array>& array,
     total_bytes += data_arr[i].size();
     total_length += offset_arr[i].size();
   }
-  array_builder.Reserve(total_length);  // the number of elements
-  array_builder.ReserveData(total_bytes);
+  ARROW_OK_OR_RAISE(
+      array_builder.Reserve(total_length));  // the number of elements
+  ARROW_OK_OR_RAISE(array_builder.ReserveData(total_bytes));
 
   for (size_t i = 0; i < data_arr.size(); ++i) {
     const char* ptr = data_arr[i].data();
@@ -130,7 +132,7 @@ void BuildArray(std::shared_ptr<arrow::Array>& array,
       ptr += cur_offset[j];
     }
   }
-  array_builder.Finish(&array);
+  ARROW_OK_OR_RAISE(array_builder.Finish(&array));
 }
 
 static constexpr const char* JAVA_LOADER_CLASS =
@@ -602,8 +604,7 @@ class JavaLoaderInvoker {
  | length  |   ed class  | oid-len | srcOids | dstOids  | edata-len   | ...
 
  do not modify pointer */
-  int digestEdgesFromMapedFile(char* data,
-                               int64_t chunk_len) {
+  int digestEdgesFromMapedFile(char* data, int64_t chunk_len) {
     if (chunk_len < 28) {
       LOG(ERROR) << "At least need 16 bytes to read meta";
       return 0;

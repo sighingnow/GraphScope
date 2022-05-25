@@ -368,7 +368,7 @@ class GraphXVertexMap
 
     auto ovnum = outer_lid2Oids_->length();
     LOG(INFO) << "ovnum: " << ovnum;
-    gid_builder.Reserve(ovnum);
+    ARROW_OK_OR_RAISE(gid_builder.Reserve(ovnum));
     vid_t gid;
     for (auto i = 0; i < ovnum; ++i) {
       CHECK(GetGid(outer_lid2Oids_accessor_[i], gid));
@@ -376,7 +376,7 @@ class GraphXVertexMap
       // LOG(INFO) << "outer oid: " << outer_lid2Oids_->Value(i)
       //           << " gid: " << gid;
     }
-    gid_builder.Finish(&outer_lid2Gids_);
+    ARROW_OK_OR_RAISE(gid_builder.Finish(&outer_lid2Gids_));
     outer_lid2Gids_accessor_ = outer_lid2Gids_->raw_values();
 
     vid_t lid = lid2Oids_[fid_]->length();
@@ -628,15 +628,15 @@ class BasicGraphXVertexMapBuilder
       MPI_Allgather(&tmp_graphx_pid, 1, MPI_INT, graphx_pids.data(), 1, MPI_INT,
                     comm_spec_.comm());
 
-      for (auto v : graphx_pids){
-          LOG(INFO) << v ;
+      for (auto v : graphx_pids) {
+        LOG(INFO) << v;
       }
       LOG(INFO) << "Received graphx pids: "
                 << std::string(graphx_pids.begin(), graphx_pids.end());
       arrow::Int32Builder builder;
-      builder.AppendValues(graphx_pids);
+      ARROW_OK_OR_RAISE(builder.AppendValues(graphx_pids));
       std::shared_ptr<arrow::Int32Array> graphx_pids_array;
-      builder.Finish(&graphx_pids_array);
+      ARROW_OK_OR_RAISE(builder.Finish(&graphx_pids_array));
       vineyard::NumericArrayBuilder<int32_t> v6d_graphx_pids_builder(
           client, graphx_pids_array);
       this->SetGraphXPids(
