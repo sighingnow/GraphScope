@@ -107,7 +107,7 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
   VertexDataBuilder() {}
   ~VertexDataBuilder() {}
 
-  void Init(vid_t frag_vnums, vdata_t initValue) {
+  boost::leaf::result<void> Init(vid_t frag_vnums, vdata_t initValue) {
     vdata_array_builder_t vdata_builder;
     this->frag_vnums_ = frag_vnums;
     ARROW_OK_OR_RAISE(vdata_builder.Reserve(static_cast<int64_t>(frag_vnums_)));
@@ -119,7 +119,7 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
               << " vertices, init val : " << initValue;
   }
 
-  void Init(vdata_array_builder_t& vdata_builder) {
+  boost::leaf::result<void> Init(vdata_array_builder_t& vdata_builder) {
     this->frag_vnums_ = vdata_builder.length();
     ARROW_OK_OR_RAISE(vdata_builder.Finish(&(this->vdata_array_)));
     LOG(INFO) << "Init vertex data with " << frag_vnums_;

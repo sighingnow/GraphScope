@@ -363,7 +363,7 @@ class GraphXVertexMap
     return id_parser_.generate_global_id(fid, lid);
   }
 
-  void InitOuterGids() {
+ boost::leaf::result<void> InitOuterGids() {
     vid_array_builder_t gid_builder;
 
     auto ovnum = outer_lid2Oids_->length();
@@ -384,6 +384,7 @@ class GraphXVertexMap
       outer_gid2Lids_.emplace(outer_lid2Gids_->Value(i), lid);
       lid++;
     }
+    return {};
   }
 
  private:
@@ -564,8 +565,8 @@ class BasicGraphXVertexMapBuilder
     std::shared_ptr<oid_array_t> our_oids =
         partial_vmap->GetInnerLid2Oid().GetArray();
 
-    vineyard::FragmentAllGatherArray<oid_t>(comm_spec_, our_oids,
-                                            collected_oids);
+    CHECK(vineyard::FragmentAllGatherArray<oid_t>(comm_spec_, our_oids,
+                                            collected_oids).ok());
     CHECK_EQ(collected_oids.size(), comm_spec_.worker_num());
     for (auto i = 0; i < comm_spec_.worker_num(); ++i) {
       auto array = collected_oids[i];
@@ -634,9 +635,9 @@ class BasicGraphXVertexMapBuilder
       LOG(INFO) << "Received graphx pids: "
                 << std::string(graphx_pids.begin(), graphx_pids.end());
       arrow::Int32Builder builder;
-      ARROW_OK_OR_RAISE(builder.AppendValues(graphx_pids));
+      CHECK(builder.AppendValues(graphx_pids).ok());
       std::shared_ptr<arrow::Int32Array> graphx_pids_array;
-      ARROW_OK_OR_RAISE(builder.Finish(&graphx_pids_array));
+      CHECK(builder.Finish(&graphx_pids_array).ok());
       vineyard::NumericArrayBuilder<int32_t> v6d_graphx_pids_builder(
           client, graphx_pids_array);
       this->SetGraphXPids(

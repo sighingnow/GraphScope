@@ -25,7 +25,7 @@ if (ENABLE_JAVA_SDK)
     #check whether we are using clang.
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         message(STATUS "Using Clang compiler: ${CMAKE_CXX_COMPILER}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fforce-emit-vtables")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ferror-limit=5 -flto -fforce-emit-vtables")
     else()
         message(WARNING "Compiling with ENABLE_JAVA_SDK ON expects a minimum Clang-11 compiler,"
                         "your compiler is ${CMAKE_CXX_COMPILER}. Continue building,"
@@ -33,7 +33,6 @@ if (ENABLE_JAVA_SDK)
     endif()
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fmax-errors=5")
 if (NETWORKX)
     add_definitions(-DNETWORKX)
     add_definitions(-DRAPIDJSON_HAS_CXX11=1)
@@ -87,6 +86,7 @@ endif()
 if (W_NO_UNDEF_PREFIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-undef-prefix")
 endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lpthread")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
 if (NOT APPLE)
@@ -133,6 +133,20 @@ if (APPLE)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/usr/local/lib")
     endif()
 endif ()
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/opt/openmpi/lib")
+        if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+            set(OpenMP_C "${CMAKE_C_COMPILER}" CACHE STRING "" FORCE)
+            set(OpenMP_C_FLAGS "-fopenmp=libomp" CACHE STRING "" FORCE) # -Wno-unused-command-line-argument
+            set(OpenMP_C_LIB_NAMES "libomp" CACHE STRING "" FORCE)
+            set(OpenMP_libomp_LIBRARY "omp" CACHE STRING "" FORCE)
+        endif()
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            set(OpenMP_CXX "${CMAKE_CXX_COMPILER}" CACHE STRING "" FORCE)
+            set(OpenMP_CXX_FLAGS "-fopenmp=libomp" CACHE STRING "" FORCE) #-Wno-unused-command-line-argument
+            set(OpenMP_CXX_LIB_NAMES "libomp" CACHE STRING "" FORCE)
+            set(OpenMP_libomp_LIBRARY "omp" CACHE STRING "" FORCE)
+        endif()
+
 find_package(OpenMP REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS system filesystem
@@ -249,7 +263,7 @@ else()
         ${VINEYARD_LIBRARIES}
         )
 endif()
-target_link_libraries(grape_engine PRIVATE OpenMP::OpenMP_CXX)
+#target_link_libraries(grape_engine PRIVATE OpenMP::OpenMP_CXX)
 
 if (${LIBUNWIND_FOUND})
     target_link_libraries(grape_engine PRIVATE ${LIBUNWIND_LIBRARIES})

@@ -60,7 +60,7 @@ static constexpr const char* DATA_VECTOR_VECTOR =
 template <typename T,
           typename std::enable_if<std::is_same<T, grape::EmptyType>::value,
                                   T>::type* = nullptr>
-void BuildArray(std::shared_ptr<arrow::Array>& array,
+boost::leaf::result<void> BuildArray(std::shared_ptr<arrow::Array>& array,
                 const std::vector<std::vector<char>>& data_arr,
                 const std::vector<std::vector<int>>& offset_arr) {
   VLOG(10) << "Building pod array with null builder";
@@ -72,12 +72,13 @@ void BuildArray(std::shared_ptr<arrow::Array>& array,
   ARROW_OK_OR_RAISE(array_builder.AppendNulls(total_length));
 
   ARROW_OK_OR_RAISE(array_builder.Finish(&array));
+  return {};
 }
 template <typename T,
           typename std::enable_if<(!std::is_same<T, std::string>::value &&
                                    !std::is_same<T, grape::EmptyType>::value),
                                   T>::type* = nullptr>
-void BuildArray(std::shared_ptr<arrow::Array>& array,
+boost::leaf::result<void> BuildArray(std::shared_ptr<arrow::Array>& array,
                 const std::vector<std::vector<char>>& data_arr,
                 const std::vector<std::vector<int>>& offset_arr) {
   VLOG(10) << "Building pod array with pod builder";
@@ -102,12 +103,13 @@ void BuildArray(std::shared_ptr<arrow::Array>& array,
     }
   }
   ARROW_OK_OR_RAISE(array_builder.Finish(&array));
+  return {};
 }
 
 template <typename T,
           typename std::enable_if<std::is_same<T, std::string>::value,
                                   T>::type* = nullptr>
-void BuildArray(std::shared_ptr<arrow::Array>& array,
+boost::leaf::result<void> BuildArray(std::shared_ptr<arrow::Array>& array,
                 const std::vector<std::vector<char>>& data_arr,
                 const std::vector<std::vector<int>>& offset_arr) {
   VLOG(10) << "Building utf array with string builder";
@@ -133,6 +135,7 @@ void BuildArray(std::shared_ptr<arrow::Array>& array,
     }
   }
   ARROW_OK_OR_RAISE(array_builder.Finish(&array));
+  return {};
 }
 
 static constexpr const char* JAVA_LOADER_CLASS =

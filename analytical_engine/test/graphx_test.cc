@@ -26,7 +26,7 @@ limitations under the License.
 #include "glog/logging.h"
 #include "vineyard/client/client.h"
 
-void generateData(arrow::Int64Builder& srcBuilder,
+boost::leaf::result<void> generateData(arrow::Int64Builder& srcBuilder,
                   arrow::Int64Builder& dstBuilder,
                   arrow::Int64Builder& edataBuilder,
                   grape::CommSpec& comm_spec);
@@ -37,8 +37,8 @@ vineyard::ObjectID getLocalVM(vineyard::Client& client,
   {
     arrow::Int64Builder inner, outer;
     if (comm_spec.worker_id() == 0) {
-      ARROW_OK_OR_RAISE(inner.Reserve(3));
-      ARROW_OK_OR_RAISE(outer.Reserve(3));
+      CHECK(inner.Reserve(3).ok());
+      CHECK(outer.Reserve(3).ok());
       inner.UnsafeAppend(2);
       inner.UnsafeAppend(4);
       inner.UnsafeAppend(6);
@@ -56,8 +56,8 @@ vineyard::ObjectID getLocalVM(vineyard::Client& client,
       LOG(INFO) << "Worker [" << comm_spec.worker_id()
                 << "Persist local vmap id: " << vmap->id();
     } else {
-      ARROW_OK_OR_RAISE(inner.Reserve(3));
-      ARROW_OK_OR_RAISE(outer.Reserve(3));
+      CHECK(inner.Reserve(3).ok());
+      CHECK(outer.Reserve(3).ok());
       inner.UnsafeAppend(1);
       inner.UnsafeAppend(3);
       inner.UnsafeAppend(5);
@@ -180,7 +180,7 @@ void TestGraphXFragment(vineyard::Client& client, vineyard::ObjectID vm_id,
   LOG(INFO) << "Succesfully construct fragment: " << res->id();
 }
 
-void generateData(arrow::Int64Builder& srcBuilder,
+boost::leaf::result<void> generateData(arrow::Int64Builder& srcBuilder,
                   arrow::Int64Builder& dstBuilder,
                   arrow::Int64Builder& edataBuilder,
                   grape::CommSpec& comm_spec) {
@@ -222,6 +222,7 @@ void generateData(arrow::Int64Builder& srcBuilder,
   //   edataBuilder.UnsafeAppend(5);
   //   edataBuilder.UnsafeAppend(6);
   // }
+  return {};
 }
 void Init() {
   grape::InitMPIComm();

@@ -311,7 +311,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
   explicit BasicGraphXCSRBuilder(vineyard::Client& client)
       : GraphXCSRBuilder<vid_t, edata_t>(client) {}
 
-  void LoadEdges(oid_array_builder_t& srcOidsBuilder,
+  boost::leaf::result<void> LoadEdges(oid_array_builder_t& srcOidsBuilder,
                  oid_array_builder_t& dstOidsBuilder,
                  edata_array_builder_t& edatasBuilder,
                  GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map) {
@@ -407,12 +407,13 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     add_edges(srcLids, dstLids, in_edge_active, out_edge_active);
     sort();
     LOG(INFO) << "Finish loading edges";
+    return {};
   }
 
   vineyard::Status Build(vineyard::Client& client) override {
     {
       std::shared_ptr<arrow::FixedSizeBinaryArray> edges;
-      ARROW_OK_OR_RAISE(in_edge_builder_.Finish(&edges));
+      CHECK(in_edge_builder_.Finish(&edges).ok());
 
       vineyard::FixedSizeBinaryArrayBuilder edge_builder_v6d(client, edges);
       auto res = std::dynamic_pointer_cast<vineyard::FixedSizeBinaryArray>(
@@ -422,7 +423,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     }
     {
       std::shared_ptr<arrow::FixedSizeBinaryArray> edges;
-      ARROW_OK_OR_RAISE(out_edge_builder_.Finish(&edges));
+      CHECK(out_edge_builder_.Finish(&edges).ok());
 
       vineyard::FixedSizeBinaryArrayBuilder edge_builder_v6d(client, edges);
       auto res = std::dynamic_pointer_cast<vineyard::FixedSizeBinaryArray>(
@@ -467,18 +468,18 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
   }
 
  private:
-  void build_offsets() {
+  boost::leaf::result<void> build_offsets() {
     in_edges_num_ = 0;
     for (auto d : ie_degree_) {
       in_edges_num_ += d;
     }
-    in_edge_builder_.Resize(in_edges_num_);
+    ARROW_OK_OR_RAISE(in_edge_builder_.Resize(in_edges_num_));
 
     out_edges_num_ = 0;
     for (auto d : oe_degree_) {
       out_edges_num_ += d;
     }
-    out_edge_builder_.Resize(out_edges_num_);
+    ARROW_OK_OR_RAISE(out_edge_builder_.Resize(out_edges_num_));
 
     {
       ie_offsets_.resize(vnum_ + 1);
@@ -512,6 +513,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       std::vector<int> tmp;
       tmp.swap(oe_degree_);
     }
+    return {};
   }
 
   void add_edges(const std::vector<vid_t>& src_accessor,
