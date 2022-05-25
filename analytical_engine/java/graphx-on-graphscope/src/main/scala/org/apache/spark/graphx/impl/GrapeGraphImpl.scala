@@ -181,7 +181,31 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   override def mapTriplets[ED2: ClassTag](
                                   map: EdgeTriplet[VD, ED] => ED2,
                                   tripletFields: TripletFields): Graph[VD, ED2] = {
-    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(grapeVertices.grapePartitionsRDD){
+    //broadcast outer vertex data
+    //After map vertices, broadcast new inner vertex data to outer vertex data
+    val time0 = System.nanoTime()
+    val updateMessage = grapeVertices.grapePartitionsRDD.mapPartitions(iter => {
+      if (iter.hasNext){
+        val tuple = iter.next()
+        val pid = tuple._1
+        val part = tuple._2
+        part.generateVertexDataMessage
+      }
+      else {
+        Iterator.empty
+      }
+    }).partitionBy(new HashPartitioner(grapeVertices.grapePartitionsRDD.getNumPartitions))
+    val updatedVertexPartition = grapeVertices.grapePartitionsRDD.zipPartitions(updateMessage){
+      (vIter, msgIter) => {
+        val (pid, vpart) = vIter.next()
+        Iterator((pid,vpart.updateOuterVertexData(msgIter)))
+      }
+    }
+    val time1 = System.nanoTime()
+    logger.info(s"sync outer vertex data cost ${(time1 - time0)/ 1000000} ms")
+    //Although it seems we create new partitions, but actually we reuse the previous
+    val newGrapeVertices = grapeVertices.withGrapePartitionsRDD(updatedVertexPartition)
+    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newGrapeVertices.grapePartitionsRDD){
       (eIter,vIter) => {
         val (pid, vPart) = vIter.next()
         val (_, epart) = eIter.next()
@@ -189,7 +213,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       }
     }
     val newEdges = grapeEdges.withPartitionsRDD(newEdgePartitions)
-    new GrapeGraphImpl[VD,ED2](grapeVertices,newEdges)
+    new GrapeGraphImpl[VD,ED2](newGrapeVertices,newEdges)
   }
 
   override def mapTriplets[ED2](f: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], tripletFields: TripletFields)(implicit evidence$8: ClassTag[ED2]): Graph[VD, ED2] = {
