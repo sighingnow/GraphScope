@@ -88,7 +88,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       while (i < outerGids.length){
         require(vm.outerVertexGid2Vertex(outerGids(i), vertex))
         outerLids(i) = vertex.GetValue()
-        log.info(s"Partition ${pid} received outer vdata updating info ${outerLids(i)}, ${outerDatas(i)}")
+//        log.info(s"Partition ${pid} received outer vdata updating info ${outerLids(i)}, ${outerDatas(i)}")
         vertexData.setData(outerLids(i), outerDatas(i))
         i += 1
       }
