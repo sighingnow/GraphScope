@@ -173,6 +173,11 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     val newEdges = grapeEdges.mapEdgePartitions((pid,part) => part.map(f(pid, part.iterator)))
     new GrapeGraphImpl[VD,ED2](vertices,newEdges)
   }
+
+  override def mapTriplets[ED2: ClassTag](map: EdgeTriplet[VD, ED] => ED2): Graph[VD, ED2] = {
+    mapTriplets(map, TripletFields.All)
+  }
+
   override def mapTriplets[ED2: ClassTag](
                                   map: EdgeTriplet[VD, ED] => ED2,
                                   tripletFields: TripletFields): Graph[VD, ED2] = {
