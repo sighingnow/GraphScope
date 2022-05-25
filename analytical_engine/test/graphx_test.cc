@@ -37,8 +37,8 @@ vineyard::ObjectID getLocalVM(vineyard::Client& client,
   {
     arrow::Int64Builder inner, outer;
     if (comm_spec.worker_id() == 0) {
-      inner.Reserve(3);
-      outer.Reserve(3);
+      ARROW_OK_OR_RAISE(inner.Reserve(3));
+      ARROW_OK_OR_RAISE(outer.Reserve(3));
       inner.UnsafeAppend(2);
       inner.UnsafeAppend(4);
       inner.UnsafeAppend(6);
@@ -56,8 +56,8 @@ vineyard::ObjectID getLocalVM(vineyard::Client& client,
       LOG(INFO) << "Worker [" << comm_spec.worker_id()
                 << "Persist local vmap id: " << vmap->id();
     } else {
-      inner.Reserve(3);
-      outer.Reserve(3);
+      ARROW_OK_OR_RAISE(inner.Reserve(3));
+      ARROW_OK_OR_RAISE(outer.Reserve(3));
       inner.UnsafeAppend(1);
       inner.UnsafeAppend(3);
       inner.UnsafeAppend(5);
@@ -185,9 +185,9 @@ void generateData(arrow::Int64Builder& srcBuilder,
                   arrow::Int64Builder& edataBuilder,
                   grape::CommSpec& comm_spec) {
   // if (comm_spec.worker_id() == 0) {
-  srcBuilder.Reserve(6);
-  dstBuilder.Reserve(6);
-  edataBuilder.Reserve(6);
+  ARROW_OK_OR_RAISE(srcBuilder.Reserve(6));
+  ARROW_OK_OR_RAISE(dstBuilder.Reserve(6));
+  ARROW_OK_OR_RAISE(edataBuilder.Reserve(6));
   srcBuilder.UnsafeAppend(1);
   srcBuilder.UnsafeAppend(1);
   srcBuilder.UnsafeAppend(2);

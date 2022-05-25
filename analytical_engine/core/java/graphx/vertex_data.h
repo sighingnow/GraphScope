@@ -110,18 +110,18 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
   void Init(vid_t frag_vnums, vdata_t initValue) {
     vdata_array_builder_t vdata_builder;
     this->frag_vnums_ = frag_vnums;
-    vdata_builder.Reserve(static_cast<int64_t>(frag_vnums_));
+    ARROW_OK_OR_RAISE(vdata_builder.Reserve(static_cast<int64_t>(frag_vnums_)));
     for (size_t i = 0; i < static_cast<size_t>(frag_vnums_); ++i) {
       vdata_builder.UnsafeAppend(initValue);
     }
-    vdata_builder.Finish(&(this->vdata_array_));
+    ARROW_OK_OR_RAISE(vdata_builder.Finish(&(this->vdata_array_)));
     LOG(INFO) << "Init vertex data with " << frag_vnums_
               << " vertices, init val : " << initValue;
   }
 
   void Init(vdata_array_builder_t& vdata_builder) {
     this->frag_vnums_ = vdata_builder.length();
-    vdata_builder.Finish(&(this->vdata_array_));
+    ARROW_OK_OR_RAISE(vdata_builder.Finish(&(this->vdata_array_)));
     LOG(INFO) << "Init vertex data with " << frag_vnums_;
   }
 
@@ -130,7 +130,7 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
         this->Seal(client));
   }
 
-  std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) {
+  std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) override {
     // ensure the builder hasn't been sealed yet.
     ENSURE_NOT_SEALED(this);
     VINEYARD_CHECK_OK(this->Build(client));

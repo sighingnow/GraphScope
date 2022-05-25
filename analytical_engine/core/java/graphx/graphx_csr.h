@@ -319,9 +319,9 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     std::shared_ptr<oid_array_t> srcOids, dstOids;
     // std::shared_ptr<edata_array_t> edatas;
     {
-      srcOidsBuilder.Finish(&srcOids);
-      dstOidsBuilder.Finish(&dstOids);
-      edatasBuilder.Finish(&edata_array_);
+      ARROW_OK_OR_RAISE(srcOidsBuilder.Finish(&srcOids));
+      ARROW_OK_OR_RAISE(dstOidsBuilder.Finish(&dstOids));
+      ARROW_OK_OR_RAISE(edatasBuilder.Finish(&edata_array_));
     }
     CHECK_EQ(srcOids->length(), dstOids->length());
     CHECK_EQ(dstOids->length(), edata_array_->length());
@@ -412,7 +412,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
   vineyard::Status Build(vineyard::Client& client) override {
     {
       std::shared_ptr<arrow::FixedSizeBinaryArray> edges;
-      in_edge_builder_.Finish(&edges);
+      ARROW_OK_OR_RAISE(in_edge_builder_.Finish(&edges));
 
       vineyard::FixedSizeBinaryArrayBuilder edge_builder_v6d(client, edges);
       auto res = std::dynamic_pointer_cast<vineyard::FixedSizeBinaryArray>(
@@ -422,7 +422,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
     }
     {
       std::shared_ptr<arrow::FixedSizeBinaryArray> edges;
-      out_edge_builder_.Finish(&edges);
+      ARROW_OK_OR_RAISE(out_edge_builder_.Finish(&edges));
 
       vineyard::FixedSizeBinaryArrayBuilder edge_builder_v6d(client, edges);
       auto res = std::dynamic_pointer_cast<vineyard::FixedSizeBinaryArray>(
@@ -488,8 +488,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       }
       CHECK_EQ(ie_offsets_[vnum_], in_edges_num_);
       offset_array_builder_t builder;
-      builder.AppendValues(ie_offsets_);
-      builder.Finish(&ie_offset_array_);
+      ARROW_OK_OR_RAISE(builder.AppendValues(ie_offsets_));
+      ARROW_OK_OR_RAISE(builder.Finish(&ie_offset_array_));
     }
     {
       oe_offsets_.resize(vnum_ + 1);
@@ -499,8 +499,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
       }
       CHECK_EQ(oe_offsets_[vnum_], out_edges_num_);
       offset_array_builder_t builder;
-      builder.AppendValues(oe_offsets_);
-      builder.Finish(&oe_offset_array_);
+      ARROW_OK_OR_RAISE(builder.AppendValues(oe_offsets_));
+      ARROW_OK_OR_RAISE(builder.Finish(&oe_offset_array_));
     }
 
     // We copy to offset_array since later we will modify inplace in <offset>
