@@ -34,6 +34,7 @@
 #include "grape/grape.h"
 #include "grape/util.h"
 #include "grape/worker/comm_spec.h"
+#include "vineyard/graph/utils/error.h"
 #include "vineyard/basic/ds/array.h"
 #include "vineyard/basic/ds/arrow.h"
 #include "vineyard/basic/ds/arrow_utils.h"

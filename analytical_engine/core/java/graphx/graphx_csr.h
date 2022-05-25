@@ -38,6 +38,7 @@
 #include "grape/graph/immutable_csr.h"
 #include "grape/utils/bitset.h"
 #include "grape/worker/comm_spec.h"
+#include "vineyard/graph/utils/error.h"
 #include "vineyard/basic/ds/arrow_utils.h"
 #include "vineyard/basic/stream/byte_stream.h"
 #include "vineyard/basic/stream/dataframe_stream.h"

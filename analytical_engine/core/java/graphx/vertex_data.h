@@ -24,6 +24,7 @@
 #include "vineyard/basic/ds/arrow.h"
 #include "vineyard/basic/ds/arrow_utils.h"
 #include "vineyard/client/client.h"
+#include "vineyard/graph/utils/error.h"
 #include "vineyard/common/util/functions.h"
 #include "vineyard/common/util/typename.h"
 #include "vineyard/graph/fragment/property_graph_types.h"
@@ -117,12 +118,14 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
     ARROW_OK_OR_RAISE(vdata_builder.Finish(&(this->vdata_array_)));
     LOG(INFO) << "Init vertex data with " << frag_vnums_
               << " vertices, init val : " << initValue;
+    return {};
   }
 
   boost::leaf::result<void> Init(vdata_array_builder_t& vdata_builder) {
     this->frag_vnums_ = vdata_builder.length();
     ARROW_OK_OR_RAISE(vdata_builder.Finish(&(this->vdata_array_)));
     LOG(INFO) << "Init vertex data with " << frag_vnums_;
+    return {};
   }
 
   std::shared_ptr<VertexData<vid_t, vdata_t>> MySeal(vineyard::Client& client) {
