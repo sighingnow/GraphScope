@@ -57,8 +57,8 @@ object GraphXBenchmark extends Logging{
     /**
      * test join
      */
-    val outDegree = graph15.outDegrees
-    val inDegree = graph15.inDegrees
+    val outDegree = graph15.outDegrees.cache()
+    val inDegree = graph15.inDegrees.cache()
     log.info(s"after get out degree and in degrees ${outDegree.count()}, ${inDegree.count()}")
     val time31 = System.nanoTime()
     val graph16 = graph15.outerJoinVertices(outDegree)((_,_,degree) => degree.getOrElse(0))
