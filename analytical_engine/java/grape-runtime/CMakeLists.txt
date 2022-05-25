@@ -17,7 +17,7 @@ project(GRAPE-JNI)
 #Check compiler is clang or gnu
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     message(STATUS "Using Clang compiler: ${CMAKE_CXX_COMPILER}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fforce-emit-vtables")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fforce-emit-vtables -ferror-limit=5")
     message(STATUS "Try to find ld.lld under same directory..")
     get_filename_component(COMPILER_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
     message(STATUS "Obtain directory: ${COMPILER_DIR}")
@@ -28,7 +28,7 @@ else()
 endif()
 
 # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g -std=gnu++14 -Wall -Werror")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g -std=gnu++14 -Wall -Werror")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g -std=gnu++14 -Wall -Werror")
 
 file(GLOB SOURCES "target/generated-sources/annotations/*.cc" "src/main/native/*.cc" "../../core/java/javasdk.cc") #"src/main/native/*.cc"
 
