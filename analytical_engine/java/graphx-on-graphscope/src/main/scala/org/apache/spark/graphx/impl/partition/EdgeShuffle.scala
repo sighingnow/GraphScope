@@ -4,6 +4,7 @@ import org.apache.spark.graphx.Edge
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.{BitSet, OpenHashSet}
 
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 class EdgeShuffle[ED : ClassTag](val fromPid : Int,
@@ -18,26 +19,20 @@ class EdgeShuffle[ED : ClassTag](val fromPid : Int,
   override def toString: String = "EdgeShuffle:{from "+ fromPid +",to "+ dstPid + ", oids:"+ oids.size + ",srcs: " + srcs.length + ",dsts: " + dsts.length + ",attrs:" + attrs.length;
 }
 
-class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : Int) extends Logging{
-  val fromPid2Shuffle = new Array[EdgeShuffle[ED]](numPartitions)
+class EdgeShuffleReceived[ED: ClassTag](val selfPid : Int) extends Logging{
+  val fromPid2Shuffle = new ArrayBuffer[EdgeShuffle[ED]]
 
-  def set(ind : Int, edgeShuffle: EdgeShuffle[ED]): Unit ={
-    if (fromPid2Shuffle(ind) != null){
-      throw new IllegalStateException(s"shuffle already in at ${ind}")
-    }
-    fromPid2Shuffle(ind) = edgeShuffle
-  }
-
-  def get(ind : Int) : EdgeShuffle[ED]= {
-    fromPid2Shuffle(ind)
+  def add(edgeShuffle: EdgeShuffle[ED]): Unit ={
+    fromPid2Shuffle.+=(edgeShuffle)
   }
 
   def getArrays: (Array[Array[Long]], Array[Array[Long]], Array[Array[ED]]) = {
-    val srcArrays = new Array[Array[Long]](numPartitions)
-    val dstArrays = new Array[Array[Long]](numPartitions)
-    val attrArrays = new Array[Array[ED]](numPartitions)
+    val size = fromPid2Shuffle.size
+    val srcArrays = new Array[Array[Long]](size)
+    val dstArrays = new Array[Array[Long]](size)
+    val attrArrays = new Array[Array[ED]](size)
     var i = 0
-    while (i < numPartitions){
+    while (i < size){
       srcArrays(i) = fromPid2Shuffle(i).srcs
       dstArrays(i) = fromPid2Shuffle(i).dsts
       attrArrays(i) = fromPid2Shuffle(i).attrs
@@ -52,7 +47,7 @@ class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : I
   def totalSize() : Long = {
     var i = 0;
     var res = 0L;
-    while (i < numPartitions){
+    while (i < fromPid2Shuffle.size){
       res += fromPid2Shuffle(i).size()
       i += 1
     }
@@ -67,38 +62,38 @@ class EdgeShuffleReceived[ED: ClassTag](val numPartitions : Int, val selfPid : I
     res
   }
 
-  def iterator() : Iterator[Edge[ED]] = {
-    new Iterator[Edge[ED]]{
-      var curPid = 0
-      var curInd = 0
-      var curShuffle :EdgeShuffle[ED] = fromPid2Shuffle(curPid)
-      val edge = new Edge[ED](0,0)
-      override def hasNext: Boolean = {
-          if (curInd >= curShuffle.size()){
-            curPid += 1
-	          var flag = true
-            while (curPid < numPartitions && flag){
-              curShuffle = fromPid2Shuffle(curPid)
-              if (curShuffle.size() > 0){
-  		          flag = false
-              }
-	            else {
-                 curPid += 1
-	            }
-            }
-            if (curPid >= numPartitions) return false
-            curInd = 0
-          }
-          true
-      }
-
-      override def next(): Edge[ED] = {
-        edge.srcId = curShuffle.srcs(curInd)
-        edge.dstId = curShuffle.dsts(curInd)
-        edge.attr = curShuffle.attrs(curInd)
-        curInd += 1
-        edge
-      }
-    }
-  }
+//  def iterator() : Iterator[Edge[ED]] = {
+//    new Iterator[Edge[ED]]{
+//      var curPid = 0
+//      var curInd = 0
+//      var curShuffle :EdgeShuffle[ED] = fromPid2Shuffle(curPid)
+//      val edge = new Edge[ED](0,0)
+//      override def hasNext: Boolean = {
+//          if (curInd >= curShuffle.size()){
+//            curPid += 1
+//	          var flag = true
+//            while (curPid < numPartitions && flag){
+//              curShuffle = fromPid2Shuffle(curPid)
+//              if (curShuffle.size() > 0){
+//  		          flag = false
+//              }
+//	            else {
+//                 curPid += 1
+//	            }
+//            }
+//            if (curPid >= numPartitions) return false
+//            curInd = 0
+//          }
+//          true
+//      }
+//
+//      override def next(): Edge[ED] = {
+//        edge.srcId = curShuffle.srcs(curInd)
+//        edge.dstId = curShuffle.dsts(curInd)
+//        edge.attr = curShuffle.attrs(curInd)
+//        curInd += 1
+//        edge
+//      }
+//    }
+//  }
 }

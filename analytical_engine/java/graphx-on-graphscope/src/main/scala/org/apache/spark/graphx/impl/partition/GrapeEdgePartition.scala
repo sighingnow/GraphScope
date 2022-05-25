@@ -20,10 +20,14 @@ import scala.reflect.ClassTag
 class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
                                                      val csr : GraphXCSR[Long,ED],
                                                      val vm : GraphXVertexMap[Long,Long],
-                                                     val edataStore : EdgeDataStore[ED],
                                                      val client : VineyardClient,
                                                      val edgeReversed : Boolean = false,
-                                                     var activeEdgeSet : BitSet = null) extends Logging {
+                                                     var activeEdgeSet : BitSet = null,
+                                                     var srcLids : PrimitiveArray[Long] = null,
+                                                     var dstLids : PrimitiveArray[Long] = null,
+                                                     var srcOids : PrimitiveArray[Long] = null,
+                                                     var dstOids : PrimitiveArray[Long] = null,
+                                                     var edatas : PrimitiveArray[ED] = null) extends Logging {
   val startLid = 0
   val endLid : Long = vm.innerVertexSize()
   def partOutEdgeNum : Long = csr.getPartialOutEdgesNum(startLid, endLid)
@@ -34,6 +38,47 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     activeEdgeSet.setUntil(csr.getOEOffset(endLid).toInt)
   }
   val NBR_SIZE = 16L
+  //to avoid the difficult to get srcLid in iterating over edges.
+
+  initEdgesInheap()
+  def initEdgesInheap() : Unit = {
+    val time0 = System.nanoTime()
+    if (srcOids == null){
+      srcOids = PrimitiveArray.create(classOf[Long], partOutEdgeNum.toInt)
+      srcLids = PrimitiveArray.create(classOf[Long], partOutEdgeNum.toInt)
+      var curLid = 0
+      while (curLid < endLid){
+        val curOid = vm.getId(curLid)
+        val startNbrOffset = csr.getOEOffset(curLid)
+        val endNbrOffset = csr.getOEOffset(curLid + 1)
+        var j = startNbrOffset
+        while (j < endNbrOffset){
+          j += 1
+          srcOids.set(j, curOid)
+          srcLids.set(j, curLid)
+        }
+        curLid += 1
+      }
+    }
+    if (dstOids == null){
+      require(edatas == null, "dstOids equals to null but edatas non null")
+      dstOids = PrimitiveArray.create(classOf[Long], partOutEdgeNum.toInt)
+      dstLids = PrimitiveArray.create(classOf[Long], partOutEdgeNum.toInt)
+      edatas = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], partOutEdgeNum.toInt).asInstanceOf[PrimitiveArray[ED]]
+      val nbr = csr.getOEBegin(0)
+      var offset = 0
+      val edataArray = csr.getEdataArray
+      while (offset < partOutEdgeNum.toInt){
+        dstOids.set(offset, vm.getId(nbr.vid()))
+        dstLids.set(offset, nbr.vid())
+        edatas.set(offset, edataArray.get(nbr.eid()))
+        offset += 1
+        nbr.addV(NBR_SIZE)
+      }
+    }
+    val time1 = System.nanoTime()
+    log.info(s"[Initializing edge cache in heap cost ]: ${(time1 - time0) / 1000000} ms")
+  }
 
   log.info(s"Got edge partition ${this.toString}")
 
@@ -98,12 +143,8 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   /** Iterate over out edges only, in edges will be iterated in other partition */
   def iterator : Iterator[Edge[ED]] = {
     new Iterator[Edge[ED]]{
-      val curNbr: PropertyNbrUnit[VertexId] = csr.getOEBegin(startLid)
-      val beginAddr = curNbr.getAddress
-      var curLid: Int = startLid
       var offset : Long = activeEdgeSet.nextSetBit(0)
       val offsetLimit : Long = csr.getOEOffset(endLid)
-      curNbr.setAddress(beginAddr + offset * NBR_SIZE)
       var edge: ReusableEdge[ED] = null.asInstanceOf[ReusableEdge[ED]]
 
       if (edgeReversed){
@@ -115,23 +156,15 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       log.info(s"Initiate iterator on partition ${pid} ,reversed ${edgeReversed}")
 
       override def hasNext: Boolean = {
-        log.info(s"has next offset: ${offset}, limit ${offsetLimit}")
-        if (offset >= 0 && offset < offsetLimit) true
+//        log.info(s"has next offset: ${offset}, limit ${offsetLimit}")
+        if (offset >= 0) true
         else false
       }
 
       override def next() : Edge[ED] = {
-        //Find srcLid of curNbr
-        while (csr.getOEOffset(curLid + 1) <= offset){
-          curLid += 1
-        }
-        log.info(s"curLid ${curLid},offset ${offset}, offset limit${offsetLimit}")
-        curNbr.setAddress(beginAddr + offset * NBR_SIZE)
-        val dstLid = curNbr.vid()
-        val edata = edataStore.getData(curNbr.eid())
-        edge.srcId = vm.getId(curLid)
-        edge.dstId = vm.getId(dstLid)
-        edge.attr = edata
+        edge.srcId = srcOids.get(offset)
+        edge.dstId = dstOids.get(offset)
+        edge.attr = edatas.get(offset)
         edge.index = offset
         offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
         edge
@@ -143,15 +176,11 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
                        includeSrc: Boolean = true, includeDst: Boolean = true)
   : Iterator[EdgeTriplet[VD, ED]] = new Iterator[EdgeTriplet[VD, ED]] {
 
-    val curNbr: PropertyNbrUnit[VertexId] = csr.getOEBegin(startLid)
-    val beginAddr = curNbr.getAddress
-    var curLid: Int = startLid
     var offset : Long = activeEdgeSet.nextSetBit(0)
     val offsetLimit : Long = csr.getOEOffset(endLid)
-    curNbr.setAddress(beginAddr + offset * NBR_SIZE)
 
     def createTriplet : GSEdgeTriplet[VD,ED] = {
-      if (edgeReversed){
+      if (!edgeReversed){
         new GSEdgeTripletImpl[VD,ED];
       }
       else {
@@ -159,10 +188,10 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       }
     }
 
-    log.info(s"Initiate iterator on partition ${pid} ,reversed ${edgeReversed}")
+    log.info(s"Initiate triplet iterator on partition ${pid} ,reversed ${edgeReversed}")
 
     override def hasNext: Boolean = {
-      log.info(s"has next offset: ${offset}, limit ${offsetLimit}")
+//      log.info(s"has next offset: ${offset}, limit ${offsetLimit}")
       if (offset >= 0 && offset < offsetLimit) true
       else false
     }
@@ -170,25 +199,16 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     override def next() : EdgeTriplet[VD,ED] = {
       //Find srcLid of curNbr
       val edgeTriplet = createTriplet
-      while (csr.getOEOffset(curLid + 1) <= offset){
-        curLid += 1
-      }
-      log.info(s"curLid ${curLid},offset ${offset}, offset limit${offsetLimit}")
-      curNbr.setAddress(beginAddr + offset * NBR_SIZE)
-      val dstLid = curNbr.vid()
-      val edata = edataStore.getData(curNbr.eid())
+//      log.info(s"curLid ${curLid},offset ${offset}, offset limit${offsetLimit}")
       edgeTriplet.index = offset
-      edgeTriplet.srcId = vm.getId(curLid)
-      edgeTriplet.dstId = vm.getId(dstLid)
-      edgeTriplet.attr = edata
-      if (includeSrc){
-        edgeTriplet.srcAttr = vertexDataStore.getData(curLid)
-      }
-      if (includeDst){
-        edgeTriplet.dstAttr = vertexDataStore.getData(dstLid)
-      }
+      edgeTriplet.srcId = srcOids.get(offset)
+      edgeTriplet.dstId = dstOids.get(offset)
+      edgeTriplet.attr = edatas.get(offset)
+      edgeTriplet.srcAttr = vertexDataStore.getData(srcLids.get(offset))
+      edgeTriplet.dstAttr = vertexDataStore.getData(dstLids.get(offset))
       offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
       //        curNbr.addV(NBR_SIZE)
+//      log.info(s"Produce edge Triplet: ${edgeTriplet}")
       edgeTriplet
     }
   }
@@ -219,7 +239,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     var attrSum = null.asInstanceOf[ED]
     val newMask = new BitSet(activeEdgeSet.capacity)
     newMask.union(activeEdgeSet)
-    val newEdata = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], edataStore.size.toInt).asInstanceOf[PrimitiveArray[ED]]
+    val newEdata = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], edatas.size()).asInstanceOf[PrimitiveArray[ED]]
     while (iter.hasNext){
       val edge = iter.next()
       val curIndex = edge.index
@@ -243,43 +263,49 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       }
       flag = true
     }
-    new GrapeEdgePartition[VD,ED](pid, csr, vm, new InHeapEdataStore[ED](newEdata), client, edgeReversed, newMask)
+    new GrapeEdgePartition[VD,ED](pid, csr, vm,client, edgeReversed, newMask, srcLids,dstLids, srcOids, dstOids, newEdata)
   }
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
-    val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], edataStore.size.toInt).asInstanceOf[PrimitiveArray[ED2]]
-    val iter = iterator
+    val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], edatas.size()).asInstanceOf[PrimitiveArray[ED2]]
+    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     var ind = 0;
     while (iter.hasNext){
-      newData.set(ind, f(iter.next()))
+      val edge = iter.next()
+      newData.set(edge.index, f(edge))
       ind += 1
     }
     this.withNewEdata(newData)
   }
 
   def map[ED2: ClassTag](iter: Iterator[ED2]): GrapeEdgePartition[VD, ED2] = {
-    val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], edataStore.size.toInt).asInstanceOf[PrimitiveArray[ED2]]
+    val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], edatas.size()).asInstanceOf[PrimitiveArray[ED2]]
     var ind = activeEdgeSet.nextSetBit(0)
-    val limit = edataStore.size.toInt
+//    val curNbr: PropertyNbrUnit[VertexId] = csr.getOEBegin(0)
+//    val beginAddr = curNbr.getAddress
     while (iter.hasNext) {
+//      val curAddr = beginAddr + ind * NBR_SIZE
+//      curNbr.setAddress(curAddr)
+//      val eid = curNbr.eid()
       newData.set(ind, iter.next())
+//      newData.set(eid, iter.next())
       require(ind != -1, s"mapping edges: received edge iterator length neq to cur active edges ${activeEdgeSet.cardinality()}")
       ind = activeEdgeSet.nextSetBit(ind + 1)
     }
-    require(ind == activeEdgeSet.cardinality(), s"after map new edata, ind ${ind}, expect edata size ${activeEdgeSet.cardinality()}")
+    require(ind == -1, s"after map new edata, ind ${ind}, expect edata size ${activeEdgeSet.cardinality()}")
     this.withNewEdata(newData)
   }
 
   def reverse: GrapeEdgePartition[VD, ED] = {
-    new GrapeEdgePartition[VD,ED](pid, csr, vm, edataStore, client,!edgeReversed, activeEdgeSet)
+    new GrapeEdgePartition[VD,ED](pid, csr, vm, client,!edgeReversed, activeEdgeSet,srcLids, dstLids, srcOids, dstOids, edatas)
   }
 
   def withNewEdata[ED2: ClassTag](newEdata : PrimitiveArray[ED2]): GrapeEdgePartition[VD, ED2] = {
-    new GrapeEdgePartition[VD,ED2](pid, csr.asInstanceOf[GraphXCSR[Long,ED2]],vm, new InHeapEdataStore[ED2](newEdata) ,client,edgeReversed,activeEdgeSet)
+    new GrapeEdgePartition[VD,ED2](pid, csr.asInstanceOf[GraphXCSR[Long,ED2]],vm, client, edgeReversed, activeEdgeSet, srcLids,dstLids, srcOids,dstOids, newEdata)
   }
 
   def withNewMask(newActiveSet: BitSet) : GrapeEdgePartition[VD,ED] = {
-    new GrapeEdgePartition[VD,ED](pid, csr, vm, edataStore, client, edgeReversed, newActiveSet)
+    new GrapeEdgePartition[VD,ED](pid, csr, vm, client, edgeReversed, newActiveSet,srcLids,dstLids, srcOids,dstOids, edatas)
   }
 
   /**  currently we only support inner join with same vertex map*/
@@ -292,25 +318,25 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val newMask = this.activeEdgeSet & other.activeEdgeSet
     log.info(s"Inner join edgePartition 0 has ${this.activeEdgeSet.cardinality()} actives edges, the other has ${other.activeEdgeSet} active edges")
     log.info(s"after join ${newMask.cardinality()} active edges")
-    val newEdata = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED3], edataStore.size.toInt).asInstanceOf[PrimitiveArray[ED3]]
+    val newEdata = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED3], edatas.size()).asInstanceOf[PrimitiveArray[ED3]]
     val oldIter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     while (oldIter.hasNext){
       val oldEdge = oldIter.next()
       val oldIndex = oldEdge.index.toInt
       if (newMask.get(oldIndex)){
-        newEdata.set(oldIndex, f(oldEdge.srcId, oldEdge.dstId, oldEdge.attr, other.edataStore.getData(oldIndex)))
+        newEdata.set(oldIndex, f(oldEdge.srcId, oldEdge.dstId, oldEdge.attr, other.edatas.get(oldIndex)))
       }
     }
 
-    new GrapeEdgePartition[VD,ED3](pid, csr.asInstanceOf[GraphXCSR[Long,ED3]], vm, new InHeapEdataStore[ED3](newEdata), client,edgeReversed, newMask)
+    new GrapeEdgePartition[VD,ED3](pid, csr.asInstanceOf[GraphXCSR[Long,ED3]], vm, client,edgeReversed, newMask,srcLids,dstLids, srcOids,dstOids, newEdata)
   }
 
-  override def toString: String = "GrapeEdgePartition(pid=" + pid +
+  override def toString: String =  super.toString + "(pid=" + pid +
     ", start lid" + startLid + ", end lid " + endLid + ",csr: " + csr + ", vm" + vm.toString +
     ",out edges num" + partOutEdgeNum + ", in edges num" + partInEdgeNum +")"
 }
 
-class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : VineyardClient) extends Logging{
+class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : Int,val client : VineyardClient) extends Logging{
   val srcOidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
   val dstOidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
   val edataBuilder : ArrowArrayBuilder[ED] = ScalaFFIFactory.newArrowArrayBuilder(GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]])
@@ -375,11 +401,10 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
       outerOidBuilder.unsafeAppend(outerIter.next())
     }
     val localVertexMapBuilder = ScalaFFIFactory.newLocalVertexMapBuilder(client, innerOidBuilder, outerOidBuilder)
-    val localVM = localVertexMapBuilder.seal(client).get();
+    val localVM = localVertexMapBuilder.seal(client).get()
     log.info(s"${ExecutorUtils.getHostName}: Finish building local vm: ${localVM.id()}, ${localVM.getInnerVerticesNum}");
     localVM
   }
-
   def buildCSR(globalVMID : Long): (GraphXVertexMap[Long,Long], GraphXCSR[Long,ED]) = {
     val edgesNum = lists.map(shuffle => shuffle.totalSize()).sum
     log.info(s"Got totally ${lists.length}, edges ${edgesNum} in ${ExecutorUtils.getHostName}")

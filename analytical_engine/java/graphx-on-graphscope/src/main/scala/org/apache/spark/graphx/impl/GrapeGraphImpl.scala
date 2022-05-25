@@ -2,6 +2,7 @@ package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.graphx.VertexDataBuilder
+import org.apache.spark.HashPartitioner
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
 import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
 import org.slf4j.{Logger, LoggerFactory}
@@ -153,6 +154,20 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
                                 (implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
     new GrapeGraphImpl[VD2,ED](vertices.mapVertices[VD2](map), edges)
   }
+  override def mapEdges[ED2: ClassTag](map: Edge[ED] => ED2): Graph[VD, ED2] = {
+    val newEdgePartitions = grapeEdges.grapePartitionsRDD.mapPartitions(
+      iter => {
+        if (iter.hasNext){
+          val (pid,part) = iter.next()
+          Iterator((pid,part.map(map)))
+        }
+        else {
+          Iterator.empty
+        }
+      }
+    )
+    new GrapeGraphImpl[VD,ED2](vertices, grapeEdges.withPartitionsRDD(newEdgePartitions))
+  }
 
   override def mapEdges[ED2](f: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2])(implicit evidence$5: ClassTag[ED2]): Graph[VD, ED2] = {
     val newEdges = grapeEdges.mapEdgePartitions((pid,part) => part.map(f(pid, part.iterator)))
@@ -164,11 +179,11 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       (eIter,vIter) => {
         val (pid, vPart) = vIter.next()
         val (_, epart) = eIter.next()
-        Iterator((pid,epart.map(f(pid, epart.tripletIterator(vPart.vertexData, tripletFields.useSrc, tripletFields.useDst)))))
+        Iterator((pid, epart.map(f(pid, epart.tripletIterator(vPart.vertexData, tripletFields.useSrc, tripletFields.useDst)))))
       }
     }
     val newEdges = grapeEdges.withPartitionsRDD(newEdgePartitions)
-    new GrapeGraphImpl[VD,ED2](vertices,newEdges)
+    new GrapeGraphImpl[VD,ED2](grapeVertices,newEdges)
   }
 
   override def reverse: Graph[VD, ED] = {

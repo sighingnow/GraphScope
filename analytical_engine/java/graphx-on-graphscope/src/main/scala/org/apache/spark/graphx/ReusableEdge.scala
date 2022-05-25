@@ -1,7 +1,8 @@
 package org.apache.spark.graphx
 
 trait ReusableEdge[ED] extends Edge[ED]{
-  var index : Long = 0
+  var index : Long = -1
+//  var eid : Long = -1
   def setSrcId(vertexId: VertexId)
   def setDstId(vertexId: VertexId)
   def setAttr(ed : ED)

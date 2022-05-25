@@ -65,7 +65,27 @@ class GrapeVertexRDDImpl[VD] private[graphx](
         }
       },preservesPartitioning = true
     )
-    this.withGrapePartitionsRDD(newPartitionsRDD)
+    val newVertexRDD = this.withGrapePartitionsRDD(newPartitionsRDD)
+    //After map vertices, broadcast new inner vertex data to outer vertex data
+    val updateMessage = newVertexRDD.grapePartitionsRDD.mapPartitions(iter => {
+      if (iter.hasNext){
+        val tuple = iter.next()
+        val pid = tuple._1
+        val part = tuple._2
+        part.generateVertexDataMessage
+      }
+      else {
+        Iterator.empty
+      }
+    }).partitionBy(new HashPartitioner(getNumPartitions))
+    val updatedVertexPartition = newVertexRDD.grapePartitionsRDD.zipPartitions(updateMessage){
+      (vIter, msgIter) => {
+        val (pid, vpart) = vIter.next()
+        Iterator((pid,vpart.updateOuterVertexData(msgIter)))
+      }
+    }
+    //Although it seems we create new partitions, but actually we reuse the previous
+    newVertexRDD.withGrapePartitionsRDD(updatedVertexPartition)
   }
 
   override def mapValues[VD2](f: VD => VD2)(implicit evidence$2: ClassTag[VD2]): VertexRDD[VD2] = {

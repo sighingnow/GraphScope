@@ -4,7 +4,7 @@ import org.apache.spark.graphx.{EdgeTriplet, GraphLoader, VertexId}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 
-class GraphTransform extends Logging{
+object GraphTransform extends Logging{
   def main(args: Array[String]) : Unit = {
     val spark = SparkSession
       .builder
@@ -31,6 +31,7 @@ class GraphTransform extends Logging{
     val graph3 = graph2.outDegrees.mapValues(_ => 0)
     val degreeSum = graph3.values.sum()
     log.info(s"after filter ${degreeSum}")
+
     val graph5 = graph.groupEdges((a,b) => a +b)
     val inDegreeSum = graph5.inDegrees.values.sum()
     val outDegreeSum = graph5.outDegrees.values.sum()
@@ -38,13 +39,14 @@ class GraphTransform extends Logging{
 
     val graph6 = graph.mapEdges(edge => edge.srcId)
     val triplets = graph6.triplets.collect()
-    for (triplet <- triplets){
-      log.info(s"triplet: ${triplet}")
-    }
-
+//    for (triplet <- triplets){
+//      log.info(s"triplet: ${triplet}")
+//    }
+    log.info(s" num of triplets ${triplets.map(triplet => triplet.attr).sum}")
     val graph7 = graph.reverse
     val graph8 = graph7.filter(_.mapVertices((_, vd)=> vd.toInt).mapEdges(edge=>edge.attr), epred = (trip : EdgeTriplet[Int,Int]) => true, vpred = (vid:VertexId, vd: Int) => vid== 1)
-    graph8.numVertices
+    log.info(s"${graph8.vertices.collect()}")
+    log.info(s"num vertices ${graph8.numVertices}")
     val endTime = System.nanoTime()
     println("[Query time ] : " + ((endTime - startTime) / 1000000) + "ms")
     println("[Load graph time ]: " + ((loadGraph1 - loadGraph0) / 1000000) + "ms")

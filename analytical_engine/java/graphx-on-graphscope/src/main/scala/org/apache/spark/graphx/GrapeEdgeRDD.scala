@@ -3,7 +3,6 @@ package org.apache.spark.graphx
 import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
-import org.apache.spark.graphx.impl.partition.data.GrapeEdataStore
 import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived, GrapeEdgePartition, GrapeEdgePartitionBuilder}
 import org.apache.spark.graphx.utils.{Constant, ExecutorUtils, GrapeMeta, ScalaFFIFactory}
 import org.apache.spark.internal.Logging
@@ -49,12 +48,13 @@ object GrapeEdgeRDD extends Logging{
 
     val edgeShuffleReceived = edgeShuffles.mapPartitionsWithIndex((ind, iter) => {
       if (iter.hasNext) {
-        val edgeShuffleReceived = new EdgeShuffleReceived[ED](numPartitions, ind)
+        val edgeShuffleReceived = new EdgeShuffleReceived[ED](ind)
         while (iter.hasNext) {
           val (pid, shuffle) = iter.next()
           require(pid == ind)
           if (shuffle != null){
-              edgeShuffleReceived.set(shuffle.fromPid, shuffle)
+              log.info(s"partition ${ind} receives msg from ${shuffle.fromPid}")
+              edgeShuffleReceived.add(shuffle)
 	        }
         }
         log.info(s"Partition ${ind} collect received partitions ${edgeShuffleReceived}")
@@ -86,7 +86,7 @@ object GrapeEdgeRDD extends Logging{
     val localVertexMapIdss = edgesShuffleWithMeta.mapPartitions(iter => {
       if (iter.hasNext){
         val (meta, shufflesReceived) = iter.next()
-        val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](meta.vineyardClient)
+        val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions,meta.vineyardClient)
         edgePartitionBuilder.addEdges(shufflesReceived)
         val localVertexMap = edgePartitionBuilder.buildLocalVertexMap()
         meta.setLocalVertexMap(localVertexMap)
@@ -144,7 +144,7 @@ object GrapeEdgeRDD extends Logging{
     val grapeEdgePartitions = metaUpdated2.mapPartitions(iter => {
       if (iter.hasNext) {
         val (meta, part) = iter.next()
-        Iterator((meta.partitionID, new GrapeEdgePartition[VD, ED](meta.partitionID, meta.graphxCSR, meta.globalVM, new GrapeEdataStore[ED](meta.graphxCSR), meta.vineyardClient)))
+        Iterator((meta.partitionID, new GrapeEdgePartition[VD, ED](meta.partitionID, meta.graphxCSR, meta.globalVM, meta.vineyardClient)))
       }
       else Iterator.empty
     }).cache()

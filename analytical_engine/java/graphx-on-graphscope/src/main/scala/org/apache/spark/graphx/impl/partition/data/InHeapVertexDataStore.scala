@@ -51,4 +51,6 @@ class InHeapVertexDataStore[VD: ClassTag](val vdArray : PrimitiveArray[VD], val 
     }
     vertexDataV6d.id()
   }
+
+  override def setData(lid: Long, vd: VD): Unit = vdArray.set(lid, vd)
 }
