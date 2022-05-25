@@ -1,13 +1,12 @@
 package org.apache.spark.graphx.impl.partition
 
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
-import com.alibaba.graphscope.ds.PropertyNbrUnit
-import com.alibaba.graphscope.graphx.{GSEdgeTriplet, GSEdgeTripletImpl, GraphXCSR, GraphXVertexMap, LocalVertexMap, ReverseGSEdgeTripletImpl, VineyardClient}
+import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.graphx.impl.{EdgePartition, GrapeUtils}
-import org.apache.spark.graphx.impl.partition.data.{EdgeDataStore, InHeapEdataStore, VertexDataStore}
+import org.apache.spark.graphx.impl.GrapeUtils
+import org.apache.spark.graphx.impl.partition.data.VertexDataStore
 import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
-import org.apache.spark.graphx.{Edge, EdgeDirection, EdgeTriplet, ReusableEdge, ReusableEdgeImpl, ReversedReusableEdge, VertexId}
+import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.{BitSet, OpenHashSet}
 
@@ -275,6 +274,21 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       newData.set(edge.index, f(edge))
       ind += 1
     }
+    this.withNewEdata(newData)
+  }
+  def mapTriplets[ED2: ClassTag](f: EdgeTriplet[VD,ED] => ED2, vertexDataStore: VertexDataStore[VD], tripletFields: TripletFields): GrapeEdgePartition[VD, ED2] = {
+    val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], edatas.size()).asInstanceOf[PrimitiveArray[ED2]]
+//    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
+    val iter = tripletIterator(vertexDataStore).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
+    var ind = 0;
+    val time0 = System.nanoTime()
+    while (iter.hasNext){
+      val edge = iter.next()
+      newData.set(edge.index, f(edge))
+      ind += 1
+    }
+    val time1 = System.nanoTime()
+    log.info(s"[Perf:] mapping over triplets cost ${(time1 - time0)/1000000} ms")
     this.withNewEdata(newData)
   }
 

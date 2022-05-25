@@ -173,6 +173,19 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     val newEdges = grapeEdges.mapEdgePartitions((pid,part) => part.map(f(pid, part.iterator)))
     new GrapeGraphImpl[VD,ED2](vertices,newEdges)
   }
+  override def mapTriplets[ED2: ClassTag](
+                                  map: EdgeTriplet[VD, ED] => ED2,
+                                  tripletFields: TripletFields): Graph[VD, ED2] = {
+    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(grapeVertices.grapePartitionsRDD){
+      (eIter,vIter) => {
+        val (pid, vPart) = vIter.next()
+        val (_, epart) = eIter.next()
+        Iterator((pid, epart.mapTriplets(map, vPart.vertexData, tripletFields)))
+      }
+    }
+    val newEdges = grapeEdges.withPartitionsRDD(newEdgePartitions)
+    new GrapeGraphImpl[VD,ED2](grapeVertices,newEdges)
+  }
 
   override def mapTriplets[ED2](f: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], tripletFields: TripletFields)(implicit evidence$8: ClassTag[ED2]): Graph[VD, ED2] = {
     val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(grapeVertices.grapePartitionsRDD){
