@@ -54,6 +54,10 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     ieOffsetsArray.get(l + 1) - ieOffsetsArray.get(l)
   }
 
+  lazy val inDegreeArray: PrimitiveArray[PartitionID] = getInDegreeArray
+  lazy val outDegreeArray: PrimitiveArray[PartitionID] = getOutDegreeArray
+  lazy val inOutDegreeArray: PrimitiveArray[PartitionID] = getInOutDegreeArray
+
   if (activeEdgeSet == null){
     activeEdgeSet = new BitSet(getOEOffset(endLid).toInt) // just need to control out edges
     activeEdgeSet.setUntil(getOEOffset(endLid).toInt)
@@ -106,13 +110,13 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 
   def getDegreeArray(edgeDirection: EdgeDirection): PrimitiveArray[Int] = {
     if (edgeDirection.equals(EdgeDirection.In)){
-      getInDegreeArray
+      inDegreeArray
     }
     else if (edgeDirection.equals(EdgeDirection.Out)){
-      getOutDegreeArray
+      outDegreeArray
     }
     else{
-      getInOutDegreeArray
+      inOutDegreeArray
     }
   }
 
@@ -176,9 +180,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       log.info(s"Initiate iterator on partition ${pid} ,reversed ${edgeReversed}")
 
       override def hasNext: Boolean = {
-//        log.info(s"has next offset: ${offset}, limit ${offsetLimit}")
-        if (offset >= 0) true
-        else false
+        offset >= 0
       }
 
       override def next() : Edge[ED] = {
