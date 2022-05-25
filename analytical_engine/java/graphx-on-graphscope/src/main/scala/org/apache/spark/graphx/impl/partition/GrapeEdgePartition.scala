@@ -52,9 +52,9 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
         val endNbrOffset = csr.getOEOffset(curLid + 1)
         var j = startNbrOffset
         while (j < endNbrOffset){
-          j += 1
           srcOids.set(j, curOid)
           srcLids.set(j, curLid)
+          j += 1
         }
         curLid += 1
       }
