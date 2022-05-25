@@ -341,7 +341,7 @@ class GraphXVertexMap
 
   VID_T InnerOid2Gid(const OID_T& oid) const {
     VID_T gid;
-    CHECK(GetGid(fid_, oid, lid));
+    CHECK(GetGid(fid_, oid, gid));
     return gid;
   }
 
@@ -624,9 +624,13 @@ class BasicGraphXVertexMapBuilder
       // gather grape pid <-> graphx pid matching.
       std::vector<int32_t> graphx_pids;
       graphx_pids.resize(comm_spec_.fnum());
-      MPI_Allgather(&baset_t::graphx_pid_, 1, MPI_INT, graphx_pids, 1, MPI_INT,
-                    comm_spec.comm());
+      int32_t tmp_graphx_pid = base_t::graphx_pid_;
+      MPI_Allgather(&tmp_graphx_pid, 1, MPI_INT, graphx_pids.data(), 1, MPI_INT,
+                    comm_spec_.comm());
 
+      for (auto v : graphx_pids){
+          LOG(INFO) << v ;
+      }
       LOG(INFO) << "Received graphx pids: "
                 << std::string(graphx_pids.begin(), graphx_pids.end());
       arrow::Int32Builder builder;
@@ -637,7 +641,7 @@ class BasicGraphXVertexMapBuilder
           client, graphx_pids_array);
       this->SetGraphXPids(
           *std::dynamic_pointer_cast<vineyard::NumericArray<int32_t>>(
-              builder.Seal(client)));
+              v6d_graphx_pids_builder.Seal(client)));
     }
 
 #if defined(WITH_PROFILING)
