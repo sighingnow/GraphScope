@@ -157,7 +157,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 
       override def hasNext: Boolean = {
 //        log.info(s"has next offset: ${offset}, limit ${offsetLimit}")
-        if (offset >= 0 && offset < offsetLimit) true
+        if (offset >= 0) true
         else false
       }
 
@@ -263,7 +263,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       }
       flag = true
     }
-    new GrapeEdgePartition[VD,ED](pid, csr, vm, client, edgeReversed, newMask, srcLids,dstLids, srcOids, dstOids, newEdata)
+    new GrapeEdgePartition[VD,ED](pid, csr, vm,client, edgeReversed, newMask, srcLids,dstLids, srcOids, dstOids, newEdata)
   }
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
@@ -336,7 +336,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     ",out edges num" + partOutEdgeNum + ", in edges num" + partInEdgeNum +")"
 }
 
-class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : VineyardClient) extends Logging{
+class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : Int,val client : VineyardClient) extends Logging{
   val srcOidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
   val dstOidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
   val edataBuilder : ArrowArrayBuilder[ED] = ScalaFFIFactory.newArrowArrayBuilder(GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]])
@@ -401,11 +401,10 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val client : Vineyar
       outerOidBuilder.unsafeAppend(outerIter.next())
     }
     val localVertexMapBuilder = ScalaFFIFactory.newLocalVertexMapBuilder(client, innerOidBuilder, outerOidBuilder)
-    val localVM = localVertexMapBuilder.seal(client).get();
+    val localVM = localVertexMapBuilder.seal(client).get()
     log.info(s"${ExecutorUtils.getHostName}: Finish building local vm: ${localVM.id()}, ${localVM.getInnerVerticesNum}");
     localVM
   }
-
   def buildCSR(globalVMID : Long): (GraphXVertexMap[Long,Long], GraphXCSR[Long,ED]) = {
     val edgesNum = lists.map(shuffle => shuffle.totalSize()).sum
     log.info(s"Got totally ${lists.length}, edges ${edgesNum} in ${ExecutorUtils.getHostName}")

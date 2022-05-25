@@ -2,6 +2,7 @@ package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.graphx.VertexDataBuilder
+import org.apache.spark.HashPartitioner
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
 import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
 import org.slf4j.{Logger, LoggerFactory}
@@ -182,7 +183,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       }
     }
     val newEdges = grapeEdges.withPartitionsRDD(newEdgePartitions)
-    new GrapeGraphImpl[VD,ED2](vertices,newEdges)
+    new GrapeGraphImpl[VD,ED2](grapeVertices,newEdges)
   }
 
   override def reverse: Graph[VD, ED] = {

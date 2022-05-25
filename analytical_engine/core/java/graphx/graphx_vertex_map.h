@@ -32,6 +32,7 @@
 #include "flat_hash_map/flat_hash_map.hpp"
 
 #include "grape/grape.h"
+#include "grape/util.h"
 #include "grape/worker/comm_spec.h"
 #include "vineyard/basic/ds/array.h"
 #include "vineyard/basic/ds/arrow.h"
@@ -85,6 +86,7 @@ class GraphXVertexMap
 
     this->fnum_ = meta.GetKeyValue<fid_t>("fnum");
     this->fid_ = meta.GetKeyValue<fid_t>("fid");
+    this->graphx_pid_ = meta.GetKeyValue<int>("graphx_pid");
 
     id_parser_.init(fnum_);
 
@@ -107,6 +109,12 @@ class GraphXVertexMap
       outer_lid2Oids_accessor_ = outer_lid2Oids_->raw_values();
     }
     InitOuterGids();
+    {
+      vineyard::NumericArray<int32_t> array;
+      array.Construct(meta.GetMemberMeta("graphx_pids_array"));
+      graphx_pids_array_ = array.GetArray();
+    }
+
     this->ivnum_ = lid2Oids_[fid_]->length();
     this->ovnum_ = outer_lid2Oids_->length();
     this->tvnum_ = this->ivnum_ + this->ovnum_;
@@ -128,6 +136,11 @@ class GraphXVertexMap
   }
   fid_t fid() const { return fid_; }
   fid_t fnum() const { return fnum_; }
+
+  int32_t Fid2GraphxPid(fid_t fid) {
+    CHECK_LT(fid, fnum_);
+    return graphx_pids_array_->Value(fid);
+  }
 
   inline fid_t GetFragId(const vertex_t& v) const {
     if (v.GetValue() >= ivnum_) {
@@ -227,13 +240,17 @@ class GraphXVertexMap
   inline VID_T GetOuterVertexGid(const vertex_t& v) const {
     return outer_lid2Gids_->Value(v.GetValue() - ivnum_);
   }
+  inline VID_T GetOuterVertexGid(const VID_T& lid) const {
+    CHECK_GE(lid, ivnum_);
+    return outer_lid2Gids_accessor_[lid - ivnum_];
+  }
 
-  OID_T GetInnerVertexId(const vertex_t& v) const {
+  inline OID_T GetInnerVertexId(const vertex_t& v) const {
     assert(v.GetValue() < ivnum_);
     // return lid2Oids_[fid_]->Value(v.GetValue());
     return lid2Oids_accessor_[fid_][v.GetValue()];
   }
-  OID_T GetOuterVertexId(const vertex_t& v) const {
+  inline OID_T GetOuterVertexId(const vertex_t& v) const {
     assert(v.GetValue() >= ivnum_);
     assert(v.GetValue() < tvnum_);
     return outer_lid2Oids_accessor_[v.GetValue() - ivnum_];
@@ -322,6 +339,12 @@ class GraphXVertexMap
     }
   }
 
+  VID_T InnerOid2Gid(const OID_T& oid) const {
+    VID_T gid;
+    CHECK(GetGid(fid_, oid, lid));
+    return gid;
+  }
+
   bool GetGid(const OID_T& oid, VID_T& gid) const {
     fid_t fid = static_cast<fid_t>(0);
     while (fid < fnum_ && !GetGid(fid, oid, gid)) {
@@ -365,6 +388,7 @@ class GraphXVertexMap
 
  private:
   grape::fid_t fnum_, fid_;
+  int graphx_pid_;
   vid_t ivnum_, ovnum_, tvnum_;
   grape::IdParser<vid_t> id_parser_;
   std::vector<vineyard::Hashmap<oid_t, vid_t>> oid2Lids_;
@@ -375,6 +399,7 @@ class GraphXVertexMap
   const vid_t* outer_lid2Gids_accessor_;
   std::shared_ptr<vid_array_t> outer_lid2Gids_;
   ska::flat_hash_map<vid_t, vid_t> outer_gid2Lids_;
+  std::shared_ptr<arrow::Int32Array> graphx_pids_array_;
 
   template <typename _OID_T, typename _VID_T>
   friend class GraphXVertexMapBuilder;
@@ -393,13 +418,17 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
 
  public:
   explicit GraphXVertexMapBuilder(vineyard::Client& client, grape::fid_t fnum,
-                                  grape::fid_t fid)
+                                  grape::fid_t fid, int graphx_pid)
       : client_(client) {
     lid2Oids_.resize(fnum);
     oid2Lids_.resize(fnum);
     fnum_ = fnum;
     fid_ = fid;
+    graphx_pid_ = graphx_pid;
   };
+  void SetGraphXPids(const vineyard::NumericArray<int32_t>& graphx_pids_array) {
+    this->graphx_pids_array_ = graphx_pids_array;
+  }
 
   void SetOidArray(grape::fid_t fid, const vineyard_oid_array_t& oid_arrays) {
     this->lid2Oids_[fid] = oid_arrays;
@@ -429,6 +458,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     vertex_map->fnum_ = fnum_;
     vertex_map->fid_ = fid_;
     vertex_map->id_parser_.init(fnum_);
+    vertex_map->graphx_pid_ = graphx_pid_;
 
     vertex_map->lid2Oids_.resize(fnum_);
     vertex_map->lid2Oids_accessor_.resize(fnum_);
@@ -442,6 +472,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     vertex_map->outer_lid2Oids_ = outer_oid_array_.GetArray();
     vertex_map->outer_lid2Oids_accessor_ =
         outer_oid_array_.GetArray()->raw_values();
+    vertex_map->graphx_pids_array_ = graphx_pids_array_.GetArray();
 
     // Initiate outer gids rather than sealing them
     vertex_map->InitOuterGids();
@@ -454,6 +485,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
 
     vertex_map->meta_.AddKeyValue("fnum", fnum_);
     vertex_map->meta_.AddKeyValue("fid", fid_);
+    vertex_map->meta_.AddKeyValue("graphx_pid", graphx_pid_);
 
     size_t nbytes = 0;
     for (grape::fid_t i = 0; i < fnum_; ++i) {
@@ -472,6 +504,8 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
                                   lid2Oids_[i].meta());
       nbytes += lid2Oids_[i].nbytes();
     }
+    vertex_map->meta_.AddMember("graphx_pids_array", graphx_pids_array_.meta());
+    nbytes += graphx_pids_array_.nbytes();
 
     vertex_map->meta_.SetNBytes(nbytes);
 
@@ -483,12 +517,16 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     return std::static_pointer_cast<vineyard::Object>(vertex_map);
   }
 
+ protected:
+  int graphx_pid_;
+
  private:
   grape::fid_t fnum_, fid_;
   vineyard::Client& client_;
   std::vector<vineyard_oid_array_t> lid2Oids_;
   std::vector<vineyard::Hashmap<oid_t, vid_t>> oid2Lids_;
   vineyard_oid_array_t outer_oid_array_;
+  vineyard::NumericArray<int32_t> graphx_pids_array_;
   // vineyard_vid_array_t outer_gid_array_;
 };
 
@@ -500,13 +538,14 @@ class BasicGraphXVertexMapBuilder
   using oid_array_t = typename vineyard::ConvertToArrowType<oid_t>::ArrayType;
   using oid_array_builder_t =
       typename vineyard::ConvertToArrowType<oid_t>::BuilderType;
+  using base_t = GraphXVertexMapBuilder<oid_t, vid_t>;
 
  public:
   BasicGraphXVertexMapBuilder(vineyard::Client& client,
                               grape::CommSpec& comm_spec, int graphx_pid,
                               vineyard::ObjectID localVertexMapID)
       : GraphXVertexMapBuilder<oid_t, vid_t>(client, comm_spec.worker_num(),
-                                             comm_spec.worker_id()),
+                                             comm_spec.worker_id(), graphx_pid),
         comm_spec_(comm_spec) {
     comm_spec_.Dup();
     partial_vmap = std::dynamic_pointer_cast<LocalVertexMap<oid_t, vid_t>>(
@@ -579,6 +618,26 @@ class BasicGraphXVertexMapBuilder
     }
     for (auto& thrd : threads) {
       thrd.join();
+    }
+
+    {
+      // gather grape pid <-> graphx pid matching.
+      std::vector<int32_t> graphx_pids;
+      graphx_pids.resize(comm_spec_.fnum());
+      MPI_Allgather(&baset_t::graphx_pid_, 1, MPI_INT, graphx_pids, 1, MPI_INT,
+                    comm_spec.comm());
+
+      LOG(INFO) << "Received graphx pids: "
+                << std::string(graphx_pids.begin(), graphx_pids.end());
+      arrow::Int32Builder builder;
+      builder.AppendValues(graphx_pids);
+      std::shared_ptr<arrow::Int32Array> graphx_pids_array;
+      builder.Finish(&graphx_pids_array);
+      vineyard::NumericArrayBuilder<int32_t> v6d_graphx_pids_builder(
+          client, graphx_pids_array);
+      this->SetGraphXPids(
+          *std::dynamic_pointer_cast<vineyard::NumericArray<int32_t>>(
+              builder.Seal(client)));
     }
 
 #if defined(WITH_PROFILING)
