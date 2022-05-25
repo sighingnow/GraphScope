@@ -140,11 +140,13 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
       vineyard_offset_array_t array;
       array.Construct(meta.GetMemberMeta("ie_offsets"));
       ie_offsets_ = array.GetArray();
+      ie_offsets_accessor_.Init(ie_offsets_);
     }
     {
       vineyard_offset_array_t array;
       array.Construct(meta.GetMemberMeta("oe_offsets"));
       oe_offsets_ = array.GetArray();
+      oe_offsets_accessor_.Init(oe_offsets_);
     }
     {
       vineyard_edata_array_t array;
@@ -189,6 +191,13 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
     return edatas_accessor_;
   }
 
+  inline graphx::ImmutableTypedArray<int64_t>& GetIEOffsetArray() {
+    return ie_offsets_accessor_;
+  }
+  inline graphx::ImmutableTypedArray<int64_t>& GetOEOffsetArray() {
+    return oe_offsets_accessor_;
+  }
+
  private:
   vid_t local_vnum_;
   int64_t in_edges_num_, out_edges_num_;
@@ -197,6 +206,8 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
   std::shared_ptr<arrow::Int64Array> ie_offsets_, oe_offsets_;
   std::shared_ptr<edata_array_t> edatas_;
   graphx::ImmutableTypedArray<edata_t> edatas_accessor_;
+  graphx::ImmutableTypedArray<int64_t> ie_offsets_accessor_,
+      oe_offsets_accessor_;
 
   template <typename _VID_T, typename _ED_T>
   friend class GraphXCSRBuilder;
@@ -237,8 +248,10 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
 
     size_t nBytes = 0;
     graphx_csr->ie_offsets_ = ie_offsets.GetArray();
+    graphx_csr->ie_offsets_accessor_.Init(graphx_csr->ie_offsets_);
     nBytes += ie_offsets.nbytes();
     graphx_csr->oe_offsets_ = oe_offsets.GetArray();
+    graphx_csr->oe_offsets_accessor_.Init(graphx_csr->oe_offsets_);
     nBytes += oe_offsets.nbytes();
     graphx_csr->in_edges_ = in_edges.GetArray();
     nBytes += in_edges.nbytes();
@@ -312,10 +325,10 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T, ED_T> {
   explicit BasicGraphXCSRBuilder(vineyard::Client& client)
       : GraphXCSRBuilder<vid_t, edata_t>(client) {}
 
-  boost::leaf::result<void> LoadEdges(oid_array_builder_t& srcOidsBuilder,
-                 oid_array_builder_t& dstOidsBuilder,
-                 edata_array_builder_t& edatasBuilder,
-                 GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map) {
+  boost::leaf::result<void> LoadEdges(
+      oid_array_builder_t& srcOidsBuilder, oid_array_builder_t& dstOidsBuilder,
+      edata_array_builder_t& edatasBuilder,
+      GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map) {
     LOG(INFO) << "start loading edges";
     std::shared_ptr<oid_array_t> srcOids, dstOids;
     // std::shared_ptr<edata_array_t> edatas;

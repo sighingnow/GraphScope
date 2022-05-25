@@ -51,6 +51,12 @@ public interface GraphXCSR<VID_T,ED_T> extends FFIPointer {
     @FFINameAlias("GetEdataArray")
     @CXXReference ImmutableTypedArray<ED_T> getEdataArray();
 
+    @FFINameAlias("GetOEOffsetArray")
+    @CXXReference @FFITypeAlias("gs::graphx::ImmutableTypedArray<int64_t>") ImmutableTypedArray<Long> getOEOffsetsArray();
+
+    @FFINameAlias("GetIEOffsetArray")
+    @CXXReference @FFITypeAlias("gs::graphx::ImmutableTypedArray<int64_t>") ImmutableTypedArray<Long> getIEOffsetsArray();
+
     /**
      * Inner vnum
      * @return

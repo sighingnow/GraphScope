@@ -1,12 +1,13 @@
 package org.apache.spark.graphx.impl.partition
 
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
+import com.alibaba.graphscope.ds.ImmutableTypedArray
 import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.utils.array.PrimitiveArray
+import org.apache.spark.graphx._
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.impl.partition.data.VertexDataStore
 import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
-import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.{BitSet, OpenHashSet}
 
@@ -29,12 +30,33 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
                                                      var edatas : PrimitiveArray[ED] = null) extends Logging {
   val startLid = 0
   val endLid : Long = vm.innerVertexSize()
+  val oeOffsetsArray: ImmutableTypedArray[Long] = csr.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
+  val ieOffsetsArray : ImmutableTypedArray[Long] = csr.getIEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
   def partOutEdgeNum : Long = csr.getPartialOutEdgesNum(startLid, endLid)
   def partInEdgeNum : Long = csr.getPartialInEdgesNum(startLid, endLid)
 
+  @inline
+  def getOEOffset(lid : Long) : Long = {
+    oeOffsetsArray.get(lid)
+  }
+  @inline
+  def getIEOffset(lid : Long) : Long = {
+    ieOffsetsArray.get(lid)
+  }
+
+  @inline
+  def getOutDegree(l: Long) : Long = {
+    oeOffsetsArray.get(l + 1) - oeOffsetsArray.get(l)
+  }
+
+  @inline
+  def getInDegree(l: Long) : Long = {
+    ieOffsetsArray.get(l + 1) - ieOffsetsArray.get(l)
+  }
+
   if (activeEdgeSet == null){
-    activeEdgeSet = new BitSet(csr.getOEOffset(endLid).toInt) // just need to control out edges
-    activeEdgeSet.setUntil(csr.getOEOffset(endLid).toInt)
+    activeEdgeSet = new BitSet(getOEOffset(endLid).toInt) // just need to control out edges
+    activeEdgeSet.setUntil(getOEOffset(endLid).toInt)
   }
   val NBR_SIZE = 16L
   //to avoid the difficult to get srcLid in iterating over edges.
@@ -48,8 +70,8 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       var curLid = 0
       while (curLid < endLid){
         val curOid = vm.getId(curLid)
-        val startNbrOffset = csr.getOEOffset(curLid)
-        val endNbrOffset = csr.getOEOffset(curLid + 1)
+        val startNbrOffset = oeOffsetsArray.get(curLid)
+        val endNbrOffset = oeOffsetsArray.get(curLid + 1)
         var j = startNbrOffset
         while (j < endNbrOffset){
           srcOids.set(j, curOid)
@@ -99,7 +121,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val res = PrimitiveArray.create(classOf[Int], len)
     var i = 0L
     while (i < endLid){
-      res.set(i, csr.getOutDegree(i).toInt)
+      res.set(i, getOutDegree(i).toInt)
       i += 1
     }
     while (i < len){
@@ -114,7 +136,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val res = PrimitiveArray.create(classOf[Int], len)
     var i = 0L
     while (i < endLid){
-      res.set(i, csr.getInDegree(i).toInt)
+      res.set(i, getInDegree(i).toInt)
       i += 1
     }
     while (i < len){
@@ -129,7 +151,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val res = PrimitiveArray.create(classOf[Int], len)
     var i = 0L
     while (i < endLid) {
-      res.set(i, csr.getInDegree(i).toInt)
+      res.set(i, getInDegree(i).toInt + getOutDegree(i).toInt)
       i += 1
     }
     while (i < len) {
@@ -143,7 +165,6 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   def iterator : Iterator[Edge[ED]] = {
     new Iterator[Edge[ED]]{
       var offset : Long = activeEdgeSet.nextSetBit(0)
-      val offsetLimit : Long = csr.getOEOffset(endLid)
       var edge: ReusableEdge[ED] = null.asInstanceOf[ReusableEdge[ED]]
 
       if (edgeReversed){
@@ -176,7 +197,6 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   : Iterator[EdgeTriplet[VD, ED]] = new Iterator[EdgeTriplet[VD, ED]] {
 
     var offset : Long = activeEdgeSet.nextSetBit(0)
-    val offsetLimit : Long = csr.getOEOffset(endLid)
 
     def createTriplet : GSEdgeTriplet[VD,ED] = {
       if (!edgeReversed){
@@ -190,9 +210,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     log.info(s"Initiate triplet iterator on partition ${pid} ,reversed ${edgeReversed}")
 
     override def hasNext: Boolean = {
-//      log.info(s"has next offset: ${offset}, limit ${offsetLimit}")
-      if (offset >= 0 && offset < offsetLimit) true
-      else false
+      offset >= 0
     }
 
     override def next() : EdgeTriplet[VD,ED] = {
@@ -218,7 +236,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
               vertexDataStore: VertexDataStore[VD]): GrapeEdgePartition[VD, ED] = {
     //First invalided all invalid edges from invalid vertices.
     val tripletIter = tripletIterator(vertexDataStore).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
-    val newActiveEdges = new BitSet(csr.getOEOffset(endLid).toInt)
+    val newActiveEdges = new BitSet(getOEOffset(endLid).toInt)
     newActiveEdges.union(activeEdgeSet)
     while (tripletIter.hasNext){
       val triplet = tripletIter.next()
