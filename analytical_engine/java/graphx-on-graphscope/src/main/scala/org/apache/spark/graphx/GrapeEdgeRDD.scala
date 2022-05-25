@@ -3,7 +3,6 @@ package org.apache.spark.graphx
 import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
-import org.apache.spark.graphx.impl.partition.data.GrapeEdataStore
 import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived, GrapeEdgePartition, GrapeEdgePartitionBuilder}
 import org.apache.spark.graphx.utils.{Constant, ExecutorUtils, GrapeMeta, ScalaFFIFactory}
 import org.apache.spark.internal.Logging
@@ -87,7 +86,7 @@ object GrapeEdgeRDD extends Logging{
     val localVertexMapIdss = edgesShuffleWithMeta.mapPartitions(iter => {
       if (iter.hasNext){
         val (meta, shufflesReceived) = iter.next()
-        val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](meta.vineyardClient)
+        val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions,meta.vineyardClient)
         edgePartitionBuilder.addEdges(shufflesReceived)
         val localVertexMap = edgePartitionBuilder.buildLocalVertexMap()
         meta.setLocalVertexMap(localVertexMap)

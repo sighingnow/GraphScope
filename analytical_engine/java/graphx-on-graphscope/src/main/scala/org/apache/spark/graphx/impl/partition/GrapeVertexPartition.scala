@@ -4,19 +4,24 @@ import com.alibaba.graphscope.ds.Vertex
 import com.alibaba.graphscope.graphx.{GraphXVertexMap, VertexDataBuilder, VineyardClient}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.graphx.VertexId
+import org.apache.spark.graphx.{PartitionID, VertexId}
 import org.apache.spark.graphx.impl.GrapeUtils
-import org.apache.spark.graphx.impl.partition.data.{GrapeVertexDataStore, InHeapVertexDataStore, VertexDataStore}
+import org.apache.spark.graphx.impl.partition.data.{InHeapVertexDataStore, VertexDataStore}
 import org.apache.spark.graphx.utils.ScalaFFIFactory
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
+class VertexDataMessage[VD: ClassTag](val dstPid : Int, val gids : Array[Long], val newData : Array[VD]) extends Serializable{
+
+}
 class GrapeVertexPartition[VD : ClassTag](val pid : Int,
                                           val vm : GraphXVertexMap[Long,Long],
                                           val vertexData: VertexDataStore[VD],
                                           val client : VineyardClient,
+                                          val routingTable: RoutingTable,
                                           var bitSet: BitSet = null) extends Logging {
   val startLid = 0
   val endLid = vm.innerVertexSize()
@@ -45,6 +50,50 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         res
       }
     }
+  }
+  def generateVertexDataMessage : Iterator[(PartitionID, VertexDataMessage[VD])] = {
+    val res = new ArrayBuffer[(PartitionID,VertexDataMessage[VD])]()
+    val curFid = vm.fid()
+    val idParser = new IdParser(vm.fnum())
+    for (i <- 0 until(routingTable.numPartitions)){
+      val lids = routingTable.get(i)
+      if (lids != null){
+        val gids = new Array[Long](lids.length)
+        val newData = new Array[VD](lids.length)
+        var j = 0
+        while (j < lids.length){
+          gids(j) = idParser.generateGlobalId(curFid, lids(j))
+          require(lids(j) < endLid)
+          newData(j) = getData(lids(j))
+          j += 1
+        }
+        val msg = new VertexDataMessage[VD](i, gids,newData)
+        res.+=((i, msg))
+        log.info(s"Partitoin ${pid} send vertex data to ${i}, size ${lids.length}")
+      }
+    }
+    res.toIterator
+  }
+
+  def updateOuterVertexData(vertexDataMessage: Iterator[(PartitionID,VertexDataMessage[VD])]): GrapeVertexPartition[VD] = {
+    while (vertexDataMessage.hasNext){
+      val (dstPid, msg) = vertexDataMessage.next()
+      require(dstPid == pid)
+      val outerGids = msg.gids
+      val outerDatas = msg.newData
+      val outerLids = new Array[Long](outerGids.length)
+      val idParser = new IdParser(vm.fnum())
+      var i = 0
+      val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
+      while (i < outerGids.length){
+        require(vm.outerVertexGid2Vertex(outerGids(i), vertex))
+        outerLids(i) = vertex.GetValue()
+        log.info(s"Partition ${pid} received outer vdata updating info ${outerLids(i)}, ${outerDatas(i)}")
+        vertexData.setData(outerLids(i), outerDatas(i))
+        i += 1
+      }
+    }
+    this
   }
 
   def map[VD2: ClassTag](f: (VertexId, VD) => VD2): GrapeVertexPartition[VD2] = {
@@ -181,11 +230,11 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   }
 
   def withNewValues[VD2 : ClassTag](vds: VertexDataStore[VD2]) : GrapeVertexPartition[VD2] = {
-    new GrapeVertexPartition[VD2](pid, vm, vds,client, bitSet)
+    new GrapeVertexPartition[VD2](pid, vm, vds,client, routingTable, bitSet)
   }
 
   def withMask(newMask: BitSet): GrapeVertexPartition[VD] ={
-    new GrapeVertexPartition[VD](pid, vm, vertexData, client, newMask)
+    new GrapeVertexPartition[VD](pid, vm, vertexData, client,routingTable, newMask)
   }
 
   override def toString: String = "GrapeVertexPartition{" + "pid=" + pid + ",startLid=" + startLid + ", endLid=" + endLid + '}'
@@ -199,10 +248,19 @@ class GrapeVertexPartitionBuilder[VD: ClassTag] extends Logging{
     log.info(s"Init vertex data with ${fragVnums} ${value}")
   }
 
-  def build(pid : Int, client : VineyardClient, vertexMap: GraphXVertexMap[Long,Long]) : GrapeVertexPartition[VD] = {
+  def build(pid : Int, client : VineyardClient, vertexMap: GraphXVertexMap[Long,Long], routingTable: RoutingTable) : GrapeVertexPartition[VD] = {
     val vertexData = vertexDataBuilder.seal(client).get()
     log.info(s"Partition ${pid} built vertex data ${vertexData}")
     require(vertexMap.getVertexSize == vertexData.verticesNum(), s"csr inner vertex should equal to vmap ${vertexMap.innerVertexSize()}, ${vertexData.verticesNum()}")
-    new GrapeVertexPartition[VD](pid, vertexMap,new GrapeVertexDataStore[VD](vertexData), client)
+    //copy to heap
+    val newArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD], vertexData.verticesNum().toInt).asInstanceOf[PrimitiveArray[VD]]
+    var i = 0
+    val limit = vertexData.verticesNum()
+    while (i < limit){
+      newArray.set(i, vertexData.getData(i))
+      i += 1
+    }
+    val newVertexData = new InHeapVertexDataStore[VD](newArray,client)
+    new GrapeVertexPartition[VD](pid, vertexMap,newVertexData, client, routingTable)
   }
 }

@@ -2,11 +2,11 @@ package org.apache.spark.graphx
 
 
 import org.apache.spark.graphx.impl.grape.GrapeVertexRDDImpl
-import org.apache.spark.graphx.impl.partition.{GrapeVertexPartition, GrapeVertexPartitionBuilder}
+import org.apache.spark.graphx.impl.partition.{GrapeVertexPartition, GrapeVertexPartitionBuilder, RoutingTable}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{Dependency, SparkContext}
+import org.apache.spark.{Dependency, HashPartitioner, SparkContext}
 
 import scala.reflect.ClassTag
 
@@ -62,18 +62,29 @@ object GrapeVertexRDD extends Logging{
 
   def fromEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD, storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
     log.info(s"Driver: Creating vertex rdd from edgeRDD of numPartition ${numPartitions}, default val ${defaultVal}")
-    val grapePartition = edgeRDD.grapePartitionsRDD.mapPartitions(
-      iter => {
+    //creating routing table
+    val routingTableMessage = edgeRDD.grapePartitionsRDD.mapPartitions(iter => {
+      if (iter.hasNext){
         val tuple = iter.next()
+        RoutingTable.generateMsg(tuple._1, numPartitions, tuple._2.vm)
+      }
+      else {
+        Iterator.empty
+      }
+    }).partitionBy(new HashPartitioner(numPartitions)).cache()
+    val grapeVertexPartition = edgeRDD.grapePartitionsRDD.zipPartitions(routingTableMessage){
+      (edgeIter,msgIter) => {
+        val tuple = edgeIter.next()
         val epart = tuple._2
+        val routingTable = RoutingTable.fromMsg(tuple._1, numPartitions,msgIter, epart.vm)
         val vertexPartitionBuilder = new GrapeVertexPartitionBuilder[VD]
         val fragVertices = epart.vm.getVertexSize
         log.info(s"Partition ${tuple._1} doing initialization with default value ${defaultVal}, frag vertices ${fragVertices}")
         vertexPartitionBuilder.init(fragVertices, defaultVal)
-        val grapeVertexPartition = vertexPartitionBuilder.build(tuple._1, epart.client, epart.vm)
+        val grapeVertexPartition = vertexPartitionBuilder.build(tuple._1, epart.client, epart.vm, routingTable)
         Iterator((tuple._1, grapeVertexPartition))
       }
-    ).cache()
-    new GrapeVertexRDDImpl[VD](grapePartition,storageLevel)
+    }.cache()
+    new GrapeVertexRDDImpl[VD](grapeVertexPartition,storageLevel)
   }
 }
