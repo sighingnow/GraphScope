@@ -37,6 +37,8 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
                                                             @transient val vertices: GrapeVertexRDD[VD],
                                                             @transient val edges: GrapeEdgeRDD[ED]) extends Graph[VD, ED] with Serializable {
   val logger: Logger = LoggerFactory.getLogger(classOf[GrapeGraphImpl[_,_]].toString)
+  vertices.cache()
+  edges.cache()
 
   protected def this(vertices : GrapeVertexRDDImpl[VD], edges : GrapeEdgeRDDImpl[VD,ED], fragId : String) =
     this(vertices.asInstanceOf[GrapeVertexRDD[VD]],edges.asInstanceOf[GrapeEdgeRDD[ED]])
@@ -152,6 +154,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
   def mapVertices[VD2: ClassTag](map: (VertexId, VD) => VD2)
                                 (implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
+    vertices.cache()
     new GrapeGraphImpl[VD2,ED](vertices.mapVertices[VD2](map), edges)
   }
   override def mapEdges[ED2: ClassTag](map: Edge[ED] => ED2): Graph[VD, ED2] = {
