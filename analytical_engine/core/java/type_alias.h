@@ -177,8 +177,8 @@ template <>
 struct ImmutableTypedArray<std::string> {
  public:
   using value_type = arrow::util::string_view;
-  TypedArray() : array_(NULL) {}
-  explicit TypedArray(std::shared_ptr<arrow::Array> array) {
+   ImmutableTypedArray() : array_(NULL) {}
+  explicit ImmutableTypedArray(std::shared_ptr<arrow::Array> array) {
     if (array == nullptr) {
       array_ = NULL;
     } else {
