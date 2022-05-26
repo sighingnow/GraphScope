@@ -27,9 +27,6 @@ public interface VertexDataBuilder<VID,VD> extends FFIPointer {
     @FFINameAlias("Init")
     void init(@CXXReference ArrowArrayBuilder<VD> newValues);
 
-    @FFINameAlias("Init")
-    void init(long frag_vnums, @CXXReference FFIByteVector vector, @CXXReference FFIIntVector offset);
-
     @FFINameAlias("MySeal")
     @CXXValue StdSharedPtr<VertexData<VID,VD>> seal(@CXXReference VineyardClient client);
 

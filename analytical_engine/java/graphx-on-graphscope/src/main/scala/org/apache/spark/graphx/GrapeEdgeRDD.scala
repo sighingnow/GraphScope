@@ -83,7 +83,7 @@ object GrapeEdgeRDD extends Logging{
       else Iterator.empty
     },true).cache()
 
-    val localVertexMapIdss = edgesShuffleWithMeta.mapPartitions(iter => {
+    val localVertexMapIds = edgesShuffleWithMeta.mapPartitions(iter => {
       if (iter.hasNext){
         val (meta, shufflesReceived) = iter.next()
         val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions,meta.vineyardClient)
@@ -96,11 +96,11 @@ object GrapeEdgeRDD extends Logging{
       else Iterator.empty
     }).collect().distinct.sorted
 
-    log.info(s"[GrapeEdgeRDD]: got distinct local vm ids ${localVertexMapIdss.mkString("Array(", ", ", ")")}")
-    require(localVertexMapIdss.length == numPartitions, s"${localVertexMapIdss.length} neq to num partitoins ${numPartitions}")
+    log.info(s"[GrapeEdgeRDD]: got distinct local vm ids ${localVertexMapIds.mkString("Array(", ", ", ")")}")
+    require(localVertexMapIds.length == numPartitions, s"${localVertexMapIds.length} neq to num partitoins ${numPartitions}")
 
     log.info("[GrapeEdgeRDD]: Start constructing global vm")
-    val globalVMIDs = MPIUtils.constructGlobalVM(localVertexMapIdss, Constant.vineyardEndpoint, "int64_t", "uint64_t")
+    val globalVMIDs = MPIUtils.constructGlobalVM(localVertexMapIds, Constant.vineyardEndpoint, "int64_t", "uint64_t")
     log.info(s"[GrapeEdgeRDD]: Finish constructing global vm ${globalVMIDs}")
     require(globalVMIDs.size() == numPartitions)
 

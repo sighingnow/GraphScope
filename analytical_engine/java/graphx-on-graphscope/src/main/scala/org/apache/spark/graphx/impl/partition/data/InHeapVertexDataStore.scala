@@ -1,6 +1,6 @@
 package org.apache.spark.graphx.impl.partition.data
 
-import com.alibaba.graphscope.graphx.{VertexData, VertexDataBuilder, VineyardClient}
+import com.alibaba.graphscope.graphx.{StringVertexDataBuilder, VertexData, VertexDataBuilder, VineyardClient}
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream
 import com.alibaba.graphscope.stdcxx.{FFIIntVector, FFIIntVectorFactory}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
@@ -13,14 +13,14 @@ import scala.reflect.ClassTag
 
 class InHeapVertexDataStore[VD: ClassTag](val vdArray : PrimitiveArray[VD], val client : VineyardClient) extends VertexDataStore [VD] with Logging{
 
-  var vertexDataV6d: VertexData[Long, VD] = null.asInstanceOf[VertexData[Long,VD]]
+  var vertexDataV6dId: Long = 0L
   override def size: Long = vdArray.size()
 
   @inline
   override def getData(lid: Long): VD = vdArray.get(lid)
 
   override def vineyardID: Long = {
-    if (vertexDataV6d == null) {
+    if (vertexDataV6dId == 0) {
       if (GrapeUtils.getRuntimeClass[VD].equals(classOf[Long]) || GrapeUtils.getRuntimeClass[VD].equals(classOf[Double]) || GrapeUtils.getRuntimeClass[VD].equals(classOf[Int])){
         val newVdataBuilder = ScalaFFIFactory.newVertexDataBuilder[VD]()
         val arrowArrayBuilder = ScalaFFIFactory.newArrowArrayBuilder[VD](GrapeUtils.getRuntimeClass[VD].asInstanceOf[Class[VD]])
@@ -31,7 +31,7 @@ class InHeapVertexDataStore[VD: ClassTag](val vdArray : PrimitiveArray[VD], val 
           i += 1
         }
         newVdataBuilder.init(arrowArrayBuilder)
-        vertexDataV6d = newVdataBuilder.seal(client).get()
+        vertexDataV6dId = newVdataBuilder.seal(client).get().id()
       }
       else {
         val ffiByteVectorOutput = new FFIByteVectorOutputStream()
@@ -53,12 +53,12 @@ class InHeapVertexDataStore[VD: ClassTag](val vdArray : PrimitiveArray[VD], val 
         ffiByteVectorOutput.finishSetting()
         val writenBytes = ffiByteVectorOutput.bytesWriten()
         log.info(s"write vertex data ${limit} of type ${GrapeUtils.getRuntimeClass[VD].getName}, writen bytes ${writenBytes}")
-        val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder().asInstanceOf[VertexDataBuilder[Long,VD]]
+        val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder()
         newVdataBuilder.init(size, ffiByteVectorOutput.getVector, ffiOffset)
-        vertexDataV6d = newVdataBuilder.seal(client).get()
+        vertexDataV6dId = newVdataBuilder.seal(client).get().id()
       }
     }
-    vertexDataV6d.id()
+    vertexDataV6dId
   }
 
   @inline
