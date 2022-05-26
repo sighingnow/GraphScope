@@ -177,27 +177,36 @@ template <>
 struct ImmutableTypedArray<std::string> {
  public:
   using value_type = arrow::util::string_view;
-   ImmutableTypedArray() : array_(NULL) {}
+  ImmutableTypedArray() : array_(NULL), length_(0) {}
   explicit ImmutableTypedArray(std::shared_ptr<arrow::Array> array) {
     if (array == nullptr) {
       array_ = NULL;
+      length_ = 0;
     } else {
       array_ = std::dynamic_pointer_cast<arrow::LargeStringArray>(array).get();
+      length = array_->length();
     }
   }
 
   void Init(std::shared_ptr<arrow::Array> array) {
     if (array == nullptr) {
       array_ = NULL;
+      length_ = 0;
     } else {
       array_ = std::dynamic_pointer_cast<arrow::LargeStringArray>(array).get();
+      length_ = array_->length();
     }
   }
 
   value_type operator[](size_t loc) const { return array_->GetView(loc); }
+  value_type Get(size_t loc) const { return array_->GetView(loc); }
+
+  // void Set(size_t loc, value_type newValue) { buffer_[loc] = newValue; }
+  size_t GetLength() const { return length; }
 
  private:
   arrow::LargeStringArray* array_;
+  size_t length_;
 };
 }  // namespace graphx
 }  // namespace gs
