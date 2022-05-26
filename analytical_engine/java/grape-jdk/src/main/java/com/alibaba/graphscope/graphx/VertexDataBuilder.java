@@ -10,6 +10,7 @@ import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder;
 import com.alibaba.graphscope.stdcxx.FFIByteVector;
+import com.alibaba.graphscope.stdcxx.FFIIntVector;
 import com.alibaba.graphscope.stdcxx.StdSharedPtr;
 import com.alibaba.graphscope.stdcxx.StdVector;
 import com.alibaba.graphscope.utils.CppClassName;
@@ -27,7 +28,7 @@ public interface VertexDataBuilder<VID,VD> extends FFIPointer {
     void init(@CXXReference ArrowArrayBuilder<VD> newValues);
 
     @FFINameAlias("Init")
-    void init(@CXXReference FFIByteVector vector);
+    void init(long frag_vnums, @CXXReference FFIByteVector vector, @CXXReference FFIIntVector offset);
 
     @FFINameAlias("MySeal")
     @CXXValue StdSharedPtr<VertexData<VID,VD>> seal(@CXXReference VineyardClient client);

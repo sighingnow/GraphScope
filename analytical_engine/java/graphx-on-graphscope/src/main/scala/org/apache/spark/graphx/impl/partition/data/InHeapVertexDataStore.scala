@@ -2,6 +2,7 @@ package org.apache.spark.graphx.impl.partition.data
 
 import com.alibaba.graphscope.graphx.{VertexData, VertexDataBuilder, VineyardClient}
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream
+import com.alibaba.graphscope.stdcxx.{FFIIntVector, FFIIntVectorFactory}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.utils.ScalaFFIFactory
@@ -34,19 +35,26 @@ class InHeapVertexDataStore[VD: ClassTag](val vdArray : PrimitiveArray[VD], val 
       }
       else {
         val ffiByteVectorOutput = new FFIByteVectorOutputStream()
+        val ffiOffset = FFIIntVectorFactory.INSTANCE.create().asInstanceOf[FFIIntVector]
+        ffiOffset.resize(size)
+        ffiOffset.touch()
         val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
         var i = 0
         val limit = size
+        var prevBytesWritten = 0
         while (i < limit){
           objectOutputStream.writeObject(getData(i))
           i += 1
+          ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
+          prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
+          log.info(s"Writing element ${i}: ${getData(i).toString} cost ${ffiOffset.get(i)} bytes")
         }
         objectOutputStream.flush()
         ffiByteVectorOutput.finishSetting()
         val writenBytes = ffiByteVectorOutput.bytesWriten()
         log.info(s"write vertex data ${limit} of type ${GrapeUtils.getRuntimeClass[VD].getName}, writen bytes ${writenBytes}")
         val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder().asInstanceOf[VertexDataBuilder[Long,VD]]
-        newVdataBuilder.init(ffiByteVectorOutput.getVector)
+        newVdataBuilder.init(size, ffiByteVectorOutput.getVector, ffiOffset)
         vertexDataV6d = newVdataBuilder.seal(client).get()
       }
     }

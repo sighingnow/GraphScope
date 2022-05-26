@@ -130,11 +130,11 @@ class VertexData<VID_T, std::string>
 
   vid_t VerticesNum() { return frag_vnums_; }
 
-  std::string& GetData(const vid_t& lid) {
-      return vdatas_->GetView(lid);
-  }
+  std::string& GetData(const vid_t& lid) { return vdatas_->GetView(lid); }
 
-  std::string & GetData(const vertex_t& v) { return vdatas_->GetView(v.GetValue()); }
+  std::string& GetData(const vertex_t& v) {
+    return vdatas_->GetView(v.GetValue());
+  }
 
   // void SetData(const vertex_t& v, vdata_t vd) {
   //   return vdatas_accessor_.Set(v.GetValue(), vd);
@@ -184,7 +184,8 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
     LOG(INFO) << "Init vertex data with " << frag_vnums_;
   }
 
-  void Init(std::vector<char>& vdata_builder) {
+  void Init(vid_t frag_vnums, std::vector<char>& vdata_builder,
+            std::vector<int32_t>& offset) {
     LOG(FATAL)
         << "Initialization with vector char is only available for string vdata";
   }
@@ -254,14 +255,20 @@ class VertexDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
     LOG(FATAL) << "Not implemented";
   }
 
-  void Init(vid_t frag_vnums, std::vector<char>& vdata_buffer) {
+  void Init(vid_t frag_vnums, std::vector<char>& vdata_buffer,
+            std::vector<int32_t>& offsets) {
     this->frag_vnums_ = frag_vnums;
     vdata_array_builder_t builder;
     LOG(INFO) << "Vdata buffer has " << vdata_buffer.size() << " bytes";
     builder.Reserve(vdata_buffer.size());
-    builder.AppendValues(vdata_buffer.data(), vdata_buffer.size());
-    builder.Finish(&vdata_array_); LOG(INFO)
-        << "Init vertex data with " << frag_vnums_;
+    const char* ptr = vdata_buffer.data();
+    for (auto offset : offsets) {
+      builder.UnsafeAppend(ptr, offset);
+      ptr += offset;
+    }
+    // builder.AppendValues(vdata_buffer.data(), vdata_buffer.size());
+    builder.Finish(&vdata_array_);
+    LOG(INFO) << "Init vertex data with " << frag_vnums_;
   }
 
   std::shared_ptr<VertexData<vid_t, vdata_t>> MySeal(vineyard::Client& client) {
