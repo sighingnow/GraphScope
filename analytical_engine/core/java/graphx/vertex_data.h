@@ -152,8 +152,8 @@ class VertexData<VID_T, std::string>
   std::shared_ptr<vdata_array_t> vdatas_;
   graphx::ImmutableTypedArray<std::string> vdatas_accessor_;
 
-  // template <typename _VID_T, typename _VD_T>
-  // friend class VertexDataBuilder;
+  template <typename _VID_T, typename _VD_T>
+  friend class VertexDataBuilder;
 };
 
 template <typename VID_T, typename VD_T>
@@ -256,15 +256,16 @@ class VertexDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
   }
 
   void Init(vid_t frag_vnums, std::vector<char>& vdata_buffer,
-            std::vector<int32_t>& offsets) {
+            std::vector<int32_t>& lengths) {
     this->frag_vnums_ = frag_vnums;
     vdata_array_builder_t builder;
     LOG(INFO) << "Vdata buffer has " << vdata_buffer.size() << " bytes";
-    builder.Reserve(vdata_buffer.size());
+    builder.Reserve(frag_vnums);
+    builder.ReserveData(vdata_buffer.size());
     const char* ptr = vdata_buffer.data();
-    for (auto offset : offsets) {
-      builder.UnsafeAppend(ptr, offset);
-      ptr += offset;
+    for (auto len : lengths) {
+      builder.UnsafeAppend(ptr, len);
+      ptr += len;
     }
     // builder.AppendValues(vdata_buffer.data(), vdata_buffer.size());
     builder.Finish(&vdata_array_);
