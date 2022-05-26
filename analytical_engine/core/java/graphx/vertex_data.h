@@ -73,12 +73,12 @@ class VertexData : public vineyard::Registered<VertexData<VID_T, VD_T>> {
 
   vid_t VerticesNum() { return frag_vnums_; }
 
-  VD_T& GetData(const vid_t& lid) {
+  VD_T GetData(const vid_t& lid) {
     CHECK_LT(lid, frag_vnums_);
     return vdatas_accessor_[lid];
   }
 
-  VD_T& GetData(const vertex_t& v) { return GetData(v.GetValue()); }
+  VD_T GetData(const vertex_t& v) { return GetData(v.GetValue()); }
 
   // void SetData(const vertex_t& v, vdata_t vd) {
   //   return vdatas_accessor_.Set(v.GetValue(), vd);
@@ -103,8 +103,8 @@ class VertexData<VID_T, std::string>
   using vid_t = VID_T;
   using vdata_t = std::string;
   using vid_array_t = typename vineyard::ConvertToArrowType<vid_t>::ArrayType;
-  using vdata_array_t =
-      typename vineyard::ConvertToArrowType<vdata_t>::ArrayType;
+
+  using vdata_array_t = arrow::LargeStringArray;
   using vertex_t = grape::Vertex<VID_T>;
 
  public:
@@ -121,7 +121,7 @@ class VertexData<VID_T, std::string>
     this->id_ = meta.GetId();
     this->frag_vnums_ = meta.GetKeyValue<fid_t>("frag_vnums");
     LOG(INFO) << "frag_vnums: " << frag_vnums_;
-    vineyard::NumericArray<vdata_t> vineyard_array;
+    vineyard::LargeStringArray vineyard_array;
     vineyard_array.Construct(meta.GetMemberMeta("vdatas"));
     vdatas_ = vineyard_array.GetArray();
 
@@ -133,9 +133,9 @@ class VertexData<VID_T, std::string>
 
   vid_t VerticesNum() { return frag_vnums_; }
 
-  std::string& GetData(const vid_t& lid) { return vdatas_->GetView(lid); }
+  arrow::util::string_view GetData(const vid_t& lid) { return vdatas_->GetView(lid); }
 
-  std::string& GetData(const vertex_t& v) {
+  arrow::util::string_view GetData(const vertex_t& v) {
     return vdatas_->GetView(v.GetValue());
   }
 
@@ -240,17 +240,14 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
 template <typename VID_T>
 class VertexDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
   using vid_t = VID_T;
-  using vdata_t = std::string;
-  using vdata_array_builder_t =
-      typename vineyard::ConvertToArrowType<vdata_t>::BuilderType;
-  using vdata_array_t =
-      typename vineyard::ConvertToArrowType<vdata_t>::ArrayType;
+  using vdata_array_builder_t = arrow::LargeStringBuilder;
+  using vdata_array_t = arrow::LargeStringArray;
 
  public:
   VertexDataBuilder() {}
   ~VertexDataBuilder() {}
 
-  void Init(vid_t frag_vnums, vdata_t initValue) {
+  void Init(vid_t frag_vnums, std::string initValue) {
     LOG(FATAL) << "Not implemented";
   }
 
@@ -274,8 +271,8 @@ class VertexDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
     LOG(INFO) << "Init vertex data with " << frag_vnums_;
   }
 
-  std::shared_ptr<VertexData<vid_t, vdata_t>> MySeal(vineyard::Client& client) {
-    return std::dynamic_pointer_cast<VertexData<vid_t, vdata_t>>(
+  std::shared_ptr<VertexData<vid_t, std::string>> MySeal(vineyard::Client& client) {
+    return std::dynamic_pointer_cast<VertexData<vid_t, std::string>>(
         this->Seal(client));
   }
 
@@ -283,8 +280,8 @@ class VertexDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
     // ensure the builder hasn't been sealed yet.
     ENSURE_NOT_SEALED(this);
     VINEYARD_CHECK_OK(this->Build(client));
-    auto vertex_data = std::make_shared<VertexData<vid_t, vdata_t>>();
-    vertex_data->meta_.SetTypeName(type_name<VertexData<vid_t, vdata_t>>());
+    auto vertex_data = std::make_shared<VertexData<vid_t, std::string>>();
+    vertex_data->meta_.SetTypeName(type_name<VertexData<vid_t, std::string>>());
 
     size_t nBytes = 0;
     vertex_data->vdatas_ = vineyard_array.GetArray();
@@ -303,8 +300,7 @@ class VertexDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
   }
 
   vineyard::Status Build(vineyard::Client& client) override {
-    typename vineyard::InternalType<vdata_t>::vineyard_builder_type
-        vdata_builder(client, this->vdata_array_);
+    vineyard::LargeStringArrayBuilder vdata_builder(client, this->vdata_array_);
     vineyard_array = *std::dynamic_pointer_cast<vineyard::LargeStringArray>(
         vdata_builder.Seal(client));
     LOG(INFO) << "Finish building vertex data;";

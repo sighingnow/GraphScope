@@ -186,7 +186,7 @@ struct ImmutableTypedArray<std::string> {
       length_ = 0;
     } else {
       array_ = std::dynamic_pointer_cast<arrow::LargeStringArray>(array).get();
-      length = array_->length();
+      length_ = array_->length();
     }
   }
 
@@ -204,7 +204,7 @@ struct ImmutableTypedArray<std::string> {
   value_type Get(size_t loc) const { return array_->GetView(loc); }
 
   // void Set(size_t loc, value_type newValue) { buffer_[loc] = newValue; }
-  size_t GetLength() const { return length; }
+  size_t GetLength() const { return length_; }
 
  private:
   arrow::LargeStringArray* array_;
