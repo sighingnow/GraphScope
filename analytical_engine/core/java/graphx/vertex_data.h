@@ -17,6 +17,9 @@
 #ifndef ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_VERTEX_DATA_H
 #define ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_VERTEX_DATA_H
 
+#include "arrow/array.h"
+#include "arrow/array/builder_binary.h"
+
 #include "grape/grape.h"
 #include "grape/utils/vertex_array.h"
 #include "grape/worker/comm_spec.h"
