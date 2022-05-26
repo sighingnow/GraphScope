@@ -369,6 +369,7 @@ import com.alibaba.fastffi.FFIGenBatch;
           @FFIGen(type = "com.alibaba.graphscope.stdcxx.StdVector",
                   templates =
                   {
+                    @CXXTemplate(cxx = "char", java = "Byte"),
                     @CXXTemplate(cxx = "int64_t", java = "Long")
                     , @CXXTemplate(cxx = "double", java = "Double"),
                         @CXXTemplate(cxx = "int32_t", java = "Integer"),

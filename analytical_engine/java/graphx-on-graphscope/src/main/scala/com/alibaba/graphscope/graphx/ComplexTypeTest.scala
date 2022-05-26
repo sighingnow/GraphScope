@@ -47,7 +47,7 @@ object ComplexTypeTest extends Logging{
     val ffiInput = new FFIByteVectorInputStream(ffiByteVector)
     val objectInputStream = new ObjectInputStream(ffiInput)
     val len = objectInputStream.readLong()
-    for (i <- 0 until len){
+    for (i <- 0 until len.toInt){
       log.info(s"Reading ${i} th obj")
       val tuple = objectInputStream.readObject().asInstanceOf[(Int,Int)]
       log.info(s"${tuple}")
