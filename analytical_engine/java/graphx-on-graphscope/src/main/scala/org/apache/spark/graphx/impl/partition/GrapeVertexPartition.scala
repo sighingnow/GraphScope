@@ -88,7 +88,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       while (i < outerGids.length){
         require(vm.outerVertexGid2Vertex(outerGids(i), vertex))
         outerLids(i) = vertex.GetValue()
-        log.info(s"Partition ${pid} received outer vdata updating info ${outerLids(i)}, ${outerDatas(i)}")
+//        log.info(s"Partition ${pid} received outer vdata updating info ${outerLids(i)}, ${outerDatas(i)}")
         vertexData.setData(outerLids(i), outerDatas(i))
         i += 1
       }
@@ -180,6 +180,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       logWarning("Joining two VertexPartitions with different indexes is slow.")
       leftJoin(createUsingIndex(other.iterator))(f)
     } else {
+      val time0 = System.nanoTime()
       val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD3], partVnum.toInt).asInstanceOf[PrimitiveArray[VD3]]
       var i = this.bitSet.nextSetBit(0)
       while (i >= 0 && i < partVnum) {
@@ -187,6 +188,8 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         newValues.set(i, f(this.vm.getId(i), this.getData(i), otherV))
         i = this.bitSet.nextSetBit(i + 1)
       }
+      val time1 = System.nanoTime()
+      log.info(s"Left join cost ${(time1 - time0) / 1000000} ms")
       this.withNewValues(new InHeapVertexDataStore[VD3](newValues,client))
     }
   }

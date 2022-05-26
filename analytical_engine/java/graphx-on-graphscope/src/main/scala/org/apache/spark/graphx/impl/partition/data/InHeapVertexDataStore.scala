@@ -15,6 +15,7 @@ class InHeapVertexDataStore[VD: ClassTag](val vdArray : PrimitiveArray[VD], val 
   var vertexDataV6d: VertexData[Long, VD] = null.asInstanceOf[VertexData[Long,VD]]
   override def size: Long = vdArray.size()
 
+  @inline
   override def getData(lid: Long): VD = vdArray.get(lid)
 
   override def vineyardID: Long = {
@@ -52,5 +53,6 @@ class InHeapVertexDataStore[VD: ClassTag](val vdArray : PrimitiveArray[VD], val 
     vertexDataV6d.id()
   }
 
+  @inline
   override def setData(lid: Long, vd: VD): Unit = vdArray.set(lid, vd)
 }

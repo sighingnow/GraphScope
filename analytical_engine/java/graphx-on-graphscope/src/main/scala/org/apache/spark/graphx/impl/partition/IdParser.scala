@@ -21,7 +21,6 @@ class IdParser(val fnum : Int)extends Logging{
       fid_offset = 64 - i
     }
     id_mask = (1 << fid_offset) - 1
-    log.info(s"fid offset: ${fid_offset}, ${id_mask.toBinaryString}")
   }
 
   def getLocalId(gid : Long) : Long = {

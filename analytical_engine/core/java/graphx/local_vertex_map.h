@@ -215,8 +215,8 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
                              oid_array_builder_t& inner_oids_builder,
                              oid_array_builder_t& outer_oids_builder)
       : LocalVertexMapBuilder<oid_t, vid_t>(client) {
-    inner_oids_builder.Finish(&inner_oids);
-    outer_oids_builder.Finish(&outer_oids);
+    CHECK(inner_oids_builder.Finish(&inner_oids).ok());
+    CHECK(outer_oids_builder.Finish(&outer_oids).ok());
   }
 
   vineyard::Status Build(vineyard::Client& client) override {

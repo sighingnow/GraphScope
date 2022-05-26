@@ -37,6 +37,8 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
                                                             @transient val vertices: GrapeVertexRDD[VD],
                                                             @transient val edges: GrapeEdgeRDD[ED]) extends Graph[VD, ED] with Serializable {
   val logger: Logger = LoggerFactory.getLogger(classOf[GrapeGraphImpl[_,_]].toString)
+  vertices.cache()
+  edges.cache()
 
   protected def this(vertices : GrapeVertexRDDImpl[VD], edges : GrapeEdgeRDDImpl[VD,ED], fragId : String) =
     this(vertices.asInstanceOf[GrapeVertexRDD[VD]],edges.asInstanceOf[GrapeEdgeRDD[ED]])
@@ -152,6 +154,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
   def mapVertices[VD2: ClassTag](map: (VertexId, VD) => VD2)
                                 (implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
+    vertices.cache()
     new GrapeGraphImpl[VD2,ED](vertices.mapVertices[VD2](map), edges)
   }
   override def mapEdges[ED2: ClassTag](map: Edge[ED] => ED2): Graph[VD, ED2] = {
@@ -173,10 +176,39 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     val newEdges = grapeEdges.mapEdgePartitions((pid,part) => part.map(f(pid, part.iterator)))
     new GrapeGraphImpl[VD,ED2](vertices,newEdges)
   }
+
+  override def mapTriplets[ED2: ClassTag](map: EdgeTriplet[VD, ED] => ED2): Graph[VD, ED2] = {
+    mapTriplets(map, TripletFields.All)
+  }
+
   override def mapTriplets[ED2: ClassTag](
                                   map: EdgeTriplet[VD, ED] => ED2,
                                   tripletFields: TripletFields): Graph[VD, ED2] = {
-    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(grapeVertices.grapePartitionsRDD){
+    //broadcast outer vertex data
+    //After map vertices, broadcast new inner vertex data to outer vertex data
+    val time0 = System.nanoTime()
+    val updateMessage = grapeVertices.grapePartitionsRDD.mapPartitions(iter => {
+      if (iter.hasNext){
+        val tuple = iter.next()
+        val pid = tuple._1
+        val part = tuple._2
+        part.generateVertexDataMessage
+      }
+      else {
+        Iterator.empty
+      }
+    }).partitionBy(new HashPartitioner(grapeVertices.grapePartitionsRDD.getNumPartitions))
+    val updatedVertexPartition = grapeVertices.grapePartitionsRDD.zipPartitions(updateMessage){
+      (vIter, msgIter) => {
+        val (pid, vpart) = vIter.next()
+        Iterator((pid,vpart.updateOuterVertexData(msgIter)))
+      }
+    }
+    val time1 = System.nanoTime()
+    logger.info(s"sync outer vertex data cost ${(time1 - time0)/ 1000000} ms")
+    //Although it seems we create new partitions, but actually we reuse the previous
+    val newGrapeVertices = grapeVertices.withGrapePartitionsRDD(updatedVertexPartition)
+    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newGrapeVertices.grapePartitionsRDD){
       (eIter,vIter) => {
         val (pid, vPart) = vIter.next()
         val (_, epart) = eIter.next()
@@ -184,7 +216,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       }
     }
     val newEdges = grapeEdges.withPartitionsRDD(newEdgePartitions)
-    new GrapeGraphImpl[VD,ED2](grapeVertices,newEdges)
+    new GrapeGraphImpl[VD,ED2](newGrapeVertices,newEdges)
   }
 
   override def mapTriplets[ED2](f: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], tripletFields: TripletFields)(implicit evidence$8: ClassTag[ED2]): Graph[VD, ED2] = {

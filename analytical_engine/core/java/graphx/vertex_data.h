@@ -109,8 +109,8 @@ class VertexData<VID_T, std::string>
   ~VertexData() {}
   static std::unique_ptr<vineyard::Object> Create() __attribute__((used)) {
     return std::static_pointer_cast<vineyard::Object>(
-        std::unique_ptr<VertexData<VID_T, VD_T>>{
-            new VertexData<VID_T, VD_T>()});
+        std::unique_ptr<VertexData<VID_T, std::string>>{
+            new VertexData<VID_T, std::string>()});
   }
 
   void Construct(const vineyard::ObjectMeta& meta) override {
@@ -130,12 +130,11 @@ class VertexData<VID_T, std::string>
 
   vid_t VerticesNum() { return frag_vnums_; }
 
-  VD_T& GetData(const vid_t& lid) {
-    CHECK_LT(lid, frag_vnums_);
-    return vdatas_accessor_[lid];
+  std::string& GetData(const vid_t& lid) {
+      return vdatas_->GetView(lid);
   }
 
-  VD_T& GetData(const vertex_t& v) { return GetData(v.GetValue()); }
+  std::string & GetData(const vertex_t& v) { return vdatas_->GetView(v.GetValue()); }
 
   // void SetData(const vertex_t& v, vdata_t vd) {
   //   return vdatas_accessor_.Set(v.GetValue(), vd);
@@ -148,7 +147,7 @@ class VertexData<VID_T, std::string>
  private:
   vid_t frag_vnums_;
   std::shared_ptr<vdata_array_t> vdatas_;
-  graphx::ImmutableTypedArray<vdata_t> vdatas_accessor_;
+  graphx::ImmutableTypedArray<std::string> vdatas_accessor_;
 
   // template <typename _VID_T, typename _VD_T>
   // friend class VertexDataBuilder;
@@ -167,21 +166,21 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
   VertexDataBuilder() {}
   ~VertexDataBuilder() {}
 
-  void Init(vid_t frag_vnums, vdata_t initValue) {
+  boost::leaf::result<void> Init(vid_t frag_vnums, vdata_t initValue) {
     vdata_array_builder_t vdata_builder;
     this->frag_vnums_ = frag_vnums;
-    vdata_builder.Reserve(static_cast<int64_t>(frag_vnums_));
+    ARROW_OK_OR_RAISE(vdata_builder.Reserve(static_cast<int64_t>(frag_vnums_)));
     for (size_t i = 0; i < static_cast<size_t>(frag_vnums_); ++i) {
       vdata_builder.UnsafeAppend(initValue);
     }
-    vdata_builder.Finish(&(this->vdata_array_));
+    ARROW_OK_OR_RAISE(vdata_builder.Finish(&(this->vdata_array_)));
     LOG(INFO) << "Init vertex data with " << frag_vnums_
               << " vertices, init val : " << initValue;
   }
 
-  void Init(vdata_array_builder_t& vdata_builder) {
+  boost::leaf::result<void> Init(vdata_array_builder_t& vdata_builder) {
     this->frag_vnums_ = vdata_builder.length();
-    vdata_builder.Finish(&(this->vdata_array_));
+    ARROW_OK_OR_RAISE(vdata_builder.Finish(&(this->vdata_array_)));
     LOG(INFO) << "Init vertex data with " << frag_vnums_;
   }
 
@@ -195,7 +194,7 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
         this->Seal(client));
   }
 
-  std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) {
+  std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) override {
     // ensure the builder hasn't been sealed yet.
     ENSURE_NOT_SEALED(this);
     VINEYARD_CHECK_OK(this->Build(client));
@@ -259,9 +258,9 @@ class VertexDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
     this->frag_vnums_ = frag_vnums;
     vdata_array_builder_t builder;
     LOG(INFO) << "Vdata buffer has " << vdata_buffer.size() << " bytes";
-    builder.Reserve(vdata_buffer.size())
-        builder.AppendValues(vdata_buffer.data(), vdata_buffer.size());
-    builder.Finish(&vdata_array_) LOG(INFO)
+    builder.Reserve(vdata_buffer.size());
+    builder.AppendValues(vdata_buffer.data(), vdata_buffer.size());
+    builder.Finish(&vdata_array_); LOG(INFO)
         << "Init vertex data with " << frag_vnums_;
   }
 

@@ -177,7 +177,6 @@ void Run() {
   if (std::strcmp(FLAGS_vd_type.c_str(),"int64_t") == 0 && std::strcmp(FLAGS_ed_type.c_str(),"int64_t") == 0) {
     using ProjectedFragmentType =
         ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
-    using APP_TYPE = JavaPIEProjectedDefaultApp<ProjectedFragmentType>;
 
     projected_frag_id = LoadFragment<ProjectedFragmentType>(
         comm_spec, client, FLAGS_directed, FLAGS_vertex_files, FLAGS_edge_files,
@@ -185,7 +184,6 @@ void Run() {
   } else if (std::strcmp(FLAGS_vd_type.c_str(),"double") == 0 && std::strcmp(FLAGS_ed_type.c_str(), "double") == 0) {
     using ProjectedFragmentType =
         ArrowProjectedFragment<int64_t, uint64_t, double, double>;
-    using APP_TYPE = JavaPIEProjectedDefaultApp<ProjectedFragmentType>;
 
     projected_frag_id = LoadFragment<ProjectedFragmentType>(
         comm_spec, client, FLAGS_directed, FLAGS_vertex_files, FLAGS_edge_files,
@@ -214,9 +212,6 @@ void Run() {
   }
 }
 
-std::string getHost(){
-    
-}
 
 void Finalize() {
   grape::FinalizeMPIComm();
