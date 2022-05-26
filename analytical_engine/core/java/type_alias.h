@@ -24,6 +24,8 @@
 #include "vineyard/graph/fragment/property_graph_types.h"
 #include "vineyard/graph/fragment/property_graph_utils.h"
 
+#include "arrow/array.h"
+
 #include "core/context/column.h"
 #include "core/fragment/arrow_projected_fragment.h"
 #include "core/loader/arrow_fragment_loader.h"

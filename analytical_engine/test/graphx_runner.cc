@@ -75,9 +75,9 @@ std::string flags2JsonStr() {
   pt.put("vd_class", FLAGS_vd_class);
   pt.put("ed_class", FLAGS_ed_class);
   pt.put("max_iterations", FLAGS_max_iterations);
-  pt.put("serial_path", FLAGS_serial_path)
+  pt.put("serial_path", FLAGS_serial_path);
 
-      std::stringstream ss;
+  std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);
   return ss.str();
 }
