@@ -323,7 +323,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 //      val eid = curNbr.eid()
       newData.set(ind, iter.next())
 //      newData.set(eid, iter.next())
-      require(ind != -1, s"mapping edges: received edge iterator length neq to cur active edges ${activeEdgeSet.cardinality()}")
+//      require(ind != -1, s"mapping edges: received edge iterator length neq to cur active edges ${activeEdgeSet.cardinality()}")
       ind = activeEdgeSet.nextSetBit(ind + 1)
     }
     require(ind == -1, s"after map new edata, ind ${ind}, expect edata size ${activeEdgeSet.cardinality()}")

@@ -48,7 +48,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   val grapeEdges: GrapeEdgeRDDImpl[VD, ED] = edges.asInstanceOf[GrapeEdgeRDDImpl[VD,ED]]
   val grapeVertices: GrapeVertexRDDImpl[VD] = vertices.asInstanceOf[GrapeVertexRDDImpl[VD]]
 
-  def numVertices: Long = vertices.count()
+  def numVertices: Long = grapeVertices.count()
 
   def numEdges: Long = edges.count()
 
@@ -186,29 +186,33 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
                                   tripletFields: TripletFields): Graph[VD, ED2] = {
     //broadcast outer vertex data
     //After map vertices, broadcast new inner vertex data to outer vertex data
-    val time0 = System.nanoTime()
-    val updateMessage = grapeVertices.grapePartitionsRDD.mapPartitions(iter => {
-      if (iter.hasNext){
-        val tuple = iter.next()
-        val pid = tuple._1
-        val part = tuple._2
-        part.generateVertexDataMessage
-      }
-      else {
-        Iterator.empty
-      }
-    }).partitionBy(new HashPartitioner(grapeVertices.grapePartitionsRDD.getNumPartitions))
-    val updatedVertexPartition = grapeVertices.grapePartitionsRDD.zipPartitions(updateMessage){
-      (vIter, msgIter) => {
-        val (pid, vpart) = vIter.next()
-        Iterator((pid,vpart.updateOuterVertexData(msgIter)))
-      }
+    var newVertices = vertices
+    if (!grapeVertices.outerVertexSynced){
+      logger.info(s"${grapeVertices} is doing outer vertex data sync")
+      val updateMessage = grapeVertices.grapePartitionsRDD.mapPartitions(iter => {
+        if (iter.hasNext){
+          val tuple = iter.next()
+          val pid = tuple._1
+          val part = tuple._2
+          part.generateVertexDataMessage
+        }
+        else {
+          Iterator.empty
+        }
+      }).partitionBy(new HashPartitioner(grapeVertices.grapePartitionsRDD.getNumPartitions))
+      val updatedVertexPartition = grapeVertices.grapePartitionsRDD.zipPartitions(updateMessage){
+        (vIter, msgIter) => {
+          val (pid, vpart) = vIter.next()
+          Iterator((pid,vpart.updateOuterVertexData(msgIter)))
+        }
+      }.cache()
+      newVertices = grapeVertices.withGrapePartitionsRDD(updatedVertexPartition, true)
     }
-    val time1 = System.nanoTime()
-    logger.info(s"sync outer vertex data cost ${(time1 - time0)/ 1000000} ms")
-    //Although it seems we create new partitions, but actually we reuse the previous
-    val newGrapeVertices = grapeVertices.withGrapePartitionsRDD(updatedVertexPartition)
-    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newGrapeVertices.grapePartitionsRDD){
+    else {
+      logger.info(s"${grapeVertices} has done outer vertex data sync, just go to map triplets")
+    }
+
+    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD){
       (eIter,vIter) => {
         val (pid, vPart) = vIter.next()
         val (_, epart) = eIter.next()
@@ -216,7 +220,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       }
     }
     val newEdges = grapeEdges.withPartitionsRDD(newEdgePartitions)
-    new GrapeGraphImpl[VD,ED2](newGrapeVertices,newEdges)
+    new GrapeGraphImpl[VD,ED2](newVertices,newEdges)
   }
 
   override def mapTriplets[ED2](f: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], tripletFields: TripletFields)(implicit evidence$8: ClassTag[ED2]): Graph[VD, ED2] = {

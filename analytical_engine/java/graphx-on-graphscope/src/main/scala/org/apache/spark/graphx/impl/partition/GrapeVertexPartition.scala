@@ -63,7 +63,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         var j = 0
         while (j < lids.length){
           gids(j) = idParser.generateGlobalId(curFid, lids(j))
-          require(lids(j) < endLid)
+//          require(lids(j) < endLid)
           newData(j) = getData(lids(j))
           j += 1
         }

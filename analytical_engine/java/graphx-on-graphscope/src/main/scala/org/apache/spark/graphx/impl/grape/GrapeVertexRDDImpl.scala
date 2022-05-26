@@ -18,7 +18,8 @@ import scala.reflect.ClassTag
  */
 class GrapeVertexRDDImpl[VD] private[graphx](
                                               @transient override val grapePartitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD])],
-                                              val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
+                                              val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
+                                              val outerVertexSynced : Boolean = false) // indicate whether we have done outer vertex shuffling.
                                             (implicit override protected val vdTag: ClassTag[VD])
   extends GrapeVertexRDD[VD](grapePartitionsRDD.context, List(new OneToOneDependency(grapePartitionsRDD))) {
 
@@ -211,6 +212,9 @@ class GrapeVertexRDDImpl[VD] private[graphx](
 
   override private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])]) : GrapeVertexRDD[VD2] = {
     new GrapeVertexRDDImpl[VD2](partitionsRDD,this.targetStorageLevel)
+  }
+  private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])], synced : Boolean) : GrapeVertexRDD[VD2] = {
+    new GrapeVertexRDDImpl[VD2](partitionsRDD,this.targetStorageLevel, synced)
   }
 
   override private[graphx] def withTargetStorageLevel(newTargetStorageLevel: StorageLevel) = {

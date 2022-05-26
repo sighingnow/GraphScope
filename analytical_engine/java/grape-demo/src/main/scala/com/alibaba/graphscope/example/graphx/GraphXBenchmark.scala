@@ -53,6 +53,8 @@ object GraphXBenchmark extends Logging{
     val graph15 = graph14.mapTriplets(triplet => triplet.attr * 2).cache()
     log.info(s"After transform edge triplet ${graph15.numVertices} ${graph15.numEdges}")
     val time3 = System.nanoTime()
+    log.info(s"After transform edge triplet ${graph15.numVertices} ${graph15.numEdges}")
+    val time30 = System.nanoTime()
 
     /**
      * test join
@@ -61,12 +63,16 @@ object GraphXBenchmark extends Logging{
     val inDegree = graph15.inDegrees.cache()
     log.info(s"after get out degree and in degrees ${outDegree.count()}, ${inDegree.count()}")
     val time31 = System.nanoTime()
+    log.info(s"after get out degree and in degrees ${outDegree.count()}, ${inDegree.count()}")
+    val time32 = System.nanoTime()
     val graph16 = graph15.outerJoinVertices(outDegree)((_,_,degree) => degree.getOrElse(0))
     val graph17 = graph16.outerJoinVertices(inDegree)((_,_,degree)=>degree.getOrElse(0))
-    log.info(s"after outer join ${graph17.vertices.map(tuple => tuple._2).count()}")
+    log.info(s"after outer join vertices ${graph17.vertices.count()}, edges ${graph17.edges.count()}")
     val time4 = System.nanoTime()
+    log.info(s"after outer join vertices ${graph17.vertices.count()}, edges ${graph17.edges.count()}")
+    val time5 = System.nanoTime()
 
-//    log.info(s"s[Summary: ] graph6 vertices${graph6.vertices.collect().map(tuple => tuple._2).sum}")
+    //    log.info(s"s[Summary: ] graph6 vertices${graph6.vertices.collect().map(tuple => tuple._2).sum}")
 //    log.info(s"s[Summary: ] graph12 edges ${graph12.vertices.collect().map(tuple => tuple._2).sum}")
 //    log.info(s"s[Summary: ] graph15 triplets ${graph15.vertices.collect().map(tuple => tuple._2).sum}")
 //    log.info(s"s[Summary: ] graph6 vertices ${graph6.triplets.collect().map(tuple => tuple.attr).sum}")
@@ -76,8 +82,11 @@ object GraphXBenchmark extends Logging{
     log.info(s"[Summary: ] map vertices cost ${(time1 - loadGraph1) / 1000000}ms")
     log.info(s"[Summary: ] map edges cost ${(time2 - time1) / 1000000}ms")
     log.info(s"[Summary: ] map edge triplets cost ${(time3 - time2) / 1000000}ms")
-    log.info(s"[Summary: ] get degree cost ${(time31 - time3) / 1000000}ms")
-    log.info(s"[Summary: ] join vertices cost ${(time4 - time31) / 1000000}ms")
+    log.info(s"[Summary: ] just count graph15 ${(time30 - time3) / 1000000}ms")
+    log.info(s"[Summary: ] get degree cost ${(time31 - time30) / 1000000}ms")
+    log.info(s"[Summary: ] count degree cost ${(time32 - time31) / 1000000}ms")
+    log.info(s"[Summary: ] join vertices cost ${(time4 - time32) / 1000000}ms")
+    log.info(s"[Summary: ] count graph17 for second time ${(time5 - time4) / 1000000 } ms")
 
   }
 }
