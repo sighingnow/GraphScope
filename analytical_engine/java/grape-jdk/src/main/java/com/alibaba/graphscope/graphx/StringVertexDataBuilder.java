@@ -20,7 +20,7 @@ public interface StringVertexDataBuilder extends FFIPointer {
 
     @FFINameAlias("Init")
     void init(long frag_vnums, @CXXReference @FFITypeAlias("std::vector<char>") StdVector<Byte> vector,
-        @CXXReference @FFITypeAlias("std::vector<char>") StdVector<Integer> length);
+        @CXXReference @FFITypeAlias("std::vector<int32_t>") StdVector<Integer> length);
 
     @FFINameAlias("MySeal")
     @CXXValue @FFITypeAlias("std::shared_ptr<gs::VertexData<uint64_t,std::string>>") StdSharedPtr<StringVertexData> seal(@CXXReference VineyardClient client);

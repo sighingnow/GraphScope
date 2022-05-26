@@ -185,7 +185,7 @@ class GraphXFragment
     return vm_.GetOuterVertexGid(v);
   }
 
-  inline vdata_t& GetData(const vertex_t& v) { return vdata_.GetData(v); }
+  inline vdata_t GetData(const vertex_t& v) { return vdata_.GetData(v); }
   // inline void SetData(const vertex_t& v, vdata_t vd) { vdata_.SetData(v, vd);
   // }
 

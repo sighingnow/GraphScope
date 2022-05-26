@@ -18,7 +18,7 @@ object ComplexTypeTest extends Logging{
     log.info("vineyard connected");
     val ffiByteVectorOutput = new FFIByteVectorOutputStream()
     val ffiOffset = FFIIntVectorFactory.INSTANCE.create().asInstanceOf[FFIIntVector]
-    val array = Array((1,3),(3,4))
+    val array = Array((1,3),(3,4),(12,13),(34,53))
     ffiOffset.resize(array.length)
     ffiOffset.touch()
     val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
@@ -27,10 +27,10 @@ object ComplexTypeTest extends Logging{
     var prevBytesWritten = 0
     while (i < limit){
       objectOutputStream.writeObject(array(i))
-      i += 1
       ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
       prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
-      log.info(s"Writing element ${i}: ${args(i).toString} cost ${ffiOffset.get(i)} bytes")
+      log.info(s"Writing element ${i}: ${array(i).toString} cost ${ffiOffset.get(i)} bytes")
+      i += 1
     }
     objectOutputStream.flush()
     ffiByteVectorOutput.finishSetting()
