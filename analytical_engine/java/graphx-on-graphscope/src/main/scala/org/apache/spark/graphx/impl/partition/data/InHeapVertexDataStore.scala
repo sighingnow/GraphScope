@@ -1,6 +1,6 @@
 package org.apache.spark.graphx.impl.partition.data
 
-import com.alibaba.graphscope.graphx.{StringVertexDataBuilder, VertexData, VertexDataBuilder, VineyardClient}
+import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream
 import com.alibaba.graphscope.stdcxx.{FFIIntVector, FFIIntVectorFactory}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
@@ -44,10 +44,10 @@ class InHeapVertexDataStore[VD: ClassTag](val vdArray : PrimitiveArray[VD], val 
         var prevBytesWritten = 0
         while (i < limit){
           objectOutputStream.writeObject(getData(i))
-          i += 1
           ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
           prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
           log.info(s"Writing element ${i}: ${getData(i).toString} cost ${ffiOffset.get(i)} bytes")
+          i += 1
         }
         objectOutputStream.flush()
         ffiByteVectorOutput.finishSetting()
