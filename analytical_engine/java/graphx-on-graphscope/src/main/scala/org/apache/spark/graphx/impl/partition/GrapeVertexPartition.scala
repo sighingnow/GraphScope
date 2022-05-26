@@ -76,23 +76,24 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   }
 
   def updateOuterVertexData(vertexDataMessage: Iterator[(PartitionID,VertexDataMessage[VD])]): GrapeVertexPartition[VD] = {
+    val time0 = System.nanoTime()
+    log.info("Start updating outer vertex")
     while (vertexDataMessage.hasNext){
       val (dstPid, msg) = vertexDataMessage.next()
       require(dstPid == pid)
       val outerGids = msg.gids
       val outerDatas = msg.newData
-      val outerLids = new Array[Long](outerGids.length)
-      val idParser = new IdParser(vm.fnum())
       var i = 0
       val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
       while (i < outerGids.length){
         require(vm.outerVertexGid2Vertex(outerGids(i), vertex))
-        outerLids(i) = vertex.GetValue()
 //        log.info(s"Partition ${pid} received outer vdata updating info ${outerLids(i)}, ${outerDatas(i)}")
-        vertexData.setData(outerLids(i), outerDatas(i))
+        vertexData.setData(vertex.GetValue, outerDatas(i))
         i += 1
       }
     }
+    val time1 = System.nanoTime()
+    log.info(s"[Perf: ] updating outer vertex data cost ${(time1 - time0) / 1000000}ms")
     this
   }
 
