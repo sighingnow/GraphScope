@@ -121,6 +121,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def getOutDegreeArray : PrimitiveArray[Int] = {
+    val time0 = System.nanoTime()
     val len = vm.getVertexSize.toInt
     val res = PrimitiveArray.create(classOf[Int], len)
     var i = 0L
@@ -132,10 +133,13 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       res.set(i, 0)
       i += 1
     }
+    val time1 = System.nanoTime()
+    log.info(s"Get out degree array cost ${(time1 - time0)/1000000} ms")
     res
   }
 
   def getInDegreeArray : PrimitiveArray[Int] = {
+    val time0 = System.nanoTime()
     val len = vm.getVertexSize.toInt
     val res = PrimitiveArray.create(classOf[Int], len)
     var i = 0L
@@ -147,6 +151,8 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       res.set(i, 0)
       i += 1
     }
+    val time1 = System.nanoTime()
+    log.info(s"Get in degree array cost ${(time1 - time0)/1000000} ms")
     res
   }
 
