@@ -145,6 +145,7 @@ class ImmutableTypedArray {
               ->raw_values();
       buffer_ = const_cast<T*>(const_buffer_);
       length = array->length();
+      initVector();
     }
   }
 
@@ -159,6 +160,7 @@ class ImmutableTypedArray {
               ->raw_values();
       buffer_ = const_cast<T*>(const_buffer_);
       length = array->length();
+      initVector();
     }
   }
 
@@ -169,8 +171,18 @@ class ImmutableTypedArray {
   // void Set(size_t loc, value_type newValue) { buffer_[loc] = newValue; }
   size_t GetLength() const { return length; }
 
+  std::vector<char>& GetRawBytes() { return raw_bytes_; }
+
  private:
+  void initVector() {
+    auto tmp_ptr = static_cast<char*> buffer_;
+    raw_bytes_.resize(sizeof(T) * length);
+    LOG(INFO) << "Raw bytes of immutable array " << (sizeof(T) * length)
+              << "bytes";
+    memcpy(raw_bytes_.data(), tmp_ptr, sizeof(T) * length);
+  }
   T* buffer_;
+  std::vector<char> raw_bytes_;
   size_t length;
 };
 template <>
@@ -185,6 +197,7 @@ struct ImmutableTypedArray<std::string> {
     } else {
       array_ = std::dynamic_pointer_cast<arrow::LargeStringArray>(array).get();
       length = array_->length();
+      initVector();
     }
   }
 
@@ -195,17 +208,30 @@ struct ImmutableTypedArray<std::string> {
     } else {
       array_ = std::dynamic_pointer_cast<arrow::LargeStringArray>(array).get();
       length_ = array_->length();
+      initVector();
     }
   }
 
-  value_type operator[](size_t loc) const { return array_->GetView(loc); }
+  value_type& operator[](size_t loc) const { return array_->GetView(loc); }
   value_type Get(size_t loc) const { return array_->GetView(loc); }
 
   // void Set(size_t loc, value_type newValue) { buffer_[loc] = newValue; }
   size_t GetLength() const { return length; }
 
  private:
+  void initVector() {
+    char* tmp_ptr = static_cast<char*>(array_->raw_data());  // uint8_t
+    int64_t arr_length = array_->length();
+    LOG(INFO) << "array length: " << arr_length;
+    int64_t bytes_in_array = array_->value_offset(arr_length);
+    LOG(INFO) << "bytes in array: " << bytes_in_array;
+    raw_bytes_.resize(sizeof(char) * bytes_in_array);
+    LOG(INFO) << "Raw bytes of immutable array " << (sizeof(T) * length)
+              << "bytes";
+    memcpy(raw_bytes_.data(), tmp_ptr, sizeof(char) * bytes_in_array);
+  }
   arrow::LargeStringArray* array_;
+  std::vector<char> raw_bytes_;
   size_t length_;
 };
 }  // namespace graphx
