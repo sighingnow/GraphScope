@@ -50,20 +50,20 @@ object GraphXBenchmark extends Logging{
      */
     val graph13 = graph.mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr + triplet.attr)
     val graph14 = graph13.mapTriplets(triplet => triplet.attr + 1)
-    val graph15 = graph14.mapTriplets(triplet => triplet.attr * 2)
+    val graph15 = graph14.mapTriplets(triplet => triplet.attr * 2).cache()
     log.info(s"After transform edge triplet ${graph15.numVertices} ${graph15.numEdges}")
     val time3 = System.nanoTime()
 
     /**
      * test join
      */
-//    val outDegree = graph15.outDegrees.cache()
-//    val inDegree = graph15.inDegrees.cache()
-//    log.info(s"after get out degree and in degrees ${outDegree.count()}, ${inDegree.count()}")
+    val outDegree = graph15.outDegrees.cache()
+    val inDegree = graph15.inDegrees.cache()
+    log.info(s"after get out degree and in degrees ${outDegree.count()}, ${inDegree.count()}")
     val time31 = System.nanoTime()
-//    val graph16 = graph15.outerJoinVertices(outDegree)((_,_,degree) => degree.getOrElse(0))
-//    val graph17 = graph16.outerJoinVertices(inDegree)((_,_,degree)=>degree.getOrElse(0))
-//    log.info(s"after outer join ${graph17.vertices.map(tuple => tuple._2).count()}")
+    val graph16 = graph15.outerJoinVertices(outDegree)((_,_,degree) => degree.getOrElse(0))
+    val graph17 = graph16.outerJoinVertices(inDegree)((_,_,degree)=>degree.getOrElse(0))
+    log.info(s"after outer join ${graph17.vertices.map(tuple => tuple._2).count()}")
     val time4 = System.nanoTime()
 
 //    log.info(s"s[Summary: ] graph6 vertices${graph6.vertices.collect().map(tuple => tuple._2).sum}")
