@@ -53,7 +53,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
       }
     }
     log.info(s"get degree rdd with direction ${edgeDirection}")
-    originalVertexRDD.withGrapePartitionsRDD(newVertexPartitionRDD).cache()
+    originalVertexRDD.withGrapePartitionsRDD(newVertexPartitionRDD)
   }
 
   override def collect(): Array[Edge[ED]] = this.map(_.copy()).collect()

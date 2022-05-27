@@ -126,25 +126,15 @@ object GrapeEdgeRDD extends Logging{
         }
         require(res != null, s"after iterate over received global ids, no suitable found for ${meta.partitionID} : ${globalVMIDs}")
         meta.setGlobalVM(res.toLong)
-        Iterator((pid, meta))
-      }
-      else Iterator.empty
-    }) //.cache()
-
-    val metaUpdated2 = metaUpdated.mapPartitions(iter => {
-      log.info("doing meta update2")
-      if (iter.hasNext) {
-        val (pid,meta) = iter.next()
-        require(meta.globalVMId != -1)
         val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId)
         meta.setGlobalVM(vm)
         meta.setCSR(csr)
         Iterator((pid, meta))
       }
       else Iterator.empty
-    }) //.cache()
+    }).cache()
 
-    val grapeEdgePartitions = metaUpdated2.mapPartitions(iter => {
+    val grapeEdgePartitions = metaUpdated.mapPartitions(iter => {
       log.info("doing edge partition building")
       if (iter.hasNext) {
         val (pid, meta) = iter.next()

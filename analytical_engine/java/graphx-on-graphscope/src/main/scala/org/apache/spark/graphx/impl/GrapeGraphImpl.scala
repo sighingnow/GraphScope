@@ -154,7 +154,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
   def mapVertices[VD2: ClassTag](map: (VertexId, VD) => VD2)
                                 (implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
-    vertices.cache()
+//    vertices.cache()
     new GrapeGraphImpl[VD2,ED](vertices.mapVertices[VD2](map), edges)
   }
   override def mapEdges[ED2: ClassTag](map: Edge[ED] => ED2): Graph[VD, ED2] = {
