@@ -39,6 +39,13 @@ include_directories(SYSTEM ${JAVA_INCLUDE_PATH})
 include_directories(SYSTEM ${JAVA_INCLUDE_PATH2})
 include_directories("src/main/native")
 
+find_package(Boost REQUIRED COMPONENTS system filesystem
+             # required by folly
+             context program_options regex thread)
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
+# eliminate a lot of warnings for newer version of boost library.
+add_compile_options(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
+
 # find libgrape-lite-------------------------------------------------------------------
 find_package(libgrapelite REQUIRED)
 include_directories(SYSTEM ${LIBGRAPELITE_INCLUDE_DIRS})
@@ -56,6 +63,6 @@ find_package(Threads REQUIRED)
 
 add_library(grape-jni SHARED ${SOURCES})
 target_compile_definitions(grape-jni PUBLIC ENABLE_JAVA_SDK)
-target_link_libraries(grape-jni ${CMAKE_JNI_LINKER_FLAGS}  ${LIBGRAPELITE_LIBRARIES} ${GRAPHSCOPE_ANALYTICAL_LIBRARIES})
+target_link_libraries(grape-jni ${CMAKE_JNI_LINKER_FLAGS}  ${LIBGRAPELITE_LIBRARIES} ${GRAPHSCOPE_ANALYTICAL_LIBRARIES} ${Boost_LIBRARIES})
 set_target_properties(grape-jni PROPERTIES LINKER_LANGUAGE CXX)
 target_compile_features(grape-jni PRIVATE cxx_std_14)

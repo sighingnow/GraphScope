@@ -179,6 +179,7 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
     ARROW_OK_OR_RAISE(vdata_builder.Finish(&(this->vdata_array_)));
     LOG(INFO) << "Init vertex data with " << frag_vnums_
               << " vertices, init val : " << initValue;
+    return {};
   }
 
   boost::leaf::result<void> Init(vdata_array_builder_t& vdata_builder) {
