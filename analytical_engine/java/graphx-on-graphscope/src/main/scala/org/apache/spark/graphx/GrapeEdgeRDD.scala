@@ -129,10 +129,13 @@ object GrapeEdgeRDD extends Logging{
         val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId)
         meta.setGlobalVM(vm)
         meta.setCSR(csr)
+        meta.edgePartitionBuilder.clearBuilders()
+        meta.edgePartitionBuilder = null //make it null to let it be gc able
         Iterator((pid, meta))
       }
       else Iterator.empty
     }).cache()
+    //clear edge partition builder to save us some memory
 
     val grapeEdgePartitions = metaUpdated.mapPartitions(iter => {
       log.info("doing edge partition building")
@@ -142,6 +145,9 @@ object GrapeEdgeRDD extends Logging{
       }
       else Iterator.empty
     }).cache()
+
+    //clear cached builder memory
+    metaUpdated.unpersist()
 
     val rdd =new GrapeEdgeRDDImpl[VD,ED](grapeEdgePartitions)
     log.info(s"[GrapeEdgeRDD:] Finish Construct EdgeRDD, total edges count ${rdd.count()}")
