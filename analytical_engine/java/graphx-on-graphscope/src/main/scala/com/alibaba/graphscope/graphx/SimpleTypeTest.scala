@@ -1,12 +1,8 @@
 package com.alibaba.graphscope.graphx
 
 import com.alibaba.fastffi.FFITypeFactory
-import com.alibaba.graphscope.serialization.{FFIByteVectorInputStream, FFIByteVectorOutputStream}
-import com.alibaba.graphscope.stdcxx.{FFIByteVector, FFIIntVector, FFIIntVectorFactory}
 import org.apache.spark.graphx.utils.ScalaFFIFactory
 import org.apache.spark.internal.Logging
-
-import java.io.{ObjectInputStream, ObjectOutputStream}
 
 object SimpleTypeTest extends Logging{
   def main(args: Array[String]): Unit = {
