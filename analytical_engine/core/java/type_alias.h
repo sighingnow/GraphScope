@@ -105,7 +105,7 @@ using ArrowArray = typename vineyard::ConvertToArrowType<T>::ArrayType;
 
 template <typename T>
 struct TypeName {
-  static std::string Get() { return "NULL"; }
+  static std::string Get() { return "std::string"; }
 };
 
 // a specialization for each type of those you want to support
@@ -224,15 +224,16 @@ struct ImmutableTypedArray<std::string> {
 
  private:
   void initVector() {
-    char* tmp_ptr = reinterpret_cast<char*>(const_cast<uint8_t*>(array_->raw_data()));  // uint8_t
+    char* tmp_ptr = reinterpret_cast<char*>(
+        const_cast<uint8_t*>(array_->raw_data()));  // uint8_t
     int64_t arr_length = array_->length();
     LOG(INFO) << "array length: " << arr_length;
     int64_t bytes_in_array = array_->value_offset(arr_length);
 
     LOG(INFO) << "bytes in array: " << bytes_in_array;
     raw_bytes_.resize(sizeof(char) * bytes_in_array);
-    LOG(INFO) << "Raw bytes of immutable array " << (sizeof(char) * bytes_in_array)
-              << "bytes";
+    LOG(INFO) << "Raw bytes of immutable array "
+              << (sizeof(char) * bytes_in_array) << "bytes";
     memcpy(raw_bytes_.data(), tmp_ptr, sizeof(char) * bytes_in_array);
     LOG(INFO) << "after copy" << raw_bytes_.size();
   }
