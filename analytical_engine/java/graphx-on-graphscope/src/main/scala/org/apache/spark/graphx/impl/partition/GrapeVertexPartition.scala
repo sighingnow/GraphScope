@@ -99,12 +99,15 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
   def map[VD2: ClassTag](f: (VertexId, VD) => VD2): GrapeVertexPartition[VD2] = {
     // Construct a view of the map transformation
+    val time0 = System.nanoTime()
     val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], vm.getVertexSize.toInt).asInstanceOf[PrimitiveArray[VD2]]
     var i = bitSet.nextSetBit(0)
     while (i >= 0) {
       newValues.set(i, f(vm.getId(i), getData(i)))
       i = bitSet.nextSetBit(i + 1)
     }
+    val time1 = System.nanoTime()
+    log.info(s"map vertex partition cost ${(time1 - time0) / 1000000} ms")
     this.withNewValues(new InHeapVertexDataStore[VD2](newValues, client))
   }
 
