@@ -12,7 +12,7 @@ object SimpleTypeTest extends Logging{
     ffiByteString.copyFrom("/tmp/vineyard.sock")
     client.connect(ffiByteString)
     log.info("vineyard connected");
-    val newVdataBuilder = ScalaFFIFactory.newVertexDataBuilder[Int]()
+    val newVdataBuilder = ScalaFFIFactory.newVertexDataBuilder[Long]()
     newVdataBuilder.init(62586, 1)
     val vertexData = newVdataBuilder.seal(client).get()
     log.info(s"Got vertexdata id ${vertexData.id()}")
