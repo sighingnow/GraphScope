@@ -394,23 +394,10 @@ object PageRank extends Logging {
     log.info(s"before map triplet ${graph1.triplets.collect().mkString("Array(", ", ", ")")}")
     val graph2 = graph1.mapTriplets( e => 1.0 / e.srcAttr).cache()
     log.info(s"after map triplet ${graph2.triplets.collect().mkString("Array(", ", ", ")")}")
+    val graph3 = graph2.mapVertices((id, attr) => if (id == src) (0.0, Double.NegativeInfinity) else (0.0, 0.0)).cache()
 
-    // Initialize the pagerankGraph with each edge attribute
-    // having weight 1/outDegree and each vertex with attribute 0.
-    val pagerankGraph: Graph[(Double, Double), Double] = graph
-      // Associate the degree with each vertex
-      .outerJoinVertices(graph.outDegrees) {
-        (vid, vdata, deg) => deg.getOrElse(0)
-      }
-      // Set the weight on the edges based on the degree
-      .mapTriplets( e => 1.0 / e.srcAttr )
-      // Set the vertex attributes to (initialPR, delta = 0)
-      .mapVertices { (id, attr) =>
-        if (id == src) (0.0, Double.NegativeInfinity) else (0.0, 0.0)
-      }
-      .cache()
-    log.info(s"${pagerankGraph.vertices.collect().mkString("Array(", ", ", ")")}")
-    log.info(s"${pagerankGraph.triplets.collect().mkString("Array(", ", ", ")")}")
+    log.info(s"${graph3.vertices.collect().mkString("Array(", ", ", ")")}")
+    log.info(s"${graph3.triplets.collect().mkString("Array(", ", ", ")")}")
 
     // Define the three functions needed to implement PageRank in the GraphX
     // version of Pregel
@@ -453,7 +440,7 @@ object PageRank extends Logging {
         vertexProgram(id, attr, msgSum)
     }
 
-    val rankGraph = Pregel(pagerankGraph, initialMessage, activeDirection = EdgeDirection.Out)(
+    val rankGraph = Pregel(graph3, initialMessage, activeDirection = EdgeDirection.Out)(
       vp, sendMessage, messageCombiner)
       .mapVertices((vid, attr) => attr._1)
 
