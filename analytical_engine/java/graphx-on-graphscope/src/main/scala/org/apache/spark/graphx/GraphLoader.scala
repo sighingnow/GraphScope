@@ -95,7 +95,7 @@ object GraphLoader extends Logging {
 //        }
 //        else newIter
       }
-    ).partitionBy(partitioner).persist(edgeStorageLevel).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
+    ).partitionBy(partitioner).setName("GraphLoader.edgeListFile - edges (%s)".format(path))
     val edgeShufflesNum = edgesShuffled.count()
     val edgeShuffleTime = System.nanoTime()
     log.info(s"Repartition ${edgeShufflesNum} edges cost ${(edgeShuffleTime - linesTime)/ 1000000} ms ")
@@ -109,6 +109,7 @@ object GraphLoader extends Logging {
     log.info(s"[GraphLoader:] construct edge rdd ${edgeRDD} cost ${(time1 - time0) / 1000000} ms")
     val vertexRDD = GrapeVertexRDD.fromEdgeRDD[Int](edgeRDD, edgeRDD.grapePartitionsRDD.getNumPartitions, 1,vertexStorageLevel).cache()
     log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
+    lines.unpersist()
     GrapeGraphImpl.fromExistingRDDs(vertexRDD,edgeRDD)
   }
 }
