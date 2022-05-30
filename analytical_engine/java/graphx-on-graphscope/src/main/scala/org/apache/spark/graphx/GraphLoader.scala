@@ -3,7 +3,8 @@ package org.apache.spark.graphx
 import com.alibaba.graphscope.utils.{LongLong, LongLongInputFormat}
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.graphx.impl.GrapeGraphImpl
-import org.apache.spark.graphx.impl.partition.EdgeShuffle
+import org.apache.spark.graphx.impl.partition.{EdgeShuffle, VertexDataMessage}
+import org.apache.spark.graphx.impl.partition.RoutingTable.RoutingMessage
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.collection.{OpenHashSet, PrimitiveVector}
@@ -21,6 +22,9 @@ object GraphLoader extends Logging {
    edgeStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
    vertexStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   : Graph[Int, Int] = {
+    //check whether kryo serialization is enabled, and register our classes.
+    val conf = sc.conf
+    conf.registerKryoClasses(Array(classOf[EdgeShuffle[_]], classOf[RoutingMessage], classOf[VertexDataMessage[_]]))
     val startTimeNs = System.nanoTime()
     // Parse the edge data table directly into edge partitions
     val lines = {

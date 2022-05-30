@@ -76,6 +76,7 @@ public class CppHeaderName {
     public static final String CORE_JAVA_GRAPHX_GRAPHX_VERTEX_MAP_H = "core/java/graphx/graphx_vertex_map.h";
     public static final String CORE_JAVA_GRAPHX_VERTEX_DATA_H = "core/java/graphx/vertex_data.h";
     public static final String CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H = "core/java/graphx/graphx_fragment.h";
+    public static final String CORE_JAVA_FRAGMENT_GETTER_H = "core/java/graphx/fragment_getter.h";
 
     public static final String VINEYARD_CLIENT_H = "vineyard/client/client.h";
     public static final String VINEYARD_STATUS_H = "vineyard/common/util/status.h";

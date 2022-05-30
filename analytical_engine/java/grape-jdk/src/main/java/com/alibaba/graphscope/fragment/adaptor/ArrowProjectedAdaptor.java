@@ -20,6 +20,13 @@ public class ArrowProjectedAdaptor<OID_T, VID_T, VDATA_T, EDATA_T>
     public static String fragmentType = "ArrowProjectedFragment";
     private ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T> fragment;
 
+    @Override
+    public String toString() {
+        return "ArrowProjectedAdaptor{" +
+            "fragment=" + fragment +
+            '}';
+    }
+
     public ArrowProjectedAdaptor(ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T> frag) {
         fragment = frag;
     }

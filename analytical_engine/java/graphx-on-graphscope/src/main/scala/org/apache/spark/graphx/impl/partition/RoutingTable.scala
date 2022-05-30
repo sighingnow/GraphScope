@@ -21,8 +21,9 @@ class RoutingTable(val numPartitions : Int) {
 }
 
 object RoutingTable extends Logging{
+  type RoutingMessage = (PartitionID,Array[Long])
   /** to which partition these outer gids belongs. */
-  def generateMsg(fromPid : Int, numPartitions : Int, vm : GraphXVertexMap[Long,Long]) : Iterator[(PartitionID, (PartitionID,Array[Long]))] = {
+  def generateMsg(fromPid : Int, numPartitions : Int, vm : GraphXVertexMap[Long,Long]) : Iterator[(PartitionID, RoutingMessage)] = {
     require(numPartitions == vm.fnum())
     val idParser = new IdParser(numPartitions)
     val gids = new Array[ArrayBuffer[Long]](numPartitions)
@@ -49,7 +50,7 @@ object RoutingTable extends Logging{
     gids.zipWithIndex.map(tuple => (tuple._2, (fromPid,tuple._1.toArray))).toIterator
   }
 
-  def fromMsg(curPid : Int, numPartitions : Int, msgIter : Iterator[(PartitionID, (PartitionID,Array[Long]))], vm : GraphXVertexMap[Long,Long]) : RoutingTable = {
+  def fromMsg(curPid : Int, numPartitions : Int, msgIter : Iterator[(PartitionID, RoutingMessage)], vm : GraphXVertexMap[Long,Long]) : RoutingTable = {
     val routingTable = new RoutingTable(numPartitions)
     while (msgIter.hasNext){
       val tuple = msgIter.next()
