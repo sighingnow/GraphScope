@@ -16,13 +16,18 @@ import scala.reflect.ClassTag
 
 class FragmentPartition[VD : ClassTag,ED : ClassTag](rddId : Int, override val index : Int, val hostName : String,objectID : Long, socket : String, fragName : String) extends Partition with Logging {
 
-  val client: VineyardClient = ScalaFFIFactory.newVineyardClient()
-  val ffiByteString: FFIByteString = FFITypeFactory.newByteString()
-  ffiByteString.copyFrom(socket)
-  client.connect(ffiByteString)
-  log.info(s"Create vineyard client ${client} and connect to ${socket}")
-  val fragment: IFragment[Long, Long, VD, ED] = ScalaFFIFactory.getFragment[VD,ED](client, objectID, fragName)
-  log.info(s"Got iFragment ${fragment}")
+  /** mark this val as lazy to let it run on executor rather than driver */
+  lazy val tuple = {
+    val client: VineyardClient = ScalaFFIFactory.newVineyardClient()
+    val ffiByteString: FFIByteString = FFITypeFactory.newByteString()
+    ffiByteString.copyFrom(socket)
+    client.connect(ffiByteString)
+    log.info(s"Create vineyard client ${client} and connect to ${socket}")
+    val fragment: IFragment[Long, Long, VD, ED] = ScalaFFIFactory.getFragment[VD,ED](client, objectID, fragName)
+    log.info(s"Got iFragment ${fragment}")
+    (client, fragment)
+  }
+
   override def hashCode(): Int = 31 * (31 + rddId) + index
 
   override def equals(other: Any): Boolean = super.equals(other)
@@ -32,7 +37,7 @@ class FragmentPartition[VD : ClassTag,ED : ClassTag](rddId : Int, override val i
 class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames : Array[String], fragName: String, objectID : Long, socket : String = "/tmp/vineyard.sock")  extends RDD[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))](sc, Nil) with Logging{
   override def compute(split: Partition, context: TaskContext): Iterator[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))] = {
     val partitionCasted = split.asInstanceOf[FragmentPartition[VD,ED]]
-    Iterator((partitionCasted.index, (partitionCasted.client, partitionCasted.fragment)))
+    Iterator((partitionCasted.index, partitionCasted.tuple))
   }
 
   /** according to spark code comments, this function will be only executed once. */
