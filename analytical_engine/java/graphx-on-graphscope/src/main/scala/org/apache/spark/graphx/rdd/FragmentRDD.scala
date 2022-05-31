@@ -35,6 +35,10 @@ class FragmentPartition[VD : ClassTag,ED : ClassTag](rddId : Int, override val i
 }
 
 class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames : Array[String], fragName: String, objectID : Long, socket : String = "/tmp/vineyard.sock")  extends RDD[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))](sc, Nil) with Logging{
+  val array = new Array[Partition](hostNames.length)
+    for (i <- 0 until hostNames.length) {
+      array(i) = new FragmentPartition[VD,ED](id, i, hostNames(i), objectID, socket,fragName)
+    }
   override def compute(split: Partition, context: TaskContext): Iterator[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))] = {
     val partitionCasted = split.asInstanceOf[FragmentPartition[VD,ED]]
     Iterator((partitionCasted.index, partitionCasted.tuple))
@@ -42,10 +46,6 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
 
   /** according to spark code comments, this function will be only executed once. */
   override protected def getPartitions: Array[Partition] = {
-    val array = new Array[Partition](hostNames.length)
-    for (i <- 0 until hostNames.length) {
-      array(i) = new FragmentPartition[VD,ED](id, i, hostNames(i), objectID, socket,fragName)
-    }
     array
   }
 
@@ -59,6 +59,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
   }
 
   def generateRDD() : (GrapeVertexRDD[VD],GrapeEdgeRDD[ED]) = {
+    this.cache()
     val fragmentStructures = this.mapPartitions(iter => {
       if (iter.hasNext){
         val (pid, (client,frag)) = iter.next()

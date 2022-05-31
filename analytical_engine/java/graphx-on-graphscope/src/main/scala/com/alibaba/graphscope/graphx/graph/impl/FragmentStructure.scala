@@ -225,7 +225,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
       val initAddress : Long = nbr.getAddress
 
       override def hasNext: Boolean = {
-        if (offset <= 0) return false
+        if (offset < 0) return false
 
         while (lid2Offset(curLid + 1) <= offset) {
           curLid += 1
@@ -249,6 +249,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
           edge.dstAttr = frag.getData(vertex)
         }
         edge.attr = attr
+	edge.index = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
         edge
       }
@@ -274,7 +275,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
       val initAddress : Long = nbr.getAddress
 
       override def hasNext: Boolean = {
-        if (offset <= 0) return false
+        if (offset < 0) return false
 
         while (lid2Offset(curLid + 1) <= offset) {
           curLid += 1
@@ -288,9 +289,11 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         nbr.setAddress(initAddress + NBR_SIZE * offset)
         val dstLid = nbr.vid()
         val attr = edataArrayAccessor.get(nbr.eid())
+        log.info(s"eid ${nbr.eid()}, attr ${attr}")
         vertex.SetValue(dstLid)
         edge.dstId = frag.getId(vertex)
         edge.attr = attr
+	edge.index = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
         edge
       }
@@ -315,7 +318,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
       val initAddress : Long = nbr.getAddress
 
       override def hasNext: Boolean = {
-        if (offset <= 0) return false
+        if (offset < 0) return false
 
         while (lid2Offset(curLid + 1) <= offset) {
           curLid += 1
@@ -332,6 +335,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         vertex.SetValue(dstLid)
         edge.dstId = frag.getId(vertex)
         edge.attr = attr
+        edge.index = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
         edge
       }
@@ -356,7 +360,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
       val initAddress : Long = nbr.getAddress
 
       override def hasNext: Boolean = {
-        if (offset <= 0) return false
+        if (offset < 0) return false
 
         while (lid2Offset(curLid + 1) <= offset) {
           curLid += 1
@@ -380,6 +384,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
           edge.dstAttr = frag.getData(vertex)
         }
         edge.attr = attr
+	edge.index = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
         edge
       }
