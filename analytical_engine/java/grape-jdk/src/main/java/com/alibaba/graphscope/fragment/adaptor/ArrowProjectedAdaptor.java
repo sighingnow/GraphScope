@@ -112,7 +112,7 @@ public class ArrowProjectedAdaptor<OID_T, VID_T, VDATA_T, EDATA_T>
 
     @Override
     public int getLocalOutDegree(Vertex<VID_T> vertex) {
-        return fragment.getLocalInDegree(vertex);
+        return fragment.getLocalOutDegree(vertex);
     }
 
     @Override
