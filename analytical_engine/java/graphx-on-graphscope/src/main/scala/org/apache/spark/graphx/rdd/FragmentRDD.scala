@@ -39,7 +39,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
   override protected def getPartitions: Array[Partition] = {
     val array = new Array[Partition](hostNames.length)
     for (i <- 0 until hostNames.length) {
-      array(i) = new FragmentPartition(id, i, hostNames(i), objectID, socket)
+      array(i) = new FragmentPartition[VD,ED](id, i, hostNames(i), objectID, socket,fragName)
     }
     array
   }
@@ -50,7 +50,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
    * @return
    */
   override protected def getPreferredLocations(split: Partition): Seq[String] = {
-    Array(split.asInstanceOf[FragmentPartition].hostName)
+    Array(split.asInstanceOf[FragmentPartition[VD,ED]].hostName)
   }
 
   def generateRDD() : (GrapeVertexRDD[VD],GrapeEdgeRDD[ED]) = {

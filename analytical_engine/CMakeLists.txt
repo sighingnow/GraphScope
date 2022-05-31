@@ -306,7 +306,7 @@ if (BUILD_TESTS)
 
         add_executable(projected_fragment_loader test/projected_fragment_loader.cc)
         target_include_directories(projected_fragment_loader PRIVATE core utils apps)
-        target_compile_definitions(projected_fragment_loader PUBLIC ENABLE_JAVA_SDK)
+#        target_compile_definitions(projected_fragment_loader PUBLIC ENABLE_JAVA_SDK)
         target_link_libraries(projected_fragment_loader ${CMAKE_DL_LIBS} ${VINEYARD_LIBRARIES} ${Boost_LIBRARIES} ${GLOG_LIBRARIES} ${LIBRT} ${GFLAGS_LIBRARIES})
 
         if (${LIBUNWIND_FOUND})

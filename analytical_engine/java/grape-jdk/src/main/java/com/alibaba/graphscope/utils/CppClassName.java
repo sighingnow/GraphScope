@@ -93,7 +93,7 @@ public class CppClassName {
   public static final String GS_ARROW_ARRAY_BUILDER = "gs::ArrowArrayBuilder";
   public static final String GS_ARROW_ARRAY = "gs::ArrowArray";
   public static final String GS_GRAPHX_LOCAL_VERTEX_MAP_BUILDER = "gs::BasicLocalVertexMapBuilder";
-  public static final String GS_ARROW_PROJECTED_FRAGMENT_GETTER = "gs::ArrowFragmentGetter";
+  public static final String GS_ARROW_PROJECTED_FRAGMENT_GETTER = "gs::ArrowProjectedFragmentGetter";
 
   public static final String ARROW_STATUS = "arrow::Status";
   public static final String VINEYARD_STATUS = "vineyard::Status";
