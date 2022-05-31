@@ -21,7 +21,7 @@ object GraphScopeRDD extends Logging{
     val status = sc.getExecutorMemoryStatus
     log.info(s"Got executor memory status ${status}, size ${status.size}")
     val hostNames = status.iterator.map(item => item._1).toArray
-    log.info(s"Got collected hostNames ${hostNames}")
+    log.info(s"Got collected hostNames ${hostNames.mkString("Array(", ", ", ")")}")
     hostNames
   }
 }

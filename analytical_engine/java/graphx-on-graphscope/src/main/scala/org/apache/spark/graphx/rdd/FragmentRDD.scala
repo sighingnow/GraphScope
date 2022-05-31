@@ -1,6 +1,6 @@
 package org.apache.spark.graphx.rdd
 
-import com.alibaba.fastffi.FFITypeFactory
+import com.alibaba.fastffi.{FFIByteString, FFITypeFactory}
 import com.alibaba.graphscope.fragment.IFragment
 import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
@@ -14,8 +14,15 @@ import org.apache.spark.{Partition, SparkContext, TaskContext}
 
 import scala.reflect.ClassTag
 
-class FragmentPartition(rddId : Int, override val index : Int, val hostName : String,objectID : Long) extends Partition{
+class FragmentPartition[VD : ClassTag,ED : ClassTag](rddId : Int, override val index : Int, val hostName : String,objectID : Long, socket : String, fragName : String) extends Partition with Logging {
 
+  val client: VineyardClient = ScalaFFIFactory.newVineyardClient()
+  val ffiByteString: FFIByteString = FFITypeFactory.newByteString()
+  ffiByteString.copyFrom(socket)
+  client.connect(ffiByteString)
+  log.info(s"Create vineyard client ${client} and connect to ${socket}")
+  val fragment: IFragment[Long, Long, VD, ED] = ScalaFFIFactory.getFragment[VD,ED](client, objectID, fragName)
+  log.info(s"Got iFragment ${fragment}")
   override def hashCode(): Int = 31 * (31 + rddId) + index
 
   override def equals(other: Any): Boolean = super.equals(other)
@@ -24,21 +31,15 @@ class FragmentPartition(rddId : Int, override val index : Int, val hostName : St
 
 class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames : Array[String], fragName: String, objectID : Long, socket : String = "/tmp/vineyard.sock")  extends RDD[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))](sc, Nil) with Logging{
   override def compute(split: Partition, context: TaskContext): Iterator[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))] = {
-    val client = ScalaFFIFactory.newVineyardClient()
-    val partitionCasted = split.asInstanceOf[FragmentPartition]
-    val ffiByteString = FFITypeFactory.newByteString()
-    ffiByteString.copyFrom(socket)
-    client.connect(ffiByteString)
-    log.info(s"Create vineyard client ${client} and connect to ${socket}")
-    val fragment = ScalaFFIFactory.getFragment[VD,ED](client, objectID, fragName)
-    log.info(s"Got ifragment ${fragment}")
-    Iterator((partitionCasted.index, (client,fragment)))
+    val partitionCasted = split.asInstanceOf[FragmentPartition[VD,ED]]
+    Iterator((partitionCasted.index, (partitionCasted.client, partitionCasted.fragment)))
   }
 
+  /** according to spark code comments, this function will be only executed once. */
   override protected def getPartitions: Array[Partition] = {
     val array = new Array[Partition](hostNames.length)
     for (i <- 0 until hostNames.length) {
-      array(i) = new FragmentPartition(id, i, hostNames(i), objectID)
+      array(i) = new FragmentPartition(id, i, hostNames(i), objectID, socket)
     }
     array
   }
