@@ -13,10 +13,10 @@ object FragmentAsRDDTest extends Logging{
       .getOrCreate()
     val sc = spark.sparkContext
     require(array.length == 2)
-    val objectID = array(0).toLong
+    val objectIDs = array(0)
     val fragName = array(1)
-    log.info(s"Getting fragment ${objectID} as RDD, frag type ${fragName}")
-    val (vertexRDD,edgeRDD) = GraphScopeRDD.loadFragmentAsRDD[Double,Long](sc, objectID, fragName)
+    log.info(s"Getting fragment ${objectIDs} as RDD, frag type ${fragName}")
+    val (vertexRDD,edgeRDD) = GraphScopeRDD.loadFragmentAsRDD[Double,Long](sc, objectIDs, fragName)
     log.info(s"vertices count ${vertexRDD.count()}, edge cout ${edgeRDD.count()}")
 
     //1. map vertices
