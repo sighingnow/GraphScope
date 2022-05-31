@@ -76,10 +76,10 @@ object ScalaFFIFactory extends Logging{
   }
 
   def getFragment[VD : ClassTag,ED : ClassTag](client : VineyardClient, objectID : Long, fragStr : String) : IFragment[Long,Long,VD,ED]= {
-    if (fragStr.startsWith("ArrowFragment")){
+    if (fragStr.startsWith("gs::ArrowFragment")){
       throw new IllegalStateException("Not implemented now")
     }
-    else if (fragStr.startsWith("ArrowProjectedFragment")){
+    else if (fragStr.startsWith("gs::ArrowProjectedFragment")){
       log.info(s"Getting fragment for ${fragStr}, ${objectID}")
       val factory = FFITypeFactory.getFactory(classOf[ArrowProjectedFragment[Long,Long,VD,ED]], fragStr).asInstanceOf[ArrowProjectedFragmentGetter.Factory[Long,Long,VD,ED]]
       val fragmentGetter = factory.create()
