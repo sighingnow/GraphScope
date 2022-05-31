@@ -26,6 +26,8 @@ object GraphScopeRDD extends Logging{
 //    log.info(s"Got collected hostNames ${hostNames.mkString("Array(", ", ", ")")}")
 //    hostNames
     val castedBackend = sc.schedulerBackend.asInstanceOf[CoarseGrainedSchedulerBackend]
+    val fields = castedBackend.getClass.getDeclaredFields
+    log.info(s"${fields.mkString("Array(", ", ", ")")}")
     val executorDataMapField = castedBackend.getClass.getDeclaredField("executorDataMap")
     executorDataMapField.setAccessible(true)
     require(executorDataMapField != null)
