@@ -81,13 +81,26 @@ object ScalaFFIFactory extends Logging{
     }
     else if (fragStr.startsWith("gs::ArrowProjectedFragment")){
       log.info(s"Getting fragment for ${fragStr}, ${objectID}")
-      val factory = FFITypeFactory.getFactory(classOf[ArrowProjectedFragment[Long,Long,VD,ED]], fragStr).asInstanceOf[ArrowProjectedFragmentGetter.Factory[Long,Long,VD,ED]]
+      val getterStr = fragName2FragGetterName(fragStr)
+      val factory = FFITypeFactory.getFactory(classOf[ArrowProjectedFragmentGetter[Long,Long,VD,ED]], getterStr).asInstanceOf[ArrowProjectedFragmentGetter.Factory[Long,Long,VD,ED]]
       val fragmentGetter = factory.create()
       val res = fragmentGetter.get(client, objectID)
       new ArrowProjectedAdaptor[Long,Long,VD,ED](res.get())
     }
     else {
       throw new IllegalStateException(s"Not recognized frag str ${fragStr}")
+    }
+  }
+  /** transform the frag name to frag getter name. */
+  def fragName2FragGetterName(str : String) : String = {
+    if (str.contains("ArrowProjectedFragment")){
+      str.replace("ArrowProjectedFragment", "ArrowProjectedFragmentGetter")
+    }
+    else if (str.contains("ArrowFragment")){
+      str.replace("ArrowFragment", "ArrowFragmentGetter")
+    }
+    else {
+      throw new IllegalStateException(s"Not recognized ${str}")
     }
   }
 }
