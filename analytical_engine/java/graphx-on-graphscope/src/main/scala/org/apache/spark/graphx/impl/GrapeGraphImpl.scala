@@ -287,7 +287,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
 object GrapeGraphImpl {
 
-  def fromExistingRDDs[VD: ClassTag,ED :ClassTag](vertices: GrapeVertexRDDImpl[VD], edges: GrapeEdgeRDDImpl[VD, ED]): GrapeGraphImpl[VD,ED] ={
+  def fromExistingRDDs[VD: ClassTag,ED :ClassTag](vertices: GrapeVertexRDD[VD], edges: GrapeEdgeRDD[ED]): GrapeGraphImpl[VD,ED] ={
     new GrapeGraphImpl[VD,ED](vertices, edges)
   }
 

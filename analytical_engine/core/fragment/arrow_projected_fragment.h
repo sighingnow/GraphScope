@@ -573,22 +573,31 @@ class ArrowProjectedFragment
     ivnum_ = static_cast<vid_t>(inner_vertices_.size());
     ovnum_ = static_cast<vid_t>(outer_vertices_.size());
     tvnum_ = static_cast<vid_t>(vertices_.size());
-    if (ivnum_ > 0) {
+    // if (ivnum_ > 0) {
+    //   ienum_ = static_cast<size_t>(oe_offsets_end_->Value(ivnum_ - 1) -
+    //                                oe_offsets_begin_->Value(0));
+    //   if (directed_) {
+    //     ienum_ += static_cast<size_t>(ie_offsets_end_->Value(ivnum_ - 1) -
+    //                                   ie_offsets_begin_->Value(0));
+    //   }
+    // }
+    // if (ovnum_ > 0) {
+    //   oenum_ = static_cast<size_t>(oe_offsets_end_->Value(tvnum_ - 1) -
+    //                                oe_offsets_begin_->Value(ivnum_));
+    //   if (directed_) {
+    //     oenum_ += static_cast<size_t>(ie_offsets_end_->Value(tvnum_ - 1) -
+    //                                   ie_offsets_begin_->Value(ivnum_));
+    //   }
+    // }
+    if (directed_) {
+      ienum_ = static_cast<size_t>(ie_offsets_end_->Value(ivnum_ - 1) -
+                                   ie_offsets_begin_->Value(0));
+    } else {
       ienum_ = static_cast<size_t>(oe_offsets_end_->Value(ivnum_ - 1) -
                                    oe_offsets_begin_->Value(0));
-      if (directed_) {
-        ienum_ += static_cast<size_t>(ie_offsets_end_->Value(ivnum_ - 1) -
-                                      ie_offsets_begin_->Value(0));
-      }
     }
-    if (ovnum_ > 0) {
-      oenum_ = static_cast<size_t>(oe_offsets_end_->Value(tvnum_ - 1) -
-                                   oe_offsets_begin_->Value(ivnum_));
-      if (directed_) {
-        oenum_ += static_cast<size_t>(ie_offsets_end_->Value(tvnum_ - 1) -
-                                      ie_offsets_begin_->Value(ivnum_));
-      }
-    }
+    oenum_ = static_cast<size_t>(oe_offsets_end_->Value(ivnum_ - 1) -
+                                 oe_offsets_begin_->Value(0));
 
     vertex_label_num_ = fragment_->vertex_label_num_;
     edge_label_num_ = fragment_->edge_label_num_;

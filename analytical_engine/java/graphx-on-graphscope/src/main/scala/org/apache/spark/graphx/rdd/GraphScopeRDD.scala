@@ -1,7 +1,7 @@
 package org.apache.spark.graphx.rdd
 
 import org.apache.spark.SparkContext
-import org.apache.spark.graphx.{EdgeRDD, VertexRDD}
+import org.apache.spark.graphx.{EdgeRDD, GrapeEdgeRDD, GrapeVertexRDD, VertexRDD}
 import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag
@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
  */
 object GraphScopeRDD extends Logging{
 
-  def loadFragmentAsRDD[VD: ClassTag, ED: ClassTag](sc : SparkContext, objectID : Long, fragName : String) : (VertexRDD[VD],EdgeRDD[ED]) = {
+  def loadFragmentAsRDD[VD: ClassTag, ED: ClassTag](sc : SparkContext, objectID : Long, fragName : String) : (GrapeVertexRDD[VD],GrapeEdgeRDD[ED]) = {
     val fragmentRDD = new FragmentRDD[VD,ED](sc, getExecutorHostNames(sc), fragName,objectID)
     fragmentRDD.generateRDD()
   }

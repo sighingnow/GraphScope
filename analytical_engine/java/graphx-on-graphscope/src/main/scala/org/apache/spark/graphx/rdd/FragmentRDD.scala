@@ -59,7 +59,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
         Iterator(new FragmentStructure(frag))
       }
       else Iterator.empty
-    })
+    }).cache()
     val pid2Fids = this.mapPartitions(iter => {
       val tuple = iter.next()
       Iterator((tuple._1, tuple._2._2.fid()))
@@ -78,7 +78,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
         }
         else Iterator.empty
       }
-    }
+    }.cache()
     val edgeRDD = new GrapeEdgeRDDImpl[VD,ED](edgePartitions)
 
     val vertexRDD = GrapeVertexRDD.fromFragmentEdgeRDD[VD](edgeRDD, edgePartitions.getNumPartitions)
