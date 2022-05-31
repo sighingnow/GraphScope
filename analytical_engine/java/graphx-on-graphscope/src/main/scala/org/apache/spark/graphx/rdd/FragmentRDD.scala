@@ -44,7 +44,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
     val hostId = str.split(":")
     require(hostId.length == 2)
     val host = hostId(0)
-    val id = host(1)
+    val id = hostId(1)
     require(!map.contains(host), s"entry for host ${host} already set ${map.get(host)}")
     map(host) = id.toLong
     log.info(s"host ${host}: objid : ${id}")

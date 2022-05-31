@@ -5,6 +5,7 @@ import org.apache.spark.graphx.{EdgeRDD, GrapeEdgeRDD, GrapeVertexRDD, VertexRDD
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.cluster.{CoarseGrainedSchedulerBackend, ExecutorData, ExecutorInfo, StandaloneSchedulerBackend}
 
+import scala.collection.mutable
 import scala.collection.mutable.HashMap
 import scala.reflect.ClassTag
 
@@ -25,25 +26,15 @@ object GraphScopeRDD extends Logging{
 //    val hostNames = status.iterator.map(item => item._1).toArray
 //    log.info(s"Got collected hostNames ${hostNames.mkString("Array(", ", ", ")")}")
 //    hostNames
-    val tmp = sc.parallelize(Array(0,1,3,4,5), 4)
-    log.info(s"${tmp.count()}")
-    log.info(s"${sc.statusTracker.getExecutorInfos.map(_.host()).mkString("Array(", ", ", ")")}")
-    log.info(s"${sc.getExecutorIds()}")
-    log.info(s"backend: ${sc.schedulerBackend}")
-    val castedBackend = sc.schedulerBackend.asInstanceOf[CoarseGrainedSchedulerBackend]
-    val fatherClass = castedBackend.getClass.getSuperclass
-    val fields = fatherClass.getDeclaredFields
-    log.info(s"${fields.mkString("Array(", ", ", ")")}")
-    log.info(s"${fatherClass.getSimpleName}")
-    val executorDataMapField = fatherClass.getDeclaredField("org$apache$spark$scheduler$cluster$CoarseGrainedSchedulerBackend$$executorDataMap")
-    executorDataMapField.setAccessible(true)
-    require(executorDataMapField != null)
-    val executorDataMap = executorDataMapField.get(castedBackend)
-    require(executorDataMap != null)
-    //ExecutorData in private in package cluster
-    val readExecutorDataMap = executorDataMap.asInstanceOf[HashMap[String, ExecutorInfo]]
-    val array = readExecutorDataMap.values.map(info => info.executorHost).toArray
-    log.info(s"collected executor host array: ${array.mkString("Array(", ", ", ")")}")
-    array
+
+    val castedBackend = sc.schedulerBackend.asInstanceOf[StandaloneSchedulerBackend]
+    log.info(s"${castedBackend.getClass.getDeclaredFields.mkString("Array(", ", ", ")")}")
+    val field = castedBackend.getClass.getDeclaredField("executorHosts")
+    require(field != null)
+    field.setAccessible(true)
+
+    val executorHosts = field.get(castedBackend).asInstanceOf[mutable.HashMap[String,String]]
+    log.info(s"${executorHosts.values.toArray.mkString("Array(", ", ", ")")}")
+    executorHosts.values.toArray
   }
 }
