@@ -17,7 +17,7 @@ import scala.reflect.ClassTag
  * @tparam VD
  */
 class GrapeVertexRDDImpl[VD] private[graphx](
-                                              @transient override val grapePartitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD])],
+                                              @transient override val grapePartitionsRDD: RDD[GrapeVertexPartition[VD]],
                                               val targetStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
                                               val outerVertexSynced : Boolean = false) // indicate whether we have done outer vertex shuffling.
                                             (implicit override protected val vdTag: ClassTag[VD])
@@ -45,7 +45,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   }
 
   override def count(): Long = {
-    grapePartitionsRDD.map(_._2.bitSet.cardinality()).fold(0)(_ + _)
+    grapePartitionsRDD.map(_.bitSet.cardinality()).fold(0)(_ + _)
   }
 
   override private[graphx] def mapVertexPartitions[VD2](f: ShippableVertexPartition[VD] => ShippableVertexPartition[VD2])(implicit evidence$1: ClassTag[VD2]) = {
@@ -56,10 +56,8 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     val newPartitionsRDD  = grapePartitionsRDD.mapPartitions(
       iter => {
         if (iter.hasNext){
-          val tuple = iter.next();
-          val pid = tuple._1
-          val partition = tuple._2
-          Iterator((pid, f.apply(partition)))
+          val part = iter.next();
+          Iterator(f.apply(part))
         }
         else {
           Iterator.empty
@@ -88,11 +86,10 @@ class GrapeVertexRDDImpl[VD] private[graphx](
           grapePartitionsRDD.zipPartitions(
             other.grapePartitionsRDD, preservesPartitioning = true) {
             (thisIter, otherIter) =>
-              val thisTuple = thisIter.next()
-              val thisPartition = thisTuple._2
-              val otherTuple = otherIter.next()
-              require(thisTuple._1 == otherTuple._1, "partition id should match")
-              Iterator((thisTuple._1, thisPartition.minus(otherTuple._2)))
+              val thisPartition = thisIter.next()
+              val otherPartition = otherIter.next()
+              require(thisPartition.pid == otherPartition.pid, "partition id should match")
+              Iterator( thisPartition.minus(otherPartition))
           })
       }
       case _ =>  throw new IllegalArgumentException("can only minus a grape vertex rdd now")
@@ -114,8 +111,8 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     ) { (thisIter, otherIter) =>
       val thisTuple = thisIter.next()
       val otherTuple = otherIter.next()
-      require(thisTuple._1 == otherTuple._1, "partition id should match")
-      Iterator((thisTuple._1, thisTuple._2.diff(otherTuple._2)))
+      require(thisTuple.pid == otherTuple.pid, "partition id should match")
+      Iterator( thisTuple.diff(otherTuple))
     }
     this.withGrapePartitionsRDD(newPartitionsRDD)
   }
@@ -128,7 +125,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
         ) { (thisIter, otherIter) =>
           val thisTuple = thisIter.next()
           val otherTuple = otherIter.next()
-          Iterator((thisTuple._1, thisTuple._2.leftJoin(otherTuple._2)(f)))
+          Iterator(thisTuple.leftJoin(otherTuple)(f))
         }
       }
     }
@@ -152,7 +149,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
         ) { (thisIter, otherIter) =>
           val thisTuple = thisIter.next()
           val otherTuple = otherIter.next()
-          Iterator((thisTuple._1, thisTuple._2.innerJoin(otherTuple._2)(f)))
+          Iterator(thisTuple.innerJoin(otherTuple)(f))
         }
       }
     }
@@ -187,8 +184,8 @@ class GrapeVertexRDDImpl[VD] private[graphx](
       (thisIter, msgIter) =>{
         if (thisIter.hasNext){
           val tuple = thisIter.next();
-          val newPartition = tuple._2.aggregateUsingIndex(msgIter, reduceFunc)
-          Iterator((tuple._1, newPartition))
+          val newPartition = tuple.aggregateUsingIndex(msgIter, reduceFunc)
+          Iterator(newPartition)
         }
         else {
           Iterator.empty
@@ -210,10 +207,10 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     throw new IllegalStateException("Inherited but not implemented, should not be used, use withGrapePartitionsRDD instead")
   }
 
-  override private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])]) : GrapeVertexRDD[VD2] = {
+  override private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[GrapeVertexPartition[VD2]]) : GrapeVertexRDD[VD2] = {
     new GrapeVertexRDDImpl[VD2](partitionsRDD,this.targetStorageLevel)
   }
-  private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[(PartitionID, GrapeVertexPartition[VD2])], synced : Boolean) : GrapeVertexRDD[VD2] = {
+  private[graphx] def withGrapePartitionsRDD[VD2 : ClassTag](partitionsRDD: RDD[GrapeVertexPartition[VD2]], synced : Boolean) : GrapeVertexRDD[VD2] = {
     new GrapeVertexRDDImpl[VD2](partitionsRDD,this.targetStorageLevel, synced)
   }
 

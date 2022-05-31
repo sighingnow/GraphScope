@@ -54,6 +54,17 @@ public class ImmutableEdgecutFragmentAdaptor<OID_T, VID_T, VDATA_T, EDATA_T>
         return fragment.getEdgeNum();
     }
 
+    //FIXME: immutable EdgeCut fragment should implement this function too
+    @Override
+    public long getInEdgeNum() {
+        return 0;
+    }
+
+    @Override
+    public long getOutEdgeNum() {
+        return 0;
+    }
+
     @Override
     public VID_T getVerticesNum() {
         return fragment.getVerticesNum();

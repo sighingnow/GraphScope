@@ -68,4 +68,10 @@ public interface ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T>
     @FFINameAlias("get_edata_array_accessor")
     @CXXReference
     TypedArray<EDATA_T> getEdataArrayAccessor();
+
+    @FFINameAlias("GetInEdgeNum")
+    long getInEdgeNum();
+
+    @FFINameAlias("GetOutEdgeNum")
+    long getOutEdgeNum();
 }

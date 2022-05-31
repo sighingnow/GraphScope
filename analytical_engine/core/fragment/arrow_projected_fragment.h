@@ -727,6 +727,10 @@ class ArrowProjectedFragment
 
   inline size_t GetEdgeNum() const { return ienum_ + oenum_; }
 
+  inline size_t GetInEdgeNum() const { return ienum_; }
+
+  inline size_t GetOutEdgeNum() const { return oenum_; }
+
   inline size_t GetTotalVerticesNum() const {
     return vm_ptr_->GetTotalVerticesNum();
   }

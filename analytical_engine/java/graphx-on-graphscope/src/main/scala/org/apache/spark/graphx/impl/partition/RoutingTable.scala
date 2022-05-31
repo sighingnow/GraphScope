@@ -1,6 +1,7 @@
 package org.apache.spark.graphx.impl.partition
 
 import com.alibaba.graphscope.graphx.GraphXVertexMap
+import com.alibaba.graphscope.graphx.graph.GraphStructure
 import org.apache.spark.graphx.PartitionID
 import org.apache.spark.internal.Logging
 
@@ -23,8 +24,8 @@ class RoutingTable(val numPartitions : Int) {
 object RoutingTable extends Logging{
   type RoutingMessage = (PartitionID,Array[Long])
   /** to which partition these outer gids belongs. */
-  def generateMsg(fromPid : Int, numPartitions : Int, vm : GraphXVertexMap[Long,Long]) : Iterator[(PartitionID, RoutingMessage)] = {
-    require(numPartitions == vm.fnum())
+  def generateMsg(fromPid : Int, numPartitions : Int, graphStructure: GraphStructure) : Iterator[(PartitionID, RoutingMessage)] = {
+    require(numPartitions == graphStructure.fnum())
     val idParser = new IdParser(numPartitions)
     val gids = new Array[ArrayBuffer[Long]](numPartitions)
     for (pid <- 0 until numPartitions){
@@ -32,13 +33,13 @@ object RoutingTable extends Logging{
     }
     val fid2GraphXPid = new Array[Int](numPartitions)
     for (fid <- 0 until numPartitions){
-      fid2GraphXPid(fid) = vm.fid2GraphxPid(fid)
+      fid2GraphXPid(fid) = graphStructure.fid2GraphxPid(fid)
     }
     log.info(s"fid to graphx pid mapping ${fid2GraphXPid.mkString("Array(", ", ", ")")}")
-    var lid = vm.innerVertexSize()
-    val limit = vm.getVertexSize
+    var lid = graphStructure.getInnerVertexSize
+    val limit = graphStructure.getVertexSize
     while (lid < limit){
-      val gid = vm.getOuterVertexGid(lid)
+      val gid = graphStructure.getOuterVertexGid(lid)
       val fid = idParser.getFragId(gid)
       val pid = fid2GraphXPid(fid)
       gids(pid).+=(gid)
@@ -50,25 +51,25 @@ object RoutingTable extends Logging{
     gids.zipWithIndex.map(tuple => (tuple._2, (fromPid,tuple._1.toArray))).toIterator
   }
 
-  def fromMsg(curPid : Int, numPartitions : Int, msgIter : Iterator[(PartitionID, RoutingMessage)], vm : GraphXVertexMap[Long,Long]) : RoutingTable = {
+  def fromMsg(curPid : Int, numPartitions : Int, msgIter : Iterator[(PartitionID, RoutingMessage)], graphStructure: GraphStructure) : RoutingTable = {
     val routingTable = new RoutingTable(numPartitions)
     while (msgIter.hasNext){
       val tuple = msgIter.next()
       require(tuple._1 == curPid)
       log.info(s"Partitions ${curPid} receives routing msg from ${tuple._2._1}, length ${tuple._2._2.length}")
-      routingTable.set(tuple._2._1, gidArrayToLidArray(vm, curPid, tuple._2._2))
+      routingTable.set(tuple._2._1, gidArrayToLidArray(graphStructure, curPid, tuple._2._2))
     }
     routingTable
   }
 
-  def gidArrayToLidArray(vm : GraphXVertexMap[Long,Long], curPid : Int, longs: Array[Long]) : Array[Long] = {
+  def gidArrayToLidArray(graphStructure: GraphStructure, curPid : Int, longs: Array[Long]) : Array[Long] = {
     val res = new Array[Long](longs.length)
     var i = 0
     val limit = longs.length
-    val idParser = new IdParser(vm.fnum())
-    val fid2GraphXPid = new Array[Int](vm.fnum())
-    for (fid <- 0 until vm.fnum()){
-      fid2GraphXPid(fid) = vm.fid2GraphxPid(fid)
+    val idParser = new IdParser(graphStructure.fnum())
+    val fid2GraphXPid = new Array[Int](graphStructure.fnum())
+    for (fid <- 0 until graphStructure.fnum()){
+      fid2GraphXPid(fid) = graphStructure.fid2GraphxPid(fid)
     }
     while (i < limit){
       val gid = longs(i)

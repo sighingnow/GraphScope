@@ -38,4 +38,10 @@ public interface GraphXFragment<OID_T, VID_T, VD_T, ED_T>
     @FFINameAlias("GetEdataArray") @CXXReference ImmutableTypedArray<ED_T> getEdataArray();
 
     @FFINameAlias("GetVdataArray") @CXXReference ImmutableTypedArray<VD_T> getVdataArray();
+
+    @FFINameAlias("GetInEdgeNum")
+    long getInEdgeNum();
+
+    @FFINameAlias("GetOutEdgeNum")
+    long getOutEdgeNum();
 }

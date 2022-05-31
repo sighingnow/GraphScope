@@ -66,6 +66,16 @@ public class ArrowProjectedAdaptor<OID_T, VID_T, VDATA_T, EDATA_T>
     }
 
     @Override
+    public long getInEdgeNum() {
+        return fragment.getInEdgeNum();
+    }
+
+    @Override
+    public long getOutEdgeNum() {
+        return fragment.getOutEdgeNum();
+    }
+
+    @Override
     public VID_T getVerticesNum() {
         return fragment.getVerticesNum();
     }

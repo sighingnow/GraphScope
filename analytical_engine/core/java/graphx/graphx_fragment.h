@@ -114,6 +114,8 @@ class GraphXFragment
   inline fid_t fnum() const { return fnum_; }
 
   inline int64_t GetEdgeNum() const { return csr_.GetTotalEdgesNum(); }
+  inline int64_t GetInEdgeNum() const { return csr_.GetInEdgesNum(); }
+  inline int64_t GetOutEdgeNum() const { return csr_.GetOutEdgesNum(); }
 
   inline VID_T GetInnerVerticesNum() const { return vm_.GetInnerVertexSize(); }
   inline VID_T GetOuterVerticesNum() const { return vm_.GetOuterVertexSize(); }
@@ -210,7 +212,6 @@ class GraphXFragment
 
  private:
   grape::fid_t fnum_, fid_;
-  // FIXME: in edgs.
   vertices_t inner_vertices_, outer_vertices_, vertices_;
   csr_t csr_;
   vm_t vm_;
@@ -255,6 +256,12 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
     vdata_ =
         *std::dynamic_pointer_cast<graphx_vdata_t>(client.GetObject(vdata_id));
   };
+
+  std::shared_ptr<GraphXFragment<oid_t, vid_t, vdata_t, edata_t>> MySeal(
+      vineyard::Client& client) {
+    return std::dynamic_pointer_cast<
+        GraphXFragment<oid_t, vid_t, vdata_t, edata_t>>(this->Seal(client));
+  }
 
   std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) override {
     // ensure the builder hasn't been sealed yet.

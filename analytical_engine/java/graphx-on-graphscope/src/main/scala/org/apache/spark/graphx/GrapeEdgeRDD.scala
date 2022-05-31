@@ -1,7 +1,11 @@
 package org.apache.spark.graphx
 
 import com.alibaba.fastffi.FFITypeFactory
+import com.alibaba.graphscope.ds.ImmutableTypedArray
+import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import com.alibaba.graphscope.utils.MPIUtils
+import com.alibaba.graphscope.utils.array.PrimitiveArray
+import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
 import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived, GrapeEdgePartition, GrapeEdgePartitionBuilder}
 import org.apache.spark.graphx.utils.{Constant, ExecutorUtils, GrapeMeta, ScalaFFIFactory}
@@ -14,7 +18,7 @@ import scala.reflect.ClassTag
 abstract class GrapeEdgeRDD[ED](sc: SparkContext,
                                 deps: Seq[Dependency[_]]) extends EdgeRDD[ED](sc, deps) {
 
-  private[graphx] def grapePartitionsRDD: RDD[(PartitionID, GrapeEdgePartition[VD, ED])] forSome { type VD }
+  private[graphx] def grapePartitionsRDD: RDD[GrapeEdgePartition[VD, ED]] forSome { type VD }
 
   override def partitionsRDD = null
 
@@ -33,12 +37,6 @@ object GrapeEdgeRDD extends Logging{
     //Shuffle the edge rdd
     //then use build to build.
     null
-  }
-
-  private[graphx] def fromGrapeEdgePartitions[VD: ClassTag, ED : ClassTag](
-                                                        edgePartitions: RDD[(PartitionID, GrapeEdgePartition[VD, ED])]): GrapeEdgeRDDImpl[VD, ED] = {
-    //    new EdgeRDDImpl(edgePartitions)
-    new GrapeEdgeRDDImpl[VD,ED](edgePartitions)
   }
 
   private[graphx] def fromEdgeShuffle[VD: ClassTag, ED : ClassTag](edgeShuffles : RDD[(PartitionID, EdgeShuffle[ED])]) : GrapeEdgeRDDImpl[VD,ED] = {
@@ -141,7 +139,42 @@ object GrapeEdgeRDD extends Logging{
       log.info("doing edge partition building")
       if (iter.hasNext) {
         val (pid, meta) = iter.next()
-        Iterator((meta.partitionID, new GrapeEdgePartition[VD, ED](meta.partitionID, meta.graphxCSR, meta.globalVM, meta.vineyardClient)))
+        val time0 = System.nanoTime()
+        val edgesNum = meta.graphxCSR.getOutEdgesNum.toInt
+        val srcOids = PrimitiveArray.create(classOf[Long], edgesNum)
+        val srcLids = PrimitiveArray.create(classOf[Long], edgesNum)
+        val dstOids = PrimitiveArray.create(classOf[Long], edgesNum)
+        val dstLids = PrimitiveArray.create(classOf[Long], edgesNum)
+        val edatas = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED],meta.graphxCSR.getOutEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED]]
+        var curLid = 0
+        val endLid = meta.globalVM.innerVertexSize()
+        val oeOffsetsArray: ImmutableTypedArray[Long] = meta.graphxCSR.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
+        while (curLid < endLid){
+          val curOid = meta.globalVM.getId(curLid)
+          val startNbrOffset = oeOffsetsArray.get(curLid)
+          val endNbrOffset = oeOffsetsArray.get(curLid + 1)
+          var j = startNbrOffset
+          while (j < endNbrOffset){
+            srcOids.set(j, curOid)
+            srcLids.set(j, curLid)
+            j += 1
+          }
+          curLid += 1
+        }
+        val nbr = meta.graphxCSR.getOEBegin(0)
+        var offset = 0
+        val edataArray = meta.graphxCSR.getEdataArray
+        while (offset < edgesNum){
+          dstOids.set(offset, meta.globalVM.getId(nbr.vid()))
+          dstLids.set(offset, nbr.vid())
+          edatas.set(offset, edataArray.get(nbr.eid()))
+          offset += 1
+          nbr.addV(16)
+        }
+        val time1 = System.nanoTime()
+        log.info(s"[Initializing edge cache in heap cost ]: ${(time1 - time0) / 1000000} ms")
+        val graphStructure = new GraphXGraphStructure(meta.globalVM, meta.graphxCSR, srcLids, dstLids, srcOids, dstOids)
+        Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, graphStructure, meta.vineyardClient, edatas))
       }
       else Iterator.empty
     }).cache()

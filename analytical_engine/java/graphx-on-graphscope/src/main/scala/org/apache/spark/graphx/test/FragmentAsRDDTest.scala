@@ -15,7 +15,7 @@ object FragmentAsRDDTest extends Logging{
     val objectID = array(0).toLong
     val fragName = array(1)
     log.info(s"Getting fragment ${objectID} as RDD, frag type ${fragName}")
-    val (vertexRDD,edgeRDD) = GraphScopeRDD.loadFragmentAsRDD(sc, objectID, fragName)
+    val (vertexRDD,edgeRDD) = GraphScopeRDD.loadFragmentAsRDD[Double,Long](sc, objectID, fragName)
     log.info(s"vertices count ${vertexRDD.count()}, edge cout ${edgeRDD.count()}")
     sc.stop()
   }

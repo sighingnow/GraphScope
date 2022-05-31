@@ -1,6 +1,7 @@
 package org.apache.spark.graphx.impl.partition
 
 import com.alibaba.graphscope.ds.Vertex
+import com.alibaba.graphscope.graphx.graph.GraphStructure
 import com.alibaba.graphscope.graphx.{GraphXVertexMap, VertexDataBuilder, VineyardClient}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
@@ -18,13 +19,13 @@ class VertexDataMessage[VD: ClassTag](val dstPid : Int, val gids : Array[Long], 
 
 }
 class GrapeVertexPartition[VD : ClassTag](val pid : Int,
-                                          val vm : GraphXVertexMap[Long,Long],
+                                          val graphStructure: GraphStructure,
                                           val vertexData: VertexDataStore[VD],
                                           val client : VineyardClient,
                                           val routingTable: RoutingTable,
                                           var bitSet: BitSet = null) extends Logging {
   val startLid = 0
-  val endLid = vm.innerVertexSize()
+  val endLid = graphStructure.getInnerVertexSize
   def partVnum : Long = endLid - startLid
   val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
   if (bitSet ==null){
@@ -39,13 +40,13 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   def iterator : Iterator[(VertexId,VD)] = {
     new Iterator[(VertexId,VD)]{
       var lid = 0
-      val limit: VertexId = vm.innerVertexSize()
+      val limit: VertexId = graphStructure.getInnerVertexSize
       override def hasNext: Boolean = {
         lid < limit
       }
 
       override def next(): (VertexId, VD) = {
-        val res = (vm.innerVertexLid2Oid(lid), getData(lid))
+        val res = (graphStructure.innerVertexLid2Oid(lid), getData(lid))
         lid += 1;
         res
       }
@@ -53,8 +54,8 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   }
   def generateVertexDataMessage : Iterator[(PartitionID, VertexDataMessage[VD])] = {
     val res = new ArrayBuffer[(PartitionID,VertexDataMessage[VD])]()
-    val curFid = vm.fid()
-    val idParser = new IdParser(vm.fnum())
+    val curFid = graphStructure.fid()
+    val idParser = new IdParser(graphStructure.fnum())
     for (i <- 0 until(routingTable.numPartitions)){
       val lids = routingTable.get(i)
       if (lids != null){
@@ -86,7 +87,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       var i = 0
       val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
       while (i < outerGids.length){
-        require(vm.outerVertexGid2Vertex(outerGids(i), vertex))
+        require(graphStructure.outerVertexGid2Vertex(outerGids(i), vertex))
 //        log.info(s"Partition ${pid} received outer vdata updating info ${outerLids(i)}, ${outerDatas(i)}")
         vertexData.setData(vertex.GetValue, outerDatas(i))
         i += 1
@@ -100,10 +101,10 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   def map[VD2: ClassTag](f: (VertexId, VD) => VD2): GrapeVertexPartition[VD2] = {
     // Construct a view of the map transformation
     val time0 = System.nanoTime()
-    val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], vm.getVertexSize.toInt).asInstanceOf[PrimitiveArray[VD2]]
+    val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], graphStructure.getVertexSize.toInt).asInstanceOf[PrimitiveArray[VD2]]
     var i = bitSet.nextSetBit(0)
     while (i >= 0) {
-      newValues.set(i, f(vm.getId(i), getData(i)))
+      newValues.set(i, f(graphStructure.getId(i), getData(i)))
       i = bitSet.nextSetBit(i + 1)
     }
     val time1 = System.nanoTime()
@@ -118,8 +119,8 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     // Iterate over the active bits in the old mask and evaluate the predicate
     var curLid = bitSet.nextSetBit(startLid)
     while (curLid >= 0 && curLid < endLid) {
-      if (pred(vm.getId(curLid), getData(curLid))){
-        log.info(s"vertex lid ${curLid}(oid ${vm.getId(curLid)} matches pred")
+      if (pred(graphStructure.getId(curLid), getData(curLid))){
+        log.info(s"vertex lid ${curLid}(oid ${graphStructure.getId(curLid)} matches pred")
         newMask.set(curLid)
       }
       curLid = bitSet.nextSetBit(curLid + 1)
@@ -136,7 +137,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     iter.foreach { product =>
       val oid = product._1
       val vdata = product._2
-      require(vm.getVertex(oid,vertex))
+      require(graphStructure.getVertex(oid,vertex))
       val lid = vertex.GetValue().toInt
       if (lid >= 0) {
         if (newMask.get(lid)) {
@@ -152,7 +153,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
   /** Hides the VertexId's that are the same between `this` and `other`. */
   def minus(other: GrapeVertexPartition[VD]): GrapeVertexPartition[VD] = {
-    if (this.vm != other.vm) {
+    if (this.graphStructure != other.graphStructure) {
       logWarning("Minus operations on two VertexPartitions with different indexes is slow.")
       minus(createUsingIndex(other.iterator))
     } else {
@@ -161,7 +162,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   }
 
   def diff(other: GrapeVertexPartition[VD]): GrapeVertexPartition[VD] = {
-    if (this.vm != this.vm) {
+    if (this.graphStructure != this.graphStructure) {
       logWarning("Diffing two VertexPartitions with different indexes is slow.")
       diff(createUsingIndex(other.iterator))
     } else {
@@ -180,7 +181,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   def leftJoin[VD2: ClassTag, VD3: ClassTag]
   (other: GrapeVertexPartition[VD2])
   (f: (VertexId, VD, Option[VD2]) => VD3): GrapeVertexPartition[VD3] = {
-    if (this.vm != other.vm){
+    if (this.graphStructure != other.graphStructure){
       logWarning("Joining two VertexPartitions with different indexes is slow.")
       leftJoin(createUsingIndex(other.iterator))(f)
     } else {
@@ -189,7 +190,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       var i = this.bitSet.nextSetBit(0)
       while (i >= 0 && i < partVnum) {
         val otherV: Option[VD2] = if (other.bitSet.get(i)) Some(other.getData(i)) else None
-        newValues.set(i, f(this.vm.getId(i), this.getData(i), otherV))
+        newValues.set(i, f(this.graphStructure.getId(i), this.getData(i), otherV))
         i = this.bitSet.nextSetBit(i + 1)
       }
       val time1 = System.nanoTime()
@@ -207,7 +208,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], partVnum.toInt).asInstanceOf[PrimitiveArray[VD2]]
     iter.foreach { pair =>
 //      val pos = self.index.getPos(pair._1)
-      val vertexFound = vm.getVertex(pair._1,vertex)
+      val vertexFound = graphStructure.getVertex(pair._1,vertex)
       if (vertexFound){
         val lid = vertex.GetValue().toInt
         newMask.set(lid)
@@ -221,7 +222,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   def innerJoin[U: ClassTag, VD2: ClassTag]
   (other: GrapeVertexPartition[U])
   (f: (VertexId, VD, U) => VD2): GrapeVertexPartition[VD2] = {
-    if (this.vm != other.vm){
+    if (this.graphStructure != other.graphStructure){
       logWarning("Joining two VertexPartitions with different indexes is slow.")
       innerJoin(createUsingIndex(other.iterator))(f)
     } else {
@@ -229,7 +230,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], partVnum.toInt).asInstanceOf[PrimitiveArray[VD2]]
       var i = newMask.nextSetBit(startLid)
       while (i >= 0) {
-        newValues.set(i, f(this.vm.getId(i), this.getData(i), other.getData(i)))
+        newValues.set(i, f(this.graphStructure.getId(i), this.getData(i), other.getData(i)))
         i = newMask.nextSetBit(i + 1)
       }
       this.withNewValues(new InHeapVertexDataStore[VD2](newValues,client)).withMask(newMask)
@@ -237,11 +238,11 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   }
 
   def withNewValues[VD2 : ClassTag](vds: VertexDataStore[VD2]) : GrapeVertexPartition[VD2] = {
-    new GrapeVertexPartition[VD2](pid, vm, vds,client, routingTable, bitSet)
+    new GrapeVertexPartition[VD2](pid, graphStructure, vds,client, routingTable, bitSet)
   }
 
   def withMask(newMask: BitSet): GrapeVertexPartition[VD] ={
-    new GrapeVertexPartition[VD](pid, vm, vertexData, client,routingTable, newMask)
+    new GrapeVertexPartition[VD](pid, graphStructure, vertexData, client,routingTable, newMask)
   }
 
   override def toString: String = "GrapeVertexPartition{" + "pid=" + pid + ",startLid=" + startLid + ", endLid=" + endLid + '}'
@@ -255,10 +256,10 @@ class GrapeVertexPartitionBuilder[VD: ClassTag] extends Logging{
     log.info(s"Init vertex data with ${fragVnums} ${value}")
   }
 
-  def build(pid : Int, client : VineyardClient, vertexMap: GraphXVertexMap[Long,Long], routingTable: RoutingTable) : GrapeVertexPartition[VD] = {
+  def build(pid : Int, client : VineyardClient, graphStructure: GraphStructure, routingTable: RoutingTable) : GrapeVertexPartition[VD] = {
     val vertexData = vertexDataBuilder.seal(client).get()
     log.info(s"Partition ${pid} built vertex data ${vertexData}")
-    require(vertexMap.getVertexSize == vertexData.verticesNum(), s"csr inner vertex should equal to vmap ${vertexMap.innerVertexSize()}, ${vertexData.verticesNum()}")
+    require(graphStructure.getVertexSize == vertexData.verticesNum(), s"csr inner vertex should equal to vmap ${graphStructure.getInnerVertexSize}, ${vertexData.verticesNum()}")
     //copy to heap
     val newArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD], vertexData.verticesNum().toInt).asInstanceOf[PrimitiveArray[VD]]
     var i = 0
@@ -268,6 +269,6 @@ class GrapeVertexPartitionBuilder[VD: ClassTag] extends Logging{
       i += 1
     }
     val newVertexData = new InHeapVertexDataStore[VD](newArray,client)
-    new GrapeVertexPartition[VD](pid, vertexMap,newVertexData, client, routingTable)
+    new GrapeVertexPartition[VD](pid, graphStructure, newVertexData, client, routingTable)
   }
 }

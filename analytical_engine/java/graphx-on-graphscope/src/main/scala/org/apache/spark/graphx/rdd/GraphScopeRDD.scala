@@ -13,7 +13,7 @@ object GraphScopeRDD extends Logging{
 
   def loadFragmentAsRDD[VD: ClassTag, ED: ClassTag](sc : SparkContext, objectID : Long, fragName : String) : (VertexRDD[VD],EdgeRDD[ED]) = {
     val fragmentRDD = new FragmentRDD[VD,ED](sc, getExecutorHostNames(sc), fragName,objectID)
-    (fragmentRDD.generateVertexRDD(), fragmentRDD.generateEdgeRDD())
+    fragmentRDD.generateRDD()
   }
 
 

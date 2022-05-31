@@ -296,6 +296,16 @@ public class GraphConverter<VD, ED> {
             return null;
         }
 
+        @Override
+        public long getInEdgeNum() {
+            return 0;
+        }
+
+        @Override
+        public long getOutEdgeNum() {
+            return 0;
+        }
+
         /**
          * Get the number of inner vertices.
          *

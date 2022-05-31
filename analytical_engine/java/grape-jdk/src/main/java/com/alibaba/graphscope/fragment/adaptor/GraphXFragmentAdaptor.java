@@ -74,6 +74,16 @@ public class GraphXFragmentAdaptor<OID_T, VID_T, VDATA_T, EDATA_T> implements
         return fragment.getEdgeNum();
     }
 
+    @Override
+    public long getInEdgeNum() {
+        return fragment.getInEdgeNum();
+    }
+
+    @Override
+    public long getOutEdgeNum() {
+        return fragment.getOutEdgeNum();
+    }
+
     /**
      * Returns the number of vertices in this fragment.
      *

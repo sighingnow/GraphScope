@@ -51,6 +51,10 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      */
     long getEdgeNum();
 
+    long getInEdgeNum();
+
+    long getOutEdgeNum();
+
     /**
      * Returns the number of vertices in this fragment.
      *
