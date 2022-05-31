@@ -111,7 +111,7 @@ object GraphLoader extends Logging {
     val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[Int,Int](edgesShuffled).cache()
     val time1 = System.nanoTime()
     log.info(s"[GraphLoader:] construct edge rdd ${edgeRDD} cost ${(time1 - time0) / 1000000} ms")
-    val vertexRDD = GrapeVertexRDD.fromEdgeRDD[Int](edgeRDD, edgeRDD.grapePartitionsRDD.getNumPartitions, 1,vertexStorageLevel).cache()
+    val vertexRDD = GrapeVertexRDD.fromGraphXEdgeRDD[Int](edgeRDD, edgeRDD.grapePartitionsRDD.getNumPartitions, 1,vertexStorageLevel).cache()
     log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
     lines.unpersist()
     GrapeGraphImpl.fromExistingRDDs(vertexRDD,edgeRDD)

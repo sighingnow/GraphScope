@@ -80,7 +80,8 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
       }
     }
     val edgeRDD = new GrapeEdgeRDDImpl[VD,ED](edgePartitions)
-    val vertexRDD = GrapeVertexRDD.fromEdgeRDD(edgeRDD, edgePartitions.getNumPartitions, null.asInstanceOf[VD])
+
+    val vertexRDD = GrapeVertexRDD.fromFragmentEdgeRDD[VD](edgeRDD, edgePartitions.getNumPartitions)
     (vertexRDD,edgeRDD)
   }
 }
