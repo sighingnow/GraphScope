@@ -7,11 +7,12 @@ import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
 import org.apache.spark.graphx.impl.partition.GrapeEdgePartition
 import org.apache.spark.graphx.utils.ScalaFFIFactory
-import org.apache.spark.graphx.{GrapeEdgeRDD, GrapeVertexRDD, PartitionID}
+import org.apache.spark.graphx.{GrapeEdgeRDD, GrapeVertexRDD, PartitionID, VertexId}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 
+import scala.collection.mutable
 import scala.reflect.ClassTag
 
 class FragmentPartition[VD : ClassTag,ED : ClassTag](rddId : Int, override val index : Int, val hostName : String,objectID : Long, socket : String, fragName : String) extends Partition with Logging {
@@ -34,10 +35,24 @@ class FragmentPartition[VD : ClassTag,ED : ClassTag](rddId : Int, override val i
 
 }
 
-class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames : Array[String], fragName: String, objectID : Long, socket : String = "/tmp/vineyard.sock")  extends RDD[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))](sc, Nil) with Logging{
+class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames : Array[String], fragName: String, objectIDs : String, socket : String = "/tmp/vineyard.sock")  extends RDD[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))](sc, Nil) with Logging{
+  //objectIds be like d50:id1,d51:id2
+  val objectsSplited: Array[String] = objectIDs.split(",")
+  val map: mutable.Map[String,Long] = mutable.Map[String, Long]()
+  require(objectsSplited.length == hostNames.length, s"executor's host names length not equal to object ids ${hostNames.mkString("Array(", ", ", ")")}, ${objectIDs}")
+  for (str <- objectsSplited){
+    val hostId = str.split(":")
+    require(hostId.length == 2)
+    val host = hostId(0)
+    val id = host(1)
+    require(!map.contains(host), s"entry for host ${host} already set ${map.get(host)}")
+    map(host) = id.toLong
+    log.info(s"host ${host}: objid : ${id}")
+  }
   val array = new Array[Partition](hostNames.length)
     for (i <- 0 until hostNames.length) {
-      array(i) = new FragmentPartition[VD,ED](id, i, hostNames(i), objectID, socket,fragName)
+      require(map.contains(hostNames(i)))
+      array(i) = new FragmentPartition[VD,ED](id, i, hostNames(i), map(hostNames(i)), socket,fragName)
     }
   override def compute(split: Partition, context: TaskContext): Iterator[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))] = {
     val partitionCasted = split.asInstanceOf[FragmentPartition[VD,ED]]

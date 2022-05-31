@@ -19,14 +19,18 @@
 
 #include "glog/logging.h"
 
+#include <boost/asio.hpp>
+
 #include "grape/grape.h"
 #include "grape/util.h"
 #include "vineyard/client/client.h"
 #include "vineyard/graph/fragment/arrow_fragment.h"
 
 #include "core/fragment/arrow_projected_fragment.h"
-#include "core/loader/arrow_fragment_loader.h"
 #include "core/java/graphx/fragment_getter.h"
+#include "core/loader/arrow_fragment_loader.h"
+
+std::string getHostName() { return boost::asio::ip::host_name(); }
 
 int main(int argc, char** argv) {
   if (argc < 6) {
@@ -62,7 +66,7 @@ int main(int argc, char** argv) {
 
     LOG(INFO) << "Connected to IPCServer: " << ipc_socket;
 
-    vineyard::ObjectID fragment_group_id,projected_id;
+    vineyard::ObjectID fragment_group_id, projected_id;
     {
       auto loader = std::make_unique<
           gs::ArrowFragmentLoader<vineyard::property_graph_types::OID_TYPE,
@@ -81,29 +85,31 @@ int main(int argc, char** argv) {
     }
 
     {
-    using FragmentType =
-        vineyard::ArrowFragment<vineyard::property_graph_types::OID_TYPE,
-                                vineyard::property_graph_types::VID_TYPE>;
-    using ProjectedFragmentType =
-        gs::ArrowProjectedFragment<int64_t, uint64_t, double, int64_t>;
+      using FragmentType =
+          vineyard::ArrowFragment<vineyard::property_graph_types::OID_TYPE,
+                                  vineyard::property_graph_types::VID_TYPE>;
+      using ProjectedFragmentType =
+          gs::ArrowProjectedFragment<int64_t, uint64_t, double, int64_t>;
 
-    LOG(INFO) << "[worker-" << comm_spec.worker_id()
-              << "] loaded graph to vineyard ..." << fragment_group_id;
-          auto fg = std::dynamic_pointer_cast<vineyard::ArrowFragmentGroup>(
-              client.GetObject(fragment_group_id));
-          auto fid = comm_spec.WorkerToFrag(comm_spec.worker_id());
-          auto frag_id = fg->Fragments().at(fid);
-          auto fragment =
-              std::static_pointer_cast<FragmentType>(client.GetObject(frag_id));
-    std::shared_ptr<ProjectedFragmentType> projected_fragment =
-        ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
-    LOG(INFO) << "After projection: " << projected_fragment->id();
-    projected_id = projected_fragment->id();
+      LOG(INFO) << "[worker-" << comm_spec.worker_id()
+                << "] loaded graph to vineyard ..." << fragment_group_id;
+      auto fg = std::dynamic_pointer_cast<vineyard::ArrowFragmentGroup>(
+          client.GetObject(fragment_group_id));
+      auto fid = comm_spec.WorkerToFrag(comm_spec.worker_id());
+      auto frag_id = fg->Fragments().at(fid);
+      auto fragment =
+          std::static_pointer_cast<FragmentType>(client.GetObject(frag_id));
+      std::shared_ptr<ProjectedFragmentType> projected_fragment =
+          ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
+      LOG(INFO) << "After projection: " << getHostName() << ":"
+                << projected_fragment->id();
+      projected_id = projected_fragment->id();
     }
-    gs::ArrowProjectedFragmentGetter<int64_t,uint64_t,double,int64_t> getter;
+    gs::ArrowProjectedFragmentGetter<int64_t, uint64_t, double, int64_t> getter;
     auto res = getter.Get(client, projected_id);
     LOG(INFO) << "use fragment getter:" << res->id();
-    LOG(INFO) << "in edges num:" <<res->GetInEdgeNum() << " out edges num: " <<res->GetOutEdgeNum();
+    LOG(INFO) << "in edges num:" << res->GetInEdgeNum()
+              << " out edges num: " << res->GetOutEdgeNum();
     MPI_Barrier(comm_spec.comm());
   }
 

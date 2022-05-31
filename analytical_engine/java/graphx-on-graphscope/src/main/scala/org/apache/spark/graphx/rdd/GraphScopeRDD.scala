@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
  */
 object GraphScopeRDD extends Logging{
 
-  def loadFragmentAsRDD[VD: ClassTag, ED: ClassTag](sc : SparkContext, objectID : Long, fragName : String) : (GrapeVertexRDD[VD],GrapeEdgeRDD[ED]) = {
+  def loadFragmentAsRDD[VD: ClassTag, ED: ClassTag](sc : SparkContext, objectID : String, fragName : String) : (GrapeVertexRDD[VD],GrapeEdgeRDD[ED]) = {
     val fragmentRDD = new FragmentRDD[VD,ED](sc, getExecutorHostNames(sc), fragName,objectID)
     fragmentRDD.generateRDD()
   }
