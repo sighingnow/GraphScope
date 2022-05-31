@@ -25,11 +25,17 @@ object GraphScopeRDD extends Logging{
 //    val hostNames = status.iterator.map(item => item._1).toArray
 //    log.info(s"Got collected hostNames ${hostNames.mkString("Array(", ", ", ")")}")
 //    hostNames
+    val tmp = sc.parallelize(Array(0,1,3,4,5), 4)
+    log.info(s"${tmp.count()}")
+    log.info(s"${sc.statusTracker.getExecutorInfos.map(_.host()).mkString("Array(", ", ", ")")}")
+    log.info(s"${sc.getExecutorIds()}")
     log.info(s"backend: ${sc.schedulerBackend}")
     val castedBackend = sc.schedulerBackend.asInstanceOf[CoarseGrainedSchedulerBackend]
-    val fields = castedBackend.getClass.getDeclaredFields
+    val fatherClass = castedBackend.getClass.getSuperclass
+    val fields = fatherClass.getDeclaredFields
     log.info(s"${fields.mkString("Array(", ", ", ")")}")
-    val executorDataMapField = castedBackend.getClass.getDeclaredField("executorDataMap")
+    log.info(s"${fatherClass.getSimpleName}")
+    val executorDataMapField = fatherClass.getDeclaredField("org$apache$spark$scheduler$cluster$CoarseGrainedSchedulerBackend$$executorDataMap")
     executorDataMapField.setAccessible(true)
     require(executorDataMapField != null)
     val executorDataMap = executorDataMapField.get(castedBackend)
