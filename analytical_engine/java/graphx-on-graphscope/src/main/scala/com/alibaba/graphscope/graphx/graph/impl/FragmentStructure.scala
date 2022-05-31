@@ -31,6 +31,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     for (i <- 0 until endLid.toInt){
       res(i + 1) = res(i) + getOutDegree(i)
     }
+    log.info(s"${res.mkString("Array(", ", ", ")")}")
     res
   }
 
@@ -278,6 +279,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         if (offset < 0) return false
 
         while (lid2Offset(curLid + 1) <= offset) {
+          log.info(s"inc curLid since ${lid2Offset(curLid + 1)} leq ${offset}")
           curLid += 1
         }
         vertex.SetValue(curLid)
@@ -289,7 +291,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         nbr.setAddress(initAddress + NBR_SIZE * offset)
         val dstLid = nbr.vid()
         val attr = edataArrayAccessor.get(nbr.eid())
-        log.info(s"eid ${nbr.eid()}, attr ${attr}")
+        log.info(s"src lid ${curLid}, src oid ${edge.srcId}  eid ${nbr.eid()}, attr ${attr}")
         vertex.SetValue(dstLid)
         edge.dstId = frag.getId(vertex)
         edge.attr = attr

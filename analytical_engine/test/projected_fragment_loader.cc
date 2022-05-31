@@ -95,8 +95,11 @@ int main(int argc, char** argv) {
           auto frag_id = fg->Fragments().at(fid);
           auto fragment =
               std::static_pointer_cast<FragmentType>(client.GetObject(frag_id));
+
+    LOG(INFO) << "vertex prop num:" <<fragment->vertex_property_num(0);
+    LOG(INFO) << "edge prop num:" <<fragment->edge_property_num(0);
     std::shared_ptr<ProjectedFragmentType> projected_fragment =
-        ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
+        ProjectedFragmentType::Project(fragment, "0", "0", "0", "2");
     LOG(INFO) << "After projection: " << projected_fragment->id();
     projected_id = projected_fragment->id();
     }
@@ -104,6 +107,12 @@ int main(int argc, char** argv) {
     auto res = getter.Get(client, projected_id);
     LOG(INFO) << "use fragment getter:" << res->id();
     LOG(INFO) << "in edges num:" <<res->GetInEdgeNum() << " out edges num: " <<res->GetOutEdgeNum();
+    grape::Vertex<uint64_t> vertex;
+    vertex.SetValue(0);
+    LOG(INFO) << "out degree: " << res->GetLocalOutDegree(vertex);
+    for (auto e : res->GetOutgoingAdjList(vertex)){
+        LOG(INFO) << e.neighbor().GetValue() << ", " <<e.edge_id()<< ","<<e.data();
+    }
     MPI_Barrier(comm_spec.comm());
   }
 
