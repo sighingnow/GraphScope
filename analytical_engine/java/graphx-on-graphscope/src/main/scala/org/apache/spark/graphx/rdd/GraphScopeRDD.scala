@@ -5,6 +5,7 @@ import org.apache.spark.graphx.{EdgeRDD, GrapeEdgeRDD, GrapeVertexRDD, VertexRDD
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.cluster.{CoarseGrainedSchedulerBackend, ExecutorData, ExecutorInfo, StandaloneSchedulerBackend}
 
+import scala.collection.mutable
 import scala.collection.mutable.HashMap
 import scala.reflect.ClassTag
 
@@ -25,18 +26,12 @@ object GraphScopeRDD extends Logging{
 //    val hostNames = status.iterator.map(item => item._1).toArray
 //    log.info(s"Got collected hostNames ${hostNames.mkString("Array(", ", ", ")")}")
 //    hostNames
-    val castedBackend = sc.schedulerBackend.asInstanceOf[CoarseGrainedSchedulerBackend]
-    val fields = castedBackend.getClass.getDeclaredFields
-    log.info(s"${fields.mkString("Array(", ", ", ")")}")
-    val executorDataMapField = castedBackend.getClass.getDeclaredField("executorDataMap")
-    executorDataMapField.setAccessible(true)
-    require(executorDataMapField != null)
-    val executorDataMap = executorDataMapField.get(castedBackend)
-    require(executorDataMap != null)
-    //ExecutorData in private in package cluster
-    val readExecutorDataMap = executorDataMap.asInstanceOf[HashMap[String, ExecutorInfo]]
-    val array = readExecutorDataMap.values.map(info => info.executorHost).toArray
-    log.info(s"collected executor host array: ${array.mkString("Array(", ", ", ")")}")
-    array
+    val castedBackend = sc.schedulerBackend.asInstanceOf[StandaloneSchedulerBackend]
+    val field = castedBackend.getClass.getDeclaredField("org$apache$spark$scheduler$cluster$StandaloneSchedulerBackend$$executorHosts")
+    require(field != null)
+
+    val executorHosts = field.get(castedBackend).asInstanceOf[mutable.HashMap[String,String]]
+    log.info(s"${executorHosts.values.toArray.mkString("Array(", ", ", ")")}")
+    executorHosts.values.toArray
   }
 }
