@@ -6,12 +6,14 @@ import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
 import org.apache.spark.graphx.impl.partition.GrapeEdgePartition
+import org.apache.spark.graphx.rdd.FragmentPartition.getHost
 import org.apache.spark.graphx.utils.ScalaFFIFactory
 import org.apache.spark.graphx.{GrapeEdgeRDD, GrapeVertexRDD, PartitionID, VertexId}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 
+import java.net.InetAddress
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
@@ -19,20 +21,30 @@ class FragmentPartition[VD : ClassTag,ED : ClassTag](rddId : Int, override val i
 
   /** mark this val as lazy to let it run on executor rather than driver */
   lazy val tuple = {
-    val client: VineyardClient = ScalaFFIFactory.newVineyardClient()
-    val ffiByteString: FFIByteString = FFITypeFactory.newByteString()
-    ffiByteString.copyFrom(socket)
-    client.connect(ffiByteString)
-    log.info(s"Create vineyard client ${client} and connect to ${socket}")
-    val fragment: IFragment[Long, Long, VD, ED] = ScalaFFIFactory.getFragment[VD,ED](client, objectID, fragName)
-    log.info(s"Got iFragment ${fragment}")
-    (client, fragment)
+    if (hostName.equals(getHost)){
+      val client: VineyardClient = ScalaFFIFactory.newVineyardClient()
+      val ffiByteString: FFIByteString = FFITypeFactory.newByteString()
+      ffiByteString.copyFrom(socket)
+      client.connect(ffiByteString)
+      log.info(s"Create vineyard client ${client} and connect to ${socket}")
+      val fragment: IFragment[Long, Long, VD, ED] = ScalaFFIFactory.getFragment[VD,ED](client, objectID, fragName)
+      log.info(s"Got iFragment ${fragment}")
+      (client, fragment)
+    }
+    else {
+      log.info(s"This partition should be evaluated on this host since it is not on the desired host,desired host ${hostName}, cur host ${getHost}")
+    }
   }
 
   override def hashCode(): Int = 31 * (31 + rddId) + index
 
   override def equals(other: Any): Boolean = super.equals(other)
 
+}
+object FragmentPartition{
+  def getHost : String = {
+    InetAddress.getLocalHost.getHostName
+  }
 }
 
 class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames : Array[String], fragName: String, objectIDs : String, socket : String = "/tmp/vineyard.sock")  extends RDD[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))](sc, Nil) with Logging{
