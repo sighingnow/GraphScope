@@ -3,6 +3,7 @@ package org.apache.spark.graphx.rdd
 import org.apache.spark.SparkContext
 import org.apache.spark.graphx.{EdgeRDD, GrapeEdgeRDD, GrapeVertexRDD, VertexRDD}
 import org.apache.spark.internal.Logging
+import org.apache.spark.rdd.{ParallelCollectionRDD, RDD}
 import org.apache.spark.scheduler.cluster.{CoarseGrainedSchedulerBackend, ExecutorData, ExecutorInfo, StandaloneSchedulerBackend}
 
 import java.net.InetAddress
@@ -32,16 +33,17 @@ object GraphScopeRDD extends Logging{
       log.info(s"host ${host}: objectId : ${id}")
     }
     val res = map.map(tuple => (tuple._2, Array(tuple._1))).toArray
-    val distributedObjectIDs = sc.makeRDD(res).repartition(2)
-    log.info(s"${distributedObjectIDs.collect().map(t => (t._1, t._2(0))).mkString("Array(", ", ", ")")}")
-    distributedObjectIDs.foreachPartition(iter => {
-      val tuple = iter.next()
-      val host = tuple._2(0)
-      log.info(s"Partition on dst host ${host} get cur host ${InetAddress.getLocalHost.getHostName}")
-    })
+    val distributedObjectIDs = makeRDD(sc,res)
+    distributedObjectIDs.foreachPartition(iter => log.info(s"one partition on ${InetAddress.getLocalHost.getHostName}"))
+    log.info(s"${distributedObjectIDs.collect().mkString("Array(", ", ", ")")}")
 
     val fragmentRDD = new FragmentRDD[VD,ED](sc, getExecutorHostNames(sc),  getExecutorIdss(sc),fragName,objectIDs)
     fragmentRDD.generateRDD()
+  }
+
+  def makeRDD(sc : SparkContext, seq: Array[(Long, Array[String])]): RDD[Long] ={
+    val indexToPrefs = seq.zipWithIndex.map(t => (t._2, t._1._2.toSeq)).toMap
+    new ParallelCollectionRDD[Long](sc, seq.map(_._1), math.max(seq.size, 1), indexToPrefs)
   }
 
 
