@@ -15,8 +15,24 @@ import scala.reflect.ClassTag
  */
 object GraphScopeRDD extends Logging{
 
-  def loadFragmentAsRDD[VD: ClassTag, ED: ClassTag](sc : SparkContext, objectID : String, fragName : String) : (GrapeVertexRDD[VD],GrapeEdgeRDD[ED]) = {
-    val fragmentRDD = new FragmentRDD[VD,ED](sc, getExecutorHostNames(sc), fragName,objectID)
+  def loadFragmentAsRDD[VD: ClassTag, ED: ClassTag](sc : SparkContext, objectIDs : String, fragName : String) : (GrapeVertexRDD[VD],GrapeEdgeRDD[ED]) = {
+
+    val objectsSplited: Array[String] = objectIDs.split(",")
+    val map: mutable.Map[String,Long] = mutable.Map[String, Long]()
+    for (str <- objectsSplited){
+      val hostId = str.split(":")
+      require(hostId.length == 2)
+      val host = hostId(0)
+      val id = hostId(1)
+      require(!map.contains(host), s"entry for host ${host} already set ${map.get(host)}")
+      map(host) = id.toLong
+      log.info(s"host ${host}: objectId : ${id}")
+    }
+    val res = map.map(tuple => (tuple._2, Array(tuple._1))).toArray
+    val distributedObjectIDs = sc.makeRDD(res)
+    log.info(s"${distributedObjectIDs.collect().mkString("Array(", ", ", ")")}")
+
+    val fragmentRDD = new FragmentRDD[VD,ED](sc, getExecutorHostNames(sc), fragName,objectIDs)
     fragmentRDD.generateRDD()
   }
 
