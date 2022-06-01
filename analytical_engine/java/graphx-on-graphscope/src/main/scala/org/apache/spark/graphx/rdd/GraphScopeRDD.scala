@@ -17,6 +17,9 @@ object GraphScopeRDD extends Logging{
 
   def loadFragmentAsRDD[VD: ClassTag, ED: ClassTag](sc : SparkContext, objectIDs : String, fragName : String) : (GrapeVertexRDD[VD],GrapeEdgeRDD[ED]) = {
 
+    val tmpRdd = sc.parallelize(0 to 100, 100).coalesce(2)
+    val collectedHostNames = tmpRdd.mapPartitions( iter => Iterator(InetAddress.getLocalHost.getHostName)).collect().distinct
+    log.info(s"Collected host names : ${collectedHostNames}")
     val objectsSplited: Array[String] = objectIDs.split(",")
     val map: mutable.Map[String,Long] = mutable.Map[String, Long]()
     for (str <- objectsSplited){
