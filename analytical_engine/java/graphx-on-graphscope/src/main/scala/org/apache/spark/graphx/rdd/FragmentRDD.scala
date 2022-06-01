@@ -33,6 +33,7 @@ class FragmentPartition[VD : ClassTag,ED : ClassTag](rddId : Int, override val i
     }
     else {
       log.info(s"This partition should be evaluated on this host since it is not on the desired host,desired host ${hostName}, cur host ${getHost}")
+      null
     }
   }
 
@@ -82,7 +83,9 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
    * @return
    */
   override protected def getPreferredLocations(split: Partition): Seq[String] = {
-    Array(split.asInstanceOf[FragmentPartition[VD,ED]].hostName)
+    val casted = split.asInstanceOf[FragmentPartition[VD,ED]]
+    log.info(s"get pref location for ${casted.hostName}")
+    Array(casted.hostName)
   }
 
   def generateRDD() : (GrapeVertexRDD[VD],GrapeEdgeRDD[ED]) = {
