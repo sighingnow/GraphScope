@@ -42,8 +42,8 @@ object GraphScopeRDD extends Logging{
   }
 
   def makeRDD(sc : SparkContext, seq: Array[(Long, Array[String])]): RDD[Long] ={
-    val indexToPrefs = seq.zipWithIndex.map(t => (t._2, t._1._2)).toMap
-    new ParallelCollectionRDD[Long](sc, seq.map(_._1), math.max(seq.size, 1), indexToPrefs.asInstanceOf[Map[Int,mutable.Seq[String]]])
+    val indexToPrefs = seq.zipWithIndex.map(t => (t._2, t._1._2.toSeq)).toMap
+    new ParallelCollectionRDD[Long](sc, seq.map(_._1), math.max(seq.size, 1), indexToPrefs)
   }
 
 

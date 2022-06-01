@@ -2,8 +2,12 @@ package org.apache.spark.graphx.test
 
 import org.apache.spark.graphx.impl.GrapeGraphImpl
 import org.apache.spark.graphx.rdd.GraphScopeRDD
+import org.apache.spark.graphx.rdd.GraphScopeRDD.{log, makeRDD}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
+
+import java.net.InetAddress
+import scala.collection.mutable
 
 object FragmentAsRDDTest extends Logging{
   def main(array: Array[String]) : Unit = {
@@ -15,6 +19,25 @@ object FragmentAsRDDTest extends Logging{
     require(array.length == 2)
     val objectIDs = array(0)
     val fragName = array(1)
+
+    val objectsSplited: Array[String] = objectIDs.split(",")
+    val map: mutable.Map[String,Long] = mutable.Map[String, Long]()
+    for (str <- objectsSplited){
+      val hostId = str.split(":")
+      require(hostId.length == 2)
+      val host = hostId(0)
+      val id = hostId(1)
+      require(!map.contains(host), s"entry for host ${host} already set ${map.get(host)}")
+      map(host) = id.toLong
+      log.info(s"host ${host}: objectId : ${id}")
+    }
+    val res = map.map(tuple => (tuple._2, Array(tuple._1))).toArray
+    val distributedObjectIDs = makeRDD(sc,res)
+    distributedObjectIDs.foreachPartition(iter => log.info(s"one partition on ${InetAddress.getLocalHost.getHostName}"))
+    log.info(s"${distributedObjectIDs.collect().mkString("Array(", ", ", ")")}")
+
+    return
+
     log.info(s"Getting fragment ${objectIDs} as RDD, frag type ${fragName}")
     val (vertexRDD,edgeRDD) = GraphScopeRDD.loadFragmentAsRDD[Double,Long](sc, objectIDs, fragName)
     log.info(s"vertices count ${vertexRDD.count()}, edge cout ${edgeRDD.count()}")
