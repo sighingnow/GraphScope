@@ -25,7 +25,7 @@ object FragmentAsRDDTest extends Logging{
     for (str <- objectsSplited){
       val hostId = str.split(":")
       require(hostId.length == 2)
-      val host = hostId(0)
+      val host = InetAddress.getByName(hostId(0)).getHostAddress
       val id = hostId(1)
       require(!map.contains(host), s"entry for host ${host} already set ${map.get(host)}")
       map(host) = id.toLong
