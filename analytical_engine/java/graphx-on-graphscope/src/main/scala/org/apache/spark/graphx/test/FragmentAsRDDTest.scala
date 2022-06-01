@@ -20,6 +20,13 @@ object FragmentAsRDDTest extends Logging{
     val objectIDs = array(0)
     val fragName = array(1)
 
+    val testRDD = sc.parallelize(0 until 100000, 2).coalesce(2)
+    val hostNames = testRDD.mapPartitions(iter => {
+      log.info(s" test rdd on executor ${InetAddress.getLocalHost.getHostName}")
+      Iterator(InetAddress.getLocalHost.getHostName)
+    }).collect()
+    log.info(s"collected ${hostNames.mkString("Array(", ", ", ")")}")
+
     val objectsSplited: Array[String] = objectIDs.split(",")
     val map: mutable.Map[String,Long] = mutable.Map[String, Long]()
     for (str <- objectsSplited){
