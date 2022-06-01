@@ -18,6 +18,7 @@ object FragmentAsRDDTest extends Logging{
       .appName(s"${this.getClass.getSimpleName}")
       .getOrCreate()
     val sc = spark.sparkContext
+    sc.setLogLevel("debug")
     require(array.length == 2)
     val objectIDs = array(0)
     val fragName = array(1)

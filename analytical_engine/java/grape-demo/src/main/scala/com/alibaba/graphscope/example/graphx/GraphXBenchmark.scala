@@ -11,6 +11,7 @@ object GraphXBenchmark extends Logging{
       .appName(s"${this.getClass.getSimpleName}")
       .getOrCreate()
     val sc = spark.sparkContext
+    sc.setLogLevel("DEBUG")
     if (args.length < 2) {
       println("Expect 2 args")
       return 0;
@@ -32,6 +33,7 @@ object GraphXBenchmark extends Logging{
 //    val graph5 = graph4.mapVertices((vid, vd)=> vd + vid)
 //    val graph6 = graph5.mapVertices((vid, vd)=> vd + vid)
     log.info(s"after map vertices ${graph6.numVertices} ${graph6.numEdges}")
+    return 
     val time1 = System.nanoTime()
     /**
      * test edge transformation

@@ -23,8 +23,8 @@ object GraphLoader extends Logging {
    vertexStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   : Graph[Int, Int] = {
     //check whether kryo serialization is enabled, and register our classes.
-    val conf = sc.conf
-    conf.registerKryoClasses(Array(classOf[EdgeShuffle[_]], classOf[RoutingMessage], classOf[VertexDataMessage[_]]))
+//    val conf = sc.conf
+//    conf.registerKryoClasses(Array(classOf[EdgeShuffle[_]], classOf[RoutingMessage], classOf[VertexDataMessage[_]]))
     val startTimeNs = System.nanoTime()
     // Parse the edge data table directly into edge partitions
     val lines = {
