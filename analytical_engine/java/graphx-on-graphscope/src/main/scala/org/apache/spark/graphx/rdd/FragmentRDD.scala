@@ -11,13 +11,14 @@ import org.apache.spark.graphx.utils.ScalaFFIFactory
 import org.apache.spark.graphx.{GrapeEdgeRDD, GrapeVertexRDD, PartitionID, VertexId}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
+import org.apache.spark.scheduler.TaskLocation
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 
 import java.net.InetAddress
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-class FragmentPartition[VD : ClassTag,ED : ClassTag](rddId : Int, override val index : Int, val hostName : String,objectID : Long, socket : String, fragName : String) extends Partition with Logging {
+class FragmentPartition[VD : ClassTag,ED : ClassTag](rddId : Int, override val index : Int, val hostName : String,val executorId : String,objectID : Long, socket : String, fragName : String) extends Partition with Logging {
 
   /** mark this val as lazy to let it run on executor rather than driver */
   lazy val tuple = {
@@ -48,7 +49,7 @@ object FragmentPartition{
   }
 }
 
-class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames : Array[String], fragName: String, objectIDs : String, socket : String = "/tmp/vineyard.sock")  extends RDD[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))](sc, Nil) with Logging{
+class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames : Array[String], val executorIds : Array[String],fragName: String, objectIDs : String, socket : String = "/tmp/vineyard.sock")  extends RDD[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))](sc, Nil) with Logging{
   //objectIds be like d50:id1,d51:id2
   val objectsSplited: Array[String] = objectIDs.split(",")
   val map: mutable.Map[String,Long] = mutable.Map[String, Long]()
@@ -65,7 +66,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
   val array = new Array[Partition](hostNames.length)
     for (i <- 0 until hostNames.length) {
       require(map.contains(hostNames(i)))
-      array(i) = new FragmentPartition[VD,ED](id, i, hostNames(i), map(hostNames(i)), socket,fragName)
+      array(i) = new FragmentPartition[VD,ED](id, i, hostNames(i), executorIds(i), map(hostNames(i)), socket,fragName)
     }
   override def compute(split: Partition, context: TaskContext): Iterator[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))] = {
     val partitionCasted = split.asInstanceOf[FragmentPartition[VD,ED]]
@@ -84,8 +85,9 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
    */
   override protected def getPreferredLocations(split: Partition): Seq[String] = {
     val casted = split.asInstanceOf[FragmentPartition[VD,ED]]
-    log.info(s"get pref location for ${casted.hostName}")
-    Array(casted.hostName)
+    val location = TaskLocation.executorLocationTag + casted.hostName + "_" + casted.executorId
+    log.info(s"get pref location for ${casted.hostName} ${location}")
+    Array(location)
   }
 
   def generateRDD() : (GrapeVertexRDD[VD],GrapeEdgeRDD[ED]) = {

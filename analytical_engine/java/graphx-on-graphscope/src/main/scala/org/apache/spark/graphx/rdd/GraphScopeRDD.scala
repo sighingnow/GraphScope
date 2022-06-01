@@ -19,7 +19,7 @@ object GraphScopeRDD extends Logging{
 
     val tmpRdd = sc.parallelize(0 to 100, 100).coalesce(2)
     val collectedHostNames = tmpRdd.mapPartitions( iter => Iterator(InetAddress.getLocalHost.getHostName)).collect().distinct
-    log.info(s"Collected host names : ${collectedHostNames}")
+    log.info(s"Collected host names : ${collectedHostNames.mkString("Array(", ", ", ")")}")
     val objectsSplited: Array[String] = objectIDs.split(",")
     val map: mutable.Map[String,Long] = mutable.Map[String, Long]()
     for (str <- objectsSplited){
@@ -40,18 +40,12 @@ object GraphScopeRDD extends Logging{
       log.info(s"Partition on dst host ${host} get cur host ${InetAddress.getLocalHost.getHostName}")
     })
 
-    val fragmentRDD = new FragmentRDD[VD,ED](sc, getExecutorHostNames(sc), fragName,objectIDs)
+    val fragmentRDD = new FragmentRDD[VD,ED](sc, getExecutorHostNames(sc),  getExecutorIdss(sc),fragName,objectIDs)
     fragmentRDD.generateRDD()
   }
 
 
   def getExecutorHostNames(sc : SparkContext)  : Array[String] = {
-//    val status = sc.getExecutorMemoryStatus
-//    log.info(s"Got executor memory status ${status}, size ${status.size}")
-//    val hostNames = status.iterator.map(item => item._1).toArray
-//    log.info(s"Got collected hostNames ${hostNames.mkString("Array(", ", ", ")")}")
-//    hostNames
-
     val castedBackend = sc.schedulerBackend.asInstanceOf[StandaloneSchedulerBackend]
     log.info(s"${castedBackend.getClass.getDeclaredFields.mkString("Array(", ", ", ")")}")
     val field = castedBackend.getClass.getDeclaredField("executorHosts")
@@ -66,5 +60,17 @@ object GraphScopeRDD extends Logging{
     })
     log.info(s"transformed to hostnames: ${executorHosts.mkString("Array(", ", ", ")")}")
     executorHosts
+  }
+
+  def getExecutorIdss(sc : SparkContext)  : Array[String] = {
+    val castedBackend = sc.schedulerBackend.asInstanceOf[StandaloneSchedulerBackend]
+    log.info(s"${castedBackend.getClass.getDeclaredFields.mkString("Array(", ", ", ")")}")
+    val field = castedBackend.getClass.getDeclaredField("executorHosts")
+    require(field != null)
+    field.setAccessible(true)
+
+    val executorIps = field.get(castedBackend).asInstanceOf[mutable.HashMap[String,String]]
+    log.info(s"${executorIps.keySet.toArray.mkString("Array(", ", ", ")")}")
+    executorIps.keySet.toArray
   }
 }
