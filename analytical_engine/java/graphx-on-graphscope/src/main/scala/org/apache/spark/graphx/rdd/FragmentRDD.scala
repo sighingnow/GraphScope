@@ -33,6 +33,7 @@ class FragmentPartition[VD : ClassTag,ED : ClassTag](rddId : Int, override val i
     }
     else {
       log.info(s"This partition should be evaluated on this host since it is not on the desired host,desired host ${hostName}, cur host ${getHost}")
+      null
     }
   }
 
