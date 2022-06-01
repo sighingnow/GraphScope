@@ -29,8 +29,13 @@ object GraphScopeRDD extends Logging{
       log.info(s"host ${host}: objectId : ${id}")
     }
     val res = map.map(tuple => (tuple._2, Array(tuple._1))).toArray
-    val distributedObjectIDs = sc.makeRDD(res)
-    log.info(s"${distributedObjectIDs.collect().mkString("Array(", ", ", ")")}")
+    val distributedObjectIDs = sc.makeRDD(res).repartition(2)
+    log.info(s"${distributedObjectIDs.collect().map(t => (t._1, t._2(0))).mkString("Array(", ", ", ")")}")
+    distributedObjectIDs.foreachPartition(iter => {
+      val tuple = iter.next()
+      val host = tuple._2(0)
+      log.info(s"Partition on dst host ${host} get cur host ${InetAddress.getLocalHost.getHostName}")
+    })
 
     val fragmentRDD = new FragmentRDD[VD,ED](sc, getExecutorHostNames(sc), fragName,objectIDs)
     fragmentRDD.generateRDD()
