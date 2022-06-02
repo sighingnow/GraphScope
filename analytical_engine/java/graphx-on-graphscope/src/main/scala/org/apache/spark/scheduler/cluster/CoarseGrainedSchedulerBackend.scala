@@ -146,6 +146,7 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
 
     override def receive: PartialFunction[Any, Unit] = {
       case StatusUpdate(executorId, taskId, state, data, resources) =>
+        log.info(s"receive status update ${executorId} ${taskId} ${state} ${data} ${resources}")
         scheduler.statusUpdate(taskId, state, data.value)
         if (TaskState.isFinished(state)) {
           executorDataMap.get(executorId) match {
@@ -168,6 +169,7 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
         }
 
       case ReviveOffers =>
+        log.info("receive revive offers")
         makeOffers()
 
       case KillTask(taskId, executorId, interruptThread, reason) =>
@@ -321,12 +323,14 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
         val activeExecutors = executorDataMap.filterKeys(isExecutorActive)
         val workOffers = activeExecutors.map {
           case (id, executorData) =>
+            log.info(s"make work offers ${id} ${executorData}")
             new WorkerOffer(id, executorData.executorHost, executorData.freeCores,
               Some(executorData.executorAddress.hostPort),
               executorData.resourcesInfo.map { case (rName, rInfo) =>
                 (rName, rInfo.availableAddrs.toBuffer)
               }, executorData.resourceProfileId)
         }.toIndexedSeq
+        log.info(s"made offers ${workOffers.mkString(",")}")
         scheduler.resourceOffers(workOffers, true)
       }
       if (taskDescs.nonEmpty) {
@@ -356,6 +360,7 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
               executorData.resourcesInfo.map { case (rName, rInfo) =>
                 (rName, rInfo.availableAddrs.toBuffer)
               }, executorData.resourceProfileId))
+          log.info(s"made offer on ${executorId} ${workOffers.mkString(",")}")
           scheduler.resourceOffers(workOffers, false)
         } else {
           Seq.empty
