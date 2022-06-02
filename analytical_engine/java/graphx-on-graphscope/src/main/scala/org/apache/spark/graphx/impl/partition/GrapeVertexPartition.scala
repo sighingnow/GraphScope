@@ -66,6 +66,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
           gids(j) = idParser.generateGlobalId(curFid, lids(j))
 //          require(lids(j) < endLid)
           newData(j) = getData(lids(j))
+          log.info(s"send outer vd ${newData(j)} to gid ${gids(j)}")
           j += 1
         }
         val msg = new VertexDataMessage[VD](i, gids,newData)
@@ -88,7 +89,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
       while (i < outerGids.length){
         require(graphStructure.outerVertexGid2Vertex(outerGids(i), vertex))
-//        log.info(s"Partition ${pid} received outer vdata updating info ${outerLids(i)}, ${outerDatas(i)}")
+        log.info(s"Partition ${pid} received outer vdata updating info ${vertex.GetValue()}, ${outerDatas(i)}")
         vertexData.setData(vertex.GetValue, outerDatas(i))
         i += 1
       }
