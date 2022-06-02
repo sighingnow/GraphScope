@@ -390,12 +390,15 @@ private[spark] class DAGScheduler(
         }
         log.info(s"block ids ${blockIds.mkString("Array(", ", ", ")")}")
         blockManagerMaster.getLocations(blockIds).map { bms =>
-          bms.map(bm => TaskLocation(bm.host, bm.executorId))
+          bms.map(bm => {
+            log.info(s"create task location ${bm.host} ${bm.executorId}")
+            TaskLocation(bm.host, bm.executorId)
+          })
         }
       }
       cacheLocs(rdd.id) = locs
     }
-    log.info(s"${rdd.toDebugString} got locs ${cacheLocs(rdd.id)(0).mkString(",")}")
+    log.info(s"${rdd.toDebugString} got locs ${cacheLocs(rdd.id).mkString(",")}")
     cacheLocs(rdd.id)
   }
 
