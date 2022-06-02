@@ -41,7 +41,7 @@ object FragmentAsRDDTest extends Logging{
       map(host) = id.toLong
       log.info(s"host ${host}: objectId : ${id}")
     }
-    val res = map.map(tuple => (tuple._2, Array(TaskLocation.inMemoryLocationTag + tuple._1))).toArray
+    val res = map.zipWithIndex.map(tuple => (tuple._1._2, Array(TaskLocation.executorLocationTag + tuple._1._1 + "_" + tuple._2))).toArray
     val distributedObjectIDs = makeRDD(sc,res).persist(StorageLevel.MEMORY_ONLY)
     distributedObjectIDs.foreachPartition(iter => log.info(s"one partition on ${InetAddress.getLocalHost.getHostName}"))
     log.info(s"${distributedObjectIDs.collect().mkString("Array(", ", ", ")")}")
