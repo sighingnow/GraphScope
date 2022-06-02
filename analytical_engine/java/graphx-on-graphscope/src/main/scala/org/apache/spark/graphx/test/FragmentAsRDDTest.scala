@@ -18,17 +18,10 @@ object FragmentAsRDDTest extends Logging{
       .appName(s"${this.getClass.getSimpleName}")
       .getOrCreate()
     val sc = spark.sparkContext
-    sc.setLogLevel("debug")
+//    sc.setLogLevel("debug")
     require(array.length == 2)
     val objectIDs = array(0)
     val fragName = array(1)
-
-//    val testRDD = sc.parallelize(0 until 100000, 2).coalesce(2)
-//    val hostNames = testRDD.mapPartitions(iter => {
-//      log.info(s" test rdd on executor ${InetAddress.getLocalHost.getHostName}")
-//      Iterator(InetAddress.getLocalHost.getHostName)
-//    }).collect()
-//    log.info(s"collected ${hostNames.mkString("Array(", ", ", ")")}")
 
     val objectsSplited: Array[String] = objectIDs.split(",")
     val map: mutable.Map[String,Long] = mutable.Map[String, Long]()
@@ -45,8 +38,6 @@ object FragmentAsRDDTest extends Logging{
     val distributedObjectIDs = makeRDD(sc,res).persist(StorageLevel.MEMORY_ONLY)
     distributedObjectIDs.foreachPartition(iter => log.info(s"one partition on ${InetAddress.getLocalHost.getHostName}"))
     log.info(s"${distributedObjectIDs.collect().mkString("Array(", ", ", ")")}")
-
-    return
 
     log.info(s"Getting fragment ${objectIDs} as RDD, frag type ${fragName}")
     val (vertexRDD,edgeRDD) = GraphScopeRDD.loadFragmentAsRDD[Double,Long](sc, objectIDs, fragName)
