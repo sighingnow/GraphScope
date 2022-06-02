@@ -98,7 +98,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
         Iterator(new FragmentStructure(frag))
       }
       else Iterator.empty
-    }).cache()
+    },preservesPartitioning = true).cache()
     val pid2Fids = this.mapPartitions(iter => {
       val tuple = iter.next()
       Iterator((tuple._1, tuple._2._2.fid()))
@@ -108,7 +108,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
       val fragmentStructure = iter.next()
       fragmentStructure.initFid2GraphxPid(pid2Fids)
     })
-    val edgePartitions = this.zipPartitions(fragmentStructures){
+    val edgePartitions = this.zipPartitions(fragmentStructures, preservesPartitioning = true){
       (fragIter, structureIter) => {
         if (fragIter.hasNext){
           val (pid,(client,frag)) = fragIter.next()
