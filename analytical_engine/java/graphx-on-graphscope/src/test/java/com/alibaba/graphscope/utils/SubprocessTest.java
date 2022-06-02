@@ -27,12 +27,12 @@ public class SubprocessTest {
         os.write("a + b\n".getBytes(StandardCharsets.UTF_8));
         os.flush();
 //        process.getInputStream().
-        BufferedReader stdInput = new BufferedReader(new InputStreamReader(is));
-        String str;
-        while ((str = stdInput.readLine()) != null) {
-            System.out.println(str);
-        }
-        TimeUnit.SECONDS.sleep(3);
+//        BufferedReader stdInput = new BufferedReader(new InputStreamReader(is));
+//        String str;
+//        while ((str = stdInput.readLine()) != null) {
+//            System.out.println(str);
+//        }
+//        TimeUnit.SECONDS.sleep(3);
         process.destroyForcibly();
         process.waitFor();
     }

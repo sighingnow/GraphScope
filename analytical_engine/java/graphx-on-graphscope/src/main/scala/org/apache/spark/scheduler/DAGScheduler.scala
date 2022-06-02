@@ -2539,6 +2539,7 @@ private[spark] class DAGScheduler(
     if (rddPrefs.nonEmpty) {
       val res= rddPrefs.map(TaskLocation(_))
       log.info(s"returning res ${res}")
+      return res
     }
 
     // If the RDD has narrow dependencies, pick the first partition of the first narrow dependency
