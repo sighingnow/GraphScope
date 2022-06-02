@@ -1435,6 +1435,7 @@ private[spark] class DAGScheduler(
         runningStages -= stage
         return
     }
+    log.info(s"got taskId to location ${taskIdToLocations.toArray.map(t => (t._1,t._2.mkString(","))).mkString(";")}")
 
     stage.makeNewStageAttempt(partitionsToCompute.size, taskIdToLocations.values.toSeq)
 
