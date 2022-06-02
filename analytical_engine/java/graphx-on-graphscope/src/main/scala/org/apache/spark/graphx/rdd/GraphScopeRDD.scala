@@ -48,20 +48,23 @@ object GraphScopeRDD extends Logging{
 
 
   def getExecutorHostNames(sc : SparkContext)  : Array[String] = {
-    val castedBackend = sc.schedulerBackend.asInstanceOf[StandaloneSchedulerBackend]
-    log.info(s"${castedBackend.getClass.getDeclaredFields.mkString("Array(", ", ", ")")}")
-    val field = castedBackend.getClass.getDeclaredField("executorHosts")
-    require(field != null)
-    field.setAccessible(true)
-
-    val executorIps = field.get(castedBackend).asInstanceOf[mutable.HashMap[String,String]]
-    log.info(s"${executorIps.values.toArray.mkString("Array(", ", ", ")")}")
-    val executorHosts = executorIps.values.toArray.map(ip => {
-      val inetAddress = InetAddress.getByName(ip)
-      inetAddress.getHostName
-    })
-    log.info(s"transformed to hostnames: ${executorHosts.mkString("Array(", ", ", ")")}")
-    executorHosts
+//    val castedBackend = sc.schedulerBackend.asInstanceOf[StandaloneSchedulerBackend]
+    val hostNames = sc.getExecutorMemoryStatus.map(t => t._1.split(":")(0)).toArray
+    log.info(s"launched host names ${hostNames.mkString("Array(", ", ", ")")}")
+//    castedBackend.getExecutorAvailableResources()
+//    log.info(s"${castedBackend.getClass.getDeclaredFields.mkString("Array(", ", ", ")")}")
+//    val field = castedBackend.getClass.getDeclaredField("executorHosts")
+//    require(field != null)
+//    field.setAccessible(true)
+//
+//    val executorIps = field.get(castedBackend).asInstanceOf[mutable.HashMap[String,String]]
+//    log.info(s"${executorIps.values.toArray.mkString("Array(", ", ", ")")}")
+//    val executorHosts = executorIps.values.toArray.map(ip => {
+//      val inetAddress = InetAddress.getByName(ip)
+//      inetAddress.getHostName
+//    })
+//    log.info(s"transformed to hostnames: ${executorHosts.mkString("Array(", ", ", ")")}")
+    hostNames
   }
 
   def getExecutorIdss(sc : SparkContext)  : Array[String] = {
