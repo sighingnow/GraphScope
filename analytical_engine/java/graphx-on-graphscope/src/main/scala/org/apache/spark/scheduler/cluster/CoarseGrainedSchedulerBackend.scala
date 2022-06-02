@@ -160,6 +160,7 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
                   r.release(v.addresses)
                 }
               }
+              log.info(s"one task finished ${taskId}, release resource cpu: ${taskCpus} ${executorInfo.freeCores}, resource ${resources}")
               makeOffers(executorId)
             case None =>
               // Ignoring the update since we don't know about the executor.
@@ -211,9 +212,11 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
         removeWorker(workerId, host, message)
 
       case LaunchedExecutor(executorId) =>
+        log.info(s"launched executor ${executorId}")
         executorDataMap.get(executorId).foreach { data =>
           data.freeCores = data.totalCores
         }
+        log.info(s"after receive executor launched: ${executorDataMap.toArray.mkString(",")}")
         makeOffers(executorId)
 
       case MiscellaneousProcessAdded(time: Long,
@@ -330,7 +333,7 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
                 (rName, rInfo.availableAddrs.toBuffer)
               }, executorData.resourceProfileId)
         }.toIndexedSeq
-        log.info(s"made offers ${workOffers.mkString(",")}")
+        log.info(s"driver end made offers ${workOffers.mkString(",")}, isAllFreeResource true")
         scheduler.resourceOffers(workOffers, true)
       }
       if (taskDescs.nonEmpty) {
@@ -360,7 +363,7 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
               executorData.resourcesInfo.map { case (rName, rInfo) =>
                 (rName, rInfo.availableAddrs.toBuffer)
               }, executorData.resourceProfileId))
-          log.info(s"made offer on ${executorId} ${workOffers.mkString(",")}")
+          log.info(s"made offer on ${executorId} ${workOffers.mkString(",")}, isAllFreeResources False")
           scheduler.resourceOffers(workOffers, false)
         } else {
           Seq.empty

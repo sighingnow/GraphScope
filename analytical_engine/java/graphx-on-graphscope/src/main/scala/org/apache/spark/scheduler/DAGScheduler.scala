@@ -2517,21 +2517,27 @@ private[spark] class DAGScheduler(
                                         rdd: RDD[_],
                                         partition: Int,
                                         visited: HashSet[(RDD[_], Int)]): Seq[TaskLocation] = {
+    log.info(s"getting preferred locs internal ${rdd.toDebugString}, partition ${partition}")
     // If the partition has already been visited, no need to re-visit.
     // This avoids exponential path exploration.  SPARK-695
     if (!visited.add((rdd, partition))) {
       // Nil has already been returned for previously visited partitions.
+      log.info(s"${partition} visited, return nil")
       return Nil
     }
     // If the partition is cached, return the cache locations
     val cached = getCacheLocs(rdd)(partition)
+    log.info(s"getCacheLocs non empty : ${cached.nonEmpty}")
     if (cached.nonEmpty) {
       return cached
     }
+    log.info("cached empty, get prefered locations specified by rdd")
     // If the RDD has some placement preferences (as is the case for input RDDs), get those
     val rddPrefs = rdd.preferredLocations(rdd.partitions(partition)).toList
+    log.info(s"got calculated rdd prefs ${rddPrefs.mkString(",")}")
     if (rddPrefs.nonEmpty) {
-      return rddPrefs.map(TaskLocation(_))
+      val res= rddPrefs.map(TaskLocation(_))
+      log.info(s"returning res ${res}")
     }
 
     // If the RDD has narrow dependencies, pick the first partition of the first narrow dependency
@@ -2548,7 +2554,7 @@ private[spark] class DAGScheduler(
 
       case _ =>
     }
-
+    log.info("oops, return nil")
     Nil
   }
 
