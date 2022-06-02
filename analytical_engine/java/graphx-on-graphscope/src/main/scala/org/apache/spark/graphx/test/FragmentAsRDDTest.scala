@@ -4,9 +4,9 @@ import org.apache.spark.graphx.impl.GrapeGraphImpl
 import org.apache.spark.graphx.rdd.GraphScopeRDD
 import org.apache.spark.graphx.rdd.GraphScopeRDD.{log, makeRDD}
 import org.apache.spark.internal.Logging
+import org.apache.spark.scheduler.TaskLocation
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.storage.StorageLevel
-
 
 import java.net.InetAddress
 import scala.collection.mutable
@@ -41,7 +41,7 @@ object FragmentAsRDDTest extends Logging{
       map(host) = id.toLong
       log.info(s"host ${host}: objectId : ${id}")
     }
-    val res = map.map(tuple => (tuple._2, Array(tuple._1))).toArray
+    val res = map.map(tuple => (tuple._2, Array(TaskLocation.inMemoryLocationTag + tuple._1))).toArray
     val distributedObjectIDs = makeRDD(sc,res).persist(StorageLevel.MEMORY_ONLY)
     distributedObjectIDs.foreachPartition(iter => log.info(s"one partition on ${InetAddress.getLocalHost.getHostName}"))
     log.info(s"${distributedObjectIDs.collect().mkString("Array(", ", ", ")")}")

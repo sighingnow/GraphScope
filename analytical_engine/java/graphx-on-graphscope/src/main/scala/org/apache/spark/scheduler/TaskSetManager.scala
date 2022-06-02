@@ -20,15 +20,13 @@ package org.apache.spark.scheduler
 import java.io.NotSerializableException
 import java.nio.ByteBuffer
 import java.util.concurrent.{ConcurrentLinkedQueue, TimeUnit}
-
 import scala.collection.immutable.Map
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
-import scala.math.max
+import scala.math.{exp, max}
 import scala.util.control.NonFatal
-
 import org.apache.spark._
 import org.apache.spark.TaskState.TaskState
-import org.apache.spark.internal.{config, Logging}
+import org.apache.spark.internal.{Logging, config}
 import org.apache.spark.internal.config._
 import org.apache.spark.resource.ResourceInformation
 import org.apache.spark.scheduler.SchedulingMode._
@@ -361,6 +359,7 @@ private[spark] class TaskSetManager(
                                    host: String,
                                    maxLocality: TaskLocality.Value,
                                    speculative: Boolean): Option[(Int, TaskLocality.Value, Boolean)] = {
+    log.info(s"dequeuing task ${execId}, ${host}, ${maxLocality}")
     if (speculative && speculatableTasks.isEmpty) {
       return None
     }
@@ -439,6 +438,7 @@ private[spark] class TaskSetManager(
                      taskResourceAssignments: Map[String, ResourceInformation] = Map.empty)
   : (Option[TaskDescription], Boolean, Int) =
   {
+    log.info(s"resource offser ${execId}, ${host}, ${maxLocality}, ${taskResourceAssignments.toArray.mkString(",")}")
     val offerExcluded = taskSetExcludelistHelperOpt.exists { excludeList =>
       excludeList.isNodeExcludedForTaskSet(host) ||
         excludeList.isExecutorExcludedForTaskSet(execId)
