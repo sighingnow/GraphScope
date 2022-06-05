@@ -193,12 +193,12 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
 
   override def tripletIterator[VD: ClassTag, ED: ClassTag](vertexDataStore: VertexDataStore[VD], edatas: PrimitiveArray[ED], activeSet: BitSet, includeSrc: Boolean, includeDst: Boolean, edgeReversed : Boolean): Iterator[EdgeTriplet[VD, ED]] = {
     if (fragment.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)){
-      val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,VD,ED]]
+      val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,VD,ED]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,VD,ED]]
       if (edatas == null){
-        newProjectedTripletIterator(projectedFragment.getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,VD,ED]],activeSet,edgeReversed,includeSrc,includeDst)
+        newProjectedTripletIterator(projectedFragment, vertexDataStore,activeSet,edgeReversed,includeSrc,includeDst)
       }
       else {
-        newProjectedTripletIteratorV2(projectedFragment.getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,VD,ED]],edatas,activeSet,edgeReversed,includeSrc,includeDst)
+        newProjectedTripletIteratorV2(projectedFragment, vertexDataStore,edatas,activeSet,edgeReversed,includeSrc,includeDst)
       }
     }
     else {
@@ -206,7 +206,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     }
   }
 
-  private def newProjectedTripletIterator[VD: ClassTag,ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, VD, ED], bitSet: BitSet, edgeReversed: Boolean, includeSrc : Boolean, includeDst : Boolean) : Iterator[EdgeTriplet[VD,ED]] = {
+  private def newProjectedTripletIterator[VD: ClassTag,ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, VD, ED],vertexDataStore: VertexDataStore[VD], bitSet: BitSet, edgeReversed: Boolean, includeSrc : Boolean, includeDst : Boolean) : Iterator[EdgeTriplet[VD,ED]] = {
     new Iterator[EdgeTriplet[VD,ED]]{
       def createTriplet : GSEdgeTriplet[VD,ED] = {
         if (!edgeReversed){
@@ -242,15 +242,17 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         vertex.SetValue(curLid)
         edge.srcId = frag.getInnerVertexId(vertex)
         if (includeSrc){
-          edge.srcAttr = frag.getData(vertex)
+//          edge.srcAttr = frag.getData(vertex)
+          edge.srcAttr = vertexDataStore.getData(curLid)
         }
         vertex.SetValue(dstLid)
         edge.dstId = frag.getId(vertex)
         if (includeDst){
-          edge.dstAttr = frag.getData(vertex)
+//          edge.dstAttr = frag.getData(vertex)
+          edge.dstAttr = vertexDataStore.getData(dstLid)
         }
         edge.attr = attr
-	edge.index = offset
+	      edge.index = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
         edge
       }
@@ -295,7 +297,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         vertex.SetValue(dstLid)
         edge.dstId = frag.getId(vertex)
         edge.attr = attr
-	edge.index = offset
+	      edge.index = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
         edge
       }
@@ -343,7 +345,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
       }
     }
   }
-  private def newProjectedTripletIteratorV2[VD: ClassTag,ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, VD, ED], edatas : PrimitiveArray[ED],bitSet: BitSet, edgeReversed: Boolean, includeSrc : Boolean, includeDst : Boolean) : Iterator[EdgeTriplet[VD,ED]] = {
+  private def newProjectedTripletIteratorV2[VD: ClassTag,ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, VD, ED],vertexDataStore: VertexDataStore[VD], edatas : PrimitiveArray[ED],bitSet: BitSet, edgeReversed: Boolean, includeSrc : Boolean, includeDst : Boolean) : Iterator[EdgeTriplet[VD,ED]] = {
     new Iterator[EdgeTriplet[VD,ED]]{
       def createTriplet : GSEdgeTriplet[VD,ED] = {
         if (!edgeReversed){
@@ -378,15 +380,17 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         vertex.SetValue(curLid)
         edge.srcId = frag.getInnerVertexId(vertex)
         if (includeSrc){
-          edge.srcAttr = frag.getData(vertex)
+//          edge.srcAttr = frag.getData(vertex)
+          edge.srcAttr = vertexDataStore.getData(curLid)
         }
         vertex.SetValue(dstLid)
         edge.dstId = frag.getId(vertex)
         if (includeDst){
-          edge.dstAttr = frag.getData(vertex)
+//          edge.dstAttr = frag.getData(vertex)
+          edge.dstAttr = vertexDataStore.getData(dstLid)
         }
         edge.attr = attr
-	edge.index = offset
+	      edge.index = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
         edge
       }
