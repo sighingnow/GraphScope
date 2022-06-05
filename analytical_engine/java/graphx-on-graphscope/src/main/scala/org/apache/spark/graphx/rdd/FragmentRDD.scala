@@ -63,13 +63,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
     map(host) = id.toLong
     log.info(s"host ${host}: objId : ${id}")
   }
-  val array = new Array[Partition](objectsSplited.length)
-  val iter = executorId2Host.iterator
-  for (i <- array.indices) {
-    val (executorId, executorHost) = iter.next()
-    log.info(s"executorId ${executorId}, host ${executorHost}, corresponding obj id ${map(executorHost)}")
-    array(i) = new FragmentPartition[VD,ED](id, i, executorHost, executorId,map(executorHost), socket,fragName)
-  }
+
 
   override def compute(split: Partition, context: TaskContext): Iterator[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))] = {
     val partitionCasted = split.asInstanceOf[FragmentPartition[VD,ED]]
@@ -78,6 +72,13 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
 
   /** according to spark code comments, this function will be only executed once. */
   override protected def getPartitions: Array[Partition] = {
+    val array = new Array[Partition](objectsSplited.length)
+    val iter = executorId2Host.iterator
+    for (i <- array.indices) {
+      val (executorId, executorHost) = iter.next()
+      log.info(s"executorId ${executorId}, host ${executorHost}, corresponding obj id ${map(executorHost)}")
+      array(i) = new FragmentPartition[VD,ED](id, i, executorHost, executorId,map(executorHost), socket,fragName)
+    }
     array
   }
 
