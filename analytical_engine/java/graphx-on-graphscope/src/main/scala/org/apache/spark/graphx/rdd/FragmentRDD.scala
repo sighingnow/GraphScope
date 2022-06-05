@@ -49,25 +49,28 @@ object FragmentPartition{
   }
 }
 
-class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames : Array[String], val executorIds : Array[String],fragName: String, objectIDs : String, socket : String = "/tmp/vineyard.sock")  extends RDD[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))](sc, Nil) with Logging{
+class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Host : mutable.HashMap[String,String], fragName: String, objectIDs : String, socket : String = "/tmp/vineyard.sock")  extends RDD[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))](sc, Nil) with Logging{
   //objectIds be like d50:id1,d51:id2
   val objectsSplited: Array[String] = objectIDs.split(",")
   val map: mutable.Map[String,Long] = mutable.Map[String, Long]()
-  require(objectsSplited.length == hostNames.length, s"executor's host names length not equal to object ids ${hostNames.mkString("Array(", ", ", ")")}, ${objectIDs}")
+  require(objectsSplited.length == executorId2Host.size, s"executor's host names length not equal to object ids ${executorId2Host.toArray.mkString("Array(", ", ", ")")}, ${objectIDs}")
   for (str <- objectsSplited){
-    val hostId = str.split(":")
-    require(hostId.length == 2)
-    val host = hostId(0)
-    val id = hostId(1)
+    val hostAndId = str.split(":")
+    require(hostAndId.length == 2)
+    val host = hostAndId(0)
+    val id = hostAndId(1)
     require(!map.contains(host), s"entry for host ${host} already set ${map.get(host)}")
     map(host) = id.toLong
-    log.info(s"host ${host}: objid : ${id}")
+    log.info(s"host ${host}: objId : ${id}")
   }
-  val array = new Array[Partition](hostNames.length)
-    for (i <- 0 until hostNames.length) {
-      require(map.contains(hostNames(i)))
-      array(i) = new FragmentPartition[VD,ED](id, i, hostNames(i), executorIds(i), map(hostNames(i)), socket,fragName)
-    }
+  val array = new Array[Partition](objectsSplited.length)
+  val iter = executorId2Host.iterator
+  for (i <- array.indices) {
+    val (executorId, executorHost) = iter.next()
+    log.info(s"executorId ${executorId}, host ${executorHost}, corresponding obj id ${map(executorHost)}")
+    array(i) = new FragmentPartition[VD,ED](id, i, executorHost, executorId,map(executorHost), socket,fragName)
+  }
+
   override def compute(split: Partition, context: TaskContext): Iterator[(PartitionID,(VineyardClient,IFragment[Long,Long,VD,ED]))] = {
     val partitionCasted = split.asInstanceOf[FragmentPartition[VD,ED]]
     Iterator((partitionCasted.index, partitionCasted.tuple))
@@ -102,7 +105,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, val hostNames 
     val pid2Fids = this.mapPartitions(iter => {
       val tuple = iter.next()
       Iterator((tuple._1, tuple._2._2.fid()))
-    }).collect()
+    },preservesPartitioning = true).collect()
     log.info(s"pid2fids ${pid2Fids.mkString("Array(", ", ", ")")}")
     fragmentStructures.foreachPartition(iter => {
       val fragmentStructure = iter.next()

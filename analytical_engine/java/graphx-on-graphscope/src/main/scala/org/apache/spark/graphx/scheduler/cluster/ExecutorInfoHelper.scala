@@ -1,0 +1,29 @@
+package org.apache.spark.graphx.scheduler.cluster
+
+import org.apache.spark.SparkContext
+import org.apache.spark.internal.Logging
+import org.apache.spark.scheduler.cluster.{CoarseGrainedSchedulerBackend, StandaloneSchedulerBackend}
+import org.apache.spark.scheduler.cluster.ExecutorInfo
+
+import scala.collection.mutable
+
+object ExecutorInfoHelper extends Logging{
+
+  def getExecutors(sc : SparkContext) : mutable.HashMap[String,String] = {
+    val castedBackend = sc.schedulerBackend.asInstanceOf[CoarseGrainedSchedulerBackend]
+    val field = castedBackend.getClass.getDeclaredField("executorDataMap")
+    require(field != null)
+    field.setAccessible(true)
+    val executorDataMap = field.get(castedBackend).asInstanceOf[mutable.HashMap[String,ExecutorInfo]]
+    require(executorDataMap != null)
+
+    val res = new mutable.HashMap[String,String]()
+    for (tuple <- executorDataMap){
+      val executorId = tuple._1
+      val host = tuple._2.executorHost
+      log.info(s"executor id ${executorId}, host ${host}")
+      res.+=((executorId,host))
+    }
+    res
+  }
+}
