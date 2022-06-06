@@ -25,9 +25,9 @@
 #include <utility>
 #include <vector>
 
+#include <boost/asio.hpp>
 #include "arrow/array.h"
 #include "boost/lexical_cast.hpp"
-#include <boost/asio.hpp>
 
 #include "grape/fragment/fragment_base.h"
 #include "vineyard/basic/ds/arrow_utils.h"
@@ -1300,71 +1300,47 @@ inline boost::leaf::result<vineyard::ObjectID> ConstructProjectedFragmentGroup(
     vineyard::Client& client, vineyard::ObjectID frag_id,
     const grape::CommSpec& comm_spec) {
   vineyard::ObjectID group_object_id;
-  uint64_t instance_id = client.instance_id();
 
   MPI_Barrier(comm_spec.comm());
   VINEYARD_DISCARD(client.SyncMetaData());
+  auto my_host_name = boost::asio::ip::host_name();
+  int my_len = my_host_name.size();
 
   if (comm_spec.worker_id() == 0) {
     // std::vector<uint64_t> gathered_instance_ids(comm_spec.worker_num());
     std::vector<std::string> gathered_host_names(comm_spec.worker_num());
     std::vector<vineyard::ObjectID> gathered_object_ids(comm_spec.worker_num());
 
-    // gather the hostNames from all workers, we now only accept 1 frag per
-    // executor
-    auto my_host_name = boost::asio::ip::host_name();
-    int my_len = my_host_name.size();
+    int* recvcounts = (int*) malloc(comm_spec.worker_num() * sizeof(int));
+
+    MPI_Gather(&my_len, 1, MPI_INT, recvcounts, 1, MPI_INT,
+               grape::kCoordinatorRank, comm_spec.comm());
+
+    int totlen = 0;
+    int* displs = (int*) malloc(comm_spec.worker_num() * sizeof(int));
+
+    displs[0] = 0;
+    totlen += recvcounts[0] + 1;
+
+    for (int i = 1; i < comm_spec.worker_num(); i++) {
+      totlen += recvcounts[i] + 1;
+      displs[i] = displs[i - 1] + recvcounts[i - 1] + 1;
+      LOG(INFO) << "reve count for " << i << " is " << recvcounts[i];
+    }
+    LOG(INFO) << "Total len" << totlen;
+
+    /* allocate string, pre-fill with spaces and null terminator */
+    char* totalstring = (char*) malloc(totlen * sizeof(char));
+    for (int i = 0; i < totlen - 1; i++) {
+      totalstring[i] = ' ';
+    }
+    totalstring[totlen - 1] = '\0';
+
+    MPI_Gatherv(my_host_name.c_str(), my_len, MPI_CHAR, totalstring, recvcounts,
+                displs, MPI_CHAR, 0, comm_spec.comm());
+
+    LOG(INFO) << "Got total string: " << totalstring;
     {
-      int* recvcounts = NULL;
-
-      /* Only root has the received data */
-      if (comm_spec.worker_id() == grape::kCoordinatorRank) {
-        recvcounts = (int*) malloc(comm_spec.worker_num() * sizeof(int));
-        LOG(INFO) << "malloc " << comm_spec.worker_num() << " on " <<comm_spec.worker_id();
-      }
-
-      LOG(INFO) << "worker " << comm_spec.worker_id() << ",len" << my_len;
-      MPI_Gather(&my_len, 1, MPI_INT, recvcounts, 1, MPI_INT, grape::kCoordinatorRank,
-                 comm_spec.comm());
-      
-      if (comm_spec.worker_id() == grape::kCoordinatorRank) {
-          for (size_t i = 0; i < comm_spec.worker_num(); ++i){
-              LOG(INFO) << "index" << i << ","<< recvcounts[i];
-          }
-      }
-      int totlen = 0;
-      int* displs = NULL;
-      char* totalstring = NULL;
-
-      if (comm_spec.worker_id() == grape::kCoordinatorRank) {
-        displs = (int *) malloc(comm_spec.worker_num() * sizeof(int));
-
-        displs[0] = 0;
-        totlen += recvcounts[0] + 1;
-
-        for (int i = 1; i < comm_spec.worker_num(); i++) {
-          totlen += recvcounts[i] + 1;
-          displs[i] = displs[i - 1] + recvcounts[i - 1] + 1;
-          LOG(INFO) << "reve count for " << i << " is " << recvcounts[i];
-        }
-        LOG(INFO) << "Total len" << totlen;
-
-        /* allocate string, pre-fill with spaces and null terminator */
-        totalstring = (char *) malloc(totlen * sizeof(char));
-        for (int i = 0; i < totlen - 1; i++) {
-          totalstring[i] = ' ';
-        }
-        totalstring[totlen - 1] = '\0';
-      }
-      MPI_Gatherv(my_host_name.c_str(), my_len, MPI_CHAR, totalstring,
-                  recvcounts, displs, MPI_CHAR, 0, MPI_COMM_WORLD);
-
-      if (comm_spec.worker_id() == grape::kCoordinatorRank) {
-        free(totalstring);
-        free(displs);
-        free(recvcounts);
-      }
-      LOG(INFO) << "Got total string: " << totalstring;
       for (size_t i = 0; i < comm_spec.worker_num() - 1; ++i) {
         LOG(INFO) << "recover hostname from " << displs[i] << ","
                   << displs[i + 1] << ", got"
@@ -1374,17 +1350,20 @@ inline boost::leaf::result<vineyard::ObjectID> ConstructProjectedFragmentGroup(
             std::string(totalstring[displs[i]], totalstring[displs[i + 1]]);
         gathered_host_names.emplace_back(host_name);
       }
-      std::string last = std::string(totalstring[displs[comm_spec.worker_num() - 1]], totalstring[totlen - 1]);
+      std::string last =
+          std::string(totalstring[displs[comm_spec.worker_num() - 1]],
+                      totalstring[totlen - 1]);
       gathered_host_names.emplace_back(last);
-      LOG(INFO) << "Finish gather hostnames.";
     }
+    free(totalstring);
+    free(displs);
+    free(recvcounts);
 
-    MPI_Gather(&instance_id, sizeof(uint64_t), MPI_CHAR,
-               &gathered_host_names[0], sizeof(uint64_t), MPI_CHAR, 0,
+    LOG(INFO) << "Finish gather hostnames.";
+
+    MPI_Gather(&frag_id, sizeof(vineyard::ObjectID), MPI_CHAR,
+               &gathered_object_ids[0], sizeof(vineyard::ObjectID), MPI_CHAR, 0,
                comm_spec.comm());
-
-    MPI_Gather(&frag_id, sizeof(vineyard::ObjectID), MPI_CHAR, &gathered_object_ids[0],
-               sizeof(vineyard::ObjectID), MPI_CHAR, 0, comm_spec.comm());
 
     ArrowProjectedFragmentGroupBuilder builder;
     builder.set_total_frag_num(comm_spec.fnum());
@@ -1392,9 +1371,9 @@ inline boost::leaf::result<vineyard::ObjectID> ConstructProjectedFragmentGroup(
         client.GetObject(frag_id));
 
     for (fid_t i = 0; i < comm_spec.fnum(); ++i) {
-      builder.AddFragmentObject(
-          i, gathered_object_ids[comm_spec.FragToWorker(i)],
-          gathered_host_names[comm_spec.FragToWorker(i)]);
+      builder.AddFragmentObject(i,
+                                gathered_object_ids[comm_spec.FragToWorker(i)],
+                                gathered_host_names[comm_spec.FragToWorker(i)]);
     }
 
     auto group_object = std::dynamic_pointer_cast<ArrowProjectedFragmentGroup>(
@@ -1405,10 +1384,12 @@ inline boost::leaf::result<vineyard::ObjectID> ConstructProjectedFragmentGroup(
     MPI_Bcast(&group_object_id, sizeof(vineyard::ObjectID), MPI_CHAR, 0,
               comm_spec.comm());
   } else {
-    MPI_Gather(&instance_id, sizeof(uint64_t), MPI_CHAR, NULL, sizeof(uint64_t),
-               MPI_CHAR, 0, comm_spec.comm());
-    MPI_Gather(&frag_id, sizeof(vineyard::ObjectID), MPI_CHAR, NULL, sizeof(vineyard::ObjectID),
-               MPI_CHAR, 0, comm_spec.comm());
+    MPI_Gather(&my_len, 1, MPI_INT, NULL, 1, MPI_INT, grape::kCoordinatorRank,
+               comm_spec.comm());
+    MPI_Gatherv(my_host_name.c_str(), my_len, MPI_CHAR, NULL, NULL, NULL,
+                MPI_CHAR, 0, comm_spec.comm());
+    MPI_Gather(&frag_id, sizeof(vineyard::ObjectID), MPI_CHAR, NULL,
+               sizeof(vineyard::ObjectID), MPI_CHAR, 0, comm_spec.comm());
 
     MPI_Bcast(&group_object_id, sizeof(vineyard::ObjectID), MPI_CHAR, 0,
               comm_spec.comm());
