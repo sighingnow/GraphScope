@@ -1225,7 +1225,7 @@ class ArrowProjectedFragmentGroup
     for (fid_t idx = 0; idx < total_frag_num_; ++idx) {
       fragments_.emplace(
           meta.GetKeyValue<fid_t>("fid_" + std::to_string(idx)),
-          meta.GetMemberMeta("frag_object_id_" + std::to_string(idx)).GetId());
+          meta.GetKeyValue<vineyard::ObjectID>("frag_object_id_" + std::to_string(idx)));
       fragment_locations_.emplace(
           meta.GetKeyValue<fid_t>("fid_" + std::to_string(idx)),
           meta.GetKeyValue<std::string>("frag_instance_id_" +
@@ -1279,7 +1279,7 @@ class ArrowProjectedFragmentGroupBuilder : public vineyard::ObjectBuilder {
       fg->meta_.AddKeyValue("fid_" + std::to_string(idx), kv.first);
       fg->meta_.AddKeyValue("frag_instance_id_" + std::to_string(idx),
                             fragment_locations_[kv.first]);
-      fg->meta_.AddMember("frag_object_id_" + std::to_string(idx), kv.second);
+      fg->meta_.AddKeyValue("frag_object_id_" + std::to_string(idx), kv.second);
       idx += 1;
     }
 
@@ -1310,14 +1310,14 @@ inline boost::leaf::result<vineyard::ObjectID> ConstructProjectedFragmentGroup(
     // std::vector<uint64_t> gathered_instance_ids(comm_spec.worker_num());
     std::vector<std::string> gathered_host_names(comm_spec.worker_num());
     std::vector<vineyard::ObjectID> gathered_object_ids(comm_spec.worker_num());
+    
+    std::vector<int> recvcounts(comm_spec.worker_num(),0);
 
-    int* recvcounts = (int*) malloc(comm_spec.worker_num() * sizeof(int));
-
-    MPI_Gather(&my_len, 1, MPI_INT, recvcounts, 1, MPI_INT,
+    MPI_Gather(&my_len, 1, MPI_INT, &recvcounts[0], 1, MPI_INT,
                grape::kCoordinatorRank, comm_spec.comm());
-
+    LOG(INFO) << recvcounts[0]<< "," <<recvcounts[1];
     int totlen = 0;
-    int* displs = (int*) malloc(comm_spec.worker_num() * sizeof(int));
+    std::vector<int> displs(comm_spec.worker_num(),0);
 
     displs[0] = 0;
     totlen += recvcounts[0] + 1;
@@ -1330,34 +1330,20 @@ inline boost::leaf::result<vineyard::ObjectID> ConstructProjectedFragmentGroup(
     LOG(INFO) << "Total len" << totlen;
 
     /* allocate string, pre-fill with spaces and null terminator */
-    char* totalstring = (char*) malloc(totlen * sizeof(char));
+    std::vector<char> totalstring(totlen * sizeof(char));
     for (int i = 0; i < totlen - 1; i++) {
-      totalstring[i] = ' ';
+      totalstring[i] = ',';
     }
     totalstring[totlen - 1] = '\0';
 
-    MPI_Gatherv(my_host_name.c_str(), my_len, MPI_CHAR, totalstring, recvcounts,
-                displs, MPI_CHAR, 0, comm_spec.comm());
+    MPI_Gatherv(my_host_name.c_str(), my_len, MPI_CHAR, &totalstring[0], &recvcounts[0],
+                &displs[0], MPI_CHAR, 0, comm_spec.comm());
 
-    LOG(INFO) << "Got total string: " << totalstring;
-    {
-      for (size_t i = 0; i < comm_spec.worker_num() - 1; ++i) {
-        LOG(INFO) << "recover hostname from " << displs[i] << ","
-                  << displs[i + 1] << ", got"
-                  << std::string(totalstring[displs[i]],
-                                 totalstring[displs[i + 1]]);
-        std::string host_name =
-            std::string(totalstring[displs[i]], totalstring[displs[i + 1]]);
-        gathered_host_names.emplace_back(host_name);
-      }
-      std::string last =
-          std::string(totalstring[displs[comm_spec.worker_num() - 1]],
-                      totalstring[totlen - 1]);
-      gathered_host_names.emplace_back(last);
-    }
-    free(totalstring);
-    free(displs);
-    free(recvcounts);
+    LOG(INFO) << "Got total string: " << totalstring.data();
+    std::string tmp_total_string = totalstring.data();
+    boost::split(gathered_host_names, tmp_total_string, boost::is_any_of(","));
+    CHECK_EQ(gathered_host_names.size(), comm_spec.worker_num());
+
 
     LOG(INFO) << "Finish gather hostnames.";
 
