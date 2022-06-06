@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
           vineyard::ArrowFragment<vineyard::property_graph_types::OID_TYPE,
                                   vineyard::property_graph_types::VID_TYPE>;
       using ProjectedFragmentType =
-          gs::ArrowProjectedFragment<int64_t, uint64_t, double, int64_t>;
+          gs::ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
 
       LOG(INFO) << "[worker-" << comm_spec.worker_id()
                 << "] loaded graph to vineyard ..." << fragment_id;
@@ -104,11 +104,21 @@ int main(int argc, char** argv) {
                 << projected_fragment->id();
       projected_id = projected_fragment->id();
       // construct projected fragment group.
-      auto projected_group_id =
-          gs::ConstructProjectedFragmentGroup(client, projected_id, comm_spec);
+      vineyard::ObjectID projected_group_id;
+      projected_group_id = boost::leaf::try_handle_all(
+          [&client, &comm_spec, &projected_id]() { return gs::ConstructProjectedFragmentGroup(client, projected_id, comm_spec); },
+          [](const vineyard::GSError& e) {
+            LOG(FATAL) << e.error_msg;
+            return 0;
+          },
+          [](const boost::leaf::error_info& unmatched) {
+            LOG(FATAL) << "Unmatched error " << unmatched;
+            return 0;
+          });
+
       LOG(INFO) << "Got projected group id " << projected_group_id;
     }
-    gs::ArrowProjectedFragmentGetter<int64_t, uint64_t, double, int64_t> getter;
+    gs::ArrowProjectedFragmentGetter<int64_t, uint64_t, int64_t, int64_t> getter;
     auto res = getter.Get(client, projected_id);
     LOG(INFO) << "use fragment getter:" << res->id();
     LOG(INFO) << "in edges num:" << res->GetInEdgeNum()

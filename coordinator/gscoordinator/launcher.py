@@ -433,7 +433,8 @@ class LocalLauncher(Launcher):
         if not self._vineyard_socket:
             ts = get_timestamp()
             vineyard_socket = f"{self._vineyard_socket_prefix}{ts}"
-            cmd = self._find_vineyardd()
+            cmd = ["sudo"]
+            cmd.extend(self._find_vineyardd())
             cmd.extend(["--socket", vineyard_socket])
             cmd.extend(["--size", self._shared_mem])
             cmd.extend(["-etcd_endpoint", self._etcd_endpoint])

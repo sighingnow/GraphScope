@@ -110,6 +110,7 @@ class ArrowFragmentLoader {
 #ifdef ENABLE_JAVA_SDK
     // check when vformat or eformat start with giraph. if not, we
     // giraph_enabled is false;
+    giraph_enabled_=false;
     for (auto v : graph_info_->vertices) {
       if (v->vformat.find("giraph") != std::string::npos) {
         giraph_enabled_ = true;
@@ -117,14 +118,14 @@ class ArrowFragmentLoader {
     }
     for (auto e : graph_info_->edges) {
       for (auto sub : e->sub_labels) {
-        if (sub->eformat.find("giraph") != std::string::npos) {
+        if (sub.eformat.find("giraph") != std::string::npos) {
           giraph_enabled_ = true;
         }
       }
     }
     LOG(INFO) << "giraph enabled " << giraph_enabled_;
 
-    if (giraph_enabled) {
+    if (giraph_enabled_) {
       java_loader_invoker_.SetWorkerInfo(comm_spec_.worker_id(),
                                          comm_spec_.worker_num(), comm_spec_);
       VLOG(1) << "workerid: " << comm_spec_.worker_id()
