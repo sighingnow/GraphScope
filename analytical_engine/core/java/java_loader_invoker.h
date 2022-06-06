@@ -720,11 +720,13 @@ class JavaLoaderInvoker {
       JNIEnv* env = m.env();
 
       if (!getenv("USER_JAR_PATH")) {
-        LOG(ERROR) << "expect env USER_JAR_PATH set";
+          LOG(WARNING) << "USER_JAR_PATH not set, using default class path for class loader";
+          gs_class_loader_obj = gs::CreateClassLoader(env);
       }
-      std::string user_jar_path = getenv("USER_JAR_PATH");
-
-      gs_class_loader_obj = gs::CreateClassLoader(env, user_jar_path);
+      else {
+         std::string user_jar_path = getenv("USER_JAR_PATH");
+         gs_class_loader_obj = gs::CreateClassLoader(env, user_jar_path);
+      }
       CHECK_NOTNULL(gs_class_loader_obj);
       {
         oids_jobj =
