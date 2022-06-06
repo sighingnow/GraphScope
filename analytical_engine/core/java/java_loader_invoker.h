@@ -60,9 +60,10 @@ static constexpr const char* DATA_VECTOR_VECTOR =
 template <typename T,
           typename std::enable_if<std::is_same<T, grape::EmptyType>::value,
                                   T>::type* = nullptr>
-boost::leaf::result<void> BuildArray(std::shared_ptr<arrow::Array>& array,
-                const std::vector<std::vector<char>>& data_arr,
-                const std::vector<std::vector<int>>& offset_arr) {
+boost::leaf::result<void> BuildArray(
+    std::shared_ptr<arrow::Array>& array,
+    const std::vector<std::vector<char>>& data_arr,
+    const std::vector<std::vector<int>>& offset_arr) {
   VLOG(10) << "Building pod array with null builder";
   arrow::NullBuilder array_builder;
   int64_t total_length = 0;
@@ -78,9 +79,10 @@ template <typename T,
           typename std::enable_if<(!std::is_same<T, std::string>::value &&
                                    !std::is_same<T, grape::EmptyType>::value),
                                   T>::type* = nullptr>
-boost::leaf::result<void> BuildArray(std::shared_ptr<arrow::Array>& array,
-                const std::vector<std::vector<char>>& data_arr,
-                const std::vector<std::vector<int>>& offset_arr) {
+boost::leaf::result<void> BuildArray(
+    std::shared_ptr<arrow::Array>& array,
+    const std::vector<std::vector<char>>& data_arr,
+    const std::vector<std::vector<int>>& offset_arr) {
   VLOG(10) << "Building pod array with pod builder";
   using elementType = T;
   using builderType = typename vineyard::ConvertToArrowType<T>::BuilderType;
@@ -109,9 +111,10 @@ boost::leaf::result<void> BuildArray(std::shared_ptr<arrow::Array>& array,
 template <typename T,
           typename std::enable_if<std::is_same<T, std::string>::value,
                                   T>::type* = nullptr>
-boost::leaf::result<void> BuildArray(std::shared_ptr<arrow::Array>& array,
-                const std::vector<std::vector<char>>& data_arr,
-                const std::vector<std::vector<int>>& offset_arr) {
+boost::leaf::result<void> BuildArray(
+    std::shared_ptr<arrow::Array>& array,
+    const std::vector<std::vector<char>>& data_arr,
+    const std::vector<std::vector<int>>& offset_arr) {
   VLOG(10) << "Building utf array with string builder";
   arrow::LargeStringBuilder array_builder;
   int64_t total_length = 0, total_bytes = 0;
@@ -166,7 +169,22 @@ static constexpr const char* JAVA_LOADER_INIT_SIG =
 static constexpr int GIRAPH_TYPE_CODE_LENGTH = 4;
 class JavaLoaderInvoker {
  public:
-  JavaLoaderInvoker() {
+  JavaLoaderInvoker() {}
+
+  ~JavaLoaderInvoker() { VLOG(1) << "Destructing java loader invoker"; }
+
+  void SetWorkerInfo(int worker_id, int worker_num,
+                     const grape::CommSpec& comm_spec) {
+    VLOG(2) << "JavaLoaderInvoekr set worker Id, num " << worker_id << ", "
+            << worker_num;
+    worker_id_ = worker_id;
+    worker_num_ = worker_num;
+    comm_spec_ = comm_spec;
+    communicator.InitCommunicator(comm_spec.comm());
+  }
+  // load the class and call init method
+  // mode = {graphx, giraph}
+  void InitJavaLoader(const std::string& mode) {
     load_thread_num = 1;
     if (getenv("LOADING_THREAD_NUM")) {
       load_thread_num = atoi(getenv("LOADING_THREAD_NUM"));
@@ -192,22 +210,6 @@ class JavaLoaderInvoker {
     createFFIPointers();
 
     oid_type = vdata_type = edata_type = msg_type = -1;
-  }
-
-  ~JavaLoaderInvoker() { VLOG(1) << "Destructing java loader invoker"; }
-
-  void SetWorkerInfo(int worker_id, int worker_num,
-                     const grape::CommSpec& comm_spec) {
-    VLOG(2) << "JavaLoaderInvoekr set worker Id, num " << worker_id << ", "
-            << worker_num;
-    worker_id_ = worker_id;
-    worker_num_ = worker_num;
-    comm_spec_ = comm_spec;
-    communicator.InitCommunicator(comm_spec.comm());
-  }
-  // load the class and call init method
-  // mode = {graphx, giraph}
-  void InitJavaLoader(const std::string& mode) {
     if (mode == "giraph") {
       initForGiraph();
     } else if (mode == "graphx") {
