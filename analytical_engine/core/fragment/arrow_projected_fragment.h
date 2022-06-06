@@ -20,6 +20,8 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <type_traits>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -1190,6 +1192,221 @@ class ArrowProjectedFragment
   std::vector<vid_t> outer_vertex_offsets_;
   std::vector<std::vector<vertex_t>> mirrors_of_frag_;
 };
+
+class ArrowProjectedFragmentGroup
+    : public Registered<ArrowProjectedFragmentGroup>,
+      GlobalObject {
+ public:
+  static std::unique_ptr<vineyard::Object> Create() __attribute__((used)) {
+    return std::static_pointer_cast<Object>(
+        std::unique_ptr<ArrowProjectedFragmentGroup>{
+            new ArrowProjectedFragmentGroup()});
+  }
+  fid_t total_frag_num() const { return total_frag_num_; }
+
+  const std::unordered_map<fid_t, vineyard::ObjectID>& Fragments() {
+    return fragments_;
+  }
+  // const std::unordered_map<fid_t, uint64_t>& FragmentLocations() {
+  //   return fragment_locations_;
+  // }
+  const std::unordered_map<fid_t, std::string>& FragmentLocations() {
+    return fragment_locations_;
+  }
+
+  void Construct(const vineyard::ObjectMeta& meta) override {
+    this->meta_ = meta;
+    this->id_ = meta.GetId();
+
+    total_frag_num_ = meta.GetKeyValue<fid_t>("total_frag_num");
+    for (fid_t idx = 0; idx < total_frag_num_; ++idx) {
+      fragments_.emplace(
+          meta.GetKeyValue<fid_t>("fid_" + std::to_string(idx)),
+          meta.GetMemberMeta("frag_object_id_" + std::to_string(idx)).GetId());
+      fragment_locations_.emplace(
+          meta.GetKeyValue<fid_t>("fid_" + std::to_string(idx)),
+          meta.GetKeyValue<std::string>("frag_instance_id_" +
+                                        std::to_string(idx)));
+    }
+  }
+
+ private:
+  fid_t total_frag_num_;
+  std::unordered_map<fid_t, vineyard::ObjectID> fragments_;
+  std::unordered_map<fid_t, std::string> fragment_locations_;
+
+  friend ArrowProjectedFragmentGroupBuilder;
+};
+
+class ArrowProjectedFragmentGroupBuilder : public vineyard::ObjectBuilder {
+ public:
+  ArrowProjectedFragmentGroupBuilder() {}
+
+  void set_total_frag_num(fid_t total_frag_num) {
+    total_frag_num_ = total_frag_num;
+  }
+  void AddFragmentObject(fid_t fid, vineyard::ObjectID object_id,
+                         std::string hostName) {
+    fragments_.emplace(fid, object_id);
+    fragment_locations_.emplace(fid, hostName);
+  }
+
+  vineyard::Status Build(vineyard::Client& client) override {
+    return vineyard::Status::OK();
+  }
+
+  std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) override {
+    // ensure the builder hasn't been sealed yet.
+    ENSURE_NOT_SEALED(this);
+
+    VINEYARD_CHECK_OK(this->Build(client));
+
+    auto fg = std::make_shared<ArrowFragmentGroup>();
+    fg->total_frag_num_ = total_frag_num_;
+    fg->fragments_ = fragments_;
+    if (std::is_base_of<vineyard::GlobalObject,
+                        ArrowProjectedFragmentGroup>::value) {
+      fg->meta_.SetGlobal(true);
+    }
+    fg->meta_.SetTypeName(type_name<ArrowProjectedFragmentGroup>());
+    fg->meta_.AddKeyValue("total_frag_num", total_frag_num_);
+    int idx = 0;
+
+    for (auto const& kv : fragments_) {
+      fg->meta_.AddKeyValue("fid_" + std::to_string(idx), kv.first);
+      fg->meta_.AddKeyValue("frag_instance_id_" + std::to_string(idx),
+                            fragment_locations_[kv.first]);
+      fg->meta_.AddMember("frag_object_id_" + std::to_string(idx), kv.second);
+      idx += 1;
+    }
+
+    VINEYARD_CHECK_OK(client.CreateMetaData(fg->meta_, fg->id_));
+    // mark the builder as sealed
+    this->set_sealed(true);
+
+    return std::static_pointer_cast<vineyard::Object>(fg);
+  }
+
+ private:
+  fid_t total_frag_num_;
+  std::unordered_map<fid_t, vineyard::ObjectID> fragments_;
+  std::unordered_map<fid_t, std::string> fragment_locations_;
+};
+
+inline boost::leaf::result<vineyard::ObjectID> ConstructProjectedFragmentGroup(
+    vineyard::Client& client, vineyard::ObjectID frag_id,
+    const grape::CommSpec& comm_spec) {
+  ObjectID group_object_id;
+  uint64_t instance_id = client.instance_id();
+
+  MPI_Barrier(comm_spec.comm());
+  VINEYARD_DISCARD(client.SyncMetaData());
+
+  if (comm_spec.worker_id() == 0) {
+    // std::vector<uint64_t> gathered_instance_ids(comm_spec.worker_num());
+    std::vector<std::string> gathered_host_names(comm_spec.worker_num());
+    std::vector<ObjectID> gathered_object_ids(comm_spec.worker_num());
+
+    // gather the hostNames from all workers, we now only accept 1 frag per
+    // executor
+    auto my_host_name = boost::asio::ip::host_name();
+    int my_len = my_host_name.size();
+    {
+      int* recvcounts = NULL;
+
+      /* Only root has the received data */
+      if (comm_spec.worker_id() == grape::kCoordinatorRank) {
+        recvcounts = malloc(comm_spec.worker_num() * sizeof(int));
+      }
+
+      MPI_Gather(&my_len, 1, MPI_INT, recvcounts, 1, MPI_INT, 0,
+                 MPI_COMM_WORLD);
+
+      int totlen = 0;
+      int* displs = NULL;
+      char* totalstring = NULL;
+
+      if (comm_spec.worker_id() == grape::kCoordinatorRank) {
+        displs = malloc(comm_spec.worker_num() * sizeof(int));
+
+        displs[0] = 0;
+        totlen += recvcounts[0] + 1;
+
+        for (int i = 1; i < size; i++) {
+          totlen += recvcounts[i] + 1;
+          displs[i] = displs[i - 1] + recvcounts[i - 1] + 1;
+          LOG(INFO) << "reve count for " << i << " is " << recvcounts[i];
+        }
+        LOG(INFO) << "Total len" << totlen;
+
+        /* allocate string, pre-fill with spaces and null terminator */
+        totalstring = malloc(totlen * sizeof(char));
+        for (int i = 0; i < totlen - 1; i++) {
+          totalstring[i] = ' ';
+        }
+        totalstring[totlen - 1] = '\0';
+      }
+      MPI_Gatherv(my_host_name.c_str(), mylen, MPI_CHAR, totalstring,
+                  recvcounts, displs, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+      if (comm_spec.worker_id() == grape::kCoordinatorRank) {
+        free(totalstring);
+        free(displs);
+        free(recvcounts);
+      }
+      LOG(INFO) << "Got total string: " << totalstring;
+      for (size_t i = 0; i < comm_spec.worker_num(); ++i) {
+        LOG(INFO) << "recover hostname from " << displs[i] << ","
+                  << displs[i + 1] << ", got"
+                  << std::string(totalstring[displs[i]],
+                                 totalstring[displs[i + 1]]);
+        std::string host_name =
+            std::string(totalstring[displs[i]], totalstring[displs[i + 1]]);
+        gathered_host_names.emplace_back(host_name);
+      }
+      LOG(INFO) << "Finish gather hostnames."
+    }
+
+    MPI_Gather(&instance_id, sizeof(uint64_t), MPI_CHAR,
+               &gathered_host_names[0], sizeof(uint64_t), MPI_CHAR, 0,
+               comm_spec.comm());
+
+    MPI_Gather(&frag_id, sizeof(ObjectID), MPI_CHAR, &gathered_object_ids[0],
+               sizeof(ObjectID), MPI_CHAR, 0, comm_spec.comm());
+
+    ArrowProjectedFragmentGroup builder;
+    builder.set_total_frag_num(comm_spec.fnum());
+    auto fragment = std::dynamic_pointer_cast<ArrowProjectedFragmentBase>(
+        client.GetObject(frag_id));
+    auto& meta = fragment->meta();
+
+    for (fid_t i = 0; i < comm_spec.fnum(); ++i) {
+      builder.AddFragmentObject(
+          i, gathered_object_ids[comm_spec.FragToWorker(i)],
+          gathered_instance_ids[comm_spec.FragToWorker(i)]);
+    }
+
+    auto group_object = std::dynamic_pointer_cast<ArrowProjectedFragmentGroup>(
+        builder.Seal(client));
+    group_object_id = group_object->id();
+    VY_OK_OR_RAISE(client.Persist(group_object_id));
+
+    MPI_Bcast(&group_object_id, sizeof(ObjectID), MPI_CHAR, 0,
+              comm_spec.comm());
+  } else {
+    MPI_Gather(&instance_id, sizeof(uint64_t), MPI_CHAR, NULL, sizeof(uint64_t),
+               MPI_CHAR, 0, comm_spec.comm());
+    MPI_Gather(&frag_id, sizeof(ObjectID), MPI_CHAR, NULL, sizeof(ObjectID),
+               MPI_CHAR, 0, comm_spec.comm());
+
+    MPI_Bcast(&group_object_id, sizeof(ObjectID), MPI_CHAR, 0,
+              comm_spec.comm());
+  }
+
+  MPI_Barrier(comm_spec.comm());
+  VINEYARD_DISCARD(client.SyncMetaData());
+  return group_object_id;
+}
 
 }  // namespace gs
 

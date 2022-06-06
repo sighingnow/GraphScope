@@ -217,5 +217,8 @@ from graphscope import JavaApp
 from graphscope.dataset import load_p2p_network
 graphscope.set_option(show_log=True)
 sess = graphscope.session(cluster_type="hosts", num_workers=1)
-graph = sess.g(directed=directed)
-graph = load_p2p_network(sess)
+graph = sess.g(directed=True)
+graph = graph.add_vertices("/home/graphscope/data/gstest/property/p2p-31_property_v_0","person")
+graph = graph.add_edges("/home/graphscope/data/gstest/property/p2p-31_property_e_0",label="knows",src_label="person",dst_label="person")
+graph_proj = graph.project(vertices={"person":["weight"]}, edges={"knows" : ["dist"]})
+res = sess.run(graph_proj._project_to_simple())
