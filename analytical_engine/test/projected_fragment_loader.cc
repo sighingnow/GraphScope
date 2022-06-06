@@ -96,23 +96,29 @@ int main(int argc, char** argv) {
       MPI_Barrier(comm_spec.comm());
       auto fragment =
           std::static_pointer_cast<FragmentType>(client.GetObject(fragment_id));
-      LOG(INFO) << "vertex prop num:" <<fragment->vertex_property_num(0);
-      LOG(INFO) << "edge prop num:" <<fragment->edge_property_num(0);
+      LOG(INFO) << "vertex prop num:" << fragment->vertex_property_num(0);
+      LOG(INFO) << "edge prop num:" << fragment->edge_property_num(0);
       std::shared_ptr<ProjectedFragmentType> projected_fragment =
           ProjectedFragmentType::Project(fragment, "0", "0", "0", "2");
       LOG(INFO) << "After projection: " << getHostName() << ":"
                 << projected_fragment->id();
       projected_id = projected_fragment->id();
+      // construct projected fragment group.
+      auto projected_group_id =
+          gs::ConstructProjectedFragmentGroup(client, projected_id, comm_spec);
+      LOG(INFO) << "Got projected group id " << projected_group_id;
     }
     gs::ArrowProjectedFragmentGetter<int64_t, uint64_t, double, int64_t> getter;
     auto res = getter.Get(client, projected_id);
     LOG(INFO) << "use fragment getter:" << res->id();
-    LOG(INFO) << "in edges num:" <<res->GetInEdgeNum() << " out edges num: " <<res->GetOutEdgeNum();
+    LOG(INFO) << "in edges num:" << res->GetInEdgeNum()
+              << " out edges num: " << res->GetOutEdgeNum();
     grape::Vertex<uint64_t> vertex;
     vertex.SetValue(0);
     LOG(INFO) << "out degree: " << res->GetLocalOutDegree(vertex);
-    for (auto e : res->GetOutgoingAdjList(vertex)){
-        LOG(INFO) << e.neighbor().GetValue() << ", " <<e.edge_id()<< ","<<e.data();
+    for (auto e : res->GetOutgoingAdjList(vertex)) {
+      LOG(INFO) << e.neighbor().GetValue() << ", " << e.edge_id() << ","
+                << e.data();
     }
     MPI_Barrier(comm_spec.comm());
   }
