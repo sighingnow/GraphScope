@@ -94,7 +94,8 @@ class ArrowFragmentLoader {
         vfiles_(vfiles),
         graph_info_(nullptr),
         directed_(directed),
-        generate_eid_(false) {}
+        generate_eid_(false),
+        giraph_enabled_(false) {}
 
   ArrowFragmentLoader(vineyard::Client& client,
                       const grape::CommSpec& comm_spec,
@@ -107,22 +108,40 @@ class ArrowFragmentLoader {
         directed_(graph_info->directed),
         generate_eid_(graph_info->generate_eid) {
 #ifdef ENABLE_JAVA_SDK
-    java_loader_invoker_.SetWorkerInfo(comm_spec_.worker_id(),
-                                       comm_spec_.worker_num(), comm_spec_);
-    VLOG(1) << "workerid: " << comm_spec_.worker_id()
-            << ", worker num: " << comm_spec_.worker_num();
-    // For java loader invoker, there can be two cases
-    // 1. For giraph. The protocol is file, and we truly load data from file
-    // 2. For graphx. The data is stored in memory mapped file, we need to open
-    // these files with prefixes.
-    //
-    // We distinguish there two modes according to protocol.
-    std::vector<std::shared_ptr<gs::detail::Vertex>> vertices =
-        graph_info->vertices;
-    if (vertices.size() == 1 && vertices[0]->protocol == "graphx") {
-      java_loader_invoker_.InitJavaLoader("graphx");
-    } else {
-      java_loader_invoker_.InitJavaLoader("giraph");
+    // check when vformat or eformat start with giraph. if not, we
+    // giraph_enabled is false;
+    for (auto v : graph_info_->vertices) {
+      if (v->vformat.find("giraph") != std::string::npos) {
+        giraph_enabled_ = true;
+      }
+    }
+    for (auto e : graph_info_->edges) {
+      for (auto sub : e->sub_labels) {
+        if (sub->eformat.find("giraph") != std::string::npos) {
+          giraph_enabled_ = true;
+        }
+      }
+    }
+    LOG(INFO) << "giraph enabled " << giraph_enabled_;
+
+    if (giraph_enabled) {
+      java_loader_invoker_.SetWorkerInfo(comm_spec_.worker_id(),
+                                         comm_spec_.worker_num(), comm_spec_);
+      VLOG(1) << "workerid: " << comm_spec_.worker_id()
+              << ", worker num: " << comm_spec_.worker_num();
+      // For java loader invoker, there can be two cases
+      // 1. For giraph. The protocol is file, and we truly load data from file
+      // 2. For graphx. The data is stored in memory mapped file, we need to
+      // open these files with prefixes.
+      //
+      // We distinguish there two modes according to protocol.
+      std::vector<std::shared_ptr<gs::detail::Vertex>> vertices =
+          graph_info->vertices;
+      if (vertices.size() == 1 && vertices[0]->protocol == "graphx") {
+        java_loader_invoker_.InitJavaLoader("graphx");
+      } else {
+        java_loader_invoker_.InitJavaLoader("giraph");
+      }
     }
 #endif
   }
@@ -474,41 +493,48 @@ class ArrowFragmentLoader {
   boost::leaf::result<std::shared_ptr<arrow::Table>> readTableFromGiraph(
       bool load_vertex, const std::string& file_path, int index,
       int total_parts, const std::string formatter) {
-    if (load_vertex) {
-      // There are cases both vertex and edges are specified in vertex file.
-      // In this case, we load the data in this function, and suppose call
-      // add_edges will be called(empty location),
-      // if location is empty, we just return the previous loaded data.
-      java_loader_invoker_.load_vertices_and_edges(file_path, formatter);
-      return java_loader_invoker_.get_vertex_table();
+    if (giraph_enabled_) {
+      if (load_vertex) {
+        // There are cases both vertex and edges are specified in vertex file.
+        // In this case, we load the data in this function, and suppose call
+        // add_edges will be called(empty location),
+        // if location is empty, we just return the previous loaded data.
+        java_loader_invoker_.load_vertices_and_edges(file_path, formatter);
+        return java_loader_invoker_.get_vertex_table();
+      } else {
+        java_loader_invoker_.load_edges(file_path, formatter);
+        return java_loader_invoker_.get_edge_table();
+      }
     } else {
-      java_loader_invoker_.load_edges(file_path, formatter);
-      return java_loader_invoker_.get_edge_table();
+      LOG(ERROR) << "Please enable giraph in constructor";
     }
     // once set, we will read.
   }
   boost::leaf::result<std::shared_ptr<arrow::Table>> readTableFromGraphx(
       bool load_vertex, const std::string& loc, int index, int total_parts) {
     // splite location for vertex files name and mapped_size;
-
-    size_t first_occur = loc.find("&");
-    if (first_occur == std::string::npos) {
-      LOG(ERROR) << "No & found in graphx location string" << first_occur;
-      return nullptr;
-    }
-    std::string files = loc.substr(0, first_occur);
-    int64_t mapped_size =
-        std::stoull(loc.substr(first_occur + 1).c_str(), NULL, 10);
-    VLOG(1) << "Worker [" << comm_spec_.worker_id() << "] files: " << files
-            << ", mapped size" << mapped_size;
-    if (load_vertex) {
-      // For graphx loading, the data filling is done from java side, before
-      // constructFragment is called.
-      java_loader_invoker_.load_vertices(files, mapped_size);
-      return java_loader_invoker_.get_vertex_table();
+    if (giraph_enabled_) {
+      size_t first_occur = loc.find("&");
+      if (first_occur == std::string::npos) {
+        LOG(ERROR) << "No & found in graphx location string" << first_occur;
+        return nullptr;
+      }
+      std::string files = loc.substr(0, first_occur);
+      int64_t mapped_size =
+          std::stoull(loc.substr(first_occur + 1).c_str(), NULL, 10);
+      VLOG(1) << "Worker [" << comm_spec_.worker_id() << "] files: " << files
+              << ", mapped size" << mapped_size;
+      if (load_vertex) {
+        // For graphx loading, the data filling is done from java side, before
+        // constructFragment is called.
+        java_loader_invoker_.load_vertices(files, mapped_size);
+        return java_loader_invoker_.get_vertex_table();
+      } else {
+        java_loader_invoker_.load_edges(files, mapped_size);
+        return java_loader_invoker_.get_edge_table();
+      }
     } else {
-      java_loader_invoker_.load_edges(files, mapped_size);
-      return java_loader_invoker_.get_edge_table();
+      LOG(ERROR) << "Please enable giraph in constructor";
     }
   }
 #endif
@@ -1028,6 +1054,7 @@ class ArrowFragmentLoader {
 
   bool directed_;
   bool generate_eid_;
+  bool giraph_enabled_;
 
 #ifdef ENABLE_JAVA_SDK
   JavaLoaderInvoker java_loader_invoker_;

@@ -210,3 +210,12 @@ if __name__ == "__main__":
         args.app,
         args.arguments,
     )
+
+
+import graphscope
+from graphscope import JavaApp
+from graphscope.dataset import load_p2p_network
+graphscope.set_option(show_log=True)
+sess = graphscope.session(cluster_type="hosts", num_workers=1)
+graph = sess.g(directed=directed)
+graph = load_p2p_network(sess)
