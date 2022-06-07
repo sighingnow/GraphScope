@@ -118,7 +118,6 @@ class _FetchHandler(object):
         # construct graph
         g = Graph(graph_dag_node)
         # update graph flied from graph_def
-        logger.info("reubuilding graph from {}".format(op_result.graph_def))
         g.update_from_graph_def(op_result.graph_def)
         return g
 

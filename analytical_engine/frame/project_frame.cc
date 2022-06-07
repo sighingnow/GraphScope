@@ -15,6 +15,7 @@
 
 #include <memory>
 #include <string>
+#include <mpi.h>
 
 #include "vineyard/common/util/typename.h"
 #include "vineyard/graph/fragment/arrow_fragment.h"
@@ -57,6 +58,7 @@ class ProjectSimpleFrame<
       std::shared_ptr<IFragmentWrapper>& input_wrapper,
       const std::string& projected_graph_name, const rpc::GSParams& params,
       const grape::CommSpec& comm_spec) {
+    MPI_Barrier(comm_spec.comm());
     auto graph_type = input_wrapper->graph_def().graph_type();
     if (graph_type != rpc::graph::ARROW_PROPERTY) {
       RETURN_GS_ERROR(vineyard::ErrorCode::kInvalidValueError,
@@ -80,9 +82,12 @@ class ProjectSimpleFrame<
     // construct projected fragment group, and set group id to vineyard_id
     vineyard::Client& client =
         *dynamic_cast<vineyard::Client*>(input_frag->meta().GetClient());
+    MPI_Barrier(comm_spec.comm());
     BOOST_LEAF_AUTO(projected_group_id,
                     ConstructProjectedFragmentGroup(
                         client, projected_frag->id(), comm_spec));
+
+    MPI_Barrier(comm_spec.comm());
     auto fid = comm_spec.WorkerToFrag(comm_spec.worker_id());
     LOG(INFO) << "Got projected group id: " << projected_group_id
               << ", projected fragment id: " << projected_frag->id();

@@ -141,7 +141,7 @@ bl::result<rpc::graph::GraphDefPb> GrapeInstance::loadGraph(
       VLOG(10) << "GRAPE_JVM_OPTS:" << jvm_opts;
     }
 #endif
-
+    
     BOOST_LEAF_AUTO(graph_utils,
                     object_manager_.GetObject<PropertyGraphUtils>(type_sig));
     BOOST_LEAF_AUTO(wrapper, graph_utils->LoadGraph(comm_spec_, *client_,

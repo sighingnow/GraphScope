@@ -1327,7 +1327,6 @@ inline boost::leaf::result<vineyard::ObjectID> ConstructProjectedFragmentGroup(
 
     MPI_Gather(&my_len, 1, MPI_INT, &recvcounts[0], 1, MPI_INT,
                grape::kCoordinatorRank, comm_spec.comm());
-    LOG(INFO) << recvcounts[0] << "," << recvcounts[1];
     int totlen = 0;
     std::vector<int> displs(comm_spec.worker_num(), 0);
 
@@ -1337,9 +1336,7 @@ inline boost::leaf::result<vineyard::ObjectID> ConstructProjectedFragmentGroup(
     for (int i = 1; i < comm_spec.worker_num(); i++) {
       totlen += recvcounts[i] + 1;
       displs[i] = displs[i - 1] + recvcounts[i - 1] + 1;
-      LOG(INFO) << "reve count for " << i << " is " << recvcounts[i];
     }
-    LOG(INFO) << "Total len" << totlen;
 
     /* allocate string, pre-fill with spaces and null terminator */
     std::vector<char> totalstring(totlen * sizeof(char));
@@ -1351,12 +1348,10 @@ inline boost::leaf::result<vineyard::ObjectID> ConstructProjectedFragmentGroup(
     MPI_Gatherv(my_host_name.c_str(), my_len, MPI_CHAR, &totalstring[0],
                 &recvcounts[0], &displs[0], MPI_CHAR, 0, comm_spec.comm());
 
-    LOG(INFO) << "Got total string: " << totalstring.data();
     std::string tmp_total_string = totalstring.data();
     boost::split(gathered_host_names, tmp_total_string, boost::is_any_of(","));
     CHECK_EQ(gathered_host_names.size(), comm_spec.worker_num());
 
-    LOG(INFO) << "Finish gather hostnames.";
 
     MPI_Gather(&frag_id, sizeof(vineyard::ObjectID), MPI_CHAR,
                &gathered_object_ids[0], sizeof(vineyard::ObjectID), MPI_CHAR, 0,

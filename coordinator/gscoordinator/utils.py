@@ -1724,7 +1724,8 @@ class ResolveMPICmdPrefix(object):
             cmd.extend([self.find_mpi()])
         cmd.extend(["-n", str(num_workers)])
         cmd.extend(["-host", self.alloc(num_workers, hosts)])
-        cmd.extend(["-mca", "btl_tcp_if_include", "bond0"])
+        cmd.extend(["--mca", "btl_tcp_if_include", "bond0"])
+        cmd.extend(["--mca", "orte_base_help_aggregate", "0"])
 
         logger.debug("Resolve mpi cmd prefix: %s", " ".join(cmd))
         logger.debug("Resolve mpi env: %s", json.dumps(env))

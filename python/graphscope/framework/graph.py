@@ -729,7 +729,7 @@ class Graph(GraphInterface):
         self._is_multigraph = graph_def.is_multigraph
         vy_info = graph_def_pb2.VineyardInfoPb()
         graph_def.extension.Unpack(vy_info)
-        logger.info("unpacked vy info {}".format(vy_info))
+        #logger.info("unpacked vy info {}".format(vy_info))
         self._vineyard_id = vy_info.vineyard_id
         self._oid_type = data_type_to_cpp(vy_info.oid_type)
         self._generate_eid = vy_info.generate_eid
@@ -737,7 +737,7 @@ class Graph(GraphInterface):
 
         self._schema_path = vy_info.schema_path
         self._schema.from_graph_def(graph_def)
-        logger.info("{}".format(str(self._schema)))
+        #logger.info("{}".format(str(self._schema)))
         self._v_labels = self._schema.vertex_labels
         self._e_labels = self._schema.edge_labels
         self._e_relationships = self._schema.edge_relationships
