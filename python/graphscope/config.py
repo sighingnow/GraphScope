@@ -104,3 +104,4 @@ class GSConfig(object):
     k8s_dataset_image = (
         f"registry.cn-hongkong.aliyuncs.com/graphscope/dataset:{__version__}"
     )
+    hosts = ["localhost"]
