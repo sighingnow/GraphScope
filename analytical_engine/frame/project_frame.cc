@@ -55,7 +55,8 @@ class ProjectSimpleFrame<
  public:
   static bl::result<std::shared_ptr<IFragmentWrapper>> Project(
       std::shared_ptr<IFragmentWrapper>& input_wrapper,
-      const std::string& projected_graph_name, const rpc::GSParams& params) {
+      const std::string& projected_graph_name, const rpc::GSParams& params,
+      const grape::CommSpec& comm_spec) {
     auto graph_type = input_wrapper->graph_def().graph_type();
     if (graph_type != rpc::graph::ARROW_PROPERTY) {
       RETURN_GS_ERROR(vineyard::ErrorCode::kInvalidValueError,
@@ -76,11 +77,23 @@ class ProjectSimpleFrame<
     auto projected_frag = projected_fragment_t::Project(
         input_frag, v_label, v_prop, e_label, e_prop);
 
+    // construct projected fragment group, and set group id to vineyard_id
+    vineyard::Client& client =
+        *dynamic_cast<vineyard::Client*>(input_frag->meta().GetClient());
+    auto projected_group_id =
+        ConstructProjectedFragmentGroup(client, projected_frag.id(), comm_spec);
+    auto fid = comm_spec.WorkerToFrag(comm_spec.worker_id());
+    auto frag_id = fg->Fragments().at(fid);
+    LOG(INFO) << "Got projected group id: " << projected_group_id
+              << ", projected fragment id: " << frag_id;
+    CHECK_EQ(frag_id, projected_frag->id());
+
     rpc::graph::GraphDefPb graph_def;
     graph_def.set_key(projected_graph_name);
     graph_def.set_graph_type(rpc::graph::ARROW_PROJECTED);
 
-    setGraphDef(projected_frag, v_label, e_label, v_prop, e_prop, graph_def);
+    setGraphDef(projected_frag, projected_group_id, v_label, e_label, v_prop,
+                e_prop, graph_def);
 
     auto wrapper = std::make_shared<FragmentWrapper<projected_fragment_t>>(
         projected_graph_name, graph_def, projected_frag);
@@ -89,8 +102,9 @@ class ProjectSimpleFrame<
 
  private:
   static void setGraphDef(std::shared_ptr<projected_fragment_t>& fragment,
-                          std::string& v_label, std::string& e_label,
-                          std::string& v_prop, std::string& e_prop,
+                          vineyard::ObjectID& group_id, std::string& v_label,
+                          std::string& e_label, std::string& v_prop,
+                          std::string& e_prop,
                           rpc::graph::GraphDefPb& graph_def) {
     auto& meta = fragment->meta();
     const auto& parent_meta = meta.GetMemberMeta("arrow_fragment");
@@ -102,6 +116,7 @@ class ProjectSimpleFrame<
     if (graph_def.has_extension()) {
       graph_def.extension().UnpackTo(&vy_info);
     }
+    vy_info.set_vineyard_id(group_id);
     vy_info.set_oid_type(PropertyTypeToPb(
         vineyard::normalize_datatype(parent_meta.GetKeyValue("oid_type"))));
     vy_info.set_vid_type(PropertyTypeToPb(
@@ -139,7 +154,8 @@ class ProjectSimpleFrame<gs::DynamicProjectedFragment<VDATA_T, EDATA_T>> {
  public:
   static bl::result<std::shared_ptr<IFragmentWrapper>> Project(
       std::shared_ptr<IFragmentWrapper>& input_wrapper,
-      const std::string& projected_graph_name, const rpc::GSParams& params) {
+      const std::string& projected_graph_name, const rpc::GSParams& params,
+      const grape::CommSpec& comm_spec) {
     auto graph_type = input_wrapper->graph_def().graph_type();
     if (graph_type != rpc::graph::DYNAMIC_PROPERTY) {
       RETURN_GS_ERROR(vineyard::ErrorCode::kInvalidValueError,
@@ -186,7 +202,8 @@ class ProjectSimpleFrame<
  public:
   static bl::result<std::shared_ptr<IFragmentWrapper>> Project(
       std::shared_ptr<IFragmentWrapper>& input_wrapper,
-      const std::string& projected_graph_name, const rpc::GSParams& params) {
+      const std::string& projected_graph_name, const rpc::GSParams& params,
+      const grape::CommSpec& comm_spec) {
     auto graph_type = input_wrapper->graph_def().graph_type();
     if (graph_type != rpc::graph::ARROW_PROPERTY) {
       RETURN_GS_ERROR(vineyard::ErrorCode::kInvalidValueError,
@@ -230,9 +247,10 @@ extern "C" {
 void Project(
     std::shared_ptr<gs::IFragmentWrapper>& wrapper_in,
     const std::string& projected_graph_name, const gs::rpc::GSParams& params,
+    const grape::CommSpec& comm_spec,
     gs::bl::result<std::shared_ptr<gs::IFragmentWrapper>>& wrapper_out) {
   wrapper_out = gs::ProjectSimpleFrame<_PROJECTED_GRAPH_TYPE>::Project(
-      wrapper_in, projected_graph_name, params);
+      wrapper_in, projected_graph_name, params, comm_spec);
 }
 
 template class _PROJECTED_GRAPH_TYPE;

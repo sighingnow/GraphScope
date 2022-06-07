@@ -32,6 +32,7 @@ namespace gs {
 typedef void ProjectT(
     std::shared_ptr<IFragmentWrapper>& wrapper_in,
     const std::string& projected_graph_name, const rpc::GSParams& params,
+    const grape::CommSpec& comm_spec,
     bl::result<std::shared_ptr<IFragmentWrapper>>& wrapper_out);
 
 /**
@@ -59,9 +60,11 @@ class Projector : public GSObject {
 
   bl::result<std::shared_ptr<IFragmentWrapper>> Project(
       std::shared_ptr<IFragmentWrapper>& wrapper_in,
-      const std::string& projected_graph_name, const rpc::GSParams& params) {
+      const std::string& projected_graph_name, const rpc::GSParams& params,
+      const grape::CommSpec& comm_spec) {
     bl::result<std::shared_ptr<IFragmentWrapper>> wrapper_out;
-    project_func_(wrapper_in, projected_graph_name, params, wrapper_out);
+    project_func_(wrapper_in, projected_graph_name, params, comm_spec,
+                  wrapper_out);
     return wrapper_out;
   }
 

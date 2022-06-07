@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
           });
     }
 
-      vineyard::ObjectID projected_group_id;
+    vineyard::ObjectID projected_group_id;
     {
       using FragmentType =
           vineyard::ArrowFragment<vineyard::property_graph_types::OID_TYPE,
@@ -106,7 +106,10 @@ int main(int argc, char** argv) {
       auto projected_id = projected_fragment->id();
       // construct projected fragment group.
       projected_group_id = boost::leaf::try_handle_all(
-          [&client, &comm_spec, &projected_id]() { return gs::ConstructProjectedFragmentGroup(client, projected_id, comm_spec); },
+          [&client, &comm_spec, &projected_id]() {
+            return gs::ConstructProjectedFragmentGroup(client, projected_id,
+                                                       comm_spec);
+          },
           [](const vineyard::GSError& e) {
             LOG(FATAL) << e.error_msg;
             return 0;
@@ -118,11 +121,12 @@ int main(int argc, char** argv) {
 
       LOG(INFO) << "Got projected group id " << projected_group_id;
     }
-      auto fg = std::dynamic_pointer_cast<gs::ArrowProjectedFragmentGroup>(
-          client.GetObject(projected_group_id));
-      auto fid = comm_spec.WorkerToFrag(comm_spec.worker_id());
-      auto frag_id = fg->Fragments().at(fid);
-    gs::ArrowProjectedFragmentGetter<int64_t, uint64_t, int64_t, int64_t> getter;
+    auto fg = std::dynamic_pointer_cast<gs::ArrowProjectedFragmentGroup>(
+        client.GetObject(projected_group_id));
+    auto fid = comm_spec.WorkerToFrag(comm_spec.worker_id());
+    auto frag_id = fg->Fragments().at(fid);
+    gs::ArrowProjectedFragmentGetter<int64_t, uint64_t, int64_t, int64_t>
+        getter;
     auto res = getter.Get(client, frag_id);
     LOG(INFO) << "use fragment getter:" << res->id();
     LOG(INFO) << "in edges num:" << res->GetInEdgeNum()

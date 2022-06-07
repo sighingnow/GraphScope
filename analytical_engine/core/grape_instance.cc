@@ -232,8 +232,8 @@ bl::result<rpc::graph::GraphDefPb> GrapeInstance::projectToSimple(
   BOOST_LEAF_AUTO(wrapper,
                   object_manager_.GetObject<IFragmentWrapper>(graph_name));
   BOOST_LEAF_AUTO(projector, object_manager_.GetObject<Projector>(type_sig));
-  BOOST_LEAF_AUTO(projected_wrapper,
-                  projector->Project(wrapper, projected_id, params));
+  BOOST_LEAF_AUTO(projected_wrapper, projector->Project(wrapper, projected_id,
+                                                        params, comm_spec_));
   BOOST_LEAF_CHECK(object_manager_.PutObject(projected_wrapper));
 
   return projected_wrapper->graph_def();
