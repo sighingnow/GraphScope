@@ -91,10 +91,16 @@ class ProjectSimpleFrame<
     rpc::graph::GraphDefPb graph_def;
     graph_def.set_key(projected_graph_name);
     graph_def.set_graph_type(rpc::graph::ARROW_PROJECTED);
-    std::string host_ids_str = getHostIdsStr();
+    std::string host_ids_str;
+    {
+      auto fg = std::dynamic_pointer_cast<gs::ArrowProjectedFragmentGroup>(
+          client.GetObject(projected_group_id));
+      host_ids_str = fg->GetHostIdsStr();
+    }
+    LOG(INFO) << "Got host ids str: " << host_ids_str;
 
-    setGraphDef(projected_frag, projected_group_id, v_label, e_label, v_prop,
-                e_prop, graph_def);
+    setGraphDef(projected_frag, projected_group_id, host_ids_str, v_label,
+                e_label, v_prop, e_prop, graph_def);
 
     auto wrapper = std::make_shared<FragmentWrapper<projected_fragment_t>>(
         projected_graph_name, graph_def, projected_frag);
@@ -102,7 +108,6 @@ class ProjectSimpleFrame<
   }
 
  private:
-  static std::string getHostIdsStr() {}
   static void setGraphDef(std::shared_ptr<projected_fragment_t>& fragment,
                           vineyard::ObjectID& group_id,
                           std::string& host_ids_str, std::string& v_label,

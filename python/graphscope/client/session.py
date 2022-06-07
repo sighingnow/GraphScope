@@ -352,6 +352,7 @@ class Session(object):
         with_mars=gs_config.with_mars,
         mount_dataset=gs_config.mount_dataset,
         reconnect=False,
+        hosts = gs_config.hosts,
         **kw,
     ):
         """Construct a new GraphScope session.
