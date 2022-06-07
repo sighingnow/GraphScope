@@ -214,7 +214,6 @@ if __name__ == "__main__":
 
 import graphscope
 graphscope.set_option(show_log=True)
-graphscope.set_option(log_level="info")
 sess = graphscope.session(cluster_type="hosts", num_workers=1)
 graph = sess.g(directed=True)
 graph.template_str
