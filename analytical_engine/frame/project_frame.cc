@@ -80,8 +80,8 @@ class ProjectSimpleFrame<
     // construct projected fragment group, and set group id to vineyard_id
     vineyard::Client& client =
         *dynamic_cast<vineyard::Client*>(input_frag->meta().GetClient());
-    auto projected_group_id =
-        ConstructProjectedFragmentGroup(client, projected_frag->id(), comm_spec);
+    auto projected_group_id = ConstructProjectedFragmentGroup(
+        client, projected_frag->id(), comm_spec);
     auto fid = comm_spec.WorkerToFrag(comm_spec.worker_id());
     LOG(INFO) << "Got projected group id: " << projected_group_id
               << ", projected fragment id: " << projected_frag->id();
@@ -123,7 +123,7 @@ class ProjectSimpleFrame<
       graph_def.extension().UnpackTo(&vy_info);
     }
     vy_info.set_vineyard_id(group_id);
-    vy_info.set_host_ids_str(host_ids_str);
+    // vy_info.set_host_ids_str(host_ids_str);
     vy_info.set_oid_type(PropertyTypeToPb(
         vineyard::normalize_datatype(parent_meta.GetKeyValue("oid_type"))));
     vy_info.set_vid_type(PropertyTypeToPb(
