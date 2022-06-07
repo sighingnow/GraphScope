@@ -138,6 +138,12 @@ void LoadGraph(
           }
           vy_info.set_vineyard_id(frag_group_id);
           vy_info.set_generate_eid(graph_info->generate_eid);
+          auto meta = frag->meta();
+          LOG(INFO) << "oid type "<< meta.GetKeyValue("oid_type") << "vid "<< meta.GetKeyValue("vid_type");
+          //vy_info.set_oid_type(gs::PropertyTypeToPb(
+          //    vineyard::normalize_datatype(meta.GetKeyValue("oid_type"))));
+          //vy_info.set_vid_type(gs::PropertyTypeToPb(
+          //    vineyard::normalize_datatype(meta.GetKeyValue("vid_type"))));
           graph_def.mutable_extension()->PackFrom(vy_info);
           gs::set_graph_def(frag, graph_def);
 

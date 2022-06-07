@@ -240,6 +240,7 @@ class GraphDAGNode(DAGNode, GraphInterface):
         oid_type = utils.normalize_data_type_str(oid_type)
         if oid_type not in ("int64_t", "std::string"):
             raise ValueError("oid_type can only be int64_t or string.")
+        logger.info("oid type {}".format(oid_type))
         self._oid_type = oid_type
         self._directed = directed
         self._generate_eid = generate_eid
@@ -728,6 +729,7 @@ class Graph(GraphInterface):
         self._is_multigraph = graph_def.is_multigraph
         vy_info = graph_def_pb2.VineyardInfoPb()
         graph_def.extension.Unpack(vy_info)
+        logger.info("unpacked vy info {}".format(vy_info))
         self._vineyard_id = vy_info.vineyard_id
         self._oid_type = data_type_to_cpp(vy_info.oid_type)
         self._generate_eid = vy_info.generate_eid
@@ -735,6 +737,7 @@ class Graph(GraphInterface):
 
         self._schema_path = vy_info.schema_path
         self._schema.from_graph_def(graph_def)
+        logger.info("{}".format(str(self._schema)))
         self._v_labels = self._schema.vertex_labels
         self._e_labels = self._schema.edge_labels
         self._e_relationships = self._schema.edge_relationships

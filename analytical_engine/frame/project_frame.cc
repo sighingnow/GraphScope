@@ -81,12 +81,10 @@ class ProjectSimpleFrame<
     vineyard::Client& client =
         *dynamic_cast<vineyard::Client*>(input_frag->meta().GetClient());
     auto projected_group_id =
-        ConstructProjectedFragmentGroup(client, projected_frag.id(), comm_spec);
+        ConstructProjectedFragmentGroup(client, projected_frag->id(), comm_spec);
     auto fid = comm_spec.WorkerToFrag(comm_spec.worker_id());
-    auto frag_id = fg->Fragments().at(fid);
     LOG(INFO) << "Got projected group id: " << projected_group_id
-              << ", projected fragment id: " << frag_id;
-    CHECK_EQ(frag_id, projected_frag->id());
+              << ", projected fragment id: " << projected_frag->id();
 
     rpc::graph::GraphDefPb graph_def;
     graph_def.set_key(projected_graph_name);

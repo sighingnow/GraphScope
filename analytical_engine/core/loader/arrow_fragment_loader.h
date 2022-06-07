@@ -508,6 +508,7 @@ class ArrowFragmentLoader {
       }
     } else {
       LOG(ERROR) << "Please enable giraph in constructor";
+      return std::shared_ptr<arrow::Table>();
     }
     // once set, we will read.
   }
@@ -536,6 +537,7 @@ class ArrowFragmentLoader {
       }
     } else {
       LOG(ERROR) << "Please enable giraph in constructor";
+      return std::shared_ptr<arrow::Table>();
     }
   }
 #endif
