@@ -316,7 +316,8 @@ class LocalLauncher(Launcher):
         if self._etcd_addrs is None:
             self._launch_etcd()
         else:
-            self._etcd_endpoint = "http://" + self._etcd_addrs
+            # self._etcd_endpoint = "http://" + self._etcd_addrs
+            self._etcd_endpoint = self._etcd_addrs
             logger.info("External Etcd endpoint is %s", self._etcd_endpoint)
 
     def _launch_etcd(self):

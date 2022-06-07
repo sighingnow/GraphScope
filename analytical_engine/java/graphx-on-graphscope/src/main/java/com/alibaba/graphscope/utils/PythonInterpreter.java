@@ -1,4 +1,4 @@
-package com.alibaba.graphscope.graphx;
+package com.alibaba.graphscope.utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;

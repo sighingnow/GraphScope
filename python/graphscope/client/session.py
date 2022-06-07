@@ -583,6 +583,7 @@ class Session(object):
             "dangling_timeout_seconds",
             "mount_dataset",
             "k8s_dataset_image",
+            "hosts"
         )
         self._deprecated_params = (
             "show_log",
@@ -1003,6 +1004,7 @@ class Session(object):
             and len(self._config_params["hosts"]) != 0
             and self._config_params["num_workers"] > 0
         ):
+            logger.info("running in host mode on {}".format(self._config_params["hosts"]))
             # lanuch coordinator with hosts
             self._launcher = HostsClusterLauncher(
                 **self._config_params,
@@ -1065,7 +1067,7 @@ class Session(object):
             return graphscope.load_from(*args, **kwargs)
 
     def _run_on_local(self):
-        self._config_params["hosts"] = ["localhost"]
+        # self._config_params["hosts"] = ["localhost"]
         self._config_params["port"] = None
         self._config_params["vineyard_socket"] = ""
 
