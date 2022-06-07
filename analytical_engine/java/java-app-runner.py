@@ -214,7 +214,8 @@ if __name__ == "__main__":
 
 import graphscope
 from graphscope.dataset import load_p2p_network
-sess = graphscope.session(cluster_type="hosts", num_workers=1)
+graphscope.set_option(show_log=True)
+sess = graphscope.session(cluster_type="hosts", num_workers=1, hosts=["d50"], etcd_addrs="http://11.227.236.89:2379,http://11.227.236.67:2379")
 graph = sess.g(directed=True)
 graph = graph.add_vertices("/home/graphscope/data/gstest/property/p2p-31_property_v_0","person")
 graph = graph.add_edges("/home/graphscope/data/gstest/property/p2p-31_property_e_0",label="knows",src_label="person",dst_label="person")

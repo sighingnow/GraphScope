@@ -91,6 +91,7 @@ class ProjectSimpleFrame<
     rpc::graph::GraphDefPb graph_def;
     graph_def.set_key(projected_graph_name);
     graph_def.set_graph_type(rpc::graph::ARROW_PROJECTED);
+    std::string host_ids_str = getHostIdsStr();
 
     setGraphDef(projected_frag, projected_group_id, v_label, e_label, v_prop,
                 e_prop, graph_def);
@@ -101,8 +102,10 @@ class ProjectSimpleFrame<
   }
 
  private:
+  static std::string getHostIdsStr() {}
   static void setGraphDef(std::shared_ptr<projected_fragment_t>& fragment,
-                          vineyard::ObjectID& group_id, std::string& v_label,
+                          vineyard::ObjectID& group_id,
+                          std::string& host_ids_str, std::string& v_label,
                           std::string& e_label, std::string& v_prop,
                           std::string& e_prop,
                           rpc::graph::GraphDefPb& graph_def) {
@@ -117,6 +120,7 @@ class ProjectSimpleFrame<
       graph_def.extension().UnpackTo(&vy_info);
     }
     vy_info.set_vineyard_id(group_id);
+    vy_info.set_host_ids_str(host_ids_str);
     vy_info.set_oid_type(PropertyTypeToPb(
         vineyard::normalize_datatype(parent_meta.GetKeyValue("oid_type"))));
     vy_info.set_vid_type(PropertyTypeToPb(

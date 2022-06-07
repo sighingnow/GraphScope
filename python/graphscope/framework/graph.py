@@ -731,6 +731,7 @@ class Graph(GraphInterface):
         self._vineyard_id = vy_info.vineyard_id
         self._oid_type = data_type_to_cpp(vy_info.oid_type)
         self._generate_eid = vy_info.generate_eid
+        self._host_ids_str = vy_info.host_ids_str
 
         self._schema_path = vy_info.schema_path
         self._schema.from_graph_def(graph_def)
@@ -811,6 +812,15 @@ class Graph(GraphInterface):
             str: return vineyard id of this graph
         """
         return self._vineyard_id
+
+    @property
+    def host_ids_str(self):
+        """Get the vineyard object_id of this graph.
+
+        Returns:
+            str: return vineyard id of this graph
+        """
+        return self._host_ids_str
 
     @property
     def session_id(self):
