@@ -234,7 +234,12 @@ import com.alibaba.fastffi.FFIGenBatch;
                       cxx = "gs::ArrowProjectedFragment<int64_t,uint64_t,double,int64_t>",
                       java =
                           "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Long>",
-                      include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H))
+                      include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)),
+                  @CXXTemplate(
+                      cxx = "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>",
+                      java =
+                          "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                      include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)),
               }),
           @FFIGen(type = "com.alibaba.graphscope.graphx.BasicLocalVertexMapBuilder",
                   templates =
@@ -410,6 +415,8 @@ import com.alibaba.fastffi.FFIGenBatch;
                                      java = {"Long", "Long", "Double", "Double"}),
                         @CXXTemplate(cxx = {"int64_t", "uint64_t", "double", "int64_t"},
                                      java = {"Long", "Long", "Double", "Long"}),
+                      @CXXTemplate(cxx = {"int64_t", "uint64_t", "int64_t", "int64_t"},
+                          java = {"Long", "Long", "Long", "Long"}),
                     //                        @CXXTemplate(
                     //                                cxx = {"int64_t", "uint64_t", "double",
                     //                                "int64_t"}, java = {"Long", "Long", "Double",
@@ -417,7 +424,8 @@ import com.alibaba.fastffi.FFIGenBatch;
                   }),
         @FFIGen(type = "com.alibaba.graphscope.graphx.ArrowProjectedFragmentGetter",
             templates = {
-                @CXXTemplate(cxx = {"int64_t","uint64_t", "double", "int64_t"}, java = {"Long","Long","Double","Long"})
+                @CXXTemplate(cxx = {"int64_t","uint64_t", "double", "int64_t"}, java = {"Long","Long","Double","Long"}),
+                @CXXTemplate(cxx = {"int64_t","uint64_t", "int64_t", "int64_t"}, java = {"Long","Long","Long","Long"})
             }),
           @FFIGen(type = "com.alibaba.graphscope.ds.ProjectedNbr",
                   templates =
