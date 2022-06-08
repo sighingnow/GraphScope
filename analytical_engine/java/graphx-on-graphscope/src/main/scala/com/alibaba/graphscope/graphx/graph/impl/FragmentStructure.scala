@@ -31,7 +31,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     for (i <- 0 until endLid.toInt){
       res(i + 1) = res(i) + getOutDegree(i)
     }
-    log.info(s"${res.mkString("Array(", ", ", ")")}")
+//    log.info(s"${res.mkString("Array(", ", ", ")")}")
     res
   }
 

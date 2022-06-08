@@ -18,9 +18,18 @@ class GSSession(sc : SparkContext) extends Logging{
   pythonInterpreter.runCommand("import os\nos.chdir(\"" + GS_PYTHON_DIR +"\")")
 
 
-  def run[VD: ClassTag, ED : ClassTag](cmd : String) : GrapeGraphImpl[VD,ED] = {
+  /**
+   *
+   * @param cmd python command in string
+   * @param resultVariable the result variable from which we will extract host_ids_str and frag_name
+   * @return
+   */
+  def run[VD: ClassTag, ED : ClassTag](cmd : String, resultVariable : String) : GrapeGraphImpl[VD,ED] = {
     //this command should re
     pythonInterpreter.runCommand(cmd)
+//    val lastCommand = s"res_str:${resultVariable}.template_str + \";\" + ${resultVariable}.host_ids_str"
+    val lastCommand = "\"res_str:\"+" + resultVariable + ".template_str + \";\"+" + resultVariable + ".host_ids_str"
+    pythonInterpreter.runCommand(lastCommand)
     var rawRes = pythonInterpreter.getMatched(RES_PATTERN)
     if (rawRes.startsWith("\'") || rawRes.endsWith("\"")){
       rawRes = rawRes.substring(1)

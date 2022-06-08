@@ -146,29 +146,29 @@
         <artifactId>kryo-serializers</artifactId>
         <version>${dep.kryo-serializers.version}</version>
       </dependency>
-      <dependency>
-        <groupId>org.apache.zookeeper</groupId>
-        <artifactId>zookeeper</artifactId>
-        <version>${dep.zookeeper.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>com.sun.jmx</groupId>
-            <artifactId>jmxri</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.sun.jdmk</groupId>
-            <artifactId>jmxtools</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.jboss.netty</groupId>
-            <artifactId>netty</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>javax.jms</groupId>
-            <artifactId>jms</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
+<!--      <dependency>-->
+<!--        <groupId>org.apache.zookeeper</groupId>-->
+<!--        <artifactId>zookeeper</artifactId>-->
+<!--        <version>${dep.zookeeper.version}</version>-->
+<!--        <exclusions>-->
+<!--          <exclusion>-->
+<!--            <groupId>com.sun.jmx</groupId>-->
+<!--            <artifactId>jmxri</artifactId>-->
+<!--          </exclusion>-->
+<!--          <exclusion>-->
+<!--            <groupId>com.sun.jdmk</groupId>-->
+<!--            <artifactId>jmxtools</artifactId>-->
+<!--          </exclusion>-->
+<!--          <exclusion>-->
+<!--            <groupId>org.jboss.netty</groupId>-->
+<!--            <artifactId>netty</artifactId>-->
+<!--          </exclusion>-->
+<!--          <exclusion>-->
+<!--            <groupId>javax.jms</groupId>-->
+<!--            <artifactId>jms</artifactId>-->
+<!--          </exclusion>-->
+<!--        </exclusions>-->
+<!--      </dependency>-->
     </dependencies>
   </dependencyManagement>
 
