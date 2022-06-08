@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.slf4j.Logger;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
  * code.
  */
 public class PythonInterpreter {
+    private final int MAX_TIME_WAIT_SECOND = 20;
 
     private Logger logger = LoggerFactory.getLogger(PythonInterpreter.class);
     private Process process;
@@ -27,6 +29,7 @@ public class PythonInterpreter {
     public PythonInterpreter(){
 
     }
+
     public void init() throws IOException {
         ProcessBuilder builder = new ProcessBuilder("/usr/bin/env", "python3", "-i");
         process = builder.start();
@@ -51,6 +54,19 @@ public class PythonInterpreter {
         } else {
             logger.info("input stream thread dead, use poll");
             return outputQueue.poll();
+        }
+    }
+
+    public String getMatched(String pattern) throws InterruptedException {
+        String str;
+        while (true){
+            str = outputQueue.take();
+            if (str.contains(pattern)){
+                return str.substring(str.indexOf(pattern) + pattern.length() + 1);
+            }
+            else {
+                logger.info("got cmd output " + str + " but not matched");
+            }
         }
     }
 
