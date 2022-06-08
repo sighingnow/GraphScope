@@ -23,7 +23,7 @@ object FragmentTest extends Logging{
 
     val gsSession: GSSession = GraphScopeHelper.createSession(sc)
     val graph: GrapeGraphImpl[Long, Long] = gsSession.run("import graphscope\n" +
-      "sess = graphscope.session(cluster_type=\"hosts\",hosts=[\"d50\"], num_workers=1)\n" +
+      "sess = graphscope.session(cluster_type=\"hosts\",hosts=[\"d50\"], num_workers=1,etcd_addrs=\"http://11.227.236.89:2379\",vineyard_socket=\"/tmp/vineyard.sock\")\n" +
       "graph = sess.g(directed=True)\n" +
       "graph = graph.add_vertices(\"/home/graphscope/data/gstest/property/p2p-31_property_v_0\",\"person\")\n" +
       "graph = graph.add_edges(\"/home/graphscope/data/gstest/property/p2p-31_property_e_0\",label=\"knows\",src_label=\"person\",dst_label=\"person\")\n" +
