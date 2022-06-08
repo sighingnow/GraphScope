@@ -48,6 +48,7 @@ message VineyardInfoPb {
     bool generate_eid = 6;
     int64 vineyard_id = 7;
     string property_schema_json = 8;
+    string host_ids_str = 9;
 }
 
 message GraphDefPb {

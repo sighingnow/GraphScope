@@ -213,10 +213,8 @@ if __name__ == "__main__":
 
 
 import graphscope
-graphscope.set_option(show_log=True)
 sess = graphscope.session(cluster_type="hosts",hosts=["d50"], num_workers=1)
 graph = sess.g(directed=True)
-graph.template_str
 graph = graph.add_vertices("/home/graphscope/data/gstest/property/p2p-31_property_v_0","person")
 graph = graph.add_edges("/home/graphscope/data/gstest/property/p2p-31_property_e_0",label="knows",src_label="person",dst_label="person")
 graph_proj = graph.project(vertices={"person":["weight"]}, edges={"knows" : ["dist"]})

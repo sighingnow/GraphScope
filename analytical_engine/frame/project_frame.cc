@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+#include <mpi.h>
 #include <memory>
 #include <string>
-#include <mpi.h>
 
 #include "vineyard/common/util/typename.h"
 #include "vineyard/graph/fragment/arrow_fragment.h"
@@ -129,7 +129,7 @@ class ProjectSimpleFrame<
       graph_def.extension().UnpackTo(&vy_info);
     }
     vy_info.set_vineyard_id(group_id);
-    // vy_info.set_host_ids_str(host_ids_str);
+    vy_info.set_host_ids_str(host_ids_str);
     vy_info.set_oid_type(PropertyTypeToPb(
         vineyard::normalize_datatype(parent_meta.GetKeyValue("oid_type"))));
     vy_info.set_vid_type(PropertyTypeToPb(
