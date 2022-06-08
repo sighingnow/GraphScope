@@ -13,7 +13,7 @@ import org.apache.spark.storage.StorageLevel
 import java.net.InetAddress
 import scala.collection.mutable
 
-class FragmentTest extends Logging{
+object FragmentTest extends Logging{
   def main(array: Array[String]) : Unit = {
     val spark = SparkSession
       .builder
@@ -29,7 +29,7 @@ class FragmentTest extends Logging{
       "graph = graph.add_edges(\"/home/graphscope/data/gstest/property/p2p-31_property_e_0\",label=\"knows\",src_label=\"person\",dst_label=\"person\")\n" +
       "graph_proj = graph.project(vertices={\"person\":[\"weight\"]}, edges={\"knows\" : [\"dist\"]})\n" +
       "simple = graph_proj._project_to_simple()\n" +
-      "simple.template_str + \";\" + simple.host_ids_str")
+      "\"res_str:\" + simple.template_str + \";\" + simple.host_ids_str")
 
     val (vertexRDD, edgeRDD) = (graph.vertices, graph.edges)
     //    log.info(s"vertices count ${vertexRDD.count()}, edge cout ${edgeRDD.count()}")

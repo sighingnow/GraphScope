@@ -62,7 +62,7 @@ public class PythonInterpreter {
         while (true){
             str = outputQueue.take();
             if (str.contains(pattern)){
-                return str.substring(str.indexOf(pattern) + pattern.length() + 1);
+                return str;
             }
             else {
                 logger.info("got cmd output " + str + " but not matched");
