@@ -219,6 +219,7 @@ graph = graph.add_vertices("/home/graphscope/data/gstest/property/p2p-31_propert
 graph = graph.add_edges("/home/graphscope/data/gstest/property/p2p-31_property_e_0",label="knows",src_label="person",dst_label="person")
 graph_proj = graph.project(vertices={"person":["weight"]}, edges={"knows" : ["dist"]})
 simple = graph_proj._project_to_simple()
+"res_str:" + simple.template_str + ";" + simple.host_ids_str
 
 
 graphscope.set_option(show_log=True)

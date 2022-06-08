@@ -21,7 +21,14 @@ class GSSession(sc : SparkContext) extends Logging{
   def run[VD: ClassTag, ED : ClassTag](cmd : String) : GrapeGraphImpl[VD,ED] = {
     //this command should re
     pythonInterpreter.runCommand(cmd)
-    val resStr = pythonInterpreter.getMatched(RES_PATTERN)
+    var rawRes = pythonInterpreter.getMatched(RES_PATTERN)
+    if (rawRes.startsWith("\'") || rawRes.endsWith("\"")){
+      rawRes = rawRes.substring(1)
+    }
+    if (rawRes.endsWith("\'") || rawRes.endsWith("\"")){
+      rawRes = rawRes.substring(0, rawRes.length - 1)
+    }
+    val resStr = rawRes.substring(rawRes.indexOf(RES_PATTERN) + RES_PATTERN.length + 1)
     val splited = resStr.split(";")
     require(splited.length == 2, "resutl str can't be splited into two parts")
     val fragName = splited(0)
