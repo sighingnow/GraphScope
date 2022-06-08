@@ -353,6 +353,7 @@ class Session(object):
         mount_dataset=gs_config.mount_dataset,
         reconnect=False,
         hosts = gs_config.hosts,
+        vineyard_socket = gs_config.vineyard_socket,
         **kw,
     ):
         """Construct a new GraphScope session.
@@ -563,6 +564,7 @@ class Session(object):
             "k8s_coordinator_cpu",
             "k8s_coordinator_mem",
             "etcd_addrs",
+            "vineyard_socket",
             "k8s_etcd_num_pods",
             "k8s_etcd_cpu",
             "k8s_etcd_mem",

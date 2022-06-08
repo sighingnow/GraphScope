@@ -105,3 +105,4 @@ class GSConfig(object):
         f"registry.cn-hongkong.aliyuncs.com/graphscope/dataset:{__version__}"
     )
     hosts = ["localhost"]
+    vineyard_socket = "/tmp/vineyard.sock"
