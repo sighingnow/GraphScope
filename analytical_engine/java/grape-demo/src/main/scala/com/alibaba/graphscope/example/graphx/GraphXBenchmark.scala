@@ -1,5 +1,6 @@
 package com.alibaba.graphscope.example.graphx
 
+import com.alibaba.graphscope.graphx.GraphScopeHelper
 import org.apache.spark.graphx.GraphLoader
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
@@ -20,7 +21,7 @@ object GraphXBenchmark extends Logging{
     val numPartition = args(1).toInt
     log.info(s"efile path ${efilePath}, numPartition ${numPartition}")
     val loadGraph0 = System.nanoTime();
-    val graph = GraphLoader.edgeListFile(sc, efilePath, canonicalOrientation = false, numPartition).cache()
+    val graph = GraphScopeHelper.edgeListFile(sc, efilePath, canonicalOrientation = false, numPartition).cache()
     log.info(s"Graph vertices ${graph.numVertices}, edges ${graph.numEdges}")
     val loadGraph1 = System.nanoTime();
     /**

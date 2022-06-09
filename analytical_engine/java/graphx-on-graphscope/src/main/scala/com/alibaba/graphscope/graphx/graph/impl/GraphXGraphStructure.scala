@@ -202,4 +202,10 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
       edgeTriplet
     }
   }
+
+  override def getInnerVertex(oid: Long, vertex: Vertex[Long]): Boolean = {
+    require(vm.getVertex(oid, vertex))
+    require(vertex.GetValue() < vm.innerVertexSize())
+    true
+  }
 }

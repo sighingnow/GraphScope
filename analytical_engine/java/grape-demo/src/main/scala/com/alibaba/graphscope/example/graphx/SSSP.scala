@@ -1,5 +1,6 @@
 package com.alibaba.graphscope.example.graphx
 
+import com.alibaba.graphscope.graphx.GraphScopeHelper
 import org.apache.spark.graphx.{Edge, Graph, GraphLoader, VertexId}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
@@ -23,9 +24,9 @@ object SSSP extends Logging{
     val sourceId: VertexId = args(2).toLong // The ultimate source
     log.info(s"efile path ${efilePath}, numPartition ${numPartition}, sourceId ${sourceId}")
     val loadGraph0 = System.nanoTime();
-    val graph = GraphLoader.edgeListFile(sc, efilePath,canonicalOrientation = false,numPartition).cache()
+    val graph = GraphScopeHelper.edgeListFile(sc, efilePath,canonicalOrientation = false,numPartition).cache()
     val loadGraph1 = System.nanoTime();
-    log.info(s"[GraphLoader: ] Load graph ${graph.numEdges}, ${graph.numVertices}")
+    log.info(s"[SSSP: ] Load graph ${graph.numEdges}, ${graph.numVertices}")
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, vdata) =>
       if (id == sourceId) 0.0 else Double.PositiveInfinity)

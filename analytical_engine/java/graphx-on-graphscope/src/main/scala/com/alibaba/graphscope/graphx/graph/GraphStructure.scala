@@ -67,4 +67,6 @@ trait GraphStructure {
    def fid2GraphxPid(fid: Int): Int
 
    def outerVertexGid2Vertex(gid: Long, vertex: Vertex[Long]): Boolean
+
+  def getInnerVertex(oid : Long, vertex: Vertex[Long]) : Boolean
 }

@@ -38,8 +38,6 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   val NBR_SIZE = 16L
   //to avoid the difficult to get srcLid in iterating over edges.
 
-
-
   log.info(s"Got edge partition ${this.toString}")
 
 
@@ -147,15 +145,8 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   def map[ED2: ClassTag](iter: Iterator[ED2]): GrapeEdgePartition[VD, ED2] = {
     val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], partOutEdgeNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
     var ind = activeEdgeSet.nextSetBit(0)
-//    val curNbr: PropertyNbrUnit[VertexId] = csr.getOEBegin(0)
-//    val beginAddr = curNbr.getAddress
     while (iter.hasNext) {
-//      val curAddr = beginAddr + ind * NBR_SIZE
-//      curNbr.setAddress(curAddr)
-//      val eid = curNbr.eid()
       newData.set(ind, iter.next())
-//      newData.set(eid, iter.next())
-//      require(ind != -1, s"mapping edges: received edge iterator length neq to cur active edges ${activeEdgeSet.cardinality()}")
       ind = activeEdgeSet.nextSetBit(ind + 1)
     }
     require(ind == -1, s"after map new edata, ind ${ind}, expect edata size ${activeEdgeSet.cardinality()}")
@@ -302,14 +293,6 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
         }
         i += 1
       }
-//      val iter = shuffle.iterator()
-//      while (iter.hasNext){
-//        val edge = iter.next()
-////        log.info(s"processing edge ${edge.srcId}->${edge.dstId}, ${edge.attr}")
-//        srcOidBuilder.unsafeAppend(edge.srcId)
-//        dstOidBuilder.unsafeAppend(edge.dstId)
-//        edataBuilder.unsafeAppend(edge.attr)
-//      }
     }
     log.info("Finish adding edges to builders")
     val graphxCSRBuilder = ScalaFFIFactory.newGraphXCSRBuilder[ED](client)

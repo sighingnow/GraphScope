@@ -1,5 +1,6 @@
 package com.alibaba.graphscope.example.graphx
 
+import com.alibaba.graphscope.graphx.GraphScopeHelper
 import org.apache.spark.graphx.{EdgeTriplet, GraphLoader, VertexId}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
@@ -19,9 +20,9 @@ object GraphTransform extends Logging{
     val numPartition = args(1).toInt
     log.info(s"efile path ${efilePath}, numPartition ${numPartition}")
     val loadGraph0 = System.nanoTime();
-    val graph = GraphLoader.edgeListFile(sc, efilePath,canonicalOrientation = false,numPartition).cache()
+    val graph = GraphScopeHelper.edgeListFile(sc, efilePath,canonicalOrientation = false,numPartition).cache()
     val loadGraph1 = System.nanoTime();
-    log.info(s"[GraphLoader: ] Load graph ${graph.numEdges}, ${graph.numVertices}")
+    log.info(s"[GraphTransform: ] Load graph ${graph.numEdges}, ${graph.numVertices}")
     // Initialize the graph such that all vertices except the root have distance infinity.
     println(s"Graph has ${graph.numVertices} vertices, ${graph.numEdges} edges")
 

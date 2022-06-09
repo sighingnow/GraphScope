@@ -107,11 +107,6 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
   }
 
 
-  /**
-   * Inner vnum
-   *
-   * @return
-   */
   override def vertexNum(): Long = fragment.getVerticesNum
 
   override def getInEdgesNum: Long = fragment.getInEdgeNum
@@ -395,5 +390,10 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         edge
       }
     }
+  }
+
+  override def getInnerVertex(oid: Long, vertex: Vertex[Long]): Boolean = {
+    require(fragment.getInnerVertex(oid,vertex))
+    true
   }
 }

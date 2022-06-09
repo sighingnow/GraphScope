@@ -1,5 +1,6 @@
 package com.alibaba.graphscope.example.graphx
 
+import com.alibaba.graphscope.graphx.GraphScopeHelper
 import org.apache.spark.graphx.GraphLoader
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
@@ -19,9 +20,9 @@ object PageRank extends Logging{
     val eFilePath = args(0);
     val numPartitions = args(1).toInt;
     log.info(s"Running for efile ${eFilePath}")
-    val graph = GraphLoader.edgeListFile(sc, eFilePath,canonicalOrientation = false,numPartitions)
+    val graph = GraphScopeHelper.edgeListFile(sc, eFilePath,canonicalOrientation = false,numPartitions)
     graph.cache()
-    log.info(s"[GraphLoader: ] Load graph ${graph.numEdges}, ${graph.numVertices}")
+    log.info(s"[PageRank: ] Load graph ${graph.numEdges}, ${graph.numVertices}")
 //    val ranks = graph.pageRank(0.0001).vertices
     // Join the ranks with the usernames
     // Print the result

@@ -24,7 +24,7 @@ class GSSession(sc : SparkContext) extends Logging{
    * @param resultVariable the result variable from which we will extract host_ids_str and frag_name
    * @return
    */
-  def run[VD: ClassTag, ED : ClassTag](cmd : String, resultVariable : String) : GrapeGraphImpl[VD,ED] = {
+  def loadGraph[VD: ClassTag, ED : ClassTag](cmd : String, resultVariable : String) : GrapeGraphImpl[VD,ED] = {
     //this command should re
     pythonInterpreter.runCommand(cmd)
 //    val lastCommand = s"res_str:${resultVariable}.template_str + \";\" + ${resultVariable}.host_ids_str"
@@ -43,6 +43,18 @@ class GSSession(sc : SparkContext) extends Logging{
     val fragName = splited(0)
     val hostIds = splited(1)
     GraphScopeRDD.loadFragmentAsGraph(sc, hostIds,fragName)
+  }
+
+  /**
+   * Run on GAE with returned graph
+   */
+  def runOnGAE[VD: ClassTag,ED : ClassTag](cmd : String, Graph : GrapeGraphImpl[VD,ED], resultVar : String) : GrapeGraphImpl[VD,ED] = {
+    null
+  }
+
+  /** Run on GAE without returning graph */
+  def runOnGAE[VD: ClassTag, ED: ClassTag](cmd : String, graphPlaceHolder : String) : Unit = {
+
   }
 
   def close() : Unit = {
