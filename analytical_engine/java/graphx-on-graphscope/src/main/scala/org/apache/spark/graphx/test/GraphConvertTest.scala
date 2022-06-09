@@ -18,7 +18,7 @@ object GraphConvertTest extends Logging{
 
     val gsSession: GSSession = GraphScopeHelper.createSession(sc)
 
-    val graphxGraph = GraphLoader.edgeListFile(sc, path,false, numPart)
+    val graphxGraph = GraphLoader.edgeListFile(sc, path,false, numPart).mapVertices((id,vd)=> id)
     log.info(s"Loaded graphx graph ${graphxGraph.numVertices} vertices, ${graphxGraph.numEdges} edges")
 
     val grapeGraph = GraphScopeHelper.graph2Fragment(graphxGraph)
