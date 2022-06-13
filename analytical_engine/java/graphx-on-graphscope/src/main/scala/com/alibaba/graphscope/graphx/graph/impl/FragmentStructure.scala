@@ -2,20 +2,23 @@ package com.alibaba.graphscope.graphx.graph.impl
 
 import com.alibaba.graphscope.ds.{PropertyNbrUnit, Vertex}
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
-import com.alibaba.graphscope.fragment.{ArrowFragment, ArrowProjectedFragment, IFragment}
+import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, IFragment}
 import com.alibaba.graphscope.graphx.graph.GraphStructure
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{ArrowProjectedStructure, GraphStructureType}
+import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure.NBR_SIZE
 import com.alibaba.graphscope.graphx.{GSEdgeTriplet, GSEdgeTripletImpl, ReverseGSEdgeTripletImpl}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.graphx.impl.partition.data.VertexDataStore
 import org.apache.spark.graphx._
+import org.apache.spark.graphx.impl.partition.data.VertexDataStore
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 
 import scala.reflect.ClassTag
 
-class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphStructure with Logging{
+class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
+                        var srcLids : PrimitiveArray[Long] = null,var dstLids : PrimitiveArray[Long] = null,
+                        var srcOids : PrimitiveArray[Long] = null, var dstOids : PrimitiveArray[Long] = null) extends GraphStructure with Logging{
   val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
   val fid2Pid = new Array[Int](fragment.fnum())
 
@@ -26,18 +29,60 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
   override val outDegreeArray: PrimitiveArray[Int] = getOutDegreeArray
   override val inOutDegreeArray: PrimitiveArray[Int] = getInOutDegreeArray
 
+  if (srcLids == null){
+    require(dstLids == null && srcOids == null && dstOids == null)
+    if (fragment.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)) {
+      val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long, Long, _, _]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
+      srcOids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
+      srcLids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
+      dstOids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
+      dstLids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
+      val nbr = projectedFragment.getOutEdgesPtr
+
+      val time0 = System.nanoTime()
+      var curLid = 0
+      while (curLid < endLid){
+        vertex.SetValue(curLid)
+        val curOid = fragment.getId(vertex)
+        val startOffset = lid2Offset(curLid)
+        val endOffset = lid2Offset(curLid + 1)
+        var tmp = startOffset
+        while (tmp < endOffset){
+          srcLids.set(tmp, curLid)
+          srcOids.set(tmp, curOid)
+          tmp += 1
+        }
+        tmp = startOffset
+        while (tmp < endOffset){
+          val dstLid = nbr.vid()
+          vertex.SetValue(dstLid)
+          val dstOid = fragment.getId(vertex)
+          dstLids.set(tmp, dstLid)
+          dstOids.set(tmp, dstOid)
+          nbr.addV(NBR_SIZE)
+          tmp += 1
+        }
+        curLid += 1
+      }
+      val time1 = System.nanoTime()
+      log.info(s"initialize arrays cost ${(time1 - time0)/1000000} ms")
+    }
+    else {
+      throw new IllegalStateException(s"No implementation for ${fragment.fragmentType()}")
+    }
+  }
+
   private val lid2Offset : Array[Long] = {
     val res = new Array[Long](endLid.toInt + 1)
     res(0) = 0
     for (i <- 0 until endLid.toInt){
       res(i + 1) = res(i) + getOutDegree(i)
     }
-//    log.info(s"${res.mkString("Array(", ", ", ")")}")
+    log.info("initialize lid2offset")
     res
   }
 
   private def getOutDegreeArray : PrimitiveArray[Int] = {
-    val arrowFragment : ArrowFragment[Long] = null
     val time0 = System.nanoTime()
     val len = fragment.getVerticesNum.toInt
     val res = PrimitiveArray.create(classOf[Int], len)
@@ -192,9 +237,11 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     if (fragment.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)){
       val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,VD,ED]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,VD,ED]]
       if (edatas == null){
+        log.info(s"creating triplet iterator v1 with frag edata, with vd store ${vertexDataStore}")
         newProjectedTripletIterator(projectedFragment, vertexDataStore,activeSet,edgeReversed,includeSrc,includeDst)
       }
       else {
+        log.info(s"creating triplet iterator v2 with java edata, with vd store ${vertexDataStore}")
         newProjectedTripletIteratorV2(projectedFragment, vertexDataStore,edatas,activeSet,edgeReversed,includeSrc,includeDst)
       }
     }
@@ -213,42 +260,28 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
           new ReverseGSEdgeTripletImpl[VD,ED]
         }
       }
-      var curLid = 0
-      val endLid : Long = frag.getInnerVerticesNum
       var offset : Long = bitSet.nextSetBit(0)
-      val NBR_SIZE = 16
+
       val edataArrayAccessor = frag.getEdataArrayAccessor
-      vertex.SetValue(curLid)
       val nbr : PropertyNbrUnit[Long]= frag.getOutEdgesPtr
       val initAddress : Long = nbr.getAddress
 
       override def hasNext: Boolean = {
-        if (offset < 0) return false
-
-        while (lid2Offset(curLid + 1) <= offset) {
-          curLid += 1
-        }
-        true
+        offset >= 0
       }
 
       override def next(): EdgeTriplet[VD,ED] = {
         val edge = createTriplet
-        nbr.setAddress(initAddress + NBR_SIZE * offset)
-        val dstLid = nbr.vid()
-        val attr = edataArrayAccessor.get(nbr.eid())
-        vertex.SetValue(curLid)
-        edge.srcId = frag.getInnerVertexId(vertex)
+        edge.srcId = srcOids.get(offset)
         if (includeSrc){
-//          edge.srcAttr = frag.getData(vertex)
-          edge.srcAttr = vertexDataStore.getData(curLid)
+          edge.srcAttr = vertexDataStore.getData(srcLids.get(offset))
         }
-        vertex.SetValue(dstLid)
-        edge.dstId = frag.getId(vertex)
+        nbr.setAddress(initAddress + NBR_SIZE * offset)
+        edge.dstId = dstOids.get(offset)
         if (includeDst){
-//          edge.dstAttr = frag.getData(vertex)
-          edge.dstAttr = vertexDataStore.getData(dstLid)
+          edge.dstAttr = vertexDataStore.getData(nbr.vid())
         }
-        edge.attr = attr
+        edge.attr = edataArrayAccessor.get(nbr.eid())
 	      edge.index = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
         edge
@@ -270,29 +303,19 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
       var offset : Long = bitSet.nextSetBit(0)
       val NBR_SIZE = 16
       val edataArrayAccessor = frag.getEdataArrayAccessor
-      vertex.SetValue(curLid)
       val nbr : PropertyNbrUnit[Long]= frag.getOutEdgesPtr
       val initAddress : Long = nbr.getAddress
 
       override def hasNext: Boolean = {
         if (offset < 0) return false
-
-        while (lid2Offset(curLid + 1) <= offset) {
-//          log.info(s"inc curLid since ${lid2Offset(curLid + 1)} leq ${offset}")
-          curLid += 1
-        }
-        vertex.SetValue(curLid)
-        edge.srcId = frag.getInnerVertexId(vertex)
         true
       }
 
       override def next(): Edge[ED] = {
         nbr.setAddress(initAddress + NBR_SIZE * offset)
-        val dstLid = nbr.vid()
         val attr = edataArrayAccessor.get(nbr.eid())
-//        log.info(s"src lid ${curLid}, src oid ${edge.srcId}  eid ${nbr.eid()}, attr ${attr}")
-        vertex.SetValue(dstLid)
-        edge.dstId = frag.getId(vertex)
+        edge.srcId = srcOids.get(offset)
+        edge.dstId = dstOids.get(offset)
         edge.attr = attr
 	      edge.index = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
@@ -303,8 +326,6 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
 
   private def newProjectedIteratorV2[ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, _, ED], edatas : PrimitiveArray[ED], bitSet: BitSet, edgeReverse : Boolean) : Iterator[Edge[ED]] = {
     new Iterator[Edge[ED]]{
-      var curLid = 0
-      val endLid : Long = frag.getInnerVerticesNum
       var edge: ReusableEdge[ED] = null.asInstanceOf[ReusableEdge[ED]]
       if (edgeReverse){
         edge = new ReversedReusableEdge[ED];
@@ -313,28 +334,18 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         edge = new ReusableEdgeImpl[ED];
       }
       var offset : Long = bitSet.nextSetBit(0)
-      val NBR_SIZE = 16
-      vertex.SetValue(curLid)
       val nbr : PropertyNbrUnit[Long]= frag.getOutEdgesPtr
       val initAddress : Long = nbr.getAddress
 
       override def hasNext: Boolean = {
-        if (offset < 0) return false
-
-        while (lid2Offset(curLid + 1) <= offset) {
-          curLid += 1
-        }
-        vertex.SetValue(curLid)
-        edge.srcId = frag.getInnerVertexId(vertex)
-        true
+        offset >= 0
       }
 
       override def next(): Edge[ED] = {
         nbr.setAddress(initAddress + NBR_SIZE * offset)
-        val dstLid = nbr.vid()
         val attr = edatas.get(offset)
-        vertex.SetValue(dstLid)
-        edge.dstId = frag.getId(vertex)
+        edge.dstId = dstOids.get(offset)
+        edge.srcId = srcOids.get(offset)
         edge.attr = attr
         edge.index = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
@@ -352,39 +363,22 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
           new ReverseGSEdgeTripletImpl[VD,ED]
         }
       }
-      var curLid = 0
-      val endLid : Long = frag.getInnerVerticesNum
       var offset : Long = bitSet.nextSetBit(0)
-      val NBR_SIZE = 16
-      vertex.SetValue(curLid)
-      val nbr : PropertyNbrUnit[Long]= frag.getOutEdgesPtr
-      val initAddress : Long = nbr.getAddress
 
       override def hasNext: Boolean = {
-        if (offset < 0) return false
-
-        while (lid2Offset(curLid + 1) <= offset) {
-          curLid += 1
-        }
-        true
+        offset >= 0
       }
 
       override def next(): EdgeTriplet[VD,ED] = {
         val edge = createTriplet
-        nbr.setAddress(initAddress + NBR_SIZE * offset)
-        val dstLid = nbr.vid()
         val attr = edatas.get(offset)
-        vertex.SetValue(curLid)
-        edge.srcId = frag.getInnerVertexId(vertex)
+        edge.srcId = srcOids.get(offset)
         if (includeSrc){
-//          edge.srcAttr = frag.getData(vertex)
-          edge.srcAttr = vertexDataStore.getData(curLid)
+          edge.srcAttr = vertexDataStore.getData(srcLids.get(offset))
         }
-        vertex.SetValue(dstLid)
-        edge.dstId = frag.getId(vertex)
+        edge.dstId = dstOids.get(offset)
         if (includeDst){
-//          edge.dstAttr = frag.getData(vertex)
-          edge.dstAttr = vertexDataStore.getData(dstLid)
+          edge.dstAttr = vertexDataStore.getData(dstLids.get(offset))
         }
         edge.attr = attr
 	      edge.index = offset
@@ -400,4 +394,8 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
   }
 
   override val structureType: GraphStructureType = ArrowProjectedStructure
+}
+
+object FragmentStructure{
+  val NBR_SIZE = 16
 }
