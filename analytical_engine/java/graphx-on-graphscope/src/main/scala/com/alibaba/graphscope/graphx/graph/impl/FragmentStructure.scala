@@ -29,6 +29,16 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
   override val outDegreeArray: PrimitiveArray[Int] = getOutDegreeArray
   override val inOutDegreeArray: PrimitiveArray[Int] = getInOutDegreeArray
 
+  private val lid2Offset : Array[Long] = {
+    val res = new Array[Long](endLid.toInt + 1)
+    res(0) = 0
+    for (i <- 0 until endLid.toInt){
+      res(i + 1) = res(i) + getOutDegree(i)
+    }
+    log.info("initialize lid2offset")
+    res
+  }
+
   if (srcLids == null){
     require(dstLids == null && srcOids == null && dstOids == null)
     if (fragment.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)) {
@@ -70,16 +80,6 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     else {
       throw new IllegalStateException(s"No implementation for ${fragment.fragmentType()}")
     }
-  }
-
-  private val lid2Offset : Array[Long] = {
-    val res = new Array[Long](endLid.toInt + 1)
-    res(0) = 0
-    for (i <- 0 until endLid.toInt){
-      res(i + 1) = res(i) + getOutDegree(i)
-    }
-    log.info("initialize lid2offset")
-    res
   }
 
   private def getOutDegreeArray : PrimitiveArray[Int] = {
