@@ -213,13 +213,17 @@ if __name__ == "__main__":
 
 
 import graphscope
+from graphscope import sssp
 graphscope.set_option(show_log=True)
 sess = graphscope.session(cluster_type="hosts",hosts=["d50"], num_workers=1,etcd_addrs="http://11.227.236.89:2379",vineyard_socket="/tmp/vineyard.sock")
 graph = sess.g(directed=True)
-graph = graph.add_vertices("/home/graphscope/data/gstest/property/p2p-31_property_v_0","person")
-graph = graph.add_edges("/home/graphscope/data/gstest/property/p2p-31_property_e_0",label="knows",src_label="person",dst_label="person")
+graph = graph.add_vertices("/home/graphscope/data/livejournal.v.csv","person")
+graph = graph.add_edges("/home/graphscope/data/livejournal.e.csv", label="knows",src_label="person",dst_label="person")
+# graph = graph.add_vertices("/home/graphscope/data/gstest/property/p2p-31_property_v_0","person")
+# graph = graph.add_edges("/home/graphscope/data/gstest/property/p2p-31_property_e_0",label="knows",src_label="person",dst_label="person")
 graph_proj = graph.project(vertices={"person":["weight"]}, edges={"knows" : ["dist"]})
 simple = graph_proj._project_to_simple()
+sssp(simple,src=1)
 "res_str:" + simple.template_str + ";" + simple.host_ids_str
 
 

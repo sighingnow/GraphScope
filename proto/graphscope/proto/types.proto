@@ -246,6 +246,7 @@ enum ParamKey {
   EFORMAT = 501; // edge input format
   JAVA_CLASS_PATH = 502; // java class path
   JVM_OPTS = 503; // opts str to start a jvm
+  LOAD_PROJECTED_GRAPH = 504; // whether or not we are loading projected graph with vineyard id.
 }
 
 enum ModifyType {

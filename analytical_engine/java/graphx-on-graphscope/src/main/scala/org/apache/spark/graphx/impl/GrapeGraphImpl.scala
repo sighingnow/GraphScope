@@ -1,11 +1,10 @@
 package org.apache.spark.graphx.impl
 
-import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
-import com.alibaba.graphscope.graphx.VertexDataBuilder
+import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import org.apache.spark.HashPartitioner
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
-import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
+import org.apache.spark.graphx.utils.ExecutorUtils
 import org.slf4j.{Logger, LoggerFactory}
 //import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
@@ -14,6 +13,9 @@ import org.apache.spark.storage.StorageLevel
 
 import scala.reflect.{ClassTag, classTag}
 
+object GrapeGraphBackend extends Enumeration{
+  val GraphXFragment, ArrowProjectedFragment = GrapeGraphBackend
+}
 /**
  * Creating a graph abstraction by combining vertex RDD and edge RDD together.
  * Before doing this construction:
@@ -41,6 +43,12 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   vertices.cache()
   edges.cache()
 
+
+  val backend: GraphStructureType = vertices.grapePartitionsRDD.mapPartitions(iter => {
+    val part = iter.next()
+    Iterator(part.graphStructure.structureType)
+  }).collect().distinct(0)
+  logger.info(s"Creating grape graph backended by ${backend}")
 
   val vdClass: Class[VD] = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
   val edClass: Class[ED] = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]

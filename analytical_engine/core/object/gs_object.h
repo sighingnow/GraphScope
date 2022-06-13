@@ -28,7 +28,8 @@ enum class ObjectType {
   kAppEntry,
   kContextWrapper,
   kPropertyGraphUtils,
-  kProjectUtils
+  kProjectUtils,
+  kProjectedGraphUtils
 };
 
 inline const char* ObjectTypeToString(ObjectType ob_type) {
@@ -45,6 +46,8 @@ inline const char* ObjectTypeToString(ObjectType ob_type) {
     return "PropertyGraphUtils";
   case ObjectType::kProjectUtils:
     return "ProjectUtils";
+  case ObjectType::kProjectedGraphUtils:
+    return "ProjectedGraphUtils";
   default:
     CHECK(false);
   }

@@ -39,6 +39,24 @@ from graphscope.proto import types_pb2
 __all__ = ["load_from"]
 
 
+def load_from_vineyard(vineyard_id, vdata_type, edata_type):
+    sess = get_default_session()
+    # construct create graph op
+    config = {
+        types_pb2.IS_FROM_VINEYARD_ID: utils.b_to_attr(True),
+        types_pb2.VINEYARD_ID : utils.i_to_attr(vineyard_id)
+        types_pb2.LOAD_PROJECTED_GRAPH : utils.b_to_attr(True),
+        types_pb2.V_DATA_TYPE: utils.s_to_attr(utils.data_type_to_cpp(vdata_type)),
+        types_pb2.E_DATA_TYPE: utils.s_to_attr(utils.data_type_to_cpp(edata_type)),
+        types_pb2.OID_TYPE: utils.s_to_attr(utils.data_type_to_cpp("int64_t")),
+        types_pb2.VID_TYPE: utils.s_to_attr(utils.data_type_to_cpp("uint64_t"))
+    }
+    op = dag_utils.create_graph(
+        sess.session_id, graph_def_pb2.ARROW_PROJECTED, inputs=[loader_op], attrs=config
+    )
+    graph = sess.g(op)
+    return graph
+
 def load_from(
     edges: Union[
         Mapping[str, Union[LoaderVariants, Sequence, Mapping]], LoaderVariants, Sequence

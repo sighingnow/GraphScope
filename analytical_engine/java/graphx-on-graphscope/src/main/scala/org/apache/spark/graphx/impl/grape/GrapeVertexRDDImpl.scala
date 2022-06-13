@@ -27,6 +27,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   override def reindex(): VertexRDD[VD] = {
     this
   }
+
   override protected def getPartitions: Array[Partition] = grapePartitionsRDD.partitions
 
   override val partitioner: Option[Partitioner] = grapePartitionsRDD.partitioner

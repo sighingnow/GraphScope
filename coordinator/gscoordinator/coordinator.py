@@ -426,8 +426,9 @@ class CoordinatorServiceServicer(
             if (
                 (
                     op.op == types_pb2.CREATE_GRAPH
-                    and op.attr[types_pb2.GRAPH_TYPE].graph_type
-                    == graph_def_pb2.ARROW_PROPERTY
+                    and (op.attr[types_pb2.GRAPH_TYPE].graph_type
+                    == graph_def_pb2.ARROW_PROPERTY or op.attr[types_pb2.GRAPH_TYPE].graph_type
+                    == graph_def_pb2.ARROW_PROJECTED)
                 )
                 or op.op == types_pb2.TRANSFORM_GRAPH
                 or op.op == types_pb2.PROJECT_TO_SIMPLE
@@ -738,6 +739,16 @@ class CoordinatorServiceServicer(
                     graph_type=op.attr[types_pb2.GRAPH_TYPE].graph_type
                 )
             )
+            if op.op == types_pb2.CREATE_GRAPH:
+                # we only load projected graph create_graph, otherwise we project
+                logger.info("seting load_projected_graph to true since op is create_graph")
+                op_def.attr[types_pb2.LOAD_PROJECTED_GRAPH].CopyFrom(
+                    attr_value_pb2.AttrValue(b=True))
+            else :
+                logger.info("seting load_projected_graph to false since op is not create_graph")
+                op_def.attr[types_pb2.LOAD_PROJECTED_GRAPH].CopyFrom(
+                    attr_value_pb2.AttrValue(b=False))
+
             dag_def = op_def_pb2.DagDef()
             dag_def.op.extend([op_def])
             try:

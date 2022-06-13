@@ -55,6 +55,33 @@ typedef void ToDynamicFragmentT(
     const std::string& dst_graph_name, int default_label_id,
     bl::result<std::shared_ptr<IFragmentWrapper>>& wrapper_out);
 
+class ProjectedGraphUtils : public GSOBject {
+ public:
+  ProjectedGraphUtils(std::string id, std::string lib_path)
+      : GSObject(std::move(id), ObjectType::kProjectedGraphUtils),
+        lib_path_(nullptr),
+        dl_handle_(nullptr),
+        load_graph_(nullptr) {}
+
+  bl::result<void> Init() {
+    { BOOST_LEAF_ASSIGN(dl_handle_, open_lib(lib_path_.c_str())); }
+    {
+      BOOST_LEAF_AUTO(p_fun, get_func_ptr(lib_path_, dl_handle_, "LoadGraph"));
+      load_graph_ = reinterpret_cast<LoadGraphT*>(p_fun);
+    }
+    return {};
+  }
+
+  bl::result<std::shared_ptr<IFragmentWrapper>> LoadGraph(
+      const grape::CommSpec& comm_spec, vineyard::Client& client,
+      const std::string& graph_name, const rpc::GSParams& params) {
+    bl::result<std::shared_ptr<IFragmentWrapper>> wrapper;
+
+    load_graph_(comm_spec, client, graph_name, params, wrapper);
+    return wrapper;
+  }
+}
+
 /**
  * @brief PropertyGraphUtils is a invoker of property_graph_frame library. This
  * utility provides these methods to manipulate ArrowFragment: LoadGraph,

@@ -1,14 +1,15 @@
 package com.alibaba.graphscope.graphx.graph.impl
 
-import com.alibaba.graphscope.ds.{PropertyNbr, PropertyNbrUnit, Vertex}
+import com.alibaba.graphscope.ds.{PropertyNbrUnit, Vertex}
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
-import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, IFragment}
-import com.alibaba.graphscope.graphx.{GSEdgeTriplet, GSEdgeTripletImpl, ReverseGSEdgeTripletImpl}
+import com.alibaba.graphscope.fragment.{ArrowFragment, ArrowProjectedFragment, IFragment}
 import com.alibaba.graphscope.graphx.graph.GraphStructure
+import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{ArrowProjectedStructure, GraphStructureType}
+import com.alibaba.graphscope.graphx.{GSEdgeTriplet, GSEdgeTripletImpl, ReverseGSEdgeTripletImpl}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.graphx.{Edge, EdgeTriplet, PartitionID, ReusableEdge, ReusableEdgeImpl, ReversedReusableEdge}
 import org.apache.spark.graphx.impl.partition.data.VertexDataStore
+import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 
@@ -36,6 +37,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
   }
 
   private def getOutDegreeArray : PrimitiveArray[Int] = {
+    val arrowFragment : ArrowFragment[Long] = null
     val time0 = System.nanoTime()
     val len = fragment.getVerticesNum.toInt
     val res = PrimitiveArray.create(classOf[Int], len)
@@ -276,7 +278,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         if (offset < 0) return false
 
         while (lid2Offset(curLid + 1) <= offset) {
-          log.info(s"inc curLid since ${lid2Offset(curLid + 1)} leq ${offset}")
+//          log.info(s"inc curLid since ${lid2Offset(curLid + 1)} leq ${offset}")
           curLid += 1
         }
         vertex.SetValue(curLid)
@@ -288,7 +290,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         nbr.setAddress(initAddress + NBR_SIZE * offset)
         val dstLid = nbr.vid()
         val attr = edataArrayAccessor.get(nbr.eid())
-        log.info(s"src lid ${curLid}, src oid ${edge.srcId}  eid ${nbr.eid()}, attr ${attr}")
+//        log.info(s"src lid ${curLid}, src oid ${edge.srcId}  eid ${nbr.eid()}, attr ${attr}")
         vertex.SetValue(dstLid)
         edge.dstId = frag.getId(vertex)
         edge.attr = attr
@@ -396,4 +398,6 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     require(fragment.getInnerVertex(oid,vertex))
     true
   }
+
+  override val structureType: GraphStructureType = ArrowProjectedStructure
 }

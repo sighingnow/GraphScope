@@ -104,17 +104,16 @@ object GraphScopeHelper extends Logging{
   }
 
   def rdd2Fragment[VD : ClassTag,ED : ClassTag](vertexRDD : VertexRDD[VD], edgeRDD : EdgeRDD[ED]) : GrapeGraphImpl[VD,ED] = {
-    if (vertexRDD.isInstanceOf[GrapeVertexRDD[VD]] && edgeRDD.isInstanceOf[GrapeEdgeRDD[ED]]){
-      val grapeGraph = GrapeGraphImpl.fromExistingRDDs(vertexRDD.asInstanceOf[GrapeVertexRDD[VD]],edgeRDD.asInstanceOf[GrapeEdgeRDD[ED]])
-      graph2Fragment(grapeGraph)
-    }
-    else if (vertexRDD.isInstanceOf[VertexRDDImpl[VD]] && edgeRDD.isInstanceOf[EdgeRDDImpl[ED,VD]]){
-      val graph = GraphImpl.fromExistingRDDs(vertexRDD,edgeRDD)
-      graph2Fragment(graph)
-    }
-    else {
-      log.error(s"Unable to convert ${vertexRDD} and ${edgeRDD} to grape fragment")
-      null
+    vertexRDD match {
+      case grapeVertexRDD: GrapeVertexRDD[VD] =>
+        val grapeGraph = GrapeGraphImpl.fromExistingRDDs(grapeVertexRDD, edgeRDD.asInstanceOf[GrapeEdgeRDD[ED]])
+        graph2Fragment(grapeGraph)
+      case vertexRDDImpl : VertexRDDImpl[VD] =>
+        val graph = GraphImpl.fromExistingRDDs(vertexRDD, edgeRDD)
+        graph2Fragment(graph)
+      case _ =>
+        log.error(s"Unable to convert ${vertexRDD} and ${edgeRDD} to grape fragment")
+        null
     }
   }
 
@@ -131,6 +130,7 @@ object GraphScopeHelper extends Logging{
       case _ => throw new IllegalStateException(s"Not recognized graph ${graph}")
     }
   }
+
   private [graphx] def graphxGraph2Fragment[VD: ClassTag,ED : ClassTag](originGraph: GraphImpl[VD, ED]) : GrapeGraphImpl[VD,ED] = {
     val numPartitions = originGraph.vertices.getNumPartitions
     val partitioner = new HashPartitioner(numPartitions)

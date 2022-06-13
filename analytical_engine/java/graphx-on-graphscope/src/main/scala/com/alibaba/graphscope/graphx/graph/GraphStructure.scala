@@ -1,9 +1,10 @@
 package com.alibaba.graphscope.graphx.graph
 
 import com.alibaba.graphscope.ds.Vertex
+import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.graphx.{Edge, EdgeTriplet}
 import org.apache.spark.graphx.impl.partition.data.VertexDataStore
+import org.apache.spark.graphx.{Edge, EdgeTriplet}
 import org.apache.spark.util.collection.BitSet
 
 import scala.reflect.ClassTag
@@ -12,7 +13,14 @@ import scala.reflect.ClassTag
  * Defines the interface of graph structure, include vm, csr. But doesn't contain vertex attribute
  * and edge attribute(or contained but we don't use)
  */
+object GraphStructureTypes extends Enumeration{
+  type GraphStructureType = Value
+  val GraphXFragmentStructure,ArrowProjectedStructure = Value
+}
+
 trait GraphStructure {
+
+  val structureType : GraphStructureType
   val inDegreeArray :PrimitiveArray[Int]
   val outDegreeArray : PrimitiveArray[Int]
   val inOutDegreeArray : PrimitiveArray[Int]

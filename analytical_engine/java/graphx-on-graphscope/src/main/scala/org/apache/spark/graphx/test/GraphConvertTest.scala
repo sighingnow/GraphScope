@@ -26,6 +26,8 @@ object GraphConvertTest extends Logging{
     val res = grapeGraph.mapVertices((id,vd) => {log.info(s"${id}: ${vd}"); vd})
     log.info(s"Converted to grape graph ${res.numVertices} vertices, ${res.numEdges} edges")
 
+    //FIXME: Run GraphScope SSSP on this graph
+
     gsSession.close()
     sc.stop()
   }

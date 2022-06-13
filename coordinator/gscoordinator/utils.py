@@ -427,10 +427,11 @@ def compile_graph_frame(
     if graph_type == graph_def_pb2.ARROW_PROPERTY:
         cmake_commands += ["-DPROPERTY_GRAPH_FRAME=True"]
     elif graph_type in (
-        graph_def_pb2.ARROW_PROJECTED,
+        graph_def_pb2.ARROW_PROJECTED):
+        cmake_commands += ["-DPROJECT_FRAME=True","-DPROJECTED_GRAPH_FRAME=True"]
+    elif graph_type in (
         graph_def_pb2.DYNAMIC_PROJECTED,
-        graph_def_pb2.ARROW_FLATTENED,
-    ):
+        graph_def_pb2.ARROW_FLATTENED):
         cmake_commands += ["-DPROJECT_FRAME=True"]
     else:
         raise ValueError(f"Illegal graph type: {graph_type}")

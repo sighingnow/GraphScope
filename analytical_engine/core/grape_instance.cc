@@ -141,7 +141,7 @@ bl::result<rpc::graph::GraphDefPb> GrapeInstance::loadGraph(
       VLOG(10) << "GRAPE_JVM_OPTS:" << jvm_opts;
     }
 #endif
-    
+
     BOOST_LEAF_AUTO(graph_utils,
                     object_manager_.GetObject<PropertyGraphUtils>(type_sig));
     BOOST_LEAF_AUTO(wrapper, graph_utils->LoadGraph(comm_spec_, *client_,
@@ -1061,12 +1061,12 @@ bl::result<void> GrapeInstance::registerGraphType(const rpc::GSParams& params) {
   BOOST_LEAF_AUTO(type_sig, params.Get<std::string>(rpc::TYPE_SIGNATURE));
   BOOST_LEAF_AUTO(lib_path, params.Get<std::string>(rpc::GRAPH_LIBRARY_PATH));
 
-  VLOG(1) << "Registering Graph, graph type: "
-          << rpc::graph::GraphTypePb_Name(graph_type)
-          << ", Type sigature: " << type_sig << ", lib path: " << lib_path;
+  LOG(INFO) << "Registering Graph, graph type: "
+            << rpc::graph::GraphTypePb_Name(graph_type)
+            << ", Type sigature: " << type_sig << ", lib path: " << lib_path;
 
   if (object_manager_.HasObject(type_sig)) {
-    VLOG(1) << "Graph already registered, signature is: " << type_sig;
+    LOG(INFO) << "Graph already registered, signature is: " << type_sig;
     return {};
   }
 
@@ -1074,12 +1074,25 @@ bl::result<void> GrapeInstance::registerGraphType(const rpc::GSParams& params) {
     auto utils = std::make_shared<PropertyGraphUtils>(type_sig, lib_path);
     BOOST_LEAF_CHECK(utils->Init());
     return object_manager_.PutObject(utils);
-  } else if (graph_type == rpc::graph::ARROW_PROJECTED ||
-             graph_type == rpc::graph::DYNAMIC_PROJECTED ||
+  } else if (graph_type == rpc::graph::DYNAMIC_PROJECTED ||
              graph_type == rpc::graph::ARROW_FLATTENED) {
     auto projector = std::make_shared<Projector>(type_sig, lib_path);
     BOOST_LEAF_CHECK(projector->Init());
     return object_manager_.PutObject(projector);
+  } else if (graph_type == rpc::graph::ARROW_PROJECTED) {
+    BOOST_LEAF_AUTO(load_projected_graph,
+                    params.Get<bool>(rpc::LOAD_PROJECTED_GRAPH));
+    if (load_projected_graph) {
+      LOG(INFO) << "Loading projected graph: " << type_sig << ", " << lib_path;
+      auto utils = std::make_shared<ProjectedGraphUtils>(type_sig, lib_path);
+      BOOST_LEAF_CHECK(utils->Init());
+    } else {
+      LOG(INFO) << "Creating projector " << type_sig << ", " << lib_path;
+      auto projector = std::make_shared<Projector>(type_sig, lib_path);
+      BOOST_LEAF_CHECK(projector->Init());
+      return object_manager_.PutObject(projector);
+    }
+
   } else {
     RETURN_GS_ERROR(
         vineyard::ErrorCode::kInvalidValueError,

@@ -111,7 +111,7 @@ def create_graph(session_id, graph_type, inputs=None, **kwargs):
         types_pb2.GRAPH_TYPE: utils.graph_type_to_attr(graph_type),
     }
 
-    if graph_type == graph_def_pb2.ARROW_PROPERTY:
+    if graph_type == graph_def_pb2.ARROW_PROPERTY or graph_type == graph_def_pb2.ARROW_PROJECTED:
         attrs = kwargs.pop("attrs", None)
         if attrs:
             for k, v in attrs.items():
