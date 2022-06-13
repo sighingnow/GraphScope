@@ -44,11 +44,11 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   edges.cache()
 
 
-  val backend: GraphStructureType = vertices.grapePartitionsRDD.mapPartitions(iter => {
+  lazy val backend: GraphStructureType = vertices.grapePartitionsRDD.mapPartitions(iter => {
     val part = iter.next()
     Iterator(part.graphStructure.structureType)
   }).collect().distinct(0)
-  logger.info(s"Creating grape graph backended by ${backend}")
+//  logger.info(s"Creating grape graph backended by ${backend}")
 
   val vdClass: Class[VD] = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
   val edClass: Class[ED] = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
