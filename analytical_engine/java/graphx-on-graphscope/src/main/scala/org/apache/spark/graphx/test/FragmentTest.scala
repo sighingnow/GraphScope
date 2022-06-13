@@ -37,14 +37,14 @@ object FragmentTest extends Logging{
     })
     val graph4 = graph3.mapTriplets(triplet => {
       triplet.attr + 1
-    })
+    }).cache()
     log.info(s"mapping triplet,edges num ${graph4.numEdges}, vertices num ${graph4.numVertices}")
     val time1 = System.nanoTime()
 
     val time2 = System.nanoTime()
     val graph5 = graph.mapVertices((vid, vd)=> vid + vd)
     val graph6 = graph5.mapVertices((vid, vd)=> vd.toLong)
-    val graph7 = graph6.mapVertices((vid, vd)=> vd + vid)
+    val graph7 = graph6.mapVertices((vid, vd)=> vd + vid).cache()
     log.info(s"map vertices ,edges num ${graph7.numEdges}, vertices num ${graph7.numVertices}")
     val time3 = System.nanoTime()
 
