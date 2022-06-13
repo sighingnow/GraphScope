@@ -189,13 +189,13 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       val time0 = System.nanoTime()
       val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD3], partVnum.toInt).asInstanceOf[PrimitiveArray[VD3]]
       var i = this.bitSet.nextSetBit(0)
-      while (i >= 0 && i < partVnum) {
+      while (i >= 0) {
         val otherV: Option[VD2] = if (other.bitSet.get(i)) Some(other.getData(i)) else None
         newValues.set(i, f(this.graphStructure.getId(i), this.getData(i), otherV))
         i = this.bitSet.nextSetBit(i + 1)
       }
       val time1 = System.nanoTime()
-      log.info(s"Left join cost ${(time1 - time0) / 1000000} ms")
+      log.info(s"Left join between ${this} and ${other} cost ${(time1 - time0) / 1000000} ms")
       this.withNewValues(new InHeapVertexDataStore[VD3](newValues,client))
     }
   }
