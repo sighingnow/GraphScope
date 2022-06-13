@@ -2,6 +2,7 @@ package org.apache.spark.graphx.test
 
 import com.alibaba.graphscope.graphx.{GSSession, GraphScopeHelper}
 import org.apache.spark.graphx.impl.GrapeGraphImpl
+import org.apache.spark.graphx.{Graph, GraphLoader}
 import org.apache.spark.graphx.rdd.GraphScopeRDD
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
@@ -24,6 +25,8 @@ object FragmentTest extends Logging{
 //      "graph_proj = graph.project(vertices={\"person\":[\"weight\"]}, edges={\"knows\" : [\"dist\"]})\n" +
 //      "simple = graph_proj._project_to_simple()\n", "simple")
     val graph : GrapeGraphImpl[Long,Long] = GraphScopeRDD.loadFragmentAsGraph[Long,Long](sc, "d50:250271883936897154", "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>")
+//    val graph : Graph[Long,Long] = GraphLoader.edgeListFile(sc, "/home/graphscope/data/livejournal.e", false, numEdgePartitions = 1).mapVertices((id,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).cache()
+//    log.info(s"graphLoader graph ${graph.numVertices}, ${graph.numEdges}")
 
     val (vertexRDD, edgeRDD) = (graph.vertices, graph.edges)
     log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
