@@ -78,9 +78,10 @@ bool InitWellKnownClasses(JNIEnv* env) {
                              "(Ljava/net/URLClassLoader;)Ljava/lang/Class;");
   CHECK_NOTNULL(class_loader_load_communicator_class_methodID);
 
-  class_loader_load_and_create_methodID = env->GetStaticMethodID(
-      gs_class_loader_clz, "loadAndCreate",
-      "(Ljava/net/URLClassLoader;Ljava/lang/String;)Ljava/lang/Object;");
+  class_loader_load_and_create_methodID =
+      env->GetStaticMethodID(gs_class_loader_clz, "loadAndCreate",
+                             "(Ljava/net/URLClassLoader;Ljava/lang/"
+                             "String;Ljava/lang/String;)Ljava/lang/Object;");
   CHECK_NOTNULL(class_loader_load_and_create_methodID);
 
   class_loader_new_gs_class_loader_methodID =
@@ -318,13 +319,14 @@ jobject CreateFFIPointer(JNIEnv* env, const char* type_name,
 }
 
 jobject LoadAndCreate(JNIEnv* env, const jobject& url_class_loader_obj,
-                      const char* class_name) {
+                      const char* class_name, const char* serial_path) {
   VLOG(1) << "Loading and creating for class: " << class_name;
   jstring class_name_jstring = env->NewStringUTF(class_name);
+  jstring serial_path_jstring = env->NewStringUTF(serial_path);
 
   jobject res = env->CallStaticObjectMethod(
       gs_class_loader_clz, class_loader_load_and_create_methodID,
-      url_class_loader_obj, class_name_jstring);
+      url_class_loader_obj, class_name_jstring, serial_path_jstring);
   if (env->ExceptionCheck()) {
     env->ExceptionDescribe();
     env->ExceptionClear();

@@ -95,9 +95,9 @@ class JavaPIEDefaultContext : public grape::ContextBase {
       }
 
       context_object_ =
-          LoadAndCreate(env, url_class_loader_object_, context_class_name_);
+          LoadAndCreate(env, url_class_loader_object_, context_class_name_, "");
       app_object_ =
-          LoadAndCreate(env, url_class_loader_object_, app_class_name_);
+          LoadAndCreate(env, url_class_loader_object_, app_class_name_, "");
 
       java_frag_type_name_ = frag_name;
       fragment_object_ = CreateFFIPointer(env, java_frag_type_name_.c_str(),

@@ -150,10 +150,11 @@ class JavaContextBase : public grape::ContextBase {
     }
     std::string user_library_name;
     std::string user_class_path;
-    std::string context_class_name_ = "";  // should only used by graphx
-    std::string args_str =
-        parseParamsAndSetupJVMEnv(params, lib_path, user_library_name,
-                                  user_class_path, context_class_name_);
+    std::string graphx_context_name = "";  // should only used by graphx
+    std::string serial_path = "";          // should only be used by graphx;
+    std::string args_str = parseParamsAndSetupJVMEnv(
+        params, lib_path, user_library_name, user_class_path,
+        graphx_context_name, serial_path);
 
     JavaVM* jvm = GetJavaVM();
     (void) jvm;
@@ -206,27 +207,29 @@ class JavaContextBase : public grape::ContextBase {
 
       {
         VLOG(1) << "Creating app object: " << app_class_name_;
-        app_object_ =
-            LoadAndCreate(env, url_class_loader_object_, app_class_name_);
+        app_object_ = LoadAndCreate(env, url_class_loader_object_,
+                                    app_class_name_, serial_path.c_str());
         VLOG(1) << "Successfully created app object with class loader:"
                 << &url_class_loader_object_
                 << ", of type: " << std::string(app_class_name_);
       }
 
       {
-        if (context_class_name_.size() != 0 &&
-            context_class_name_.find(
+        if (graphx_context_name.size() != 0 &&
+            graphx_context_name.find(
                 "com.alibaba.graphscope.context.GraphXAdaptorContext") !=
                 std::string::npos) {
-          context_object_ = LoadAndCreate(env, url_class_loader_object_,
-                                          context_class_name_.c_str());
+          context_object_ =
+              LoadAndCreate(env, url_class_loader_object_,
+                            graphx_context_name.c_str(), serial_path.c_str());
           VLOG(1) << "Succcessfully loaded graphx context: " << context_object_;
         } else {
           std::string _context_class_name_str =
               getCtxClassNameFromAppObject(env);
           VLOG(1) << "Context class name: " << _context_class_name_str;
           context_object_ = LoadAndCreate(env, url_class_loader_object_,
-                                          _context_class_name_str.c_str());
+                                          _context_class_name_str.c_str(),
+                                          serial_path.c_str());
           VLOG(1) << "Successfully created ctx object with class loader:"
                   << &url_class_loader_object_
                   << ", of type: " << _context_class_name_str;
@@ -390,11 +393,14 @@ class JavaContextBase : public grape::ContextBase {
     return std::string(user_class_path);
   }
   // user library name should be absolute
+  // serial path is used in graphx, to specify the path to serializaed class
+  // objects of vd,ed.etc.
   std::string parseParamsAndSetupJVMEnv(const std::string& params,
                                         const std::string lib_path,
                                         std::string& user_library_name,
                                         std::string& user_class_path,
-                                        std::string& context_class_name) {
+                                        std::string& context_class_name,
+                                        std::string& serial_path) {
     VLOG(10) << "received params: " << params;
     boost::property_tree::ptree pt;
     std::stringstream ss;
@@ -427,9 +433,14 @@ class JavaContextBase : public grape::ContextBase {
     app_class_name_[strlen(ch)] = '\0';
     pt.erase("app_class");
 
-    context_class_name = pt.get<std::string>("context_class");
+    context_class_name = pt.get<std::string>("graphx_context_class");
     if (!context_class_name.empty()) {
-      LOG(INFO) << "Found context class: " + context_class_name;
+      LOG(INFO) << "Found graph context class: " << context_class_name;
+    }
+
+    serial_path = pt.get<std::string>("serial_path", "");
+    if (!serial_path.empty()) {
+      LOG(INFO) << "Found serial path " << serial_path;
     }
 
     boost::filesystem::path lib_path_fs, lib_dir;
