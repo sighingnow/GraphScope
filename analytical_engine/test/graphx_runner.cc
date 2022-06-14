@@ -68,7 +68,7 @@ std::string flags2JsonStr() {
   // vd and ed type in app_class for generic class creations
   pt.put("app_class", build_generic_class(FLAGS_app_class, FLAGS_vd_class,
                                           FLAGS_ed_class, FLAGS_msg_class));
-  pt.put("context_class",
+  pt.put("graph_context_class",
          build_generic_class(FLAGS_context_class, FLAGS_vd_class,
                              FLAGS_ed_class, FLAGS_msg_class));
   pt.put("msg_class", FLAGS_msg_class);

@@ -109,13 +109,13 @@ public class GraphScopeClassLoader {
      * @throws InstantiationException if error in creating new instance.
      * @throws IllegalAccessException if error in creating new instance.
      */
-    public static Object loadAndCreate(URLClassLoader classLoader, String className)
+    public static Object loadAndCreate(URLClassLoader classLoader, String className, String serialPath)
         throws ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         if (className.startsWith("com.alibaba.graphscope.app.GraphXAdaptor")){
-            return loadGraphXAdaptor(className, classLoader);
+            return loadGraphXAdaptor(serialPath, classLoader);
         }
         if (className.startsWith("com.alibaba.graphscope.context.GraphXAdaptorContext")){
-            return loadGraphxAdaptorCtx(className, classLoader);
+            return loadGraphxAdaptorCtx(serialPath, classLoader);
         }
         logger.info("Load and create: " + formatting(className));
         Class<?> clz = classLoader.loadClass(formatting(className));
