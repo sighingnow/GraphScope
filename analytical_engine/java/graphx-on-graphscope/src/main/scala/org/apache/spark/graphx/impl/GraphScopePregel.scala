@@ -1,6 +1,6 @@
 package org.apache.spark.graphx.impl
 
-import com.alibaba.graphscope.graphx.SerializationUtils
+import com.alibaba.graphscope.graphx.{GraphScopeHelper, SerializationUtils}
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.utils.ExecutorUtils
 import org.apache.spark.graphx.{EdgeDirection, EdgeTriplet, Graph, VertexId}
@@ -21,12 +21,9 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
   val edClass: Class[ED] = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
 
   def run(): Graph[VD,ED] = {
-    if (!graph.isInstanceOf[GrapeGraphImpl[VD,ED]]) {
-      log.error("Only support grape graph")
-      return graph
-    }
+    //Can accept both grapeGraph or GraphXGraph
+    val grapeGraph = GraphScopeHelper.graph2Fragment(graph)
     //0. write back vertex.
-    val grapeGraph = graph.asInstanceOf[GrapeGraphImpl[VD,ED]]
     //1. serialization
     log.info("[Driver:] start serialization functions.")
     SerializationUtils.write(vprog, VPROG_SERIALIZATION_PATH)
