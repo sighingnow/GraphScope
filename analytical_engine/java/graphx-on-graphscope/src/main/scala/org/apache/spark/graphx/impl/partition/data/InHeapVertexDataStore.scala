@@ -7,7 +7,7 @@ import org.apache.spark.graphx.utils.ScalaFFIFactory
 
 import scala.reflect.ClassTag
 
-class InHeapVertexDataStore[VD: ClassTag](val vdArray : PrimitiveArray[VD], val client : VineyardClient) extends VertexDataStore [VD]{
+class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val vdArray : PrimitiveArray[VD], val client : VineyardClient) extends VertexDataStore [VD]{
 
   var vertexDataV6d: VertexData[Long, VD] = null.asInstanceOf[VertexData[Long,VD]]
   override def size: Long = vdArray.size()
