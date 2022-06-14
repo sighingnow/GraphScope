@@ -38,12 +38,15 @@ object SerializationUtils{
     logger.info("Write obj " + objs.mkString("Array(", ", ", ")") + " to :" +  path)
     val bo = new FileOutputStream(new File(path))
     val outputStream = new ObjectOutputStream(bo)
+    outputStream.writeInt(objs.length)
     var i = 0
     while (i < objs.length){
+      logger.info(s"writing object ${objs(i)}")
       outputStream.writeObject(objs(i))
       i += 1
     }
     outputStream.flush()
+    outputStream.close()
   }
 
   @throws[ClassNotFoundException]
@@ -55,14 +58,16 @@ object SerializationUtils{
       protected override def resolveClass(desc: ObjectStreamClass): Class[_] = {
 //        val cl = Thread.currentThread.getContextClassLoader
 //        if (cl == null) return super.resolveClass(desc)
+        logger.info(s"Resolving class for ${desc}")
         Class.forName(desc.getName, false, classLoader)
       }
     }
-    val res = new ArrayBuffer[Any]()
-    while (objectInputStream.available() > 0){
-      res.+=(objectInputStream.readObject())
+    val len = objectInputStream.readInt()
+    val res = new Array[Any](len)
+    for (i <- 0 until len){
+      res(i) = objectInputStream.readObject()
     }
-    res.toArray
+    res
   }
 
 //  private def deserializeVprog[VD, ED, MSG](vprogFilePath: String) : (Long,VD,MSG) => VD = {
