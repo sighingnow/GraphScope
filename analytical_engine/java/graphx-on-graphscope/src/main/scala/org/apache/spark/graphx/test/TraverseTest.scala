@@ -24,8 +24,9 @@ object TraverseTest extends Logging{
     //    "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>")
 
     val graph : Graph[Long,Long] = GraphLoader.edgeListFile(sc, "/home/graphscope/data/lei.e", false, numEdgePartitions = 1).mapVertices((id,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).cache()
-    val res = graph.pregel(1L, maxIterations = 10)(
-      (id, dist, newDist) => newDist,
+    val graph2 = graph.mapVertices((id,vd) => (vd,vd))
+    val res = graph2.pregel(1L, maxIterations = 10)(
+      (id, dist, newDist) => (newDist,newDist),
       triplet => { // Send Message
         log.info(s"visiting triplet ${triplet.srcId}(${triplet.srcAttr}) -> ${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")
         Iterator.empty
