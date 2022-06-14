@@ -1,7 +1,8 @@
 package org.apache.spark.graphx.test
 
 import com.alibaba.graphscope.graphx.{GSSession, GraphScopeHelper}
-import org.apache.spark.graphx.impl.GrapeGraphImpl
+import org.apache.spark.graphx.Graph
+import org.apache.spark.graphx.GraphLoader
 import org.apache.spark.graphx.rdd.GraphScopeRDD
 import org.apache.spark.graphx.test.FragmentTest.log
 import org.apache.spark.internal.Logging
@@ -17,12 +18,13 @@ object TraverseTest extends Logging{
 
     val gsSession: GSSession = GraphScopeHelper.createSession(sc)
 
-    val graph: GrapeGraphImpl[Long, Long] =
-      GraphScopeRDD.loadFragmentAsGraph[Long, Long](sc,
-        "d50:250494962841990456",
-        "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>")
+    //val graph: GrapeGraphImpl[Long, Long] =
+    //  GraphScopeRDD.loadFragmentAsGraph[Long, Long](sc,
+    //    "d50:250522961160603508",
+    //    "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>")
 
-    val res = graph.pregel(1, maxIterations = 10)(
+    val graph : Graph[Long,Long] = GraphLoader.edgeListFile(sc, "/home/graphscope/data/lei.e", false, numEdgePartitions = 1).mapVertices((id,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).cache()
+    val res = graph.pregel(1L, maxIterations = 10)(
       (id, dist, newDist) => newDist,
       triplet => { // Send Message
         log.info(s"visiting triplet ${triplet.srcId}(${triplet.srcAttr}) -> ${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")
