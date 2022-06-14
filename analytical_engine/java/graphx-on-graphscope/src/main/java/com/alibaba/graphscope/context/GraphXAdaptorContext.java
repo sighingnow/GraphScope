@@ -95,6 +95,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
 
         graphXProxy.init(frag, messageManager, maxIterations);
         logger.info("create graphx proxy: {}", graphXProxy);
+        createFFIContext(frag, conf.getVdClass(), false);
         System.gc();
     }
 
