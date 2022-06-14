@@ -1,9 +1,14 @@
 package org.apache.spark.graphx.rdd
 
 import com.alibaba.fastffi.{FFIByteString, FFITypeFactory}
-import com.alibaba.graphscope.fragment.IFragment
+import com.alibaba.graphscope.ds.TypedArray
+import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, IFragment}
+import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
+import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure.NBR_SIZE
+import com.alibaba.graphscope.utils.array.PrimitiveArray
+import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
 import org.apache.spark.graphx.impl.partition.GrapeEdgePartition
 import org.apache.spark.graphx.rdd.FragmentPartition.getHost
@@ -117,7 +122,24 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
         if (fragIter.hasNext){
           val (pid,(client,frag)) = fragIter.next()
           val structure = structureIter.next()
-          Iterator(new GrapeEdgePartition[VD,ED](pid, structure, client, null))
+          val time0 = System.nanoTime()
+          val newEdata = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], structure.getOutEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED]]
+          if (frag.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)) {
+            val projectedFragment = frag.asInstanceOf[ArrowProjectedAdaptor[Long, Long, _, _]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
+            val nbr = projectedFragment.getOutEdgesPtr
+            val edgesNum = projectedFragment.getOutEdgeNum
+            val edataAccessor = projectedFragment.getEdataArrayAccessor.asInstanceOf[TypedArray[ED]]
+            var i = 0
+            while (i < edgesNum){
+              val edata = edataAccessor.get(nbr.eid())
+              newEdata.set(i, edata)
+              nbr.addV(NBR_SIZE)
+              i += 1
+            }
+          }
+          val time1 = System.nanoTime()
+          log.info(s"got edata array cost ${(time1 - time0)/ 1000000}ms")
+          Iterator(new GrapeEdgePartition[VD,ED](pid, structure, client, newEdata))
         }
         else Iterator.empty
       }
