@@ -8,6 +8,7 @@ import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.fragment.adaptor.GraphXFragmentAdaptor;
 import com.alibaba.graphscope.graphx.GSEdgeTriplet;
 import com.alibaba.graphscope.graphx.GSEdgeTripletImpl;
+import com.alibaba.graphscope.graphx.GraphXConf;
 import com.alibaba.graphscope.graphx.SerializationUtils;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.parallel.message.DoubleMsg;
@@ -18,7 +19,6 @@ import java.net.URLClassLoader;
 import java.util.BitSet;
 import java.util.concurrent.ExecutorService;
 import org.apache.spark.graphx.EdgeTriplet;
-import org.apache.spark.graphx.GraphXConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Function1;
@@ -42,14 +42,14 @@ public class GraphXPIE<VD, ED, MSG_T> {
   /**
    * (A, A) => A)
    */
-  private Function2<MSG_T, MSG_T, MSG_T> mergeMsg;
-  private IFragment<Long, Long, VD, ED> iFragment; // different from c++ frag
-  private GraphXFragment<Long, Long, VD, ED> graphXFragment;
+  protected Function2<MSG_T, MSG_T, MSG_T> mergeMsg;
+  protected IFragment<Long, Long, VD, ED> iFragment; // different from c++ frag
+  protected GraphXFragment<Long, Long, VD, ED> graphXFragment;
   private MSG_T initialMessage;
   private ExecutorService executorService;
   private int numCores, maxIterations, round;
   private long vprogTime, msgSendTime, receiveTime, flushTime;
-  private GraphXConf<VD, ED, MSG_T> conf;
+  private GraphXConf<VD,ED,MSG_T> conf;
   private GSEdgeTriplet<VD, ED>[] edgeTriplets;
   private GSEdgeTripletImpl<VD, ED> edgeTriplet;
   DefaultMessageManager messageManager;
@@ -59,40 +59,24 @@ public class GraphXPIE<VD, ED, MSG_T> {
   private PrimitiveArray<ED> newEdataArray;
   private long innerVerticesNum, verticesNum;
   private BitSet curSet,nextSet;
-  private URLClassLoader classLoader;
 
   public PrimitiveArray<VD> getNewVdataArray() {
     return newVdataArray;
   }
 
-  public GraphXPIE(GraphXConf<VD, ED, MSG_T> conf, String vprogPath, String sendMsgPath,
-                   String mergeMsgPath, URLClassLoader classLoader) {
-    this.conf = conf;
-    this.classLoader = classLoader;
-    try {
-      this.vprog = (Function3<Long, VD, MSG_T, VD>) SerializationUtils.read(classLoader, vprogPath);
-      this.sendMsg =
-          (Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>>) SerializationUtils.read(
-              classLoader, sendMsgPath);
-      this.mergeMsg =
-          (Function2<MSG_T, MSG_T, MSG_T>) SerializationUtils.read(classLoader, mergeMsgPath);
-    } catch (ClassNotFoundException e) { e.printStackTrace(); }
-    this.edgeTriplet = new GSEdgeTripletImpl<>();
-  }
-
   public GraphXPIE(GraphXConf<VD, ED, MSG_T> conf, Function3<Long, VD, MSG_T, VD> vprog,
                    Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> sendMsg,
-                   Function2<MSG_T, MSG_T, MSG_T> mergeMsg, URLClassLoader classLoader) {
+                   Function2<MSG_T, MSG_T, MSG_T> mergeMsg,MSG_T initialMessage) {
     this.conf = conf;
-    this.classLoader = classLoader;
     this.vprog = vprog;
     this.sendMsg = sendMsg;
     this.mergeMsg = mergeMsg;
     this.edgeTriplet = new GSEdgeTripletImpl<>();
+    this.initialMessage = initialMessage;
   }
 
   public void init(IFragment<Long, Long, VD, ED> fragment, DefaultMessageManager messageManager,
-                   MSG_T initialMessage, int maxIterations) {
+                    int maxIterations) {
     this.iFragment = fragment;
     if (iFragment.fragmentType() != GraphXFragmentAdaptor.fragmentType) {
       throw new IllegalStateException("Only support graphx fragment");
@@ -100,12 +84,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
     this.graphXFragment =
         ((GraphXFragmentAdaptor<Long, Long, VD, ED>) iFragment).getGraphXFragment();
     oldEdataArray = graphXFragment.getEdataArray();
-//    logger.info("edata array size {}, edge num{}", oldEdataArray.getLength(),
-//                graphXFragment.getEdgeNum());
-//    if (oldEdataArray.getLength() * 2 != graphXFragment.getEdgeNum()) {
-//      throw new IllegalStateException("not equal" + oldEdataArray.getLength() + ","
-//                                      + graphXFragment.getEdgeNum());
-//    }
 
     oldVdataArray = graphXFragment.getVdataArray();
     logger.info("vdata array size {}, frag vnum{}", oldVdataArray.getLength(),

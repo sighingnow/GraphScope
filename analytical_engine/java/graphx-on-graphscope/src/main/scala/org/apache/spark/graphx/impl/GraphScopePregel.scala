@@ -12,10 +12,13 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
 (graph: Graph[VD, ED], initialMsg: MSG, maxIteration: Int, activeDirection: EdgeDirection, vprog: (VertexId, VD, MSG) => VD,
  sendMsg: EdgeTriplet[VD, ED] => Iterator[(VertexId, MSG)],
  mergeMsg: (MSG, MSG) => MSG) extends Logging {
-  val VPROG_SERIALIZATION_PATH = "/tmp/graphx-vprog"
-  val SEND_MSG_SERIALIZATION_PATH = "/tmp/graphx-sendMsg"
-  val MERGE_MSG_SERIALIZATION_PATH = "/tmp/graphx-mergeMsg"
-  val VDATA_MAPPED_PATH = "graphx-vdata"
+  val SERIAL_PATH = "/tmp/graphx-meta"
+//  val SEND_MSG_SERIAL_PATH = "/tmp/graphx-sendMsg"
+//  val MERGE_MSG_SERIAL_PATH = "/tmp/graphx-mergeMsg"
+//  val VD_CLASS_SERIAL_PATH = "/tmp/graphx-vd"
+//  val ED_CLASS_SERIAL_PATH = "/tmp/graphx-ed"
+//  val MSG_CLASS_SERIAL_PATH = "/tmp/graphx-msg"
+//  val INIT_MSG_SERIAL_PATh = "/tmp/graphx-init-msg"
   val msgClass: Class[MSG] = classTag[MSG].runtimeClass.asInstanceOf[java.lang.Class[MSG]]
   val vdClass: Class[VD] = classTag[VD].runtimeClass.asInstanceOf[java.lang.Class[VD]]
   val edClass: Class[ED] = classTag[ED].runtimeClass.asInstanceOf[java.lang.Class[ED]]
@@ -26,9 +29,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     //0. write back vertex.
     //1. serialization
     log.info("[Driver:] start serialization functions.")
-    SerializationUtils.write(vprog, VPROG_SERIALIZATION_PATH)
-    SerializationUtils.write(sendMsg, SEND_MSG_SERIALIZATION_PATH)
-    SerializationUtils.write(mergeMsg, MERGE_MSG_SERIALIZATION_PATH)
+    SerializationUtils.write(SERIAL_PATH, vdClass, edClass, msgClass, vprog, sendMsg, mergeMsg, initialMsg)
 
     //launch mpi processes. and run.
     val t0 = System.nanoTime()
@@ -40,10 +41,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     val vdataIds = grapeGraph.generateVdataIds()
     log.info(s"[GraphScopePregel]: collect distinct ids vm: ${vmIds.mkString("Array(", ", ", ")")}, csr: ${csrIds.mkString("Array(", ", ", ")")}, vdata: ${vdataIds.mkString("Array(", ", ", ")")}")
 
-    MPIUtils.launchGraphX[MSG,VD,ED](vmIds,csrIds,vdataIds,
-      msgClass, vdClass, edClass,
-      VPROG_SERIALIZATION_PATH, SEND_MSG_SERIALIZATION_PATH, MERGE_MSG_SERIALIZATION_PATH,
-      initialMsg,maxIteration)
+    MPIUtils.launchGraphX[MSG,VD,ED](vmIds,csrIds,vdataIds,vdClass,edClass,msgClass, SERIAL_PATH,maxIteration)
     //FIXME: reconstruct the graph from result ids.
 
     val t1 = System.nanoTime()

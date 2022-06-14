@@ -38,22 +38,14 @@ DEFINE_string(app_class, "com.alibaba.graphscope.app.GraphXAdaptor",
 DEFINE_string(context_class,
               "com.alibaba.graphscope.context.GraphXAdaptorContext",
               "graphx driver context class");  // graphx_driver_class
-DEFINE_string(vprog_path, "/tmp/graphx-vprog",
-              "path to the serialization file for vprog");
-DEFINE_string(send_msg_path, "/tmp/graphx-sendMsg",
-              "path to the serialization file for sendMsg");
-DEFINE_string(merge_msg_path, "/tmp/graphx-mergeMsg",
-              "path to the serialization file for Merge msg");
-DEFINE_string(vdata_path, "/tmp/graphx-vdata",
-              "path to serialization for vdata array");
-DEFINE_string(vd_class, "", "int64_t,int32_t,double");
-DEFINE_string(ed_class, "", "int64_t,int32_t,double");
-DEFINE_string(msg_class, "", "int64_t,int32_t,double");
-DEFINE_string(initial_msg, "", "the initial msg");
+DEFINE_string(vd_class, "", "int64_t,int32_t,double,std::string");
+DEFINE_string(ed_class, "", "int64_t,int32_t,double,std::string");
+DEFINE_string(msg_class, "", "int64_t,int32_t,double,std::string");
 DEFINE_int32(max_iterations, 100, "max iterations");
 DEFINE_string(vm_ids, "", "vertex map ids");
 DEFINE_string(csr_ids, "", "csr ids");
 DEFINE_string(vdata_ids, "", "vdata ids");
+DEFINE_string(serial_path, "", "serial path");
 
 std::string build_generic_class(const std::string& base_class,
                                 const std::string& vd_class,
@@ -82,11 +74,8 @@ std::string flags2JsonStr() {
   pt.put("msg_class", FLAGS_msg_class);
   pt.put("vd_class", FLAGS_vd_class);
   pt.put("ed_class", FLAGS_ed_class);
-  pt.put("initial_msg", FLAGS_initial_msg);
   pt.put("max_iterations", FLAGS_max_iterations);
-  pt.put("vprog_path", FLAGS_vprog_path);
-  pt.put("send_msg_path", FLAGS_send_msg_path);
-  pt.put("merge_msg_path", FLAGS_merge_msg_path);
+  pt.put("serial_path", FLAGS_serial_path);
 
   std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);
@@ -139,6 +128,9 @@ int main(int argc, char* argv[]) {
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
     gs::Run<int64_t, uint64_t, double, double>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "std::string") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
+    gs::Run<int64_t, uint64_t, std::string, double>(params);
   } else {
     LOG(ERROR) << "current not supported: " << FLAGS_vd_class << ", "
                << FLAGS_ed_class;

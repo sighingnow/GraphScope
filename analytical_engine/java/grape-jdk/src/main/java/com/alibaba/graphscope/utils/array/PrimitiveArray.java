@@ -3,6 +3,7 @@ package com.alibaba.graphscope.utils.array;
 import com.alibaba.graphscope.utils.array.impl.DoubleArray;
 import com.alibaba.graphscope.utils.array.impl.IntArray;
 import com.alibaba.graphscope.utils.array.impl.LongArray;
+import com.alibaba.graphscope.utils.array.impl.ObjectArray;
 
 public interface PrimitiveArray<T> {
     T get(int index);
@@ -30,7 +31,7 @@ public interface PrimitiveArray<T> {
             return (PrimitiveArray<TT>) new IntArray(len);
         }
         else {
-            throw new IllegalStateException("Unrecognized class: " + clz.getName());
+            return (PrimitiveArray<TT>) new ObjectArray(clz,len);
         }
     }
 }
