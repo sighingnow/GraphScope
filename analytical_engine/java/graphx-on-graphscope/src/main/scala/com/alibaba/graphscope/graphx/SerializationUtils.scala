@@ -58,17 +58,20 @@ object SerializationUtils{
       protected override def resolveClass(desc: ObjectStreamClass): Class[_] = {
 //        val cl = Thread.currentThread.getContextClassLoader
 //        if (cl == null) return super.resolveClass(desc)
-        logger.info(s"Resolving class for ${desc}")
-        if (desc.getName == "long"){
+        logger.info(s"Resolving class for ${desc}, ${desc.getName}")
+        logger.info(s"str eq ${desc.getName}, ${desc.getName.equals("long")}")
+        if (desc.getName.equals("long")){
           classOf[java.lang.Long]
         }
-        else if (desc.getName == "double"){
+        else if (desc.getName.equals("double")){
           classOf[java.lang.Double]
         }
-        else if (desc.getName == "int"){
+        else if (desc.getName.equals("int")){
           classOf[java.lang.Integer]
         }
-        Class.forName(desc.getName, false, classLoader)
+	else {
+          Class.forName(desc.getName, false, classLoader)
+        }
       }
     }
     val len = objectInputStream.readInt()
