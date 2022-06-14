@@ -111,7 +111,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
       }
     }
     this.messageManager = messageManager;
-    this.initialMessage = initialMessage;
     this.maxIterations = maxIterations;
     innerVerticesNum = graphXFragment.getInnerVerticesNum();
     verticesNum = graphXFragment.getVerticesNum();

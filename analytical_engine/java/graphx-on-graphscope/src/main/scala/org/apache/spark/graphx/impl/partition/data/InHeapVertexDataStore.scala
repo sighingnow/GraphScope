@@ -11,7 +11,7 @@ import org.apache.spark.internal.Logging
 import java.io.ObjectOutputStream
 import scala.reflect.ClassTag
 
-class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val vdArray : PrimitiveArray[VD], val client : VineyardClient) extends VertexDataStore [VD]{
+class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val vdArray : PrimitiveArray[VD], val client : VineyardClient) extends VertexDataStore [VD] with Logging {
 
   var vertexDataV6dId: Long = 0L
   override def size: Long = vdArray.size()
