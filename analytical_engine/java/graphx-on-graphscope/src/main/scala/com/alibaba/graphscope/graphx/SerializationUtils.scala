@@ -43,6 +43,7 @@ object SerializationUtils{
       outputStream.writeObject(objs(i))
       i += 1
     }
+    outputStream.flush()
   }
 
   @throws[ClassNotFoundException]
