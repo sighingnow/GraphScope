@@ -42,7 +42,18 @@ object SerializationUtils{
     var i = 0
     while (i < objs.length){
       logger.info(s"writing object ${objs(i)}")
-      outputStream.writeObject(objs(i))
+      if (objs(i).equals(classOf[Long])){
+        outputStream.writeObject(classOf[java.lang.Long])
+      }
+      else if (objs(i).equals(classOf[Int])){
+        outputStream.writeObject(classOf[java.lang.Integer])
+      }
+      else if (objs(i).equals(classOf[Double])){
+        outputStream.writeObject(classOf[java.lang.Double])
+      }
+      else {
+        outputStream.writeObject(objs(i))
+      }
       i += 1
     }
     outputStream.flush()
