@@ -87,7 +87,7 @@ object GrapeEdgeRDD extends Logging{
       else Iterator.empty
     },true).cache()
 
-    val localVertexMapIdss = metaPartitions.mapPartitions(iter => {
+    val localVertexMapIds = metaPartitions.mapPartitions(iter => {
       if (iter.hasNext){
         val (pid, meta) = iter.next()
         Iterator(ExecutorUtils.getHostName + ":" + meta.partitionID + ":" + meta.localVertexMap.id())

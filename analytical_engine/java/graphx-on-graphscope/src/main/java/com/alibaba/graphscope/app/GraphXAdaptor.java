@@ -21,10 +21,6 @@ import scala.collection.Iterator;
 public class GraphXAdaptor<VDATA_T, EDATA_T, MSG> extends Communicator implements
     DefaultAppBase<Long, Long, VDATA_T, EDATA_T, GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>> {
 
-    private static Logger logger = LoggerFactory.getLogger(GraphXAdaptor.class.getName());
-    private static String gsRuntimeJar = "local:/opt/graphscope/lib/grape-runtime-0.1-shaded.jar";
-    private static String gsLibPath = "/opt/graphscope/lib";
-
     public static <VD, ED, M> GraphXAdaptor<VD, ED, M> createImpl(
         Class<? extends VD> vdClass, Class<? extends ED> edClass,
         Class<? extends M> msgClass) {
