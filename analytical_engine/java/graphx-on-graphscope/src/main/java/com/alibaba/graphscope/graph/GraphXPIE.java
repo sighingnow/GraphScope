@@ -305,7 +305,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
       }
     } else if (conf.getMsgClass().equals(Long.class) || conf.getMsgClass().equals(long.class)) {
       LongMsg msg = FFITypeFactoryhelper.newLongMsg();
-      while (messageManager.getMessageGraphX(graphXFragment, receiveVertex, msg, 2.0)) {
+      while (messageManager.getMessageGraphX(graphXFragment, receiveVertex, msg, 1L)) {
         if (receiveVertex.GetValue() >= innerVerticesNum) {
           throw new IllegalStateException("Receive illegal vertex " + receiveVertex.GetValue()
                                           + " msg: " + msg.getData());

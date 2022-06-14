@@ -646,6 +646,11 @@ import com.alibaba.fastffi.FFIGenBatch;
                         java = {
                             "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Integer,java.lang.Double>",
                             "Integer"}),
+                    @CXXTemplate(
+                        cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,int64_t,int64_t>", "int64_t"},
+                        java = {
+                            "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                            "Long"}),
               }),
           //            @FFIGen(
           //                    type =
