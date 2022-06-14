@@ -55,7 +55,7 @@ typedef void ToDynamicFragmentT(
     const std::string& dst_graph_name, int default_label_id,
     bl::result<std::shared_ptr<IFragmentWrapper>>& wrapper_out);
 
-class ProjectedGraphUtils : public GSOBject {
+class ProjectedGraphUtils : public GSObject {
  public:
   ProjectedGraphUtils(std::string id, std::string lib_path)
       : GSObject(std::move(id), ObjectType::kProjectedGraphUtils),
@@ -80,7 +80,11 @@ class ProjectedGraphUtils : public GSOBject {
     load_graph_(comm_spec, client, graph_name, params, wrapper);
     return wrapper;
   }
-}
+ private:
+  std::string lib_path_;
+  void* dl_handle_;
+  LoadGraphT* load_graph_;
+};
 
 /**
  * @brief PropertyGraphUtils is a invoker of property_graph_frame library. This

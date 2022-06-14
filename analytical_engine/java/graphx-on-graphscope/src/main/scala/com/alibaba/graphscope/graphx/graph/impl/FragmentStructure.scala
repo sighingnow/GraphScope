@@ -356,12 +356,12 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
   private def newProjectedTripletIteratorV2[VD: ClassTag,ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, VD, ED],vertexDataStore: VertexDataStore[VD], edatas : PrimitiveArray[ED],bitSet: BitSet, edgeReversed: Boolean, includeSrc : Boolean, includeDst : Boolean) : Iterator[EdgeTriplet[VD,ED]] = {
     new Iterator[EdgeTriplet[VD,ED]]{
       def createTriplet : GSEdgeTriplet[VD,ED] = {
-        if (!edgeReversed){
+       // if (!edgeReversed){
           new GSEdgeTripletImpl[VD,ED];
-        }
-        else {
-          new ReverseGSEdgeTripletImpl[VD,ED]
-        }
+        //}
+       // else {
+       //   new ReverseGSEdgeTripletImpl[VD,ED]
+       // }
       }
       var offset : Long = bitSet.nextSetBit(0)
 
@@ -370,18 +370,18 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
       }
 
       override def next(): EdgeTriplet[VD,ED] = {
-        val edge = createTriplet
+        val edge = new GSEdgeTripletImpl[VD,ED]
         val attr = edatas.get(offset)
         edge.srcId = srcOids.get(offset)
-        if (includeSrc){
-          edge.srcAttr = vertexDataStore.getData(srcLids.get(offset))
-        }
+//        if (includeSrc){
+        edge.srcAttr = vertexDataStore.getData(srcLids.get(offset))
+//        }
         edge.dstId = dstOids.get(offset)
-        if (includeDst){
-          edge.dstAttr = vertexDataStore.getData(dstLids.get(offset))
-        }
+//        if (includeDst){
+        edge.dstAttr = vertexDataStore.getData(dstLids.get(offset))
+//        }
         edge.attr = attr
-	      edge.index = offset
+	edge.index = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
         edge
       }

@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
       LOG(INFO) << "vertex prop num:" << fragment->vertex_property_num(0);
       LOG(INFO) << "edge prop num:" << fragment->edge_property_num(0);
       std::shared_ptr<ProjectedFragmentType> projected_fragment =
-          ProjectedFragmentType::Project(fragment, "0", "0", "0", "2");
+          ProjectedFragmentType::Project(fragment, "0", "0", "0", "0");
       LOG(INFO) << "After projection: " << getHostName() << ":"
                 << projected_fragment->id();
       auto projected_id = projected_fragment->id();

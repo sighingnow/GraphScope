@@ -24,7 +24,8 @@ object FragmentTest extends Logging{
 //      "graph = graph.add_edges(\"/home/graphscope/data/livejournal.e\",label=\"knows\",src_label=\"person\",dst_label=\"person\")\n" +
 //      "graph_proj = graph.project(vertices={\"person\":[\"weight\"]}, edges={\"knows\" : [\"dist\"]})\n" +
 //      "simple = graph_proj._project_to_simple()\n", "simple")
-    val graph : GrapeGraphImpl[Long,Long] = GraphScopeRDD.loadFragmentAsGraph[Long,Long](sc, "d50:250271883936897154", "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>")
+    val graph : GrapeGraphImpl[Long,Long] = GraphScopeRDD.loadFragmentAsGraph[Long,Long](sc, "d50:250494962841990456", "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>")
+//    val graph : GrapeGraphImpl[Long,Long] = GraphScopeRDD.loadFragmentAsGraph[Long,Long](sc, "d50:250271883936897154", "gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>")
 //    val graph : Graph[Long,Long] = GraphLoader.edgeListFile(sc, "/home/graphscope/data/livejournal.e", false, numEdgePartitions = 1).mapVertices((id,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).cache()
 //    log.info(s"graphLoader graph ${graph.numVertices}, ${graph.numEdges}")
 
@@ -39,13 +40,14 @@ object FragmentTest extends Logging{
       triplet.attr + 1
     })
     val graph4 = graph3.mapTriplets(triplet => {
+      log.info(s"triplet ${triplet.srcId}(${triplet.srcAttr}) -> ${triplet.dstId}(${triplet.dstAttr}), edge attr ${triplet.attr}")
       triplet.attr + 1
     }).cache()
     log.info(s"mapping triplet,edges num ${graph4.numEdges}, vertices num ${graph4.numVertices}")
     val time1 = System.nanoTime()
 
     val time2 = System.nanoTime()
-    val graph5 = graph.mapVertices((vid, vd)=> vid + vd)
+    val graph5 = graph.mapVertices((vid, vd)=> {log.info(s"vertex: ${vid}(${vd})"); vid + vd} )
     val graph6 = graph5.mapVertices((vid, vd)=> vd.toLong)
     val graph7 = graph6.mapVertices((vid, vd)=> vd + vid).cache()
     log.info(s"map vertices ,edges num ${graph7.numEdges}, vertices num ${graph7.numVertices}")
