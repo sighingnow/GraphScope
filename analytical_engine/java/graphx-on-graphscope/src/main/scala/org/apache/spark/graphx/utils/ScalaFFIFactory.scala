@@ -4,7 +4,7 @@ import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, IFragment}
-import com.alibaba.graphscope.graphx.{ArrowProjectedFragmentGetter, BasicGraphXCSRBuilder, BasicLocalVertexMapBuilder, GraphXVertexMapGetter, LocalVertexMap, VertexDataBuilder, VineyardClient}
+import com.alibaba.graphscope.graphx.{StringVertexDataBuilder,ArrowProjectedFragmentGetter, BasicGraphXCSRBuilder, BasicLocalVertexMapBuilder, GraphXVertexMapGetter, LocalVertexMap, VertexDataBuilder, VineyardClient}
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.internal.Logging
 
@@ -66,6 +66,12 @@ object ScalaFFIFactory extends Logging{
   def newVertexDataBuilder[VD: ClassTag]() : VertexDataBuilder[Long,VD] = {
     val factory = FFITypeFactory.getFactory(classOf[VertexDataBuilder[Long,VD]],
       "gs::VertexDataBuilder<uint64_t," + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[VD]) +">").asInstanceOf[VertexDataBuilder.Factory[Long,VD]]
+    factory.create()
+  }
+
+  def newStringVertexDataBuilder() : StringVertexDataBuilder = {
+    val factory = FFITypeFactory.getFactory(classOf[StringVertexDataBuilder],
+      "gs::VertexDataBuilder<uint64_t,std::string>").asInstanceOf[StringVertexDataBuilder.Factory]
     factory.create()
   }
 

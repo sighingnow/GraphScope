@@ -28,7 +28,7 @@ object PageRank extends Logging{
     // Print the result
 //    println(ranks.collect().mkString("\n"))
 
-//    log.info(s"Finish query, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
+    log.info(s"Finish query, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
 
     sc.stop()
   }

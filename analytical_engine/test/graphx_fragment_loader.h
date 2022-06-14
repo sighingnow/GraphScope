@@ -140,7 +140,7 @@ std::string fragIdsToStr(std::vector<vineyard::ObjectID>& ids, std::vector<std::
   }
   std::stringstream ss;
   bool first = true;
-  for (auto i = 0; i < ids.size(); ++i){
+  for (size_t i = 0; i < ids.size(); ++i){
      if (first){
         ss << hosts[i]<< ":" << ids[i];
         first = false;

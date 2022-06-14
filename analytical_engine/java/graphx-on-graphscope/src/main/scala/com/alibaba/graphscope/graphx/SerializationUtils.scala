@@ -4,6 +4,7 @@ import org.apache.spark.graphx.{EdgeTriplet, VertexId}
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, FileInputStream, FileOutputStream, IOException, ObjectInputStream, ObjectOutputStream, ObjectStreamClass}
+import scala.collection.mutable.ArrayBuffer
 
 class SerializationUtils[VD,ED,A]{
   //provide some demo functions to test
@@ -33,14 +34,19 @@ object SerializationUtils{
 //    (vd, ed ,a) => vd
 //  }
   val logger : Logger = LoggerFactory.getLogger("com.alibaba.graphscope.graphx.Serializationutils")
-  def write[A](obj: A, path : String): Unit = {
-    logger.info("Write obj {} to path {}: ", obj, path)
+  def write[A](path : String, objs: Any*): Unit = {
+    logger.info("Write obj " + objs.mkString("Array(", ", ", ")") + " to :" +  path)
     val bo = new FileOutputStream(new File(path))
-    new ObjectOutputStream(bo).writeObject(obj)
+    val outputStream = new ObjectOutputStream(bo)
+    var i = 0
+    while (i < objs.length){
+      outputStream.writeObject(objs(i))
+      i += 1
+    }
   }
 
   @throws[ClassNotFoundException]
-  def read(classLoader: ClassLoader,filepath : String): Any = {
+  def read(classLoader: ClassLoader,filepath : String): Array[Any] = {
     logger.info("Reading from file path: " + filepath + ", with class loader: " + classLoader)
     val objectInputStream = new ObjectInputStream(new FileInputStream(new File(filepath))){
       @throws[IOException]
@@ -51,7 +57,11 @@ object SerializationUtils{
         Class.forName(desc.getName, false, classLoader)
       }
     }
-    objectInputStream.readObject()
+    val res = new ArrayBuffer[Any]()
+    while (objectInputStream.available() > 0){
+      res.+=(objectInputStream.readObject())
+    }
+    res.toArray
   }
 
 //  private def deserializeVprog[VD, ED, MSG](vprogFilePath: String) : (Long,VD,MSG) => VD = {

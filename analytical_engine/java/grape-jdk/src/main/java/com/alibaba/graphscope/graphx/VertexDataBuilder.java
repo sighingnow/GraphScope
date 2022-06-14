@@ -9,6 +9,8 @@ import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder;
+import com.alibaba.graphscope.stdcxx.FFIByteVector;
+import com.alibaba.graphscope.stdcxx.FFIIntVector;
 import com.alibaba.graphscope.stdcxx.StdSharedPtr;
 import com.alibaba.graphscope.stdcxx.StdVector;
 import com.alibaba.graphscope.utils.CppClassName;

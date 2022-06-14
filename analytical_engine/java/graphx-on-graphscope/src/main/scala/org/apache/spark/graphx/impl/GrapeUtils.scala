@@ -34,7 +34,9 @@ object GrapeUtils {
     else if (value.equals(classOf[java.lang.Double]) || value.eq(classOf[Double])) {
       "double"
     }
-    else throw new IllegalArgumentException(s"unexpected class ${value}")
+    else {
+      "std::string"
+    }
   }
 
   def getMethodFromClass[T](clz : Class[T], name : String ,paramClasses : Class[_]) : Method = {

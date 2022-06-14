@@ -336,46 +336,46 @@ public class GraphScopeClassLoader {
         }
     }
 
-    private static Object loadGraphXAdaptor(String genericString, URLClassLoader classLoader)
+    private static Object loadGraphXAdaptor(String serialPath, URLClassLoader classLoader)
         throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        logger.info("Trying create graphx adaptor: " + genericString);
+//        logger.info("Trying create graphx adaptor: " + genericString);
         Class<?> graphxClz = classLoader.loadClass("com.alibaba.graphscope.app.GraphXAdaptor");
         logger.info("Load clz : {}", graphxClz.getName());
-        Method method = graphxClz.getDeclaredMethod("create", String.class, String.class,String.class);
+        Method method = graphxClz.getDeclaredMethod("create", URLClassLoader.class, String.class);
         if (method == null){
             throw new IllegalStateException("Fail to found method in graphxAdaptor");
         }
-        String []t = genericString.split("<");
-        if (t.length != 2){
-            throw new IllegalStateException("Not possible legnth: " + t.length);
-        }
-        String []t2 = t[1].substring(0, t[1].length() - 1).split(",");
-        if (t2.length != 3){
-            throw new IllegalStateException("Not possible legnth: " + t2.length);
-        }
-        Object obj = method.invoke(null, t2[0], t2[1], t2[2]);
+//        String []t = genericString.split("<");
+//        if (t.length != 2){
+//            throw new IllegalStateException("Not possible legnth: " + t.length);
+//        }
+//        String []t2 = t[1].substring(0, t[1].length() - 1).split(",");
+//        if (t2.length != 3){
+//            throw new IllegalStateException("Not possible legnth: " + t2.length);
+//        }
+        Object obj = method.invoke(null,classLoader,serialPath);
         logger.info("Successfully invoked method, got" + obj);
         return obj;
     }
 
-    private static Object loadGraphxAdaptorCtx(String genericString, URLClassLoader classLoader)
+    private static Object loadGraphxAdaptorCtx(String serialPath,URLClassLoader classLoader)
         throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        logger.info("Trying create graphx adaptor context: " + genericString);
+        logger.info("Trying create graphx adaptor context from: " + serialPath + " with class loader: " + classLoader);
         Class<?> graphxClz = classLoader.loadClass("com.alibaba.graphscope.context.GraphXAdaptorContext");
         logger.info("Load clz : {}", graphxClz.getName());
-        Method method = graphxClz.getDeclaredMethod("create", String.class, String.class,String.class);
+        Method method = graphxClz.getDeclaredMethod("create", URLClassLoader.class, String.class);
         if (method == null){
             throw new IllegalStateException("Fail to found method in graphxAdaptor");
         }
-        String []t = genericString.split("<");
-        if (t.length != 2){
-            throw new IllegalStateException("Not possible legnth: " + t.length);
-        }
-        String []t2 = t[1].substring(0, t[1].length() - 1).split(",");
-        if (t2.length != 3){
-            throw new IllegalStateException("Not possible legnth: " + t2.length);
-        }
-        Object obj = method.invoke(null, t2[0], t2[1], t2[2]);
+//        String []t = genericString.split("<");
+//        if (t.length != 2){
+//            throw new IllegalStateException("Not possible legnth: " + t.length);
+//        }
+//        String []t2 = t[1].substring(0, t[1].length() - 1).split(",");
+//        if (t2.length != 3){
+//            throw new IllegalStateException("Not possible legnth: " + t2.length);
+//        }
+        Object obj = method.invoke(null, classLoader, serialPath);
         logger.info("Successfully invoked method, got" + obj);
         return obj;
     }
