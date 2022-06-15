@@ -1,6 +1,11 @@
 package com.alibaba.graphscope.graphx;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 public class GraphXConf<VD,ED,MSG> {
+    private Set<Class<?>> primitiveClasses = new HashSet<Class<?>>(Arrays.asList(Long.class, long.class, Integer.class, int.class, Double.class, double.class));
     private Class<? extends VD> vdClass;
     private Class<? extends ED> edClass;
     private Class<? extends MSG> msgClass;
@@ -32,5 +37,14 @@ public class GraphXConf<VD,ED,MSG> {
 
     public Class<? extends VD> getVdClass() {
         return vdClass;
+    }
+
+
+    public boolean isVDPrimitive(){
+        return primitiveClasses.contains(vdClass);
+    }
+
+    public boolean isEDPrimitive(){
+        return primitiveClasses.contains(edClass);
     }
 }

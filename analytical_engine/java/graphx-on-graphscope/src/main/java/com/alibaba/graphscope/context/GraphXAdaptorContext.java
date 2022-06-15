@@ -93,9 +93,17 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
         int maxIterations = jsonObject.getInteger("max_iterations");
         logger.info("Max iterations: " + maxIterations);
 
-        graphXProxy.init(frag, messageManager, maxIterations);
+        try {
+            graphXProxy.init(frag, messageManager, maxIterations);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            throw new IllegalStateException("initialization error");
+        }
         logger.info("create graphx proxy: {}", graphXProxy);
-        createFFIContext(frag, conf.getVdClass(), false);
+        //FIXME: Currently we don't use this context provided vdata array, just use long class as
+        //default vdata class, and we don't use it.
+        createFFIContext(frag, (Class<? extends VDATA_T>) Long.class, false);
         System.gc();
     }
 

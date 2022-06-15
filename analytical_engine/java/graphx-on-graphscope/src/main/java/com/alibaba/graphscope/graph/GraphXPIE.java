@@ -2,6 +2,7 @@ package com.alibaba.graphscope.graph;
 
 import com.alibaba.graphscope.ds.ImmutableTypedArray;
 import com.alibaba.graphscope.ds.PropertyNbrUnit;
+import com.alibaba.graphscope.ds.StringTypedArray;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.GraphXFragment;
 import com.alibaba.graphscope.fragment.IFragment;
@@ -13,8 +14,13 @@ import com.alibaba.graphscope.graphx.SerializationUtils;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.parallel.message.DoubleMsg;
 import com.alibaba.graphscope.parallel.message.LongMsg;
+import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
+import com.alibaba.graphscope.stdcxx.FFIByteVector;
+import com.alibaba.graphscope.stdcxx.StdVector;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
 import com.alibaba.graphscope.utils.array.PrimitiveArray;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.URLClassLoader;
 import java.util.BitSet;
 import java.util.concurrent.ExecutorService;
@@ -76,7 +82,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
   }
 
   public void init(IFragment<Long, Long, VD, ED> fragment, DefaultMessageManager messageManager,
-                    int maxIterations) {
+                    int maxIterations) throws IOException, ClassNotFoundException {
     this.iFragment = fragment;
     if (iFragment.fragmentType() != GraphXFragmentAdaptor.fragmentType) {
       throw new IllegalStateException("Only support graphx fragment");
@@ -88,10 +94,16 @@ public class GraphXPIE<VD, ED, MSG_T> {
     oldVdataArray = graphXFragment.getVdataArray();
     logger.info("vdata array size {}, frag vnum{}", oldVdataArray.getLength(),
                 graphXFragment.getVerticesNum());
-    if (oldVdataArray.getLength() != graphXFragment.getVerticesNum()) {
-      throw new IllegalStateException("not equal" + oldVdataArray.getLength() + ","
-                                      + graphXFragment.getVerticesNum());
+    if (conf.isVDPrimitive()){
+      if (oldVdataArray.getLength() != graphXFragment.getVerticesNum()) {
+        throw new IllegalStateException("not equal" + oldVdataArray.getLength() + ","
+            + graphXFragment.getVerticesNum());
+      }
     }
+    else {
+      logger.info("total bytes in vd array {}, vertices num {}", oldVdataArray.getLength(), graphXFragment.getVerticesNum());
+    }
+
     /** During query, updates are saved to on-heap array, after calculation, we persist them out*/
     newVdataArray = PrimitiveArray.create(conf.getVdClass(), (int) oldVdataArray.getLength());
     newEdataArray = PrimitiveArray.create(conf.getEdClass(), (int) oldEdataArray.getLength());
@@ -105,9 +117,25 @@ public class GraphXPIE<VD, ED, MSG_T> {
       logger.info("[Coping edata array cost: ] {}ms", (time1 - time0) / 1000000);
     }
     {
-      long len = oldVdataArray.getLength();
-      for (int i = 0; i < len; ++i){
-        newVdataArray.set(i, oldVdataArray.get(i));
+      if (conf.isVDPrimitive()){
+        long len = oldVdataArray.getLength();
+        for (int i = 0; i < len; ++i){
+          newVdataArray.set(i, oldVdataArray.get(i));
+        }
+      }
+      else {
+        StringTypedArray array = (StringTypedArray) graphXFragment.getVdataArray();
+        StdVector<Byte> data = array.getRawBytes();
+        FFIByteVector ffiByteVector = new FFIByteVector(data.getAddress());
+        FFIByteVectorInputStream ffiInput = new FFIByteVectorInputStream(ffiByteVector);
+        ObjectInputStream objectInputStream = new ObjectInputStream(ffiInput);
+        long len = objectInputStream.readLong();
+        logger.info("reading {} objects from vd array of bytes {}", len, array.getLength());
+        for (int i = 0; i < len; ++i){
+          VD obj = (VD)objectInputStream.readObject();
+          newVdataArray.set(i, obj);
+          logger.info("setting vd index {} to {}", i, obj);
+        }
       }
     }
     this.messageManager = messageManager;
