@@ -13,6 +13,10 @@ public class GraphXStringEDFragmentAdaptor<OID_T,VID_T,VD_T,ED_T> extends Abstra
         this.graphXStringEDFragment = graphXStringEDFragment;
     }
 
+
+    public GraphXStringEDFragment<OID_T,VID_T,VD_T,ED_T> getFragment(){
+        return graphXStringEDFragment;
+    }
     /**
      * Return the underlying fragment type,i.e. ArrowProjected or Simple.
      *

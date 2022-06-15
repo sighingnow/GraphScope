@@ -34,6 +34,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.app.DefaultAppBase;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
+import com.alibaba.graphscope.fragment.BaseGraphXFragment;
 import com.alibaba.graphscope.fragment.FragmentType;
 import com.alibaba.graphscope.fragment.GraphXFragment;
 import com.alibaba.graphscope.fragment.IFragment;
@@ -176,7 +177,7 @@ public interface DefaultMessageManager extends MessageManagerBase {
         @CXXReference MSG_T msg,
         @FFISkip SKIP_T skip);
 
-    @FFINameAlias("GetMessage") <FRAG_T extends GraphXFragment, MSG_T, @FFISkip SKIP_T> boolean getMessageGraphX(
+    @FFINameAlias("GetMessage") <FRAG_T extends BaseGraphXFragment, MSG_T, @FFISkip SKIP_T> boolean getMessageGraphX(
         @CXXReference FRAG_T frag,
         @CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex,
         @CXXReference MSG_T msg,
@@ -210,7 +211,7 @@ public interface DefaultMessageManager extends MessageManagerBase {
         @CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex,
         @CXXReference MSG_T msg);
 
-    @FFINameAlias("SyncStateOnOuterVertex") <FRAG_T extends GraphXFragment, MSG_T,@FFISkip SKIP_T> void syncStateOnOuterVertexGraphX(
+    @FFINameAlias("SyncStateOnOuterVertex") <FRAG_T extends BaseGraphXFragment, MSG_T,@FFISkip SKIP_T> void syncStateOnOuterVertexGraphX(
         @CXXReference FRAG_T frag,
         @CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex,
         @CXXReference MSG_T msg,
