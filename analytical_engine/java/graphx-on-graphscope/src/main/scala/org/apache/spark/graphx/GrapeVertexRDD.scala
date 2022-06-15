@@ -3,13 +3,15 @@ package org.apache.spark.graphx
 
 import com.alibaba.graphscope.ds.Vertex
 import com.alibaba.graphscope.fragment.IFragment
-import com.alibaba.graphscope.graphx.graph.impl.{FragmentStructure, GraphXGraphStructure}
+import com.alibaba.graphscope.graphx.VineyardClient
+import com.alibaba.graphscope.graphx.graph.GraphStructure
+import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.impl.grape.GrapeVertexRDDImpl
 import org.apache.spark.graphx.impl.partition.data.InHeapVertexDataStore
-import org.apache.spark.graphx.impl.partition.{GrapeVertexPartition, GrapeVertexPartitionBuilder, RoutingTable}
+import org.apache.spark.graphx.impl.partition.{GrapeVertexPartition, RoutingTable}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -91,14 +93,33 @@ object GrapeVertexRDD extends Logging{
     val grapeVertexPartition = ePartWithRoutingTables.zipPartitions(vertexShuffles){
       (firstIter, vertexShufflesIter) => {
         val (ePart, routingTable) = firstIter.next()
-        val vertexPartitionBuilder = new GrapeVertexPartitionBuilder[VD]
         val fragVertices = ePart.graphStructure.getVertexSize
         log.info(s"Partition ${ePart.pid} doing initialization with graphx vertex attrs, frag vertices ${fragVertices}")
-        val grapeVertexPartition = vertexPartitionBuilder.build(ePart.pid, ePart.client, ePart.graphStructure, routingTable, vertexShufflesIter)
+        val grapeVertexPartition = buildPartitionFromGraphX(ePart.pid, ePart.client, ePart.graphStructure, routingTable, vertexShufflesIter)
         Iterator(grapeVertexPartition)
       }
     }.cache()
-    new GrapeVertexRDDImpl[VD](grapeVertexPartition,storageLevel)
+    new GrapeVertexRDDImpl[VD](grapeVertexPartition, storageLevel)
+  }
+
+  def buildPartitionFromGraphX[VD: ClassTag](pid: Int, client: VineyardClient, graphStructure: GraphStructure, routingTable: RoutingTable, verticesAttr: Iterator[(PartitionID, (Array[Long], Array[VD]))]):GrapeVertexPartition[VD] = {
+    /** We assume the verticesAttr iterator contains only inner vertices */
+      val newArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD], graphStructure.vertexNum().toInt).asInstanceOf[PrimitiveArray[VD]]
+      val grapeVertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
+      while (verticesAttr.hasNext){
+        val cur = verticesAttr.next()
+        require(pid == cur._1)
+        val (oids, vds) = cur._2
+        var i = 0
+        while (i < oids.length){
+          require(graphStructure.getInnerVertex(oids(i),grapeVertex))
+          newArray.set(grapeVertex.GetValue(), vds(i))
+          log.info(s"In building vertex Partition, set vertex ${oids(i)}, lid ${grapeVertex.GetValue()} to attr ${vds(i)}")
+          i += 1
+        }
+      }
+      val newVertexData = new InHeapVertexDataStore[VD](newArray,client)
+      new GrapeVertexPartition[VD](pid, graphStructure, newVertexData, client, routingTable)
   }
 
   def fromGrapeEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD, storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
@@ -117,11 +138,9 @@ object GrapeVertexRDD extends Logging{
       (edgeIter,msgIter) => {
         val ePart = edgeIter.next()
         val routingTable = RoutingTable.fromMsg(ePart.pid, numPartitions,msgIter, ePart.graphStructure)
-        val vertexPartitionBuilder = new GrapeVertexPartitionBuilder[VD]
         val fragVertices = ePart.graphStructure.getVertexSize
         log.info(s"Partition ${ePart.pid} doing initialization with default value ${defaultVal}, frag vertices ${fragVertices}")
-        vertexPartitionBuilder.init(fragVertices, defaultVal)
-        val grapeVertexPartition = vertexPartitionBuilder.build(ePart.pid, ePart.client, ePart.graphStructure, routingTable)
+        val grapeVertexPartition = GrapeVertexPartition.buildPrimitiveVertexPartition(fragVertices,defaultVal,ePart.pid, ePart.client, ePart.graphStructure, routingTable)
         Iterator(grapeVertexPartition)
       }
     }.cache()

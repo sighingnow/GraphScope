@@ -2,13 +2,13 @@ package org.apache.spark.graphx.impl.partition
 
 import com.alibaba.graphscope.ds.Vertex
 import com.alibaba.graphscope.graphx.graph.GraphStructure
-import com.alibaba.graphscope.graphx.{GraphXVertexMap, VertexDataBuilder, VineyardClient}
+import com.alibaba.graphscope.graphx.{VertexDataBuilder, VineyardClient}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.graphx.{PartitionID, VertexId}
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.impl.partition.data.{InHeapVertexDataStore, VertexDataStore}
 import org.apache.spark.graphx.utils.ScalaFFIFactory
+import org.apache.spark.graphx.{PartitionID, VertexId}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 
@@ -249,16 +249,11 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   override def toString: String = "GrapeVertexPartition{" + "pid=" + pid + ",startLid=" + startLid + ", endLid=" + endLid + '}'
 }
 
-class GrapeVertexPartitionBuilder[VD: ClassTag] extends Logging{
-  private val vertexDataBuilder : VertexDataBuilder[Long,VD] = ScalaFFIFactory.newVertexDataBuilder[VD]()
-
-  /** For graphxGraph conversion to grapeGraph, we don't need to incur vertexDataBuilder. i.e. no init is ok */
-  def init(fragVnums : Long, value : VD): Unit ={
+object GrapeVertexPartition extends Logging{
+  def buildPrimitiveVertexPartition[VD: ClassTag](fragVnums : Long, value : VD, pid : Int, client : VineyardClient, graphStructure: GraphStructure, routingTable: RoutingTable) : GrapeVertexPartition[VD] = {
+    val vertexDataBuilder : VertexDataBuilder[Long,VD] = ScalaFFIFactory.newVertexDataBuilder[VD]()
     vertexDataBuilder.init(fragVnums,value)
     log.info(s"Init vertex data with ${fragVnums} ${value}")
-  }
-
-  def build(pid : Int, client : VineyardClient, graphStructure: GraphStructure, routingTable: RoutingTable) : GrapeVertexPartition[VD] = {
     val vertexData = vertexDataBuilder.seal(client).get()
     log.info(s"Partition ${pid} built vertex data ${vertexData}")
     require(graphStructure.getVertexSize == vertexData.verticesNum(), s"csr inner vertex should equal to vmap ${graphStructure.getInnerVertexSize}, ${vertexData.verticesNum()}")
@@ -269,26 +264,6 @@ class GrapeVertexPartitionBuilder[VD: ClassTag] extends Logging{
     while (i < limit){
       newArray.set(i, vertexData.getData(i))
       i += 1
-    }
-    val newVertexData = new InHeapVertexDataStore[VD](newArray,client)
-    new GrapeVertexPartition[VD](pid, graphStructure, newVertexData, client, routingTable)
-  }
-
-  /** We assume the verticesAttr iterator contains only inner vertices */
-  def build(pid : Int, client: VineyardClient, graphStructure: GraphStructure, routingTable: RoutingTable, verticesAttr : Iterator[(PartitionID, (Array[Long],Array[VD]))]) : GrapeVertexPartition[VD] = {
-    val newArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD], graphStructure.vertexNum().toInt).asInstanceOf[PrimitiveArray[VD]]
-    val grapeVertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
-    while (verticesAttr.hasNext){
-      val cur = verticesAttr.next()
-      require(pid == cur._1)
-      val (oids, vds) = cur._2
-      var i = 0
-      while (i < oids.length){
-        require(graphStructure.getInnerVertex(oids(i),grapeVertex))
-        newArray.set(grapeVertex.GetValue(), vds(i))
-        log.info(s"In building vertex Partition, set vertex ${oids(i)}, lid ${grapeVertex.GetValue()} to attr ${vds(i)}")
-        i += 1
-      }
     }
     val newVertexData = new InHeapVertexDataStore[VD](newArray,client)
     new GrapeVertexPartition[VD](pid, graphStructure, newVertexData, client, routingTable)
