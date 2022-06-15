@@ -27,9 +27,9 @@ limitations under the License.
 #include "vineyard/client/client.h"
 
 boost::leaf::result<void> generateData(arrow::Int64Builder& srcBuilder,
-                  arrow::Int64Builder& dstBuilder,
-                  arrow::Int64Builder& edataBuilder,
-                  grape::CommSpec& comm_spec);
+                                       arrow::Int64Builder& dstBuilder,
+                                       arrow::Int64Builder& edataBuilder,
+                                       grape::CommSpec& comm_spec);
 
 vineyard::ObjectID getLocalVM(vineyard::Client& client,
                               grape::CommSpec& comm_spec) {
@@ -150,6 +150,37 @@ vineyard::ObjectID TestGraphXCSR(
   return csr->id();
 }
 
+void TestDriveGraphXCSR(vineyard::Client& client,
+                        vineyard::ObjectID old_csr_id) {
+  vineyard::ObjectID new_csr_id;
+  {
+    arrow::DoubleBuilder edataBuilder;
+    ARROW_OK_OR_RAISE(edataBuilder.Reserve(6));
+    for (auto i = 0; i < 6; ++i) {
+      edataBuilder.UnsafeAppend(6.0 + i);
+    }
+
+    auto csr = std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t, int64_t>>(
+        builder.GetObject(old_csr_id));
+
+    LOG(INFO) << "Old csr id: " << csr->id();
+
+    auto new_csr = csr->DriveNewCSR(edataBuilder, client);
+    new_csr_id = new_csr->id();
+    LOG(INFO) << "new csr id: " << new_csr->id();
+  }
+  std::shared_ptr<gs::GraphXCSR<uint64_t, double>> csr =
+      std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t, double>>(
+          client.GetObject(new_csr_id));
+  LOG(INFO) << "Got csr " << csr->id();
+  LOG(INFO) << "in num edges: " << csr->GetInEdgesNum()
+            << "out num edges: " << csr->GetOutEdgesNum() << " vs "
+            << csr->GetPartialOutEdgesNum(
+                   0, graphx_vm.GetInnerVertexSize(comm_spec.fid()));
+  LOG(INFO) << "lid 0 degreee: " << csr->GetOutDegree(0) << ", "
+            << csr->GetPartialOutEdgesNum(0, 1);
+}
+
 vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
   vineyard::ObjectID id;
   {
@@ -181,9 +212,9 @@ void TestGraphXFragment(vineyard::Client& client, vineyard::ObjectID vm_id,
 }
 
 boost::leaf::result<void> generateData(arrow::Int64Builder& srcBuilder,
-                  arrow::Int64Builder& dstBuilder,
-                  arrow::Int64Builder& edataBuilder,
-                  grape::CommSpec& comm_spec) {
+                                       arrow::Int64Builder& dstBuilder,
+                                       arrow::Int64Builder& edataBuilder,
+                                       grape::CommSpec& comm_spec) {
   // if (comm_spec.worker_id() == 0) {
   ARROW_OK_OR_RAISE(srcBuilder.Reserve(6));
   ARROW_OK_OR_RAISE(dstBuilder.Reserve(6));
@@ -242,6 +273,7 @@ int main(int argc, char* argv[]) {
   // TestLocalVertexMap(client);
   auto graphx_vm = TestGraphXVertexMap(client);
   auto csr_id = TestGraphXCSR(client, graphx_vm);
+  TestDriveGraphXCSR(csr_id, client);
   auto vdata_id = TestGraphXVertexData(client);
   TestGraphXFragment(client, graphx_vm.id(), csr_id, vdata_id);
   VLOG(1) << "Finish Querying.";

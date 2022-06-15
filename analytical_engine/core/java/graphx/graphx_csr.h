@@ -38,7 +38,6 @@
 #include "grape/graph/immutable_csr.h"
 #include "grape/utils/bitset.h"
 #include "grape/worker/comm_spec.h"
-#include "vineyard/graph/utils/error.h"
 #include "vineyard/basic/ds/arrow_utils.h"
 #include "vineyard/basic/stream/byte_stream.h"
 #include "vineyard/basic/stream/dataframe_stream.h"
@@ -46,6 +45,7 @@
 #include "vineyard/client/client.h"
 #include "vineyard/common/util/functions.h"
 #include "vineyard/graph/fragment/property_graph_utils.h"
+#include "vineyard/graph/utils/error.h"
 #include "vineyard/io/io/i_io_adaptor.h"
 #include "vineyard/io/io/io_factory.h"
 
@@ -120,6 +120,53 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
     CHECK_LE(end, local_vnum_);
     return oe_offsets_->Value(static_cast<int64_t>(end)) -
            oe_offsets_->Value(static_cast<int64_t>(from));
+  }
+
+  // Building
+  template <typename NEW_ED_T,
+            typename new_edata_array_builder_t =
+                vineyard::ConvertToArrowType<NEW_ED_T>::BuilderType>
+  std::shared_ptr<GraphXCSR<VID_T, NEW_ED_T>> DriveNewCSR(
+      new_edata_array_builder_t& edata_array_builder,
+      vineyard::Client& client) {
+    // 0. build and seal new edata
+    using new_edata_array_t =
+        typename vineyard::ConvertToArrowType<NEW_ED_T>::ArrayType;
+    using new_vineyard_edata_array_builder_t =
+        typename vineyard::InternalType<NEW_ED_T>::vineyard_builder_type;
+    std::shared_ptr<new_edata_array_t> arrow_edata_array;
+    edata_array_builder.Finish(&arrow_edata_array);
+    new_vineyard_edata_array_builder_t edata_array_builder(client,
+                                                           edata_array_);
+    auto edata_array = 
+        *std::dynamic_pointer_cast<vineyard::NumericArray<NEW_ED_T>>(
+            edata_array_builder.Seal(client)));
+    LOG(INFO) << "Sealed new edata array";
+    // 1. create new meta, seal and got new graphx csr.
+    vineyard::ObjectID new_graphx_csr_id;
+    {
+      auto graphx_csr = std::make_shared<GraphXCSR<vid_t, NEW_ED_T>>();
+      graphx_csr->meta_.SetTypeName(type_name<GraphXCSR<vid_t, NEW_ED_T>>());
+      graphx_csr->meta_.AddMember("in_edges",
+                                  this->meta().GetMemberMeta("in_edges"));
+      graphx_csr->meta_.AddMember("out_edges",
+                                  this->meta().GetMemberMeta("out_edges"));
+
+      graphx_csr->meta_.AddMember("ie_offsets",
+                                  this->meta().GetMemberMeta("ie_offsets"));
+      graphx_csr->meta_.AddMember("oe_offsets",
+                                  this->meta().GetMemberMeta("oe_offsets"));
+      graphx_csr->meta_.AddMember("edatas", edata_array.meta());
+      graphx_csr->meta_.SetNBytes(this->meta().GetNBytes());
+
+      VINEYARD_CHECK_OK(
+          client.CreateMetaData(graphx_csr->meta_, graphx_csr->id_));
+      new_graphx_csr_id =
+          std::static_pointer_cast<vineyard::Object>(graphx_csr);
+    }
+    auto new_graphx_csr = std::dynamic_pointer_cast<GraphXCSR<vid_t, NEW_ED_T>>(
+        client.GetObject(new_graphx_csr_id));
+    return new_graphx_csr;
   }
 
   void Construct(const vineyard::ObjectMeta& meta) override {

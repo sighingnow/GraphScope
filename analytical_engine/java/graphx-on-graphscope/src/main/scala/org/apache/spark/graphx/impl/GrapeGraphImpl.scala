@@ -86,6 +86,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         //FIXME: support output the modified data to mpi processes.
         ePart.graphStructure match {
           case casted: GraphXGraphStructure =>
+            val newCSR = buildCSRWithNewValue(casted.csr, ePart.edatas)
             Iterator(ExecutorUtils.getHostName + ":" + pid + ":" + casted.csr.id())
           case _ =>
             throw new IllegalStateException("Not implemented now!")
