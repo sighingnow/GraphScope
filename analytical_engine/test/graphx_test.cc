@@ -155,13 +155,13 @@ void TestDriveGraphXCSR(vineyard::Client& client,
   vineyard::ObjectID new_csr_id;
   {
     arrow::DoubleBuilder edataBuilder;
-    ARROW_OK_OR_RAISE(edataBuilder.Reserve(6));
+    edataBuilder.Reserve(6);
     for (auto i = 0; i < 6; ++i) {
       edataBuilder.UnsafeAppend(6.0 + i);
     }
 
     auto csr = std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t, int64_t>>(
-        builder.GetObject(old_csr_id));
+        client.GetObject(old_csr_id));
 
     LOG(INFO) << "Old csr id: " << csr->id();
 
@@ -174,9 +174,7 @@ void TestDriveGraphXCSR(vineyard::Client& client,
           client.GetObject(new_csr_id));
   LOG(INFO) << "Got csr " << csr->id();
   LOG(INFO) << "in num edges: " << csr->GetInEdgesNum()
-            << "out num edges: " << csr->GetOutEdgesNum() << " vs "
-            << csr->GetPartialOutEdgesNum(
-                   0, graphx_vm.GetInnerVertexSize(comm_spec.fid()));
+            << "out num edges: " << csr->GetOutEdgesNum(); 
   LOG(INFO) << "lid 0 degreee: " << csr->GetOutDegree(0) << ", "
             << csr->GetPartialOutEdgesNum(0, 1);
 }
@@ -273,7 +271,7 @@ int main(int argc, char* argv[]) {
   // TestLocalVertexMap(client);
   auto graphx_vm = TestGraphXVertexMap(client);
   auto csr_id = TestGraphXCSR(client, graphx_vm);
-  TestDriveGraphXCSR(csr_id, client);
+  TestDriveGraphXCSR(client, csr_id);
   auto vdata_id = TestGraphXVertexData(client);
   TestGraphXFragment(client, graphx_vm.id(), csr_id, vdata_id);
   VLOG(1) << "Finish Querying.";

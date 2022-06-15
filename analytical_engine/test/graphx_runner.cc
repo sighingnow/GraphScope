@@ -131,6 +131,9 @@ int main(int argc, char* argv[]) {
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "std::string") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "double") == 0) {
     gs::Run<int64_t, uint64_t, std::string, double>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "std::string") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
+    gs::Run<int64_t, uint64_t, std::string, int64_t>(params);
   } else {
     LOG(ERROR) << "current not supported: " << FLAGS_vd_class << ", "
                << FLAGS_ed_class;

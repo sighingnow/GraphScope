@@ -103,8 +103,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
         FFIByteVector ffiByteVector = new FFIByteVector(data.getAddress());
         FFIByteVectorInputStream ffiInput = new FFIByteVectorInputStream(ffiByteVector);
         ObjectInputStream objectInputStream = new ObjectInputStream(ffiInput);
-        long len = objectInputStream.readLong();
-        logger.info("reading {} objects from array of bytes {}", len, oldArray.getLength());
+        long len = oldArray.getLength();
+        logger.info("reading {} objects from array of bytes {}", len, data.size());
         PrimitiveArray<T> newArray = PrimitiveArray.create(clz, (int) len);
         for (int i = 0; i < len; ++i) {
             T obj = (T) objectInputStream.readObject();

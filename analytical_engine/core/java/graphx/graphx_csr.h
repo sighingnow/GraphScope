@@ -125,9 +125,9 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
   // Building
   template <typename NEW_ED_T,
             typename new_edata_array_builder_t =
-                vineyard::ConvertToArrowType<NEW_ED_T>::BuilderType>
+                typename vineyard::ConvertToArrowType<NEW_ED_T>::BuilderType>
   std::shared_ptr<GraphXCSR<VID_T, NEW_ED_T>> DriveNewCSR(
-      new_edata_array_builder_t& edata_array_builder,
+      new_edata_array_builder_t& arrow_array_builder,
       vineyard::Client& client) {
     // 0. build and seal new edata
     using new_edata_array_t =
@@ -135,12 +135,12 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
     using new_vineyard_edata_array_builder_t =
         typename vineyard::InternalType<NEW_ED_T>::vineyard_builder_type;
     std::shared_ptr<new_edata_array_t> arrow_edata_array;
-    edata_array_builder.Finish(&arrow_edata_array);
+    arrow_array_builder.Finish(&arrow_edata_array);
     new_vineyard_edata_array_builder_t edata_array_builder(client,
-                                                           edata_array_);
+                                                           arrow_edata_array);
     auto edata_array = 
         *std::dynamic_pointer_cast<vineyard::NumericArray<NEW_ED_T>>(
-            edata_array_builder.Seal(client)));
+            edata_array_builder.Seal(client));
     LOG(INFO) << "Sealed new edata array";
     // 1. create new meta, seal and got new graphx csr.
     vineyard::ObjectID new_graphx_csr_id;
