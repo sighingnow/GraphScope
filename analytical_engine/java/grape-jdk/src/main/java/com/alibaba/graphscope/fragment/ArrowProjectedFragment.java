@@ -74,4 +74,8 @@ public interface ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T>
 
     @FFINameAlias("GetOutEdgeNum")
     long getOutEdgeNum();
+
+    @FFINameAlias("GetData")
+    @CXXReference
+    VDATA_T getData(@CXXReference Vertex<VID_T> vertex);
 }

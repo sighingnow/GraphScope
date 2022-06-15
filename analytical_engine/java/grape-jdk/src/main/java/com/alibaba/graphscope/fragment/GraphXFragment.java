@@ -44,4 +44,8 @@ public interface GraphXFragment<OID_T, VID_T, VD_T, ED_T>
 
     @FFINameAlias("GetOutEdgeNum")
     long getOutEdgeNum();
+
+    @FFINameAlias("GetData")
+    @CXXReference
+    VD_T getData(@CXXReference Vertex<VID_T> vertex);
 }
