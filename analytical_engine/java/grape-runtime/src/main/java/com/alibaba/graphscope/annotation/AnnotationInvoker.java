@@ -96,6 +96,11 @@ import com.alibaba.fastffi.FFIGenBatch;
                     , @CXXTemplate(cxx = {"uint64_t", "int32_t"}, java = {"Long", "Integer"}),
                         @CXXTemplate(cxx = {"uint64_t", "double"}, java = {"Long", "Double"}),
                   }),
+        @FFIGen(type = "com.alibaba.graphscope.graphx.GraphXCSRMapper",
+                templates = {
+                    @CXXTemplate(cxx = {"uint64_t", "int64_t", "int64_t"}, java = {"Long", "Long", "Long"})
+                }
+        ),
         @FFIGen(type = "com.alibaba.graphscope.fragment.GraphXStringVDFragment",
         templates =
             {
@@ -200,6 +205,10 @@ import com.alibaba.fastffi.FFIGenBatch;
                         java =
                             "com.alibaba.graphscope.graphx.GraphXCSR<java.lang.Long,java.lang.Double>",
                         include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_CSR_H)),
+                  @CXXTemplate(
+                      cxx = "gs::GraphXCSRMapper<uint64_t,int64_t,int64_t>",
+                      java = "com.alibaba.graphscope.graphx.GraphXCSRMapper<java.lang.Long,java.lang.Long,java.lang.Long>"
+                  ),
                     @CXXTemplate(
                         cxx = "gs::VertexData<uint64_t,int64_t>",
                         java =

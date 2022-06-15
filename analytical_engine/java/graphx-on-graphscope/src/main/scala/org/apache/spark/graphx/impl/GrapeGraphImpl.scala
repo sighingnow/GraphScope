@@ -1,10 +1,14 @@
 package org.apache.spark.graphx.impl
 
+import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
+import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXCSRMapper, VineyardClient}
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
+import com.alibaba.graphscope.utils.GenericUtils
+import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.HashPartitioner
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
-import org.apache.spark.graphx.utils.ExecutorUtils
+import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
 import org.slf4j.{Logger, LoggerFactory}
 //import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
@@ -86,8 +90,18 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         //FIXME: support output the modified data to mpi processes.
         ePart.graphStructure match {
           case casted: GraphXGraphStructure =>
-            val newCSR = buildCSRWithNewValue(casted.csr, ePart.edatas)
-            Iterator(ExecutorUtils.getHostName + ":" + pid + ":" + casted.csr.id())
+            //build new edata array builder
+            val edataBuilder = ScalaFFIFactory.newArrowArrayBuilder[ED](GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]])
+            val numEdges = ePart.edatas.size()
+            edataBuilder.reserve(numEdges)
+            var i = 0
+            while (i < numEdges){
+              edataBuilder.unsafeAppend(ePart.edatas.get(i))
+              i += 1
+            }
+            val newCSR = mapOldCSRToNewCSR(casted.csr, edataBuilder, ePart.client)
+            //map old csr to new csr with new edata.
+            Iterator(ExecutorUtils.getHostName + ":" + pid + ":" + newCSR.id())
           case _ =>
             throw new IllegalStateException("Not implemented now!")
         }
@@ -95,6 +109,20 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         Iterator.empty
       }
     }).collect()
+  }
+
+  def mapOldCSRToNewCSR(oldCSR: GraphXCSR[Long, _], newEdata: ArrowArrayBuilder[ED], client : VineyardClient) : GraphXCSR[Long,ED] = {
+    val oldCSRTypeParams = GenericUtils.getTypeArgumentFromInterface(oldCSR.getClass)
+    require(oldCSRTypeParams.length == 2)
+    logger.info(s"Creating csr mapper from old edata ${oldCSRTypeParams(1).getName} to new edata of type ${GrapeUtils.getRuntimeClass[ED].getName}")
+    val mapper = ScalaFFIFactory.newGraphXCSRMapper[ED](oldCSRTypeParams(1))
+    genericMap(mapper, oldCSR, newEdata, oldCSRTypeParams(1),client)
+  }
+
+  def genericMap[OLD_ED_T,ED_T : ClassTag](mapper: GraphXCSRMapper[Long, _, ED_T], oldCSR: GraphXCSR[Long, _], newEdata : ArrowArrayBuilder[ED_T], value2: Class[OLD_ED_T], client: VineyardClient)(implicit oldEDClassTag: ClassTag[OLD_ED_T]) : GraphXCSR[Long,ED_T] = {
+    val oldCSRCasted = oldCSR.asInstanceOf[GraphXCSR[Long,OLD_ED_T]]
+    val mapperCasted = mapper.asInstanceOf[GraphXCSRMapper[Long,OLD_ED_T,ED_T]]
+    mapperCasted.map(oldCSRCasted,newEdata,client).get()
   }
 
   def generateVdataIds() : Array[String] = {

@@ -213,11 +213,11 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
   friend class GraphXCSRBuilder;
 
   template <typename _VID_T, typename _ED_T, typename _NEW_ED_T>
-  friend class GraphXCSRDiriver;
+  friend class GraphXCSRMapper;
 };
 
 template <typename VID_T, typename OLD_ED_T, typename NEW_ED_T>
-class GraphXCSRDiriver {
+class GraphXCSRMapper {
   using vid_t = VID_T;
   using old_edata_t = OLD_ED_T;
   using new_edata_t = NEW_ED_T;
@@ -229,10 +229,10 @@ class GraphXCSRDiriver {
       typename vineyard::InternalType<new_edata_t>::vineyard_builder_type;
 
  public:
-  GraphXCSRDiriver() {}
-  ~GraphXCSRDiriver() {}
+  GraphXCSRMapper() {}
+  ~GraphXCSRMapper() {}
 
-  std::shared_ptr<GraphXCSR<vid_t, new_edata_t>> Dirive(
+  std::shared_ptr<GraphXCSR<vid_t, new_edata_t>> Map(
       GraphXCSR<vid_t, old_edata_t> old_csr,
       new_edata_array_builder_t& arrow_array_builder,
       vineyard::Client& client) {

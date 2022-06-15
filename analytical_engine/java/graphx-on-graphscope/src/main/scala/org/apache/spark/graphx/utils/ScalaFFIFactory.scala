@@ -4,7 +4,7 @@ import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, IFragment}
-import com.alibaba.graphscope.graphx.{StringVertexDataBuilder,ArrowProjectedFragmentGetter, BasicGraphXCSRBuilder, BasicLocalVertexMapBuilder, GraphXVertexMapGetter, LocalVertexMap, VertexDataBuilder, VineyardClient}
+import com.alibaba.graphscope.graphx.{ArrowProjectedFragmentGetter, BasicGraphXCSRBuilder, BasicLocalVertexMapBuilder, GraphXCSRMapper, GraphXVertexMapGetter, LocalVertexMap, StringVertexDataBuilder, VertexDataBuilder, VineyardClient}
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.internal.Logging
 
@@ -81,6 +81,13 @@ object ScalaFFIFactory extends Logging{
     }
   }
 
+  def newGraphXCSRMapper[NEW_ED : ClassTag](oldEDClz : Class[_]) : GraphXCSRMapper[Long,_,NEW_ED] = {
+    val factory = FFITypeFactory.getFactory(classOf[GraphXCSRMapper[Long,_,NEW_ED]],
+      "gs::GraphXCSRMapper<uint64_t," + GrapeUtils.classToStr(oldEDClz) + ","
+        + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[NEW_ED]) + ">").asInstanceOf[GraphXCSRMapper.Factory[Long,_,NEW_ED]]
+    factory.create()
+  }
+
   def getFragment[VD : ClassTag,ED : ClassTag](client : VineyardClient, objectID : Long, fragStr : String) : IFragment[Long,Long,VD,ED]= {
     if (fragStr.startsWith("gs::ArrowFragment")){
       throw new IllegalStateException("Not implemented now")
@@ -109,4 +116,6 @@ object ScalaFFIFactory extends Logging{
       throw new IllegalStateException(s"Not recognized ${str}")
     }
   }
+
+
 }

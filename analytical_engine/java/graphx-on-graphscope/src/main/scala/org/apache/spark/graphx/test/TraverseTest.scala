@@ -25,7 +25,8 @@ object TraverseTest extends Logging{
 
     val graph : Graph[Long,Long] = GraphLoader.edgeListFile(sc, "/home/graphscope/data/lei.e", false, numEdgePartitions = 1).mapVertices((id,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).cache()
     val graph2 = graph.mapVertices((id,vd) => (vd,vd))
-    val res = graph2.pregel(1L, maxIterations = 10)(
+    val graph3 = graph2.mapEdges(edge => edge.attr + 10L)
+    val res = graph3.pregel(1L, maxIterations = 10)(
       (id, dist, newDist) => (newDist,newDist),
       triplet => { // Send Message
         log.info(s"visiting triplet ${triplet.srcId}(${triplet.srcAttr}) -> ${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")

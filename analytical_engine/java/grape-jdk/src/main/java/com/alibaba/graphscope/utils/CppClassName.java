@@ -82,6 +82,7 @@ public class CppClassName {
 
   public static final String GS_EDGE_PARTITION = "gs::EdgePartition";
   public static final String GS_GRAPHX_CSR = "gs::GraphXCSR";
+  public static final String GS_GRAPHX_CSR_MAPPER = "gs::GraphXCSRMapper";
   public static final String GS_GRAPHX_LOCAL_VERTEX_MAP = "gs::LocalVertexMap";
   public static final String GS_GRAPHX_GRAPHX_VERTEX_MAP = "gs::GraphXVertexMap";
   public static final String GS_GRAPHX_GRAPHX_VERTEX_MAP_GETTER = "gs::GraphXVertexMapGetter";
