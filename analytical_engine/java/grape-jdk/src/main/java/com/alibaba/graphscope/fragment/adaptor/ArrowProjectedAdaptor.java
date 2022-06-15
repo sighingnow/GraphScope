@@ -8,6 +8,7 @@ import com.alibaba.graphscope.ds.VertexRange;
 import com.alibaba.graphscope.ds.adaptor.AdjList;
 import com.alibaba.graphscope.ds.adaptor.ProjectedAdjListAdaptor;
 import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
+import com.alibaba.graphscope.fragment.FragmentType;
 import com.alibaba.graphscope.fragment.IFragment;
 
 import org.slf4j.Logger;
@@ -17,7 +18,6 @@ public class ArrowProjectedAdaptor<OID_T, VID_T, VDATA_T, EDATA_T>
         implements IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
     private static Logger logger = LoggerFactory.getLogger(ArrowProjectedAdaptor.class.getName());
 
-    public static String fragmentType = "ArrowProjectedFragment";
     private ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T> fragment;
 
     @Override
@@ -36,8 +36,8 @@ public class ArrowProjectedAdaptor<OID_T, VID_T, VDATA_T, EDATA_T>
     }
 
     @Override
-    public String fragmentType() {
-        return fragmentType;
+    public FragmentType fragmentType() {
+        return FragmentType.ArrowProjectedFragment;
     }
 
     /**

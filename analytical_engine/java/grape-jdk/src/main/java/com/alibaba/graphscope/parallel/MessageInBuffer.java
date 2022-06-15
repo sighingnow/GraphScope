@@ -36,6 +36,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.ArrowFragment;
 import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
+import com.alibaba.graphscope.fragment.FragmentType;
 import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.fragment.ImmutableEdgecutFragment;
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor;
@@ -56,10 +57,10 @@ public interface MessageInBuffer extends FFIPointer {
             @CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex,
             @CXXReference MSG_T msg,
             @FFISkip VDATA_T unused) {
-        if (frag.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)) {
+        if (frag.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
             getMessageArrowProjected(
                     (ArrowProjectedFragment) frag.getFFIPointer(), vertex, msg, unused);
-        } else if (frag.fragmentType().equals(ImmutableEdgecutFragmentAdaptor.fragmentType)) {
+        } else if (frag.fragmentType().equals(FragmentType.ImmutableEdgecutFragment)) {
             getMessageImmutable(
                     (ImmutableEdgecutFragment) frag.getFFIPointer(), vertex, msg, unused);
         }

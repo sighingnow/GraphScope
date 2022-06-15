@@ -1,89 +1,100 @@
-package com.alibaba.graphscope.fragment;
+package com.alibaba.graphscope.fragment.adaptor;
 
-import com.alibaba.fastffi.CXXReference;
-import com.alibaba.fastffi.CXXValue;
-import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFIPointer;
-import com.alibaba.graphscope.ds.DestList;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.ds.VertexRange;
 import com.alibaba.graphscope.ds.adaptor.AdjList;
+import com.alibaba.graphscope.fragment.EdgecutFragment;
+import com.alibaba.graphscope.fragment.IFragment;
 
-/**
- * IFragment defines a simple fragment interface, which conforms two different simple fragment
- * {@link ArrowProjectedFragment} and {@link ImmutableEdgecutFragment} into one.
- *
- * @param <OID_T> original vertex id type.
- * @param <VID_T> vertex id type.
- * @param <VDATA_T> vertex data type.
- * @param <EDATA_T> edge data type.
- */
-public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
+public abstract class AbstractGraphXFragmentAdaptor<OID_T, VID_T, VDATA_T, EDATA_T> implements
+    IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
 
-    /**
-     * Return the underlying fragment type,i.e. ArrowProjected or Simple.
-     *
-     * @return underlying fragment type.
-     */
-    FragmentType fragmentType();
+    private EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> edgecutFragment;
+
+    public AbstractGraphXFragmentAdaptor(EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> fragment) {
+        this.edgecutFragment = fragment;
+    }
 
     /**
      * Get the actual fragment FFIPointer we are using.
      *
      * @return a ffipointer
      */
-    FFIPointer getFFIPointer();
+    @Override
+    public FFIPointer getFFIPointer() {
+        return edgecutFragment;
+    }
 
-    /** @return The id of current fragment. */
-    int fid();
+    /**
+     * @return The id of current fragment.
+     */
+    @Override
+    public int fid() {
+        return edgecutFragment.fid();
+    }
 
     /**
      * Number of fragments.
      *
      * @return number of fragments.
      */
-    int fnum();
+    @Override
+    public int fnum() {
+        return edgecutFragment.fnum();
+    }
 
     /**
      * Returns the number of edges in this fragment.
      *
      * @return the number of edges in this fragment.
      */
-    long getEdgeNum();
-
-    long getInEdgeNum();
-
-    long getOutEdgeNum();
+    @Override
+    public long getEdgeNum() {
+        return edgecutFragment.getEdgeNum();
+    }
 
     /**
      * Returns the number of vertices in this fragment.
      *
      * @return the number of vertices in this fragment.
      */
-    VID_T getVerticesNum();
+    @Override
+    public VID_T getVerticesNum() {
+        return edgecutFragment.getVerticesNum();
+    }
 
     /**
      * Returns the number of vertices in the entire graph.
      *
      * @return The number of vertices in the entire graph.
      */
-    long getTotalVerticesNum();
+    @Override
+    public long getTotalVerticesNum() {
+        return edgecutFragment.getTotalVerticesNum();
+    }
 
     /**
      * Get all vertices referenced to this fragment.
      *
      * @return A vertex set can be iterate on.
      */
-    VertexRange<VID_T> vertices();
+    @Override
+    public VertexRange<VID_T> vertices() {
+        return edgecutFragment.vertices();
+    }
 
     /**
      * Get the vertex handle from the original id.
      *
-     * @param oid input original id.
+     * @param oid    input original id.
      * @param vertex output vertex handle
      * @return If find the vertex in this fragment, return true. Otherwise, return false.
      */
-    boolean getVertex(@CXXReference OID_T oid, @CXXReference Vertex<VID_T> vertex);
+    @Override
+    public boolean getVertex(OID_T oid, Vertex<VID_T> vertex) {
+        return edgecutFragment.getVertex(oid, vertex);
+    }
 
     /**
      * Get the original Id of a vertex.
@@ -91,7 +102,10 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex querying vertex.
      * @return original id.
      */
-    OID_T getId(@CXXReference Vertex<VID_T> vertex);
+    @Override
+    public OID_T getId(Vertex<VID_T> vertex) {
+        return edgecutFragment.getId(vertex);
+    }
 
     /**
      * To which fragment the vertex belongs.
@@ -99,42 +113,70 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex querying vertex.
      * @return frag id.
      */
-    int getFragId(@CXXReference Vertex<VID_T> vertex);
+    @Override
+    public int getFragId(Vertex<VID_T> vertex) {
+        return edgecutFragment.getFragId(vertex);
+    }
 
-    int getLocalInDegree(@CXXReference Vertex<VID_T> vertex);
+    @Override
+    public int getLocalInDegree(Vertex<VID_T> vertex) {
+        return edgecutFragment.getLocalInDegree(vertex);
+    }
 
-    int getLocalOutDegree(@CXXReference Vertex<VID_T> vertex);
+    @Override
+    public int getLocalOutDegree(Vertex<VID_T> vertex) {
+        return edgecutFragment.getLocalOutDegree(vertex);
+    }
 
-    boolean gid2Vertex(@CXXReference VID_T gid, @CXXReference Vertex<VID_T> vertex);
+    @Override
+    public boolean gid2Vertex(VID_T gid, Vertex<VID_T> vertex) {
+        return edgecutFragment.gid2Vertex(gid, vertex);
+    }
 
-    VID_T vertex2Gid(@CXXReference Vertex<VID_T> vertex);
+    @Override
+    public VID_T vertex2Gid(Vertex<VID_T> vertex) {
+        return edgecutFragment.vertex2Gid(vertex);
+    }
+
     /**
      * Get the number of inner vertices.
      *
      * @return number of inner vertices.
      */
-    long getInnerVerticesNum();
+    @Override
+    public long getInnerVerticesNum() {
+        return edgecutFragment.getInnerVerticesNum();
+    }
 
     /**
      * Get the number of outer vertices.
      *
      * @return umber of outer vertices.
      */
-    long getOuterVerticesNum();
+    @Override
+    public long getOuterVerticesNum() {
+        return edgecutFragment.getOuterVerticesNum();
+    }
 
     /**
      * Obtain vertex range contains all inner vertices.
      *
      * @return vertex range.
      */
-    VertexRange<VID_T> innerVertices();
+    @Override
+    public VertexRange<VID_T> innerVertices() {
+        return edgecutFragment.innerVertices();
+    }
 
     /**
      * Obtain vertex range contains all outer vertices.
      *
      * @return vertex range.
      */
-    VertexRange<VID_T> outerVertices();
+    @Override
+    public VertexRange<VID_T> outerVertices() {
+        return edgecutFragment.outerVertices();
+    }
 
     /**
      * Check whether a vertex is a inner vertex for a fragment.
@@ -142,7 +184,10 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex querying vertex.
      * @return true if is inner vertex.
      */
-    boolean isInnerVertex(@CXXReference Vertex<VID_T> vertex);
+    @Override
+    public boolean isInnerVertex(Vertex<VID_T> vertex) {
+        return edgecutFragment.isInnerVertex(vertex);
+    }
 
     /**
      * Check whether a vertex is a outer vertex for a fragment.
@@ -150,27 +195,36 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex querying vertex.
      * @return true if is outer vertex.
      */
-    boolean isOuterVertex(@CXXReference Vertex<VID_T> vertex);
+    @Override
+    public boolean isOuterVertex(Vertex<VID_T> vertex) {
+        return edgecutFragment.isOuterVertex(vertex);
+    }
 
     /**
      * Check whether a vertex, represented in OID_T, is a inner vertex. If yes, if true and put
      * inner representation id in the second param. Else return false.
      *
-     * @param oid querying vertex in OID_T.
+     * @param oid    querying vertex in OID_T.
      * @param vertex placeholder for VID_T, if oid belongs to this fragment.
      * @return inner vertex or not.
      */
-    boolean getInnerVertex(@CXXReference OID_T oid, @CXXReference Vertex<VID_T> vertex);
+    @Override
+    public boolean getInnerVertex(OID_T oid, Vertex<VID_T> vertex) {
+        return edgecutFragment.getInnerVertex(oid, vertex);
+    }
 
     /**
      * Check whether a vertex, represented in OID_T, is a outer vertex. If yes, if true and put
      * outer representation id in the second param. Else return false.
      *
-     * @param oid querying vertex in OID_T.
+     * @param oid    querying vertex in OID_T.
      * @param vertex placeholder for VID_T, if oid doesn't belong to this fragment.
      * @return outer vertex or not.
      */
-    boolean getOuterVertex(@CXXReference OID_T oid, @CXXReference Vertex<VID_T> vertex);
+    @Override
+    public boolean getOuterVertex(OID_T oid, Vertex<VID_T> vertex) {
+        return edgecutFragment.getOuterVertex(oid, vertex);
+    }
 
     /**
      * Obtain vertex id from original id, only for inner vertex.
@@ -178,7 +232,10 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex querying vertex.
      * @return original id.
      */
-    OID_T getInnerVertexId(@CXXReference Vertex<VID_T> vertex);
+    @Override
+    public OID_T getInnerVertexId(Vertex<VID_T> vertex) {
+        return edgecutFragment.getInnerVertexId(vertex);
+    }
 
     /**
      * Obtain vertex id from original id, only for outer vertex.
@@ -186,27 +243,36 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex querying vertex.
      * @return original id.
      */
-    OID_T getOuterVertexId(@CXXReference Vertex<VID_T> vertex);
+    @Override
+    public OID_T getOuterVertexId(Vertex<VID_T> vertex) {
+        return edgecutFragment.getOuterVertexId(vertex);
+    }
 
     /**
      * Convert from global id to an inner vertex handle.
      *
-     * @param gid Input global id.
+     * @param gid    Input global id.
      * @param vertex Output vertex handle.
      * @return True if exists an inner vertex of this fragment with global id as gid, false
-     *     otherwise.
+     * otherwise.
      */
-    boolean innerVertexGid2Vertex(@CXXReference VID_T gid, @CXXReference Vertex<VID_T> vertex);
+    @Override
+    public boolean innerVertexGid2Vertex(VID_T gid, Vertex<VID_T> vertex) {
+        return edgecutFragment.innerVertexGid2Vertex(gid, vertex);
+    }
 
     /**
      * Convert from global id to an outer vertex handle.
      *
-     * @param gid Input global id.
+     * @param gid    Input global id.
      * @param vertex Output vertex handle.
      * @return True if exists an outer vertex of this fragment with global id as gid, false
-     *     otherwise.
+     * otherwise.
      */
-    boolean outerVertexGid2Vertex(@CXXReference VID_T gid, @CXXReference Vertex<VID_T> vertex);
+    @Override
+    public boolean outerVertexGid2Vertex(VID_T gid, Vertex<VID_T> vertex) {
+        return edgecutFragment.outerVertexGid2Vertex(gid, vertex);
+    }
 
     /**
      * Convert from inner vertex handle to its global id.
@@ -214,7 +280,10 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex Input vertex handle.
      * @return Global id of the vertex.
      */
-    VID_T getOuterVertexGid(@CXXReference Vertex<VID_T> vertex);
+    @Override
+    public VID_T getOuterVertexGid(Vertex<VID_T> vertex) {
+        return edgecutFragment.getOuterVertexGid(vertex);
+    }
 
     /**
      * Convert from outer vertex handle to its global id.
@@ -222,7 +291,10 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex Input vertex handle.
      * @return Global id of the vertex.
      */
-    VID_T getInnerVertexGid(@CXXReference Vertex<VID_T> vertex);
+    @Override
+    public VID_T getInnerVertexGid(Vertex<VID_T> vertex) {
+        return edgecutFragment.getInnerVertexGid(vertex);
+    }
 
     /**
      * Return the incoming edge destination fragment ID list of a inner vertex.
@@ -238,7 +310,6 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex Input vertex.
      * @return The incoming edge destination fragment ID list.
      */
-//    DestList inEdgeDests(@CXXReference Vertex<VID_T> vertex);
 
     /**
      * Return the outgoing edge destination fragment ID list of a inner vertex.
@@ -254,7 +325,6 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex Input vertex.
      * @return The outgoing edge destination fragment ID list.
      */
-//    DestList outEdgeDests(@CXXReference Vertex<VID_T> vertex);
 
     /**
      * Get both the in edges and out edges.
@@ -262,31 +332,25 @@ public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
      * @param vertex query vertex.
      * @return The outgoing and incoming edge destination fragment ID list.
      */
-//    DestList inOutEdgeDests(@CXXReference Vertex<VID_T> vertex);
 
-    @FFINameAlias("GetIncomingAdjList")
-    @CXXValue
-    AdjList<VID_T, EDATA_T> getIncomingAdjList(@CXXReference Vertex<VID_T> vertex);
+    @Override
+    public AdjList<VID_T, EDATA_T> getIncomingAdjList(Vertex<VID_T> vertex) {
+        throw new IllegalStateException("Not implemented");
+    }
 
-    @FFINameAlias("GetOutgoingAdjList")
-    @CXXValue
-    AdjList<VID_T, EDATA_T> getOutgoingAdjList(@CXXReference Vertex<VID_T> vertex);
-
-    /**
-     * Get the data on vertex.
-     *
-     * @param vertex querying vertex.
-     * @return vertex data
-     */
-    @FFINameAlias("GetData")
-    VDATA_T getData(@CXXReference Vertex<VID_T> vertex);
+    @Override
+    public AdjList<VID_T, EDATA_T> getOutgoingAdjList(Vertex<VID_T> vertex) {
+        throw new IllegalStateException("Not implemented");
+    }
 
     /**
      * Update vertex data with a new value.
      *
      * @param vertex querying vertex.
-     * @param vdata new vertex data.
+     * @param vdata  new vertex data.
      */
-    @FFINameAlias("SetData")
-    void setData(@CXXReference Vertex<VID_T> vertex, @CXXReference VDATA_T vdata);
+    @Override
+    public void setData(Vertex<VID_T> vertex, VDATA_T vdata) {
+        throw new IllegalStateException("Not implemented");
+    }
 }

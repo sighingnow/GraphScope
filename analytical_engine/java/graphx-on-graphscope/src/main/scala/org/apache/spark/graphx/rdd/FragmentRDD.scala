@@ -2,7 +2,7 @@ package org.apache.spark.graphx.rdd
 
 import com.alibaba.fastffi.{FFIByteString, FFITypeFactory}
 import com.alibaba.graphscope.ds.TypedArray
-import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, IFragment}
+import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, FragmentType, IFragment}
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
@@ -124,7 +124,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
           val structure = structureIter.next()
           val time0 = System.nanoTime()
           val newEdata = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], structure.getOutEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED]]
-          if (frag.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)) {
+          if (frag.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
             val projectedFragment = frag.asInstanceOf[ArrowProjectedAdaptor[Long, Long, _, _]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
             val nbr = projectedFragment.getOutEdgesPtr
             val edgesNum = projectedFragment.getOutEdgeNum

@@ -7,6 +7,7 @@ import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.ds.VertexRange;
 import com.alibaba.graphscope.ds.adaptor.AdjList;
 import com.alibaba.graphscope.ds.adaptor.GrapeAdjListAdaptor;
+import com.alibaba.graphscope.fragment.FragmentType;
 import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.fragment.ImmutableEdgecutFragment;
 
@@ -25,8 +26,8 @@ public class ImmutableEdgecutFragmentAdaptor<OID_T, VID_T, VDATA_T, EDATA_T>
     }
 
     @Override
-    public String fragmentType() {
-        return fragmentType;
+    public FragmentType fragmentType() {
+        return FragmentType.ImmutableEdgecutFragment;
     }
 
     /**

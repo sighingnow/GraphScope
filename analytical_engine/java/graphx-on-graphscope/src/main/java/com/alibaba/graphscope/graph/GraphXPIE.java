@@ -5,6 +5,7 @@ import com.alibaba.graphscope.ds.ImmutableTypedArray;
 import com.alibaba.graphscope.ds.PropertyNbrUnit;
 import com.alibaba.graphscope.ds.StringTypedArray;
 import com.alibaba.graphscope.ds.Vertex;
+import com.alibaba.graphscope.fragment.FragmentType;
 import com.alibaba.graphscope.fragment.GraphXFragment;
 import com.alibaba.graphscope.fragment.GraphXStringVDFragment;
 import com.alibaba.graphscope.fragment.IFragment;
@@ -86,7 +87,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
   public void init(IFragment<Long, Long, VD, ED> fragment, DefaultMessageManager messageManager,
                     int maxIterations) throws IOException, ClassNotFoundException {
     this.iFragment = fragment;
-    if (iFragment.fragmentType() != GraphXFragmentAdaptor.fragmentType) {
+    if (!(iFragment.fragmentType().equals(FragmentType.GraphXFragment) || iFragment.fragmentType().equals(FragmentType.GraphXStringVDFragment) || iFragment.fragmentType().equals(FragmentType.GraphXStringEDFragment))) {
       throw new IllegalStateException("Only support graphx fragment");
     }
     this.graphXFragment =

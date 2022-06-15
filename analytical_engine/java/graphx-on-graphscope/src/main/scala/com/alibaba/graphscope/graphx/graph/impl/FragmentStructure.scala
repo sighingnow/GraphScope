@@ -2,7 +2,7 @@ package com.alibaba.graphscope.graphx.graph.impl
 
 import com.alibaba.graphscope.ds.{PropertyNbrUnit, Vertex}
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
-import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, IFragment}
+import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, FragmentType, IFragment}
 import com.alibaba.graphscope.graphx.graph.GraphStructure
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{ArrowProjectedStructure, GraphStructureType}
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure.NBR_SIZE
@@ -41,7 +41,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
 
   if (srcLids == null){
     require(dstLids == null && srcOids == null && dstOids == null)
-    if (fragment.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)) {
+    if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
       val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long, Long, _, _]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
       srcOids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
       srcLids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
@@ -219,7 +219,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
 
   /** For us, the input edatas should be null, and we shall not reply on it to get edge data. */
   override def iterator[ED: ClassTag](edatas: PrimitiveArray[ED], activeSet: BitSet, edgeReversed: Boolean): Iterator[Edge[ED]] = {
-    if (fragment.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)){
+    if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)){
       val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,_,ED]]
       if (edatas == null){
         newProjectedIterator(projectedFragment.getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,ED]],activeSet,edgeReversed)
@@ -234,7 +234,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
   }
 
   override def tripletIterator[VD: ClassTag, ED: ClassTag](vertexDataStore: VertexDataStore[VD], edatas: PrimitiveArray[ED], activeSet: BitSet, includeSrc: Boolean, includeDst: Boolean, edgeReversed : Boolean): Iterator[EdgeTriplet[VD, ED]] = {
-    if (fragment.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)){
+    if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)){
       val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,VD,ED]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,VD,ED]]
       if (edatas == null){
         log.info(s"creating triplet iterator v1 with frag edata, with vd store ${vertexDataStore}")

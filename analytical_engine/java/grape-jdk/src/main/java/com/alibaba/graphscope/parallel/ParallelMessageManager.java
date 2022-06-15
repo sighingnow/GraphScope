@@ -33,6 +33,7 @@ import com.alibaba.fastffi.FFISkip;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
+import com.alibaba.graphscope.fragment.FragmentType;
 import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.fragment.ImmutableEdgecutFragment;
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor;
@@ -65,10 +66,10 @@ public interface ParallelMessageManager extends MessageManagerBase {
             @CXXReference MSG_T msg,
             int channelId,
             @FFISkip VDATA_T vdata) {
-        if (frag.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)) {
+        if (frag.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
             syncStateOnOuterVertexArrowProjected(
                     (ArrowProjectedFragment) frag.getFFIPointer(), vertex, msg, channelId, vdata);
-        } else if (frag.fragmentType().equals(ImmutableEdgecutFragmentAdaptor.fragmentType)) {
+        } else if (frag.fragmentType().equals(FragmentType.ImmutableEdgecutFragment)) {
             syncStateOnOuterVertexImmutable(
                     (ImmutableEdgecutFragment) frag.getFFIPointer(), vertex, msg, channelId, vdata);
         }
@@ -80,10 +81,10 @@ public interface ParallelMessageManager extends MessageManagerBase {
             @CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex,
             int channelId,
             @FFISkip VDATA_T vdata) {
-        if (frag.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)) {
+        if (frag.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
             syncStateOnOuterVertexArrowProjectedNoMsg(
                     (ArrowProjectedFragment) frag.getFFIPointer(), vertex, channelId, vdata);
-        } else if (frag.fragmentType().equals(ImmutableEdgecutFragmentAdaptor.fragmentType)) {
+        } else if (frag.fragmentType().equals(FragmentType.ImmutableEdgecutFragment)) {
             syncStateOnOuterVertexImmutableNoMsg(
                     (ImmutableEdgecutFragment) frag.getFFIPointer(), vertex, channelId, vdata);
         }
@@ -96,10 +97,10 @@ public interface ParallelMessageManager extends MessageManagerBase {
             @CXXReference MSG_T msg,
             int channelId,
             @FFISkip VDATA_T unused) {
-        if (frag.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)) {
+        if (frag.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
             sendMsgThroughOEdgesArrowProjected(
                     (ArrowProjectedFragment) frag.getFFIPointer(), vertex, msg, channelId, unused);
-        } else if (frag.fragmentType().equals(ImmutableEdgecutFragmentAdaptor.fragmentType)) {
+        } else if (frag.fragmentType().equals(FragmentType.ImmutableEdgecutFragment)) {
             sendMsgThroughOEdgesImmutable(
                     (ImmutableEdgecutFragment) frag.getFFIPointer(),
                     vertex,
@@ -116,10 +117,10 @@ public interface ParallelMessageManager extends MessageManagerBase {
             @CXXReference MSG_T msg,
             int channelId,
             @FFISkip VDATA_T unused) {
-        if (frag.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)) {
+        if (frag.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
             sendMsgThroughEdgesArrowProjected(
                     (ArrowProjectedFragment) frag.getFFIPointer(), vertex, msg, channelId, unused);
-        } else if (frag.fragmentType().equals(ImmutableEdgecutFragmentAdaptor.fragmentType)) {
+        } else if (frag.fragmentType().equals(FragmentType.ImmutableEdgecutFragment)) {
             sendMsgThroughEdgesImmutable(
                     (ImmutableEdgecutFragment) frag.getFFIPointer(),
                     vertex,
@@ -136,10 +137,10 @@ public interface ParallelMessageManager extends MessageManagerBase {
             @CXXReference MSG_T msg,
             int channelId,
             @FFISkip VDATA_T unused) {
-        if (frag.fragmentType().equals(ArrowProjectedAdaptor.fragmentType)) {
+        if (frag.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
             sendMsgThroughIEdgesArrowProjected(
                     (ArrowProjectedFragment) frag.getFFIPointer(), vertex, msg, channelId, unused);
-        } else if (frag.fragmentType().equals(ImmutableEdgecutFragmentAdaptor.fragmentType)) {
+        } else if (frag.fragmentType().equals(FragmentType.ImmutableEdgecutFragment)) {
             sendMsgThroughIEdgesImmutable(
                     (ImmutableEdgecutFragment) frag.getFFIPointer(),
                     vertex,

@@ -5,6 +5,7 @@ import com.alibaba.graphscope.ds.DestList;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.ds.VertexRange;
 import com.alibaba.graphscope.ds.adaptor.AdjList;
+import com.alibaba.graphscope.fragment.FragmentType;
 import com.alibaba.graphscope.fragment.GraphXFragment;
 import com.alibaba.graphscope.fragment.IFragment;
 import org.slf4j.Logger;
@@ -15,7 +16,6 @@ public class GraphXFragmentAdaptor<OID_T, VID_T, VDATA_T, EDATA_T> implements
 
     private static Logger logger = LoggerFactory.getLogger(GraphXFragmentAdaptor.class.getName());
 
-    public static String fragmentType = "GraphXFragment";
     private GraphXFragment<OID_T, VID_T, VDATA_T, EDATA_T> fragment;
 
     public GraphXFragmentAdaptor(GraphXFragment<OID_T, VID_T, VDATA_T, EDATA_T> fragment) {
@@ -32,8 +32,8 @@ public class GraphXFragmentAdaptor<OID_T, VID_T, VDATA_T, EDATA_T> implements
      * @return underlying fragment type.
      */
     @Override
-    public String fragmentType() {
-        return fragmentType;
+    public FragmentType fragmentType() {
+        return FragmentType.GraphXFragment;
     }
 
     /**
