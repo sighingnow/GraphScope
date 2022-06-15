@@ -122,53 +122,6 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
            oe_offsets_->Value(static_cast<int64_t>(from));
   }
 
-  // Building
-  template <typename NEW_ED_T,
-            typename new_edata_array_builder_t =
-                typename vineyard::ConvertToArrowType<NEW_ED_T>::BuilderType>
-  std::shared_ptr<GraphXCSR<VID_T, NEW_ED_T>> DriveNewCSR(
-      new_edata_array_builder_t& arrow_array_builder,
-      vineyard::Client& client) {
-    // 0. build and seal new edata
-    using new_edata_array_t =
-        typename vineyard::ConvertToArrowType<NEW_ED_T>::ArrayType;
-    using new_vineyard_edata_array_builder_t =
-        typename vineyard::InternalType<NEW_ED_T>::vineyard_builder_type;
-    std::shared_ptr<new_edata_array_t> arrow_edata_array;
-    arrow_array_builder.Finish(&arrow_edata_array);
-    new_vineyard_edata_array_builder_t edata_array_builder(client,
-                                                           arrow_edata_array);
-    auto edata_array = 
-        *std::dynamic_pointer_cast<vineyard::NumericArray<NEW_ED_T>>(
-            edata_array_builder.Seal(client));
-    LOG(INFO) << "Sealed new edata array";
-    // 1. create new meta, seal and got new graphx csr.
-    vineyard::ObjectID new_graphx_csr_id;
-    {
-      auto graphx_csr = std::make_shared<GraphXCSR<vid_t, NEW_ED_T>>();
-      graphx_csr->meta_.SetTypeName(type_name<GraphXCSR<vid_t, NEW_ED_T>>());
-      graphx_csr->meta_.AddMember("in_edges",
-                                  this->meta().GetMemberMeta("in_edges"));
-      graphx_csr->meta_.AddMember("out_edges",
-                                  this->meta().GetMemberMeta("out_edges"));
-
-      graphx_csr->meta_.AddMember("ie_offsets",
-                                  this->meta().GetMemberMeta("ie_offsets"));
-      graphx_csr->meta_.AddMember("oe_offsets",
-                                  this->meta().GetMemberMeta("oe_offsets"));
-      graphx_csr->meta_.AddMember("edatas", edata_array.meta());
-      graphx_csr->meta_.SetNBytes(this->meta().GetNBytes());
-
-      VINEYARD_CHECK_OK(
-          client.CreateMetaData(graphx_csr->meta_, graphx_csr->id_));
-      new_graphx_csr_id =
-          std::static_pointer_cast<vineyard::Object>(graphx_csr);
-    }
-    auto new_graphx_csr = std::dynamic_pointer_cast<GraphXCSR<vid_t, NEW_ED_T>>(
-        client.GetObject(new_graphx_csr_id));
-    return new_graphx_csr;
-  }
-
   void Construct(const vineyard::ObjectMeta& meta) override {
     this->meta_ = meta;
     this->id_ = meta.GetId();
@@ -259,6 +212,63 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T, ED_T>> {
   template <typename _VID_T, typename _ED_T>
   friend class GraphXCSRBuilder;
 };
+
+template <typename VID_T, typename OLD_ED_T, typename NEW_ED_T>
+class GraphXCSRDiriver {
+  using vid_t = VID_T;
+  using old_edata_t = OLD_ED_T;
+  using new_edata_t = NEW_ED_T;
+  using new_edata_array_builder_t =
+      typename vineyard::ConvertToArrowType<new_edata_t>::BuilderType;
+  using new_edata_array_t =
+      typename vineyard::ConvertToArrowType<new_edata_t>::ArrayType;
+  using new_vineyard_edata_array_builder_t =
+      typename vineyard::InternalType<new_edata_t>::vineyard_builder_type;
+
+ public:
+  GraphXCSRDriver() {}
+  ~GraphXCSRDriver() {}
+
+  GraphXCSR<vid_t, new_edata_array_t> Dirive(
+      GraphXCSR<vid_t, old_edata_t> old_csr,
+      new_edata_array_builder_t& arrow_array_builder,
+      vineyard::Client& client) {
+    std::shared_ptr<new_edata_array_t> arrow_edata_array;
+    arrow_array_builder.Finish(&arrow_edata_array);
+    new_vineyard_edata_array_builder_t edata_array_builder(client,
+                                                           arrow_edata_array);
+    auto edata_array =
+        *std::dynamic_pointer_cast<vineyard::NumericArray<new_edata_t>>(
+            edata_array_builder.Seal(client));
+    LOG(INFO) << "Sealed new edata array";
+    // 1. create new meta, seal and got new graphx csr.
+    vineyard::ObjectID new_graphx_csr_id;
+    {
+      auto graphx_csr = std::make_shared<GraphXCSR<vid_t, new_edata_t>>();
+      graphx_csr->meta_.SetTypeName(type_name<GraphXCSR<vid_t, new_edata_t>>());
+      graphx_csr->meta_.AddMember("in_edges",
+                                  this->meta().GetMemberMeta("in_edges"));
+      graphx_csr->meta_.AddMember("out_edges",
+                                  this->meta().GetMemberMeta("out_edges"));
+
+      graphx_csr->meta_.AddMember("ie_offsets",
+                                  this->meta().GetMemberMeta("ie_offsets"));
+      graphx_csr->meta_.AddMember("oe_offsets",
+                                  this->meta().GetMemberMeta("oe_offsets"));
+      graphx_csr->meta_.AddMember("edatas", edata_array.meta());
+      graphx_csr->meta_.SetNBytes(this->meta().GetNBytes());
+
+      VINEYARD_CHECK_OK(
+          client.CreateMetaData(graphx_csr->meta_, graphx_csr->id_));
+      new_graphx_csr_id =
+          std::static_pointer_cast<vineyard::Object>(graphx_csr);
+    }
+    auto new_graphx_csr =
+        std::dynamic_pointer_cast<GraphXCSR<vid_t, new_edata_t>>(
+            client.GetObject(new_graphx_csr_id));
+    return new_graphx_csr;
+  }
+}
 
 template <typename VID_T, typename ED_T>
 class GraphXCSRBuilder : public vineyard::ObjectBuilder {

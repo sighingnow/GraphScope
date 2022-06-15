@@ -164,8 +164,9 @@ void TestDriveGraphXCSR(vineyard::Client& client,
         client.GetObject(old_csr_id));
 
     LOG(INFO) << "Old csr id: " << csr->id();
+    gs::GraphXCSRDiriver<uint64_t, int64_t, double> diriver;
 
-    auto new_csr = csr->DriveNewCSR(edataBuilder, client);
+    auto new_csr = diriver.Dirive(csr, edataBuilder, client);
     new_csr_id = new_csr->id();
     LOG(INFO) << "new csr id: " << new_csr->id();
   }
@@ -174,7 +175,7 @@ void TestDriveGraphXCSR(vineyard::Client& client,
           client.GetObject(new_csr_id));
   LOG(INFO) << "Got csr " << csr->id();
   LOG(INFO) << "in num edges: " << csr->GetInEdgesNum()
-            << "out num edges: " << csr->GetOutEdgesNum(); 
+            << "out num edges: " << csr->GetOutEdgesNum();
   LOG(INFO) << "lid 0 degreee: " << csr->GetOutDegree(0) << ", "
             << csr->GetPartialOutEdgesNum(0, 1);
 }
