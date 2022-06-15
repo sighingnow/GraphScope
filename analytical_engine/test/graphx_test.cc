@@ -166,7 +166,7 @@ void TestDriveGraphXCSR(vineyard::Client& client,
     LOG(INFO) << "Old csr id: " << csr->id();
     gs::GraphXCSRMapper<uint64_t, int64_t, double> diriver;
 
-    auto new_csr = *diriver.Dirive(*csr, edataBuilder, client);
+    auto new_csr = *diriver.Map(*csr, edataBuilder, client);
     new_csr_id = new_csr.id();
     LOG(INFO) << "new csr id: " << new_csr_id;
   }

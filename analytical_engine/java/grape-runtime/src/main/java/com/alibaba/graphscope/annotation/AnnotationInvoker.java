@@ -207,8 +207,8 @@ import com.alibaba.fastffi.FFIGenBatch;
                         include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_CSR_H)),
                   @CXXTemplate(
                       cxx = "gs::GraphXCSRMapper<uint64_t,int64_t,int64_t>",
-                      java = "com.alibaba.graphscope.graphx.GraphXCSRMapper<java.lang.Long,java.lang.Long,java.lang.Long>"
-                  ),
+                      java = "com.alibaba.graphscope.graphx.GraphXCSRMapper<java.lang.Long,java.lang.Long,java.lang.Long>",
+                      include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_CSR_H)),
                     @CXXTemplate(
                         cxx = "gs::VertexData<uint64_t,int64_t>",
                         java =
