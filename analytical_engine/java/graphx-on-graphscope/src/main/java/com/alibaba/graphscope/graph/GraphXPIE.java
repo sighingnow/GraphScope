@@ -1,10 +1,12 @@
 package com.alibaba.graphscope.graph;
 
+import com.alibaba.fastffi.impl.CXXStdString;
 import com.alibaba.graphscope.ds.ImmutableTypedArray;
 import com.alibaba.graphscope.ds.PropertyNbrUnit;
 import com.alibaba.graphscope.ds.StringTypedArray;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.GraphXFragment;
+import com.alibaba.graphscope.fragment.GraphXStringVDFragment;
 import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.fragment.adaptor.GraphXFragmentAdaptor;
 import com.alibaba.graphscope.graphx.GSEdgeTriplet;
@@ -124,17 +126,24 @@ public class GraphXPIE<VD, ED, MSG_T> {
         }
       }
       else {
-        StringTypedArray array = (StringTypedArray) graphXFragment.getVdataArray();
-        StdVector<Byte> data = array.getRawBytes();
-        FFIByteVector ffiByteVector = new FFIByteVector(data.getAddress());
-        FFIByteVectorInputStream ffiInput = new FFIByteVectorInputStream(ffiByteVector);
-        ObjectInputStream objectInputStream = new ObjectInputStream(ffiInput);
-        long len = objectInputStream.readLong();
-        logger.info("reading {} objects from vd array of bytes {}", len, array.getLength());
-        for (int i = 0; i < len; ++i){
-          VD obj = (VD)objectInputStream.readObject();
-          newVdataArray.set(i, obj);
-          logger.info("setting vd index {} to {}", i, obj);
+        if (conf.isEDPrimitive()){
+          //cast to here to make use of string vdata
+          GraphXStringVDFragment<Long,Long, CXXStdString,ED> graphXStringVDFragment = (GraphXStringVDFragment<Long, Long, CXXStdString, ED>) graphXFragment;
+          StringTypedArray array = graphXStringVDFragment.getVdataArray();
+          StdVector<Byte> data = array.getRawBytes();
+          FFIByteVector ffiByteVector = new FFIByteVector(data.getAddress());
+          FFIByteVectorInputStream ffiInput = new FFIByteVectorInputStream(ffiByteVector);
+          ObjectInputStream objectInputStream = new ObjectInputStream(ffiInput);
+          long len = objectInputStream.readLong();
+          logger.info("reading {} objects from vd array of bytes {}", len, array.getLength());
+          for (int i = 0; i < len; ++i){
+            VD obj = (VD)objectInputStream.readObject();
+            newVdataArray.set(i, obj);
+            logger.info("setting vd index {} to {}", i, obj);
+          }
+        }
+        else {
+          throw new IllegalStateException("Not implemented for vd and ed both complex");
         }
       }
     }
