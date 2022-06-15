@@ -166,9 +166,9 @@ void TestDriveGraphXCSR(vineyard::Client& client,
     LOG(INFO) << "Old csr id: " << csr->id();
     gs::GraphXCSRDiriver<uint64_t, int64_t, double> diriver;
 
-    auto new_csr = diriver.Dirive(csr, edataBuilder, client);
-    new_csr_id = new_csr->id();
-    LOG(INFO) << "new csr id: " << new_csr->id();
+    auto new_csr = *diriver.Dirive(*csr, edataBuilder, client);
+    new_csr_id = new_csr.id();
+    LOG(INFO) << "new csr id: " << new_csr_id;
   }
   std::shared_ptr<gs::GraphXCSR<uint64_t, double>> csr =
       std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t, double>>(
