@@ -605,26 +605,48 @@ class ArrowProjectedFragment
     vertex_label_num_ = fragment_->vertex_label_num_;
     edge_label_num_ = fragment_->edge_label_num_;
 
-    if (fragment_->vertex_tables_[vertex_label_]->num_rows() == 0) {
-      vertex_data_array_ = nullptr;
+    // only get from parent fragment_ if entry vdata_array is empty.
+    if (meta.Haskey("new_vdata_array")) {
+      LOG(INFO) << "Construct vdata array from meta";
+      using vineyard_vdata_array_t =
+          typename vineyard::InternalType<vdata_t>::vineyard_array_type;
+      vineyard_vdata_array_t array;
+      array.Construct(meta.GetMemberMeta("new_vdata_array"));
+      vertex_data_array_ = array.GetArray();
+
     } else {
-      vertex_data_array_ = (vertex_prop_ == -1)
-                               ? nullptr
-                               : (fragment_->vertex_tables_[vertex_label_]
-                                      ->column(vertex_prop_)
-                                      ->chunk(0));
+      LOG(INFO) << "Got vdata array from parent fragment";
+      if (fragment_->vertex_tables_[vertex_label_]->num_rows() == 0) {
+        vertex_data_array_ = nullptr;
+      } else {
+        vertex_data_array_ = (vertex_prop_ == -1)
+                                 ? nullptr
+                                 : (fragment_->vertex_tables_[vertex_label_]
+                                        ->column(vertex_prop_)
+                                        ->chunk(0));
+      }
     }
     ovgid_list_ = fragment_->ovgid_lists_[vertex_label_];
     ovg2l_map_ = fragment_->ovg2l_maps_[vertex_label_];
 
-    if (fragment_->edge_tables_[edge_label_]->num_rows() == 0) {
-      edge_data_array_ = nullptr;
+    if (meta.HasKey("new_edata_array")) {
+      LOG(INFO) << "Construct edata array from meta";
+      using vineyard_edata_array_t =
+          typename vineyard::InternalType<edata_t>::vineyard_array_type;
+      vineyard_edata_array_t array;
+      array.Construct(meta.GetMemberMeta("new_edata_array"));
+      edge_data_array_ = array.GetArray();
     } else {
-      edge_data_array_ = (edge_prop_ == -1)
-                             ? nullptr
-                             : (fragment_->edge_tables_[edge_label_]
-                                    ->column(edge_prop_)
-                                    ->chunk(0));
+      LOG(INFO) << "Got edata array from parent fragment";
+      if (fragment_->edge_tables_[edge_label_]->num_rows() == 0) {
+        edge_data_array_ = nullptr;
+      } else {
+        edge_data_array_ = (edge_prop_ == -1)
+                               ? nullptr
+                               : (fragment_->edge_tables_[edge_label_]
+                                      ->column(edge_prop_)
+                                      ->chunk(0));
+      }
     }
 
     if (directed_) {
@@ -1351,7 +1373,6 @@ inline boost::leaf::result<vineyard::ObjectID> ConstructProjectedFragmentGroup(
     std::string tmp_total_string = totalstring.data();
     boost::split(gathered_host_names, tmp_total_string, boost::is_any_of(","));
     CHECK_EQ(gathered_host_names.size(), comm_spec.worker_num());
-
 
     MPI_Gather(&frag_id, sizeof(vineyard::ObjectID), MPI_CHAR,
                &gathered_object_ids[0], sizeof(vineyard::ObjectID), MPI_CHAR, 0,
