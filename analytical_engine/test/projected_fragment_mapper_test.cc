@@ -91,8 +91,6 @@ int main(int argc, char** argv) {
                                   vineyard::property_graph_types::VID_TYPE>;
       using ProjectedFragmentType =
           gs::ArrowProjectedFragment<int64_t, uint64_t, int64_t, int64_t>;
-      using NewProjectedFragmentType =
-          gs::ArrowProjectedFragment<int64_t, uint64_t, double, double>;
 
       LOG(INFO) << "[worker-" << comm_spec.worker_id()
                 << "] loaded graph to vineyard ..." << fragment_id;
@@ -115,11 +113,11 @@ int main(int argc, char** argv) {
                 << ",enum: " << projected_fragment->GetOutEdgeNum();
       {
         auto ivnum = projected_fragment->GetInnerVerticesNum();
-        for (auto i = 0; i < ivnum; ++i) {
+        for (size_t i = 0; i < ivnum; ++i) {
           vdata_builder.UnsafeAppend((double) i);
         }
         auto oenum = projected_fragment->GetOutEdgeNum();
-        for (auto i = 0; i < oenum; ++i) {
+        for (size_t i = 0; i < oenum; ++i) {
           edata_builder.UnsafeAppend((double) i);
         }
       }
@@ -127,7 +125,7 @@ int main(int argc, char** argv) {
           mapper.Map(*projected_fragment, vdata_builder, edata_builder, client);
       LOG(INFO) << "Got mapped fragment " << new_fragment->id();
       grape::Vertex<uint64_t> vertex;
-      vertex.SetValue(0);
+      vertex.SetValue(10);
       LOG(INFO) << "old vdata " << projected_fragment->GetData(vertex)
                 << ",new data: " << new_fragment->GetData(vertex);
     }
