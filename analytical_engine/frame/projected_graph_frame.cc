@@ -76,7 +76,7 @@ void LoadGraph(
           gs::rpc::graph::GraphDefPb graph_def;
 
           graph_def.set_key(graph_name);
-          graph_def.set_graph_type(rpc::graph::ARROW_PROJECTED);
+          graph_def.set_graph_type(gs::rpc::graph::ARROW_PROJECTED);
           gs::rpc::graph::VineyardInfoPb vy_info;
           if (graph_def.has_extension()) {
             graph_def.extension().UnpackTo(&vy_info);
@@ -85,16 +85,17 @@ void LoadGraph(
           vy_info.set_host_ids_str(fg->GetHostIdsStr());
           {
             auto& meta = frag->meta();
-            auto& parent_meta = meta.GetMemberMeta("arrow_fragment");
+            auto parent_meta = meta.GetMemberMeta("arrow_fragment");
             graph_def.set_directed(frag->directed());
-            vy_info.set_oid_type(PropertyTypeToPb(vineyard::normalize_datatype(
+            vy_info.set_oid_type(gs::PropertyTypeToPb(vineyard::normalize_datatype(
                 parent_meta.GetKeyValue("oid_type"))));
-            vy_info.set_vid_type(PropertyTypeToPb(vineyard::normalize_datatype(
+            vy_info.set_vid_type(gs::PropertyTypeToPb(vineyard::normalize_datatype(
                 parent_meta.GetKeyValue("vid_type"))));
-            auto& v_label = meta.GetKeyValue("projected_v_label");
-            auto& v_prop = meta.GetKeyValue("projected_v_property");
-            auto& e_label = meta.GetKeyValue("projected_e_label");
-            auto& e_prop = meta.GetKeyValue("projected_e_property");
+            auto v_label = meta.GetKeyValue("projected_v_label");
+            auto v_prop = meta.GetKeyValue("projected_v_property");
+            auto e_label = meta.GetKeyValue("projected_e_label");
+            auto e_prop = meta.GetKeyValue("projected_e_property");
+            std::string vdata_type,edata_type;
             LOG(INFO) << "v label " << v_label << " v prop: " << v_prop
                       << ", e_label: " << e_label << ", e_prop " << e_prop;
             if (v_prop != "-1") {
@@ -105,7 +106,7 @@ void LoadGraph(
             } else {
               vdata_type = vineyard::normalize_datatype("empty");
             }
-            vy_info.set_vdata_type(PropertyTypeToPb(vdata_type));
+            vy_info.set_vdata_type(gs::PropertyTypeToPb(vdata_type));
 
             if (e_prop != "-1") {
               std::string edata_key =
@@ -115,7 +116,7 @@ void LoadGraph(
             } else {
               edata_type = vineyard::normalize_datatype("empty");
             }
-            vy_info.set_edata_type(PropertyTypeToPb(edata_type));
+            vy_info.set_edata_type(gs::PropertyTypeToPb(edata_type));
             vy_info.set_property_schema_json("{}");
           }
           graph_def.mutable_extension()->PackFrom(vy_info);
