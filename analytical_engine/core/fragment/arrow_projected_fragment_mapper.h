@@ -29,10 +29,10 @@
 #include "arrow/array.h"
 #include "boost/lexical_cast.hpp"
 
-#include "vineyard/graph/fragment/property_graph_types.h"
 #include "grape/fragment/fragment_base.h"
 #include "vineyard/basic/ds/arrow_utils.h"
 #include "vineyard/common/util/version.h"
+#include "vineyard/graph/fragment/property_graph_types.h"
 
 #include "core/fragment/arrow_projected_fragment.h"
 
@@ -108,7 +108,9 @@ class ArrowProjectedFragmentMapper {
     auto old_meta = old_fragment.meta();
     {
       auto new_frag = std::make_shared<new_frag_t>();
-      new_frag->meta_.SetTypeName(type_name<ArrowProjectedFragment<oid_t, vid_t, new_vdata_t, new_edata_t>>());
+      new_frag->meta_.SetTypeName(
+          type_name<ArrowProjectedFragment<oid_t, vid_t, new_vdata_t,
+                                           new_edata_t>>());
       new_frag->meta_.AddKeyValue(
           "projected_v_label",
           old_meta.GetKeyValue<label_id_t>("projected_v_label"));
@@ -149,7 +151,7 @@ class ArrowProjectedFragmentMapper {
         std::dynamic_pointer_cast<new_frag_t>(client.GetObject(new_frag_id));
     return new_frag;
   }
-  };
+};
 }  // namespace gs
 
 #endif  // ANALYTICAL_ENGINE_CORE_FRAGMENT_ARROW_PROJECTED_FRAGMENT_MAPPER_H_
