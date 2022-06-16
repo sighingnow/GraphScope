@@ -67,7 +67,7 @@ include_directories(${PROJECT_SOURCE_DIR}/proto)
 # Set flags
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fmax-errors=10")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 if (APPLE)
     set(CMAKE_MACOSX_RPATH ON)
@@ -311,8 +311,12 @@ if (BUILD_TESTS)
 
         add_executable(projected_fragment_loader test/projected_fragment_loader.cc)
         target_include_directories(projected_fragment_loader PRIVATE core utils apps)
-#        target_compile_definitions(projected_fragment_loader PUBLIC ENABLE_JAVA_SDK)
         target_link_libraries(projected_fragment_loader ${CMAKE_DL_LIBS} ${VINEYARD_LIBRARIES} ${Boost_LIBRARIES} ${GLOG_LIBRARIES} ${LIBRT} ${GFLAGS_LIBRARIES})
+
+        add_executable(projected_fragment_mapper_test test/projected_fragment_mapper_test.cc)
+        target_include_directories(projected_fragment_mapper_test PRIVATE core utils apps)
+        target_link_libraries(projected_fragment_mapper_test ${CMAKE_DL_LIBS} ${VINEYARD_LIBRARIES} ${Boost_LIBRARIES} ${GLOG_LIBRARIES} ${LIBRT} ${GFLAGS_LIBRARIES})
+
 
         if (${LIBUNWIND_FOUND})
             # target_link_libraries(run_java_app ${LIBUNWIND_LIBRARIES})
@@ -324,6 +328,7 @@ if (BUILD_TESTS)
             target_link_libraries(graphx_string_test ${LIBUNWIND_LIBRARIES})
             target_link_libraries(graphx_vertex_map_loader ${LIBUNWIND_LIBRARIES})
             target_link_libraries(projected_fragment_loader ${LIBUNWIND_LIBRARIES})
+            target_link_libraries(projected_fragment_mapper_test ${LIBUNWIND_LIBRARIES})
             ############################################################
         endif ()
     endif()

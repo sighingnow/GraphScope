@@ -329,6 +329,11 @@ class AdjList<VID_T, EID_T, grape::EmptyType> {
 
 }  // namespace arrow_projected_fragment_impl
 
+
+template <typename OID_T, typename VID_T, typename OLD_VDATA_T,
+          typename NEW_VDATA_T, typename OLD_EDATA_T, typename NEW_EDATA_T>
+class ArrowProjectedFragmentMapper;
+
 /**
  * @brief This class represents the fragment projected from ArrowFragment which
  * contains only one vertex label and edge label. The fragment has no label and
@@ -629,7 +634,7 @@ class ArrowProjectedFragment
     ovgid_list_ = fragment_->ovgid_lists_[vertex_label_];
     ovg2l_map_ = fragment_->ovg2l_maps_[vertex_label_];
 
-    if (meta.HasKey("new_edata_array")) {
+    if (meta.Haskey("new_edata_array")) {
       LOG(INFO) << "Construct edata array from meta";
       using vineyard_edata_array_t =
           typename vineyard::InternalType<edata_t>::vineyard_array_type;
@@ -1214,6 +1219,10 @@ class ArrowProjectedFragment
 
   std::vector<vid_t> outer_vertex_offsets_;
   std::vector<std::vector<vertex_t>> mirrors_of_frag_;
+
+  template <typename _OID_T, typename _VID_T, typename _OLD_VDATA_T,
+          typename _NEW_VDATA_T, typename _OLD_EDATA_T, typename _NEW_EDATA_T>
+  friend class ArrowProjectedFragmentMapper;
 };
 
 class ArrowProjectedFragmentGroupBuilder;
@@ -1273,6 +1282,7 @@ class ArrowProjectedFragmentGroup
   std::unordered_map<fid_t, std::string> fragment_locations_;
 
   friend ArrowProjectedFragmentGroupBuilder;
+
 };
 
 class ArrowProjectedFragmentGroupBuilder : public vineyard::ObjectBuilder {

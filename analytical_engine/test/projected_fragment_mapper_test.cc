@@ -85,7 +85,6 @@ int main(int argc, char** argv) {
           });
     }
 
-    vineyard::ObjectID projected_group_id;
     {
       using FragmentType =
           vineyard::ArrowFragment<vineyard::property_graph_types::OID_TYPE,
@@ -108,8 +107,7 @@ int main(int argc, char** argv) {
                 << projected_fragment->id();
 
       gs::ArrowProjectedFragmentMapper<int64_t, uint64_t, int64_t, double,
-                                       int64_t, double>
-          mapper;
+                                       int64_t, double>mapper;
       arrow::DoubleBuilder vdata_builder, edata_builder;
       vdata_builder.Reserve(projected_fragment->GetInnerVerticesNum());
       edata_builder.Reserve(projected_fragment->GetOutEdgeNum());

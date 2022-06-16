@@ -29,6 +29,7 @@
 #include "arrow/array.h"
 #include "boost/lexical_cast.hpp"
 
+#include "vineyard/graph/fragment/property_graph_types.h"
 #include "grape/fragment/fragment_base.h"
 #include "vineyard/basic/ds/arrow_utils.h"
 #include "vineyard/common/util/version.h"
@@ -46,6 +47,7 @@ namespace gs {
 template <typename OID_T, typename VID_T, typename OLD_VDATA_T,
           typename NEW_VDATA_T, typename OLD_EDATA_T, typename NEW_EDATA_T>
 class ArrowProjectedFragmentMapper {
+ public:
   using label_id_t = vineyard::property_graph_types::LABEL_ID_TYPE;
   using prop_id_t = vineyard::property_graph_types::PROP_ID_TYPE;
   using vid_t = VID_T;
@@ -70,11 +72,10 @@ class ArrowProjectedFragmentMapper {
       typename vineyard::InternalType<new_vdata_t>::vineyard_builder_type;
 
   using old_frag_t =
-      typename ArrowProjectedFragment<vid_t, oid_t, old_vdata_t, old_edata_t>;
+      ArrowProjectedFragment<oid_t, vid_t, old_vdata_t, old_edata_t>;
   using new_frag_t =
-      typename ArrowProjectedFragment<oid_t, vid_t, new_vdata_t, new_edata_t>;
+      ArrowProjectedFragment<oid_t, vid_t, new_vdata_t, new_edata_t>;
 
- public:
   ArrowProjectedFragmentMapper() {}
   ~ArrowProjectedFragmentMapper() {}
 
@@ -107,7 +108,7 @@ class ArrowProjectedFragmentMapper {
     auto old_meta = old_fragment.meta();
     {
       auto new_frag = std::make_shared<new_frag_t>();
-      new_frag->meta_.SetTypeName(type_name<new_frag_t>());
+      new_frag->meta_.SetTypeName(type_name<ArrowProjectedFragment<oid_t, vid_t, new_vdata_t, new_edata_t>>());
       new_frag->meta_.AddKeyValue(
           "projected_v_label",
           old_meta.GetKeyValue<label_id_t>("projected_v_label"));
@@ -117,26 +118,26 @@ class ArrowProjectedFragmentMapper {
       new_frag->meta_.AddKeyValue(
           "projected_v_property",
           old_meta.GetKeyValue<prop_id_t>("projected_v_property"));
-      new_frag->meta_.AddMember(
+      new_frag->meta_.AddKeyValue(
           "projected_e_property",
           old_meta.GetKeyValue<prop_id_t>("projected_e_property"));
 
       new_frag->meta_.AddMember("arrow_fragment",
-                                meta.GetMemberMeta("arrow_fragment"));
-      if (old_fragment->directed()) {
+                                old_meta.GetMemberMeta("arrow_fragment"));
+      if (old_fragment.directed()) {
         new_frag->meta_.AddMember("ie_offsets_begin",
-                                  meta.GetMemberMeta("ie_offsets_begin"));
+                                  old_meta.GetMemberMeta("ie_offsets_begin"));
         new_frag->meta_.AddMember("ie_offsets_end",
-                                  meta.GetMemberMeta("ie_offsets_end"));
+                                  old_meta.GetMemberMeta("ie_offsets_end"));
       }
 
       new_frag->meta_.AddMember("oe_offsets_begin",
-                                meta.GetMemberMeta("oe_offsets_begin"));
+                                old_meta.GetMemberMeta("oe_offsets_begin"));
       new_frag->meta_.AddMember("oe_offsets_end",
-                                meta.GetMemberMeta("oe_offsets_end"));
+                                old_meta.GetMemberMeta("oe_offsets_end"));
       new_frag->meta_.AddMember(
           "arrow_projected_vertex_map",
-          meta.GetMemberMeta("arrow_projected_vertex_map"));
+          old_meta.GetMemberMeta("arrow_projected_vertex_map"));
 
       new_frag->meta_.AddMember("new_vdata_array", vdata_array.meta());
       new_frag->meta_.AddMember("new_edata_array", edata_array.meta());
@@ -147,6 +148,7 @@ class ArrowProjectedFragmentMapper {
     auto new_frag =
         std::dynamic_pointer_cast<new_frag_t>(client.GetObject(new_frag_id));
     return new_frag;
+  }
   };
 }  // namespace gs
 
