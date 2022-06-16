@@ -21,6 +21,7 @@ import json
 import logging
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -154,6 +155,7 @@ class LocalLauncher(Launcher):
         self._zookeeper_port = None
         self._zetcd_process = None
         # vineyardd
+        self._vineyard_rpc_port = None
         self._vineyardd_process = None
         # analytical engine
         self._analytical_engine_process = None
@@ -251,7 +253,16 @@ class LocalLauncher(Launcher):
             "{}:{}".format(key, value) for key, value in engine_params.items()
         ]
         env = os.environ.copy()
-        env.update({"GRAPHSCOPE_HOME": GRAPHSCOPE_HOME})
+        if ".install_prefix" in INTERACTIVE_ENGINE_SCRIPT:
+            env.update(
+                {
+                    "GRAPHSCOPE_HOME": os.path.dirname(
+                        os.path.dirname(INTERACTIVE_ENGINE_SCRIPT)
+                    )
+                }
+            )
+        else:
+            env.update({"GRAPHSCOPE_HOME": GRAPHSCOPE_HOME})
         cmd = [
             INTERACTIVE_ENGINE_SCRIPT,
             "create_gremlin_instance_on_local",
@@ -281,7 +292,16 @@ class LocalLauncher(Launcher):
 
     def close_interactive_instance(self, object_id):
         env = os.environ.copy()
-        env.update({"GRAPHSCOPE_HOME": GRAPHSCOPE_HOME})
+        if ".install_prefix" in INTERACTIVE_ENGINE_SCRIPT:
+            env.update(
+                {
+                    "GRAPHSCOPE_HOME": os.path.dirname(
+                        os.path.dirname(INTERACTIVE_ENGINE_SCRIPT)
+                    )
+                }
+            )
+        else:
+            env.update({"GRAPHSCOPE_HOME": GRAPHSCOPE_HOME})
         cmd = [
             INTERACTIVE_ENGINE_SCRIPT,
             "close_gremlin_instance_on_local",
@@ -316,15 +336,21 @@ class LocalLauncher(Launcher):
         if self._etcd_addrs is None:
             self._launch_etcd()
         else:
-            # self._etcd_endpoint = "http://" + self._etcd_addrs
-            self._etcd_endpoint = self._etcd_addrs
+            self._etcd_endpoint = "http://" + self._etcd_addrs
             logger.info("External Etcd endpoint is %s", self._etcd_endpoint)
 
     def _launch_etcd(self):
         etcd_exec = self._find_etcd()
         self._etcd_peer_port = 2380 if is_free_port(2380) else get_free_port()
         self._etcd_client_port = 2379 if is_free_port(2379) else get_free_port()
-        self._etcd_endpoint = "http://127.0.0.1:{0}".format(str(self._etcd_client_port))
+        if len(self._hosts) > 1:
+            self._etcd_endpoint = "http://{0}:{1}".format(
+                socket.gethostname(), str(self._etcd_client_port)
+            )
+        else:
+            self._etcd_endpoint = "http://127.0.0.1:{0}".format(
+                str(self._etcd_client_port)
+            )
 
         env = os.environ.copy()
         env.update({"ETCD_MAX_TXN_OPS": "102400"})
@@ -431,46 +457,62 @@ class LocalLauncher(Launcher):
         return vineyardd
 
     def _create_vineyard(self):
-        if not self._vineyard_socket:
-            ts = get_timestamp()
-            vineyard_socket = f"{self._vineyard_socket_prefix}{ts}"
-            cmd = ["sudo"]
-            cmd.extend(self._find_vineyardd())
-            cmd.extend(["--socket", vineyard_socket])
-            cmd.extend(["--size", self._shared_mem])
-            cmd.extend(["-etcd_endpoint", self._etcd_endpoint])
-            cmd.extend(["-etcd_prefix", f"vineyard.gsa.{ts}"])
-            env = os.environ.copy()
-            env["GLOG_v"] = str(self._glog_level)
+        if self._vineyard_socket is not None:
+            return
 
-            logger.info("Launch vineyardd with command: %s", " ".join(cmd))
+        multiple_hosts = len(self._hosts.split(",")) > 1
 
-            process = subprocess.Popen(
-                cmd,
-                start_new_session=True,
-                cwd=os.getcwd(),
-                env=env,
-                encoding="utf-8",
-                errors="replace",
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True,
-                bufsize=1,
-            )
+        if multiple_hosts:
+            rmcp = ResolveMPICmdPrefix()
+            cmd, mpi_env = rmcp.resolve(self._num_workers, self._hosts)
+        else:
+            cmd, mpi_env = [], {}
 
-            logger.info("Server is initializing vineyardd.")
-            stdout_watcher = PipeWatcher(
-                process.stdout,
-                sys.stdout,
-                suppressed=(not logger.isEnabledFor(logging.DEBUG)),
-            )
-            setattr(process, "stdout_watcher", stdout_watcher)
+        ts = get_timestamp()
+        vineyard_socket = f"{self._vineyard_socket_prefix}{ts}"
+        self._vineyard_rpc_port = 9600 if is_free_port(9600) else get_free_port()
 
-            self._vineyard_socket = vineyard_socket
-            self._vineyardd_process = process
+        cmd.extend(self._find_vineyardd())
+        cmd.extend(["--socket", vineyard_socket])
+        cmd.extend(["--rpc_socket_port", str(self._vineyard_rpc_port)])
+        cmd.extend(["--size", self._shared_mem])
+        cmd.extend(["-etcd_endpoint", self._etcd_endpoint])
+        cmd.extend(["-etcd_prefix", f"vineyard.gsa.{ts}"])
+        env = os.environ.copy()
+        env["GLOG_v"] = str(self._glog_level)
+        env.update(mpi_env)
 
-            start_time = time.time()
+        logger.info("Launch vineyardd with command: %s", " ".join(cmd))
+
+        process = subprocess.Popen(
+            cmd,
+            start_new_session=True,
+            cwd=os.getcwd(),
+            env=env,
+            encoding="utf-8",
+            errors="replace",
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            bufsize=1,
+        )
+
+        logger.info("Server is initializing vineyardd.")
+        stdout_watcher = PipeWatcher(
+            process.stdout,
+            sys.stdout,
+            suppressed=(not logger.isEnabledFor(logging.DEBUG)),
+        )
+        setattr(process, "stdout_watcher", stdout_watcher)
+
+        self._vineyard_socket = vineyard_socket
+        self._vineyardd_process = process
+
+        start_time = time.time()
+        if multiple_hosts:
+            time.sleep(5)  # should be OK
+        else:
             while not os.path.exists(self._vineyard_socket):
                 time.sleep(1)
                 if (
@@ -478,21 +520,9 @@ class LocalLauncher(Launcher):
                     and self._timeout_seconds + start_time < time.time()
                 ):
                     raise RuntimeError("Launch vineyardd failed due to timeout.")
-            logger.info(
-                "Vineyardd is ready, ipc socket is {0}".format(self._vineyard_socket)
-            )
-
-    def _create_services(self):
-        # create etcd
-        self._config_etcd()
-        # create vineyard
-        self._create_vineyard()
-        # create GAE rpc service
-        self._start_analytical_engine()
-        # create zetcd
-        self._launch_zetcd()
-        if self.poll() is not None and self.poll() != 0:
-            raise RuntimeError("Initializing analytical engine failed.")
+        logger.info(
+            "Vineyardd is ready, ipc socket is {0}".format(self._vineyard_socket)
+        )
 
     def _start_analytical_engine(self):
         rmcp = ResolveMPICmdPrefix()
@@ -556,6 +586,18 @@ class LocalLauncher(Launcher):
                 self._analytical_engine_endpoint
             )
         )
+
+    def _create_services(self):
+        # create etcd
+        self._config_etcd()
+        # create vineyard
+        self._create_vineyard()
+        # create GAE rpc service
+        self._start_analytical_engine()
+        # create zetcd
+        self._launch_zetcd()
+        if self.poll() is not None and self.poll() != 0:
+            raise RuntimeError("Initializing analytical engine failed.")
 
     def create_learning_instance(self, object_id, handle, config):
         # prepare argument

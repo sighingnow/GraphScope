@@ -62,14 +62,14 @@ void LoadGraph(
             RETURN_GS_ERROR(vineyard::ErrorCode::kInvalidValueError,
                             "Missing param: VINEYARD_ID");
           }
-          auto fg = std::dynamic_pointer_cast<ArrowProjectedFragmentGroup>(
+          auto fg = std::dynamic_pointer_cast<gs::ArrowProjectedFragmentGroup>(
               client.GetObject(frag_group_id));
           auto fid = comm_spec.WorkerToFrag(comm_spec.worker_id());
           auto frag_id = fg->Fragments().at(fid);
           auto frag =
               std::static_pointer_cast<_GRAPH_TYPE>(client.GetObject(frag_id));
 
-          BOOST_LEAF_AUTO(new_frag_group_id, ConstructProjectedFragmentGroup(
+          BOOST_LEAF_AUTO(new_frag_group_id, gs::ConstructProjectedFragmentGroup(
                                                  client, frag_id, comm_spec));
           gs::rpc::graph::GraphDefPb graph_def;
 

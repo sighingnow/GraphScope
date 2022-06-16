@@ -1072,7 +1072,7 @@ class Session(object):
     def _run_on_local(self):
         # self._config_params["hosts"] = ["localhost"]
         self._config_params["port"] = None
-#        self._config_params["vineyard_socket"] = ""
+        self._config_params["vineyard_socket"] = ""
 
     @set_defaults(gs_config)
     def gremlin(self, graph, engine_params=None):

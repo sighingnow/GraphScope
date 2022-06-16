@@ -44,7 +44,7 @@ def load_from_vineyard(vineyard_id, vdata_type, edata_type):
     # construct create graph op
     config = {
         types_pb2.IS_FROM_VINEYARD_ID: utils.b_to_attr(True),
-        types_pb2.VINEYARD_ID : utils.i_to_attr(vineyard_id)
+        types_pb2.VINEYARD_ID : utils.i_to_attr(vineyard_id),
         types_pb2.LOAD_PROJECTED_GRAPH : utils.b_to_attr(True),
         types_pb2.V_DATA_TYPE: utils.s_to_attr(utils.data_type_to_cpp(vdata_type)),
         types_pb2.E_DATA_TYPE: utils.s_to_attr(utils.data_type_to_cpp(edata_type)),

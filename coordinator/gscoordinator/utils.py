@@ -426,8 +426,7 @@ def compile_graph_frame(
     logger.info("enable java sdk {}".format(engine_config["enable_java_sdk"]))
     if graph_type == graph_def_pb2.ARROW_PROPERTY:
         cmake_commands += ["-DPROPERTY_GRAPH_FRAME=True"]
-    elif graph_type in (
-        graph_def_pb2.ARROW_PROJECTED):
+    elif graph_type == graph_def_pb2.ARROW_PROJECTED:
         cmake_commands += ["-DPROJECT_FRAME=True","-DPROJECTED_GRAPH_FRAME=True"]
     elif graph_type in (
         graph_def_pb2.DYNAMIC_PROJECTED,
