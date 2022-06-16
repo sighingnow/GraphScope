@@ -428,7 +428,11 @@ def compile_graph_frame(
         cmake_commands += ["-DPROPERTY_GRAPH_FRAME=True"]
     elif graph_type in (
         graph_def_pb2.ARROW_PROJECTED):
-        cmake_commands += ["-DPROJECT_FRAME=True","-DPROJECTED_GRAPH_FRAME=True"]
+        logger.info("load projected graph {}".format(attr[types_pb2.LOAD_PROJECTED_GRAPH].b))
+        if attr[types_pb2.LOAD_PROJECTED_GRAPH].b:
+            cmake_commands += ["-DPROJECTED_GRAPH_FRAME=True"]
+        else:
+            cmake_commands += ["-DPROJECT_FRAME=True"]
     elif graph_type in (
         graph_def_pb2.DYNAMIC_PROJECTED,
         graph_def_pb2.ARROW_FLATTENED):
