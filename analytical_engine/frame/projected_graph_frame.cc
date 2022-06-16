@@ -48,6 +48,8 @@ void LoadGraph(
     gs::bl::result<std::shared_ptr<gs::IFragmentWrapper>>& fragment_wrapper) {
   using oid_t = typename _GRAPH_TYPE::oid_t;
   using vid_t = typename _GRAPH_TYPE::vid_t;
+  using vdata_t = typename _GRAPH_TYPE::vdata_t;
+  using edata_t = typename _GRAPH_TYPE::edata_t;
 
   fragment_wrapper = gs::bl::try_handle_some(
       [&]() -> gs::bl::result<std::shared_ptr<gs::IFragmentWrapper>> {
@@ -74,12 +76,49 @@ void LoadGraph(
           gs::rpc::graph::GraphDefPb graph_def;
 
           graph_def.set_key(graph_name);
+          graph_def.set_graph_type(rpc::graph::ARROW_PROJECTED);
           gs::rpc::graph::VineyardInfoPb vy_info;
           if (graph_def.has_extension()) {
             graph_def.extension().UnpackTo(&vy_info);
           }
           vy_info.set_vineyard_id(new_frag_group_id);
-          gs::set_graph_def(frag, graph_def);
+          vy_info.set_host_ids_str(fg->GetHostIdsStr());
+          {
+            auto& meta = frag->meta();
+            auto& parent_meta = meta.GetMemberMeta("arrow_fragment");
+            graph_def.set_directed(frag->directed());
+            vy_info.set_oid_type(PropertyTypeToPb(vineyard::normalize_datatype(
+                parent_meta.GetKeyValue("oid_type"))));
+            vy_info.set_vid_type(PropertyTypeToPb(vineyard::normalize_datatype(
+                parent_meta.GetKeyValue("vid_type"))));
+            auto& v_label = meta.GetKeyValue("projected_v_label");
+            auto& v_prop = meta.GetKeyValue("projected_v_property");
+            auto& e_label = meta.GetKeyValue("projected_e_label");
+            auto& e_prop = meta.GetKeyValue("projected_e_property");
+            LOG(INFO) << "v label " << v_label << " v prop: " << v_prop
+                      << ", e_label: " << e_label << ", e_prop " << e_prop;
+            if (v_prop != "-1") {
+              std::string vdata_key =
+                  "vertex_property_type_" + v_label + "_" + v_prop;
+              vdata_type = vineyard::normalize_datatype(
+                  parent_meta.GetKeyValue(vdata_key));
+            } else {
+              vdata_type = vineyard::normalize_datatype("empty");
+            }
+            vy_info.set_vdata_type(PropertyTypeToPb(vdata_type));
+
+            if (e_prop != "-1") {
+              std::string edata_key =
+                  "edge_property_type_" + e_label + "_" + e_prop;
+              edata_type = vineyard::normalize_datatype(
+                  parent_meta.GetKeyValue(edata_key));
+            } else {
+              edata_type = vineyard::normalize_datatype("empty");
+            }
+            vy_info.set_edata_type(PropertyTypeToPb(edata_type));
+            vy_info.set_property_schema_json("{}");
+          }
+          graph_def.mutable_extension()->PackFrom(vy_info);
 
           auto wrapper = std::make_shared<gs::FragmentWrapper<_GRAPH_TYPE>>(
               graph_name, graph_def, frag);
