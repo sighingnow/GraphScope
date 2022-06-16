@@ -105,24 +105,24 @@ class ArrowProjectedFragmentMapper {
     }
 
     vineyard::ObjectID new_frag_id;
-    auto old_meta = old_fragment.meta();
+    const vineyard::ObjectMeta& old_meta = old_fragment.meta();
+    auto v_label = old_meta.GetKeyValue<int>("projected_v_label");
     {
       auto new_frag = std::make_shared<new_frag_t>();
       new_frag->meta_.SetTypeName(
           type_name<ArrowProjectedFragment<oid_t, vid_t, new_vdata_t,
                                            new_edata_t>>());
       new_frag->meta_.AddKeyValue(
-          "projected_v_label",
-          old_meta.GetKeyValue<label_id_t>("projected_v_label"));
+          "projected_v_label", v_label);
       new_frag->meta_.AddKeyValue(
           "projected_e_label",
-          old_meta.GetKeyValue<label_id_t>("projected_e_label"));
+          old_meta.GetKeyValue<int>("projected_e_label"));
       new_frag->meta_.AddKeyValue(
           "projected_v_property",
-          old_meta.GetKeyValue<prop_id_t>("projected_v_property"));
+          old_meta.GetKeyValue<int>("projected_v_property"));
       new_frag->meta_.AddKeyValue(
           "projected_e_property",
-          old_meta.GetKeyValue<prop_id_t>("projected_e_property"));
+          old_meta.GetKeyValue<int>("projected_e_property"));
 
       new_frag->meta_.AddMember("arrow_fragment",
                                 old_meta.GetMemberMeta("arrow_fragment"));
