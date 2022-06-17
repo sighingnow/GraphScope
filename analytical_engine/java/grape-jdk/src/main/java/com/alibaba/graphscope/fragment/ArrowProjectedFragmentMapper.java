@@ -2,6 +2,7 @@ package com.alibaba.graphscope.fragment;
 
 import static com.alibaba.graphscope.utils.CppClassName.ARROW_PROJECTED_FRAGMENT_MAPPER;
 import static com.alibaba.graphscope.utils.CppHeaderName.ARROW_PROJECTED_FRAGMENT_MAPPER_H;
+import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_TYPE_ALIAS_H;
 
 import com.alibaba.fastffi.CXXHead;
 import com.alibaba.fastffi.CXXReference;
@@ -17,6 +18,7 @@ import com.alibaba.graphscope.stdcxx.StdSharedPtr;
 
 @FFIGen
 @CXXHead(ARROW_PROJECTED_FRAGMENT_MAPPER_H)
+@CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(ARROW_PROJECTED_FRAGMENT_MAPPER)
 public interface ArrowProjectedFragmentMapper<OID_T, VID_T, OLD_V_T, NEW_V_T, OLD_E_T, NEW_E_T> extends
     FFIPointer {

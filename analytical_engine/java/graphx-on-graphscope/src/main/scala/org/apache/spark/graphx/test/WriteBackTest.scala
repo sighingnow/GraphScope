@@ -15,8 +15,8 @@ object WriteBackTest extends Logging{
           .getOrCreate()
         val sc = spark.sparkContext
 
-      val graph = GraphScopeRDD.loadFragmentAsGraph(sc, hostIdsStr,"gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>");
-        val hostAndIds = GraphScopeHelper.writeBackFragment(graph)
+      val graph = GraphScopeRDD.loadFragmentAsGraph[Long,Long](sc, hostIdsStr,"gs::ArrowProjectedFragment<int64_t,uint64_t,int64_t,int64_t>");
+        val hostAndIds = GraphScopeHelper.writeBackFragment[Long,Long](graph)
         log.info(s"Write back to GraphScope ${hostAndIds.mkString(",")}")
 
     //FIXME: Run GraphScope SSSP on this graph

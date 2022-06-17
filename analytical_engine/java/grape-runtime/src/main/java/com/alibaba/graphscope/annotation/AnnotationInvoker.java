@@ -28,6 +28,7 @@ import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_GRAPHX_GRAPHX
 import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_GRAPHX_GRAPHX_VERTEX_MAP_H;
 import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_GRAPHX_LOCAL_VERTEX_MAP_H;
 import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_GRAPHX_VERTEX_DATA_H;
+import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_TYPE_ALIAS_H;
 
 import com.alibaba.fastffi.CXXHead;
 import com.alibaba.fastffi.CXXTemplate;
@@ -297,7 +298,7 @@ import com.alibaba.fastffi.FFIGenBatch;
                       cxx = "gs::ArrowProjectedFragmentMapper<int64_t,uint64_t,int64_t,int64_t,int64_t,int64_t>",
                       java =
                           "com.alibaba.graphscope.fragment.ArrowProjectedFragmentMapper<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
-                      include = @CXXHead(ARROW_PROJECTED_FRAGMENT_MAPPER_H)),
+                      include = {@CXXHead(ARROW_PROJECTED_FRAGMENT_MAPPER_H), @CXXHead(CORE_JAVA_TYPE_ALIAS_H)}),
                 //                  @CXXTemplate(
                 //                      cxx =
                 //                      "gs::GraphXFragment<int64_t,uint64_t,std::string,int64_t>",
