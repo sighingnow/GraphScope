@@ -175,6 +175,7 @@ object GraphScopeHelper extends Logging{
       i += 1
     }
     val enum = edArray.size()
+    newEdBuilder.reserve(enum)
     i = 0
     while (i < enum){
       //FIXME:  order in nbr or in offset.
