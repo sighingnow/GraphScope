@@ -131,7 +131,10 @@ object GraphScopeHelper extends Logging{
    */
   def writeBackFragment[VD : ClassTag, ED : ClassTag](graph : GrapeGraphImpl[VD,ED]) : Array[String] = {
     graph.backend match {
-      case GraphStructureTypes.GraphXFragmentStructure => throw new IllegalStateException("Not implemented")
+      case GraphStructureTypes.GraphXFragmentStructure =>
+        log.info(s"Write back graphx fragment for ${graph}")
+        val res = graph.fragmentIds.collect()
+        res.map(str => str.substring(0,str.indexOf(":")) + ":" + str.substring(str.lastIndexOf(":") + 1))
       case GraphStructureTypes.ArrowProjectedStructure =>
         log.info(s"Write back projected fragment for ${graph}")
         val grapeVerticesPartitions = graph.grapeVertices.grapePartitionsRDD
