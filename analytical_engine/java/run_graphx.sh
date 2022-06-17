@@ -10,11 +10,7 @@ ED_CLASS=$1
 shift
 MSG_CLASS=$1
 shift
-VM_IDS=$1
-shift
-CSR_IDS=$1
-shift
-VDATA_IDS=$1
+FRAG_IDS=$1
 shift
 SERIAL_PATH=$1
 shift
@@ -23,9 +19,7 @@ MAX_ITERATION=$1
 echo "serial path         "${SERIAL_PATH}
 echo "num workers:        "${NUM_WORKERS}
 echo "host file           "${HOST_SLOT}
-echo "vm ids:             "${VM_IDS}
-echo "csr ids:            "${CSR_IDS}
-echo "vdata ids:          "${VDATA_IDS}
+echo "frag ids:           "${FRAG_IDS}
 echo "max iter            "${MAX_ITERATION}
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -42,7 +36,7 @@ done
 cmd="GLOG_v=10 mpirun --mca btl_tcp_if_include bond0 -n ${NUM_WORKERS} -host ${HOST_SLOT} -x LD_PRELOAD -x GLOG_v \
 -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} \
 --vd_class ${VD_CLASS} --ed_class ${ED_CLASS} --msg_class ${MSG_CLASS} \
---serial_path ${SERIAL_PATH} --vm_ids ${VM_IDS} --csr_ids ${CSR_IDS} --vdata_ids ${VDATA_IDS} \
+--serial_path ${SERIAL_PATH} --frag_ids ${FRAG_IDS} \
 --max_iterations ${MAX_ITERATION}"
 echo "running cmd: "$cmd >&2
 eval $cmd

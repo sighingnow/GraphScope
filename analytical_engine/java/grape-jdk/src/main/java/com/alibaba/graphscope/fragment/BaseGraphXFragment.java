@@ -7,6 +7,8 @@ import com.alibaba.graphscope.ds.Vertex;
 
 public interface BaseGraphXFragment<OID_T, VID_T, VD_T, ED_T>
     extends EdgecutFragment<OID_T, VID_T, VD_T, ED_T>  {
+    long id();
+
     @FFINameAlias("GetIEBegin")
     PropertyNbrUnit<VID_T> getIEBegin(@CXXReference Vertex<VID_T> vertex);
 

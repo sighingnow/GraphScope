@@ -58,25 +58,16 @@ public class MPIUtils {
     public static String getGAEHome(){
         return GAE_HOME;
     }
-    private static int checkIds(String[]vmdIds, String[]csrIds, String[]vdataIds){
-        if (vmdIds.length != csrIds.length || csrIds.length != vdataIds.length){
-            throw new IllegalStateException("length not equal: " + Arrays.toString(vmdIds) + Arrays.toString(
-                csrIds) + Arrays.toString(vdataIds));
-        }
-        return vmdIds.length;
-    }
 
     public static <MSG,VD,ED> void launchGraphX(
-        String[] vmIds, String []csrIds, String[] vdataIds,
-        Class<? extends VD> vdClass, Class<?extends ED> edClass, Class<? extends MSG> msgClass,
+        String[] fragIds, Class<? extends VD> vdClass, Class<?extends ED> edClass, Class<? extends MSG> msgClass,
         String serialPath, int maxIteration){
-        int numWorkers = checkIds(vmIds, csrIds, vdataIds);
-        String hostNameSlots = generateHostNameAndSlotsFromIDs(vmIds);
+        int numWorkers = fragIds.length;
+        String hostNameSlots = generateHostNameAndSlotsFromIDs(fragIds);
         logger.info("running mpi with {} workers", numWorkers);
         String[] commands = {"/bin/bash", LAUNCH_GRAPHX_SHELL_SCRIPT, String.valueOf(numWorkers), hostNameSlots,
             GrapeUtils.classToStr(vdClass), GrapeUtils.classToStr(edClass), GrapeUtils.classToStr(msgClass),
-            String.join(",", vmIds),String.join(",", csrIds), String.join(",",vdataIds),
-            serialPath, String.valueOf(maxIteration)};
+            String.join(",", fragIds), serialPath, String.valueOf(maxIteration)};
 
         logger.info("Running with commands: " + String.join(" ", commands));
         long startTime = System.nanoTime();
@@ -109,15 +100,15 @@ public class MPIUtils {
     /**
      * Input : d50:0:123457,d51:1:1232431
      * Output d50:1,d51:1
-     * @param localVMIDs
+     * @param ids
      * @return
      */
-    private static String generateHostNameAndSlotsFromIDs(String[] localVMIDs){
+    private static String generateHostNameAndSlotsFromIDs(String[] ids){
         HashMap<String,Integer> map = new HashMap<>();
-        for (String str : localVMIDs){
+        for (String str : ids){
             String[] splited = str.split(":");
             if (splited.length != 3){
-                throw new IllegalStateException("Unexpected input " + Arrays.toString(localVMIDs));
+                throw new IllegalStateException("Unexpected input " + Arrays.toString(ids));
             }
             if (map.containsKey(splited[0])){
                 map.put(splited[0], map.get(splited[0]) + 1);

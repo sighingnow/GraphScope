@@ -57,9 +57,7 @@ DECLARE_string(ed_class);
 DECLARE_string(msg_class);
 DECLARE_string(initial_msg);
 DECLARE_int32(max_iterations);
-DECLARE_string(vm_ids);
-DECLARE_string(csr_ids);
-DECLARE_string(vdata_ids);
+DECLARE_string(frag_ids);
 
 namespace gs {
 
@@ -112,21 +110,12 @@ vineyard::ObjectID splitAndGet(grape::CommSpec& comm_spec,
 
 template <typename OID_T, typename VID_T, typename VD_T, typename ED_T>
 vineyard::ObjectID LoadFragment(vineyard::Client& client,
-                                grape::CommSpec& comm_spec, std::string& vm_ids,
-                                std::string& csr_ids, std::string& vdata_ids) {
-  auto cur_frag_vm_id = splitAndGet(comm_spec, vm_ids);
-  auto cur_frag_csr_id = splitAndGet(comm_spec, csr_ids);
-  auto cur_frag_vdata_id = splitAndGet(comm_spec, vdata_ids);
+                                grape::CommSpec& comm_spec,
+                                std::string& frag_ids) {
+  auto cur_frag_id = splitAndGet(comm_spec, frag_ids);
   LOG(INFO) << "Worker [" << comm_spec.worker_id()
-            << "] create graphx fragment from vmd id: " << cur_frag_vm_id
-            << " csr id: " << cur_frag_csr_id
-            << ", vdata id: " << cur_frag_vdata_id;
-  gs::GraphXFragmentBuilder<OID_T, VID_T, VD_T, ED_T> builder(
-      client, cur_frag_vm_id, cur_frag_csr_id, cur_frag_vdata_id);
-  auto res =
-      std::dynamic_pointer_cast<gs::GraphXFragment<OID_T, VID_T, VD_T, ED_T>>(
-          builder.Seal(client));
-  return res->id();
+            << "] got graphx fragment from id: " << cur_frag_id;
+  return cur_frag_id;
 }
 
 template <typename FRAG_T>
@@ -166,8 +155,8 @@ void CreateAndQuery(std::string params, const std::string& frag_name) {
   VINEYARD_CHECK_OK(client.Connect(FLAGS_ipc_socket));
   VLOG(1) << "Connected to IPCServer: " << FLAGS_ipc_socket;
 
-  auto fragment_id = LoadFragment<OID_T, VID_T, VD_T, ED_T>(
-      client, comm_spec, FLAGS_vm_ids, FLAGS_csr_ids, FLAGS_vdata_ids);
+  auto fragment_id =
+      LoadFragment<OID_T, VID_T, VD_T, ED_T>(client, comm_spec, FLAGS_frag_ids);
 
   VLOG(10) << "[worker " << comm_spec.worker_id()
            << "] loaded frag id: " << fragment_id;

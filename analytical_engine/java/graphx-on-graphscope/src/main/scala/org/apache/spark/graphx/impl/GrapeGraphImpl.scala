@@ -63,6 +63,38 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   def numEdges: Long = edges.count()
 
+  lazy val fragmentIds : RDD[String] = {
+    edges.grapePartitionsRDD.zipPartitions(vertices.grapePartitionsRDD) { (edgeIter, vertexIter) => {
+      val ePart = edgeIter.next()
+      val vPart = vertexIter.next()
+      ePart.graphStructure match {
+        case casted: GraphXGraphStructure =>
+          val vmId = casted.vm.id() //vm id will never change
+
+          val edataBuilder = ScalaFFIFactory.newArrowArrayBuilder[ED](GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]])
+          val numEdges = ePart.edatas.size()
+          //FIXME: edata in order of offset or eid
+          edataBuilder.reserve(numEdges)
+          var i = 0
+          while (i < numEdges) {
+            edataBuilder.unsafeAppend(ePart.edatas.get(i))
+            i += 1
+          }
+          val newCSR = mapOldCSRToNewCSR(casted.csr, edataBuilder, ePart.client)
+          val csrId = newCSR.id()
+
+          val vdId = vPart.vertexData.vineyardID
+
+          val fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD, ED](ePart.client, vmId, csrId, vdId)
+          val frag = fragBuilder.seal(ePart.client).get()
+          logger.info(s"Got built frag: ${frag.id}")
+          Iterator(ExecutorUtils.getHostName + ":" + ePart.pid + ":" + frag.id)
+        case _ =>
+          throw new IllegalStateException("Not implemented now!")
+      }
+    }}
+  }
+
   //FIXME: refactor this into construct graphxFragment from here
   def generateGlobalVMIds() : Array[String] = {
     edges.grapePartitionsRDD.mapPartitions(iter => {

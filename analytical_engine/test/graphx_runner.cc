@@ -42,9 +42,7 @@ DEFINE_string(vd_class, "", "int64_t,int32_t,double,std::string");
 DEFINE_string(ed_class, "", "int64_t,int32_t,double,std::string");
 DEFINE_string(msg_class, "", "int64_t,int32_t,double,std::string");
 DEFINE_int32(max_iterations, 100, "max iterations");
-DEFINE_string(vm_ids, "", "vertex map ids");
-DEFINE_string(csr_ids, "", "csr ids");
-DEFINE_string(vdata_ids, "", "vdata ids");
+DEFINE_string(frag_ids, "", "frag ids");
 DEFINE_string(serial_path, "", "serial path");
 
 std::string build_generic_class(const std::string& base_class,

@@ -35,14 +35,13 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     val t0 = System.nanoTime()
 
     //FIXME: Support running projected fragment
+    //FIXME: launch graphx process should take graphx fragment id as input, not these ugly ids.
     /** Generate a json string contains necessary info to reconstruct a graphx graph, can be like
      * workerName:*/
-    val vmIds = grapeGraph.generateGlobalVMIds()
-    val csrIds = grapeGraph.generateCSRIds()
-    val vdataIds = grapeGraph.generateVdataIds()
-    log.info(s"[GraphScopePregel]: collect distinct ids vm: ${vmIds.mkString("Array(", ", ", ")")}, csr: ${csrIds.mkString("Array(", ", ", ")")}, vdata: ${vdataIds.mkString("Array(", ", ", ")")}")
+    val fragIds = grapeGraph.fragmentIds.collect()
+    log.info(s"[GraphScopePregel]: Collected frag ids ${fragIds.mkString(",")}")
 
-    MPIUtils.launchGraphX[MSG,VD,ED](vmIds,csrIds,vdataIds,vdClass,edClass,msgClass, SERIAL_PATH,maxIteration)
+    MPIUtils.launchGraphX[MSG,VD,ED](fragIds,vdClass,edClass,msgClass, SERIAL_PATH,maxIteration)
     //FIXME: reconstruct the graph from result ids.
 
     val t1 = System.nanoTime()
