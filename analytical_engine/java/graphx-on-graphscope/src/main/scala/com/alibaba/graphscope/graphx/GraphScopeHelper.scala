@@ -142,7 +142,7 @@ object GraphScopeHelper extends Logging{
             val structure = edgePart.graphStructure.asInstanceOf[FragmentStructure]
             val oldProjectedFrag = structure.fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,_,_]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
             //get the original fragment type parameters
-            val typeParams = GenericUtils.getTypeArgumentFromInterface(structure.fragment.getClass)
+            val typeParams = GenericUtils.getTypeArgumentFromInterface(oldProjectedFrag.getClass)
             require(typeParams.length == 4)
             val (vdClass,edClass) = (typeParams(2), typeParams(3))
             log.info(s"Original vd class ${vdClass} ed class ${edClass}")
