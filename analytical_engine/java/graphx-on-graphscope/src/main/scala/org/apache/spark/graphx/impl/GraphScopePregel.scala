@@ -34,6 +34,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     //launch mpi processes. and run.
     val t0 = System.nanoTime()
 
+    //FIXME: Support running projected fragment
     /** Generate a json string contains necessary info to reconstruct a graphx graph, can be like
      * workerName:*/
     val vmIds = grapeGraph.generateGlobalVMIds()

@@ -112,11 +112,9 @@ class ArrowProjectedFragmentMapper {
       new_frag->meta_.SetTypeName(
           type_name<ArrowProjectedFragment<oid_t, vid_t, new_vdata_t,
                                            new_edata_t>>());
+      new_frag->meta_.AddKeyValue("projected_v_label", v_label);
       new_frag->meta_.AddKeyValue(
-          "projected_v_label", v_label);
-      new_frag->meta_.AddKeyValue(
-          "projected_e_label",
-          old_meta.GetKeyValue<int>("projected_e_label"));
+          "projected_e_label", old_meta.GetKeyValue<int>("projected_e_label"));
       new_frag->meta_.AddKeyValue(
           "projected_v_property",
           old_meta.GetKeyValue<int>("projected_v_property"));

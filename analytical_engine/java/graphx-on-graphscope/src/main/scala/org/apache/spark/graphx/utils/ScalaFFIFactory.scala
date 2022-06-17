@@ -3,7 +3,7 @@ package org.apache.spark.graphx.utils
 import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
-import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, IFragment}
+import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, ArrowProjectedFragmentMapper, IFragment}
 import com.alibaba.graphscope.graphx.{ArrowProjectedFragmentGetter, BasicGraphXCSRBuilder, BasicLocalVertexMapBuilder, GraphXCSRMapper, GraphXVertexMapGetter, LocalVertexMap, StringVertexDataBuilder, VertexDataBuilder, VineyardClient}
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.internal.Logging
@@ -85,6 +85,13 @@ object ScalaFFIFactory extends Logging{
     val factory = FFITypeFactory.getFactory(classOf[GraphXCSRMapper[Long,_,NEW_ED]],
       "gs::GraphXCSRMapper<uint64_t," + GrapeUtils.classToStr(oldEDClz) + ","
         + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[NEW_ED]) + ">").asInstanceOf[GraphXCSRMapper.Factory[Long,_,NEW_ED]]
+    factory.create()
+  }
+
+  def newProjectedFragmentMapper[NEW_VD : ClassTag, NEW_ED : ClassTag, OLD_VD, OLD_ED](oldVdClz : Class[OLD_VD], oldEDClz : Class[OLD_ED]) : ArrowProjectedFragmentMapper[Long,Long,OLD_VD,NEW_VD,OLD_ED,NEW_ED] = {
+    val factory = FFITypeFactory.getFactory(classOf[ArrowProjectedFragmentMapper[Long,Long,OLD_VD,NEW_VD,OLD_ED,NEW_ED]],
+    "gs::ArrowProjectedFragmentMapper<int64_t,uint64_t," +GrapeUtils.classToStr(oldVdClz) + "," + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[NEW_VD]) + ","+ GrapeUtils.classToStr(oldEDClz) + ","
+      + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[NEW_ED]) + ">").asInstanceOf[ArrowProjectedFragmentMapper.Factory[Long,Long,OLD_VD,NEW_VD,OLD_ED, NEW_ED]]
     factory.create()
   }
 

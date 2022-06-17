@@ -22,6 +22,7 @@ import static com.alibaba.graphscope.utils.CppClassName.GRAPHX_FRAGMENT;
 import static com.alibaba.graphscope.utils.CppClassName.GS_VERTEX_ARRAY;
 import static com.alibaba.graphscope.utils.CppClassName.LONG_MSG;
 import static com.alibaba.graphscope.utils.CppHeaderName.ARROW_PROJECTED_FRAGMENT_H;
+import static com.alibaba.graphscope.utils.CppHeaderName.ARROW_PROJECTED_FRAGMENT_MAPPER_H;
 import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_GRAPHX_GRAPHX_CSR_H;
 import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H;
 import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_GRAPHX_GRAPHX_VERTEX_MAP_H;
@@ -292,6 +293,11 @@ import com.alibaba.fastffi.FFIGenBatch;
                         java =
                             "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
                         include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)),
+                  @CXXTemplate(
+                      cxx = "gs::ArrowProjectedFragmentMapper<int64_t,uint64_t,int64_t,int64_t,int64_t,int64_t>",
+                      java =
+                          "com.alibaba.graphscope.fragment.ArrowProjectedFragmentMapper<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>",
+                      include = @CXXHead(ARROW_PROJECTED_FRAGMENT_MAPPER_H)),
                 //                  @CXXTemplate(
                 //                      cxx =
                 //                      "gs::GraphXFragment<int64_t,uint64_t,std::string,int64_t>",
@@ -494,6 +500,12 @@ import com.alibaba.fastffi.FFIGenBatch;
                     //                                "int64_t"}, java = {"Long", "Long", "Double",
                     //                                "Long"})
                   }),
+        @FFIGen(type = "com.alibaba.graphscope.fragment.ArrowProjectedFragmentMapper",
+            templates =
+                {
+                    @CXXTemplate(cxx = {"int64_t", "uint64_t", "int64_t", "int64_t", "int64_t", "int64_t"},
+                        java = {"Long", "Long", "Long", "Long","Long","Long"}),
+                }),
           @FFIGen(type = "com.alibaba.graphscope.graphx.ArrowProjectedFragmentGetter",
                   templates =
                   {

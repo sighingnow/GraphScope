@@ -23,8 +23,11 @@ object GraphConvertTest extends Logging{
 
     val grapeGraph = GraphScopeHelper.graph2Fragment(graphxGraph)
     log.info(s"Converted to grape graph ${grapeGraph.numVertices} vertices, ${grapeGraph.numEdges} edges")
-    val res = grapeGraph.mapVertices((id,vd) => {log.info(s"${id}: ${vd}"); vd})
+    val res = grapeGraph.mapVertices((id,vd) => {log.info(s"${id}: ${vd}"); vd + 10})
     log.info(s"Converted to grape graph ${res.numVertices} vertices, ${res.numEdges} edges")
+
+    val hostAndIds = GraphScopeHelper.writeBackFragment(grapeGraph)
+    log.info(s"Write back to GraphScope ${hostAndIds.mkString(",")}")
 
     //FIXME: Run GraphScope SSSP on this graph
 

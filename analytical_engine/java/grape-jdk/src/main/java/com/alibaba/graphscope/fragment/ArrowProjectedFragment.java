@@ -48,6 +48,8 @@ import com.alibaba.graphscope.ds.Vertex;
 @FFITypeAlias(ARROW_PROJECTED_FRAGMENT)
 public interface ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T>
         extends EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
+    long id();
+
     @FFINameAlias("GetIncomingAdjList")
     @CXXValue
     ProjectedAdjList<VID_T, EDATA_T> getIncomingAdjList(@CXXReference Vertex<VID_T> vertex);

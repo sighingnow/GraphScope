@@ -61,6 +61,8 @@ public class CppHeaderName {
     public static final String GRAPE_COMMUNICATOR_H = "grape/communication/communicator.h";
     public static final String ARROW_PROJECTED_FRAGMENT_H =
             "core/fragment/arrow_projected_fragment.h";
+    public static final String ARROW_PROJECTED_FRAGMENT_MAPPER_H =
+        "core/fragment/arrow_projected_fragment_mapper.h";
     // public static final String CORE_JAVA_TYPE_ALIAS_H = "core/java/type_alias.h";
     public static final String GRAPE_WORKER_COMM_SPEC_H = "grape/worker/comm_spec.h";
     public static final String GRAPE_SERIALIZATION_IN_ARCHIVE = "grape/serialization/in_archive.h";

@@ -267,6 +267,11 @@ public class GraphConverter<VD, ED> {
     public class ArrowProjectedEmpty implements ArrowProjectedFragment {
 
         @Override
+        public long id() {
+            return 0;
+        }
+
+        @Override
         public ProjectedAdjList getIncomingAdjList(Vertex vertex) {
             return null;
         }

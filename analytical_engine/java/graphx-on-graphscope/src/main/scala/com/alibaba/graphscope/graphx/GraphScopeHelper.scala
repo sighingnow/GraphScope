@@ -1,10 +1,18 @@
 package com.alibaba.graphscope.graphx
 
-import com.alibaba.graphscope.utils.{LongLong, LongLongInputFormat}
+import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
+import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, ArrowProjectedFragmentMapper}
+import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
+import com.alibaba.graphscope.graphx.graph.GraphStructureTypes
+import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
+import com.alibaba.graphscope.utils.array.PrimitiveArray
+import com.alibaba.graphscope.utils.{GenericUtils, LongLong, LongLongInputFormat}
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.graphx.{EdgeRDD, GrapeEdgeRDD, GrapeVertexRDD, Graph, PartitionID, TypeAlias, VertexId, VertexRDD}
-import org.apache.spark.graphx.impl.{EdgeRDDImpl, GrapeGraphImpl, GraphImpl, VertexRDDImpl}
+import org.apache.spark.graphx.impl.{EdgeRDDImpl, GrapeGraphImpl, GrapeUtils, GraphImpl, VertexRDDImpl}
 import org.apache.spark.graphx.impl.partition.EdgeShuffle
+import org.apache.spark.graphx.impl.partition.data.VertexDataStore
+import org.apache.spark.graphx.utils.ScalaFFIFactory
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.collection.{OpenHashSet, PrimitiveVector}
@@ -115,6 +123,65 @@ object GraphScopeHelper extends Logging{
         log.error(s"Unable to convert ${vertexRDD} and ${edgeRDD} to grape fragment")
         null
     }
+  }
+
+  /**
+   * Given a fragment-backend graph, we writeback the modified data to original fragment,
+   * resulting a new graph.
+   */
+  def writeBackFragment[VD : ClassTag, ED : ClassTag](graph : GrapeGraphImpl[VD,ED]) : Array[String] = {
+    graph.backend match {
+      case GraphStructureTypes.GraphXFragmentStructure => throw new IllegalStateException("Not implemented")
+      case GraphStructureTypes.ArrowProjectedStructure =>
+        log.info(s"Write back projected fragment for ${graph}")
+        val grapeVerticesPartitions = graph.grapeVertices.grapePartitionsRDD
+        val res = graph.grapeEdges.grapePartitionsRDD.zipPartitions(grapeVerticesPartitions){
+          (edgeIter, vertexIter) => {
+            val edgePart = edgeIter.next()
+            val vertexPart = vertexIter.next()
+            val structure = edgePart.graphStructure.asInstanceOf[FragmentStructure]
+            val oldProjectedFrag = structure.fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,_,_]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
+            //get the original fragment type parameters
+            val typeParams = GenericUtils.getTypeArgumentFromInterface(structure.fragment.getClass)
+            require(typeParams.length == 4)
+            val (vdClass,edClass) = (typeParams(2), typeParams(3))
+            log.info(s"Original vd class ${vdClass} ed class ${edClass}")
+            //create mapper
+            val resFrag = doMap(oldProjectedFrag.asInstanceOf[ArrowProjectedFragment[Long,Long,Any,Any]],vdClass.asInstanceOf[Class[Any]], edClass.asInstanceOf[Class[Any]], vertexPart.vertexData, edgePart.edatas, edgePart.client)
+            Iterator(GrapeUtils.getSelfHostName + ":" + resFrag.id())
+          }
+        }
+        res.collect()
+      case _ =>
+        throw new IllegalStateException("Not recognized structure")
+    }
+  }
+
+  def doMap[NEW_VD : ClassTag,NEW_ED : ClassTag, OLD_VD <: Any, OLD_ED <: Any](oldFrag: ArrowProjectedFragment[Long, Long, OLD_VD, OLD_ED],
+                                                 oldVdClass : Class[OLD_VD], oldEdClass : Class[OLD_ED],
+                                                 vdArray : VertexDataStore[NEW_VD],
+                                                 edArray : PrimitiveArray[NEW_ED],
+                                                 client : VineyardClient):
+  ArrowProjectedFragment[Long,Long,NEW_VD,NEW_ED] = {
+    val mapper = ScalaFFIFactory.newProjectedFragmentMapper[NEW_VD,NEW_ED,OLD_VD,OLD_ED](oldVdClass,oldEdClass)
+    val newVdBuilder : ArrowArrayBuilder[NEW_VD] = ScalaFFIFactory.newArrowArrayBuilder[NEW_VD](GrapeUtils.getRuntimeClass[NEW_VD].asInstanceOf[Class[NEW_VD]])
+    val newEdBuilder : ArrowArrayBuilder[NEW_ED] = ScalaFFIFactory.newArrowArrayBuilder[NEW_ED](GrapeUtils.getRuntimeClass[NEW_ED].asInstanceOf[Class[NEW_ED]])
+    //Filling vd array
+    val ivnum = oldFrag.getInnerVerticesNum
+    newVdBuilder.reserve(ivnum)
+    var i = 0;
+    while (i < ivnum){
+      newVdBuilder.unsafeAppend(vdArray.getData(i))
+      i += 1
+    }
+    val enum = edArray.size()
+    i = 0
+    while (i < enum){
+      //FIXME:  order in nbr or in offset.
+      newEdBuilder.unsafeAppend(edArray.get(i))
+      i += 1
+    }
+    mapper.map(oldFrag,newVdBuilder, newEdBuilder,client).get()
   }
 
   /** Convert a common graphX graph to grape graph, which later can be used to run GraphScope app. */
