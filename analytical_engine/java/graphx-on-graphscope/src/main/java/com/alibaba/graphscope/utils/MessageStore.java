@@ -23,7 +23,7 @@ public interface MessageStore<T> extends PrimitiveArray<T> {
 
     void digest(FFIByteVector vector,BaseGraphXFragment<Long,Long,?,?> fragment, BitSet curSet);
 
-    static <T> MessageStore<T> create(int fnum, int len, Class<? extends T> clz, Function2<T,T,T> function2)
+    static <T> MessageStore<T> create(int len, int fnum, Class<? extends T> clz, Function2<T,T,T> function2)
         throws IOException {
         if (clz.equals(Long.class) || clz.equals(long.class)){
             return (MessageStore<T>) new LongMessageStore(len,fnum,
