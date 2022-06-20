@@ -7,21 +7,23 @@ import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.BaseGraphXFragment;
 import com.alibaba.graphscope.fragment.FragmentType;
 import com.alibaba.graphscope.fragment.GraphXFragment;
+import com.alibaba.graphscope.fragment.GraphXStringEDFragment;
 import com.alibaba.graphscope.fragment.GraphXStringVDFragment;
+import com.alibaba.graphscope.fragment.GraphXStringVEDFragment;
 import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.fragment.adaptor.GraphXFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringEDFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringVDFragmentAdaptor;
-import com.alibaba.graphscope.graphx.GSEdgeTriplet;
+import com.alibaba.graphscope.fragment.adaptor.GraphXStringVEDFragmentAdaptor;
 import com.alibaba.graphscope.graphx.GSEdgeTripletImpl;
 import com.alibaba.graphscope.graphx.GraphXConf;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
-import com.alibaba.graphscope.parallel.message.DoubleMsg;
-import com.alibaba.graphscope.parallel.message.LongMsg;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
 import com.alibaba.graphscope.stdcxx.FFIByteVector;
+import com.alibaba.graphscope.stdcxx.FFIByteVectorFactory;
 import com.alibaba.graphscope.stdcxx.StdVector;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
+import com.alibaba.graphscope.utils.MessageStore;
 import com.alibaba.graphscope.utils.array.PrimitiveArray;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -39,8 +41,6 @@ import scala.collection.Iterator;
 public class GraphXPIE<VD, ED, MSG_T> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphXPIE.class.getName());
-    private static final int vertexChunkSize = 4096;
-    private static final int edgeChunkSize = 1024;
     /**
      * User vertex program: vprog: (VertexId, VD, A) => VD
      */
@@ -60,11 +60,17 @@ public class GraphXPIE<VD, ED, MSG_T> {
     private int numCores, maxIterations, round;
     private long vprogTime, msgSendTime, receiveTime, flushTime;
     private GraphXConf<VD, ED, MSG_T> conf;
-    private GSEdgeTriplet<VD, ED>[] edgeTriplets;
     private GSEdgeTripletImpl<VD, ED> edgeTriplet;
     DefaultMessageManager messageManager;
     private PrimitiveArray<VD> newVdataArray;
     private PrimitiveArray<ED> newEdataArray;
+    /**
+     * The messageStore stores the result messages after query. 1) Before PEval or IncEval,
+     * messageStore should be clear. 2) After iterateOnEdges, we need to flush messages a. For
+     * message to inner vertex, set them locally b. For message to outer vertex, send via mpi 3)
+     * after flush, clear message store.
+     */
+    private MessageStore<MSG_T> messageStore;
     private long innerVerticesNum, verticesNum;
     private BitSet curSet, nextSet;
 
@@ -83,35 +89,168 @@ public class GraphXPIE<VD, ED, MSG_T> {
         this.initialMessage = initialMessage;
     }
 
-    private static <T> PrimitiveArray<T> processPrimitiveArray(ImmutableTypedArray<T> oldArray,
-        Class<? extends T> clz) {
-        PrimitiveArray<T> newArray = PrimitiveArray.create(clz, (int) oldArray.getLength());
-        long time0 = System.nanoTime();
-        long len = oldArray.getLength();
-        for (int i = 0; i < len; ++i) {
-            newArray.set(i, oldArray.get(i));
+    public void init(IFragment<Long, Long, VD, ED> fragment, DefaultMessageManager messageManager,
+        int maxIterations) throws IOException, ClassNotFoundException {
+        this.iFragment = fragment;
+        if (!(iFragment.fragmentType().equals(FragmentType.GraphXFragment)
+            || iFragment.fragmentType().equals(FragmentType.GraphXStringVDFragment)
+            || iFragment.fragmentType().equals(FragmentType.GraphXStringEDFragment)
+            || iFragment.fragmentType().equals(FragmentType.GraphXStringVEDFragment))) {
+            throw new IllegalStateException("Only support graphx fragment");
         }
-        long time1 = System.nanoTime();
-        logger.info("[Coping array cost:  {}ms", (time1 - time0) / 1000000);
-        return newArray;
+        this.graphXFragment = getBaseGraphXFragment(iFragment);
+        Tuple2<PrimitiveArray<VD>, PrimitiveArray<ED>> tuple = initOldAndNewArrays(graphXFragment,
+            conf);
+        newVdataArray = tuple._1();
+        newEdataArray = tuple._2();
+
+        this.messageManager = messageManager;
+        this.maxIterations = maxIterations;
+        innerVerticesNum = graphXFragment.getInnerVerticesNum();
+        verticesNum = graphXFragment.getVerticesNum();
+        this.messageStore = MessageStore.create((int) verticesNum, fragment.fnum(),
+            conf.getMsgClass(), mergeMsg);
+        logger.info("ivnum {}, tvnum {}", innerVerticesNum, verticesNum);
+        curSet = new BitSet((int) verticesNum);
+        nextSet = new BitSet((int) verticesNum);
+        round = 0;
+        msgSendTime = vprogTime = receiveTime = flushTime = 0;
     }
 
-    private static <T> PrimitiveArray<T> processComplexArray(StringTypedArray oldArray,
-        Class<? extends T> clz)
-        throws IOException, ClassNotFoundException {
-        StdVector<Byte> data = oldArray.getRawBytes();
-        FFIByteVector ffiByteVector = new FFIByteVector(data.getAddress());
-        FFIByteVectorInputStream ffiInput = new FFIByteVectorInputStream(ffiByteVector);
-        ObjectInputStream objectInputStream = new ObjectInputStream(ffiInput);
-        long len = oldArray.getLength();
-        logger.info("reading {} objects from array of bytes {}", len, data.size());
-        PrimitiveArray<T> newArray = PrimitiveArray.create(clz, (int) len);
-        for (int i = 0; i < len; ++i) {
-            T obj = (T) objectInputStream.readObject();
-            newArray.set(i, obj);
-            logger.info("setting array index {} to {}", i, obj);
+    public void PEval() {
+        Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
+        vprogTime -= System.nanoTime();
+        for (long lid = 0; lid < innerVerticesNum; ++lid) {
+            vertex.SetValue(lid);
+            Long oid = graphXFragment.getId(vertex);
+            VD originalVD = newVdataArray.get(lid);
+            newVdataArray.set(lid, vprog.apply(oid, originalVD, initialMessage));
+//      logger.info("Running vprog on {}, oid {}, original vd {}, cur vd {}", lid,
+//                  graphXFragment.getId(vertex), originalVD, newVdataArray.get(lid));
         }
-        return newArray;
+        vprogTime += System.nanoTime();
+
+        msgSendTime -= System.nanoTime();
+        for (long lid = 0; lid < innerVerticesNum; ++lid) {
+            vertex.SetValue(lid);
+            Long oid = graphXFragment.getInnerVertexId(vertex);
+            edgeTriplet.setSrcOid(oid, newVdataArray.get(lid));
+            iterateOnEdges(vertex, edgeTriplet);
+        }
+        msgSendTime += System.nanoTime();
+        logger.info("[PEval] Finish iterate edges for frag {}", graphXFragment.fid());
+        flushTime -= System.nanoTime();
+        try {
+            messageStore.flushMessages(nextSet, messageManager, graphXFragment);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        nextSet.clear((int) innerVerticesNum, (int) verticesNum);
+        flushTime += System.nanoTime();
+        round = 1;
+    }
+
+    void iterateOnEdges(Vertex<Long> vertex, GSEdgeTripletImpl<VD, ED> edgeTriplet) {
+        PropertyNbrUnit<Long> begin = graphXFragment.geOEBegin(vertex);
+        PropertyNbrUnit<Long> end = graphXFragment.getOEEnd(vertex);
+        Vertex<Long> nbrVertex = FFITypeFactoryhelper.newVertexLong();
+
+        while (begin.getAddress() != end.getAddress()) {
+            Long nbrVid = begin.vid();
+            nbrVertex.SetValue(nbrVid);
+            edgeTriplet.setDstOid(graphXFragment.getId(nbrVertex), newVdataArray.get(nbrVid));
+            edgeTriplet.setAttr(newEdataArray.get(begin.eid()));
+            Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
+//      logger.info("for edge: lid:{} oid:{}({}) -> lid:{} oid {} ({}), edge attr {}, ivnum {}", vertex.GetValue(), edgeTriplet.srcId(),
+//                  edgeTriplet.srcAttr(), nbrVid, edgeTriplet.dstId(), edgeTriplet.dstAttr(),
+//                  edgeTriplet.attr, innerVerticesNum);
+            messageStore.addMessages(msgs, graphXFragment, nextSet);
+            begin.addV(16);
+        }
+    }
+
+    public boolean IncEval() {
+        if (round >= maxIterations) {
+            return true;
+        }
+        //set nextSet(0, ivnum) to curSet(0, ivnum).
+        curSet.clear();
+        curSet.or(nextSet);
+        nextSet.clear();
+
+        /////////////////////////////////////Receive message////////////////////
+        receiveMessage();
+
+        Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
+
+        if (curSet.cardinality() > 0) {
+            logger.info("Before running round {}, frag [{}] has {} active vertices", round,
+                graphXFragment.fid(), curSet.cardinality());
+            vprogTime -= System.nanoTime();
+            for (int lid = curSet.nextSetBit(0); lid >= 0 && lid < innerVerticesNum; lid = curSet.nextSetBit(lid + 1)) {
+                vertex.SetValue((long) lid);
+                Long oid = graphXFragment.getId(vertex);
+                VD originalVD = newVdataArray.get(lid);
+                newVdataArray.set(lid, vprog.apply(oid, originalVD, messageStore.get(lid)));
+            }
+            vprogTime += System.nanoTime();
+
+            msgSendTime -= System.nanoTime();
+            for (int lid = curSet.nextSetBit(0); lid >= 0; lid = curSet.nextSetBit(lid + 1)) {
+                vertex.SetValue((long) lid);
+                Long oid = graphXFragment.getId(vertex);
+                edgeTriplet.setSrcOid(oid, newVdataArray.get(lid));
+                iterateOnEdges(vertex, edgeTriplet);
+            }
+            msgSendTime += System.nanoTime();
+            logger.info("[IncEval {}] Finish iterate edges for frag {}", round,
+                graphXFragment.fid());
+            flushTime -= System.nanoTime();
+            try {
+                messageStore.flushMessages(nextSet, messageManager, graphXFragment);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            nextSet.clear((int) innerVerticesNum, (int) verticesNum);
+            flushTime += System.nanoTime();
+        } else {
+            logger.info("Frag {} No message received", graphXFragment.fid());
+            round += 1;
+            return true;
+        }
+        round += 1;
+        logger.info("Round [{}] vprog {}, msgSend {} flushMsg {}", round, vprogTime / 1000000,
+            msgSendTime / 1000000, flushTime / 1000000);
+        return false;
+    }
+
+    public void postApp() {
+        logger.info("Post app");
+    }
+
+    /**
+     * To receive message from grape, we need some wrappers. double -> DoubleMessage. long ->
+     * LongMessage. Vprog happens here
+     *
+     * @return true if message received.
+     */
+    private void receiveMessage() {
+        FFIByteVector tmpVector = (FFIByteVector) FFIByteVectorFactory.INSTANCE.create();
+        long bytesOfReceivedMsg = 0;
+        while (messageManager.getPureMessage(tmpVector)) {
+            // The retrieved tmp vector has been resized, so the cached objAddress is not available.
+            // trigger the refresh
+            tmpVector.touch();
+            // OutArchive will do the resize;
+            if (logger.isDebugEnabled()) {
+                logger.debug("Frag [{}] digest message of size {}", graphXFragment.fid(),
+                    tmpVector.size());
+            }
+            messageStore.digest(tmpVector, graphXFragment, curSet);
+            bytesOfReceivedMsg += tmpVector.size();
+        }
+        logger.info("Frag [{}] Totally received {} bytes", graphXFragment.fid(),
+            bytesOfReceivedMsg);
     }
 
     private static <VD_T, ED_T, MSG_T_> Tuple2<PrimitiveArray<VD_T>, PrimitiveArray<ED_T>> initOldAndNewArrays(
@@ -150,11 +289,71 @@ public class GraphXPIE<VD, ED, MSG_T> {
             PrimitiveArray<VD_T> newVdataArray = processComplexArray(oldVdataArray,
                 conf.getVdClass());
             return new Tuple2<>(newVdataArray, newEdataArray);
+        } else if (conf.isVDPrimitive() && !conf.isEDPrimitive()) {
+            StringTypedArray oldEDdataArray;
+            ImmutableTypedArray<VD_T> oldVdataArray;
+            GraphXStringEDFragment<Long, Long, VD_T, ED_T> graphXFragment = (GraphXStringEDFragment<Long, Long, VD_T, ED_T>) baseGraphXFragment;
+            oldEDdataArray = graphXFragment.getEdataArray();
+            oldVdataArray = graphXFragment.getVdataArray();
+            logger.info("total bytes in vd array {}, vertices num {}", oldVdataArray.getLength(),
+                graphXFragment.getVerticesNum());
+
+            PrimitiveArray<VD_T> newVdataArray = processPrimitiveArray(oldVdataArray,
+                conf.getVdClass());
+            PrimitiveArray<ED_T> newEdataArray = processComplexArray(oldEDdataArray,
+                conf.getEdClass());
+            return new Tuple2<>(newVdataArray, newEdataArray);
+        } else if (!conf.isVDPrimitive() && !conf.isEDPrimitive()) {
+            StringTypedArray oldEDdataArray;
+            StringTypedArray oldVdataArray;
+            GraphXStringVEDFragment<Long, Long, VD_T, ED_T> graphXFragment = (GraphXStringVEDFragment<Long, Long, VD_T, ED_T>) baseGraphXFragment;
+            oldEDdataArray = graphXFragment.getEdataArray();
+            oldVdataArray = graphXFragment.getVdataArray();
+            logger.info("total bytes in vd array {}, total bytes in ed array {}, vertices num {}",
+                oldVdataArray.getLength(), oldEDdataArray.getLength(),
+                graphXFragment.getVerticesNum());
+
+            PrimitiveArray<VD_T> newVdataArray = processComplexArray(oldVdataArray,
+                conf.getVdClass());
+            PrimitiveArray<ED_T> newEdataArray = processComplexArray(oldEDdataArray,
+                conf.getEdClass());
+            return new Tuple2<>(newVdataArray, newEdataArray);
         } else {
             logger.error("Not implemented for vd {} ed {}", conf.isVDPrimitive(),
                 conf.isEDPrimitive());
             throw new IllegalStateException("not implemented");
         }
+    }
+
+    private static <T> PrimitiveArray<T> processComplexArray(StringTypedArray oldArray,
+        Class<? extends T> clz)
+        throws IOException, ClassNotFoundException {
+        StdVector<Byte> data = oldArray.getRawBytes();
+        FFIByteVector ffiByteVector = new FFIByteVector(data.getAddress());
+        FFIByteVectorInputStream ffiInput = new FFIByteVectorInputStream(ffiByteVector);
+        ObjectInputStream objectInputStream = new ObjectInputStream(ffiInput);
+        long len = oldArray.getLength();
+        logger.info("reading {} objects from array of bytes {}", len, data.size());
+        PrimitiveArray<T> newArray = PrimitiveArray.create(clz, (int) len);
+        for (int i = 0; i < len; ++i) {
+            T obj = (T) objectInputStream.readObject();
+            newArray.set(i, obj);
+            logger.info("setting array index {} to {}", i, obj);
+        }
+        return newArray;
+    }
+
+    private static <T> PrimitiveArray<T> processPrimitiveArray(ImmutableTypedArray<T> oldArray,
+        Class<? extends T> clz) {
+        PrimitiveArray<T> newArray = PrimitiveArray.create(clz, (int) oldArray.getLength());
+        long time0 = System.nanoTime();
+        long len = oldArray.getLength();
+        for (int i = 0; i < len; ++i) {
+            newArray.set(i, oldArray.get(i));
+        }
+        long time1 = System.nanoTime();
+        logger.info("[Coping array cost:  {}ms", (time1 - time0) / 1000000);
+        return newArray;
     }
 
     private BaseGraphXFragment<Long, Long, VD, ED> getBaseGraphXFragment(
@@ -165,222 +364,10 @@ public class GraphXPIE<VD, ED, MSG_T> {
             return ((GraphXFragmentAdaptor<Long, Long, VD, ED>) iFragment).getFragment();
         } else if (iFragment.fragmentType().equals(FragmentType.GraphXStringEDFragment)) {
             return ((GraphXStringEDFragmentAdaptor<Long, Long, VD, ED>) iFragment).getFragment();
+        } else if (iFragment.fragmentType().equals(FragmentType.GraphXStringVEDFragment)) {
+            return ((GraphXStringVEDFragmentAdaptor<Long, Long, VD, ED>) iFragment).getFragment();
         } else {
             throw new IllegalStateException("Not implemented" + iFragment);
         }
-    }
-
-    public void init(IFragment<Long, Long, VD, ED> fragment, DefaultMessageManager messageManager,
-        int maxIterations) throws IOException, ClassNotFoundException {
-        this.iFragment = fragment;
-        if (!(iFragment.fragmentType().equals(FragmentType.GraphXFragment)
-            || iFragment.fragmentType().equals(FragmentType.GraphXStringVDFragment)
-            || iFragment.fragmentType().equals(FragmentType.GraphXStringEDFragment))) {
-            throw new IllegalStateException("Only support graphx fragment");
-        }
-        this.graphXFragment = getBaseGraphXFragment(iFragment);
-        Tuple2<PrimitiveArray<VD>, PrimitiveArray<ED>> tuple = initOldAndNewArrays(graphXFragment,
-            conf);
-        newVdataArray = tuple._1();
-        newEdataArray = tuple._2();
-
-        this.messageManager = messageManager;
-        this.maxIterations = maxIterations;
-        innerVerticesNum = graphXFragment.getInnerVerticesNum();
-        verticesNum = graphXFragment.getVerticesNum();
-        logger.info("ivnum {}, tvnum {}", innerVerticesNum, verticesNum);
-        curSet = new BitSet((int) verticesNum);
-        nextSet = new BitSet((int) verticesNum);
-        round = 0;
-        msgSendTime = vprogTime = receiveTime = flushTime = 0;
-    }
-
-    public void PEval() {
-        Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
-        vprogTime -= System.nanoTime();
-        for (long lid = 0; lid < innerVerticesNum; ++lid) {
-            vertex.SetValue(lid);
-            Long oid = graphXFragment.getId(vertex);
-            VD originalVD = newVdataArray.get(lid);
-            newVdataArray.set(lid, vprog.apply(oid, originalVD, initialMessage));
-//      logger.info("Running vprog on {}, oid {}, original vd {}, cur vd {}", lid,
-//                  graphXFragment.getId(vertex), originalVD, newVdataArray.get(lid));
-        }
-        vprogTime += System.nanoTime();
-
-        msgSendTime -= System.nanoTime();
-        for (long lid = 0; lid < innerVerticesNum; ++lid) {
-            vertex.SetValue(lid);
-            Long oid = graphXFragment.getInnerVertexId(vertex);
-            edgeTriplet.setSrcOid(oid, newVdataArray.get(lid));
-            iterateOnEdges(vertex, edgeTriplet);
-        }
-        msgSendTime += System.nanoTime();
-        logger.info("[PEval] Finish iterate edges for frag {}", graphXFragment.fid());
-        flushTime -= System.nanoTime();
-        flushOutMessage();
-        flushTime += System.nanoTime();
-        round = 1;
-    }
-
-    void flushOutMessage() {
-        Vertex<Long> v = FFITypeFactoryhelper.newVertexLong();
-        int cnt = 0;
-        for (int i = nextSet.nextSetBit((int) innerVerticesNum); i >= 0;
-            i = nextSet.nextSetBit(i + 1)) {
-            v.SetValue((long) i);
-            messageManager.syncStateOnOuterVertexGraphX(graphXFragment, v, newVdataArray.get(i),
-                newVdataArray.get(i));
-            //logger.info("frag {} send msg {} to outer vertex {},  dst frag id {}, gid {}", graphXFragment.fid(),newVdataArray.get(i), i, graphXFragment.getFragId(v), graphXFragment.getOuterVertexGid(v));
-            cnt += 1;
-        }
-        logger.info("Frag [{}] try to send {} msg to outer vertices", graphXFragment.fid(), cnt);
-        nextSet.clear((int) innerVerticesNum, (int) verticesNum);
-    }
-
-    void iterateOnEdges(Vertex<Long> vertex, GSEdgeTripletImpl<VD, ED> edgeTriplet) {
-        PropertyNbrUnit<Long> begin = graphXFragment.geOEBegin(vertex);
-        PropertyNbrUnit<Long> end = graphXFragment.getOEEnd(vertex);
-        int cnt = 0;
-        Vertex<Long> nbrVertex = FFITypeFactoryhelper.newVertexLong();
-        Vertex<Long> tmpVertex = FFITypeFactoryhelper.newVertexLong();
-        while (begin.getAddress() != end.getAddress()) {
-//      logger.info("Visiting edge {} of vertex {}(oid {})", cnt, vertex.GetValue(), edgeTriplet.srcId());
-            Long nbrVid = begin.vid();
-            nbrVertex.SetValue(nbrVid);
-            edgeTriplet.setDstOid(graphXFragment.getId(nbrVertex), newVdataArray.get(nbrVid));
-            edgeTriplet.setAttr(newEdataArray.get(begin.eid()));
-            Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
-//      logger.info("for edge: lid:{} oid:{}({}) -> lid:{} oid {} ({}), edge attr {}, ivnum {}", vertex.GetValue(), edgeTriplet.srcId(),
-//                  edgeTriplet.srcAttr(), nbrVid, edgeTriplet.dstId(), edgeTriplet.dstAttr(),
-//                  edgeTriplet.attr, innerVerticesNum);
-            while (msgs.hasNext()) {
-                Tuple2<Long, MSG_T> msg = msgs.next();
-                if (!graphXFragment.getVertex(msg._1(), tmpVertex)) {
-                    throw new IllegalStateException("get vertex for oid failed: " + msg._1());
-                }
-                if (tmpVertex.GetValue() > innerVerticesNum) {
-//           logger.info("got outer vertex: {}",tmpVertex.GetValue()); 
-                }
-//        logger.info("Oid {} to vertex {}", msg._1(), tmpVertex.GetValue());
-
-                // FIXME: currently we assume msg type equal to vdata type
-                MSG_T original_MSG = (MSG_T) newVdataArray.get(tmpVertex.GetValue());
-                VD res = (VD) mergeMsg.apply(original_MSG, msg._2());
-//        logger.info("Merge msg ({} + {}) = {}", original_MSG, msg._2(), res);
-                newVdataArray.set(tmpVertex.GetValue(), res);
-                if (tmpVertex.GetValue() > innerVerticesNum) {
-                    //logger.info("frag {} send {} to outer vertex {}", graphXFragment.fid(), newVdataArray.get(tmpVertex.GetValue()), tmpVertex.GetValue());
-                }
-                nextSet.set(Math.toIntExact(tmpVertex.GetValue()));
-            }
-//      begin.nextV();
-            begin.addV(16);
-            cnt += 1;
-        }
-    }
-
-    public boolean IncEval() {
-        if (round >= maxIterations) {
-            return true;
-        }
-        //set nextSet(0, ivnum) to curSet(0, ivnum).
-        curSet.clear();
-        curSet.or(nextSet);
-        nextSet.clear();
-        receiveMessage();
-        logger.info("Before running round {}, frag [{}] has {} active vertices", round,
-            graphXFragment.fid(), curSet.cardinality());
-        if (curSet.cardinality() > 0) {
-            Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
-
-//      for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
-//        if (i >= innerVerticesNum) {
-//          throw new IllegalStateException("Not possible to receive a msg send to outer vertex");
-//        }
-//        vertex.SetValue((long) i);
-//        Long oid = graphXFragment.getId(vertex);
-//        VD originalVD = newVdataArray.get(i);
-//        newVdataArray.set(i, vprog.apply(oid, originalVD, initialMessage));
-//      }
-            msgSendTime -= System.nanoTime();
-            for (int lid = curSet.nextSetBit(0); lid >= 0; lid = curSet.nextSetBit(lid + 1)) {
-                vertex.SetValue((long) lid);
-                Long oid = graphXFragment.getId(vertex);
-                edgeTriplet.setSrcOid(oid, newVdataArray.get(lid));
-                iterateOnEdges(vertex, edgeTriplet);
-            }
-            msgSendTime += System.nanoTime();
-            logger.info("[IncEval {}] Finish iterate edges for frag {}", round,
-                graphXFragment.fid());
-            flushTime -= System.nanoTime();
-            flushOutMessage();
-            flushTime += System.nanoTime();
-        } else {
-            logger.info("Round [{}] vprog {}, msgSend {} flushMsg {}", round, vprogTime / 1000000,
-                msgSendTime / 1000000, flushTime / 1000000);
-            logger.info("Frag {} No message received", graphXFragment.fid());
-            round += 1;
-            return true;
-        }
-        round += 1;
-        logger.info("Round [{}] vprog {}, msgSend {} flushMsg {}", round, vprogTime / 1000000,
-            msgSendTime / 1000000, flushTime / 1000000);
-        return false;
-    }
-
-    public void postApp() {
-        logger.info("Post app");
-    }
-
-    /**
-     * To receive message from grape, we need some wrappers. double -> DoubleMessage. long ->
-     * LongMessage. Vprog happens here
-     *
-     * @return true if message received.
-     */
-    private void receiveMessage() {
-        Vertex<Long> receiveVertex = FFITypeFactoryhelper.newVertexLong();
-        vprogTime -= System.nanoTime();
-        int msgReceived = 0;
-//    bitSet.clear();
-        // receive message
-        if (conf.getMsgClass().equals(Double.class) || conf.getMsgClass().equals(double.class)) {
-            DoubleMsg msg = FFITypeFactoryhelper.newDoubleMsg();
-            while (messageManager.getMessageGraphX(graphXFragment, receiveVertex, msg, 2.0)) {
-                if (receiveVertex.GetValue() >= innerVerticesNum) {
-                    throw new IllegalStateException(
-                        "Receive illegal vertex " + receiveVertex.GetValue()
-                            + " msg: " + msg.getData());
-                }
-//        newVdataArray.set(receiveVertex.GetValue(), (VD) (Double) msg.getData());
-                Long lid = receiveVertex.GetValue();
-                newVdataArray.set(lid,
-                    vprog.apply(graphXFragment.getId(receiveVertex), newVdataArray.get(lid),
-                        (MSG_T) (Double) msg.getData()));
-                msgReceived += 1;
-                curSet.set(receiveVertex.GetValue().intValue());
-            }
-        } else if (conf.getMsgClass().equals(Long.class) || conf.getMsgClass().equals(long.class)) {
-            LongMsg msg = FFITypeFactoryhelper.newLongMsg();
-            while (messageManager.getMessageGraphX(graphXFragment, receiveVertex, msg, 1L)) {
-                if (receiveVertex.GetValue() >= innerVerticesNum) {
-                    throw new IllegalStateException(
-                        "Receive illegal vertex " + receiveVertex.GetValue()
-                            + " msg: " + msg.getData());
-                }
-                Long lid = receiveVertex.GetValue();
-                newVdataArray.set(lid,
-                    vprog.apply(graphXFragment.getId(receiveVertex), newVdataArray.get(lid),
-                        (MSG_T) (Long) msg.getData()));
-                msgReceived += 1;
-                curSet.set(receiveVertex.GetValue().intValue());
-            }
-        } else {
-            logger.info("Not supported msg type " + conf.getMsgClass().getName());
-        }
-        vprogTime += System.nanoTime();
-        logger.info("frag {} received msg from others {}", graphXFragment.fid(), msgReceived);
-//    return msgReceived > 0;
     }
 }
