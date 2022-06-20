@@ -84,22 +84,26 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
           val vdId = vPart.vertexData.vineyardID
 
-          var fragBuilder = null.asInstanceOf[GraphXFragmentBuilder[Long,Long,_,_]]
+//          var fragBuilder = null.asInstanceOf[GraphXFragmentBuilder[Long,Long,_,_]]
+          var fragId = null.asInstanceOf[Long]
           if (GrapeUtils.isPrimitive[VD] && GrapeUtils.isPrimitive[ED]){
-            fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD, ED](ePart.client, vmId, csrId, vdId)
+            val fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD, ED](ePart.client, vmId, csrId, vdId)
+            fragId = fragBuilder.seal(ePart.client).get().id()
           }
           else if (GrapeUtils.isPrimitive[VD]){
-            fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD,String](ePart.client, vmId, csrId, vdId)
+            val fragBuilder = ScalaFFIFactory.newGraphXStringEDFragmentBuilder[VD](ePart.client, vmId, csrId, vdId)
+            fragId = fragBuilder.seal(ePart.client).get().id()
           }
           else if (GrapeUtils.isPrimitive[ED]){
-            fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[String,ED](ePart.client, vmId, csrId, vdId)
+            val fragBuilder = ScalaFFIFactory.newGraphXStringVDFragmentBuiler[ED](ePart.client, vmId, csrId, vdId)
+            fragId = fragBuilder.seal(ePart.client).get().id()
           }
           else {
-            fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[String,String](ePart.client, vmId, csrId,vmId)
+            val fragBuilder = ScalaFFIFactory.newGraphXStringVEDFragmentBuilder(ePart.client, vmId, csrId,vmId)
+            fragId = fragBuilder.seal(ePart.client).get().id()
           }
-          val frag = fragBuilder.seal(ePart.client).get()
-          logger.info(s"Got built frag: ${frag.id}")
-          Iterator(ExecutorUtils.getHostName + ":" + ePart.pid + ":" + frag.id)
+          logger.info(s"Got built frag: ${fragId}")
+          Iterator(ExecutorUtils.getHostName + ":" + ePart.pid + ":" + fragId)
         case _ =>
           throw new IllegalStateException("Not implemented now!")
       }
