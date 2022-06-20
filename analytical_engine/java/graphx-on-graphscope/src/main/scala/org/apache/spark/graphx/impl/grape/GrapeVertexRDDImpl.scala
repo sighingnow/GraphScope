@@ -33,9 +33,9 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   override val partitioner: Option[Partitioner] = grapePartitionsRDD.partitioner
 
   override def compute(part: Partition, context: TaskContext): Iterator[(VertexId,VD)] = {
-    val p = firstParent[(PartitionID, GrapeVertexPartition[VD])].iterator(part, context)
+    val p = firstParent[GrapeVertexPartition[VD]].iterator(part, context)
     if (p.hasNext) {
-      p.next()._2.iterator.map(_.copy())
+      p.next().iterator.map(_.copy())
     } else {
       Iterator.empty
     }
