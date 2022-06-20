@@ -1,11 +1,12 @@
-package com.alibaba.graphscope.example.graphx
+package org.apache.spark.graphx.test
+
 
 import com.alibaba.graphscope.graphx.GraphScopeHelper
 import org.apache.spark.graphx.GraphLoader
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 
-object PageRank extends Logging{
+object PageRankTest extends Logging{
   def main(args: Array[String]): Unit = {
     // Creates a SparkSession.
     val spark = SparkSession
@@ -20,7 +21,7 @@ object PageRank extends Logging{
     val eFilePath = args(0);
     val numPartitions = args(1).toInt;
     log.info(s"Running for efile ${eFilePath}")
-    val graph = GraphScopeHelper.edgeListFile(sc, eFilePath,canonicalOrientation = false,numPartitions)
+    val graph = GraphScopeHelper.edgeListFile(sc, eFilePath,canonicalOrientation = false, numPartitions)
     graph.cache()
     log.info(s"[PageRank: ] Load graph ${graph.numEdges}, ${graph.numVertices}")
     val ranks = graph.pageRank(0.0001).vertices
@@ -33,3 +34,4 @@ object PageRank extends Logging{
     sc.stop()
   }
 }
+

@@ -1,10 +1,7 @@
 package org.apache.spark.graphx.test
 
 import com.alibaba.graphscope.graphx.{GSSession, GraphScopeHelper}
-import org.apache.spark.graphx.Graph
-import org.apache.spark.graphx.GraphLoader
-import org.apache.spark.graphx.rdd.GraphScopeRDD
-import org.apache.spark.graphx.test.FragmentTest.log
+import org.apache.spark.graphx.{Graph, GraphLoader}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 

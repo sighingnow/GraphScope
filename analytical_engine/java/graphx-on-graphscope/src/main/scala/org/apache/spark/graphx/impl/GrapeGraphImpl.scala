@@ -1,11 +1,10 @@
 package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
-import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXCSRMapper, VineyardClient}
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
+import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXCSRMapper, VineyardClient}
 import com.alibaba.graphscope.utils.GenericUtils
-import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.HashPartitioner
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
 import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
