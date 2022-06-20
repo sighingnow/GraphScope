@@ -67,6 +67,11 @@ object GrapeUtils {
 
   def getRuntimeClass[T: ClassTag] = implicitly[ClassTag[T]].runtimeClass
 
+  def isPrimitive[T : ClassTag] : Boolean = {
+    val clz = getRuntimeClass[T]
+    clz.equals(classOf[Double]) || clz.equals(classOf[Long]) || clz.equals(classOf[Int]) || clz.equals(classOf[Float])
+  }
+
   @throws[UnknownHostException]
   def getSelfHostName = InetAddress.getLocalHost.getHostName
 

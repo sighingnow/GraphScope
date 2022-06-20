@@ -101,7 +101,8 @@ import com.alibaba.fastffi.FFIGenBatch;
         @FFIGen(type = "com.alibaba.graphscope.graphx.GraphXCSRMapper",
                 templates = {
                     @CXXTemplate(cxx = {"uint64_t", "int64_t", "int64_t"}, java = {"Long", "Long", "Long"}),
-                    @CXXTemplate(cxx = {"uint64_t", "int32_t", "int32_t"}, java = {"Long", "Integer", "Integer"})
+                    @CXXTemplate(cxx = {"uint64_t", "int32_t", "int32_t"}, java = {"Long", "Integer", "Integer"}),
+                    @CXXTemplate(cxx = {"uint64_t", "int32_t", "double"}, java = {"Long","Integer","Double"})
                 }
         ),
         @FFIGen(type = "com.alibaba.graphscope.fragment.GraphXStringVDFragment",

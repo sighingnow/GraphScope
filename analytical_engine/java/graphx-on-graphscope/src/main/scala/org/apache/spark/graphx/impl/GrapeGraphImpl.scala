@@ -3,7 +3,7 @@ package org.apache.spark.graphx.impl
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
-import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXCSRMapper, VineyardClient}
+import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXCSRMapper, GraphXFragmentBuilder, VineyardClient}
 import com.alibaba.graphscope.utils.GenericUtils
 import org.apache.spark.HashPartitioner
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
@@ -84,7 +84,19 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
           val vdId = vPart.vertexData.vineyardID
 
-          val fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD, ED](ePart.client, vmId, csrId, vdId)
+          var fragBuilder = null.asInstanceOf[GraphXFragmentBuilder[Long,Long,_,_]]
+          if (GrapeUtils.isPrimitive[VD] && GrapeUtils.isPrimitive[ED]){
+            fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD, ED](ePart.client, vmId, csrId, vdId)
+          }
+          else if (GrapeUtils.isPrimitive[VD]){
+            fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD,String](ePart.client, vmId, csrId, vdId)
+          }
+          else if (GrapeUtils.isPrimitive[ED]){
+            fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[String,ED](ePart.client, vmId, csrId, vdId)
+          }
+          else {
+            fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[String,String](ePart.client, vmId, csrId,vmId)
+          }
           val frag = fragBuilder.seal(ePart.client).get()
           logger.info(s"Got built frag: ${frag.id}")
           Iterator(ExecutorUtils.getHostName + ":" + ePart.pid + ":" + frag.id)
