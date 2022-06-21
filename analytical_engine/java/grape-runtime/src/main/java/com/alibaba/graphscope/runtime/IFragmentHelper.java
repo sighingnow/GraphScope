@@ -6,12 +6,14 @@ import com.alibaba.graphscope.fragment.ArrowProjectedFragment;
 import com.alibaba.graphscope.fragment.GraphXFragment;
 import com.alibaba.graphscope.fragment.GraphXStringEDFragment;
 import com.alibaba.graphscope.fragment.GraphXStringVDFragment;
+import com.alibaba.graphscope.fragment.GraphXStringVEDFragment;
 import com.alibaba.graphscope.fragment.IFragment;
 import com.alibaba.graphscope.fragment.ImmutableEdgecutFragment;
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringEDFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringVDFragmentAdaptor;
+import com.alibaba.graphscope.fragment.adaptor.GraphXStringVEDFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.ImmutableEdgecutFragmentAdaptor;
 
 import org.slf4j.Logger;
@@ -76,6 +78,16 @@ public class IFragmentHelper {
             }
             return createGraphXStringEDFragmentAdaptor(
                 classes[0], classes[1], classes[2], classes[3], graphXStringEDFragment);
+        }
+        else if (fragmentImpl instanceof GraphXStringVEDFragment){
+            GraphXStringVEDFragment graphXStringVEDFragment = (GraphXStringVEDFragment) fragmentImpl;
+            Class<?>[] classes = getTypeArgumentFromInterface(GraphXStringVEDFragment.class, graphXStringVEDFragment.getClass());
+            if (classes.length != 4) {
+                logger.error("Expected 4 actural type arguments, received: " + classes.length);
+                return null;
+            }
+            return createGraphXStringVEDFragmentAdaptor(
+                classes[0], classes[1], classes[2], classes[3], graphXStringVEDFragment);
         }
         else {
             logger.info(
@@ -161,5 +173,15 @@ public class IFragmentHelper {
         GraphXStringEDFragment<OID_T,VID_T,VDATA_T,EDATA_T> fragment
     ){
         return new GraphXStringEDFragmentAdaptor<OID_T,VID_T, VDATA_T, EDATA_T>(fragment);
+    }
+
+    private static <OID_T,VID_T,VDATA_T,EDATA_T> GraphXStringVEDFragmentAdaptor<OID_T,VID_T,VDATA_T,EDATA_T> createGraphXStringVEDFragmentAdaptor(
+        Class<? extends OID_T> oidClass,
+        Class<? extends VID_T> vidClass,
+        Class<? extends VDATA_T> vdClass,
+        Class<? extends EDATA_T> edClass,
+        GraphXStringVEDFragment<OID_T,VID_T,VDATA_T,EDATA_T> fragment
+    ){
+        return new GraphXStringVEDFragmentAdaptor<OID_T,VID_T, VDATA_T, EDATA_T>(fragment);
     }
 }
