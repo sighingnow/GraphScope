@@ -70,7 +70,7 @@ class GraphXFragment
   using vid_t = VID_T;
   using vdata_t = VD_T;
   using edata_t = ED_T;
-  using csr_t = GraphXCSR<VID_T, ED_T>;
+  using csr_t = GraphXCSR<VID_T>;
   using vm_t = GraphXVertexMap<OID_T, VID_T>;
   using graphx_vdata_t = VertexData<VID_T, VD_T>;
   using graphx_edata_t = EdgeData<VID_T, ED_T>;
@@ -107,7 +107,7 @@ class GraphXFragment
     this->vdata_.Construct(meta.GetMemberMeta("vdata"));
     this->edata_.Construct(meta.GetMemberMeta("edata"));
     CHECK_EQ(vm_.GetVertexSize(), vdata_.VerticesNum());
-    CHECK_EQ(csr_.GetOutEdgesNum(), edata_.EdgeNum());
+    CHECK_EQ(csr_.GetOutEdgesNum(), edata_.GetEdgeNum());
     this->inner_vertices_.SetRange(0, vm_.GetInnerVertexSize());
     this->outer_vertices_.SetRange(vm_.GetInnerVertexSize(),
                                    vm_.GetVertexSize());
@@ -232,7 +232,7 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
   using vid_t = VID_T;
   using vdata_t = VD_T;
   using edata_t = ED_T;
-  using csr_t = GraphXCSR<VID_T, ED_T>;
+  using csr_t = GraphXCSR<VID_T>;
   using vm_t = GraphXVertexMap<OID_T, VID_T>;
   using graphx_vdata_t = VertexData<VID_T, VD_T>;
   using graphx_edata_t = EdgeData<VID_T, ED_T>;
@@ -240,7 +240,7 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
  public:
   explicit GraphXFragmentBuilder(vineyard::Client& client,
                                  GraphXVertexMap<OID_T, VID_T>& vm,
-                                 GraphXCSR<VID_T, ED_T>& csr,
+                                 GraphXCSR<VID_T>& csr,
                                  VertexData<VID_T, VD_T>& vdata,
                                  EdgeData<VID_T, ED_T>& edata)
       : client_(client) {
