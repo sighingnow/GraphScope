@@ -89,7 +89,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
             newArray.set(eid, oldArray.get(i))
             i += 1
           }
-          val edId = GrapeUtils.array2ArrowArray[ED](newArray,ePart.client)
+          val edId = GrapeUtils.array2ArrowArray[ED](newArray,ePart.client,false)
 
           logger.info(s"vm id ${vmId}, csr id ${csrId}, vd id ${vdId}, ed id ${edId}")
 

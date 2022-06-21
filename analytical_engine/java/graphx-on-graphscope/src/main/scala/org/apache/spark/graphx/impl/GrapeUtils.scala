@@ -89,12 +89,13 @@ object GrapeUtils extends Logging{
     set.toArray
   }
 
-  def array2ArrowArray[T : ClassTag](array : PrimitiveArray[T], client : VineyardClient) : Long = {
+  /** true for build vertex array, false for build edge array */
+  def array2ArrowArray[T : ClassTag](array : PrimitiveArray[T], client : VineyardClient, vertex : Boolean) : Long = {
     val size = array.size()
     if (GrapeUtils.getRuntimeClass[T].equals(classOf[Long])
       || GrapeUtils.getRuntimeClass[T].equals(classOf[Double])
       || GrapeUtils.getRuntimeClass[T].equals(classOf[Int])){
-      val newVdataBuilder = ScalaFFIFactory.newVertexDataBuilder[T]()
+
       val arrowArrayBuilder = ScalaFFIFactory.newArrowArrayBuilder[T](GrapeUtils.getRuntimeClass[T].asInstanceOf[Class[T]])
       arrowArrayBuilder.reserve(size)
       var i = 0
@@ -102,8 +103,16 @@ object GrapeUtils extends Logging{
         arrowArrayBuilder.unsafeAppend(array.get(i))
         i += 1
       }
-      newVdataBuilder.init(arrowArrayBuilder)
-      newVdataBuilder.seal(client).get().id()
+      if (vertex){
+        val newVdataBuilder = ScalaFFIFactory.newVertexDataBuilder[T]()
+        newVdataBuilder.init(arrowArrayBuilder)
+        newVdataBuilder.seal(client).get().id()
+      }
+      else {
+        val newEdataBuilder = ScalaFFIFactory.newEdgeDataBuilder[T]()
+        newEdataBuilder.init(arrowArrayBuilder)
+        newEdataBuilder.seal(client).get().id()
+      }
     }
     else {
       val ffiByteVectorOutput = new FFIByteVectorOutputStream()
@@ -125,9 +134,16 @@ object GrapeUtils extends Logging{
       ffiByteVectorOutput.finishSetting()
       val writenBytes = ffiByteVectorOutput.bytesWriten()
       log.info(s"write data array ${limit} of type ${GrapeUtils.getRuntimeClass[T].getName}, writen bytes ${writenBytes}")
-      val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder()
-      newVdataBuilder.init(size, ffiByteVectorOutput.getVector, ffiOffset)
-      newVdataBuilder.seal(client).get().id()
+      if (vertex){
+        val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder()
+        newVdataBuilder.init(size, ffiByteVectorOutput.getVector, ffiOffset)
+        newVdataBuilder.seal(client).get().id()
+      }
+      else {
+        val newEdataBuilder = ScalaFFIFactory.newStringEdgeDataBuilder()
+        newEdataBuilder.init(size, ffiByteVectorOutput.getVector, ffiOffset)
+        newEdataBuilder.seal(client).get().id()
+      }
     }
   }
 }

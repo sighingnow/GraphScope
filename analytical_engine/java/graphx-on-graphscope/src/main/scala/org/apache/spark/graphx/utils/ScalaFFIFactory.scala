@@ -4,7 +4,7 @@ import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, ArrowProjectedFragmentMapper, GraphXStringEDFragment, GraphXStringVEDFragment, IFragment}
-import com.alibaba.graphscope.graphx.{ArrowProjectedFragmentGetter, BasicGraphXCSRBuilder, BasicLocalVertexMapBuilder, GraphXFragmentBuilder, GraphXVertexMapGetter, LocalVertexMap, StringEDGraphXFragmentBuilder, StringEdgeDataBuilder, StringVDGraphXFragmentBuilder, StringVEDGraphXFragmentBuilder, StringVertexDataBuilder, VertexDataBuilder, VineyardClient}
+import com.alibaba.graphscope.graphx.{ArrowProjectedFragmentGetter, BasicGraphXCSRBuilder, BasicLocalVertexMapBuilder, EdgeDataBuilder, GraphXFragmentBuilder, GraphXVertexMapGetter, LocalVertexMap, StringEDGraphXFragmentBuilder, StringEdgeDataBuilder, StringVDGraphXFragmentBuilder, StringVEDGraphXFragmentBuilder, StringVertexDataBuilder, VertexDataBuilder, VineyardClient}
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.internal.Logging
 
@@ -66,6 +66,11 @@ object ScalaFFIFactory extends Logging{
   def newVertexDataBuilder[VD: ClassTag]() : VertexDataBuilder[Long,VD] = {
     val factory = FFITypeFactory.getFactory(classOf[VertexDataBuilder[Long,VD]],
       "gs::VertexDataBuilder<uint64_t," + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[VD]) +">").asInstanceOf[VertexDataBuilder.Factory[Long,VD]]
+    factory.create()
+  }
+  def newEdgeDataBuilder[VD: ClassTag]() : EdgeDataBuilder[Long,VD] = {
+    val factory = FFITypeFactory.getFactory(classOf[EdgeDataBuilder[Long,VD]],
+      "gs::EdgeDataBuilder<uint64_t," + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[VD]) +">").asInstanceOf[EdgeDataBuilder.Factory[Long,VD]]
     factory.create()
   }
 
