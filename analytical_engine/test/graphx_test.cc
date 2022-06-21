@@ -19,6 +19,7 @@ limitations under the License.
 
 #include "arrow/array.h"
 #include "arrow/array/builder_primitive.h"
+#include "core/java/graphx/edge_data.h"
 #include "core/java/graphx/graphx_csr.h"
 #include "core/java/graphx/graphx_fragment.h"
 #include "core/java/graphx/local_vertex_map.h"
@@ -118,27 +119,23 @@ gs::GraphXVertexMap<int64_t, uint64_t> TestGraphXVertexMap(
 }
 
 vineyard::ObjectID TestGraphXCSR(
-    vineyard::Client& client,
-    gs::GraphXVertexMap<int64_t, uint64_t>& graphx_vm) {
+    vineyard::Client& client, gs::GraphXVertexMap<int64_t, uint64_t>& graphx_vm,
+    arrow::Int64Builder srcBuilder, arrow::Int64Builder dstBuilder) {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
   vineyard::ObjectID csr_id;
   {
-    arrow::Int64Builder srcBuilder, dstBuilder;
-    arrow::Int64Builder edataBuilder;
-    generateData(srcBuilder, dstBuilder, edataBuilder, comm_spec);
-
-    gs::BasicGraphXCSRBuilder<int64_t, uint64_t, int64_t> builder(client);
-    builder.LoadEdges(srcBuilder, dstBuilder, edataBuilder, graphx_vm);
-    auto csr = std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t, int64_t>>(
+    gs::BasicGraphXCSRBuilder<int64_t, uint64_t> builder(client);
+    builder.LoadEdges(srcBuilder, dstBuilder, graphx_vm);
+    auto csr = std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t>>(
         builder.Seal(client));
 
     // VINEYARD_CHECK_OK(client.Persist(csr->id()));
     csr_id = csr->id();
     LOG(INFO) << "Persist csr id: " << csr->id();
   }
-  std::shared_ptr<gs::GraphXCSR<uint64_t, int64_t>> csr =
-      std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t, int64_t>>(
+  std::shared_ptr<gs::GraphXCSR<uint64_t>> csr =
+      std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t>>(
           client.GetObject(csr_id));
   LOG(INFO) << "Got csr " << csr->id();
   LOG(INFO) << "in num edges: " << csr->GetInEdgesNum()
@@ -148,36 +145,6 @@ vineyard::ObjectID TestGraphXCSR(
   LOG(INFO) << "lid 0 degreee: " << csr->GetOutDegree(0) << ", "
             << csr->GetPartialOutEdgesNum(0, 1);
   return csr->id();
-}
-
-void TestDriveGraphXCSR(vineyard::Client& client,
-                        vineyard::ObjectID old_csr_id) {
-  vineyard::ObjectID new_csr_id;
-  {
-    arrow::DoubleBuilder edataBuilder;
-    edataBuilder.Reserve(6);
-    for (auto i = 0; i < 6; ++i) {
-      edataBuilder.UnsafeAppend(6.0 + i);
-    }
-
-    auto csr = std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t, int64_t>>(
-        client.GetObject(old_csr_id));
-
-    LOG(INFO) << "Old csr id: " << csr->id();
-    gs::GraphXCSRMapper<uint64_t, int64_t, double> diriver;
-
-    auto new_csr = *diriver.Map(*csr, edataBuilder, client);
-    new_csr_id = new_csr.id();
-    LOG(INFO) << "new csr id: " << new_csr_id;
-  }
-  std::shared_ptr<gs::GraphXCSR<uint64_t, double>> csr =
-      std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t, double>>(
-          client.GetObject(new_csr_id));
-  LOG(INFO) << "Got csr " << csr->id();
-  LOG(INFO) << "in num edges: " << csr->GetInEdgesNum()
-            << "out num edges: " << csr->GetOutEdgesNum();
-  LOG(INFO) << "lid 0 degreee: " << csr->GetOutDegree(0) << ", "
-            << csr->GetPartialOutEdgesNum(0, 1);
 }
 
 vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
@@ -199,11 +166,31 @@ vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
   return vd->id();
 }
 
+vineyard::ObjectID TestGraphXEdgeData(vineyard::Client& client,
+                                      arrow::Int64Builder& edata_builder) {
+  vineyard::ObjectID id;
+  {
+    gs::EdgeDataBuilder<uint64_t, int64_t> builder;
+    builder.init(edata_builder);
+    auto ed = builder.MySeal(client);
+    id = vd->id();
+  }
+
+  std::shared_ptr<gs::EdgeData<uint64_t, int64_t>> ed =
+      std::dynamic_pointer_cast<gs::EdgeData<uint64_t, int64_t>>(
+          client.GetObject(id));
+  LOG(INFO) << "vnum: " << ed->GetEdgeNum();
+  LOG(INFO) << "edata : " << ed->GetEdgeDataByEid(0);
+  auto edArray = ed->GetEdataArray();
+  LOG(INFO) << "ed length: " << edArray.GetLength();
+  return ed->id();
+}
+
 void TestGraphXFragment(vineyard::Client& client, vineyard::ObjectID vm_id,
-                        vineyard::ObjectID csr_id,
-                        vineyard::ObjectID vdata_id) {
+                        vineyard::ObjectID csr_id, vineyard::ObjectID vdata_id,
+                        vineyard::ObjectID edata_id) {
   gs::GraphXFragmentBuilder<int64_t, uint64_t, int64_t, int64_t> builder(
-      client, vm_id, csr_id, vdata_id);
+      client, vm_id, csr_id, vdata_id, edata_id);
   auto res = std::dynamic_pointer_cast<
       gs::GraphXFragment<int64_t, uint64_t, int64_t, int64_t>>(
       builder.Seal(client));
@@ -269,12 +256,16 @@ int main(int argc, char* argv[]) {
   LOG(INFO) << "Connected to IPCServer: ";
   Init();
 
+  arrow::Int64Builder srcBuilder, dstBuilder;
+  arrow::Int64Builder edataBuilder;
+  generateData(srcBuilder, dstBuilder, edataBuilder, comm_spec);
+
   // TestLocalVertexMap(client);
   auto graphx_vm = TestGraphXVertexMap(client);
-  auto csr_id = TestGraphXCSR(client, graphx_vm);
-  TestDriveGraphXCSR(client, csr_id);
+  auto csr_id = TestGraphXCSR(client, graphx_vm, srcBuilder, dstBuilder);
   auto vdata_id = TestGraphXVertexData(client);
-  TestGraphXFragment(client, graphx_vm.id(), csr_id, vdata_id);
+  auto edata_id = TestGraphXEdgeData(client, edataBuilder);
+  TestGraphXFragment(client, graphx_vm.id(), csr_id, vdata_id, edata_id);
   VLOG(1) << "Finish Querying.";
 
   grape::FinalizeMPIComm();

@@ -48,6 +48,7 @@
 
 #include "core/error.h"
 #include "core/io/property_parser.h"
+#include "core/java/graphx/edge_data.h"
 #include "core/java/graphx/graphx_csr.h"
 #include "core/java/graphx/graphx_vertex_map.h"
 #include "core/java/graphx/local_vertex_map.h"
@@ -72,6 +73,7 @@ class GraphXFragment
   using csr_t = GraphXCSR<VID_T, ED_T>;
   using vm_t = GraphXVertexMap<OID_T, VID_T>;
   using graphx_vdata_t = VertexData<VID_T, VD_T>;
+  using graphx_edata_t = EdgeData<VID_T, ED_T>;
   using vertices_t = grape::VertexRange<VID_T>;
   using vertex_t = grape::Vertex<VID_T>;
   using nbr_t = vineyard::property_graph_utils::NbrUnit<vid_t, eid_t>;
@@ -103,7 +105,9 @@ class GraphXFragment
     this->csr_.Construct(meta.GetMemberMeta("csr"));
     this->vm_.Construct(meta.GetMemberMeta("vm"));
     this->vdata_.Construct(meta.GetMemberMeta("vdata"));
+    this->edata_.Construct(meta.GetMemberMeta("edata"));
     CHECK_EQ(vm_.GetVertexSize(), vdata_.VerticesNum());
+    CHECK_EQ(csr_.GetOutEdgesNum(), edata_.EdgeNum());
     this->inner_vertices_.SetRange(0, vm_.GetInnerVertexSize());
     this->outer_vertices_.SetRange(vm_.GetInnerVertexSize(),
                                    vm_.GetVertexSize());
@@ -204,7 +208,7 @@ class GraphXFragment
     return csr_.GetOEEnd(v.GetValue());
   }
   inline graphx::ImmutableTypedArray<edata_t>& GetEdataArray() {
-    return csr_.GetEdataArray();
+    return edata_.GetEdataArray();
   }
   inline graphx::ImmutableTypedArray<vdata_t>& GetVdataArray() {
     return vdata_.GetVdataArray();
@@ -216,6 +220,7 @@ class GraphXFragment
   csr_t csr_;
   vm_t vm_;
   graphx_vdata_t vdata_;
+  graphx_edata_t edata_;
 
   template <typename _OID_T, typename _VID_T, typename _VD_T, typename _ED_T>
   friend class GraphXFragmentBuilder;
@@ -230,24 +235,28 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
   using csr_t = GraphXCSR<VID_T, ED_T>;
   using vm_t = GraphXVertexMap<OID_T, VID_T>;
   using graphx_vdata_t = VertexData<VID_T, VD_T>;
+  using graphx_edata_t = EdgeData<VID_T, ED_T>;
 
  public:
   explicit GraphXFragmentBuilder(vineyard::Client& client,
                                  GraphXVertexMap<OID_T, VID_T>& vm,
                                  GraphXCSR<VID_T, ED_T>& csr,
-                                 VertexData<VID_T, VD_T>& vdata)
+                                 VertexData<VID_T, VD_T>& vdata,
+                                 EdgeData<VID_T, ED_T>& edata)
       : client_(client) {
     fid_ = vm.fid();
     fnum_ = vm.fnum();
     vm_ = vm;
     csr_ = csr;
     vdata_ = vdata;
+    edata_ = edata;
   };
 
   explicit GraphXFragmentBuilder(vineyard::Client& client,
                                  vineyard::ObjectID vm_id,
                                  vineyard::ObjectID csr_id,
-                                 vineyard::ObjectID vdata_id)
+                                 vineyard::ObjectID vdata_id,
+                                 vineyard::ObjectID edata_id)
       : client_(client) {
     vm_ = *std::dynamic_pointer_cast<vm_t>(client.GetObject(vm_id));
     fid_ = vm_.fid();
@@ -255,6 +264,8 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
     csr_ = *std::dynamic_pointer_cast<csr_t>(client.GetObject(csr_id));
     vdata_ =
         *std::dynamic_pointer_cast<graphx_vdata_t>(client.GetObject(vdata_id));
+    edata_ =
+        *std::dynamic_pointer_cast<graphx_edata_t>(client.GetObject(edata_id));
   };
 
   std::shared_ptr<GraphXFragment<oid_t, vid_t, vdata_t, edata_t>> MySeal(
@@ -278,12 +289,14 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
     fragment->csr_ = csr_;
     fragment->vm_ = vm_;
     fragment->vdata_ = vdata_;
+    fragment->edata_ = edata_;
 
     fragment->meta_.AddKeyValue("fid", fid_);
     fragment->meta_.AddKeyValue("fnum", fnum_);
     fragment->meta_.AddMember("vdata", vdata_.meta());
     fragment->meta_.AddMember("csr", csr_.meta());
     fragment->meta_.AddMember("vm", vm_.meta());
+    fragment->meta_.AddMember("edata", edata_.meta());
 
     fragment->inner_vertices_.SetRange(0, vm_.GetInnerVertexSize());
     fragment->outer_vertices_.SetRange(vm_.GetInnerVertexSize(),
@@ -294,6 +307,7 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
     nBytes += vdata_.nbytes();
     nBytes += csr_.nbytes();
     nBytes += vm_.nbytes();
+    nBytes += edata_.nbytes();
     LOG(INFO) << "total bytes: " << nBytes;
     fragment->meta_.SetNBytes(nBytes);
 
@@ -314,6 +328,7 @@ class GraphXFragmentBuilder : public vineyard::ObjectBuilder {
   csr_t csr_;
   vm_t vm_;
   graphx_vdata_t vdata_;
+  graphx_edata_t edata_;
   vineyard::Client& client_;
 };
 

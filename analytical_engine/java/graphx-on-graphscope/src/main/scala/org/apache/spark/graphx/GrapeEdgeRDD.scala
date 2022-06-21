@@ -76,7 +76,7 @@ object GrapeEdgeRDD extends Logging{
         val (_pid, shuffleReceived) = iter.next()
         require(pid == _pid, s"not possible ${pid}, ${_pid}")
         val grapeMeta = new GrapeMeta[VD,ED](pid, numPartitions,vineyardClient,ExecutorUtils.getHostName)
-        val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions,grapeMeta.vineyardClient)
+        val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions, grapeMeta.vineyardClient)
         edgePartitionBuilder.addEdges(shuffleReceived)
         val localVertexMap = edgePartitionBuilder.buildLocalVertexMap()
         grapeMeta.setLocalVertexMap(localVertexMap)

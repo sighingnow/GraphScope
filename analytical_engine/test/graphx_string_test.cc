@@ -159,8 +159,8 @@ vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
     std::vector<int32_t> values{1, 2, 3, 4, 5};
     buffer.resize(sizeof(int32_t) * 5);
     memcpy(buffer.data(), values.data(), sizeof(int32_t) * 5);
-    for (auto i = 0; i < 20; ++i){
-       LOG(INFO) <<"ind: " << i << (int) buffer[i];
+    for (auto i = 0; i < 20; ++i) {
+      LOG(INFO) << "ind: " << i << (int) buffer[i];
     }
     builder.Init(2, buffer, offsets);
 
@@ -254,9 +254,9 @@ int main(int argc, char* argv[]) {
   LOG(INFO) << "Connected to IPCServer: ";
   Init();
 
-  //TestLocalVertexMap(client);
-  //auto graphx_vm = TestGraphXVertexMap(client);
-  //auto csr_id = TestGraphXCSR(client, graphx_vm);
+  // TestLocalVertexMap(client);
+  // auto graphx_vm = TestGraphXVertexMap(client);
+  // auto csr_id = TestGraphXCSR(client, graphx_vm);
   auto vdata_id = TestGraphXVertexData(client);
   //   TestGraphXFragment(client, graphx_vm.id(), csr_id, vdata_id);
   VLOG(1) << "Finish Querying.";
