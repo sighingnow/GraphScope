@@ -13,7 +13,7 @@ import org.apache.spark.util.collection.BitSet
 //import scala.collection.BitSet
 import scala.reflect.ClassTag
 
-class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphXCSR[Long,_],  var srcLids : PrimitiveArray[Long],
+class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphXCSR[Long],  var srcLids : PrimitiveArray[Long],
                            val dstLids : PrimitiveArray[Long], val srcOids : PrimitiveArray[Long],
                            val dstOids : PrimitiveArray[Long]) extends GraphStructure with Logging{
   val startLid = 0

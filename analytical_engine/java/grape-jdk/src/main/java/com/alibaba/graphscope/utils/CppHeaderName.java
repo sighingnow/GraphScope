@@ -77,6 +77,7 @@ public class CppHeaderName {
     public static final String CORE_JAVA_GRAPHX_LOCAL_VERTEX_MAP_H = "core/java/graphx/local_vertex_map.h";
     public static final String CORE_JAVA_GRAPHX_GRAPHX_VERTEX_MAP_H = "core/java/graphx/graphx_vertex_map.h";
     public static final String CORE_JAVA_GRAPHX_VERTEX_DATA_H = "core/java/graphx/vertex_data.h";
+    public static final String CORE_JAVA_GRAPHX_EDGE_DATA_H = "core/java/graphx/edge_data.h";
     public static final String CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H = "core/java/graphx/graphx_fragment.h";
     public static final String CORE_JAVA_FRAGMENT_GETTER_H = "core/java/graphx/fragment_getter.h";
 

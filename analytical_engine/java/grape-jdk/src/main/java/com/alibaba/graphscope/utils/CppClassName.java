@@ -89,8 +89,11 @@ public class CppClassName {
   public static final String GS_GRAPHX_GRAPHX_VERTEX_MAP_GETTER = "gs::GraphXVertexMapGetter";
   public static final String GS_BASIC_GRAPHX_CSR_BUILDER = "gs::BasicGraphXCSRBuilder";
   public static final String GS_VERTEX_DATA = "gs::VertexData";
+  public static final String GS_EDGE_DATA = "gs::EdgeData";
   public static final String GS_STRING_VERTEX_DATA = "gs::VertexData<uint64_t,std::string>";
+  public static final String GS_STRING_EDGE_DATA = "gs::EdgeData<uint64_t,std::string>";
   public static final String GS_VERTEX_DATA_BUILDER = "gs::VertexDataBuilder";
+  public static final String GS_EDGE_DATA_BUILDER = "gs::EdgeDataBuilder";
   public static final String GS_STRING_VERTEX_DATA_BUILDER = "gs::VertexDataBuilder<uint64_t,std::string>";
   public static final String GS_MUTABLE_TYPE_ARRAY = "gs::graphx::ImmutableTypedArray";
   public static final String GS_STRING_MUTABLE_TYPE_ARRAY = "gs::graphx::ImmutableTypedArray<std::string>";

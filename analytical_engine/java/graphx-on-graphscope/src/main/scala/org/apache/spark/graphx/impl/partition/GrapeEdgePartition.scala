@@ -196,7 +196,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : Int,val client : VineyardClient) extends Logging{
   val srcOidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
   val dstOidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
-  val edataBuilder : ArrowArrayBuilder[ED] = ScalaFFIFactory.newArrowArrayBuilder(GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]])
+//  val edataBuilder : ArrowArrayBuilder[ED] = ScalaFFIFactory.newArrowArrayBuilder(GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]])
   val innerOidBuilder : ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
   val outerOidBuilder : ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
   var lists : ArrayBuffer[EdgeShuffleReceived[ED]] = ArrayBuffer.empty[EdgeShuffleReceived[ED]]
@@ -262,12 +262,42 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     log.info(s"${ExecutorUtils.getHostName}: Finish building local vm: ${localVM.id()}, ${localVM.getInnerVerticesNum}");
     localVM
   }
-  def buildCSR(globalVMID : Long): (GraphXVertexMap[Long,Long], GraphXCSR[Long,ED]) = {
+
+  def buildEdataArray : PrimitiveArray[ED] = {
+    var len = 0
+    for (shuffle <- lists){
+      val (srcArrays, dstArrays, attrArrays) = shuffle.getArrays
+      for (a <- attrArrays){
+        len += a.length
+      }
+    }
+    val edataArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], len).asInstanceOf[PrimitiveArray[ED]]
+    var ind = 0
+    for (shuffle <- lists){
+      val (_, _, attrArrays) = shuffle.getArrays
+      var i = 0
+      val outerArrayLimit = attrArrays.length
+      while (i < outerArrayLimit){
+        var j = 0
+        val innerLimit = attrArrays(i).length
+        val attrArray = attrArrays(i)
+        while (j < innerLimit){
+          edataArray.set(ind, attrArray(j))
+          j += 1
+          ind += 1
+        }
+        i += 1
+      }
+    }
+    edataArray
+  }
+
+  // no edata building is needed, we only persist edata to c++ when we run pregel
+  def buildCSR(globalVMID : Long): (GraphXVertexMap[Long,Long], GraphXCSR[Long]) = {
     val edgesNum = lists.map(shuffle => shuffle.totalSize()).sum
     log.info(s"Got totally ${lists.length}, edges ${edgesNum} in ${ExecutorUtils.getHostName}")
     srcOidBuilder.reserve(edgesNum)
     dstOidBuilder.reserve(edgesNum)
-    edataBuilder.reserve(edgesNum)
     log.info(s"Constructing csr with global vm ${globalVMID}")
     val graphxVertexMapGetter = ScalaFFIFactory.newVertexMapGetter()
     val graphxVertexMap = graphxVertexMapGetter.get(client, globalVMID).get()
@@ -288,15 +318,15 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
         while (j < innerLimit){
           srcOidBuilder.unsafeAppend(srcArray(j))
           dstOidBuilder.unsafeAppend(dstArray(j))
-          edataBuilder.unsafeAppend(attrArray(j))
+//          edataBuilder.unsafeAppend(attrArray(j))
           j += 1
         }
         i += 1
       }
     }
     log.info("Finish adding edges to builders")
-    val graphxCSRBuilder = ScalaFFIFactory.newGraphXCSRBuilder[ED](client)
-    graphxCSRBuilder.loadEdges(srcOidBuilder,dstOidBuilder,edataBuilder,graphxVertexMap)
+    val graphxCSRBuilder = ScalaFFIFactory.newGraphXCSRBuilder(client)
+    graphxCSRBuilder.loadEdges(srcOidBuilder,dstOidBuilder,graphxVertexMap)
     val graphxCSR = graphxCSRBuilder.seal(client).get()
     (graphxVertexMap,graphxCSR)
   }

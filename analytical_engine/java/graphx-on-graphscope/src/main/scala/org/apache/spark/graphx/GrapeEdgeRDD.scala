@@ -125,8 +125,10 @@ object GrapeEdgeRDD extends Logging{
         require(res != null, s"after iterate over received global ids, no suitable found for ${meta.partitionID} : ${globalVMIDs}")
         meta.setGlobalVM(res.toLong)
         val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId)
+        val edatas = meta.edgePartitionBuilder.buildEdataArray
         meta.setGlobalVM(vm)
         meta.setCSR(csr)
+        meta.setEdataArray(edatas)
         meta.edgePartitionBuilder.clearBuilders()
         meta.edgePartitionBuilder = null //make it null to let it be gc able
         Iterator((pid, meta))
@@ -145,7 +147,6 @@ object GrapeEdgeRDD extends Logging{
         val srcLids = PrimitiveArray.create(classOf[Long], edgesNum)
         val dstOids = PrimitiveArray.create(classOf[Long], edgesNum)
         val dstLids = PrimitiveArray.create(classOf[Long], edgesNum)
-        val edatas = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED],meta.graphxCSR.getOutEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED]]
         var curLid = 0
         val endLid = meta.globalVM.innerVertexSize()
         val oeOffsetsArray: ImmutableTypedArray[Long] = meta.graphxCSR.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
@@ -161,20 +162,10 @@ object GrapeEdgeRDD extends Logging{
           }
           curLid += 1
         }
-        val nbr = meta.graphxCSR.getOEBegin(0)
-        var offset = 0
-        val edataArray = meta.graphxCSR.getEdataArray
-        while (offset < edgesNum){
-          dstOids.set(offset, meta.globalVM.getId(nbr.vid()))
-          dstLids.set(offset, nbr.vid())
-          edatas.set(offset, edataArray.get(nbr.eid()))
-          offset += 1
-          nbr.addV(16)
-        }
         val time1 = System.nanoTime()
         log.info(s"[Initializing edge cache in heap cost ]: ${(time1 - time0) / 1000000} ms")
         val graphStructure = new GraphXGraphStructure(meta.globalVM, meta.graphxCSR, srcLids, dstLids, srcOids, dstOids)
-        Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, graphStructure, meta.vineyardClient, edatas))
+        Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, graphStructure, meta.vineyardClient, meta.edataArray))
       }
       else Iterator.empty
     }).cache()

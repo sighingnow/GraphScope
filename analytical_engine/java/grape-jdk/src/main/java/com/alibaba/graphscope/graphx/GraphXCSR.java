@@ -15,7 +15,7 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_GRAPHX_CSR_H)
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.GS_GRAPHX_CSR)
-public interface GraphXCSR<VID_T,ED_T> extends FFIPointer {
+public interface GraphXCSR<VID_T> extends FFIPointer {
     long id();
 
     @FFINameAlias("GetInDegree")
@@ -47,9 +47,6 @@ public interface GraphXCSR<VID_T,ED_T> extends FFIPointer {
 
     @FFINameAlias("GetIEOffset")
     long getIEOffset(long ind);
-
-    @FFINameAlias("GetEdataArray")
-    @CXXReference ImmutableTypedArray<ED_T> getEdataArray();
 
     @FFINameAlias("GetOEOffsetArray")
     @CXXReference @FFITypeAlias("gs::graphx::ImmutableTypedArray<int64_t>") ImmutableTypedArray<Long> getOEOffsetsArray();

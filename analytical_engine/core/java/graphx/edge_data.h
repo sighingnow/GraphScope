@@ -73,10 +73,6 @@ class EdgeData : public vineyard::Registered<EdgeData<VID_T, ED_T>> {
 
   ED_T GetEdgeDataByEid(const eid_t& eid) { return edatas_accessor_[eid]; }
 
-  ED_T GetEdgeDataByOffset(const uint64_t& offset) {
-    return edatas_accessor_[offset];
-  }
-
   eid_t GetEdgeNum() { return edge_num_; }
 
   graphx::ImmutableTypedArray<edata_t>& GetEdataArray() {
@@ -127,10 +123,6 @@ class EdgeData<VID_T, std::string>
 
   arrow::util::string_view GetEdgeDataByEid(const eid_t& eid) {
     return edatas_->GetView(eid);
-  }
-
-  arrow::util::string_view GetEdgeDataByOffset(const uint64_t& v) {
-    return edatas_->GetView(v);
   }
 
   eid_t GetEdgeNum() { return edge_num_; }
