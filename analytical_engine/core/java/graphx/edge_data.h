@@ -65,10 +65,10 @@ class EdgeData : public vineyard::Registered<EdgeData<VID_T, ED_T>> {
     vineyard_array.Construct(meta.GetMemberMeta("edatas"));
     edatas_ = vineyard_array.GetArray();
 
-    CHECK_EQ(edatas_->length(), edge_num);
+    CHECK_EQ(edatas_->length(), edge_num_);
 
     edatas_accessor_.Init(edatas_);
-    LOG(INFO) << "Finish construct edge data, edge num: " << edge_num;
+    LOG(INFO) << "Finish construct edge data, edge num: " << edge_num_;
   }
 
   ED_T GetEdgeDataByEid(const eid_t& eid) { return edatas_accessor_[eid]; }
@@ -144,6 +144,7 @@ template <typename VID_T, typename ED_T>
 class EdgeDataBuilder : public vineyard::ObjectBuilder {
   using vid_t = VID_T;
   using edata_t = ED_T;
+  using eid_t = uint64_t;
   using edata_array_builder_t =
       typename vineyard::ConvertToArrowType<edata_t>::BuilderType;
   using edata_array_t =
@@ -218,7 +219,7 @@ class EdgeDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
     this->edge_num_ = edge_num;
     edata_array_builder_t builder;
     LOG(INFO) << "edata buffer has " << edata_buffer.size() << " bytes";
-    builder.Reserve(edge_num);
+    builder.Reserve(edge_num_);
     builder.ReserveData(edata_buffer.size());
     const char* ptr = edata_buffer.data();
     for (auto len : lengths) {

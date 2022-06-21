@@ -81,7 +81,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T>> {
 
   static std::unique_ptr<vineyard::Object> Create() __attribute__((used)) {
     return std::static_pointer_cast<vineyard::Object>(
-        std::unique_ptr<GraphXCSR<VID_T, ED_T>>{new GraphXCSR<VID_T, ED_T>()});
+        std::unique_ptr<GraphXCSR<VID_T>>{new GraphXCSR<VID_T>()});
   }
 
   int64_t GetInDegree(vid_t lid) {
@@ -299,8 +299,8 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
     ENSURE_NOT_SEALED(this);
     VINEYARD_CHECK_OK(this->Build(client));
 
-    auto graphx_csr = std::make_shared<GraphXCSR<vid_t, edata_t>>();
-    graphx_csr->meta_.SetTypeName(type_name<GraphXCSR<vid_t, edata_t>>());
+    auto graphx_csr = std::make_shared<GraphXCSR<vid_t>>();
+    graphx_csr->meta_.SetTypeName(type_name<GraphXCSR<vid_t>>());
 
     size_t nBytes = 0;
     graphx_csr->ie_offsets_ = ie_offsets.GetArray();

@@ -83,6 +83,7 @@ gs::GraphXVertexMap<int64_t, uint64_t> TestGraphXVertexMap(
     vineyard::Client& client) {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
+
   if (comm_spec.worker_num() != 2) {
     LOG(FATAL) << "Expect worker num == 2";
   }
@@ -120,9 +121,10 @@ gs::GraphXVertexMap<int64_t, uint64_t> TestGraphXVertexMap(
 
 vineyard::ObjectID TestGraphXCSR(
     vineyard::Client& client, gs::GraphXVertexMap<int64_t, uint64_t>& graphx_vm,
-    arrow::Int64Builder srcBuilder, arrow::Int64Builder dstBuilder) {
+    arrow::Int64Builder& srcBuilder, arrow::Int64Builder& dstBuilder) {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
+
   vineyard::ObjectID csr_id;
   {
     gs::BasicGraphXCSRBuilder<int64_t, uint64_t> builder(client);
@@ -171,9 +173,9 @@ vineyard::ObjectID TestGraphXEdgeData(vineyard::Client& client,
   vineyard::ObjectID id;
   {
     gs::EdgeDataBuilder<uint64_t, int64_t> builder;
-    builder.init(edata_builder);
+    builder.Init(edata_builder);
     auto ed = builder.MySeal(client);
-    id = vd->id();
+    id = ed->id();
   }
 
   std::shared_ptr<gs::EdgeData<uint64_t, int64_t>> ed =
@@ -199,8 +201,10 @@ void TestGraphXFragment(vineyard::Client& client, vineyard::ObjectID vm_id,
 
 boost::leaf::result<void> generateData(arrow::Int64Builder& srcBuilder,
                                        arrow::Int64Builder& dstBuilder,
-                                       arrow::Int64Builder& edataBuilder,
-                                       grape::CommSpec& comm_spec) {
+                                       arrow::Int64Builder& edataBuilder) {
+  grape::CommSpec comm_spec;
+  comm_spec.Init(MPI_COMM_WORLD);
+
   // if (comm_spec.worker_id() == 0) {
   ARROW_OK_OR_RAISE(srcBuilder.Reserve(6));
   ARROW_OK_OR_RAISE(dstBuilder.Reserve(6));
@@ -247,6 +251,10 @@ void Init() {
   comm_spec.Init(MPI_COMM_WORLD);
 }
 
+void Finialize(){ 
+  grape::FinalizeMPIComm();
+}
+
 int main(int argc, char* argv[]) {
   FLAGS_stderrthreshold = 0;
   google::InitGoogleLogging("graphx_test");
@@ -258,7 +266,7 @@ int main(int argc, char* argv[]) {
 
   arrow::Int64Builder srcBuilder, dstBuilder;
   arrow::Int64Builder edataBuilder;
-  generateData(srcBuilder, dstBuilder, edataBuilder, comm_spec);
+  generateData(srcBuilder, dstBuilder, edataBuilder);
 
   // TestLocalVertexMap(client);
   auto graphx_vm = TestGraphXVertexMap(client);
@@ -268,7 +276,6 @@ int main(int argc, char* argv[]) {
   TestGraphXFragment(client, graphx_vm.id(), csr_id, vdata_id, edata_id);
   VLOG(1) << "Finish Querying.";
 
-  grape::FinalizeMPIComm();
   google::ShutdownGoogleLogging();
   return 0;
 }
