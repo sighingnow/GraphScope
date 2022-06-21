@@ -847,28 +847,32 @@ import com.alibaba.fastffi.FFIGenBatch;
                       java = {
                           "com.alibaba.graphscope.fragment.GraphXStringEDFragment<java.lang.Long,java.lang.Long,java.lang.Double,com.alibaba.fastffi.impl.CXXStdString>",
                           "Long"}),
+                  @CXXTemplate(
+                      cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,int32_t,std::string>", "int64_t"},
+                      java = {
+                          "com.alibaba.graphscope.fragment.GraphXStringEDFragment<java.lang.Long,java.lang.Long,java.lang.Integer,com.alibaba.fastffi.impl.CXXStdString>",
+                          "Long"}),
+                  @CXXTemplate(
+                      cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,std::string,int32_t>", "int64_t"},
+                      java = {
+                          "com.alibaba.graphscope.fragment.GraphXStringVDFragment<java.lang.Long,java.lang.Long,com.alibaba.fastffi.impl.CXXStdString,java.lang.Integer>",
+                          "Long"}),
+                  @CXXTemplate(
+                      cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,std::string,int64_t>", "int64_t"},
+                      java = {
+                          "com.alibaba.graphscope.fragment.GraphXStringVDFragment<java.lang.Long,java.lang.Long,com.alibaba.fastffi.impl.CXXStdString,java.lang.Long>",
+                          "Long"}),
+                  @CXXTemplate(
+                      cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,std::string,double>", "int64_t"},
+                      java = {
+                          "com.alibaba.graphscope.fragment.GraphXStringVDFragment<java.lang.Long,java.lang.Long,com.alibaba.fastffi.impl.CXXStdString,java.lang.Double>",
+                          "Long"}),
+                  @CXXTemplate(
+                      cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,std::string,std::string>", "int64_t"},
+                      java = {
+                          "com.alibaba.graphscope.fragment.GraphXStringVEDFragment<java.lang.Long,java.lang.Long,com.alibaba.fastffi.impl.CXXStdString,com.alibaba.fastffi.impl.CXXStdString>",
+                          "Long"}),
               }),
-          //            @FFIGen(
-          //                    type =
-          //                    "com.alibaba.graphscope.context.ffi.FFIVertexPropertyContext",
-          //                    templates = {
-          //                        @CXXTemplate(
-          //                                cxx = {
-          //                                    ARROW_PROJECTED_FRAGMENT +
-          //                                    "<int64_t,uint64_t,double,int64_t>"
-          //                                },
-          //                                java = {
-          //                                    "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Double,java.lang.Long>"
-          //                                }),
-          //                        @CXXTemplate(
-          //                                cxx = {
-          //                                    ARROW_PROJECTED_FRAGMENT +
-          //                                    "<int64_t,uint64_t,int64_t,int64_t>"
-          //                                },
-          //                                java = {
-          //                                    "com.alibaba.graphscope.fragment.ArrowProjectedFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Long>"
-          //                                })
-          //                    }),
           @FFIGen(
               type = "com.alibaba.graphscope.parallel.DefaultMessageManager",
               functionTemplates =
