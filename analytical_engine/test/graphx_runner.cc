@@ -132,6 +132,21 @@ int main(int argc, char* argv[]) {
   } else if (std::strcmp(FLAGS_vd_class.c_str(), "std::string") == 0 &&
              std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
     gs::Run<int64_t, uint64_t, std::string, int64_t>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "std::string") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "int32_t") == 0) {
+    gs::Run<int64_t, uint64_t, std::string, int32_t>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "int32_t") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "std::string") == 0) {
+    gs::Run<int64_t, uint64_t, int32_t, std::string>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "std::string") == 0) {
+    gs::Run<int64_t, uint64_t, int64_t, std::string>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "double") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "std::string") == 0) {
+    gs::Run<int64_t, uint64_t, double, std::string>(params);
+  } else if (std::strcmp(FLAGS_vd_class.c_str(), "std::string") == 0 &&
+             std::strcmp(FLAGS_ed_class.c_str(), "std::string") == 0) {
+    gs::Run<int64_t, uint64_t, std::string, std::string>(params);
   } else {
     LOG(ERROR) << "current not supported: " << FLAGS_vd_class << ", "
                << FLAGS_ed_class;
