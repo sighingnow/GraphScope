@@ -21,7 +21,7 @@ class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val vdAr
 
   override def vineyardID: Long = {
     if (vertexDataV6dId == 0) {
-      GrapeUtils.array2ArrowArray[VD](vdArray, client)
+      vertexDataV6dId = GrapeUtils.array2ArrowArray[VD](vdArray, client)
     }
     vertexDataV6dId
   }
