@@ -91,20 +91,26 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
           }
           val edId = GrapeUtils.array2ArrowArray[ED](newArray,ePart.client)
 
+          logger.info(s"vm id ${vmId}, csr id ${csrId}, vd id ${vdId}, ed id ${edId}")
+
           var fragId = null.asInstanceOf[Long]
           if (GrapeUtils.isPrimitive[VD] && GrapeUtils.isPrimitive[ED]){
+            logger.info("VD and ED both primitive")
             val fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD, ED](ePart.client, vmId, csrId, vdId,edId)
             fragId = fragBuilder.seal(ePart.client).get().id()
           }
           else if (GrapeUtils.isPrimitive[VD]){
+            logger.info("only vd primitive")
             val fragBuilder = ScalaFFIFactory.newGraphXStringEDFragmentBuilder[VD](ePart.client, vmId, csrId, vdId, edId)
             fragId = fragBuilder.seal(ePart.client).get().id()
           }
           else if (GrapeUtils.isPrimitive[ED]){
+            logger.info("only ed primitive")
             val fragBuilder = ScalaFFIFactory.newGraphXStringVDFragmentBuiler[ED](ePart.client, vmId, csrId, vdId,edId)
             fragId = fragBuilder.seal(ePart.client).get().id()
           }
           else {
+            logger.info("vd and ed are both complex")
             val fragBuilder = ScalaFFIFactory.newGraphXStringVEDFragmentBuilder(ePart.client, vmId, csrId, vdId, edId)
             fragId = fragBuilder.seal(ePart.client).get().id()
           }

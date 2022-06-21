@@ -124,7 +124,7 @@ object GrapeUtils extends Logging{
       objectOutputStream.flush()
       ffiByteVectorOutput.finishSetting()
       val writenBytes = ffiByteVectorOutput.bytesWriten()
-      log.info(s"write vertex data ${limit} of type ${GrapeUtils.getRuntimeClass[T].getName}, writen bytes ${writenBytes}")
+      log.info(s"write data array ${limit} of type ${GrapeUtils.getRuntimeClass[T].getName}, writen bytes ${writenBytes}")
       val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder()
       newVdataBuilder.init(size, ffiByteVectorOutput.getVector, ffiOffset)
       newVdataBuilder.seal(client).get().id()
