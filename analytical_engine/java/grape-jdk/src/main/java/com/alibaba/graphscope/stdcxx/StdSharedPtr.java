@@ -29,7 +29,8 @@ import com.alibaba.graphscope.utils.JNILibraryName;
 @CXXHead(CppHeaderName.ARROW_FRAGMENT_H)
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias("std::shared_ptr")
-@CXXTemplate(cxx = "gs::VertexData<uint64_t,std::string>", java = "com.alibaba.graphscope.graphx.StringVertexData")
+//@CXXTemplate(cxx = "gs::VertexData<uint64_t,std::string>", java = "com.alibaba.graphscope.graphx.StringVertexData")
+//@CXXTemplate(cxx = "gs::EdgeData<uint64_t,std::string>", java = "com.alibaba.graphscope.graphx.StringEdgeData")
 public interface StdSharedPtr<T extends FFIPointer> extends FFIPointer {
     // & will return the pointer of T.
     // shall be cxxvalue?

@@ -16,13 +16,13 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_VERTEX_DATA_H)
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.GS_STRING_VERTEX_DATA)
-public interface StringVertexData extends FFIPointer {
+public interface StringVertexData<VID,T> extends FFIPointer {
     long id();
     /**
      * Could contain outer vertices data
      * @return nums
      */
-    @FFINameAlias("VerticesNum") Long verticesNum();
+    @FFINameAlias("VerticesNum") VID verticesNum();
 
     @FFINameAlias("GetVdataArray") @CXXReference @FFITypeAlias("gs::graphx::ImmutableTypedArray<std::string>") StringTypedArray getVdataArray();
 

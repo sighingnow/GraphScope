@@ -2,7 +2,9 @@ package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
+import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.HashPartitioner
+import org.apache.spark.graphx.impl.GrapeUtils.getRuntimeClass
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
 import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
 import org.slf4j.{Logger, LoggerFactory}
@@ -59,6 +61,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   def numEdges: Long = edges.count()
 
+
   lazy val fragmentIds : RDD[String] = {
     edges.grapePartitionsRDD.zipPartitions(vertices.grapePartitionsRDD) { (edgeIter, vertexIter) => {
       val ePart = edgeIter.next()
@@ -67,36 +70,42 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         case casted: GraphXGraphStructure =>
           val vmId = casted.vm.id() //vm id will never change
 
-          val edataBuilder = ScalaFFIFactory.newArrowArrayBuilder[ED](GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]])
-          val numEdges = ePart.edatas.size()
-          //FIXME: edata in order of offset or eid
-          edataBuilder.reserve(numEdges)
-          var i = 0
-          while (i < numEdges) {
-            edataBuilder.unsafeAppend(ePart.edatas.get(i))
-            i += 1
-          }
 //          val newCSR = mapOldCSRToNewCSR(casted.csr, edataBuilder, ePart.client)
           val csrId = casted.csr.id()
 
           val vdId = vPart.vertexData.vineyardID
 
-//          var fragBuilder = null.asInstanceOf[GraphXFragmentBuilder[Long,Long,_,_]]
+          val nbr = casted.csr.getOEBegin(0)
+          val initAddress = nbr.getAddress
+          val oldArray = ePart.edatas
+          //First swap according to eids
+          var i = 0
+          nbr.setAddress(initAddress - 16)
+          val size = oldArray.size()
+          val newArray = PrimitiveArray.create(getRuntimeClass[ED], size).asInstanceOf[PrimitiveArray[ED]]
+          while (i < size){
+            nbr.addV(16)
+            val eid = nbr.eid()
+            newArray.set(eid, oldArray.get(i))
+            i += 1
+          }
+          val edId = GrapeUtils.array2ArrowArray[ED](newArray,ePart.client)
+
           var fragId = null.asInstanceOf[Long]
           if (GrapeUtils.isPrimitive[VD] && GrapeUtils.isPrimitive[ED]){
-            val fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD, ED](ePart.client, vmId, csrId, vdId)
+            val fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD, ED](ePart.client, vmId, csrId, vdId,edId)
             fragId = fragBuilder.seal(ePart.client).get().id()
           }
           else if (GrapeUtils.isPrimitive[VD]){
-            val fragBuilder = ScalaFFIFactory.newGraphXStringEDFragmentBuilder[VD](ePart.client, vmId, csrId, vdId)
+            val fragBuilder = ScalaFFIFactory.newGraphXStringEDFragmentBuilder[VD](ePart.client, vmId, csrId, vdId, edId)
             fragId = fragBuilder.seal(ePart.client).get().id()
           }
           else if (GrapeUtils.isPrimitive[ED]){
-            val fragBuilder = ScalaFFIFactory.newGraphXStringVDFragmentBuiler[ED](ePart.client, vmId, csrId, vdId)
+            val fragBuilder = ScalaFFIFactory.newGraphXStringVDFragmentBuiler[ED](ePart.client, vmId, csrId, vdId,edId)
             fragId = fragBuilder.seal(ePart.client).get().id()
           }
           else {
-            val fragBuilder = ScalaFFIFactory.newGraphXStringVEDFragmentBuilder(ePart.client, vmId, csrId,vmId)
+            val fragBuilder = ScalaFFIFactory.newGraphXStringVEDFragmentBuilder(ePart.client, vmId, csrId,vmId, edId)
             fragId = fragBuilder.seal(ePart.client).get().id()
           }
           logger.info(s"Got built frag: ${fragId}")

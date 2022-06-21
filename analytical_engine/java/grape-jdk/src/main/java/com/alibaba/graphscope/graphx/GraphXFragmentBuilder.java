@@ -25,6 +25,6 @@ public interface GraphXFragmentBuilder<OID_T, VID_T, VD_T, ED_T> extends FFIPoin
     interface Factory<OID_T, VID_T, VD_T, ED_T> {
 
         GraphXFragmentBuilder<OID_T, VID_T, VD_T, ED_T> create(
-            @CXXReference VineyardClient vineyardClient, long vmId, long csrId, long vdataId);
+            @CXXReference VineyardClient vineyardClient, long vmId, long csrId, long vdataId, long edataId);
     }
 }

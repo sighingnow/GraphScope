@@ -14,7 +14,7 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_EDGE_DATA_H)
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.GS_STRING_EDGE_DATA)
-public interface StringEdgeData extends FFIPointer {
+public interface StringEdgeData<VID,T> extends FFIPointer {
     long id();
     /**
      * Could contain outer vertices data

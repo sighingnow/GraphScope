@@ -19,6 +19,7 @@ limitations under the License.
 
 #include "arrow/array.h"
 #include "arrow/array/builder_primitive.h"
+#include "core/java/graphx/edge_data.h"
 #include "core/java/graphx/graphx_csr.h"
 #include "core/java/graphx/graphx_fragment.h"
 #include "core/java/graphx/local_vertex_map.h"
@@ -79,8 +80,7 @@ vineyard::ObjectID getLocalVM(vineyard::Client& client,
   return vmap_id;
 }
 
-
-vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
+void TestGraphXVertexData(vineyard::Client& client) {
   vineyard::ObjectID id;
   {
     gs::VertexDataBuilder<uint64_t, std::string> builder;
@@ -111,19 +111,40 @@ vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
   for (auto i = 0; i < 5; ++i) {
     LOG(INFO) << "[" << i << "]" << (*(ptr + i));
   }
-  return vd->id();
 }
 
-// void TestGraphXFragment(vineyard::Client& client, vineyard::ObjectID vm_id,
-//                         vineyard::ObjectID csr_id,
-//                         vineyard::ObjectID vdata_id) {
-//   gs::GraphXFragmentBuilder<int64_t, uint64_t, int64_t, int64_t> builder(
-//       client, vm_id, csr_id, vdata_id);
-//   auto res = std::dynamic_pointer_cast<
-//       gs::GraphXFragment<int64_t, uint64_t, int64_t, int64_t>>(
-//       builder.Seal(client));
-//   LOG(INFO) << "Succesfully construct fragment: " << res->id();
-// }
+void TestGraphXEdgeData(vineyard::Client& client) {
+  vineyard::ObjectID id;
+  {
+    gs::EdgeDataBuilder<uint64_t, std::string> builder;
+    std::vector<char> buffer;
+    std::vector<int32_t> offsets{sizeof(int32_t) * 3, sizeof(int32_t) * 2};
+    std::vector<int32_t> values{1, 2, 3, 4, 5};
+    buffer.resize(sizeof(int32_t) * 5);
+    memcpy(buffer.data(), values.data(), sizeof(int32_t) * 5);
+    for (auto i = 0; i < 20; ++i) {
+      LOG(INFO) << "ind: " << i << (int) buffer[i];
+    }
+    builder.Init(2, buffer, offsets);
+
+    auto ed = builder.MySeal(client);
+    id = ed->id();
+  }
+
+  std::shared_ptr<gs::EdgeData<uint64_t, std::string>> ed =
+      std::dynamic_pointer_cast<gs::EdgeData<uint64_t, std::string>>(
+          client.GetObject(id));
+  LOG(INFO) << "edge_num: " << vd->GetEdgeNum();
+  auto edArray = ed->GetEdataArray();
+  LOG(INFO) << "ed length: " << edArray.GetLength();
+  auto vec = edArray.GetRawBytes();
+  LOG(INFO) << "vd raw bytes: " << vec.size();
+  CHECK(vec.size() == 20);
+  int32_t* ptr = reinterpret_cast<int32_t*>(vec.data());
+  for (auto i = 0; i < 5; ++i) {
+    LOG(INFO) << "[" << i << "]" << (*(ptr + i));
+  }
+}
 
 boost::leaf::result<void> generateData(arrow::Int64Builder& srcBuilder,
                                        arrow::Int64Builder& dstBuilder,
@@ -187,7 +208,8 @@ int main(int argc, char* argv[]) {
   // TestLocalVertexMap(client);
   // auto graphx_vm = TestGraphXVertexMap(client);
   // auto csr_id = TestGraphXCSR(client, graphx_vm);
-  auto vdata_id = TestGraphXVertexData(client);
+  TestGraphXVertexData(client);
+  TestGraphXEdgeData(client);
   //   TestGraphXFragment(client, graphx_vm.id(), csr_id, vdata_id);
   VLOG(1) << "Finish Querying.";
 

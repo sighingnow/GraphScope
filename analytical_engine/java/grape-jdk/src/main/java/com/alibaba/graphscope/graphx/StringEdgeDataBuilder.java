@@ -14,20 +14,20 @@ import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
 
 @FFIGen(library = "grape-jni")
-@CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_VERTEX_DATA_H)
-@FFITypeAlias(CppClassName.GS_STRING_VERTEX_DATA_BUILDER)
-public interface StringEdgeDataBuilder extends FFIPointer {
+@CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_EDGE_DATA_H)
+@FFITypeAlias(CppClassName.GS_STRING_EDGE_DATA_BUILDER)
+public interface StringEdgeDataBuilder<VID,T> extends FFIPointer {
 
     @FFINameAlias("Init")
     void init(long edgeNum, @CXXReference @FFITypeAlias("std::vector<char>") StdVector<Byte> vector,
         @CXXReference @FFITypeAlias("std::vector<int32_t>") StdVector<Integer> length);
 
     @FFINameAlias("MySeal")
-    @CXXValue @FFITypeAlias("std::shared_ptr<gs::EdgeData<uint64_t,std::string>>") StdSharedPtr<StringEdgeData> seal(@CXXReference VineyardClient client);
+    @CXXValue StdSharedPtr<StringEdgeData<VID,T>> seal(@CXXReference VineyardClient client);
 
     @FFIFactory
-    interface Factory {
+    interface Factory<VID,T> {
 
-        StringEdgeDataBuilder create();
+        StringEdgeDataBuilder<VID,T> create();
     }
 }

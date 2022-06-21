@@ -16,18 +16,18 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @FFIGen(library = "grape-jni")
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_VERTEX_DATA_H)
 @FFITypeAlias(CppClassName.GS_STRING_VERTEX_DATA_BUILDER)
-public interface StringVertexDataBuilder extends FFIPointer {
+public interface StringVertexDataBuilder<VID,T> extends FFIPointer {
 
     @FFINameAlias("Init")
     void init(long frag_vnums, @CXXReference @FFITypeAlias("std::vector<char>") StdVector<Byte> vector,
         @CXXReference @FFITypeAlias("std::vector<int32_t>") StdVector<Integer> length);
 
     @FFINameAlias("MySeal")
-    @CXXValue @FFITypeAlias("std::shared_ptr<gs::VertexData<uint64_t,std::string>>") StdSharedPtr<StringVertexData> seal(@CXXReference VineyardClient client);
+    @CXXValue StdSharedPtr<StringVertexData<VID,T>> seal(@CXXReference VineyardClient client);
 
     @FFIFactory
-    interface Factory {
+    interface Factory<VID,T> {
 
-        StringVertexDataBuilder create();
+        StringVertexDataBuilder<VID,T> create();
     }
 }

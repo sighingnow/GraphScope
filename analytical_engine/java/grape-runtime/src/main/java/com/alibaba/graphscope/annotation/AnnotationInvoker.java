@@ -92,7 +92,21 @@ import com.alibaba.fastffi.FFIGenBatch;
                     , @CXXTemplate(cxx = {"uint64_t", "int32_t"}, java = {"Long", "Integer"}),
                         @CXXTemplate(cxx = {"uint64_t", "double"}, java = {"Long", "Double"}),
                   }),
-          @FFIGen(type = "com.alibaba.graphscope.graphx.StringVertexData"),
+        @FFIGen(type = "com.alibaba.graphscope.graphx.EdgeData",
+            templates =
+                {
+                    @CXXTemplate(cxx = {"uint64_t", "int64_t"}, java = {"Long", "Long"})
+                    , @CXXTemplate(cxx = {"uint64_t", "int32_t"}, java = {"Long", "Integer"}),
+                    @CXXTemplate(cxx = {"uint64_t", "double"}, java = {"Long", "Double"}),
+                }),
+          @FFIGen(type = "com.alibaba.graphscope.graphx.StringVertexData",
+              templates = {
+              @CXXTemplate(cxx = {"uint64_t", "std::string"}, java = {"Long", "com.alibaba.fastffi.impl.CXXStdString"})}
+          ),
+        @FFIGen(type = "com.alibaba.graphscope.graphx.StringEdgeData",
+            templates = {
+            @CXXTemplate(cxx = {"uint64_t", "std::string"}, java = {"Long", "com.alibaba.fastffi.impl.CXXStdString"})}
+        ),
           @FFIGen(type = "com.alibaba.graphscope.graphx.GraphXCSR",
                   templates =
                   {
@@ -239,7 +253,7 @@ import com.alibaba.fastffi.FFIGenBatch;
                             "com.alibaba.graphscope.graphx.VertexData<java.lang.Long,java.lang.Double>",
                         include = @CXXHead(CORE_JAVA_GRAPHX_VERTEX_DATA_H)),
                     @CXXTemplate(cxx = "gs::VertexData<uint64_t,std::string>",
-                                 java = "com.alibaba.graphscope.graphx.StringVertexData",
+                                 java = "com.alibaba.graphscope.graphx.StringVertexData<java.lang.Long,com.alibaba.fastffi.impl.CXXStdString>",
                                  include = @CXXHead(CORE_JAVA_GRAPHX_VERTEX_DATA_H)),
                   @CXXTemplate(
                       cxx = "gs::EdgeData<uint64_t,int64_t>",
@@ -257,7 +271,7 @@ import com.alibaba.fastffi.FFIGenBatch;
                           "com.alibaba.graphscope.graphx.EdgeData<java.lang.Long,java.lang.Double>",
                       include = @CXXHead(CORE_JAVA_GRAPHX_EDGE_DATA_H)),
                   @CXXTemplate(cxx = "gs::EdgeData<uint64_t,std::string>",
-                      java = "com.alibaba.graphscope.graphx.StringEdgeData",
+                      java = "com.alibaba.graphscope.graphx.StringEdgeData<java.lang.Long,com.alibaba.fastffi.impl.CXXStdString>",
                       include = @CXXHead(CORE_JAVA_GRAPHX_EDGE_DATA_H)),
                     @CXXTemplate(
                         cxx = "gs::GraphXFragment<int64_t,uint64_t,int64_t,int64_t>",
@@ -388,8 +402,14 @@ import com.alibaba.fastffi.FFIGenBatch;
                     , @CXXTemplate(cxx = {"uint64_t", "int64_t"}, java = {"Long", "Long"}),
                     @CXXTemplate(cxx = {"uint64_t", "double"}, java = {"Long", "Double"})
                 }),
-          @FFIGen(type = "com.alibaba.graphscope.graphx.StringVertexDataBuilder"),
-            @FFIGen(type = "com.alibaba.graphscope.graphx.StringEdgeDataBuilder"),
+          @FFIGen(type = "com.alibaba.graphscope.graphx.StringVertexDataBuilder",
+          templates = {
+              @CXXTemplate(cxx = {"uint64_t", "std::string"}, java = {"Long", "com.alibaba.fastffi.impl.CXXStdString"})
+          }),
+            @FFIGen(type = "com.alibaba.graphscope.graphx.StringEdgeDataBuilder",
+                templates = {
+                    @CXXTemplate(cxx = {"uint64_t", "std::string"}, java = {"Long", "com.alibaba.fastffi.impl.CXXStdString"})
+                }),
           @FFIGen(type = "com.alibaba.graphscope.graphx.GraphXVertexMapGetter",
                   templates =
                   {

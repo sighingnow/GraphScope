@@ -4,7 +4,7 @@ import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, ArrowProjectedFragmentMapper, GraphXStringEDFragment, GraphXStringVEDFragment, IFragment}
-import com.alibaba.graphscope.graphx.{ArrowProjectedFragmentGetter, BasicGraphXCSRBuilder, BasicLocalVertexMapBuilder, GraphXFragmentBuilder, GraphXVertexMapGetter, LocalVertexMap, StringEDGraphXFragmentBuilder, StringVDGraphXFragmentBuilder, StringVEDGraphXFragmentBuilder, StringVertexDataBuilder, VertexDataBuilder, VineyardClient}
+import com.alibaba.graphscope.graphx.{ArrowProjectedFragmentGetter, BasicGraphXCSRBuilder, BasicLocalVertexMapBuilder, GraphXFragmentBuilder, GraphXVertexMapGetter, LocalVertexMap, StringEDGraphXFragmentBuilder, StringEdgeDataBuilder, StringVDGraphXFragmentBuilder, StringVEDGraphXFragmentBuilder, StringVertexDataBuilder, VertexDataBuilder, VineyardClient}
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.internal.Logging
 
@@ -69,9 +69,15 @@ object ScalaFFIFactory extends Logging{
     factory.create()
   }
 
-  def newStringVertexDataBuilder() : StringVertexDataBuilder = {
-    val factory = FFITypeFactory.getFactory(classOf[StringVertexDataBuilder],
-      "gs::VertexDataBuilder<uint64_t,std::string>").asInstanceOf[StringVertexDataBuilder.Factory]
+  def newStringVertexDataBuilder() : StringVertexDataBuilder[Long,String] = {
+    val factory = FFITypeFactory.getFactory(classOf[StringVertexDataBuilder[Long,String]],
+      "gs::VertexDataBuilder<uint64_t,std::string>").asInstanceOf[StringVertexDataBuilder.Factory[Long,String]]
+    factory.create()
+  }
+
+  def newStringEdgeDataBuilder() : StringEdgeDataBuilder[Long,String] = {
+    val factory = FFITypeFactory.getFactory(classOf[StringEdgeDataBuilder[Long,String]],
+      "gs::EdgeDataBuilder<uint64_t,std::string>").asInstanceOf[StringEdgeDataBuilder.Factory[Long,String]]
     factory.create()
   }
 
@@ -81,29 +87,29 @@ object ScalaFFIFactory extends Logging{
     }
   }
 
-  def newGraphXFragmentBuilder[VD : ClassTag,ED : ClassTag](client : VineyardClient, vmId : Long, csrId : Long, vdId : Long) : GraphXFragmentBuilder[Long,Long,VD,ED] = {
+  def newGraphXFragmentBuilder[VD : ClassTag,ED : ClassTag](client : VineyardClient, vmId : Long, csrId : Long, vdId : Long, edId : Long) : GraphXFragmentBuilder[Long,Long,VD,ED] = {
     require(GrapeUtils.isPrimitive[VD] && GrapeUtils.isPrimitive[ED])
     val factory = FFITypeFactory.getFactory(classOf[GraphXFragmentBuilder[Long,Long,VD,ED]], "gs::GraphXFragmentBuilder<int64_t,uint64_t," +
         GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[VD]) + "," + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[ED]) + ">").asInstanceOf[GraphXFragmentBuilder.Factory[Long,Long,VD,ED]]
-    factory.create(client, vmId, csrId,vdId)
+    factory.create(client, vmId, csrId,vdId,edId)
   }
 
-  def newGraphXStringVDFragmentBuiler[ED : ClassTag](client : VineyardClient, vmId : Long, csrId : Long, vdId : Long) : StringVDGraphXFragmentBuilder[Long,Long,String,ED] = {
+  def newGraphXStringVDFragmentBuiler[ED : ClassTag](client : VineyardClient, vmId : Long, csrId : Long, vdId : Long,edId : Long) : StringVDGraphXFragmentBuilder[Long,Long,String,ED] = {
     require(GrapeUtils.isPrimitive[ED])
     val factory = FFITypeFactory.getFactory(classOf[StringVDGraphXFragmentBuilder[Long,Long,String,ED]], "gs::GraphXFragmentBuilder<int64_t,uint64_t,std::string," +
         GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[ED]) + ">").asInstanceOf[StringVDGraphXFragmentBuilder.Factory[Long,Long,String,ED]]
-    factory.create(client, vmId, csrId,vdId)
+    factory.create(client, vmId, csrId,vdId,edId)
   }
-  def newGraphXStringEDFragmentBuilder[VD : ClassTag](client : VineyardClient, vmId : Long, csrId : Long, vdId : Long) : StringEDGraphXFragmentBuilder[Long,Long,VD,String] = {
+  def newGraphXStringEDFragmentBuilder[VD : ClassTag](client : VineyardClient, vmId : Long, csrId : Long, vdId : Long,edId : Long) : StringEDGraphXFragmentBuilder[Long,Long,VD,String] = {
     require(GrapeUtils.isPrimitive[VD])
     val factory = FFITypeFactory.getFactory(classOf[StringEDGraphXFragmentBuilder[Long,Long,VD,String]], "gs::GraphXFragmentBuilder<int64_t,uint64_t," +
         GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[VD]) + ",std::string>").asInstanceOf[StringEDGraphXFragmentBuilder.Factory[Long,Long,VD,String]]
-    factory.create(client, vmId, csrId,vdId)
+    factory.create(client, vmId, csrId,vdId,edId)
   }
 
-  def newGraphXStringVEDFragmentBuilder(client : VineyardClient, vmId : Long, csrId : Long, vdId : Long) : StringVEDGraphXFragmentBuilder[Long,Long,String,String] = {
+  def newGraphXStringVEDFragmentBuilder(client : VineyardClient, vmId : Long, csrId : Long, vdId : Long,edId : Long) : StringVEDGraphXFragmentBuilder[Long,Long,String,String] = {
     val factory = FFITypeFactory.getFactory(classOf[StringVEDGraphXFragmentBuilder[Long,Long,String,String]], "gs::GraphXFragmentBuilder<int64_t,uint64_t,std::string,std::string>").asInstanceOf[StringVEDGraphXFragmentBuilder.Factory[Long,Long,String,String]]
-    factory.create(client, vmId, csrId,vdId)
+    factory.create(client, vmId, csrId,vdId,edId)
   }
 
   def newProjectedFragmentMapper[NEW_VD : ClassTag, NEW_ED : ClassTag, OLD_VD, OLD_ED](oldVdClz : Class[OLD_VD], oldEDClz : Class[OLD_ED]) : ArrowProjectedFragmentMapper[Long,Long,OLD_VD,NEW_VD,OLD_ED,NEW_ED] = {

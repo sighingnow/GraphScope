@@ -251,9 +251,7 @@ void Init() {
   comm_spec.Init(MPI_COMM_WORLD);
 }
 
-void Finialize(){ 
-  grape::FinalizeMPIComm();
-}
+void Finalize() { grape::FinalizeMPIComm(); }
 
 int main(int argc, char* argv[]) {
   FLAGS_stderrthreshold = 0;
@@ -275,6 +273,7 @@ int main(int argc, char* argv[]) {
   auto edata_id = TestGraphXEdgeData(client, edataBuilder);
   TestGraphXFragment(client, graphx_vm.id(), csr_id, vdata_id, edata_id);
   VLOG(1) << "Finish Querying.";
+  Finalize();
 
   google::ShutdownGoogleLogging();
   return 0;

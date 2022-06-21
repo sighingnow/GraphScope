@@ -1,10 +1,19 @@
 package org.apache.spark.graphx.impl
 
+import com.alibaba.graphscope.ds.PropertyNbrUnit
+import com.alibaba.graphscope.graphx.VineyardClient
+import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream
+import com.alibaba.graphscope.stdcxx.{FFIIntVector, FFIIntVectorFactory}
+import com.alibaba.graphscope.utils.array.PrimitiveArray
+import org.apache.spark.graphx.utils.ScalaFFIFactory
+import org.apache.spark.internal.Logging
+
+import java.io.ObjectOutputStream
 import java.lang.reflect.Method
 import java.net.{InetAddress, UnknownHostException}
 import scala.reflect.ClassTag
 
-object GrapeUtils {
+object GrapeUtils extends Logging{
 
   def class2Int(value: Class[_]): Int = {
     if (value.equals(classOf[java.lang.Long]) || value.equals(classOf[Long])) {
@@ -78,5 +87,47 @@ object GrapeUtils {
   def dedup(files: Array[String]): Array[String] = {
     val set = files.toSet
     set.toArray
+  }
+
+  def array2ArrowArray[T : ClassTag](array : PrimitiveArray[T], client : VineyardClient) : Long = {
+    val size = array.size()
+    if (GrapeUtils.getRuntimeClass[T].equals(classOf[Long])
+      || GrapeUtils.getRuntimeClass[T].equals(classOf[Double])
+      || GrapeUtils.getRuntimeClass[T].equals(classOf[Int])){
+      val newVdataBuilder = ScalaFFIFactory.newVertexDataBuilder[T]()
+      val arrowArrayBuilder = ScalaFFIFactory.newArrowArrayBuilder[T](GrapeUtils.getRuntimeClass[T].asInstanceOf[Class[T]])
+      arrowArrayBuilder.reserve(size)
+      var i = 0
+      while (i < size) {
+        arrowArrayBuilder.unsafeAppend(array.get(i))
+        i += 1
+      }
+      newVdataBuilder.init(arrowArrayBuilder)
+      newVdataBuilder.seal(client).get().id()
+    }
+    else {
+      val ffiByteVectorOutput = new FFIByteVectorOutputStream()
+      val ffiOffset = FFIIntVectorFactory.INSTANCE.create().asInstanceOf[FFIIntVector]
+      ffiOffset.resize(size)
+      ffiOffset.touch()
+      val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
+      var i = 0
+      val limit = size
+      var prevBytesWritten = 0
+      while (i < limit){
+        objectOutputStream.writeObject(array.get(i))
+        ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
+        prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
+        log.info(s"Writing element ${i}: ${array.get(i).toString} cost ${ffiOffset.get(i)} bytes")
+        i += 1
+      }
+      objectOutputStream.flush()
+      ffiByteVectorOutput.finishSetting()
+      val writenBytes = ffiByteVectorOutput.bytesWriten()
+      log.info(s"write vertex data ${limit} of type ${GrapeUtils.getRuntimeClass[T].getName}, writen bytes ${writenBytes}")
+      val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder()
+      newVdataBuilder.init(size, ffiByteVectorOutput.getVector, ffiOffset)
+      newVdataBuilder.seal(client).get().id()
+    }
   }
 }
