@@ -1,9 +1,9 @@
 package org.apache.spark.graphx
 
 import com.alibaba.fastffi.FFITypeFactory
-import com.alibaba.graphscope.ds.ImmutableTypedArray
+import com.alibaba.graphscope.ds.{ImmutableTypedArray, Vertex}
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
-import com.alibaba.graphscope.utils.MPIUtils
+import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, MPIUtils}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
@@ -147,8 +147,10 @@ object GrapeEdgeRDD extends Logging{
         val srcLids = PrimitiveArray.create(classOf[Long], edgesNum)
         val dstOids = PrimitiveArray.create(classOf[Long], edgesNum)
         val dstLids = PrimitiveArray.create(classOf[Long], edgesNum)
+        val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
         var curLid = 0
         val endLid = meta.globalVM.innerVertexSize()
+        val vm = meta.globalVM
         val oeOffsetsArray: ImmutableTypedArray[Long] = meta.graphxCSR.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
         while (curLid < endLid){
           val curOid = meta.globalVM.getId(curLid)
@@ -159,6 +161,14 @@ object GrapeEdgeRDD extends Logging{
             srcOids.set(j, curOid)
             srcLids.set(j, curLid)
             j += 1
+          }
+          j = startNbrOffset
+          var nbr = meta.graphxCSR.getOEBegin(curLid)
+          while (j < endNbrOffset){
+            dstLids.set(j, nbr.vid())
+            vertex.SetValue(nbr.vid())
+            dstOids.set(j, vm.getId(nbr.vid()))
+            log.info(s"visiting edge ${curLid}->${nbr.vid()}, eid ${nbr.eid()}")
           }
           curLid += 1
         }
