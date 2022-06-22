@@ -85,6 +85,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
           val newArray = PrimitiveArray.create(getRuntimeClass[ED], size).asInstanceOf[PrimitiveArray[ED]]
           while (i < size){
             nbr.addV(16)
+            logger.info(s"iterating edge ${i} total ${size}, cur vid ${nbr.vid()}, cur eid ${nbr.eid()}")
             val eid = nbr.eid()
             newArray.set(eid, oldArray.get(i))
             i += 1
