@@ -15,7 +15,8 @@ import scala.reflect.ClassTag
 
 class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphXCSR[Long],  var srcLids : PrimitiveArray[Long],
                            val dstLids : PrimitiveArray[Long], val srcOids : PrimitiveArray[Long],
-                           val dstOids : PrimitiveArray[Long]) extends GraphStructure with Logging{
+                           val dstOids : PrimitiveArray[Long],
+                           val eids : PrimitiveArray[Long]) extends GraphStructure with Logging{
   val startLid = 0
   val endLid: Long = vm.innerVertexSize()
 
@@ -162,7 +163,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
         override def next() : Edge[ED] = {
           edge.srcId = srcOids.get(offset)
           edge.dstId = dstOids.get(offset)
-          edge.attr = edatas.get(offset)
+          edge.attr = edatas.get(eids.get(offset))
           edge.index = offset
           offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
           edge
@@ -196,7 +197,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
       edgeTriplet.index = offset
       edgeTriplet.srcId = srcOids.get(offset)
       edgeTriplet.dstId = dstOids.get(offset)
-      edgeTriplet.attr = edatas.get(offset)
+      edgeTriplet.attr = edatas.get(eids.get(offset))
       edgeTriplet.srcAttr = vertexDataStore.getData(srcLids.get(offset))
       edgeTriplet.dstAttr = vertexDataStore.getData(dstLids.get(offset))
       offset = activeEdgeSet.nextSetBit(offset.toInt + 1)

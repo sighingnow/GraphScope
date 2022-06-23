@@ -126,6 +126,8 @@ object GrapeEdgeRDD extends Logging{
         meta.setGlobalVM(res.toLong)
         val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId)
         val edatas = meta.edgePartitionBuilder.buildEdataArray(csr)
+        //raw edatas contains all edge datas, i.e. csr edata array.
+        //edatas are out edges edge cache.
         meta.setGlobalVM(vm)
         meta.setCSR(csr)
         meta.setEdataArray(edatas)
@@ -147,6 +149,7 @@ object GrapeEdgeRDD extends Logging{
         val srcLids = PrimitiveArray.create(classOf[Long], edgesNum)
         val dstOids = PrimitiveArray.create(classOf[Long], edgesNum)
         val dstLids = PrimitiveArray.create(classOf[Long], edgesNum)
+        val eids = PrimitiveArray.create(classOf[Long], edgesNum)
         val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
         var curLid = 0
         val endLid = meta.globalVM.innerVertexSize()
@@ -168,13 +171,14 @@ object GrapeEdgeRDD extends Logging{
             dstLids.set(j, nbr.vid())
             vertex.SetValue(nbr.vid())
             dstOids.set(j, vm.getId(nbr.vid()))
+            eids.set(j, nbr.eid())
             log.info(s"visiting edge ${curLid}->${nbr.vid()}, eid ${nbr.eid()}")
           }
           curLid += 1
         }
         val time1 = System.nanoTime()
         log.info(s"[Initializing edge cache in heap cost ]: ${(time1 - time0) / 1000000} ms")
-        val graphStructure = new GraphXGraphStructure(meta.globalVM, meta.graphxCSR, srcLids, dstLids, srcOids, dstOids)
+        val graphStructure = new GraphXGraphStructure(meta.globalVM, meta.graphxCSR, srcLids, dstLids, srcOids, dstOids, eids)
         Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, graphStructure, meta.vineyardClient, meta.edataArray))
       }
       else Iterator.empty

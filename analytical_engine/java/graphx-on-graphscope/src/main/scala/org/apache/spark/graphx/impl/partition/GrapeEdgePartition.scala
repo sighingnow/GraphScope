@@ -267,30 +267,21 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
 
   /** The received edata arrays contains both in edges and out edges, but we only need these out edges's edata array */
   def buildEdataArray(csr : GraphXCSR[Long]) : PrimitiveArray[ED] = {
-    val len = csr.getOutEdgesNum.toInt
+    val len = csr.getOutEdgesNum.toInt + csr.getInEdgesNum.toInt
     val edataArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], len).asInstanceOf[PrimitiveArray[ED]]
     //got all edge data array
-    val allArrays : ArrayBuffer[Array[ED]] = lists.flatMap(_.getArrays._3)
-    //edataArray is indexed with offset, i.e. after sorted.
-    //all arrays are index with eid.
-    val floorMap : java.util.TreeMap[Long,Int] = new util.TreeMap[Long,Int]() //key = eid, value = index of allArrays. use floor
-    var tmp = 0
-    val arrayLengths = new ArrayBuffer[Long]
-    for (ind <- allArrays.indices){
-      floorMap.put(tmp, ind)
-      arrayLengths.+=(tmp)
-      tmp += allArrays(ind).length
-    }
+    val allArrays = lists.flatMap(_.getArrays._3).toArray
+    require(allArrays.map(_.length).sum == len)
     var ind = 0
-    val nbr = csr.getOEBegin(0)
-    while (ind < len){
-      val eid = nbr.eid()
-      val arrInd = floorMap.floorEntry(eid).getValue
-      val localInd = eid - arrayLengths(arrInd)
-      log.info(s"set edata array offset ${ind}, eid ${eid}, array ind ${arrInd}, value ${allArrays(arrInd)(localInd.toInt)}")
-      edataArray.set(ind,allArrays(arrInd)(localInd.toInt))
-      ind += 1
-      nbr.addV(16)
+
+    for (arr <- allArrays){
+      var i = 0
+      val t = arr.length
+      while (i < t){
+        edataArray.set(ind, arr(i))
+        i += 1
+        ind += 1
+      }
     }
     edataArray
   }
