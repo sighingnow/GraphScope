@@ -82,6 +82,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
           var i = 0
           nbr.setAddress(initAddress - 16)
           val size = oldArray.size()
+          logger.info(s"old array size ${size}")
           val newArray = PrimitiveArray.create(getRuntimeClass[ED], size).asInstanceOf[PrimitiveArray[ED]]
           while (i < size){
             nbr.addV(16)
