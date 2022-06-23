@@ -47,6 +47,8 @@ abstract class GrapeVertexRDD[VD](
 
   override def leftZipJoin[VD2: ClassTag, VD3: ClassTag]
   (other: VertexRDD[VD2])(f: (VertexId, VD, Option[VD2]) => VD3): VertexRDD[VD3]
+
+  def syncOuterVertex : GrapeVertexRDD[VD]
 }
 
 object GrapeVertexRDD extends Logging{

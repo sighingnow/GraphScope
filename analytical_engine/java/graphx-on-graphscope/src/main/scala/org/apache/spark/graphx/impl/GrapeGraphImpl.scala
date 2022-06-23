@@ -2,9 +2,6 @@ package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
-import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.HashPartitioner
-import org.apache.spark.graphx.impl.GrapeUtils.getRuntimeClass
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
 import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
 import org.slf4j.{Logger, LoggerFactory}
@@ -63,7 +60,8 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
 
   lazy val fragmentIds : RDD[String] = {
-    edges.grapePartitionsRDD.zipPartitions(vertices.grapePartitionsRDD) { (edgeIter, vertexIter) => {
+    val syncedGrapeVertices = grapeVertices.syncOuterVertex
+    edges.grapePartitionsRDD.zipPartitions(syncedGrapeVertices.grapePartitionsRDD) { (edgeIter, vertexIter) => {
       val ePart = edgeIter.next()
       val vPart = vertexIter.next()
       ePart.graphStructure match {
@@ -238,23 +236,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     //After map vertices, broadcast new inner vertex data to outer vertex data
     var newVertices = vertices
     if (!grapeVertices.outerVertexSynced){
-      logger.info(s"${grapeVertices} is doing outer vertex data sync")
-      val updateMessage = grapeVertices.grapePartitionsRDD.mapPartitions(iter => {
-        if (iter.hasNext){
-          val part = iter.next()
-          part.generateVertexDataMessage
-        }
-        else {
-          Iterator.empty
-        }
-      }).partitionBy(new HashPartitioner(grapeVertices.grapePartitionsRDD.getNumPartitions))
-      val updatedVertexPartition = grapeVertices.grapePartitionsRDD.zipPartitions(updateMessage){
-        (vIter, msgIter) => {
-          val  vpart = vIter.next()
-          Iterator(vpart.updateOuterVertexData(msgIter))
-        }
-      }.cache()
-      newVertices = grapeVertices.withGrapePartitionsRDD(updatedVertexPartition, true)
+      newVertices = grapeVertices.syncOuterVertex
     }
     else {
       logger.info(s"${grapeVertices} has done outer vertex data sync, just go to map triplets")
