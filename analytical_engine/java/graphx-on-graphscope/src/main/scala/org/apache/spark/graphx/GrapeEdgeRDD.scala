@@ -163,7 +163,7 @@ object GrapeEdgeRDD extends Logging{
             j += 1
           }
           j = startNbrOffset
-          var nbr = meta.graphxCSR.getOEBegin(curLid)
+          val nbr = meta.graphxCSR.getOEBegin(curLid)
           while (j < endNbrOffset){
             dstLids.set(j, nbr.vid())
             vertex.SetValue(nbr.vid())
