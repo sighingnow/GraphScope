@@ -78,12 +78,13 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
           val nbr = casted.csr.getOEBegin(0)
           val initAddress = nbr.getAddress
           val oldArray = ePart.edatas
-          //First swap according to eids
+          //old Array only got out edges data, len(oldArray) = oes < frag.edataArray.size = len(newArray) = ies + oes
+          //to update edge data, we only update oes. it is enough, in edges are updated in other fragments.
           var i = 0
           nbr.setAddress(initAddress - 16)
           val size = oldArray.size()
           logger.info(s"old array size ${size}")
-          val newArray = PrimitiveArray.create(getRuntimeClass[ED], size).asInstanceOf[PrimitiveArray[ED]]
+          val newArray = PrimitiveArray.create(getRuntimeClass[ED], (casted.csr.getInEdgesNum + casted.csr.getOutEdgesNum).toInt).asInstanceOf[PrimitiveArray[ED]]
           while (i < size){
             nbr.addV(16)
             logger.info(s"iterating edge ${i} total ${size}, cur vid ${nbr.vid()}, cur eid ${nbr.eid()}")

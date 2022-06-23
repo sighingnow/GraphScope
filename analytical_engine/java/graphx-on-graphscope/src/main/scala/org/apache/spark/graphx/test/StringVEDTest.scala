@@ -21,8 +21,8 @@ object StringVEDTest extends Logging{
     val numPartitions = args(1).toInt;
 
     val graph : Graph[Long,Long] = GraphLoader.edgeListFile(sc, eFilePath, false, numEdgePartitions = numPartitions).mapVertices((id,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).cache()
-    val graph2 = graph.mapVertices((id,vd) => (vd,vd))
-    val graph3 = graph2.mapEdges(edge => (edge.attr,edge.attr))
+    val graph2 = graph.mapVertices((id,vd) => id).mapVertices((id,vd)=>(vd,vd))
+    val graph3 = graph2.mapEdges(edge => (edge.srcId,edge.dstId))
     val res = graph3.pregel((1L,1L), maxIterations = 10)(
       (id, dist, newDist) => {
         log.info(s"visiting vertex ${id}(${dist}), new dist${newDist}")

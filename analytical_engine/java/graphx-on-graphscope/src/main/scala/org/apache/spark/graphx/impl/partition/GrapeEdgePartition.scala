@@ -290,6 +290,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
       log.info(s"set edata array offset ${ind}, eid ${eid}, array ind ${arrInd}, value ${allArrays(arrInd)(localInd.toInt)}")
       edataArray.set(ind,allArrays(arrInd)(localInd.toInt))
       ind += 1
+      nbr.addV(16)
     }
     edataArray
   }
