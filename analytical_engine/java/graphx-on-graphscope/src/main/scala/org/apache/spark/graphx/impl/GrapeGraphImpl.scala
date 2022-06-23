@@ -75,23 +75,23 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
           val vdId = vPart.vertexData.vineyardID
 
-          val nbr = casted.csr.getOEBegin(0)
-          val initAddress = nbr.getAddress
-          val oldArray = ePart.edatas
+//          val nbr = casted.csr.getOEBegin(0)
+//          val initAddress = nbr.getAddress
+//          val oldArray =
           //old Array only got out edges data, len(oldArray) = oes < frag.edataArray.size = len(newArray) = ies + oes
           //to update edge data, we only update oes. it is enough, in edges are updated in other fragments.
-          var i = 0
-          nbr.setAddress(initAddress - 16)
-          val size = oldArray.size()
-          val newArray = PrimitiveArray.create(getRuntimeClass[ED], (casted.csr.getInEdgesNum + casted.csr.getOutEdgesNum).toInt).asInstanceOf[PrimitiveArray[ED]]
-          while (i < size){
-            nbr.addV(16)
-            logger.info(s"iterating edge ${i} total ${size}, cur vid ${nbr.vid()}, cur eid ${nbr.eid()}")
-            val eid = nbr.eid()
-            newArray.set(eid, oldArray.get(i))
-            i += 1
-          }
-          val edId = GrapeUtils.array2ArrowArray[ED](newArray,ePart.client,false)
+//          var i = 0
+//          nbr.setAddress(initAddress - 16)
+//          val size = oldArray.size()
+//          val newArray = PrimitiveArray.create(getRuntimeClass[ED], (casted.csr.getInEdgesNum + casted.csr.getOutEdgesNum).toInt).asInstanceOf[PrimitiveArray[ED]]
+//          while (i < size){
+//            nbr.addV(16)
+//            logger.info(s"iterating edge ${i} total ${size}, cur vid ${nbr.vid()}, cur eid ${nbr.eid()}")
+//            val eid = nbr.eid()
+//            newArray.set(eid, oldArray.get(i))
+//            i += 1
+//          }
+          val edId = GrapeUtils.array2ArrowArray[ED](ePart.edatas,ePart.client,false)
 
           logger.info(s"vm id ${vmId}, csr id ${csrId}, vd id ${vdId}, ed id ${edId}")
 
