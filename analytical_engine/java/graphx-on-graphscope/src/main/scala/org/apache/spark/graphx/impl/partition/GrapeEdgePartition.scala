@@ -278,8 +278,8 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     val arrayLengths = new ArrayBuffer[Long]
     for (ind <- allArrays.indices){
       floorMap.put(tmp, ind)
-      tmp += allArrays(ind).length
       arrayLengths.+=(tmp)
+      tmp += allArrays(ind).length
     }
     var ind = 0
     val nbr = csr.getOEBegin(0)
