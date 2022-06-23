@@ -158,6 +158,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def withNewEdata[ED2: ClassTag](newEdata : PrimitiveArray[ED2]): GrapeEdgePartition[VD, ED2] = {
+    log.info(s"Creating new edge partition with new edge of size ${newEdata.size()}, out edge num ${graphStructure.getOutEdgesNum}")
     new GrapeEdgePartition[VD,ED2](pid, graphStructure, client,newEdata, edgeReversed, activeEdgeSet)
   }
 

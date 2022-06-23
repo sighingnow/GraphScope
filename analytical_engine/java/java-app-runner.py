@@ -217,7 +217,7 @@ etcd_addrs="http://11.227.236.89:2379"
 import graphscope
 from graphscope import sssp
 graphscope.set_option(show_log=True)
-sess = graphscope.session(cluster_type="hosts",hosts=["d50","d51"], num_workers=2)
+sess = graphscope.session(cluster_type="hosts", num_workers=1)
 graph = sess.g(directed=True)
 # graph = graph.add_vertices("/home/graphscope/data/livejournal.v.csv","person")
 # graph = graph.add_edges("/home/graphscope/data/livejournal.e.csv", label="knows",src_label="person",dst_label="person")
