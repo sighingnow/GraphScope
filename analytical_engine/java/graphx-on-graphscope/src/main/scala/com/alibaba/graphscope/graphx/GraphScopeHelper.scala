@@ -181,7 +181,6 @@ object GraphScopeHelper extends Logging{
     newEdBuilder.reserve(enum)
     i = 0
     while (i < enum){
-      //FIXME:  order in nbr or in offset.
       newEdBuilder.unsafeAppend(edArray.get(i))
       i += 1
     }

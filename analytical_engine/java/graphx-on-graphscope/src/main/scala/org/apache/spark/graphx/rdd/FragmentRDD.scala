@@ -126,14 +126,11 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
           val newEdata = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], structure.getOutEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED]]
           if (frag.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
             val projectedFragment = frag.asInstanceOf[ArrowProjectedAdaptor[Long, Long, _, _]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
-            val nbr = projectedFragment.getOutEdgesPtr
-            val edgesNum = projectedFragment.getOutEdgeNum
             val edataAccessor = projectedFragment.getEdataArrayAccessor.asInstanceOf[TypedArray[ED]]
             var i = 0
-            while (i < edgesNum){
-              val edata = edataAccessor.get(nbr.eid())
-              newEdata.set(i, edata)
-              nbr.addV(NBR_SIZE)
+            val len = projectedFragment.getInEdgeNum + projectedFragment.getOutEdgeNum
+            while (i < len){
+              newEdata.set(i, edataAccessor.get(i))
               i += 1
             }
           }
