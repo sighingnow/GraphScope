@@ -125,7 +125,7 @@ object GrapeEdgeRDD extends Logging{
         require(res != null, s"after iterate over received global ids, no suitable found for ${meta.partitionID} : ${globalVMIDs}")
         meta.setGlobalVM(res.toLong)
         val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId)
-        val edatas = meta.edgePartitionBuilder.buildEdataArray
+        val edatas = meta.edgePartitionBuilder.buildEdataArray(csr)
         meta.setGlobalVM(vm)
         meta.setCSR(csr)
         meta.setEdataArray(edatas)
