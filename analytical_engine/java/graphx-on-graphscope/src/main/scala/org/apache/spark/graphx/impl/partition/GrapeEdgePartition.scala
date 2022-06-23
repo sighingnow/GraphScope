@@ -267,12 +267,10 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
 
   /** The received edata arrays contains both in edges and out edges, but we only need these out edges's edata array */
   def buildEdataArray(csr : GraphXCSR[Long]) : PrimitiveArray[ED] = {
-    val len = csr.getOutEdgesNum.toInt + csr.getInEdgesNum.toInt
+    val allArrays = lists.flatMap(_.getArrays._3).toArray
+    val len = allArrays.map(_.length).sum
     val edataArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], len).asInstanceOf[PrimitiveArray[ED]]
     //got all edge data array
-    val allArrays = lists.flatMap(_.getArrays._3).toArray
-    val edgeNumCnt = allArrays.map(_.length).sum
-    require(edgeNumCnt == len, s"length not eq ${edgeNumCnt}, ${len}")
     var ind = 0
 
     for (arr <- allArrays){
