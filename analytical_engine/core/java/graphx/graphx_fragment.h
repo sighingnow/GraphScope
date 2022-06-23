@@ -107,7 +107,6 @@ class GraphXFragment
     this->vdata_.Construct(meta.GetMemberMeta("vdata"));
     this->edata_.Construct(meta.GetMemberMeta("edata"));
     CHECK_EQ(vm_.GetVertexSize(), vdata_.VerticesNum());
-    CHECK_EQ(csr_.GetOutEdgesNum(), edata_.GetEdgeNum());
     this->inner_vertices_.SetRange(0, vm_.GetInnerVertexSize());
     this->outer_vertices_.SetRange(vm_.GetInnerVertexSize(),
                                    vm_.GetVertexSize());
