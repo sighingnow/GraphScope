@@ -276,7 +276,7 @@ object GraphScopeHelper extends Logging{
     }).partitionBy(partitioner).setName("GraphxGraph2Fragment.vertices")
 
     log.info(s"[GraphxGraph2Fragment:] construct edge rdd ${edgeRDD} cost ${(time3 - time2) / 1000000} ms")
-    val vertexRDD = GrapeVertexRDD.fromGrapeEdgeRDDAndGraphXVertexRDD[VD](edgeRDD,verticesShuffled, numPartitions, StorageLevel.MEMORY_ONLY).cache()
+    val vertexRDD = GrapeVertexRDD.fromGrapeEdgeRDDAndGraphXVertexRDD[VD](edgeRDD, verticesShuffled, numPartitions, StorageLevel.MEMORY_ONLY).cache()
     log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
     edgesShuffled.unpersist()
     GrapeGraphImpl.fromExistingRDDs(vertexRDD,edgeRDD)

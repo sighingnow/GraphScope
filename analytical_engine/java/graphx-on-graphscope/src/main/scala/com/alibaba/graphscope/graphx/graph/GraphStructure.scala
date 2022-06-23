@@ -37,13 +37,6 @@ trait GraphStructure {
 
    def isOutEdgesEmpty(vid: Long): Boolean
 
-  /**
-   * Inner vnum
-   *
-   * @return
-   */
-   def vertexNum(): Long
-
    def getInEdgesNum: Long
 
    def getOutEdgesNum: Long

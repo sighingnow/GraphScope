@@ -106,7 +106,7 @@ object GrapeVertexRDD extends Logging{
 
   def buildPartitionFromGraphX[VD: ClassTag](pid: Int, client: VineyardClient, graphStructure: GraphStructure, routingTable: RoutingTable, verticesAttr: Iterator[(PartitionID, (Array[Long], Array[VD]))]):GrapeVertexPartition[VD] = {
     /** We assume the verticesAttr iterator contains only inner vertices */
-      val newArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD], graphStructure.vertexNum().toInt).asInstanceOf[PrimitiveArray[VD]]
+      val newArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD], graphStructure.getVertexSize.toInt).asInstanceOf[PrimitiveArray[VD]]
       val grapeVertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
       while (verticesAttr.hasNext){
         val cur = verticesAttr.next()
@@ -165,7 +165,7 @@ object GrapeVertexRDD extends Logging{
       (edgeIter,msgIter) => {
         val ePart = edgeIter.next()
         val routingTable = RoutingTable.fromMsg(ePart.pid, numPartitions,msgIter, ePart.graphStructure)
-        val array = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD], ePart.graphStructure.vertexNum().toInt).asInstanceOf[PrimitiveArray[VD]]
+        val array = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD], ePart.graphStructure.getVertexSize.toInt).asInstanceOf[PrimitiveArray[VD]]
         val actualStructure = ePart.graphStructure.asInstanceOf[FragmentStructure]
         val frag = actualStructure.fragment.asInstanceOf[IFragment[Long,Long,VD,_]]
         val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
