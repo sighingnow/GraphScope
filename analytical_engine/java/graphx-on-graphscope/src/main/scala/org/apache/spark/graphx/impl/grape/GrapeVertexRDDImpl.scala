@@ -196,6 +196,26 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     this.withGrapePartitionsRDD[VD2](newPartitionsRDD)
   }
 
+
+  override def syncOuterVertex : GrapeVertexRDD[VD] = {
+    val updateMessage = this.grapePartitionsRDD.mapPartitions(iter => {
+      if (iter.hasNext){
+        val part = iter.next()
+        part.generateVertexDataMessage
+      }
+      else {
+        Iterator.empty
+      }
+    }).partitionBy(new HashPartitioner(this.grapePartitionsRDD.getNumPartitions))
+    val updatedVertexPartition = this.grapePartitionsRDD.zipPartitions(updateMessage){
+      (vIter, msgIter) => {
+        val  vpart = vIter.next()
+        Iterator(vpart.updateOuterVertexData(msgIter))
+      }
+    }.cache()
+    this.withGrapePartitionsRDD(updatedVertexPartition, true)
+  }
+
   override def reverseRoutingTables(): VertexRDD[VD] = {
     throw new IllegalStateException("Inherited but not implemented, should not be used")
   }
