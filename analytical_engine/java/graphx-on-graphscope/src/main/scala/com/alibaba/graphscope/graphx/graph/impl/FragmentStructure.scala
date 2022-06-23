@@ -156,9 +156,6 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     fragment.getLocalOutDegree(vertex) == 0
   }
 
-
-  override def vertexNum(): Long = fragment.getVerticesNum
-
   override def getInEdgesNum: Long = fragment.getInEdgeNum
 
   override def getOutEdgesNum: Long = fragment.getOutEdgeNum

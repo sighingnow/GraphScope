@@ -106,13 +106,6 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   override def isOutEdgesEmpty(vid: Long): Boolean = csr.isOutEdgesEmpty(vid)
 
-  /**
-   * Inner vnum
-   *
-   * @return
-   */
-  override def vertexNum(): Long = csr.vertexNum()
-
   override def getInEdgesNum: Long = csr.getInEdgesNum
 
   override def getOutEdgesNum: Long = csr.getOutEdgesNum
