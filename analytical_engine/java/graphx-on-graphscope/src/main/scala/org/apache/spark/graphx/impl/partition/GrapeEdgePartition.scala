@@ -271,7 +271,8 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     val edataArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], len).asInstanceOf[PrimitiveArray[ED]]
     //got all edge data array
     val allArrays = lists.flatMap(_.getArrays._3).toArray
-    require(allArrays.map(_.length).sum == len)
+    val edgeNumCnt = allArrays.map(_.length).sum
+    require(edgeNumCnt == len, s"length not eq ${edgeNumCnt}, ${len}")
     var ind = 0
 
     for (arr <- allArrays){
