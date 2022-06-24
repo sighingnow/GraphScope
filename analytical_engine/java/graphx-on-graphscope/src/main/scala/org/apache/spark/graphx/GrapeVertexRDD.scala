@@ -9,9 +9,9 @@ import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx.impl.GrapeUtils
-import org.apache.spark.graphx.impl.grape.GrapeVertexRDDImpl
+import org.apache.spark.graphx.impl.grape.{GrapeVertexPartition, GrapeVertexRDDImpl}
 import org.apache.spark.graphx.impl.partition.data.InHeapVertexDataStore
-import org.apache.spark.graphx.impl.partition.{GrapeVertexPartition, RoutingTable}
+import org.apache.spark.graphx.impl.partition.RoutingTable
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel

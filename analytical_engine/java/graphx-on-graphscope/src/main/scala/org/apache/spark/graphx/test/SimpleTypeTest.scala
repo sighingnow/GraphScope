@@ -1,6 +1,7 @@
-package com.alibaba.graphscope.graphx
+package org.apache.spark.graphx.test
 
 import com.alibaba.fastffi.FFITypeFactory
+import com.alibaba.graphscope.graphx.VineyardClient
 import org.apache.spark.graphx.utils.ScalaFFIFactory
 import org.apache.spark.internal.Logging
 

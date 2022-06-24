@@ -1,7 +1,7 @@
 package com.alibaba.graphscope.graphx.graph.impl
 
 import com.alibaba.graphscope.ds.{ImmutableTypedArray, Vertex}
-import com.alibaba.graphscope.graphx.graph.GraphStructure
+import com.alibaba.graphscope.graphx.graph.{GSEdgeTriplet, GSEdgeTripletImpl, GraphStructure, ReusableEdge, ReusableEdgeImpl, ReverseGSEdgeTripletImpl, ReversedReusableEdge}
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{GraphStructureType, GraphXFragmentStructure}
 import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.utils.array.PrimitiveArray

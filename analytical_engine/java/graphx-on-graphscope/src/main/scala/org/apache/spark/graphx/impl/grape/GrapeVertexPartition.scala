@@ -1,4 +1,4 @@
-package org.apache.spark.graphx.impl.partition
+package org.apache.spark.graphx.impl.grape
 
 import com.alibaba.graphscope.ds.Vertex
 import com.alibaba.graphscope.graphx.graph.GraphStructure
@@ -7,6 +7,7 @@ import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.impl.partition.data.{InHeapVertexDataStore, VertexDataStore}
+import org.apache.spark.graphx.impl.partition.{IdParser, RoutingTable}
 import org.apache.spark.graphx.utils.ScalaFFIFactory
 import org.apache.spark.graphx.{PartitionID, VertexId}
 import org.apache.spark.internal.Logging

@@ -3,10 +3,9 @@ package com.alibaba.graphscope.graphx.graph.impl
 import com.alibaba.graphscope.ds.{PropertyNbrUnit, Vertex}
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, FragmentType, IFragment}
-import com.alibaba.graphscope.graphx.graph.GraphStructure
+import com.alibaba.graphscope.graphx.graph.{GSEdgeTriplet, GSEdgeTripletImpl, GraphStructure, ReusableEdge, ReusableEdgeImpl, ReversedReusableEdge}
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{ArrowProjectedStructure, GraphStructureType}
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure.NBR_SIZE
-import com.alibaba.graphscope.graphx.{GSEdgeTriplet, GSEdgeTripletImpl, ReverseGSEdgeTripletImpl}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx._

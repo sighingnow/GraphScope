@@ -9,8 +9,7 @@ import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure.NBR_SIZE
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx.impl.GrapeUtils
-import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
-import org.apache.spark.graphx.impl.partition.GrapeEdgePartition
+import org.apache.spark.graphx.impl.grape.{GrapeEdgePartition, GrapeEdgeRDDImpl}
 import org.apache.spark.graphx.rdd.FragmentPartition.getHost
 import org.apache.spark.graphx.utils.ScalaFFIFactory
 import org.apache.spark.graphx.{GrapeEdgeRDD, GrapeVertexRDD, PartitionID, VertexId}

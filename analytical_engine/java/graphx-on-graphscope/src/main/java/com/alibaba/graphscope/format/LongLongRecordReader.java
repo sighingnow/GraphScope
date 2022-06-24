@@ -1,4 +1,4 @@
-package com.alibaba.graphscope.utils;
+package com.alibaba.graphscope.format;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;

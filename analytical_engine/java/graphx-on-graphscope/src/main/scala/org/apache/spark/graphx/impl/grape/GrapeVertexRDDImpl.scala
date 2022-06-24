@@ -3,7 +3,6 @@ package org.apache.spark.graphx.impl.grape
 import org.apache.spark._
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.impl.ShippableVertexPartition
-import org.apache.spark.graphx.impl.partition.GrapeVertexPartition
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 

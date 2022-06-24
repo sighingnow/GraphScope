@@ -3,12 +3,11 @@ package org.apache.spark.graphx
 import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.ds.{ImmutableTypedArray, Vertex}
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
-import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, MPIUtils}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.graphx.impl.GrapeUtils
-import org.apache.spark.graphx.impl.grape.GrapeEdgeRDDImpl
-import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived, GrapeEdgePartition, GrapeEdgePartitionBuilder}
-import org.apache.spark.graphx.utils.{Constant, ExecutorUtils, GrapeMeta, ScalaFFIFactory}
+import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, MPIUtils}
+import org.apache.spark.graphx.impl.grape.{GrapeEdgePartition, GrapeEdgePartitionBuilder, GrapeEdgeRDDImpl}
+import org.apache.spark.graphx.impl.partition.{EdgeShuffle, EdgeShuffleReceived}
+import org.apache.spark.graphx.utils.{ExecutorUtils, GrapeMeta, ScalaFFIFactory}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Dependency, SparkContext}
@@ -71,7 +70,7 @@ object GrapeEdgeRDD extends Logging{
       if (iter.hasNext){
         val vineyardClient = ScalaFFIFactory.newVineyardClient()
         val ffiByteString = FFITypeFactory.newByteString()
-        ffiByteString.copyFrom(Constant.vineyardEndpoint)
+        ffiByteString.copyFrom(ExecutorUtils.vineyardEndpoint)
         vineyardClient.connect(ffiByteString)
         val (_pid, shuffleReceived) = iter.next()
         require(pid == _pid, s"not possible ${pid}, ${_pid}")
@@ -99,7 +98,7 @@ object GrapeEdgeRDD extends Logging{
     require(localVertexMapIds.length == numPartitions, s"${localVertexMapIds.length} neq to num partitoins ${numPartitions}")
 
     log.info("[GrapeEdgeRDD]: Start constructing global vm")
-    val globalVMIDs = MPIUtils.constructGlobalVM(localVertexMapIds, Constant.vineyardEndpoint, "int64_t", "uint64_t")
+    val globalVMIDs = MPIUtils.constructGlobalVM(localVertexMapIds, ExecutorUtils.vineyardEndpoint, "int64_t", "uint64_t")
     log.info(s"[GrapeEdgeRDD]: Finish constructing global vm ${globalVMIDs}")
     require(globalVMIDs.size() == numPartitions)
 

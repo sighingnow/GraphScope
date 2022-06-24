@@ -1,4 +1,4 @@
-package com.alibaba.graphscope.graphx
+package com.alibaba.graphscope.graphx.graph
 
 import org.apache.spark.graphx.EdgeTriplet
 

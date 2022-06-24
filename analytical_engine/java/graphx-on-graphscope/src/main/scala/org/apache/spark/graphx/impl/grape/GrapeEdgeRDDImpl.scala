@@ -2,7 +2,6 @@ package org.apache.spark.graphx.impl.grape
 
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.impl.EdgeRDDImpl
-import org.apache.spark.graphx.impl.partition.GrapeEdgePartition
 import org.apache.spark.graphx.impl.partition.data.{InHeapVertexDataStore, VertexDataStore}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel

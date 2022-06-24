@@ -1,4 +1,4 @@
-package com.alibaba.graphscope.utils;
+package com.alibaba.graphscope.format;
 
 import java.io.DataInput;
 import java.io.DataOutput;

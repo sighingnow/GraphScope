@@ -15,7 +15,7 @@ import com.alibaba.graphscope.fragment.adaptor.GraphXFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringEDFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringVDFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringVEDFragmentAdaptor;
-import com.alibaba.graphscope.graphx.GSEdgeTripletImpl;
+import com.alibaba.graphscope.graphx.graph.GSEdgeTripletImpl;
 import com.alibaba.graphscope.graphx.GraphXConf;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;

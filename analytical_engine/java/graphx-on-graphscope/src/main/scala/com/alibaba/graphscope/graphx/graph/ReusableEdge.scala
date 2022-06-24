@@ -1,4 +1,6 @@
-package org.apache.spark.graphx
+package com.alibaba.graphscope.graphx.graph
+
+import org.apache.spark.graphx.{Edge, VertexId}
 
 trait ReusableEdge[ED] extends Edge[ED]{
   var index : Long = -1

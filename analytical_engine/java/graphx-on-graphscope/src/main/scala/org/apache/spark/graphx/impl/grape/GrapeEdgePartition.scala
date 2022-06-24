@@ -1,18 +1,17 @@
-package org.apache.spark.graphx.impl.partition
+package org.apache.spark.graphx.impl.grape
 
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
-import com.alibaba.graphscope.ds.ImmutableTypedArray
 import com.alibaba.graphscope.graphx._
-import com.alibaba.graphscope.graphx.graph.GraphStructure
+import com.alibaba.graphscope.graphx.graph.{GSEdgeTriplet, GraphStructure, ReusableEdge}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.impl.GrapeUtils
+import org.apache.spark.graphx.impl.partition.EdgeShuffleReceived
 import org.apache.spark.graphx.impl.partition.data.VertexDataStore
 import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.{BitSet, OpenHashSet}
 
-import java.util
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 

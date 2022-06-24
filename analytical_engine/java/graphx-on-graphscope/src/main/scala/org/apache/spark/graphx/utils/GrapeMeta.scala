@@ -2,7 +2,8 @@ package org.apache.spark.graphx.utils
 
 import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXVertexMap, LocalVertexMap, VineyardClient}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.graphx.impl.partition.{GrapeEdgePartitionBuilder, RoutingTable}
+import org.apache.spark.graphx.impl.grape.GrapeEdgePartitionBuilder
+import org.apache.spark.graphx.impl.partition.RoutingTable
 import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag

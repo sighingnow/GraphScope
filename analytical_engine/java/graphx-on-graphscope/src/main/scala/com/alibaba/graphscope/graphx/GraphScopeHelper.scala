@@ -1,12 +1,13 @@
 package com.alibaba.graphscope.graphx
 
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
+import com.alibaba.graphscope.format.{LongLong, LongLongInputFormat}
 import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, ArrowProjectedFragmentMapper}
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.utils.array.PrimitiveArray
-import com.alibaba.graphscope.utils.{GenericUtils, LongLong, LongLongInputFormat}
+import com.alibaba.graphscope.utils.GenericUtils
 import org.apache.hadoop.io.LongWritable
 import org.apache.spark.graphx.{EdgeRDD, GrapeEdgeRDD, GrapeVertexRDD, Graph, PartitionID, TypeAlias, VertexId, VertexRDD}
 import org.apache.spark.graphx.impl.{EdgeRDDImpl, GrapeGraphImpl, GrapeUtils, GraphImpl, VertexRDDImpl}
