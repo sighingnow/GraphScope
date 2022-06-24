@@ -155,10 +155,12 @@ object GrapeEdgeRDD extends Logging{
         val endLid = meta.globalVM.innerVertexSize()
         val vm = meta.globalVM
         val oeOffsetsArray: ImmutableTypedArray[Long] = meta.graphxCSR.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
+        log.info(s"all edges num: ${meta.graphxCSR.getOutEdgesNum}")
         while (curLid < endLid){
           val curOid = meta.globalVM.getId(curLid)
           val startNbrOffset = oeOffsetsArray.get(curLid)
           val endNbrOffset = oeOffsetsArray.get(curLid + 1)
+          log.info(s" begin offset ${startNbrOffset}, end offset ${endNbrOffset}, out degree for ${curOid} ${meta.graphxCSR.getOutDegree(curLid)}")
           var j = startNbrOffset
           while (j < endNbrOffset){
             srcOids.set(j, curOid)
@@ -173,6 +175,8 @@ object GrapeEdgeRDD extends Logging{
             dstOids.set(j, vm.getId(nbr.vid()))
             eids.set(j, nbr.eid())
             log.info(s"visiting edge ${curLid}->${nbr.vid()}, eid ${nbr.eid()}")
+            nbr.addV(16);
+	    j += 1
           }
           curLid += 1
         }

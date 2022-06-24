@@ -78,6 +78,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 //          val oldArray =
           //old Array only got out edges data, len(oldArray) = oes < frag.edataArray.size = len(newArray) = ies + oes
           //to update edge data, we only update oes. it is enough, in edges are updated in other fragments.
+
 //          var i = 0
 //          nbr.setAddress(initAddress - 16)
 //          val size = oldArray.size()

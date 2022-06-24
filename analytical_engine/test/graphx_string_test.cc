@@ -134,7 +134,7 @@ void TestGraphXEdgeData(vineyard::Client& client) {
   std::shared_ptr<gs::EdgeData<uint64_t, std::string>> ed =
       std::dynamic_pointer_cast<gs::EdgeData<uint64_t, std::string>>(
           client.GetObject(id));
-  LOG(INFO) << "edge_num: " << vd->GetEdgeNum();
+  LOG(INFO) << "edge_num: " << ed->GetEdgeNum();
   auto edArray = ed->GetEdataArray();
   LOG(INFO) << "ed length: " << edArray.GetLength();
   auto vec = edArray.GetRawBytes();
