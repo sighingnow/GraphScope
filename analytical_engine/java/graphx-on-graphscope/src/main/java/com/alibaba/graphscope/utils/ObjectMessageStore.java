@@ -124,6 +124,7 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
                 T msg = (T) inputStream.readObject();
                 fragment.innerVertexGid2Vertex(gid, tmpVertex);
                 int lid = tmpVertex.GetValue().intValue();
+                logger.info("Digesting message for lid {}, msg {} curSet status {}", tmpVertex.GetValue(), msg, curSet.get(lid));
                 if (curSet.get(lid)){
                     values[lid] = mergeMessage.apply(values[lid], msg);
                 }
