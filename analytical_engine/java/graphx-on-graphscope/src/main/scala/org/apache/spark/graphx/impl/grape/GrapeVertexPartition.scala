@@ -186,6 +186,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       logWarning("Joining two VertexPartitions with different indexes is slow.")
       leftJoin(createUsingIndex(other.iterator))(f)
     } else {
+      /** for vertex not represented in other, we use original vertex */
       val time0 = System.nanoTime()
       val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD3], partVnum.toInt).asInstanceOf[PrimitiveArray[VD3]]
       var i = this.bitSet.nextSetBit(0)

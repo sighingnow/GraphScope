@@ -36,24 +36,6 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
   }
   setName("GrapeEdgeRDDImpl")
 
-  override def generateDegreeRDD(originalVertexRDD : GrapeVertexRDD[_],
-                                 edgeDirection: EdgeDirection) : GrapeVertexRDD[Int] = {
-//    val grapeVertexRDDImpl = originalVertexRDD.asInstanceOf[GrapeVertexRDDImpl[_]]
-    val newVertexPartitionRDD = this.grapePartitionsRDD.zipPartitions(originalVertexRDD.grapePartitionsRDD, true){
-      (thisIter, otherIter) => {
-        val ePart = thisIter.next()
-        val otherVPart = otherIter.next()
-        //VertexPartition id range should be same with edge partition
-        val newVdArray = ePart.getDegreeArray(edgeDirection)
-        require(otherVPart.vertexData.size == newVdArray.size())
-        val newVPart = otherVPart.withNewValues(new InHeapVertexDataStore[Int](newVdArray,otherVPart.client))
-        Iterator(newVPart)
-      }
-    }
-    log.info(s"get degree rdd with direction ${edgeDirection}")
-    originalVertexRDD.withGrapePartitionsRDD(newVertexPartitionRDD)
-  }
-
   override def collect(): Array[Edge[ED]] = this.map(_.copy()).collect()
 
   override def persist(newLevel: StorageLevel): this.type = {

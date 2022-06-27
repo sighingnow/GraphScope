@@ -21,9 +21,11 @@ import scala.reflect.ClassTag
 import scala.util.Random
 import org.apache.spark.SparkException
 import org.apache.spark.graphx.impl.GrapeGraphImpl
+import org.apache.spark.graphx.impl.partition.data.InHeapVertexDataStore
 import org.apache.spark.graphx.lib._
 import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.rdd.RDD
+import org.apache.spark.util.collection.BitSet
 
 /**
  * Contains additional functionality for [[Graph]]. All operations are expressed in terms of the
@@ -69,7 +71,7 @@ class GraphOps[VD: ClassTag, ED: ClassTag](graph: Graph[VD, ED]) extends Seriali
   private def degreesRDD(edgeDirection: EdgeDirection): VertexRDD[Int] = {
     if (graph.isInstanceOf[GrapeGraphImpl[VD,ED]]){
       val grapeGraph = graph.asInstanceOf[GrapeGraphImpl[VD,ED]]
-        grapeGraph.edges.generateDegreeRDD(grapeGraph.vertices, edgeDirection)
+        generateDegreeRDD(grapeGraph.vertices, grapeGraph.edges, edgeDirection)
     }
     else {
       if (edgeDirection == EdgeDirection.In) {
@@ -81,6 +83,34 @@ class GraphOps[VD: ClassTag, ED: ClassTag](graph: Graph[VD, ED]) extends Seriali
           TripletFields.None)
       }
     }
+  }
+
+  def generateDegreeRDD(originalVertexRDD : GrapeVertexRDD[_],
+                                 edgeRDD : GrapeEdgeRDD[_],
+                                 edgeDirection: EdgeDirection) : GrapeVertexRDD[Int] = {
+    //    val grapeVertexRDDImpl = originalVertexRDD.asInstanceOf[GrapeVertexRDDImpl[_]]
+    val newVertexPartitionRDD = edgeRDD.grapePartitionsRDD.zipPartitions(originalVertexRDD.grapePartitionsRDD, true){
+      (thisIter, otherIter) => {
+        val ePart = thisIter.next()
+        val otherVPart = otherIter.next()
+        //VertexPartition id range should be same with edge partition
+        val newVdArray = ePart.getDegreeArray(edgeDirection)
+        require(otherVPart.vertexData.size == newVdArray.size())
+        val newVPart = otherVPart.withNewValues(new InHeapVertexDataStore[Int](newVdArray,otherVPart.client))
+        //IN native graphx impl, the vertex with degree 0 is not returned. But we return them as well.
+        //to make the result same, we set all vertices with zero degree to inactive.
+        val s = newVdArray.size()
+        val activeSet = new BitSet(s)
+        activeSet.setUntil(s)
+        var i = 0
+        while (i < s){
+          activeSet.unset(i)
+          i += 1
+        }
+        Iterator(newVPart.withMask(activeSet))
+      }
+    }
+    originalVertexRDD.withGrapePartitionsRDD(newVertexPartitionRDD)
   }
 
   /**

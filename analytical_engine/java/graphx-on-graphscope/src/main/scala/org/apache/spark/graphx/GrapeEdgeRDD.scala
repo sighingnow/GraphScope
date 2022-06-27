@@ -27,8 +27,6 @@ abstract class GrapeEdgeRDD[ED](sc: SparkContext,
   (f: (VertexId, VertexId, ED, ED2) => ED3): GrapeEdgeRDD[ED3]
 
   override def reverse: GrapeEdgeRDD[ED];
-
-  def generateDegreeRDD(originalVertexRDD : GrapeVertexRDD[_], edgeDirection : EdgeDirection) : GrapeVertexRDD[Int]
 }
 
 object GrapeEdgeRDD extends Logging{
