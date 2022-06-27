@@ -40,9 +40,9 @@ object OperatorTest extends Logging{
         graph.subgraph(epred = { triplet => triplet.srcId % 2 == 0}, vpred = (vid,vd) => vid % 2 == 0)
       }
 
-      val graphxRes = outerJoin(subGraph(mapDifferentType(mapping(graph))))
+      val graphxRes = outerJoin(mapDifferentType(mapping(graph)))
 
-      val grapeRes = outerJoin(subGraph(mapDifferentType(mapping(grapeGraph))))
+      val grapeRes = outerJoin(mapDifferentType(mapping(grapeGraph)))
 
       graphxRes.vertices.saveAsTextFile(s"/tmp/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
       grapeRes.vertices.saveAsTextFile(s"/tmp/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")

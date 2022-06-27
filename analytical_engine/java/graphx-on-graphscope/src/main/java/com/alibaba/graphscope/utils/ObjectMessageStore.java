@@ -117,8 +117,8 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
             throw new IllegalStateException("The received vector can not be empty");
         }
 
-        logger.debug("DefaultMessageStore digest FFIVector size {}", size);
         try {
+            logger.info("DefaultMessageStore digest FFIVector size {}, available {}", size, inputStream.available());
             while (inputStream.available() > 0) {
                 long gid = inputStream.readLong();
                 T msg = (T) inputStream.readObject();

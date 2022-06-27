@@ -23,14 +23,14 @@ object StringVEDTest extends Logging{
     val graph : Graph[Long,Long] = GraphLoader.edgeListFile(sc, eFilePath, false, numEdgePartitions = numPartitions).mapVertices((id,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).cache()
     val graph2 = graph.mapVertices((id,vd) => id).mapVertices((id,vd)=>(vd,vd))
     val graph3 = graph2.mapEdges(edge => (edge.srcId,edge.dstId))
-    val res = graph3.pregel((1L,1L), maxIterations = 10)(
+    val res = graph3.pregel((5L,5L), maxIterations = 10)(
       (id, dist, newDist) => {
         log.info(s"visiting vertex ${id}(${dist}), new dist${newDist}")
         newDist
       },
       triplet => { // Send Message
         log.info(s"visiting triplet ${triplet.srcId}(${triplet.srcAttr}) -> ${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")
-        Iterator.empty
+        Iterator((triplet.dstId, (2L,2L)))
       },
       (a, b) => (Math.min(a._1,b._1),Math.max(a._2,b._2)) // Merge Message
     )
