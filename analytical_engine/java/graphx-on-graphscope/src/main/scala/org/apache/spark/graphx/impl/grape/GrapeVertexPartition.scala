@@ -40,15 +40,14 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
   def iterator : Iterator[(VertexId,VD)] = {
     new Iterator[(VertexId,VD)]{
-      var lid = 0
-      val limit: VertexId = graphStructure.getInnerVertexSize
+      var lid = bitSet.nextSetBit(0)
       override def hasNext: Boolean = {
-        lid < limit
+        lid >= 0
       }
 
       override def next(): (VertexId, VD) = {
         val res = (graphStructure.innerVertexLid2Oid(lid), getData(lid))
-        lid += 1;
+        lid  = bitSet.nextSetBit(lid + 1)
         res
       }
     }
