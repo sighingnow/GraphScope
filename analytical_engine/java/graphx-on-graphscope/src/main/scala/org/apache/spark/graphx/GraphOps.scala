@@ -99,12 +99,14 @@ class GraphOps[VD: ClassTag, ED: ClassTag](graph: Graph[VD, ED]) extends Seriali
         val newVPart = otherVPart.withNewValues(new InHeapVertexDataStore[Int](newVdArray,otherVPart.client))
         //IN native graphx impl, the vertex with degree 0 is not returned. But we return them as well.
         //to make the result same, we set all vertices with zero degree to inactive.
-        val s = newVdArray.size()
-        val activeSet = new BitSet(s)
-        activeSet.setUntil(s)
+        val ivnum = otherVPart.partVnum.toInt
+        val activeSet = new BitSet(ivnum)
+        activeSet.setUntil(ivnum)
         var i = 0
-        while (i < s){
-          activeSet.unset(i)
+        while (i < ivnum){
+          if (newVdArray.get(i) == 0){
+            activeSet.unset(i)
+          }
           i += 1
         }
         Iterator(newVPart.withMask(activeSet))
