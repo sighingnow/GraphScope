@@ -5,7 +5,6 @@ import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import org.apache.spark.graphx.impl.grape.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
 import org.apache.spark.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
 import org.slf4j.{Logger, LoggerFactory}
-//import com.alibaba.graphscope.utils.FragmentRegistry
 import org.apache.spark.graphx._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -67,29 +66,8 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       ePart.graphStructure match {
         case casted: GraphXGraphStructure =>
           val vmId = casted.vm.id() //vm id will never change
-
-//          val newCSR = mapOldCSRToNewCSR(casted.csr, edataBuilder, ePart.client)
           val csrId = casted.csr.id()
-
           val vdId = vPart.vertexData.vineyardID
-
-//          val nbr = casted.csr.getOEBegin(0)
-//          val initAddress = nbr.getAddress
-//          val oldArray =
-          //old Array only got out edges data, len(oldArray) = oes < frag.edataArray.size = len(newArray) = ies + oes
-          //to update edge data, we only update oes. it is enough, in edges are updated in other fragments.
-
-//          var i = 0
-//          nbr.setAddress(initAddress - 16)
-//          val size = oldArray.size()
-//          val newArray = PrimitiveArray.create(getRuntimeClass[ED], (casted.csr.getInEdgesNum + casted.csr.getOutEdgesNum).toInt).asInstanceOf[PrimitiveArray[ED]]
-//          while (i < size){
-//            nbr.addV(16)
-//            logger.info(s"iterating edge ${i} total ${size}, cur vid ${nbr.vid()}, cur eid ${nbr.eid()}")
-//            val eid = nbr.eid()
-//            newArray.set(eid, oldArray.get(i))
-//            i += 1
-//          }
           val edId = GrapeUtils.array2ArrowArray[ED](ePart.edatas,ePart.client,false)
 
           logger.info(s"vm id ${vmId}, csr id ${csrId}, vd id ${vdId}, ed id ${edId}")
