@@ -33,7 +33,10 @@ object OperatorTest extends Logging{
 
       def outerJoin(graph : Graph[Long,Long]) : Graph[Long,Long] = {
         val inDegrees = graph.inDegrees
-        graph.joinVertices(inDegrees)((id, ovd, newVd) => newVd)
+        graph.joinVertices(inDegrees)((id, ovd, newVd) => {
+          log.info(s"vertex ${id}, set vd from ${ovd} to ${newVd}")
+          newVd
+        })
       }
 
       def subGraph(graph: Graph[Long,Long]) : Graph[Long,Long] = {
