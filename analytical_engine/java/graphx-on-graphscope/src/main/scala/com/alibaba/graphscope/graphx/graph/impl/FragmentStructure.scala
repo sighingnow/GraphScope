@@ -260,7 +260,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
         edge.dstId = dstOids.get(offset)
         edge.srcId = srcOids.get(offset)
         edge.attr = edatas.get(eids.get(offset))
-        edge.index = offset
+        edge.eid = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
         edge
       }
@@ -293,7 +293,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
         edge.dstAttr = vertexDataStore.getData(dstLids.get(offset))
 //        }
         edge.attr = edatas.get(eids.get(offset))
-	      edge.index = offset
+	      edge.eid = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
         edge
       }

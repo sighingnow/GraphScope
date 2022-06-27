@@ -24,11 +24,11 @@ object OperatorTest extends Logging{
       def mapping(graph : Graph[Long,Long])  : Graph[Long,Long] = {
         graph.mapVertices((vid, vd) => vd + vid)
           .mapEdges(edge=> {log.info(s"edge ${edge.srcId}->${edge.dstId}:${edge.attr}");edge.srcId + edge.dstId + edge.attr})
-//          .mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr + triplet.attr + triplet.srcId + triplet.dstId)
+          .mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr + triplet.attr + triplet.srcId + triplet.dstId)
       }
 
       def mapDifferentType(graph : Graph[Long,Long]) : Graph[Double,Double] = {
-        graph.mapVertices((vid, vd) => {log.info(s"${vid}(${vd})"); vd.toDouble}).mapEdges(edge=>{log.info(s"edge attr ${edge.attr}"); edge.attr.toDouble})
+        graph.mapVertices((vid, vd) => {log.info(s"vertex ${vid}(${vd})"); vd.toDouble}).mapEdges(edge=>{log.info(s"edge attr ${edge.attr}"); edge.attr.toDouble})
       }
 
       val graphxRes = mapDifferentType(mapping(graph))

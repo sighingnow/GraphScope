@@ -175,7 +175,7 @@ object GrapeEdgeRDD extends Logging{
             eids.set(j, nbr.eid())
             log.info(s"visiting edge ${curLid}->${nbr.vid()}, eid ${nbr.eid()}")
             nbr.addV(16);
-	    j += 1
+	          j += 1
           }
           curLid += 1
         }

@@ -73,7 +73,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     while (tripletIter.hasNext){
       val triplet = tripletIter.next()
       if (!vpred(triplet.srcId,triplet.srcAttr) || !vpred(triplet.dstId, triplet.dstAttr) || !epred(triplet)){
-        activeEdgeSet.unset(triplet.index.toInt)
+        activeEdgeSet.unset(triplet.eid.toInt)
         log.info(s"Inactive edge ${triplet}")
       }
     }
@@ -91,7 +91,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val newEdata = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], partOutEdgeNum.toInt).asInstanceOf[PrimitiveArray[ED]]
     while (iter.hasNext){
       val edge = iter.next()
-      val curIndex = edge.index
+      val curIndex = edge.eid
       var flag = false
       if (flag && edge.srcId == curSrcId && edge.dstId == curDstId){
         attrSum = merge(attrSum, edge.attr)
@@ -121,7 +121,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     var ind = 0;
     while (iter.hasNext){
       val edge = iter.next()
-      newData.set(edge.index, f(edge))
+      newData.set(edge.eid, f(edge))
       ind += 1
     }
     this.withNewEdata(newData)
@@ -134,7 +134,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val time0 = System.nanoTime()
     while (iter.hasNext){
       val edge = iter.next()
-      newData.set(edge.index, f(edge))
+      newData.set(edge.eid, f(edge))
       ind += 1
     }
     val time1 = System.nanoTime()
@@ -180,7 +180,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val oldIter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     while (oldIter.hasNext){
       val oldEdge = oldIter.next()
-      val oldIndex = oldEdge.index.toInt
+      val oldIndex = oldEdge.eid.toInt
       if (newMask.get(oldIndex)){
         newEdata.set(oldIndex, f(oldEdge.srcId, oldEdge.dstId, oldEdge.attr, other.edatas.get(oldIndex))) //FIXME: edatas can be null
       }

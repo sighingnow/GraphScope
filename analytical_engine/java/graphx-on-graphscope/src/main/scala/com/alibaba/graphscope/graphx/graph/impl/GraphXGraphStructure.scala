@@ -157,7 +157,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
           edge.srcId = srcOids.get(offset)
           edge.dstId = dstOids.get(offset)
           edge.attr = edatas.get(eids.get(offset))
-          edge.index = offset
+          edge.eid = eids.get(offset)
           offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
           edge
         }
@@ -187,10 +187,10 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
       //Find srcLid of curNbr
       val edgeTriplet = createTriplet
       //      log.info(s"curLid ${curLid},offset ${offset}, offset limit${offsetLimit}")
-      edgeTriplet.index = offset
+      edgeTriplet.eid = eids.get(offset)
       edgeTriplet.srcId = srcOids.get(offset)
       edgeTriplet.dstId = dstOids.get(offset)
-      edgeTriplet.attr = edatas.get(eids.get(offset))
+      edgeTriplet.attr = edatas.get(edgeTriplet.eid)
       edgeTriplet.srcAttr = vertexDataStore.getData(srcLids.get(offset))
       edgeTriplet.dstAttr = vertexDataStore.getData(dstLids.get(offset))
       offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
