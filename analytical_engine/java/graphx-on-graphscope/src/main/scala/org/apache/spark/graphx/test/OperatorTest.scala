@@ -2,7 +2,6 @@ package org.apache.spark.graphx.test
 
 import com.alibaba.graphscope.graphx.GraphScopeHelper
 import org.apache.spark.graphx.{Graph, GraphLoader}
-import org.apache.spark.graphx.rdd.GraphScopeRDD
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 
@@ -23,17 +22,27 @@ object OperatorTest extends Logging{
 
       def mapping(graph : Graph[Long,Long])  : Graph[Long,Long] = {
         graph.mapVertices((vid, vd) => vd + vid)
-          .mapEdges(edge=> {log.info(s"edge ${edge.srcId}->${edge.dstId}:${edge.attr}");edge.srcId + edge.dstId + edge.attr})
+          .mapEdges(edge=> edge.srcId + edge.dstId + edge.attr)
           .mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr + triplet.attr + triplet.srcId + triplet.dstId)
       }
 
-      def mapDifferentType(graph : Graph[Long,Long]) : Graph[Double,Double] = {
-        graph.mapVertices((vid, vd) => {log.info(s"vertex ${vid}(${vd})"); vd.toDouble}).mapEdges(edge=>{log.info(s"edge attr ${edge.attr}"); edge.attr.toDouble})
+      def mapDifferentType(graph : Graph[Long,Long]) : Graph[Long,Long] = {
+        val tmp = graph.mapVertices((vid, vd) => vd.toDouble).mapEdges(edge=> edge.attr.toDouble)
+        tmp.mapVertices((vid, vd) => vd.toLong).mapEdges(edge=> edge.attr.toLong)
       }
 
-      val graphxRes = mapDifferentType(mapping(graph))
+      def outerJoin(graph : Graph[Long,Long]) : Graph[Long,Long] = {
+        val inDegrees = graph.inDegrees
+        graph.joinVertices(inDegrees)((id, ovd, newVd) => newVd)
+      }
 
-      val grapeRes = mapDifferentType(mapping(grapeGraph))
+      def subGraph(graph: Graph[Long,Long]) : Graph[Long,Long] = {
+        graph.subgraph(epred = { triplet => triplet.srcId % 2 == 0}, vpred = (vid,vd) => vid % 2 == 0)
+      }
+
+      val graphxRes = outerJoin(subGraph(mapDifferentType(mapping(graph))))
+
+      val grapeRes = outerJoin(subGraph(mapDifferentType(mapping(grapeGraph))))
 
       graphxRes.vertices.saveAsTextFile(s"/tmp/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
       grapeRes.vertices.saveAsTextFile(s"/tmp/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")
