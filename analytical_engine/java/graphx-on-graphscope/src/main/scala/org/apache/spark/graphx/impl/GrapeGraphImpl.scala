@@ -255,7 +255,14 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
   override def subgraph(epred: EdgeTriplet[VD, ED] => Boolean, vpred: (VertexId, VD) => Boolean): Graph[VD, ED] = {
-    val newVertices = grapeVertices.mapGrapeVertexPartitions(_.filter(vpred))
+    var newVertices = vertices
+    if (!grapeVertices.outerVertexSynced){
+      newVertices = grapeVertices.syncOuterVertex
+    }
+    else {
+      logger.info(s"${grapeVertices} has done outer vertex data sync, just go to map triplets")
+    }
+    newVertices = newVertices.mapGrapeVertexPartitions(_.filter(vpred))
 
     val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD){
       (eIter,vIter) => {

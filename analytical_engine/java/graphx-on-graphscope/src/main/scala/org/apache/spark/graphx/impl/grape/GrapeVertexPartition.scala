@@ -27,7 +27,8 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
                                           var bitSet: BitSet = null) extends Logging {
   val startLid = 0
   val endLid = graphStructure.getInnerVertexSize
-  def partVnum : Long = endLid - startLid
+  val partVnum : Long = endLid - startLid
+  val fragVnum : Int = graphStructure.getVertexSize.toInt
   val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
   if (bitSet ==null){
     bitSet = new BitSet(partVnum.toInt)
@@ -120,6 +121,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     // Iterate over the active bits in the old mask and evaluate the predicate
     var curLid = bitSet.nextSetBit(startLid)
     while (curLid >= 0 && curLid < endLid) {
+      log.info(s"check vertex lid ${curLid}(oid ${graphStructure.getId(curLid)} active vertices ${bitSet.cardinality()}")
       if (pred(graphStructure.getId(curLid), getData(curLid))){
         log.info(s"vertex lid ${curLid}(oid ${graphStructure.getId(curLid)} matches pred")
         newMask.set(curLid)
@@ -133,7 +135,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
                                           iter: Iterator[Product2[VertexId, VD2]],
                                           reduceFunc: (VD2, VD2) => VD2): GrapeVertexPartition[VD2] = {
     val newMask = new BitSet(partVnum.toInt)
-    val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], partVnum.toInt).asInstanceOf[PrimitiveArray[VD2]]
+    val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], fragVnum).asInstanceOf[PrimitiveArray[VD2]]
 
     iter.foreach { product =>
       val oid = product._1
@@ -188,7 +190,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     } else {
       /** for vertex not represented in other, we use original vertex */
       val time0 = System.nanoTime()
-      val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD3], partVnum.toInt).asInstanceOf[PrimitiveArray[VD3]]
+      val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD3], fragVnum).asInstanceOf[PrimitiveArray[VD3]]
       var i = this.bitSet.nextSetBit(0)
       while (i >= 0) {
         val otherV: Option[VD2] = if (other.bitSet.get(i)) Some(other.getData(i)) else None
@@ -207,7 +209,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   def createUsingIndex[VD2: ClassTag](iter: Iterator[Product2[VertexId, VD2]])
   : GrapeVertexPartition[VD2] = {
     val newMask = new BitSet(partVnum.toInt)
-    val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], partVnum.toInt).asInstanceOf[PrimitiveArray[VD2]]
+    val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], fragVnum).asInstanceOf[PrimitiveArray[VD2]]
     iter.foreach { pair =>
 //      val pos = self.index.getPos(pair._1)
       val vertexFound = graphStructure.getVertex(pair._1,vertex)
@@ -229,7 +231,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       innerJoin(createUsingIndex(other.iterator))(f)
     } else {
       val newMask = this.bitSet & other.bitSet
-      val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], partVnum.toInt).asInstanceOf[PrimitiveArray[VD2]]
+      val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], fragVnum).asInstanceOf[PrimitiveArray[VD2]]
       var i = newMask.nextSetBit(startLid)
       while (i >= 0) {
         newValues.set(i, f(this.graphStructure.getId(i), this.getData(i), other.getData(i)))
@@ -247,7 +249,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     new GrapeVertexPartition[VD](pid, graphStructure, vertexData, client,routingTable, newMask)
   }
 
-  override def toString: String = "GrapeVertexPartition{" + "pid=" + pid + ",startLid=" + startLid + ", endLid=" + endLid + '}'
+  override def toString: String = "GrapeVertexPartition{" + "pid=" + pid + ",startLid=" + startLid + ", endLid=" + endLid + ",active=" + bitSet.capacity + '}'
 }
 
 object GrapeVertexPartition extends Logging{
