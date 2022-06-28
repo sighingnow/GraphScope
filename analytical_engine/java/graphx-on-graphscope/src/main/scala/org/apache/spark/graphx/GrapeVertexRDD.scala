@@ -116,7 +116,7 @@ object GrapeVertexRDD extends Logging{
         while (i < oids.length){
           require(graphStructure.getInnerVertex(oids(i),grapeVertex))
           newArray.set(grapeVertex.GetValue(), vds(i))
-          log.info(s"In building vertex Partition, set vertex ${oids(i)}, lid ${grapeVertex.GetValue()} to attr ${vds(i)}")
+//          log.info(s"In building vertex Partition, set vertex ${oids(i)}, lid ${grapeVertex.GetValue()} to attr ${vds(i)}")
           i += 1
         }
       }

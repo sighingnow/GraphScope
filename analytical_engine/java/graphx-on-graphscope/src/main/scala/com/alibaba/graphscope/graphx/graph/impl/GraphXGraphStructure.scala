@@ -142,7 +142,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     if (edgeReversed){
       new Iterator[Edge[ED]] {
         var offset: Long = activeEdgeSet.nextSetBit(0)
-        var edge = new ReusableEdgeImpl[ED];
+        val edge = new ReusableEdgeImpl[ED];
 
         override def hasNext: Boolean = {
           offset >= 0

@@ -76,7 +76,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       val triplet = tripletIter.next()
       if (!vpred(triplet.srcId,triplet.srcAttr) || !vpred(triplet.dstId, triplet.dstAttr) || !epred(triplet)){
         newActiveEdges.unset(triplet.offset.toInt)
-        log.info(s"Inactive edge ${triplet}")
+//        log.info(s"Inactive edge ${triplet}")
       }
     }
     this.withNewMask(newActiveEdges)
