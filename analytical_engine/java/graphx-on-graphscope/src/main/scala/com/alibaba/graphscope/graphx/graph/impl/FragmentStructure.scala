@@ -3,9 +3,9 @@ package com.alibaba.graphscope.graphx.graph.impl
 import com.alibaba.graphscope.ds.{PropertyNbrUnit, Vertex}
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, FragmentType, IFragment}
-import com.alibaba.graphscope.graphx.graph.{GSEdgeTriplet, GSEdgeTripletImpl, GraphStructure, ReusableEdge, ReusableEdgeImpl, ReversedReusableEdge}
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{ArrowProjectedStructure, GraphStructureType}
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure.NBR_SIZE
+import com.alibaba.graphscope.graphx.graph.{GSEdgeTripletImpl, GraphStructure, ReusableEdge, ReusableEdgeImpl}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx._
@@ -239,65 +239,104 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
   }
 
   private def newProjectedIterator[ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, _, ED], edatas : PrimitiveArray[ED], bitSet: BitSet, edgeReverse : Boolean) : Iterator[Edge[ED]] = {
-    new Iterator[Edge[ED]]{
-      var edge: ReusableEdge[ED] = null.asInstanceOf[ReusableEdge[ED]]
-      if (edgeReverse){
-        edge = new ReversedReusableEdge[ED];
-      }
-      else {
-        edge = new ReusableEdgeImpl[ED];
-      }
-      var offset : Long = bitSet.nextSetBit(0)
-      val nbr : PropertyNbrUnit[Long]= frag.getOutEdgesPtr
-      val initAddress : Long = nbr.getAddress
+    if (edgeReverse){
+      new Iterator[Edge[ED]]{
+        val edge: ReusableEdge[ED] =  new ReusableEdgeImpl[ED];
+        var offset : Long = bitSet.nextSetBit(0)
+        val nbr : PropertyNbrUnit[Long]= frag.getOutEdgesPtr
+        val initAddress : Long = nbr.getAddress
 
-      override def hasNext: Boolean = {
-        offset >= 0
-      }
+        override def hasNext: Boolean = {
+          offset >= 0
+        }
 
-      override def next(): Edge[ED] = {
-        nbr.setAddress(initAddress + NBR_SIZE * offset)
-        edge.dstId = dstOids.get(offset)
-        edge.srcId = srcOids.get(offset)
-        edge.eid = eids.get(offset)
-        edge.offset = offset
-        edge.attr = edatas.get(edge.eid)
-        offset = bitSet.nextSetBit((offset + 1).toInt)
-        edge
+        override def next(): Edge[ED] = {
+          nbr.setAddress(initAddress + NBR_SIZE * offset)
+          edge.srcId = dstOids.get(offset)
+          edge.dstId = srcOids.get(offset)
+          edge.eid = eids.get(offset)
+          edge.offset = offset
+          edge.attr = edatas.get(edge.eid)
+          offset = bitSet.nextSetBit((offset + 1).toInt)
+          edge
+        }
       }
     }
+    else {
+      new Iterator[Edge[ED]]{
+        val edge: ReusableEdge[ED] =  new ReusableEdgeImpl[ED];
+        var offset : Long = bitSet.nextSetBit(0)
+        val nbr : PropertyNbrUnit[Long]= frag.getOutEdgesPtr
+        val initAddress : Long = nbr.getAddress
+
+        override def hasNext: Boolean = {
+          offset >= 0
+        }
+
+        override def next(): Edge[ED] = {
+          nbr.setAddress(initAddress + NBR_SIZE * offset)
+          edge.dstId = dstOids.get(offset)
+          edge.srcId = srcOids.get(offset)
+          edge.eid = eids.get(offset)
+          edge.offset = offset
+          edge.attr = edatas.get(edge.eid)
+          offset = bitSet.nextSetBit((offset + 1).toInt)
+          edge
+        }
+      }
+    }
+
   }
   private def newProjectedTripletIterator[VD: ClassTag,ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, VD, ED],vertexDataStore: VertexDataStore[VD], edatas : PrimitiveArray[ED],bitSet: BitSet, edgeReversed: Boolean, includeSrc : Boolean, includeDst : Boolean) : Iterator[EdgeTriplet[VD,ED]] = {
-    new Iterator[EdgeTriplet[VD,ED]]{
-      def createTriplet : GSEdgeTriplet[VD,ED] = {
-       // if (!edgeReversed){
-          new GSEdgeTripletImpl[VD,ED];
-        //}
-       // else {
-       //   new ReverseGSEdgeTripletImpl[VD,ED]
-       // }
-      }
-      var offset : Long = bitSet.nextSetBit(0)
+    if (edgeReversed){
+      new Iterator[EdgeTriplet[VD,ED]]{
+        var offset : Long = bitSet.nextSetBit(0)
+        override def hasNext: Boolean = {
+          offset >= 0
+        }
 
-      override def hasNext: Boolean = {
-        offset >= 0
+        override def next(): EdgeTriplet[VD,ED] = {
+          val edge = new GSEdgeTripletImpl[VD,ED]
+          edge.dstId = srcOids.get(offset)
+          if (includeDst){
+            edge.dstAttr = vertexDataStore.getData(srcLids.get(offset))
+          }
+          edge.srcId = dstOids.get(offset)
+          if (includeSrc){
+            edge.srcAttr = vertexDataStore.getData(dstLids.get(offset))
+          }
+          edge.eid = eids.get(offset)
+          edge.attr = edatas.get(edge.eid)
+          edge.offset = offset
+          offset = bitSet.nextSetBit((offset + 1).toInt)
+          edge
+        }
       }
+    }
+    else {
+      new Iterator[EdgeTriplet[VD, ED]] {
+        var offset: Long = bitSet.nextSetBit(0)
 
-      override def next(): EdgeTriplet[VD,ED] = {
-        val edge = new GSEdgeTripletImpl[VD,ED]
-        edge.srcId = srcOids.get(offset)
-//        if (includeSrc){
-        edge.srcAttr = vertexDataStore.getData(srcLids.get(offset))
-//        }
-        edge.dstId = dstOids.get(offset)
-//        if (includeDst){
-        edge.dstAttr = vertexDataStore.getData(dstLids.get(offset))
-//        }
-        edge.attr = edatas.get(eids.get(offset))
-	      edge.eid = eids.get(offset)
-        edge.offset = offset
-        offset = bitSet.nextSetBit((offset + 1).toInt)
-        edge
+        override def hasNext: Boolean = {
+          offset >= 0
+        }
+
+        override def next(): EdgeTriplet[VD, ED] = {
+          val edge = new GSEdgeTripletImpl[VD, ED]
+          edge.srcId = srcOids.get(offset)
+          if (includeSrc) {
+            edge.srcAttr = vertexDataStore.getData(srcLids.get(offset))
+          }
+          edge.dstId = dstOids.get(offset)
+          if (includeDst) {
+            edge.dstAttr = vertexDataStore.getData(dstLids.get(offset))
+          }
+          edge.eid = eids.get(offset)
+          edge.attr = edatas.get(edge.eid)
+          edge.offset = offset
+          offset = bitSet.nextSetBit((offset + 1).toInt)
+          edge
+        }
       }
     }
   }
