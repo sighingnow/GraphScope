@@ -210,7 +210,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val oldIter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     while (oldIter.hasNext){
       val oldEdge = oldIter.next()
-      val oldIndex = oldEdge.eid.toInt
+      val oldIndex = oldEdge.offset.toInt
       if (newMask.get(oldIndex)){
         newEdata.set(oldIndex, f(oldEdge.srcId, oldEdge.dstId, oldEdge.attr, other.edatas.get(oldIndex))) //FIXME: edatas can be null
       }
