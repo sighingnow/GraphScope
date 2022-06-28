@@ -4,6 +4,7 @@ import org.apache.spark.graphx.EdgeTriplet
 
 abstract class GSEdgeTriplet[VD,ED] extends EdgeTriplet[VD,ED]{
   var eid : Long = -1
+  var offset : Long = -1;
 //  var eid : Long = -1
   def getSrcOid : Long = srcId
   def getSrcAttr : VD = srcAttr

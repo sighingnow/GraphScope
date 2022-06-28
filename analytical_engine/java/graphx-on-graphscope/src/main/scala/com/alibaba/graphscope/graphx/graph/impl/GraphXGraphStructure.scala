@@ -157,6 +157,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
           edge.srcId = srcOids.get(offset)
           edge.dstId = dstOids.get(offset)
           edge.attr = edatas.get(eids.get(offset))
+          edge.offset = offset
           edge.eid = eids.get(offset)
           offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
           edge
@@ -188,6 +189,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
       val edgeTriplet = createTriplet
       //      log.info(s"curLid ${curLid},offset ${offset}, offset limit${offsetLimit}")
       edgeTriplet.eid = eids.get(offset)
+      edgeTriplet.offset = offset
       edgeTriplet.srcId = srcOids.get(offset)
       edgeTriplet.dstId = dstOids.get(offset)
       edgeTriplet.attr = edatas.get(edgeTriplet.eid)
@@ -205,4 +207,6 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   }
 
   override val structureType: GraphStructureType = GraphXFragmentStructure
+
+  override def getEids: PrimitiveArray[VertexId] = eids
 }

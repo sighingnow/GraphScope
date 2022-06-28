@@ -70,4 +70,6 @@ trait GraphStructure {
    def outerVertexGid2Vertex(gid: Long, vertex: Vertex[Long]): Boolean
 
   def getInnerVertex(oid : Long, vertex: Vertex[Long]) : Boolean
+
+  def getEids : PrimitiveArray[Long]
 }

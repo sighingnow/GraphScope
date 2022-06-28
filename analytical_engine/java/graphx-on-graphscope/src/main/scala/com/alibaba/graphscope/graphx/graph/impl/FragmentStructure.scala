@@ -259,8 +259,9 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
         nbr.setAddress(initAddress + NBR_SIZE * offset)
         edge.dstId = dstOids.get(offset)
         edge.srcId = srcOids.get(offset)
-        edge.attr = edatas.get(eids.get(offset))
-        edge.eid = offset
+        edge.eid = eids.get(offset)
+        edge.offset = offset
+        edge.attr = edatas.get(edge.eid)
         offset = bitSet.nextSetBit((offset + 1).toInt)
         edge
       }
@@ -293,7 +294,8 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
         edge.dstAttr = vertexDataStore.getData(dstLids.get(offset))
 //        }
         edge.attr = edatas.get(eids.get(offset))
-	      edge.eid = offset
+	      edge.eid = eids.get(offset)
+        edge.offset = offset
         offset = bitSet.nextSetBit((offset + 1).toInt)
         edge
       }
@@ -306,6 +308,8 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
   }
 
   override val structureType: GraphStructureType = ArrowProjectedStructure
+
+  override def getEids: PrimitiveArray[VertexId] = eids
 }
 
 object FragmentStructure{

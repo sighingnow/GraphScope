@@ -4,6 +4,7 @@ import org.apache.spark.graphx.{Edge, VertexId}
 
 trait ReusableEdge[ED] extends Edge[ED]{
   var eid : Long = -1
+  var offset : Long = -1
 //  var eid : Long = -1
   def setSrcId(vertexId: VertexId)
   def setDstId(vertexId: VertexId)

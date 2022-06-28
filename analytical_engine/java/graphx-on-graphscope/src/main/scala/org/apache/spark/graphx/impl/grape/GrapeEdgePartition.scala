@@ -27,8 +27,10 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   val startLid = 0
   val endLid : Long = graphStructure.getInnerVertexSize
 
-  def partOutEdgeNum : Long = graphStructure.getOutEdgesNum
-  def partInEdgeNum : Long = graphStructure.getInEdgesNum
+  /** regard to our design, the card(activeEdgeSet) == partOutEdgeNum, len(edatas) == allEdgesNum, indexed by eid */
+  val partOutEdgeNum : Long = graphStructure.getOutEdgesNum
+  val partInEdgeNum : Long = graphStructure.getInEdgesNum
+  val allEdgesNum = partInEdgeNum + partOutEdgeNum
 
 
   if (activeEdgeSet == null){
@@ -73,7 +75,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     while (tripletIter.hasNext){
       val triplet = tripletIter.next()
       if (!vpred(triplet.srcId,triplet.srcAttr) || !vpred(triplet.dstId, triplet.dstAttr) || !epred(triplet)){
-        newActiveEdges.unset(triplet.eid.toInt)
+        newActiveEdges.unset(triplet.offset.toInt)
         log.info(s"Inactive edge ${triplet}")
       }
     }
@@ -88,7 +90,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     var attrSum = null.asInstanceOf[ED]
     val newMask = new BitSet(activeEdgeSet.capacity)
     newMask.union(activeEdgeSet)
-    val newEdata = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], partOutEdgeNum.toInt).asInstanceOf[PrimitiveArray[ED]]
+    val newEdata = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], allEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED]]
     while (iter.hasNext){
       val edge = iter.next()
       val curIndex = edge.eid
@@ -116,7 +118,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
-    val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], partOutEdgeNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
+    val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], allEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
     val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     var ind = 0;
     while (iter.hasNext){
@@ -126,8 +128,26 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     }
     this.withNewEdata(newData)
   }
+
+  def map[ED2: ClassTag](f: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2]): GrapeEdgePartition[VD, ED2] = {
+    val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], allEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
+    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
+    val resultEdata = f(pid, iter)
+    val eids = graphStructure.getEids
+    var ind = activeEdgeSet.nextSetBit(0);
+    while (ind >= 0 && resultEdata.hasNext){
+      val eid = eids.get(ind)
+      newData.set(eid, resultEdata.next())
+      ind = activeEdgeSet.nextSetBit(ind + 1);
+    }
+    if (resultEdata.hasNext || ind >= 0){
+      throw new IllegalStateException(s"impossible, two iterator should end at the same time ${ind}, ${resultEdata.hasNext}")
+    }
+    this.withNewEdata(newData)
+  }
+
   def mapTriplets[ED2: ClassTag](f: EdgeTriplet[VD,ED] => ED2, vertexDataStore: VertexDataStore[VD], tripletFields: TripletFields): GrapeEdgePartition[VD, ED2] = {
-    val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], partOutEdgeNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
+    val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], allEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
 //    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     val iter = tripletIterator(vertexDataStore).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
     var ind = 0;
@@ -142,14 +162,24 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     this.withNewEdata(newData)
   }
 
-  def map[ED2: ClassTag](iter: Iterator[ED2]): GrapeEdgePartition[VD, ED2] = {
-    val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], partOutEdgeNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
+  def mapTriplets[ED2: ClassTag](f: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], vertexDataStore: VertexDataStore[VD], includeSrc  : Boolean = true, includeDst : Boolean = true): GrapeEdgePartition[VD, ED2] = {
+    val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], allEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
+    //    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
+    val iter = tripletIterator(vertexDataStore).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
+    val resultEdata = f(pid, iter)
+    val eids = graphStructure.getEids
+    val time0 = System.nanoTime()
     var ind = activeEdgeSet.nextSetBit(0)
-    while (iter.hasNext) {
-      newData.set(ind, iter.next())
+    while (ind >= 0 && resultEdata.hasNext){
+      val eid = eids.get(ind)
+      newData.set(eid, resultEdata.next())
       ind = activeEdgeSet.nextSetBit(ind + 1)
     }
-    require(ind == -1, s"after map new edata, ind ${ind}, expect edata size ${activeEdgeSet.cardinality()}")
+    if (ind >=0 || resultEdata.hasNext){
+      throw new IllegalStateException(s"impossible, two iterator should end at the same time ${ind}, ${resultEdata.hasNext}")
+    }
+    val time1 = System.nanoTime()
+    log.info(s"[Perf:] mapping over triplets cost ${(time1 - time0)/1000000} ms")
     this.withNewEdata(newData)
   }
 
@@ -176,7 +206,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val newMask = this.activeEdgeSet & other.activeEdgeSet
     log.info(s"Inner join edgePartition 0 has ${this.activeEdgeSet.cardinality()} actives edges, the other has ${other.activeEdgeSet} active edges")
     log.info(s"after join ${newMask.cardinality()} active edges")
-    val newEdata = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED3],partOutEdgeNum.toInt).asInstanceOf[PrimitiveArray[ED3]]
+    val newEdata = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED3],allEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED3]]
     val oldIter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     while (oldIter.hasNext){
       val oldEdge = oldIter.next()
