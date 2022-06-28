@@ -1,7 +1,7 @@
 package org.apache.spark.graphx.test
 
 import com.alibaba.graphscope.graphx.GraphScopeHelper
-import org.apache.spark.graphx.{Graph, GraphLoader}
+import org.apache.spark.graphx.{EdgeTriplet, Graph, GraphLoader, PartitionID, TripletFields}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 
@@ -43,9 +43,22 @@ object OperatorTest extends Logging{
         graph.subgraph(epred = { triplet => triplet.srcId % 2 == 0}, vpred = (vid,vd) => vid % 2 == 0)
       }
 
-      val graphxRes = subGraph(outerJoin(mapDifferentType(mapping(graph))))
+      //map edge attr to pid.
+      def mapEdgeIterator(graph : Graph[Long,Long]) : Graph[Long,Long] = {
+        graph.mapEdges((pid,iter)=> iter.map(e=>pid))
+      }
 
-      val grapeRes = subGraph(outerJoin(mapDifferentType(mapping(grapeGraph))))
+      def mapTriplet(graph : Graph[Long,Long]) : Graph[Long,Long] = {
+        val graph2 = graph.mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr)
+        def f(pid : PartitionID, iter : Iterator[EdgeTriplet[Long,Long]]): Iterator[Long] = {
+          iter.map(triplet=> pid)
+        }
+        graph2.mapTriplets[Long]((pid,iter)=>f(pid,iter), TripletFields.All)
+      }
+
+      val graphxRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph)))))))
+
+      val grapeRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(grapeGraph)))))))
 
       graphxRes.vertices.saveAsTextFile(s"/tmp/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
       grapeRes.vertices.saveAsTextFile(s"/tmp/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")
