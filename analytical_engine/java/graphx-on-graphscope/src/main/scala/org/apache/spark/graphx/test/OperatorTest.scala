@@ -48,22 +48,22 @@ object OperatorTest extends Logging{
 
       //map edge attr to pid.
       def mapEdgeIterator(graph : Graph[Long,Long]) : Graph[Long,Long] = {
-        graph.mapEdges((pid,iter)=> iter.map(e=>pid))
+        graph.mapEdges((pid,iter)=> iter.map(e=>e.srcId))
       }
 
       def mapTriplet(graph : Graph[Long,Long]) : Graph[Long,Long] = {
         val graph2 = graph.mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr)
         def f(pid : PartitionID, iter : Iterator[EdgeTriplet[Long,Long]]): Iterator[Long] = {
-          iter.map(triplet=> pid)
+          iter.map(triplet=> triplet.srcId)
         }
         graph2.mapTriplets[Long]((pid,iter)=>f(pid,iter), TripletFields.All)
       }
 
       def reverse(graph : Graph[Long,Long]) = graph.reverse
 
-      val graphxRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph))))))).mask(maskGraph)
+      val graphxRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph))))))).mask(maskGraph).reverse
 
-      val grapeRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(grapeGraph))))))).mask(grapeMaskGraph)
+      val grapeRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(grapeGraph))))))).mask(grapeMaskGraph).reverse
 
       graphxRes.vertices.saveAsTextFile(s"/tmp/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
       grapeRes.vertices.saveAsTextFile(s"/tmp/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")

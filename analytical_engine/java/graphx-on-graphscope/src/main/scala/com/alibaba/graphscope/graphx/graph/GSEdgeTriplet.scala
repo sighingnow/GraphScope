@@ -39,25 +39,3 @@ class GSEdgeTripletImpl[VD,ED] extends GSEdgeTriplet[VD,ED]{
   override def toString(): String = "GSEdgeTripletImpl(" + "srcId=" +srcId +
     ",dstId=" +dstId + ",srcAttr=" + srcAttr + ",dstAttr=" + dstAttr + ",attr=" + attr + ")"
 }
-
-class ReverseGSEdgeTripletImpl[VD,ED] extends GSEdgeTriplet[VD,ED]{
-
-  override def setSrcOid(srcId : Long, srcAttr : VD): Unit ={
-    this.dstId = srcId
-    this.dstAttr = srcAttr
-  }
-
-  override def setDstOid(dstId : Long, dstAttr : VD): Unit ={
-    this.srcId = dstId;
-    this.srcAttr = dstAttr
-  }
-
-  override def setSrcOid(srcId: Long): Unit = this.dstId = srcId
-
-  override def setDstOid(srcId: Long): Unit = this.srcId = dstId
-
-  override def setAttr(edgeAttr: ED): Unit = this.attr = edgeAttr
-
-  override def toString(): String = "ReverseEdgeTripletImpl(" + "srcId=" +srcId +
-    ",dstId=" +dstId + ",srcAttr=" + srcAttr + ",dstAttr=" + dstAttr + ",attr=" + attr + ")"
-}

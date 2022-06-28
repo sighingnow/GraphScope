@@ -1,12 +1,12 @@
 package com.alibaba.graphscope.graphx.graph.impl
 
 import com.alibaba.graphscope.ds.{ImmutableTypedArray, Vertex}
-import com.alibaba.graphscope.graphx.graph.{GSEdgeTriplet, GSEdgeTripletImpl, GraphStructure, ReusableEdge, ReusableEdgeImpl, ReverseGSEdgeTripletImpl, ReversedReusableEdge}
-import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{GraphStructureType, GraphXFragmentStructure}
 import com.alibaba.graphscope.graphx._
+import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{GraphStructureType, GraphXFragmentStructure}
+import com.alibaba.graphscope.graphx.graph.{GSEdgeTripletImpl, GraphStructure, ReusableEdge, ReusableEdgeImpl}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.graphx.impl.partition.data.VertexDataStore
 import org.apache.spark.graphx._
+import org.apache.spark.graphx.impl.partition.data.VertexDataStore
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 
@@ -139,21 +139,35 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   override def outerVertexGid2Vertex(gid: Long, vertex: Vertex[Long]): Boolean = vm.outerVertexGid2Vertex(gid,vertex)
 
   override def iterator[ED: ClassTag](edatas: PrimitiveArray[ED], activeEdgeSet : BitSet, edgeReversed : Boolean = false): Iterator[Edge[ED]] = {
-      new Iterator[Edge[ED]]{
-        var offset : Long = activeEdgeSet.nextSetBit(0)
-        var edge: ReusableEdge[ED] = null.asInstanceOf[ReusableEdge[ED]]
+    if (edgeReversed){
+      new Iterator[Edge[ED]] {
+        var offset: Long = activeEdgeSet.nextSetBit(0)
+        var edge = new ReusableEdgeImpl[ED];
 
-        if (edgeReversed){
-          edge = new ReversedReusableEdge[ED];
-        }
-        else {
-          edge = new ReusableEdgeImpl[ED];
-        }
         override def hasNext: Boolean = {
           offset >= 0
         }
 
-        override def next() : Edge[ED] = {
+        override def next(): Edge[ED] = {
+          edge.dstId = srcOids.get(offset)
+          edge.srcId = dstOids.get(offset)
+          edge.attr = edatas.get(eids.get(offset))
+          edge.offset = offset
+          edge.eid = eids.get(offset)
+          offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
+          edge
+        }
+      }
+    }
+    else {
+      new Iterator[Edge[ED]] {
+        var offset: Long = activeEdgeSet.nextSetBit(0)
+        val edge: ReusableEdge[ED] = new ReusableEdgeImpl[ED];
+        override def hasNext: Boolean = {
+          offset >= 0
+        }
+
+        override def next(): Edge[ED] = {
           edge.srcId = srcOids.get(offset)
           edge.dstId = dstOids.get(offset)
           edge.attr = edatas.get(eids.get(offset))
@@ -162,41 +176,55 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
           offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
           edge
         }
+      }
     }
   }
 
   override def tripletIterator[VD: ClassTag,ED : ClassTag](vertexDataStore: VertexDataStore[VD],edatas : PrimitiveArray[ED], activeEdgeSet : BitSet, edgeReversed : Boolean = false,
                       includeSrc: Boolean = true, includeDst: Boolean = true)
-  : Iterator[EdgeTriplet[VD, ED]] = new Iterator[EdgeTriplet[VD, ED]] {
+  : Iterator[EdgeTriplet[VD, ED]] = {
+    if (edgeReversed){
+      new Iterator[EdgeTriplet[VD, ED]] {
+        var offset: Long = activeEdgeSet.nextSetBit(0)
+        override def hasNext: Boolean = {
+          offset >= 0
+        }
 
-    var offset : Long = activeEdgeSet.nextSetBit(0)
-
-    def createTriplet : GSEdgeTriplet[VD,ED] = {
-      if (!edgeReversed){
-        new GSEdgeTripletImpl[VD,ED];
+        override def next(): EdgeTriplet[VD, ED] = {
+          //Find srcLid of curNbr
+          val edgeTriplet = new GSEdgeTripletImpl[VD, ED];
+          edgeTriplet.eid = eids.get(offset)
+          edgeTriplet.offset = offset
+          edgeTriplet.dstId = srcOids.get(offset)
+          edgeTriplet.srcId = dstOids.get(offset)
+          edgeTriplet.attr = edatas.get(edgeTriplet.eid)
+          edgeTriplet.dstAttr = vertexDataStore.getData(srcLids.get(offset))
+          edgeTriplet.srcAttr = vertexDataStore.getData(dstLids.get(offset))
+          offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
+          edgeTriplet
+        }
       }
-      else {
-        new ReverseGSEdgeTripletImpl[VD,ED]
+    } else {
+      new Iterator[EdgeTriplet[VD, ED]] {
+        var offset: Long = activeEdgeSet.nextSetBit(0)
+        override def hasNext: Boolean = {
+          offset >= 0
+        }
+
+        override def next(): EdgeTriplet[VD, ED] = {
+          //Find srcLid of curNbr
+          val edgeTriplet = new GSEdgeTripletImpl[VD, ED];
+          edgeTriplet.eid = eids.get(offset)
+          edgeTriplet.offset = offset
+          edgeTriplet.srcId = srcOids.get(offset)
+          edgeTriplet.dstId = dstOids.get(offset)
+          edgeTriplet.attr = edatas.get(edgeTriplet.eid)
+          edgeTriplet.srcAttr = vertexDataStore.getData(srcLids.get(offset))
+          edgeTriplet.dstAttr = vertexDataStore.getData(dstLids.get(offset))
+          offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
+          edgeTriplet
+        }
       }
-    }
-
-    override def hasNext: Boolean = {
-      offset >= 0
-    }
-
-    override def next() : EdgeTriplet[VD,ED] = {
-      //Find srcLid of curNbr
-      val edgeTriplet = createTriplet
-      //      log.info(s"curLid ${curLid},offset ${offset}, offset limit${offsetLimit}")
-      edgeTriplet.eid = eids.get(offset)
-      edgeTriplet.offset = offset
-      edgeTriplet.srcId = srcOids.get(offset)
-      edgeTriplet.dstId = dstOids.get(offset)
-      edgeTriplet.attr = edatas.get(edgeTriplet.eid)
-      edgeTriplet.srcAttr = vertexDataStore.getData(srcLids.get(offset))
-      edgeTriplet.dstAttr = vertexDataStore.getData(dstLids.get(offset))
-      offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
-      edgeTriplet
     }
   }
 
@@ -210,3 +238,4 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   override def getEids: PrimitiveArray[VertexId] = eids
 }
+

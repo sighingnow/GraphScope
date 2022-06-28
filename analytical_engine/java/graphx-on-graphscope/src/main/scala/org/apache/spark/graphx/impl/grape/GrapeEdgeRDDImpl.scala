@@ -77,7 +77,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
   }
 
   override def reverse: GrapeEdgeRDD[ED] = {
-    mapEdgePartitions((partition) => partition.reverse)
+    mapEdgePartitions(partition => partition.reverse)
   }
 
 //  def filter(

@@ -23,16 +23,3 @@ class ReusableEdgeImpl[ED] extends ReusableEdge[ED] {
     this.attr = ed
   }
 }
-
-class ReversedReusableEdge[ED] extends ReusableEdge[ED]{
-  override def setSrcId(vertexId: VertexId) = {
-    this.dstId = vertexId
-  }
-  override def setDstId(vertexId: VertexId) = {
-    this.srcId = vertexId
-  }
-
-  override def setAttr(ed : ED) = {
-    this.attr = ed
-  }
-}
