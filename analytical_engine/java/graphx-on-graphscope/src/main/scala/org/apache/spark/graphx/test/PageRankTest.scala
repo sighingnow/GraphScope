@@ -20,16 +20,12 @@ object PageRankTest extends Logging{
     }
     val eFilePath = args(0);
     val numPartitions = args(1).toInt;
-    log.info(s"Running for efile ${eFilePath}")
-    val graph = GraphScopeHelper.edgeListFile(sc, eFilePath,canonicalOrientation = false, numPartitions)
-    graph.cache()
+    val graph = GraphScopeHelper.edgeListFile(sc, eFilePath,canonicalOrientation = false, numPartitions).mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr).cache()
     log.info(s"[PageRank: ] Load graph ${graph.numEdges}, ${graph.numVertices}")
     val ranks = graph.pageRank(0.0001).vertices
-    // Join the ranks with the usernames
-    // Print the result
-    println(ranks.collect().mkString("\n"))
 
     log.info(s"Finish query, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
+    ranks.saveAsTextFile(s"/tmp/pagerank-test-${java.time.LocalDateTime.now()}")
 
     sc.stop()
   }
