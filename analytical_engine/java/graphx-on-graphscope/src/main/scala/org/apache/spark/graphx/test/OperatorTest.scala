@@ -59,11 +59,11 @@ object OperatorTest extends Logging{
         graph2.mapTriplets[Long]((pid,iter)=>f(pid,iter), TripletFields.All)
       }
 
-      def reverse(graph : Graph[Long,Long]) = graph.reverse
 
-      val graphxRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph))))))).mask(maskGraph).reverse
+//      val graphxRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph))))))).mask(maskGraph).reverse
+      val graphxRes = outerJoin(mapDifferentType(mapping(graph)))
 
-      val grapeRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(grapeGraph))))))).mask(grapeMaskGraph).reverse
+      val grapeRes = outerJoin(mapDifferentType(mapping(grapeGraph)))
 
       graphxRes.vertices.saveAsTextFile(s"/tmp/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
       grapeRes.vertices.saveAsTextFile(s"/tmp/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")
