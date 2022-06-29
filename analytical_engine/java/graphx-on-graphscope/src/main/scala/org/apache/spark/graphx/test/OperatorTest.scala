@@ -43,7 +43,7 @@ object OperatorTest extends Logging{
       }
 
       def subGraph(graph: Graph[Long,Long]) : Graph[Long,Long] = {
-        graph.subgraph(epred = { triplet => triplet.srcId < 5 && triplet.srcId > 1}, vpred = (vid,vd) => vid < 5 && vid > 1)
+        graph.subgraph(epred = { triplet => triplet.srcId > 100}, vpred = (vid,vd) => vid > 100)
       }
 
       //map edge attr to pid.
@@ -60,9 +60,9 @@ object OperatorTest extends Logging{
       }
 
 //      val graphxRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph))))))).mask(maskGraph).reverse
-      val graphxRes = mapTriplet(mapEdgeIterator(outerJoin(mapDifferentType(mapping(graph)))))
+      val graphxRes = mapTriplet(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph)))))).mask(maskGraph)
 
-      val grapeRes = mapTriplet(mapEdgeIterator(outerJoin(mapDifferentType(mapping(grapeGraph)))))
+      val grapeRes = mapTriplet(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(grapeGraph)))))).mask(grapeMaskGraph)
 
       graphxRes.vertices.saveAsTextFile(s"/tmp/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
       grapeRes.vertices.saveAsTextFile(s"/tmp/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")

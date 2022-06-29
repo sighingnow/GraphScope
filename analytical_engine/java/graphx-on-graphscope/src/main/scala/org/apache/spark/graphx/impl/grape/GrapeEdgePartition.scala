@@ -213,6 +213,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       val oldIndex = oldEdge.offset.toInt
       if (newMask.get(oldIndex)){
         newEdata.set(oldIndex, f(oldEdge.srcId, oldEdge.dstId, oldEdge.attr, other.edatas.get(oldIndex))) //FIXME: edatas can be null
+        log.info(s"inner join: edge: ${oldEdge.srcId}->${oldEdge.dstId}: ${oldEdge.attr}, new ${newEdata.get(oldEdge.eid)}")
       }
     }
 
