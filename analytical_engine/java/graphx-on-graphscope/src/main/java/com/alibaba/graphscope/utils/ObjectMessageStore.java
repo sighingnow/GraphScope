@@ -97,9 +97,12 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
             if (i != fragment.fid()){
                 outputStream[i].flush();
                 ffiOutStream[i].finishSetting();
-                messageManager.sendToFragment(i, ffiOutStream[i].getVector());
-                logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(), ffiOutStream[i].getVector().size(), i);
+                if (ffiOutStream[i].getVector().size() > 0){
+                    messageManager.sendToFragment(i, ffiOutStream[i].getVector());
+                    logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(), ffiOutStream[i].getVector().size(), i);
+                }
                 outputStream[i].reset();
+                ffiOutStream[i].reset();
             }
         }
     }

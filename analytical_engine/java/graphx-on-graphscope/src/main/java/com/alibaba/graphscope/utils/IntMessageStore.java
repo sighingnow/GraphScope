@@ -85,9 +85,10 @@ public class IntMessageStore implements MessageStore<Integer> {
         for (int i = 0; i < fragment.fnum(); ++i) {
             if (i != fragment.fid()) {
                 outputStream[i].finishSetting();
-                messageManager.sendToFragment(i, outputStream[i].getVector());
-                logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(),
-                outputStream[i].getVector().size(), i);
+                if (outputStream[i].getVector().size() > 0){
+                    messageManager.sendToFragment(i, outputStream[i].getVector());
+                    logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(), outputStream[i].getVector().size(), i);
+                }
                 outputStream[i].reset();
             }
         }
