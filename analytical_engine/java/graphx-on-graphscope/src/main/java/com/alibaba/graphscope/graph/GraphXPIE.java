@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.BitSet;
 import java.util.concurrent.ExecutorService;
+import org.apache.spark.graphx.EdgeDirection;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +74,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
     private MessageStore<MSG_T> messageStore;
     private long innerVerticesNum, verticesNum;
     private BitSet curSet, nextSet;
+    private EdgeDirection direction;
 
     public PrimitiveArray<VD> getNewVdataArray() {
         return newVdataArray;
@@ -80,13 +82,14 @@ public class GraphXPIE<VD, ED, MSG_T> {
 
     public GraphXPIE(GraphXConf<VD, ED, MSG_T> conf, Function3<Long, VD, MSG_T, VD> vprog,
         Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, MSG_T>>> sendMsg,
-        Function2<MSG_T, MSG_T, MSG_T> mergeMsg, MSG_T initialMessage) {
+        Function2<MSG_T, MSG_T, MSG_T> mergeMsg, MSG_T initialMessage, EdgeDirection direction) {
         this.conf = conf;
         this.vprog = vprog;
         this.sendMsg = sendMsg;
         this.mergeMsg = mergeMsg;
         this.edgeTriplet = new GSEdgeTripletImpl<>();
         this.initialMessage = initialMessage;
+        this.direction = direction;
     }
 
     public void init(IFragment<Long, Long, VD, ED> fragment, DefaultMessageManager messageManager,
@@ -150,9 +153,33 @@ public class GraphXPIE<VD, ED, MSG_T> {
         round = 1;
     }
 
-    void iterateOnEdges(Vertex<Long> vertex, GSEdgeTripletImpl<VD, ED> edgeTriplet) {
-        PropertyNbrUnit<Long> begin = graphXFragment.geOEBegin(vertex);
-        PropertyNbrUnit<Long> end = graphXFragment.getOEEnd(vertex);
+    void iterateOnEdges(Vertex<Long> vertex, GSEdgeTripletImpl<VD, ED> edgeTriplet){
+        if (direction.equals(EdgeDirection.Either())){
+            iterateOnEdgesImpl(vertex, edgeTriplet, true);
+            iterateOnEdgesImpl(vertex, edgeTriplet, false);
+        }
+        else if (direction.equals(EdgeDirection.In())){
+            iterateOnEdgesImpl(vertex, edgeTriplet, true);
+        }
+        else if (direction.equals(EdgeDirection.Out())){
+            iterateOnEdgesImpl(vertex, edgeTriplet, false);
+        }
+        else {
+            throw new IllegalStateException("edge direction: both is not supported");
+        }
+    }
+
+    void iterateOnEdgesImpl(Vertex<Long> vertex, GSEdgeTripletImpl<VD, ED> edgeTriplet, boolean inEdge) {
+        PropertyNbrUnit<Long> begin,end;
+        if (inEdge){
+            begin = graphXFragment.getIEBegin(vertex);
+            end = graphXFragment.getIEEnd(vertex);
+        }
+        else {
+            begin = graphXFragment.geOEBegin(vertex);
+            end = graphXFragment.getOEEnd(vertex);
+        }
+
         Vertex<Long> nbrVertex = FFITypeFactoryhelper.newVertexLong();
 
         while (begin.getAddress() != end.getAddress()) {
@@ -161,9 +188,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
             edgeTriplet.setDstOid(graphXFragment.getId(nbrVertex), newVdataArray.get(nbrVid));
             edgeTriplet.setAttr(newEdataArray.get(begin.eid()));
             Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
-//      logger.info("for edge: lid:{} oid:{}({}) -> lid:{} oid {} ({}), edge attr {}, ivnum {}", vertex.GetValue(), edgeTriplet.srcId(),
-//                  edgeTriplet.srcAttr(), nbrVid, edgeTriplet.dstId(), edgeTriplet.dstAttr(),
-//                  edgeTriplet.attr, innerVerticesNum);
             messageStore.addMessages(msgs, graphXFragment, nextSet);
             begin.addV(16);
         }

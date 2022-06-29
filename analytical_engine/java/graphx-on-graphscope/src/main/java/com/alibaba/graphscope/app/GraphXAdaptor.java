@@ -31,9 +31,9 @@ public class GraphXAdaptor<VDATA_T, EDATA_T, MSG> extends Communicator implement
         String serialPath)
         throws ClassNotFoundException {
         Object[] objects = SerializationUtils.read(classLoader, serialPath);
-        if (objects.length != 8) {
+        if (objects.length != 9) {
             throw new IllegalStateException(
-                "Expect 7 deserialzed object, but only got " + objects.length);
+                "Expect 9 deserialzed object, but only got " + objects.length);
         }
         Class<?> vdClass = (Class<?>) objects[0];
         Class<?> edClass = (Class<?>) objects[1];

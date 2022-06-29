@@ -29,7 +29,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     //0. write back vertex.
     //1. serialization
     log.info("[Driver:] start serialization functions.")
-    SerializationUtils.write(SERIAL_PATH, vdClass, edClass, msgClass, vprog, sendMsg, mergeMsg, initialMsg, sc.appName)
+    SerializationUtils.write(SERIAL_PATH, vdClass, edClass, msgClass, vprog, sendMsg, mergeMsg, initialMsg, sc.appName,activeDirection)
 
     //launch mpi processes. and run.
     val t0 = System.nanoTime()

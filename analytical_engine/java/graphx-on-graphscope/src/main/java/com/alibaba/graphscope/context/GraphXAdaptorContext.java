@@ -16,6 +16,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URLClassLoader;
 import java.time.LocalDateTime;
+import org.apache.spark.graphx.EdgeDirection;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,18 +33,18 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
     public static <VD, ED, M> GraphXAdaptorContext<VD, ED, M> createImpl(
         Class<? extends VD> vdClass, Class<? extends ED> edClass,
         Class<? extends M> msgClass, Function3 vprog, Function1 sendMsg, Function2 mergeMsg,
-        Object initMsg, String appName) {
+        Object initMsg, String appName, EdgeDirection direction) {
         return new GraphXAdaptorContext<VD, ED, M>(vdClass, edClass, msgClass,
             (Function3<Long, VD, M, VD>) vprog,
             (Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, M>>>) sendMsg,
-            (Function2<M, M, M>) mergeMsg, (M) initMsg, appName);
+            (Function2<M, M, M>) mergeMsg, (M) initMsg, appName, direction);
     }
 
     public static <VD, ED, M> GraphXAdaptorContext<VD, ED, M> create(URLClassLoader classLoader,
         String serialPath)
         throws ClassNotFoundException {
         Object[] objects = SerializationUtils.read(classLoader, serialPath);
-        if (objects.length != 8) {
+        if (objects.length != 9) {
             throw new IllegalStateException(
                 "Expect 8 deserialzed object, but only got " + objects.length);
         }
@@ -55,8 +56,9 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
         Function2 mergeMsg = (Function2) objects[5];
         Object initMsg = objects[6];
         String appName = (String) objects[7];
+        EdgeDirection direction = (EdgeDirection) objects[8];
         return (GraphXAdaptorContext<VD, ED, M>) createImpl(vdClass, edClass, msgClass, vprog,
-            sendMsg, mergeMsg, initMsg, appName);
+            sendMsg, mergeMsg, initMsg, appName, direction);
     }
 
     private static Logger logger = LoggerFactory.getLogger(GraphXAdaptorContext.class.getName());
@@ -80,10 +82,10 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
         Class<? extends MSG> msgClass,
         Function3<Long, VDATA_T, MSG, VDATA_T> vprog,
         Function1<EdgeTriplet<VDATA_T, EDATA_T>, Iterator<Tuple2<Long, MSG>>> sendMsg,
-        Function2<MSG, MSG, MSG> mergeMsg, MSG initialMsg, String appName) {
+        Function2<MSG, MSG, MSG> mergeMsg, MSG initialMsg, String appName, EdgeDirection edgeDirection) {
         this.conf = new GraphXConf<>(vdClass, edClass, msgClass);
         this.graphXProxy = new GraphXPIE<VDATA_T, EDATA_T, MSG>(conf, vprog, sendMsg, mergeMsg,
-            initialMsg);
+            initialMsg,edgeDirection);
         this.appName = appName;
     }
 
