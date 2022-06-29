@@ -2,14 +2,14 @@ package org.apache.spark.graphx.impl
 
 import com.alibaba.graphscope.graphx.{GraphScopeHelper, SerializationUtils}
 import com.alibaba.graphscope.utils.MPIUtils
-import org.apache.spark.graphx.utils.ExecutorUtils
+import org.apache.spark.SparkContext
 import org.apache.spark.graphx.{EdgeDirection, EdgeTriplet, Graph, VertexId}
 import org.apache.spark.internal.Logging
 
 import scala.reflect.{ClassTag, classTag}
 
 class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
-(graph: Graph[VD, ED], initialMsg: MSG, maxIteration: Int, activeDirection: EdgeDirection, vprog: (VertexId, VD, MSG) => VD,
+(sc: SparkContext, graph: Graph[VD, ED], initialMsg: MSG, maxIteration: Int, activeDirection: EdgeDirection, vprog: (VertexId, VD, MSG) => VD,
  sendMsg: EdgeTriplet[VD, ED] => Iterator[(VertexId, MSG)],
  mergeMsg: (MSG, MSG) => MSG) extends Logging {
   val SERIAL_PATH = "/tmp/graphx-meta"
@@ -29,7 +29,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     //0. write back vertex.
     //1. serialization
     log.info("[Driver:] start serialization functions.")
-    SerializationUtils.write(SERIAL_PATH, vdClass, edClass, msgClass, vprog, sendMsg, mergeMsg, initialMsg)
+    SerializationUtils.write(SERIAL_PATH, vdClass, edClass, msgClass, vprog, sendMsg, mergeMsg, initialMsg, sc.appName)
 
     //launch mpi processes. and run.
     val t0 = System.nanoTime()
@@ -41,11 +41,13 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     val fragIds = grapeGraph.fragmentIds.collect()
     log.info(s"[GraphScopePregel]: Collected frag ids ${fragIds.mkString(",")}")
 
+    //running pregel will not change vertex data type.
     MPIUtils.launchGraphX[MSG,VD,ED](fragIds,vdClass,edClass,msgClass, SERIAL_PATH,maxIteration)
-    //FIXME: reconstruct the graph from result ids.
+    //usually we need to construct graph vertices attributes from vineyard array.
 
     val t1 = System.nanoTime()
     log.info(s"[GraphScopePregel: ] running MPI process cost :${(t1 - t0) / 1000000} ms")
-    graph
+    //FIXME: return the updated frag.
+    grapeGraph
   }
 }

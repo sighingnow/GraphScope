@@ -4,8 +4,9 @@ import com.alibaba.graphscope.utils.array.impl.DoubleArray;
 import com.alibaba.graphscope.utils.array.impl.IntArray;
 import com.alibaba.graphscope.utils.array.impl.LongArray;
 import com.alibaba.graphscope.utils.array.impl.ObjectArray;
+import java.io.Serializable;
 
-public interface PrimitiveArray<T> {
+public interface PrimitiveArray<T> extends Serializable {
     T get(int index);
 
     default T get(long index){

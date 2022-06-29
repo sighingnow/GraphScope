@@ -144,7 +144,7 @@ object Pregel extends Logging {
     val vprogCleaned = sc.clean(vprog,true)
     val sendMsgCleaned = sc.clean(sendMsg, true)
     val mergeMsgCleaned = sc.clean(mergeMsg, true)
-    val graphScopePregel = new GraphScopePregel[VD,ED,A](graph, initialMsg, maxIterations, activeDirection, vprogCleaned, sendMsgCleaned, mergeMsgCleaned)
+    val graphScopePregel = new GraphScopePregel[VD,ED,A](sc, graph, initialMsg, maxIterations, activeDirection, vprogCleaned, sendMsgCleaned, mergeMsgCleaned)
 
     graphScopePregel.run()
 

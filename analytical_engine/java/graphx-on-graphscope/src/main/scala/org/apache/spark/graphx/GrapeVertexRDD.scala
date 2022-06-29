@@ -49,6 +49,8 @@ abstract class GrapeVertexRDD[VD](
   (other: VertexRDD[VD2])(f: (VertexId, VD, Option[VD2]) => VD3): VertexRDD[VD3]
 
   def syncOuterVertex : GrapeVertexRDD[VD]
+
+  /** TODO: create a new vertex rdd with new vd array */
 }
 
 object GrapeVertexRDD extends Logging{

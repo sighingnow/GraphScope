@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URLClassLoader;
+import java.time.LocalDateTime;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,20 +32,20 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
     public static <VD, ED, M> GraphXAdaptorContext<VD, ED, M> createImpl(
         Class<? extends VD> vdClass, Class<? extends ED> edClass,
         Class<? extends M> msgClass, Function3 vprog, Function1 sendMsg, Function2 mergeMsg,
-        Object initMsg) {
+        Object initMsg, String appName) {
         return new GraphXAdaptorContext<VD, ED, M>(vdClass, edClass, msgClass,
             (Function3<Long, VD, M, VD>) vprog,
             (Function1<EdgeTriplet<VD, ED>, Iterator<Tuple2<Long, M>>>) sendMsg,
-            (Function2<M, M, M>) mergeMsg, (M) initMsg);
+            (Function2<M, M, M>) mergeMsg, (M) initMsg, appName);
     }
 
     public static <VD, ED, M> GraphXAdaptorContext<VD, ED, M> create(URLClassLoader classLoader,
         String serialPath)
         throws ClassNotFoundException {
         Object[] objects = SerializationUtils.read(classLoader, serialPath);
-        if (objects.length != 7) {
+        if (objects.length != 8) {
             throw new IllegalStateException(
-                "Expect 7 deserialzed object, but only got " + objects.length);
+                "Expect 8 deserialzed object, but only got " + objects.length);
         }
         Class<?> vdClass = (Class<?>) objects[0];
         Class<?> edClass = (Class<?>) objects[1];
@@ -53,13 +54,19 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
         Function1 sendMsg = (Function1) objects[4];
         Function2 mergeMsg = (Function2) objects[5];
         Object initMsg = objects[6];
+        String appName = (String) objects[7];
         return (GraphXAdaptorContext<VD, ED, M>) createImpl(vdClass, edClass, msgClass, vprog,
-            sendMsg, mergeMsg, initMsg);
+            sendMsg, mergeMsg, initMsg, appName);
     }
 
     private static Logger logger = LoggerFactory.getLogger(GraphXAdaptorContext.class.getName());
     private GraphXConf<VDATA_T, EDATA_T, MSG> conf;
     private GraphXPIE<VDATA_T, EDATA_T, MSG> graphXProxy;
+    private String appName;
+
+    public String getAppName() {
+        return appName;
+    }
 
     public GraphXConf getConf() {
         return conf;
@@ -73,10 +80,11 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
         Class<? extends MSG> msgClass,
         Function3<Long, VDATA_T, MSG, VDATA_T> vprog,
         Function1<EdgeTriplet<VDATA_T, EDATA_T>, Iterator<Tuple2<Long, MSG>>> sendMsg,
-        Function2<MSG, MSG, MSG> mergeMsg, MSG initialMsg) {
+        Function2<MSG, MSG, MSG> mergeMsg, MSG initialMsg, String appName) {
         this.conf = new GraphXConf<>(vdClass, edClass, msgClass);
         this.graphXProxy = new GraphXPIE<VDATA_T, EDATA_T, MSG>(conf, vprog, sendMsg, mergeMsg,
             initialMsg);
+        this.appName = appName;
     }
 
     /**
@@ -109,14 +117,13 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
 
     @Override
     public void Output(IFragment<Long, Long, VDATA_T, EDATA_T> frag) {
-        String prefix = "/tmp/graphx_output";
-        String filePath = prefix + "_frag_" + String.valueOf(frag.fid());
+        String prefix = "/tmp/graphx_" + appName + "_" + LocalDateTime.now();
+        String filePath = prefix + "_frag_" + frag.fid();
         PrimitiveArray<VDATA_T> vdArray = graphXProxy.getNewVdataArray();
 
         try {
-            FileWriter fileWritter = new FileWriter(new File(filePath));
+            FileWriter fileWritter = new FileWriter(filePath);
             BufferedWriter bufferedWriter = new BufferedWriter(fileWritter);
-            VertexRange<Long> innerNodes = frag.innerVertices();
 
             Vertex<Long> cur = FFITypeFactoryhelper.newVertexLong();
             for (long index = 0; index < frag.getInnerVerticesNum(); ++index) {
