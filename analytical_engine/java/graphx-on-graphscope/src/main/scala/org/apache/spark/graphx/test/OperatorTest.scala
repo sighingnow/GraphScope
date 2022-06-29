@@ -61,9 +61,9 @@ object OperatorTest extends Logging{
 
 
 //      val graphxRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph))))))).mask(maskGraph).reverse
-      val graphxRes = outerJoin(mapDifferentType(mapping(graph)))
+      val graphxRes = mapTriplet(mapEdgeIterator(outerJoin(mapDifferentType(mapping(graph)))))
 
-      val grapeRes = outerJoin(mapDifferentType(mapping(grapeGraph)))
+      val grapeRes = mapTriplet(mapEdgeIterator(outerJoin(mapDifferentType(mapping(grapeGraph)))))
 
       graphxRes.vertices.saveAsTextFile(s"/tmp/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
       grapeRes.vertices.saveAsTextFile(s"/tmp/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")
