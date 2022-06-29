@@ -113,8 +113,11 @@ public class IntMessageStore implements MessageStore<Integer> {
                     values[lid] = mergeMessage.apply(values[lid], msg);
                 }
                 else {
-                    values[lid] = msg;
-                    curSet.set(lid);
+                    //no update in curSet when the message store is not changed, although we receive vertices.
+                    if (values[lid] != msg){
+                        values[lid] = msg;
+                        curSet.set(lid);
+                    }
                 }
             }
         } catch (Exception e) {

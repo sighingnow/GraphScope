@@ -26,7 +26,7 @@ object SSSPTest extends Logging{
       if (id == sourceId) 0.0 else Double.PositiveInfinity)
     val sssp = initialGraph.pregel(Double.PositiveInfinity, 30)(
       (id, dist, newDist) =>{
-        log.info(s"vertex ${id} receive msg ${newDist}, original ${dist}")
+//        log.info(s"vertex ${id} receive msg ${newDist}, original ${dist}")
           math.min(dist, newDist); // Vertex Program
       },
       triplet => {  // Send Message
