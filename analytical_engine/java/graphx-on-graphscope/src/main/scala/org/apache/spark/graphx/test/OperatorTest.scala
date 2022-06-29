@@ -59,7 +59,6 @@ object OperatorTest extends Logging{
         graph2.mapTriplets[Long]((pid,iter)=>f(pid,iter), TripletFields.All)
       }
 
-
 //      val graphxRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph))))))).mask(maskGraph).reverse
       val graphxRes = mapTriplet(mapEdgeIterator(outerJoin(mapDifferentType(mapping(graph)))))
 

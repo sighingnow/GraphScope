@@ -227,7 +227,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     }
   }
 
-  override def tripletIterator[VD: ClassTag, ED: ClassTag](vertexDataStore: VertexDataStore[VD], edatas: PrimitiveArray[ED], activeSet: BitSet, includeSrc: Boolean, includeDst: Boolean, edgeReversed : Boolean): Iterator[EdgeTriplet[VD, ED]] = {
+  override def tripletIterator[VD: ClassTag, ED: ClassTag](vertexDataStore: VertexDataStore[VD], edatas: PrimitiveArray[ED], activeSet: BitSet,edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true): Iterator[EdgeTriplet[VD, ED]] = {
     if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)){
       val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,VD,ED]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,VD,ED]]
       log.info(s"creating triplet iterator v2 with java edata, with vd store ${vertexDataStore}")
