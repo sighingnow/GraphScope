@@ -62,7 +62,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 
   def tripletIterator(vertexDataStore: VertexDataStore[VD],
                        includeSrc: Boolean = true, includeDst: Boolean = true)
-  : Iterator[EdgeTriplet[VD, ED]] = graphStructure.tripletIterator(vertexDataStore,edatas,activeEdgeSet,includeSrc,includeDst,edgeReversed)
+  : Iterator[EdgeTriplet[VD, ED]] = graphStructure.tripletIterator(vertexDataStore,edatas,activeEdgeSet,edgeReversed = edgeReversed,includeSrc = includeSrc,includeDst = includeDst)
 
   def filter(
               epred: EdgeTriplet[VD, ED] => Boolean,
@@ -149,7 +149,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   def mapTriplets[ED2: ClassTag](f: EdgeTriplet[VD,ED] => ED2, vertexDataStore: VertexDataStore[VD], tripletFields: TripletFields): GrapeEdgePartition[VD, ED2] = {
     val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], allEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
 //    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
-    val iter = tripletIterator(vertexDataStore).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
+    val iter = tripletIterator(vertexDataStore, tripletFields.useSrc, tripletFields.useDst).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
     var ind = 0;
     val time0 = System.nanoTime()
     while (iter.hasNext){
@@ -165,7 +165,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   def mapTriplets[ED2: ClassTag](f: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], vertexDataStore: VertexDataStore[VD], includeSrc  : Boolean = true, includeDst : Boolean = true): GrapeEdgePartition[VD, ED2] = {
     val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], allEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
     //    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
-    val iter = tripletIterator(vertexDataStore).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
+    val iter = tripletIterator(vertexDataStore,includeSrc,includeDst).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
     val resultEdata = f(pid, iter)
     val eids = graphStructure.getEids
     val time0 = System.nanoTime()
