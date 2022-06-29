@@ -20,7 +20,8 @@ object PageRankTest extends Logging{
     }
     val eFilePath = args(0);
     val numPartitions = args(1).toInt;
-    val graph = GraphScopeHelper.edgeListFile(sc, eFilePath,canonicalOrientation = false, numPartitions).mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr).cache()
+//    val graph = GraphScopeHelper.edgeListFile(sc, eFilePath,canonicalOrientation = false, numPartitions).mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr).cache()
+    val graph = GraphLoader.edgeListFile(sc, eFilePath,canonicalOrientation = false, numPartitions).mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr).cache()
     log.info(s"[PageRank: ] Load graph ${graph.numEdges}, ${graph.numVertices}")
     val ranks = graph.pageRank(0.0001).vertices
 

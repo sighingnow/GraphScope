@@ -12,7 +12,6 @@ import java.util.HashMap
 import scala.reflect.ClassTag
 
 object ScalaFFIFactory extends Logging{
-  System.loadLibrary("grape-jni")
   private val arrowArrayBuilderMap = new HashMap[String, ArrowArrayBuilder.Factory[_]]
   val clientFactory : VineyardClient.Factory = FFITypeFactory.getFactory(classOf[VineyardClient],"vineyard::Client").asInstanceOf[VineyardClient.Factory]
   def newLocalVertexMapBuilder(client : VineyardClient, innerOids : ArrowArrayBuilder[Long],
