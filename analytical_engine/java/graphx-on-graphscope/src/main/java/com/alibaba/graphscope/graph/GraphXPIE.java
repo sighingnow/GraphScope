@@ -338,7 +338,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
         for (int i = 0; i < len; ++i) {
             T obj = (T) objectInputStream.readObject();
             newArray.set(i, obj);
-            logger.info("setting array index {} to {}", i, obj);
         }
         return newArray;
     }
