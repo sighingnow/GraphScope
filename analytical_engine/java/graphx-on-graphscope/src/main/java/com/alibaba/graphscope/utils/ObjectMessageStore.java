@@ -101,8 +101,8 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
                     messageManager.sendToFragment(i, ffiOutStream[i].getVector());
                     logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(), ffiOutStream[i].getVector().size(), i);
                 }
-                outputStream[i].reset();
                 ffiOutStream[i].reset();
+                outputStream[i] = new ObjectOutputStream(ffiOutStream[i]);
             }
         }
     }
