@@ -14,7 +14,8 @@ object TriangleCount extends Logging with Serializable{
 
     val tmp = graph.outerJoinVertices(graph.collectNeighborIds(edgeDirection = EdgeDirection.Either))((vid, vd, nbrIds) => nbrIds.get)
 
-    tmp.vertices.saveAsTextFile("/tmp/triangle-nbrIds")
+
+    tmp.vertices.mapValues((vid,vd) => vd.mkString(",")).saveAsTextFile("/tmp/triangle-nbrIds")
     val triangleGraph = tmp.mapVertices((vid, vd) => (0, vd.toSet))
     stage = 0
 
