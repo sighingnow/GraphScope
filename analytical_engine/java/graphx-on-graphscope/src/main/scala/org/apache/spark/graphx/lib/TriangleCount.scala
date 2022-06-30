@@ -35,8 +35,7 @@ object TriangleCount extends Logging with Serializable{
       }
       else if (stage == 2){
         //the incoming vector should contain one value, and is the number of triangles
-        require(msg.size == 1)
-        log.info(s"vertex ${id} in round 2, got res ${msg(0)}")
+        log.info(s"vertex ${id} in round 2, got res ${msg(msg.size - 1)}")
         (3, attr._2,msg(0).toInt)
       }
       else attr
@@ -44,18 +43,15 @@ object TriangleCount extends Logging with Serializable{
 
 
     def sendMessage(edge: EdgeTriplet[(Int, OpenHashSet[Long],Int), ED]) : Iterator[(VertexId,PrimitiveVector[VertexId])] = {
-      if (edge.srcAttr._1 != edge.dstAttr._1){
-        throw new IllegalStateException("Not possible")
-      }
       val stage = edge.srcAttr._1
-      if (stage == 0){
+      if (stage == 1){
         val a = new PrimitiveVector[VertexId](1)
         val b = new PrimitiveVector[VertexId](1)
         a.+=(edge.dstId)
         b.+=(edge.srcId)
         Iterator((edge.srcId, a),(edge.dstId,b))
       }
-      else if (stage == 1){
+      else if (stage == 2){
         val size = (edge.srcAttr._2.getBitSet & edge.dstAttr._2.getBitSet).cardinality()
         log.info(s"join ${edge.srcAttr._2.getBitSet.cardinality()} with ${edge.dstAttr._2.getBitSet.cardinality()} got ${size}")
         val a = new PrimitiveVector[VertexId](1)
@@ -68,8 +64,11 @@ object TriangleCount extends Logging with Serializable{
     }
 
     def messageCombiner(a: PrimitiveVector[VertexId], b: PrimitiveVector[VertexId]): PrimitiveVector[VertexId] = {
-      require(b.size == 1)
-      a.+=(b(0))
+      var i = 0
+      while (i < b.size){
+         a.+=(b(i))
+         i += 1
+      }
       a
     }
 
