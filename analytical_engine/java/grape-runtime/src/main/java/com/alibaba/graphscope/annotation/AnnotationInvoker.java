@@ -202,6 +202,8 @@ import com.alibaba.fastffi.FFIGenBatch;
                         java = {"Long", "Long", "Long", "com.alibaba.fastffi.impl.CXXStdString"}),
                     @CXXTemplate(cxx = {"int64_t", "uint64_t", "double", "std::string"},
                         java = {"Long", "Long", "Double", "com.alibaba.fastffi.impl.CXXStdString"}),
+                    @CXXTemplate(cxx = {"int64_t", "uint64_t", "int32_t", "std::string"},
+                        java = {"Long", "Long", "Integer", "com.alibaba.fastffi.impl.CXXStdString"}),
                 }),
         @FFIGen(type = "com.alibaba.graphscope.graphx.StringVDGraphXFragmentBuilder",
             templates =
@@ -210,6 +212,8 @@ import com.alibaba.fastffi.FFIGenBatch;
                         java = {"Long", "Long", "com.alibaba.fastffi.impl.CXXStdString", "Long"}),
                     @CXXTemplate(cxx = {"int64_t", "uint64_t", "std::string", "double"},
                         java = {"Long", "Long", "com.alibaba.fastffi.impl.CXXStdString", "Double"}),
+                    @CXXTemplate(cxx = {"int64_t", "uint64_t", "std::string", "int32_t"},
+                        java = {"Long", "Long", "com.alibaba.fastffi.impl.CXXStdString", "Integer"}),
                 }),
         @FFIGen(type = "com.alibaba.graphscope.graphx.StringVEDGraphXFragmentBuilder",
             templates =
@@ -327,6 +331,11 @@ import com.alibaba.fastffi.FFIGenBatch;
                       cxx = "gs::GraphXFragment<int64_t,uint64_t,std::string,double>",
                       java =
                           "com.alibaba.graphscope.fragment.GraphXStringVDFragment<java.lang.Long,java.lang.Long,com.alibaba.fastffi.impl.CXXStdString,java.lang.Double>",
+                      include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)),
+                  @CXXTemplate(
+                      cxx = "gs::GraphXFragment<int64_t,uint64_t,std::string,int32_t>",
+                      java =
+                          "com.alibaba.graphscope.fragment.GraphXStringVDFragment<java.lang.Long,java.lang.Long,com.alibaba.fastffi.impl.CXXStdString,java.lang.Integer>",
                       include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)),
                   @CXXTemplate(
                       cxx = "gs::GraphXFragment<int64_t,uint64_t,int64_t,std::string>",
@@ -836,16 +845,6 @@ import com.alibaba.fastffi.FFIGenBatch;
                       cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,int64_t,double>", "int64_t"},
                       java = {
                           "com.alibaba.graphscope.fragment.GraphXFragment<java.lang.Long,java.lang.Long,java.lang.Long,java.lang.Double>",
-                          "Long"}),
-                    @CXXTemplate(
-                        cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,std::string,int64_t>", "int64_t"},
-                        java = {
-                          "com.alibaba.graphscope.fragment.GraphXStringVDFragment<java.lang.Long,java.lang.Long,com.alibaba.fastffi.impl.CXXStdString,java.lang.Long>",
-                          "Long"}),
-                  @CXXTemplate(
-                      cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,std::string,double>", "int64_t"},
-                      java = {
-                          "com.alibaba.graphscope.fragment.GraphXStringVDFragment<java.lang.Long,java.lang.Long,com.alibaba.fastffi.impl.CXXStdString,java.lang.Double>",
                           "Long"}),
                   @CXXTemplate(
                       cxx = {GRAPHX_FRAGMENT + "<int64_t,uint64_t,int64_t,std::string>", "int64_t"},
