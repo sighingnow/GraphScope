@@ -36,7 +36,8 @@ object TriangleCount extends Logging{
       else if (stage == 2){
         //the incoming vector should contain one value, and is the number of triangles
         require(msg.size == 1)
-        log.info(s"vertex ${id} in round 2, got res ${msg(0)}")
+        val trimmed = msg.trim().toArray
+        log.info(s"vertex ${id} in round 2, receive msg ${trimmed.mkString(",")}")
         (3, attr._2,msg(0).toInt)
       }
       else attr
@@ -57,7 +58,8 @@ object TriangleCount extends Logging{
       }
       else if (stage == 1){
         val size = (edge.srcAttr._2.getBitSet & edge.dstAttr._2.getBitSet).cardinality()
-        log.info(s"join ${edge.srcAttr._2.getBitSet.cardinality()} with ${edge.dstAttr._2.getBitSet.cardinality()} got ${size}")
+        log.info(s"edge (${edge.srcId}->${edge.dstId}), (${edge.srcAttr._2.size}, ${edge.dstAttr._2.size})")
+        log.info(s"join ${edge.srcAttr._2.size} with ${edge.dstAttr._2.size} got ${size}")
         val a = new PrimitiveVector[VertexId](1)
         a.+=(size)
         Iterator((edge.srcId, a), (edge.dstId,a))
