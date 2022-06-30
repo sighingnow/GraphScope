@@ -8,7 +8,7 @@ import org.apache.spark.graphx.utils.MyPrimitiveVector
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.OpenHashSet
 
-object TriangleCount extends Logging{
+object TriangleCount extends Logging with Serializable{
 
   def run[VD: ClassTag, ED: ClassTag](graph: Graph[VD, ED]): Graph[Int, ED] = {
 

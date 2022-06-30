@@ -119,6 +119,8 @@ import com.alibaba.fastffi.FFIGenBatch;
                 java = {"Long", "Long", "com.alibaba.fastffi.impl.CXXStdString", "Long"}),
                 @CXXTemplate(cxx = {"int64_t", "uint64_t", "std::string", "double"},
                     java = {"Long", "Long", "com.alibaba.fastffi.impl.CXXStdString", "Double"}),
+                @CXXTemplate(cxx = {"int64_t", "uint64_t", "std::string", "int32_t"},
+                    java = {"Long", "Long", "com.alibaba.fastffi.impl.CXXStdString", "Integer"}),
             }),
         @FFIGen(type = "com.alibaba.graphscope.fragment.GraphXStringEDFragment",
             templates =
@@ -127,6 +129,8 @@ import com.alibaba.fastffi.FFIGenBatch;
                         java = {"Long", "Long", "Long","com.alibaba.fastffi.impl.CXXStdString"}),
                     @CXXTemplate(cxx = {"int64_t", "uint64_t", "double", "std::string"},
                         java = {"Long", "Long", "Double","com.alibaba.fastffi.impl.CXXStdString"}),
+                    @CXXTemplate(cxx = {"int64_t", "uint64_t", "int32_t", "std::string"},
+                        java = {"Long", "Long", "Integer","com.alibaba.fastffi.impl.CXXStdString"}),
                 }),
         @FFIGen(type = "com.alibaba.graphscope.fragment.GraphXStringVEDFragment",
             templates =
@@ -347,6 +351,12 @@ import com.alibaba.fastffi.FFIGenBatch;
                       java =
                           "com.alibaba.graphscope.fragment.GraphXStringEDFragment<java.lang.Long,java.lang.Long,java.lang.Double,com.alibaba.fastffi.impl.CXXStdString>",
                       include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)),
+                  @CXXTemplate(
+                      cxx = "gs::GraphXFragment<int64_t,uint64_t,int32_t,std::string>",
+                      java =
+                          "com.alibaba.graphscope.fragment.GraphXStringEDFragment<java.lang.Long,java.lang.Long,java.lang.Integer,com.alibaba.fastffi.impl.CXXStdString>",
+                      include = @CXXHead(CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)),
+
                   @CXXTemplate(
                       cxx = "gs::GraphXFragment<int64_t,uint64_t,std::string,std::string>",
                       java =
