@@ -2,12 +2,10 @@ package org.apache.spark.graphx.lib
 
 //import org.apache.spark.graphx.TypeAlias.PrimitiveVector
 
-import com.alibaba.graphscope.graphx.utils.PrimitiveVector
-
-import scala.reflect.ClassTag
 import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
-import org.apache.spark.util.collection.OpenHashSet
+
+import scala.reflect.ClassTag
 
 object TriangleCount extends Logging with Serializable{
   var stage = 0
@@ -16,7 +14,7 @@ object TriangleCount extends Logging with Serializable{
 
     val tmp = graph.outerJoinVertices(graph.collectNeighborIds(edgeDirection = EdgeDirection.Either))((vid, vd, nbrIds) => nbrIds.get)
 
-    log.info(s"collected nbrids ${tmp.vertices.collect().mkString(",")}")
+    tmp.vertices.saveAsTextFile("/tmp/triangle-nbrIds")
     val triangleGraph = tmp.mapVertices((vid, vd) => (0, vd.toSet))
     stage = 0
 
@@ -48,7 +46,7 @@ object TriangleCount extends Logging with Serializable{
     def sendMsg(edge: EdgeTriplet[(Int, Set[VertexId]), ED]) : Iterator[(VertexId,Array[VertexId])] = {
       if (stage == 0){
         stage = 1
-        log.info(s"send msg to ${edge.dstId}, ${edge.srcAttr._2.toArray.mkString(",")}")
+        log.info(s"${edge.srcId} send msg to ${edge.dstId}, ${edge.srcAttr._2.toArray.mkString(",")}")
         Iterator((edge.dstId, edge.srcAttr._2.toArray))
       }
       else {

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.BitSet;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.P;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.collection.Iterator;
@@ -133,7 +134,10 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
                 }
                 else {
                     //no update in curSet when the message store is not changed, although we receive vertices.
-                    if (!values[lid].equals(msg)){
+                    if (values[lid] == null){
+                        values[lid] = msg;
+                    }
+                    else if (!values[lid].equals(msg)){
                         values[lid] = msg;
                         curSet.set(lid);
                     }
