@@ -2,9 +2,10 @@ package org.apache.spark.graphx.lib
 
 //import org.apache.spark.graphx.TypeAlias.PrimitiveVector
 
+import com.alibaba.graphscope.graphx.utils.PrimitiveVector
+
 import scala.reflect.ClassTag
 import org.apache.spark.graphx._
-import org.apache.spark.graphx.utils.MyPrimitiveVector
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.OpenHashSet
 
@@ -14,7 +15,7 @@ object TriangleCount extends Logging with Serializable{
 
     val triangleGraph = graph.mapVertices((vid,vd) =>(0, new OpenHashSet[VertexId], -1))
 
-    def vertexProgram(id: VertexId, attr: (Int, OpenHashSet[Long],Int), msg: MyPrimitiveVector[VertexId]): (Int,OpenHashSet[Long],Int) = {
+    def vertexProgram(id: VertexId, attr: (Int, OpenHashSet[Long],Int), msg: PrimitiveVector[VertexId]): (Int,OpenHashSet[Long],Int) = {
       val stage = attr._1
       if (stage == 0){
         //send message this round;
@@ -42,14 +43,14 @@ object TriangleCount extends Logging with Serializable{
     }
 
 
-    def sendMessage(edge: EdgeTriplet[(Int, OpenHashSet[Long],Int), ED]) : Iterator[(VertexId,MyPrimitiveVector[VertexId])] = {
+    def sendMessage(edge: EdgeTriplet[(Int, OpenHashSet[Long],Int), ED]) : Iterator[(VertexId,PrimitiveVector[VertexId])] = {
       if (edge.srcAttr._1 != edge.dstAttr._1){
         throw new IllegalStateException("Not possible")
       }
       val stage = edge.srcAttr._1
       if (stage == 0){
-        val a = new MyPrimitiveVector[VertexId](1)
-        val b = new MyPrimitiveVector[VertexId](1)
+        val a = new PrimitiveVector[VertexId](1)
+        val b = new PrimitiveVector[VertexId](1)
         a.+=(edge.dstId)
         b.+=(edge.srcId)
         Iterator((edge.srcId, a),(edge.dstId,b))
@@ -57,7 +58,7 @@ object TriangleCount extends Logging with Serializable{
       else if (stage == 1){
         val size = (edge.srcAttr._2.getBitSet & edge.dstAttr._2.getBitSet).cardinality()
         log.info(s"join ${edge.srcAttr._2.getBitSet.cardinality()} with ${edge.dstAttr._2.getBitSet.cardinality()} got ${size}")
-        val a = new MyPrimitiveVector[VertexId](1)
+        val a = new PrimitiveVector[VertexId](1)
         a.+=(size)
         Iterator((edge.srcId, a), (edge.dstId,a))
       }
@@ -66,13 +67,13 @@ object TriangleCount extends Logging with Serializable{
       }
     }
 
-    def messageCombiner(a: MyPrimitiveVector[VertexId], b: MyPrimitiveVector[VertexId]): MyPrimitiveVector[VertexId] = {
+    def messageCombiner(a: PrimitiveVector[VertexId], b: PrimitiveVector[VertexId]): PrimitiveVector[VertexId] = {
       require(b.size == 1)
       a.+=(b(0))
       a
     }
 
-    val initialMsg = new MyPrimitiveVector[VertexId](1) //empty msg
+    val initialMsg = new PrimitiveVector[VertexId](1) //empty msg
     val res = triangleGraph.pregel(initialMsg)(vertexProgram, sendMessage, messageCombiner)
     res.mapVertices((vid,vd) => vd._3)
   }
