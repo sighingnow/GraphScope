@@ -13,7 +13,7 @@ import org.apache.spark.graphx.{EdgeRDD, GrapeEdgeRDD, GrapeVertexRDD, Graph, Pa
 import org.apache.spark.graphx.impl.{EdgeRDDImpl, GrapeGraphImpl, GrapeUtils, GraphImpl, VertexRDDImpl}
 import org.apache.spark.graphx.impl.partition.EdgeShuffle
 import org.apache.spark.graphx.impl.partition.data.VertexDataStore
-import org.apache.spark.graphx.utils.ScalaFFIFactory
+import org.apache.spark.graphx.utils.{MyPrimitiveVector, ScalaFFIFactory}
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.collection.{OpenHashSet, PrimitiveVector}
@@ -56,9 +56,9 @@ object GraphScopeHelper extends Logging{
     val edgesShuffled = lines.mapPartitionsWithIndex (
       (fromPid, iter) => {
         //        iter.toArray
-        val pid2src = Array.fill(numPartitions)(new TypeAlias.PrimitiveVector[VertexId])
-        val pid2Dst = Array.fill(numPartitions)(new TypeAlias.PrimitiveVector[VertexId])
-        val pid2attr = Array.fill(numPartitions)(new TypeAlias.PrimitiveVector[Int])
+        val pid2src = Array.fill(numPartitions)(new MyPrimitiveVector[VertexId])
+        val pid2Dst = Array.fill(numPartitions)(new MyPrimitiveVector[VertexId])
+        val pid2attr = Array.fill(numPartitions)(new MyPrimitiveVector[Int])
         val pid2Oids = Array.fill(numPartitions)(new OpenHashSet[VertexId])
         val time0 = System.nanoTime();
         while (iter.hasNext) {
@@ -210,9 +210,9 @@ object GraphScopeHelper extends Logging{
     val originEdgePartitions = originGraph.edges.partitionsRDD
     val edgesShuffled = originEdgePartitions.mapPartitions(iter => {
       val (fromPid, part) = iter.next()
-      val pid2src = Array.fill(numPartitions)(new TypeAlias.PrimitiveVector[VertexId])
-      val pid2Dst = Array.fill(numPartitions)(new TypeAlias.PrimitiveVector[VertexId])
-      val pid2attr = Array.fill(numPartitions)(new TypeAlias.PrimitiveVector[ED])
+      val pid2src = Array.fill(numPartitions)(new MyPrimitiveVector[VertexId])
+      val pid2Dst = Array.fill(numPartitions)(new MyPrimitiveVector[VertexId])
+      val pid2attr = Array.fill(numPartitions)(new MyPrimitiveVector[ED])
       val pid2Oids = Array.fill(numPartitions)(new OpenHashSet[VertexId])
       val time0 = System.nanoTime()
       val edgesIter = part.iterator
@@ -259,8 +259,8 @@ object GraphScopeHelper extends Logging{
     val time3 = System.nanoTime()
     //different from edgeFileLoader, here we need the attr in the original graphx graph
     val verticesShuffled = originGraph.vertices.mapPartitions(iter => {
-      val pid2Oid = Array.fill(numPartitions)(new TypeAlias.PrimitiveVector[Long])
-      val pid2Vd = Array.fill(numPartitions)(new TypeAlias.PrimitiveVector[VD])
+      val pid2Oid = Array.fill(numPartitions)(new MyPrimitiveVector[Long])
+      val pid2Vd = Array.fill(numPartitions)(new MyPrimitiveVector[VD])
       while (iter.hasNext){
         val (id, vd) = iter.next()
         val pid = partitioner.getPartition(id)
