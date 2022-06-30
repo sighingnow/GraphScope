@@ -14,18 +14,16 @@ object TriangleCount extends Logging with Serializable{
 
     val tmp = graph.outerJoinVertices(graph.collectNeighborIds(edgeDirection = EdgeDirection.Either))((vid, vd, nbrIds) => nbrIds.get)
 
-
-    tmp.vertices.mapValues((vid,vd) => vd.mkString(",")).saveAsTextFile("/tmp/triangle-nbrIds")
     val triangleGraph = tmp.mapVertices((vid, vd) => (0, vd.toSet))
     stage = 0
 
     def vp(id : VertexId, attr : (Int, Set[VertexId]), msg : Array[VertexId]) : (Int,Set[VertexId]) = {
       if (stage == 0){
-        log.info(s"vertex ${id}, stage 0")
+//        log.info(s"vertex ${id}, stage 0")
         attr
       }
       else if (stage == 1){
-        log.info(s"vertex ${id}, stage 1, receive msg ${msg.mkString(",")}")
+//        log.info(s"vertex ${id}, stage 1, receive msg ${msg.mkString(",")}")
         val prevCnt = attr._1
         var curCnt = 0
         var i = 0
@@ -36,7 +34,7 @@ object TriangleCount extends Logging with Serializable{
           }
           i += 1
         }
-        log.info(s"merge msg, prev ${prevCnt}, cur ${curCnt}")
+//        log.info(s"merge msg, prev ${prevCnt}, cur ${curCnt}")
         (prevCnt + curCnt, attr._2)
       }
       else {
@@ -47,7 +45,7 @@ object TriangleCount extends Logging with Serializable{
     def sendMsg(edge: EdgeTriplet[(Int, Set[VertexId]), ED]) : Iterator[(VertexId,Array[VertexId])] = {
       if (stage == 0){
         stage = 1
-        log.info(s"${edge.srcId} send msg to ${edge.dstId}, ${edge.srcAttr._2.toArray.mkString(",")}")
+//        log.info(s"${edge.srcId} send msg to ${edge.dstId}, ${edge.srcAttr._2.toArray.mkString(",")}")
         Iterator((edge.dstId, edge.srcAttr._2.toArray))
       }
       else {
@@ -57,7 +55,7 @@ object TriangleCount extends Logging with Serializable{
 
     def mergeMsg(a: Array[VertexId], b: Array[VertexId]): Array[VertexId] = {
       val res = a ++ b
-      log.info(s"Merging ${a.mkString(",")} with ${b.mkString(",")} : ${res.mkString(",")}")
+//      log.info(s"Merging ${a.mkString(",")} with ${b.mkString(",")} : ${res.mkString(",")}")
       res
     }
 
