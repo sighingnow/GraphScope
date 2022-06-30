@@ -1,6 +1,6 @@
 package com.alibaba.graphscope.graphx.graph.impl
 
-import com.alibaba.graphscope.ds.{PropertyNbrUnit, Vertex}
+import com.alibaba.graphscope.ds.{PropertyNbrUnit, TypedArray, Vertex}
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, FragmentType, IFragment}
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{ArrowProjectedStructure, GraphStructureType}
@@ -21,6 +21,27 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
                         var eids : PrimitiveArray[Long] = null) extends GraphStructure with Logging{
   val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
   val fid2Pid = new Array[Int](fragment.fnum())
+
+
+  var oePtr,iePtr : PropertyNbrUnit[Long] = null
+  var oePtrStartAddr,iePtrStartAddr : Long = 0
+  var oeOffsetBeginArray,ieOffsetBeginArray : TypedArray[Long] = null
+  var oeOffsetEndArray,ieOffsetEndArray : TypedArray[Long] = null
+  if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
+    val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,_,_]].asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
+    oePtr = projectedFragment.getOutEdgesPtr
+    iePtr =projectedFragment.getInEdgesPtr
+    oePtrStartAddr = oePtr.getAddress
+    iePtrStartAddr = iePtr.getAddress
+    oeOffsetBeginArray = projectedFragment.getOEOffsetsBeginAccessor.asInstanceOf[TypedArray[Long]]
+    ieOffsetBeginArray = projectedFragment.getIEOffsetsBeginAccessor.asInstanceOf[TypedArray[Long]]
+    oeOffsetEndArray = projectedFragment.getOEOffsetsEndAccessor.asInstanceOf[TypedArray[Long]]
+    ieOffsetEndArray = projectedFragment.getIEOffsetsEndAccessor.asInstanceOf[TypedArray[Long]]
+
+  }
+  else {
+    throw new IllegalStateException(s"not supported type ${fragment.fragmentType()}")
+  }
 
   val startLid = 0
   val endLid: Long = fragment.getInnerVerticesNum()
@@ -349,6 +370,56 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
   override val structureType: GraphStructureType = ArrowProjectedStructure
 
   override def getEids: PrimitiveArray[VertexId] = eids
+
+  override def getOutNbrIds(vid: VertexId): Array[VertexId] = {
+    val size = getOutDegree(vid)
+    val res = new Array[VertexId](size.toInt)
+    fillOutNbrIdsImpl(vid, res)
+    res
+  }
+
+  def fillOutNbrIdsImpl(vid : VertexId, array : Array[VertexId], startInd : Int = 0) : Unit = {
+    var curOff = oeOffsetBeginArray.get(vid)
+    val endOff = oeOffsetEndArray.get(vid)
+    oePtr.setAddress(oePtrStartAddr + curOff * 16)
+    var i = startInd
+    while (curOff < endOff){
+      val dstOid = getId(oePtr.vid())
+      array(i) = dstOid
+      curOff += 1
+      i += 1
+      oePtr.addV(16)
+    }
+  }
+
+  override def getInNbrIds(vid: VertexId): Array[VertexId] = {
+    val size = getInDegree(vid)
+    val res = new Array[VertexId](size.toInt)
+    fillInNbrIdsImpl(vid, res)
+    res
+  }
+
+  def fillInNbrIdsImpl(vid : VertexId, array : Array[VertexId], startInd : Int = 0) : Unit = {
+    var curOff = ieOffsetBeginArray.get(vid)
+    val endOff = ieOffsetEndArray.get(vid)
+    iePtr.setAddress(iePtrStartAddr + curOff * 16)
+    var i = startInd
+    while (curOff < endOff){
+      val dstOid = getId(iePtr.vid())
+      array(i) = dstOid
+      curOff += 1
+      i += 1
+      iePtr.addV(16)
+    }
+  }
+
+  override def getInOutNbrIds(vid: VertexId): Array[VertexId] = {
+    val size = getInDegree(vid) + getOutDegree(vid)
+    val res = new Array[VertexId](size.toInt)
+    fillOutNbrIdsImpl(vid, res, 0)
+    fillInNbrIdsImpl(vid, res, getOutDegree(vid).toInt)
+    res
+  }
 }
 
 object FragmentStructure{

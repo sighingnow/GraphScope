@@ -9,12 +9,12 @@ import org.apache.spark.graphx.impl.GrapeUtils
 import org.apache.spark.graphx.impl.partition.data.{InHeapVertexDataStore, VertexDataStore}
 import org.apache.spark.graphx.impl.partition.{IdParser, RoutingTable}
 import org.apache.spark.graphx.utils.ScalaFFIFactory
-import org.apache.spark.graphx.{PartitionID, VertexId}
+import org.apache.spark.graphx.{EdgeDirection, PartitionID, VertexId}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 
 import scala.collection.mutable.ArrayBuffer
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 
 class VertexDataMessage[VD: ClassTag](val dstPid : Int, val gids : Array[Long], val newData : Array[VD]) extends Serializable{
 
@@ -52,6 +52,31 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         res
       }
     }
+  }
+
+  def getNbrIds(lid: Int, edgeDirection: EdgeDirection) : Array[Long] = {
+    if (edgeDirection.equals(EdgeDirection.In)){
+      graphStructure.getInNbrIds(lid)
+    }
+    else if (edgeDirection.equals(EdgeDirection.Out)){
+      graphStructure.getOutNbrIds(lid)
+    }
+    else if (edgeDirection.equals(EdgeDirection.Either)){
+      graphStructure.getInOutNbrIds(lid)
+    }
+    else {
+      throw new IllegalStateException(s"Not supported direction ${edgeDirection.toString()}")
+    }
+  }
+
+  def collectNbrIds(edgeDirection: EdgeDirection) : GrapeVertexPartition[Array[VertexId]] = {
+    var lid = bitSet.nextSetBit(0)
+    val newValues = PrimitiveArray.create(classOf[Array[VertexId]], vertexData.size.toInt)
+    while (lid >= 0){
+      newValues.set(lid, getNbrIds(lid, edgeDirection))
+      lid = bitSet.nextSetBit(lid + 1);
+    }
+    this.withNewValues(new InHeapVertexDataStore[Array[VertexId]](newValues,client))
   }
   def generateVertexDataMessage : Iterator[(PartitionID, VertexDataMessage[VD])] = {
     val res = new ArrayBuffer[(PartitionID,VertexDataMessage[VD])]()

@@ -245,4 +245,12 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   override private[graphx] def shipVertexIds() = {
     throw new IllegalStateException("Inherited but not implemented, should not be used")
     }
+
+  override def collectNbrIds(direction : EdgeDirection): GrapeVertexRDD[Array[VertexId]] = {
+    val part = grapePartitionsRDD.mapPartitions(iter => {
+      val part = iter.next()
+      Iterator(part.collectNbrIds(direction))
+    })
+    this.withGrapePartitionsRDD(part)
+  }
 }

@@ -13,6 +13,7 @@ import org.apache.spark.util.collection.BitSet
 //import scala.collection.BitSet
 import scala.reflect.ClassTag
 
+/** the edge array only contains out edges, we use in edge as a comparison  */
 class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphXCSR[Long],  var srcLids : PrimitiveArray[Long],
                            val dstLids : PrimitiveArray[Long], val srcOids : PrimitiveArray[Long],
                            val dstOids : PrimitiveArray[Long],
@@ -237,5 +238,47 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   override val structureType: GraphStructureType = GraphXFragmentStructure
 
   override def getEids: PrimitiveArray[VertexId] = eids
+
+  override def getOutNbrIds(vid: VertexId): Array[VertexId] = {
+    val res = new Array[VertexId](outDegreeArray.get(vid))
+    fillOutNbrIds(vid, res)
+    res
+  }
+
+  def fillOutNbrIds(vid : VertexId, array: Array[VertexId],startInd : Int = 0) : Unit = {
+    var cur = getOEOffset(vid)
+    val end = getOEOffset(vid + 1)
+    var i = startInd
+    while (cur < end){
+      array(i) = dstOids.get(cur)
+      cur += 1
+      i += 1
+    }
+  }
+
+  override def getInNbrIds(vid: VertexId): Array[VertexId] = {
+    val res = new Array[VertexId](inDegreeArray.get(vid))
+    fillInNbrIds(vid, res)
+    res
+  }
+
+  def fillInNbrIds(vid :VertexId, array : Array[VertexId], startInd : Int = 0) : Unit = {
+    val beginNbr = csr.getIEBegin(vid)
+    val endNbr = csr.getIEEnd(vid)
+    var i = startInd
+    while (beginNbr.getAddress < endNbr.getAddress){
+      array(i) = vm.getId(beginNbr.vid())
+      i += 1
+      beginNbr.addV(16)
+    }
+  }
+
+  override def getInOutNbrIds(vid: VertexId): Array[VertexId] = {
+    val size = inDegreeArray.get(vid) + outDegreeArray.get(vid)
+    val res = new Array[VertexId](size)
+    fillOutNbrIds(vid, res, 0)
+    fillInNbrIds(vid, res, inDegreeArray.get(vid))
+    res
+  }
 }
 

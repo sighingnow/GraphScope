@@ -13,7 +13,19 @@ object TriangleCount extends Logging with Serializable{
 
   def run[VD: ClassTag, ED: ClassTag](graph: Graph[VD, ED]): Graph[Int, ED] = {
 
-    val triangleGraph = graph.mapVertices((vid,vd) =>(0, new OpenHashSet[VertexId], -1))
+    val triangleGraph = graph.outerJoinVertices(graph.collectNeighborIds(edgeDirection = EdgeDirection.Either))((vid, vd, nbrIds) => nbrIds.get)
+
+    log.info(s"collected nbrids ${triangleGraph.vertices.collect().mkString(",")}")
+    graph.mapVertices((vid,vd) =>1)
+
+//    val initialMsg = new PrimitiveVector[VertexId](1) //empty msg
+//    val res = triangleGraph.pregel(initialMsg)(vertexProgram, sendMessage, messageCombiner)
+//    res.mapVertices((vid,vd) => vd._3)
+  }
+}
+
+/**
+ *     val triangleGraph = graph.mapVertices((vid,vd) =>(0, new OpenHashSet[VertexId], -1))
 
     def vertexProgram(id: VertexId, attr: (Int, OpenHashSet[Long],Int), msg: PrimitiveVector[VertexId]): (Int,OpenHashSet[Long],Int) = {
       val stage = attr._1
@@ -53,12 +65,13 @@ object TriangleCount extends Logging with Serializable{
         Iterator((edge.srcId, a),(edge.dstId,b))
       }
       else if (stage == 2){
-        val size = (edge.srcAttr._2.getBitSet & edge.dstAttr._2.getBitSet).cardinality()
-        log.info(s"edge (${edge.srcId}->${edge.dstId}), (${edge.srcAttr._2.size}, ${edge.dstAttr._2.size})")
-        log.info(s"join ${edge.srcAttr._2.size} with ${edge.dstAttr._2.size} got ${size}")
-        val a = new PrimitiveVector[VertexId](1)
-        a.+=(size)
-        Iterator((edge.srcId, a), (edge.dstId,a))
+        //send our
+//        val size = (edge.srcAttr._2.getBitSet & edge.dstAttr._2.getBitSet).cardinality()
+//        log.info(s"edge (${edge.srcId}->${edge.dstId}), (${edge.srcAttr._2.size}, ${edge.dstAttr._2.size})")
+//        log.info(s"join ${edge.srcAttr._2.size} with ${edge.dstAttr._2.size} got ${size}")
+//        val a = new PrimitiveVector[VertexId](1)
+//        a.+=(size)
+//        Iterator((edge.srcId, a), (edge.dstId,a))
       }
       else {
         Iterator.empty
@@ -73,10 +86,5 @@ object TriangleCount extends Logging with Serializable{
       }
       a
     }
-
-    val initialMsg = new PrimitiveVector[VertexId](1) //empty msg
-    val res = triangleGraph.pregel(initialMsg)(vertexProgram, sendMessage, messageCombiner)
-    res.mapVertices((vid,vd) => vd._3)
-  }
-}
+ */
 

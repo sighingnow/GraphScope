@@ -20,7 +20,7 @@ package org.apache.spark.graphx
 import scala.reflect.ClassTag
 import scala.util.Random
 import org.apache.spark.SparkException
-import org.apache.spark.graphx.impl.GrapeGraphImpl
+import org.apache.spark.graphx.impl.{GrapeGraphImpl, GraphImpl}
 import org.apache.spark.graphx.impl.partition.data.InHeapVertexDataStore
 import org.apache.spark.graphx.lib._
 import org.apache.spark.ml.linalg.Vector
@@ -124,25 +124,30 @@ class GraphOps[VD: ClassTag, ED: ClassTag](graph: Graph[VD, ED]) extends Seriali
    * @return the set of neighboring ids for each vertex
    */
   def collectNeighborIds(edgeDirection: EdgeDirection): VertexRDD[Array[VertexId]] = {
-    val nbrs =
-      if (edgeDirection == EdgeDirection.Either) {
-        graph.aggregateMessages[Array[VertexId]](
-          ctx => { ctx.sendToSrc(Array(ctx.dstId)); ctx.sendToDst(Array(ctx.srcId)) },
-          _ ++ _, TripletFields.None)
-      } else if (edgeDirection == EdgeDirection.Out) {
-        graph.aggregateMessages[Array[VertexId]](
-          ctx => ctx.sendToSrc(Array(ctx.dstId)),
-          _ ++ _, TripletFields.None)
-      } else if (edgeDirection == EdgeDirection.In) {
-        graph.aggregateMessages[Array[VertexId]](
-          ctx => ctx.sendToDst(Array(ctx.srcId)),
-          _ ++ _, TripletFields.None)
-      } else {
-        throw new SparkException("It doesn't make sense to collect neighbor ids without a " +
-          "direction. (EdgeDirection.Both is not supported; use EdgeDirection.Either instead.)")
-      }
-    graph.vertices.leftZipJoin(nbrs) { (vid, vdata, nbrsOpt) =>
-      nbrsOpt.getOrElse(Array.empty[VertexId])
+    graph match {
+      case graphxGraph : GraphImpl[VD,ED] =>
+        val nbrs =
+          if (edgeDirection == EdgeDirection.Either) {
+            graph.aggregateMessages[Array[VertexId]](
+              ctx => { ctx.sendToSrc(Array(ctx.dstId)); ctx.sendToDst(Array(ctx.srcId)) },
+              _ ++ _, TripletFields.None)
+          } else if (edgeDirection == EdgeDirection.Out) {
+            graph.aggregateMessages[Array[VertexId]](
+              ctx => ctx.sendToSrc(Array(ctx.dstId)),
+              _ ++ _, TripletFields.None)
+          } else if (edgeDirection == EdgeDirection.In) {
+            graph.aggregateMessages[Array[VertexId]](
+              ctx => ctx.sendToDst(Array(ctx.srcId)),
+              _ ++ _, TripletFields.None)
+          } else {
+            throw new SparkException("It doesn't make sense to collect neighbor ids without a " +
+              "direction. (EdgeDirection.Both is not supported; use EdgeDirection.Either instead.)")
+          }
+        graph.vertices.leftZipJoin(nbrs) { (vid, vdata, nbrsOpt) =>
+          nbrsOpt.getOrElse(Array.empty[VertexId])
+        }
+      case grapeGraphImpl: GrapeGraphImpl[VD,ED] =>
+        grapeGraphImpl.grapeVertices.collectNbrIds(edgeDirection)
     }
   } // end of collectNeighborIds
 

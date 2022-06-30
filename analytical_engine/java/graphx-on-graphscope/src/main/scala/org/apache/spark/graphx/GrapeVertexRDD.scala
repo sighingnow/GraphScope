@@ -50,6 +50,8 @@ abstract class GrapeVertexRDD[VD](
 
   def syncOuterVertex : GrapeVertexRDD[VD]
 
+  def collectNbrIds(direction : EdgeDirection) : GrapeVertexRDD[Array[VertexId]]
+
   /** TODO: create a new vertex rdd with new vd array */
 }
 

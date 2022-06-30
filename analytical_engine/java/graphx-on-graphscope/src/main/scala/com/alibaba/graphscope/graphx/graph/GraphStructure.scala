@@ -33,6 +33,12 @@ trait GraphStructure {
 
    def getOutDegree(vid: Long): Long
 
+  def getOutNbrIds(vid : Long) : Array[Long]
+
+  def getInNbrIds(vid : Long) : Array[Long]
+
+  def getInOutNbrIds(vid : Long) : Array[Long]
+
    def isInEdgesEmpty(vid: Long): Boolean
 
    def isOutEdgesEmpty(vid: Long): Boolean

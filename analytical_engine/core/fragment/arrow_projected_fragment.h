@@ -49,6 +49,8 @@ class TypedArray {
 
   TypedArray() : buffer_(NULL) {}
 
+  TypedArray(const T* _buffer) : buffer_(_buffer) {}
+
   explicit TypedArray(std::shared_ptr<arrow::Array> array) {
     if (array == nullptr) {
       buffer_ = NULL;
@@ -866,33 +868,33 @@ class ArrowProjectedFragment
 
   inline adj_list_t GetIncomingAdjList(const vertex_t& v) const {
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
-    return adj_list_t(&ie_ptr_[ie_offsets_begin_ptr_[offset]],
-                      &ie_ptr_[ie_offsets_end_ptr_[offset]],
+    return adj_list_t(&ie_ptr_[ie_offsets_begin_accessor_[offset]],
+                      &ie_ptr_[ie_offsets_end_accessor_[offset]],
                       edge_data_array_accessor_);
   }
 
   inline adj_list_t GetOutgoingAdjList(const vertex_t& v) const {
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
-    return adj_list_t(&oe_ptr_[oe_offsets_begin_ptr_[offset]],
-                      &oe_ptr_[oe_offsets_end_ptr_[offset]],
+    return adj_list_t(&oe_ptr_[oe_offsets_begin_accessor_[offset]],
+                      &oe_ptr_[oe_offsets_end_accessor_[offset]],
                       edge_data_array_accessor_);
   }
 
   inline adj_list_t GetIncomingInnerVertexAdjList(const vertex_t& v) const {
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
-    return adj_list_t(&ie_ptr_[ie_offsets_begin_ptr_[offset]],
+    return adj_list_t(&ie_ptr_[ie_offsets_begin_accessor_[offset]],
                       &ie_ptr_[offset < static_cast<int64_t>(ivnum_)
                                    ? ie_spliters_ptr_[0][offset]
-                                   : ie_offsets_end_ptr_[offset]],
+                                   : ie_offsets_end_accessor_[offset]],
                       edge_data_array_accessor_);
   }
 
   inline adj_list_t GetOutgoingInnerVertexAdjList(const vertex_t& v) const {
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
-    return adj_list_t(&oe_ptr_[oe_offsets_begin_ptr_[offset]],
+    return adj_list_t(&oe_ptr_[oe_offsets_begin_accessor_[offset]],
                       &oe_ptr_[offset < static_cast<int64_t>(ivnum_)
                                    ? oe_spliters_ptr_[0][offset]
-                                   : oe_offsets_end_ptr_[offset]],
+                                   : oe_offsets_end_accessor_[offset]],
                       edge_data_array_accessor_);
   }
 
@@ -900,7 +902,7 @@ class ArrowProjectedFragment
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
     return offset < static_cast<int64_t>(ivnum_)
                ? adj_list_t(&ie_ptr_[ie_spliters_ptr_[0][offset]],
-                            &ie_ptr_[ie_offsets_end_ptr_[offset]],
+                            &ie_ptr_[ie_offsets_end_accessor_[offset]],
                             edge_data_array_accessor_)
                : adj_list_t();
   }
@@ -909,7 +911,7 @@ class ArrowProjectedFragment
     int64_t offset = vid_parser_.GetOffset(v.GetValue());
     return offset < static_cast<int64_t>(ivnum_)
                ? adj_list_t(&oe_ptr_[oe_spliters_ptr_[0][offset]],
-                            &oe_ptr_[oe_offsets_end_ptr_[offset]],
+                            &oe_ptr_[oe_offsets_end_accessor_[offset]],
                             edge_data_array_accessor_)
                : adj_list_t();
   }
@@ -962,11 +964,21 @@ class ArrowProjectedFragment
 
   inline const nbr_unit_t* get_out_edges_ptr() const { return oe_ptr_; }
 
-  inline const int64_t* get_oe_offsets_begin_ptr() const {
-    return oe_offsets_begin_ptr_;
+  inline const nbr_unit_t* get_in_edges_ptr() const { return ie_ptr_; }
+
+  inline arrow_projected_fragment_impl::TypedArray<int64_t>& get_ie_offsets_begin_accessor() const {
+    return ie_offsets_begin_accessor_;
   }
-  inline const int64_t* get_oe_offsets_end_ptr() const {
-    return oe_offsets_end_ptr_;
+
+  inline arrow_projected_fragment_impl::TypedArray<int64_t>& get_ie_offsets_end_accessor() const {
+    return ie_offsets_end_accessor_;
+  }
+
+  inline arrow_projected_fragment_impl::TypedArray<int64_t>& get_oe_offsets_begin_accessor() const {
+    return oe_offsets_begin_accessor_;
+  }
+  inline arrow_projected_fragment_impl::TypedArray<int64_t>& get_oe_offsets_end_accessor() const {
+    return oe_offsets_end_accessor_;
   }
 
   inline arrow_projected_fragment_impl::TypedArray<EDATA_T>&
@@ -1147,14 +1159,14 @@ class ArrowProjectedFragment
 
   void initPointers() {
     if (directed_) {
-      ie_offsets_begin_ptr_ = ie_offsets_begin_->raw_values();
-      ie_offsets_end_ptr_ = ie_offsets_end_->raw_values();
+      ie_offsets_begin_accessor_.Init(ie_offsets_begin_);
+      ie_offsets_end_accessor_.Init(ie_offsets_end_);
     } else {
-      ie_offsets_begin_ptr_ = oe_offsets_begin_->raw_values();
-      ie_offsets_end_ptr_ = oe_offsets_end_->raw_values();
+      ie_offsets_begin_accessor_.Init(oe_offsets_begin_);
+      ie_offsets_end_accessor_.Init(oe_offsets_end_);
     }
-    oe_offsets_begin_ptr_ = oe_offsets_begin_->raw_values();
-    oe_offsets_end_ptr_ = oe_offsets_end_->raw_values();
+    oe_offsets_begin_accessor_.Init(oe_offsets_begin_);
+    oe_offsets_end_accessor_.Init(oe_offsets_end_);
 
     vertex_data_array_accessor_.Init(vertex_data_array_);
     ovgid_list_ptr_ = ovgid_list_->raw_values();
@@ -1184,11 +1196,11 @@ class ArrowProjectedFragment
   prop_id_t vertex_prop_, edge_prop_;
 
   std::shared_ptr<arrow::Int64Array> ie_offsets_begin_, ie_offsets_end_;
-  const int64_t* ie_offsets_begin_ptr_;
-  const int64_t* ie_offsets_end_ptr_;
+  arrow_projected_fragment_impl::TypedArray<int64_t> ie_offsets_begin_accessor_;
+  arrow_projected_fragment_impl::TypedArray<int64_t> ie_offsets_end_accessor_;
   std::shared_ptr<arrow::Int64Array> oe_offsets_begin_, oe_offsets_end_;
-  const int64_t* oe_offsets_begin_ptr_;
-  const int64_t* oe_offsets_end_ptr_;
+  arrow_projected_fragment_impl::TypedArray<int64_t> oe_offsets_begin_accessor_;
+  arrow_projected_fragment_impl::TypedArray<int64_t> oe_offsets_end_accessor_;
 
   std::shared_ptr<arrow::Array> vertex_data_array_;
   arrow_projected_fragment_impl::TypedArray<VDATA_T>

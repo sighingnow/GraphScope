@@ -34,7 +34,7 @@ public abstract class AbstractDoubleEdgeManager {
     private PropertyNbrUnit<Long> nbrUnit;
     private VertexIdManager<Long, Long> vertexIdManager;
 
-    private long offsetBeginPtrFirstAddr, offsetEndPtrFirstAddr;
+    private TypedArray<Long> oeOffsetsBeginAccessor, oeOffsetsEndAccessor;
     private long nbrUnitEleSize, nbrUnitInitAddress;
     public CSRHolder csrHolder;
     protected TupleIterable edgeIterable;
@@ -91,23 +91,20 @@ public abstract class AbstractDoubleEdgeManager {
     }
 
     public int getNumEdgesImpl(long lid) {
-        long oeBeginOffset = JavaRuntime.getLong(offsetBeginPtrFirstAddr + lid * 8);
-        long oeEndOffset = JavaRuntime.getLong(offsetEndPtrFirstAddr + lid * 8);
+        long oeBeginOffset = oeOffsetsBeginAccessor.get(lid);
+        long oeEndOffset = oeOffsetsEndAccessor.get(lid);
         return (int) (oeEndOffset - oeBeginOffset);
     }
 
     private void initFields() {
         nbrUnit = this.fragment.getOutEdgesPtr();
-        offsetEndPtrFirstAddr = this.fragment.getOEOffsetsEndPtr();
-        offsetBeginPtrFirstAddr = this.fragment.getOEOffsetsBeginPtr();
+//        offsetEndPtrFirstAddr = this.fragment.getOEOffsetsEndPtr();
+//        offsetBeginPtrFirstAddr = this.fragment.getOEOffsetsBeginPtr();
+        oeOffsetsBeginAccessor = this.fragment.getOEOffsetsBeginAccessor();
+        oeOffsetsEndAccessor = this.fragment.getOEOffsetsEndAccessor();
         nbrUnitEleSize = nbrUnit.elementSize();
         nbrUnitInitAddress = nbrUnit.getAddress();
         innerVerticesNum = this.fragment.getInnerVerticesNum();
-        logger.info(
-            "Nbrunit: [{}], offsetbeginPtr fist: [{}], end [{}]",
-            nbrUnit,
-            offsetBeginPtrFirstAddr,
-            offsetEndPtrFirstAddr);
         logger.info(
             "nbr unit element size: {}, init address {}",
             nbrUnit.elementSize(),
@@ -183,10 +180,9 @@ public abstract class AbstractDoubleEdgeManager {
         }
 
         private long getTotalNumOfEdges() {
-            long largest =
-                JavaRuntime.getLong(
-                    offsetEndPtrFirstAddr + ((innerVerticesNum - 1) << VID_SHIFT_BITS));
-            long smallest = JavaRuntime.getLong(offsetBeginPtrFirstAddr + (0 << VID_SHIFT_BITS));
+            long largest = oeOffsetsEndAccessor.get(innerVerticesNum - 1);
+//            long smallest = JavaRuntime.getLong(offsetBeginPtrFirstAddr + (0 << VID_SHIFT_BITS));
+            long smallest = oeOffsetsBeginAccessor.get(0);
             return largest - smallest;
         }
 
@@ -194,9 +190,10 @@ public abstract class AbstractDoubleEdgeManager {
             int tmpSum = 0;
             long oeBeginOffset, oeEndOffset;
             for (long lid = 0; lid < innerVerticesNum; ++lid) {
-                long lidInAddr = (lid << VID_SHIFT_BITS);
-                oeBeginOffset = JavaRuntime.getLong(offsetBeginPtrFirstAddr + lidInAddr);
-                oeEndOffset = JavaRuntime.getLong(offsetEndPtrFirstAddr + lidInAddr);
+//                oeBeginOffset = JavaRuntime.getLong(offsetBeginPtrFirstAddr + lidInAddr);
+//                oeEndOffset = JavaRuntime.getLong(offsetEndPtrFirstAddr + lidInAddr);
+                oeBeginOffset = oeOffsetsBeginAccessor.get(lid);
+                oeEndOffset  = oeOffsetsEndAccessor.get(lid);
                 nbrUnitAddrs[(int) lid] = nbrUnitInitAddress + (oeBeginOffset * nbrUnitEleSize);
                 numOfEdges[(int) lid] = oeEndOffset - oeBeginOffset;
                 tmpSum += numOfEdges[(int) lid];
