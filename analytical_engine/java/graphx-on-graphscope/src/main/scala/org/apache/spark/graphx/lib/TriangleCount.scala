@@ -10,17 +10,60 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.OpenHashSet
 
 object TriangleCount extends Logging with Serializable{
+  var stage = 0
 
   def run[VD: ClassTag, ED: ClassTag](graph: Graph[VD, ED]): Graph[Int, ED] = {
 
-    val triangleGraph = graph.outerJoinVertices(graph.collectNeighborIds(edgeDirection = EdgeDirection.Either))((vid, vd, nbrIds) => nbrIds.get)
+    val tmp = graph.outerJoinVertices(graph.collectNeighborIds(edgeDirection = EdgeDirection.Either))((vid, vd, nbrIds) => nbrIds.get)
 
-    log.info(s"collected nbrids ${triangleGraph.vertices.collect().mkString(",")}")
-    graph.mapVertices((vid,vd) =>1)
+    log.info(s"collected nbrids ${tmp.vertices.collect().mkString(",")}")
+    val triangleGraph = tmp.mapVertices((vid, vd) => (0, vd.toSet))
+    stage = 0
 
-//    val initialMsg = new PrimitiveVector[VertexId](1) //empty msg
-//    val res = triangleGraph.pregel(initialMsg)(vertexProgram, sendMessage, messageCombiner)
-//    res.mapVertices((vid,vd) => vd._3)
+    def vp(id : VertexId, attr : (Int, Set[VertexId]), msg : Array[VertexId]) : (Int,Set[VertexId]) = {
+      if (stage == 0){
+        log.info(s"vertex ${id}, stage 0")
+        attr
+      }
+      else if (stage == 1){
+        log.info(s"vertex ${id}, stage 1, receive msg ${msg.mkString(",")}")
+        val prevCnt = attr._1
+        var curCnt = 0
+        var i = 0
+        val size = msg.size
+        while (i < size){
+          if (attr._2.contains(msg(i))){
+            curCnt += 1
+          }
+          i += 1
+        }
+        log.info(s"merge msg, prev ${prevCnt}, cur ${curCnt}")
+        (prevCnt + curCnt, attr._2)
+      }
+      else {
+        attr
+      }
+    }
+
+    def sendMsg(edge: EdgeTriplet[(Int, Set[VertexId]), ED]) : Iterator[(VertexId,Array[VertexId])] = {
+      if (stage == 0){
+        stage = 1
+        log.info(s"send msg to ${edge.dstId}, ${edge.srcAttr._2.toArray.mkString(",")}")
+        Iterator((edge.dstId, edge.srcAttr._2.toArray))
+      }
+      else {
+        Iterator.empty
+      }
+    }
+
+    def mergeMsg(a: Array[VertexId], b: Array[VertexId]): Array[VertexId] = {
+      val res = a ++ b
+      log.info(s"Merging ${a.mkString(",")} with ${b.mkString(",")} : ${res.mkString(",")}")
+      res
+    }
+
+    val initialMsg = new Array[VertexId](1)
+    triangleGraph.pregel(initialMsg)(vp, sendMsg, mergeMsg).mapVertices((vid,vd) => vd._1)
   }
 }
 
