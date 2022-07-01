@@ -164,9 +164,9 @@ public class GraphScopeClassLoader {
             for (Constructor constructor : constructors) {
                 if (constructor.getParameterCount() == 1
                         && constructor.getParameterTypes()[0].getName().equals("long")) {
-                    logger.info("Desired constructor exists for " + javaClass.getName());
+//                    logger.info("Desired constructor exists for " + javaClass.getName());
                     Object obj = constructor.newInstance(address);
-                    logger.info("Successfully Construct " + obj);
+//                    logger.info("Successfully Construct " + obj);
                     return obj;
                 }
             }

@@ -385,7 +385,6 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
   boost::leaf::result<void> LoadEdges(
       oid_array_builder_t& srcOidsBuilder, oid_array_builder_t& dstOidsBuilder,
       GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map) {
-    LOG(INFO) << "start loading edges";
     std::shared_ptr<oid_array_t> srcOids, dstOids;
     // std::shared_ptr<edata_array_t> edatas;
     {
@@ -405,7 +404,6 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     srcLids.resize(edges_num_);
     dstLids.resize(edges_num_);
     auto curFid = graphx_vertex_map.fid();
-    LOG(INFO) << "fid: " << curFid;
     {
       int thread_num = 16;
       std::atomic<int> current_chunk(0);
@@ -442,7 +440,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
         thrd.join();
       }
       for (auto i = 0; i < thread_num; ++i) {
-        LOG(INFO) << "Thread " << i << "processed: " << cnt[i] << "vertices";
+        LOG(DEBUG) << "Thread " << i << "processed: " << cnt[i] << "vertices";
       }
     }
     LOG(INFO) << "Finish building lid array";
@@ -489,7 +487,6 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
       auto res = std::dynamic_pointer_cast<vineyard::FixedSizeBinaryArray>(
           edge_builder_v6d.Seal(client));
       this->SetInEdges(*res);
-      LOG(INFO) << "Finish set edges";
     }
     {
       std::shared_ptr<arrow::FixedSizeBinaryArray> edges;
@@ -499,7 +496,6 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
       auto res = std::dynamic_pointer_cast<vineyard::FixedSizeBinaryArray>(
           edge_builder_v6d.Seal(client));
       this->SetOutEdges(*res);
-      LOG(INFO) << "Finish set edges";
     }
 
     CHECK_EQ(ie_offset_array_->length(), vnum_ + 1);
@@ -510,7 +506,6 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
       this->SetIEOffsetArray(
           *std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
               offset_array_builder.Seal(client)));
-      LOG(INFO) << "FINISh set offset array";
     }
     {
       vineyard_offset_array_builder_t offset_array_builder(client,
@@ -518,7 +513,6 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
       this->SetOEOffsetArray(
           *std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
               offset_array_builder.Seal(client)));
-      LOG(INFO) << "FINISh set offset array";
     }
 
     // {

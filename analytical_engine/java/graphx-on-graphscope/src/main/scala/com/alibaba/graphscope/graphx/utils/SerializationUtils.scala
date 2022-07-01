@@ -16,7 +16,7 @@ object SerializationUtils extends Logging{
     outputStream.writeInt(objs.length)
     var i = 0
     while (i < objs.length){
-      log.info(s"writing object ${objs(i)}")
+//      log.info(s"writing object ${objs(i)}")
       if (objs(i).equals(classOf[Long])){
         outputStream.writeObject(classOf[java.lang.Long])
       }
@@ -44,8 +44,8 @@ object SerializationUtils extends Logging{
       protected override def resolveClass(desc: ObjectStreamClass): Class[_] = {
 //        val cl = Thread.currentThread.getContextClassLoader
 //        if (cl == null) return super.resolveClass(desc)
-        log.info(s"Resolving class for ${desc}, ${desc.getName}")
-        log.info(s"str eq ${desc.getName}, ${desc.getName.equals("long")}")
+//        log.info(s"Resolving class for ${desc}, ${desc.getName}")
+//        log.info(s"str eq ${desc.getName}, ${desc.getName.equals("long")}")
         if (desc.getName.equals("long")){
           classOf[java.lang.Long]
         }

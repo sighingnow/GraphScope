@@ -401,7 +401,6 @@ class JavaContextBase : public grape::ContextBase {
                                         std::string& user_class_path,
                                         std::string& context_class_name,
                                         std::string& serial_path) {
-    VLOG(10) << "received params: " << params;
     boost::property_tree::ptree pt;
     std::stringstream ss;
     {
@@ -413,7 +412,6 @@ class JavaContextBase : public grape::ContextBase {
       }
     }
 
-    VLOG(10) << "Received json: " << params;
     std::string frag_name = pt.get<std::string>("frag_name");
     CHECK(!frag_name.empty());
     VLOG(10) << "Parse frag name: " << frag_name;

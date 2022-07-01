@@ -12,12 +12,9 @@ import java.net.InetAddress
  * - The host name of this executor.
  */
 object ExecutorUtils extends Logging{
-
-  private val hostName: String = InetAddress.getLocalHost.getHostName
-  private val hostIp: String = InetAddress.getLocalHost.getHostAddress
   val vineyardEndpoint = "/tmp/vineyard.sock"
 
-  def getHostName : String = hostName
-  def getHostIp : String = hostIp
+  def getHostName : String = InetAddress.getLocalHost.getHostName
+  def getHostIp : String = InetAddress.getLocalHost.getHostAddress
 
 }
