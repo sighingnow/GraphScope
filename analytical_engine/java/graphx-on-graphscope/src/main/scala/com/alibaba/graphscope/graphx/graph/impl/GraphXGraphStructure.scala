@@ -4,9 +4,9 @@ import com.alibaba.graphscope.ds.{ImmutableTypedArray, Vertex}
 import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{GraphStructureType, GraphXFragmentStructure}
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTripletImpl, GraphStructure, ReusableEdge, ReusableEdgeImpl}
+import com.alibaba.graphscope.graphx.store.VertexDataStore
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx._
-import org.apache.spark.graphx.impl.partition.data.VertexDataStore
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 

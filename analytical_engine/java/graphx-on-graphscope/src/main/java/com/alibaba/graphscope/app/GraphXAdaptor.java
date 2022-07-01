@@ -1,22 +1,13 @@
 package com.alibaba.graphscope.app;
 
-import com.alibaba.fastffi.FFIByteString;
 import com.alibaba.graphscope.communication.Communicator;
 import com.alibaba.graphscope.context.DefaultContextBase;
 import com.alibaba.graphscope.context.GraphXAdaptorContext;
 import com.alibaba.graphscope.fragment.IFragment;
-import com.alibaba.graphscope.graph.GraphXPIE;
-import com.alibaba.graphscope.graphx.SerializationUtils;
+import com.alibaba.graphscope.graphx.GraphXPIE;
+import com.alibaba.graphscope.graphx.utils.SerializationUtils;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import java.net.URLClassLoader;
-import org.apache.spark.graphx.EdgeTriplet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import scala.Function1;
-import scala.Function2;
-import scala.Function3;
-import scala.Tuple2;
-import scala.collection.Iterator;
 
 public class GraphXAdaptor<VDATA_T, EDATA_T, MSG> extends Communicator implements
     DefaultAppBase<Long, Long, VDATA_T, EDATA_T, GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>> {

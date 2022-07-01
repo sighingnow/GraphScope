@@ -2,8 +2,8 @@ package com.alibaba.graphscope.graphx.graph
 
 import com.alibaba.graphscope.ds.Vertex
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
+import com.alibaba.graphscope.graphx.store.VertexDataStore
 import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.graphx.impl.partition.data.VertexDataStore
 import org.apache.spark.graphx.{Edge, EdgeTriplet}
 import org.apache.spark.util.collection.BitSet
 

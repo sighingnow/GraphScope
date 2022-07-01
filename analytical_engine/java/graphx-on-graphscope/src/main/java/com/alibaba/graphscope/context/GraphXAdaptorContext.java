@@ -2,16 +2,14 @@ package com.alibaba.graphscope.context;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.graphscope.ds.Vertex;
-import com.alibaba.graphscope.ds.VertexRange;
 import com.alibaba.graphscope.fragment.IFragment;
-import com.alibaba.graphscope.graph.GraphXPIE;
+import com.alibaba.graphscope.graphx.GraphXPIE;
 import com.alibaba.graphscope.graphx.GraphXConf;
-import com.alibaba.graphscope.graphx.SerializationUtils;
+import com.alibaba.graphscope.graphx.utils.SerializationUtils;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
 import com.alibaba.graphscope.utils.array.PrimitiveArray;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URLClassLoader;

@@ -6,10 +6,10 @@ import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, FragmentType, IF
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{ArrowProjectedStructure, GraphStructureType}
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure.NBR_SIZE
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTripletImpl, GraphStructure, ReusableEdge, ReusableEdgeImpl}
+import com.alibaba.graphscope.graphx.store.VertexDataStore
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx._
-import org.apache.spark.graphx.impl.partition.data.VertexDataStore
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 

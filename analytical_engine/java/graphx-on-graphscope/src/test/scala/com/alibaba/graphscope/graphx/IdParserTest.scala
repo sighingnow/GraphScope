@@ -1,6 +1,6 @@
 package com.alibaba.graphscope.graphx
 
-import org.apache.spark.graphx.impl.partition.IdParser
+import com.alibaba.graphscope.graphx.utils.IdParser
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner

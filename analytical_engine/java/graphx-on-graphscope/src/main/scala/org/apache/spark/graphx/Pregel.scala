@@ -17,8 +17,8 @@
 
 package org.apache.spark.graphx
 
+import com.alibaba.graphscope.graphx.GraphScopePregel
 import org.apache.spark.SparkContext
-import org.apache.spark.graphx.impl.GraphScopePregel
 
 import scala.reflect.ClassTag
 import org.apache.spark.graphx.util.PeriodicGraphCheckpointer

@@ -1,11 +1,10 @@
 package com.alibaba.graphscope.graphx
 
-import com.alibaba.graphscope.graphx.SerializationUtils.logger
+import com.alibaba.graphscope.graphx.utils.SerializationUtils
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
-import java.io.{File, FileInputStream, IOException, ObjectInputStream, ObjectStreamClass}
 
 @RunWith(classOf[JUnitRunner])
 class SerializationTest extends FunSuite{

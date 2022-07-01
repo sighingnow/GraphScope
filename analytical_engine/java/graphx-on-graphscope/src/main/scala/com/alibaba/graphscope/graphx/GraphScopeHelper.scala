@@ -6,16 +6,19 @@ import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, ArrowProjectedFr
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
+import com.alibaba.graphscope.graphx.rdd.FragmentRDD
+import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
+import com.alibaba.graphscope.graphx.store.VertexDataStore
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import com.alibaba.graphscope.utils.GenericUtils
 import org.apache.hadoop.io.LongWritable
-import org.apache.spark.graphx.{EdgeRDD, GrapeEdgeRDD, GrapeVertexRDD, Graph, PartitionID, TypeAlias, VertexId, VertexRDD}
-import org.apache.spark.graphx.impl.{EdgeRDDImpl, GrapeGraphImpl, GrapeUtils, GraphImpl, VertexRDDImpl}
-import org.apache.spark.graphx.impl.partition.EdgeShuffle
-import org.apache.spark.graphx.impl.partition.data.VertexDataStore
-import org.apache.spark.graphx.utils.ScalaFFIFactory
-import com.alibaba.graphscope.graphx.utils.PrimitiveVector;
+import org.apache.spark.graphx.{EdgeRDD, Graph, PartitionID, TypeAlias, VertexId, VertexRDD}
+import org.apache.spark.graphx.impl.{EdgeRDDImpl, GraphImpl, VertexRDDImpl}
+import com.alibaba.graphscope.graphx.utils.{GrapeUtils, PrimitiveVector, ScalaFFIFactory}
+import org.apache.spark.graphx.grape.{GrapeEdgeRDD, GrapeGraphImpl, GrapeVertexRDD}
+import org.apache.spark.graphx.scheduler.cluster.ExecutorInfoHelper
 import org.apache.spark.internal.Logging
+import org.apache.spark.rdd.{ParallelCollectionRDD, RDD}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.collection.{OpenHashSet, PrimitiveVector}
 import org.apache.spark.{HashPartitioner, SparkContext}
@@ -25,6 +28,17 @@ import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 object GraphScopeHelper extends Logging{
+
+  def loadFragmentAsRDD[VD: ClassTag, ED: ClassTag](sc : SparkContext, objectIDs : String, fragName : String) : (GrapeVertexRDD[VD],GrapeEdgeRDD[ED]) = {
+
+    val fragmentRDD = new FragmentRDD[VD,ED](sc, ExecutorInfoHelper.getExecutors(sc), fragName,objectIDs)
+    fragmentRDD.generateRDD()
+  }
+
+  def loadFragmentAsGraph[VD: ClassTag, ED: ClassTag](sc : SparkContext, objectIDs : String, fragName : String) : GrapeGraphImpl[VD,ED] = {
+    val (vertexRDD,edgeRDD) = loadFragmentAsRDD[VD,ED](sc, objectIDs, fragName);
+    GrapeGraphImpl.fromExistingRDDs[VD,ED](vertexRDD,edgeRDD)
+  }
   /**
    * Creating GSSession, one spark context can have many graphscope session.
    */

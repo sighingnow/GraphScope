@@ -1,5 +1,6 @@
 package com.alibaba.graphscope.utils;
 
+import com.alibaba.graphscope.graphx.utils.GrapeUtils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -14,16 +15,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.apache.spark.graphx.impl.GrapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MPIUtils {
+
     private static Logger logger = LoggerFactory.getLogger(MPIUtils.class.getName());
     private static String MPI_LOG_FILE = "/tmp/graphx-mpi-log";
     private static final String GRAPHSCOPE_CODE_HOME, SPARK_HOME, GAE_HOME, SPARK_CONF_WORKERS, LAUNCH_GRAPHX_SHELL_SCRIPT, LOAD_GRAPH_SHELL_SCRIPT;
     private static final String LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT;
     private static final String pattern = "GlobalVertexMapID:";
+
     static {
         SPARK_HOME = System.getenv("SPARK_HOME");
         if (SPARK_HOME == null || SPARK_HOME.isEmpty()) {
@@ -43,7 +45,8 @@ public class MPIUtils {
         }
         LAUNCH_GRAPHX_SHELL_SCRIPT = GAE_HOME + "/java/run_graphx.sh";
         if (!fileExists(LAUNCH_GRAPHX_SHELL_SCRIPT)) {
-            throw new IllegalStateException("script " + LAUNCH_GRAPHX_SHELL_SCRIPT + "doesn't exist");
+            throw new IllegalStateException(
+                "script " + LAUNCH_GRAPHX_SHELL_SCRIPT + "doesn't exist");
         }
         LOAD_GRAPH_SHELL_SCRIPT = GAE_HOME + "/java/load_graphx_fragment.sh";
         if (!fileExists(LOAD_GRAPH_SHELL_SCRIPT)) {
@@ -51,22 +54,26 @@ public class MPIUtils {
         }
         LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT = GAE_HOME + "/java/load_graphx_vertex_map.sh";
         if (!fileExists(LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT)) {
-            throw new IllegalStateException("script " + LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT + "doesn't exist");
+            throw new IllegalStateException(
+                "script " + LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT + "doesn't exist");
         }
     }
 
-    public static String getGAEHome(){
+    public static String getGAEHome() {
         return GAE_HOME;
     }
 
-    public static <MSG,VD,ED> void launchGraphX(
-        String[] fragIds, Class<? extends VD> vdClass, Class<?extends ED> edClass, Class<? extends MSG> msgClass,
-        String serialPath, int maxIteration){
+    public static <MSG, VD, ED> void launchGraphX(
+        String[] fragIds, Class<? extends VD> vdClass, Class<? extends ED> edClass,
+        Class<? extends MSG> msgClass,
+        String serialPath, int maxIteration) {
         int numWorkers = fragIds.length;
         String hostNameSlots = generateHostNameAndSlotsFromIDs(fragIds);
         logger.info("running mpi with {} workers", numWorkers);
-        String[] commands = {"/bin/bash", LAUNCH_GRAPHX_SHELL_SCRIPT, String.valueOf(numWorkers), hostNameSlots,
-            GrapeUtils.classToStr(vdClass), GrapeUtils.classToStr(edClass), GrapeUtils.classToStr(msgClass),
+        String[] commands = {"/bin/bash", LAUNCH_GRAPHX_SHELL_SCRIPT, String.valueOf(numWorkers),
+            hostNameSlots,
+            GrapeUtils.classToStr(vdClass), GrapeUtils.classToStr(edClass),
+            GrapeUtils.classToStr(msgClass),
             String.join(",", fragIds), serialPath, String.valueOf(maxIteration)};
 
         logger.info("Running with commands: " + String.join(" ", commands));
@@ -88,53 +95,57 @@ public class MPIUtils {
             e.printStackTrace();
         }
         long endTime = System.nanoTime();
-        logger.info("Total time spend on running mpi processes : {}ms", (endTime - startTime) / 1000000);
+        logger.info("Total time spend on running mpi processes : {}ms",
+            (endTime - startTime) / 1000000);
     }
 
-    private static void check(String oidType, String vidType){
-        if (oidType != "int64_t" || vidType != "uint64_t"){
+    private static void check(String oidType, String vidType) {
+        if (oidType != "int64_t" || vidType != "uint64_t") {
             throw new IllegalStateException("Not supported: " + oidType + " " + vidType);
         }
     }
 
     /**
-     * Input : d50:0:123457,d51:1:1232431
-     * Output d50:1,d51:1
+     * Input : d50:0:123457,d51:1:1232431 Output d50:1,d51:1
+     *
      * @param ids
      * @return
      */
-    private static String generateHostNameAndSlotsFromIDs(String[] ids){
-        HashMap<String,Integer> map = new HashMap<>();
-        for (String str : ids){
+    private static String generateHostNameAndSlotsFromIDs(String[] ids) {
+        HashMap<String, Integer> map = new HashMap<>();
+        for (String str : ids) {
             String[] splited = str.split(":");
-            if (splited.length != 3){
+            if (splited.length != 3) {
                 throw new IllegalStateException("Unexpected input " + Arrays.toString(ids));
             }
-            if (map.containsKey(splited[0])){
+            if (map.containsKey(splited[0])) {
                 map.put(splited[0], map.get(splited[0]) + 1);
+            } else {
+                map.put(splited[0], 1);
             }
-            else map.put(splited[0], 1);
         }
         StringBuilder sb = new StringBuilder();
-        for (String key : map.keySet()){
+        for (String key : map.keySet()) {
             Integer value = map.get(key);
             sb.append(key);
             sb.append(":");
             sb.append(value);
             sb.append(",");
         }
-        sb.deleteCharAt(sb.length()-1);
+        sb.deleteCharAt(sb.length() - 1);
         return sb.toString();
     }
 
-    public static <MSG,VD,ED> List<String> constructGlobalVM(String[] localVMIDs, String ipcSocket, String oidType, String vidType){
+    public static <MSG, VD, ED> List<String> constructGlobalVM(String[] localVMIDs,
+        String ipcSocket, String oidType, String vidType) {
         check(oidType, vidType);
         logger.info("Try to construct global vm from: {}", Arrays.toString(localVMIDs));
         int numWorkers = localVMIDs.length;
         logger.info("running mpi with {} workers", numWorkers);
         String hostNameAndSlots = generateHostNameAndSlotsFromIDs(localVMIDs);
-        String[] commands = {"/bin/bash", LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT, String.valueOf(numWorkers),
-            hostNameAndSlots, String.join(",",localVMIDs), oidType, vidType, ipcSocket};
+        String[] commands = {"/bin/bash", LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT,
+            String.valueOf(numWorkers),
+            hostNameAndSlots, String.join(",", localVMIDs), oidType, vidType, ipcSocket};
         logger.info("Running with commands: " + String.join(" ", commands));
         List<String> globalVMIDs = new ArrayList<>(numWorkers);
         long startTime = System.nanoTime();
@@ -144,12 +155,14 @@ public class MPIUtils {
         Process process = null;
         try {
             process = processBuilder.start();
-            BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            BufferedReader stdInput = new BufferedReader(
+                new InputStreamReader(process.getErrorStream()));
             String str;
             while ((str = stdInput.readLine()) != null) {
                 System.out.println(str);
-                if (str.contains(pattern)){
-                    globalVMIDs.add((str.substring(str.indexOf(pattern) + pattern.length()).trim()));
+                if (str.contains(pattern)) {
+                    globalVMIDs.add(
+                        (str.substring(str.indexOf(pattern) + pattern.length()).trim()));
                 }
                 //FIXME: get vm id from output.
             }
@@ -164,28 +177,32 @@ public class MPIUtils {
             e.printStackTrace();
         }
         long endTime = System.nanoTime();
-        logger.info("Total time spend on Loading global vertex Map : {}ms", (endTime - startTime) / 1000000);
+        logger.info("Total time spend on Loading global vertex Map : {}ms",
+            (endTime - startTime) / 1000000);
         return globalVMIDs;
     }
 
     public static <OID, VID, GS_VD, GS_ED, GX_VD, GX_ED> String graph2Fragment(
-        String[]vertexMappedFiles, String[]edgeMappedFiles, long vertexMappedSize, long edgeMappedSize, Boolean cluster, String vdType, String edType)
+        String[] vertexMappedFiles, String[] edgeMappedFiles, long vertexMappedSize,
+        long edgeMappedSize, Boolean cluster, String vdType, String edType)
         throws FileNotFoundException {
         //Duplicate.
         String[] vertexMappedFilesDedup = dedup(vertexMappedFiles);
         String[] edgeMappedFilesDedup = dedup(edgeMappedFiles);
-        logger.info("Before duplication, vertex files: {}", String.join( "",vertexMappedFiles));
-        logger.info("After duplication, vertex files: {}",String.join("", vertexMappedFilesDedup));
+        logger.info("Before duplication, vertex files: {}", String.join("", vertexMappedFiles));
+        logger.info("After duplication, vertex files: {}", String.join("", vertexMappedFilesDedup));
         logger.info("Before duplication, edge files: {}", String.join("", edgeMappedFiles));
-        logger.info("After duplication, edge files: {}",String.join("", edgeMappedFilesDedup));
+        logger.info("After duplication, edge files: {}", String.join("", edgeMappedFilesDedup));
 
         int numWorkers = 1;
-        if (cluster){
+        if (cluster) {
             numWorkers = getNumWorker();
         }
         long startTime = System.nanoTime();
-        String[] commands = {"/bin/bash", LOAD_GRAPH_SHELL_SCRIPT, String.valueOf(numWorkers), SPARK_CONF_WORKERS, String.join(":", vertexMappedFilesDedup),
-            String.join(":", edgeMappedFilesDedup), String.valueOf(vertexMappedSize), String.valueOf(edgeMappedSize),
+        String[] commands = {"/bin/bash", LOAD_GRAPH_SHELL_SCRIPT, String.valueOf(numWorkers),
+            SPARK_CONF_WORKERS, String.join(":", vertexMappedFilesDedup),
+            String.join(":", edgeMappedFilesDedup), String.valueOf(vertexMappedSize),
+            String.valueOf(edgeMappedSize),
             vdType, edType};
         logger.info("Running command: " + String.join(" ", commands));
         ProcessBuilder processBuilder = new ProcessBuilder();
@@ -206,24 +223,24 @@ public class MPIUtils {
             e.printStackTrace();
         }
         long endTime = System.nanoTime();
-        logger.info("Total time spend on running mpi processes : {}ms", (endTime - startTime) / 1000000);
+        logger.info("Total time spend on running mpi processes : {}ms",
+            (endTime - startTime) / 1000000);
         //read fragids
         try {
             BufferedReader br = new BufferedReader(new FileReader(MPI_LOG_FILE));
             String line = br.readLine();
             logger.info(line);
-            if (line != null){
+            if (line != null) {
                 fragIds = line;
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
         return fragIds;
     }
 
-    public static String[] dedup(String[] files){
+    public static String[] dedup(String[] files) {
         Set<String> set = new HashSet<>(Arrays.asList(files));
         String res[] = new String[set.size()];
         res = set.toArray(res);
@@ -244,14 +261,16 @@ public class MPIUtils {
         }
         return numLines;
     }
+
     public static List<String> getWorkers() throws IOException {
         if (!fileExists(SPARK_CONF_WORKERS)) {
             throw new IllegalStateException("SPARK_CONF_WORKERS not available");
         }
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(new File(SPARK_CONF_WORKERS)));
+        BufferedReader bufferedReader = new BufferedReader(
+            new FileReader(new File(SPARK_CONF_WORKERS)));
         List<String> res = new ArrayList<>();
         String line = null;
-        while ((line = bufferedReader.readLine()) != null){
+        while ((line = bufferedReader.readLine()) != null) {
             res.add(line);
         }
         return res;
@@ -259,11 +278,12 @@ public class MPIUtils {
 
     /**
      * Distribute these files to all worker nodes.
+     *
      * @param files file names.
      */
     public static void distribute(String... files) throws IOException {
         List<String> hostNames = getWorkers();
-        for (String host: hostNames){
+        for (String host : hostNames) {
             FileUtils.sendFiles(files, host);
         }
     }

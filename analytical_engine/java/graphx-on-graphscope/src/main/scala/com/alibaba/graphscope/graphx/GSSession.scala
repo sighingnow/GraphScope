@@ -5,8 +5,8 @@ import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphXFragmentStr
 import com.alibaba.graphscope.utils.PythonInterpreter
 import org.apache.spark.SparkContext
 import org.apache.spark.graphx.Graph
-import org.apache.spark.graphx.impl.{GrapeGraphImpl, GraphImpl}
-import org.apache.spark.graphx.rdd.GraphScopeRDD
+import org.apache.spark.graphx.grape.GrapeGraphImpl
+import org.apache.spark.graphx.impl.GraphImpl
 import org.apache.spark.internal.Logging
 
 import scala.collection.mutable
@@ -48,7 +48,7 @@ class GSSession(sc : SparkContext) extends Logging{
     val hostIds = splited(1)
     //as this graph can later be used to run in graphscope session, we need to keep the matching between
     //java object and vineyard objectId,
-    val res = GraphScopeRDD.loadFragmentAsGraph[VD,ED](sc, hostIds, fragName)
+    val res = GraphScopeHelper.loadFragmentAsGraph[VD,ED](sc, hostIds, fragName)
     graph2GraphName(res) = resultVariable
     res
   }
