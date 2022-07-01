@@ -65,15 +65,19 @@ public interface ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T>
     PropertyNbrUnit<VID_T> getInEdgesPtr();
 
     @FFINameAlias("get_oe_offsets_begin_accessor")
+    @CXXReference
     @FFITypeAlias("gs::arrow_projected_fragment_impl::TypedArray<int64_t>") TypedArray<Long> getOEOffsetsBeginAccessor();
 
     @FFINameAlias("get_ie_offsets_begin_accessor")
+    @CXXReference
     @FFITypeAlias("gs::arrow_projected_fragment_impl::TypedArray<int64_t>") TypedArray<Long> getIEOffsetsBeginAccessor();
 
     @FFINameAlias("get_oe_offsets_end_accessor")
+    @CXXReference
     @FFITypeAlias("gs::arrow_projected_fragment_impl::TypedArray<int64_t>") TypedArray<Long> getOEOffsetsEndAccessor();
 
     @FFINameAlias("get_ie_offsets_end_accessor")
+    @CXXReference
     @FFITypeAlias("gs::arrow_projected_fragment_impl::TypedArray<int64_t>") TypedArray<Long> getIEOffsetsEndAccessor();
 
     @FFINameAlias("get_edata_array_accessor")

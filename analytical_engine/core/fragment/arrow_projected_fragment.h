@@ -966,18 +966,18 @@ class ArrowProjectedFragment
 
   inline const nbr_unit_t* get_in_edges_ptr() const { return ie_ptr_; }
 
-  inline arrow_projected_fragment_impl::TypedArray<int64_t>& get_ie_offsets_begin_accessor() const {
+  inline arrow_projected_fragment_impl::TypedArray<int64_t>& get_ie_offsets_begin_accessor() {
     return ie_offsets_begin_accessor_;
   }
 
-  inline arrow_projected_fragment_impl::TypedArray<int64_t>& get_ie_offsets_end_accessor() const {
+  inline arrow_projected_fragment_impl::TypedArray<int64_t>& get_ie_offsets_end_accessor() {
     return ie_offsets_end_accessor_;
   }
 
-  inline arrow_projected_fragment_impl::TypedArray<int64_t>& get_oe_offsets_begin_accessor() const {
+  inline arrow_projected_fragment_impl::TypedArray<int64_t>& get_oe_offsets_begin_accessor() {
     return oe_offsets_begin_accessor_;
   }
-  inline arrow_projected_fragment_impl::TypedArray<int64_t>& get_oe_offsets_end_accessor() const {
+  inline arrow_projected_fragment_impl::TypedArray<int64_t>& get_oe_offsets_end_accessor() {
     return oe_offsets_end_accessor_;
   }
 
