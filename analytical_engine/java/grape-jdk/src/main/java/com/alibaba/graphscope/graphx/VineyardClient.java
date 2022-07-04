@@ -11,7 +11,6 @@ import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
-import com.alibaba.graphscope.graphx.V6dStatus;
 import java.io.Serializable;
 
 @FFIGen(library = "grape-jni")
