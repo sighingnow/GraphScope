@@ -246,7 +246,11 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
         log.info(s"edge shuffle ${edgeShuffle} size ${edgeShuffle.size()}")
         val receivedOids = edgeShuffle.oids
         log.info(s"Before union with ${receivedOids.size}, size ${innerHashSet.size}")
-        innerHashSet.union(receivedOids)
+        var i = 0
+        while (i < receivedOids.length){
+          innerHashSet.add(receivedOids(i))
+          i += 1
+        }
         log.info(s"after ${innerHashSet.size}")
       }
     }

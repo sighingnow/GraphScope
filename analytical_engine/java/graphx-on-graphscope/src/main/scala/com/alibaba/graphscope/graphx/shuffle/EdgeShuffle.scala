@@ -1,16 +1,21 @@
 package com.alibaba.graphscope.graphx.shuffle
 
+import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle.openHashSetToArray
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.OpenHashSet
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
-class EdgeShuffle[ED : ClassTag](val fromPid : Int,
+class EdgeShuffle[VD : ClassTag,ED : ClassTag](val fromPid : Int,
                                  val dstPid: Int,
-                                 val oids : OpenHashSet[Long], // all oids belong to dstPid
+                                 val oids : Array[Long], // all oids belong to dstPid
                                  val srcs : Array[Long],
-                                 val dsts : Array[Long], val attrs: Array[ED]) extends Serializable {
+                                 val dsts : Array[Long], val attrs: Array[ED],
+                                 val vertexAttrs : Array[VD] = null) extends Serializable {
+  def this(fromPid : Int, dstPid : Int, oids : OpenHashSet[Long], srcs : Array[Long], dsts : Array[Long], edgeAttrs : Array[ED]) = {
+    this(fromPid,dstPid,openHashSetToArray(oids), srcs, dsts, edgeAttrs)
+  }
   require(srcs.length == dsts.length)
 
   def size() : Long = srcs.length
@@ -18,10 +23,24 @@ class EdgeShuffle[ED : ClassTag](val fromPid : Int,
   override def toString: String = "EdgeShuffle:{from "+ fromPid +",to "+ dstPid + ", oids:"+ oids.size + ",srcs: " + srcs.length + ",dsts: " + dsts.length + ",attrs:" + attrs.length;
 }
 
-class EdgeShuffleReceived[ED: ClassTag](val selfPid : Int) extends Logging{
-  val fromPid2Shuffle = new ArrayBuffer[EdgeShuffle[ED]]
+object EdgeShuffle{
+  def openHashSetToArray(value: OpenHashSet[Long]): Array[Long] ={
+    val res = new Array[Long](value.size)
+    val iter = value.iterator
+    var i = 0
+    while (iter.hasNext){
+      res(i) = iter.next()
+      i += 1
+    }
+    require(i == res.size)
+    res
+  }
+}
 
-  def add(edgeShuffle: EdgeShuffle[ED]): Unit ={
+class EdgeShuffleReceived[ED: ClassTag](val selfPid : Int) extends Logging{
+  val fromPid2Shuffle = new ArrayBuffer[EdgeShuffle[_,ED]]
+
+  def add(edgeShuffle: EdgeShuffle[_,ED]): Unit = {
     fromPid2Shuffle.+=(edgeShuffle)
   }
 

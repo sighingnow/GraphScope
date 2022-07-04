@@ -42,7 +42,7 @@ object GrapeEdgeRDD extends Logging{
     null
   }
 
-  def fromEdgeShuffle[VD: ClassTag, ED : ClassTag](edgeShuffles : RDD[(PartitionID, EdgeShuffle[ED])]) : GrapeEdgeRDDImpl[VD,ED] = {
+  def fromEdgeShuffle[VD: ClassTag, ED : ClassTag](edgeShuffles : RDD[(PartitionID, EdgeShuffle[VD,ED])]) : GrapeEdgeRDDImpl[VD,ED] = {
     //combine edges shuffles to edge Partition
     val numPartitions = edgeShuffles.getNumPartitions
     log.info(s"edgeShuffles has ${numPartitions} parts")

@@ -7,6 +7,7 @@ import com.alibaba.graphscope.graphx.graph.GraphStructure
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.graphx.rdd.RoutingTable
 import com.alibaba.graphscope.graphx.rdd.impl.GrapeVertexPartition
+import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
 import com.alibaba.graphscope.graphx.store.InHeapVertexDataStore
 import com.alibaba.graphscope.graphx.utils.GrapeUtils
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
@@ -57,27 +58,13 @@ abstract class GrapeVertexRDD[VD](
 }
 
 object GrapeVertexRDD extends Logging{
-  /**
-   * Constructs a `VertexRDD` containing all vertices referred to in `edges`. The vertices will be
-   * created with the attribute `defaultVal`. The resulting `VertexRDD` will be joinable with
-   * `edges`.
-   *
-   * @tparam VD the vertex attribute type
-   * @param edges         the [[EdgeRDD]] referring to the vertices to create
-   * @param numPartitions the desired number of partitions for the resulting `VertexRDD`
-   * @param defaultVal    the vertex attribute to use when creating missing vertices
-   */
-  def fromEdges[VD: ClassTag](
-                               edges: EdgeRDD[_], numPartitions: Int, defaultVal: VD): GrapeVertexRDD[VD] = {
-
-    null
-  }
 
   def fromVertexPartitions[VD : ClassTag](vertexPartition : RDD[GrapeVertexPartition[VD]]): GrapeVertexRDDImpl[VD] ={
     new GrapeVertexRDDImpl[VD](vertexPartition)
   }
 
-  def fromGrapeEdgeRDDAndGraphXVertexRDD[VD : ClassTag](edgeRDD : GrapeEdgeRDD[_], vertexShuffles :  RDD[(PartitionID,(Array[Long],Array[VD]))],  numPartitions : Int, storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
+  def fromEdgeShuffle[VD : ClassTag, ED : ClassTag](edgeShuffle : RDD[(PartitionID, EdgeShuffle[VD,ED])], edgeRDD : GrapeEdgeRDD[ED],storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
+    val numPartitions = edgeRDD.getNumPartitions
     log.info(s"Creating vertex rdd from grape edgeRDD of numPartition ${numPartitions}, along with vertex attrs ")
     //creating routing table
     val routingTableMessage = edgeRDD.grapePartitionsRDD.mapPartitions(iter => {
@@ -96,37 +83,44 @@ object GrapeVertexRDD extends Logging{
         Iterator((ePart, routingTable))
       }
     }.cache()
+    log.info(s"epart with routing table count ${ePartWithRoutingTables.count()}")
 
-    val grapeVertexPartition = ePartWithRoutingTables.zipPartitions(vertexShuffles){
-      (firstIter, vertexShufflesIter) => {
+    val grapeVertexPartition = ePartWithRoutingTables.zipPartitions(edgeShuffle){
+      (firstIter, edgeShuffleIter) => {
         val (ePart, routingTable) = firstIter.next()
         val fragVertices = ePart.graphStructure.getVertexSize
+//        val (edgeShufflePid, edgeShuffle) = edgeShuffleIter.next()
+//        require(edgeShufflePid == ePart.pid)
         log.info(s"Partition ${ePart.pid} doing initialization with graphx vertex attrs, frag vertices ${fragVertices}")
-        val grapeVertexPartition = buildPartitionFromGraphX(ePart.pid, ePart.client, ePart.graphStructure, routingTable, vertexShufflesIter)
+        val grapeVertexPartition = buildPartitionFromGraphX(ePart.pid, ePart.client, ePart.graphStructure, routingTable, edgeShuffleIter)
         Iterator(grapeVertexPartition)
       }
     }.cache()
     new GrapeVertexRDDImpl[VD](grapeVertexPartition, storageLevel)
   }
 
-  def buildPartitionFromGraphX[VD: ClassTag](pid: Int, client: VineyardClient, graphStructure: GraphStructure, routingTable: RoutingTable, verticesAttr: Iterator[(PartitionID, (Array[Long], Array[VD]))]):GrapeVertexPartition[VD] = {
+  def buildPartitionFromGraphX[VD: ClassTag](pid: Int, client: VineyardClient, graphStructure: GraphStructure, routingTable: RoutingTable, edgeShuffleIter: Iterator[(PartitionID,EdgeShuffle[VD,_])]):GrapeVertexPartition[VD] = {
     /** We assume the verticesAttr iterator contains only inner vertices */
-      val newArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD], graphStructure.getVertexSize.toInt).asInstanceOf[PrimitiveArray[VD]]
-      val grapeVertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
-      while (verticesAttr.hasNext){
-        val cur = verticesAttr.next()
-        require(pid == cur._1)
-        val (oids, vds) = cur._2
-        var i = 0
-        while (i < oids.length){
-          require(graphStructure.getInnerVertex(oids(i),grapeVertex))
-          newArray.set(grapeVertex.GetValue(), vds(i))
-//          log.info(s"In building vertex Partition, set vertex ${oids(i)}, lid ${grapeVertex.GetValue()} to attr ${vds(i)}")
-          i += 1
-        }
+    val newArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD], graphStructure.getVertexSize.toInt).asInstanceOf[PrimitiveArray[VD]]
+    val grapeVertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
+    while (edgeShuffleIter.hasNext){
+      val (dstPid, edgeShuffle) = edgeShuffleIter.next()
+      require(dstPid == pid)
+      val oids = edgeShuffle.oids
+      val verticesAttr = edgeShuffle.vertexAttrs
+      require(oids.length == verticesAttr.length, s"neq ${oids.length}, ${verticesAttr.length}")
+      val len = oids.length
+      var i = 0
+      while (i < len){
+        val oid = oids(i)
+        val vdata = verticesAttr(i)
+        require(graphStructure.getInnerVertex(oid,grapeVertex))
+        newArray.set(grapeVertex.GetValue(), vdata)
+        i += 1
       }
-      val newVertexData = new InHeapVertexDataStore[VD](newArray,client)
-      new GrapeVertexPartition[VD](pid, graphStructure, newVertexData, client, routingTable)
+    }
+    val newVertexData = new InHeapVertexDataStore[VD](newArray,client)
+    new GrapeVertexPartition[VD](pid, graphStructure, newVertexData, client, routingTable)
   }
 
   def fromGrapeEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD, storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {

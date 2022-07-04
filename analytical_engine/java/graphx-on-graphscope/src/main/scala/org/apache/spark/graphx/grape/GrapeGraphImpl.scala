@@ -2,15 +2,20 @@ package org.apache.spark.graphx.grape
 
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
+import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
 import com.alibaba.graphscope.graphx.store.InHeapVertexDataStore
 import com.alibaba.graphscope.graphx.utils.{ExecutorUtils, GrapeUtils, ScalaFFIFactory}
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.grape.impl.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
+import org.apache.spark.graphx.impl.GraphImpl
+import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.util.collection.BitSet
+import org.apache.spark.util.collection.{BitSet, PrimitiveVector}
+import org.apache.spark.{HashPartitioner, Partitioner}
 import org.slf4j.{Logger, LoggerFactory}
 
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.{ClassTag, classTag}
 
 object GrapeGraphBackend extends Enumeration{
@@ -330,7 +335,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 }
 
 
-object GrapeGraphImpl {
+object GrapeGraphImpl extends Logging{
 
   def fromExistingRDDs[VD: ClassTag,ED :ClassTag](vertices: GrapeVertexRDD[VD], edges: GrapeEdgeRDD[ED]): GrapeGraphImpl[VD,ED] ={
     new GrapeGraphImpl[VD,ED](vertices, edges)
@@ -340,4 +345,71 @@ object GrapeGraphImpl {
     null
   }
 
+  def generateGraphShuffle[VD : ClassTag, ED : ClassTag](graph : GraphImpl[VD,ED], partitioner : Partitioner) = {
+    graph.replicatedVertexView.upgrade(graph.vertices,includeSrc = true,includeDst = true)
+    val numPartitions = graph.vertices.getNumPartitions
+    val partitioner = new HashPartitioner(numPartitions)
+    graph.replicatedVertexView.edges.partitionsRDD.mapPartitions(iter => {
+      val (fromPid, part) = iter.next()
+      val srcLids = part.localSrcIds
+      val dstLids = part.localDstIds
+      val edgeAttr = part.getData
+      val lid2Oid = part.getLocal2Global
+      val vertexAttr = part.getVertexAttrs
+
+      val edgesNum = part.size
+      require(srcLids.length == dstLids.length)
+      require(edgeAttr.length == srcLids.length)
+      require(srcLids.length == part.size)
+
+      val verticesNum = lid2Oid.length
+      require(lid2Oid.length == vertexAttr.length)
+      log.info(s"shuffle from ${fromPid} edge num ${edgesNum}, vertices num ${verticesNum}")
+
+      val pid2src = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
+      val pid2Dst = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
+      val pid2EdgeAttr = Array.fill(numPartitions)(new PrimitiveVector[ED])
+      val pid2Oids = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
+      val pid2VertexAttr = Array.fill(numPartitions)(new PrimitiveVector[VD])
+
+      //shatter vertices
+      var i = 0
+      while (i < verticesNum){
+        val dstPid = partitioner.getPartition(lid2Oid(i))
+        pid2Oids(dstPid).+=(lid2Oid(i))
+        pid2VertexAttr(dstPid).+=(vertexAttr(i))
+        i += 1
+      }
+
+      i = 0
+      while (i < edgesNum){
+        val srcOid = lid2Oid(srcLids(i))
+        val dstOid = lid2Oid(dstLids(i))
+        val srcPid = partitioner.getPartition(srcOid)
+        val dstPid = partitioner.getPartition(dstOid)
+        if (srcPid == dstPid){
+          pid2src(srcPid).+=(srcOid)
+          pid2Dst(dstPid).+=(dstOid)
+          pid2EdgeAttr(srcPid).+=(edgeAttr(i))
+        }
+        else {
+          pid2src(srcPid).+=(srcOid)
+          pid2Dst(srcPid).+=(dstOid)
+          pid2EdgeAttr(srcPid).+=(edgeAttr(i))
+          pid2src(dstPid).+=(srcOid)
+          pid2Dst(dstPid).+=(dstOid)
+          pid2EdgeAttr(dstPid).+=(edgeAttr(i))
+        }
+        i += 1
+      }
+      val res = new ArrayBuffer[(PartitionID,EdgeShuffle[VD,ED])]
+      var ind = 0
+      while (ind < numPartitions){
+        log.info(s"partition ${fromPid} send msg to ${ind}")
+        res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind).trim().array, pid2src(ind).trim().array, pid2Dst(ind).trim().array, pid2EdgeAttr(ind).trim().array,pid2VertexAttr(ind).trim().array)))
+        ind += 1
+      }
+      res.toIterator
+    }).partitionBy(partitioner).setName("GraphxGraph2Fragment.graphShuffle").cache()
+  }
 }
