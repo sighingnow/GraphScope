@@ -208,7 +208,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
         Iterator.empty
       }
     }).partitionBy(new HashPartitioner(this.grapePartitionsRDD.getNumPartitions))
-    val updatedVertexPartition = this.grapePartitionsRDD.zipPartitions(updateMessage){
+    val updatedVertexPartition = this.grapePartitionsRDD.zipPartitions(updateMessage,preservesPartitioning = true){
       (vIter, msgIter) => {
         val  vpart = vIter.next()
         Iterator(vpart.updateOuterVertexData(msgIter))

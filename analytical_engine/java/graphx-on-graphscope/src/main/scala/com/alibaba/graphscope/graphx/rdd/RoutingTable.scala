@@ -18,7 +18,13 @@ class RoutingTable(val pid2Lids : Array[Array[Long]]) {
 object RoutingTable extends Logging{
 
   def fromGraphStructure(graphStructure: GraphStructure) : RoutingTable = {
-    new RoutingTable(graphStructure.mirrorVertices)
+    val res = new Array[Array[Long]](graphStructure.fnum())
+    val mirrorVertices = graphStructure.mirrorVertices
+    for (fid <- 0 until graphStructure.fnum()){
+      val pid = graphStructure.fid2GraphxPid(fid)
+      res(pid) = mirrorVertices(fid)
+    }
+    new RoutingTable(res)
   }
 
 //  type RoutingMessage = (PartitionID,Array[Long])
