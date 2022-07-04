@@ -239,7 +239,7 @@ object GraphScopeHelper extends Logging{
     val vertexRDD = GrapeVertexRDD.fromEdgeShuffle[VD,ED](graphShuffles,edgeRDD).cache()
 
     val time3 = System.nanoTime()
-    log.info(s"[GraphxGraph2Fragment:] construct edge rdd ${edgeRDD} cost ${(time3 - time2) / 1000000} ms")
+    log.info(s"[GraphScopeHelper:] construct vertex and edge rdd ${edgeRDD} cost ${(time3 - time2) / 1000000} ms")
     log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
     graphShuffles.unpersist()
     GrapeGraphImpl.fromExistingRDDs(vertexRDD,edgeRDD)

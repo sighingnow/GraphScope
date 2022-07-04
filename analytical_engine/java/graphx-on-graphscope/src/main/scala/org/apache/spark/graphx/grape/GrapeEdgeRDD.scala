@@ -64,7 +64,7 @@ object GrapeEdgeRDD extends Logging{
       else {
         Iterator.empty
       }
-    })
+    },preservesPartitioning = true)
     fromEdgeShuffleReceived(edgeShuffleReceived)
   }
 
@@ -88,7 +88,7 @@ object GrapeEdgeRDD extends Logging{
 //        Iterator((grapeMeta, shuffleReceived))
       }
       else Iterator.empty
-    },true).cache()
+    },preservesPartitioning = true).cache()
 
     val localVertexMapIds = metaPartitions.mapPartitions(iter => {
       if (iter.hasNext){
