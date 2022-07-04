@@ -100,7 +100,7 @@ object GraphScopeHelper extends Logging{
         }
         val time1 = System.nanoTime()
         log.info("[edgeListFile: ] iterating over edge cost " + (time1 - time0) / 1000000 + "ms")
-        val res = new ArrayBuffer[(PartitionID,EdgeShuffle[Int])]
+        val res = new ArrayBuffer[(PartitionID,EdgeShuffle[Int,Int])]
         var ind = 0
         while (ind < numPartitions){
           log.info(s"partition ${fromPid} send msg to ${ind}")
@@ -221,80 +221,27 @@ object GraphScopeHelper extends Logging{
     val numPartitions = originGraph.vertices.getNumPartitions
     val partitioner = new HashPartitioner(numPartitions)
     val time0 = System.nanoTime()
-    //create graph partition from edges.
-    val originEdgePartitions = originGraph.edges.partitionsRDD
-    val edgesShuffled = originEdgePartitions.mapPartitions(iter => {
-      val (fromPid, part) = iter.next()
-      val pid2src = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
-      val pid2Dst = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
-      val pid2attr = Array.fill(numPartitions)(new PrimitiveVector[ED])
-      val pid2Oids = Array.fill(numPartitions)(new OpenHashSet[VertexId])
-      val time0 = System.nanoTime()
-      val edgesIter = part.iterator
-      while (edgesIter.hasNext) {
-        val edge = edgesIter.next()
-        val srcId = edge.srcId
-        val dstId = edge.dstId
-        val srcPid = partitioner.getPartition(srcId)
-        val dstPid = partitioner.getPartition(dstId)
-        pid2Oids(srcPid).add(srcId)
-        pid2Oids(dstPid).add(dstId)
-        if (srcPid == dstPid){
-          pid2src(srcPid).+=(srcId)
-          pid2Dst(srcPid).+=(dstId)
-          pid2attr(srcPid)+=(edge.attr)
-        }
-        else {
-          pid2src(srcPid).+=(srcId)
-          pid2Dst(srcPid).+=(dstId)
-          pid2attr(srcPid).+=(edge.attr)
-          pid2src(dstPid).+=(srcId)
-          pid2Dst(dstPid).+=(dstId)
-          pid2attr(dstPid).+=(edge.attr)
-        }
-      }
-      val time1 = System.nanoTime()
-      log.info("[GraphxGraph2Fragment: ] iterating over edge cost " + (time1 - time0) / 1000000 + "ms")
-      val res = new ArrayBuffer[(PartitionID,EdgeShuffle[ED])]
-      var ind = 0
-      while (ind < numPartitions){
-        log.info(s"partition ${fromPid} send msg to ${ind}")
-        res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array, pid2attr(ind).trim().array)))
-        ind += 1
-      }
-      res.toIterator
-    }).partitionBy(partitioner).setName("GraphxGraph2Fragment.edgeListFile")
-    val edgeShufflesNum = edgesShuffled.count()
+    //Note: Before convert to graphx graph, we need to get edges and vertices attr on two endpoint.
+    //We can not separate the shuffling stage into to distinct ones. Because the result partitions
+    //has inconsistent pids.
+
+    val graphShuffles = GrapeGraphImpl.generateGraphShuffle(originGraph,partitioner)
+
+    val edgeShufflesNum = graphShuffles.count()
     val time1 = System.nanoTime()
     logInfo(s"It took ${TimeUnit.NANOSECONDS.toMillis(time1 - time0)} ms" +
       s" to load the edges,shuffle count ${edgeShufflesNum}")
 
     val time2 = System.nanoTime()
-    val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[VD,ED](edgesShuffled).cache()
-    val time3 = System.nanoTime()
-    //different from edgeFileLoader, here we need the attr in the original graphx graph
-    val verticesShuffled = originGraph.vertices.mapPartitions(iter => {
-      val pid2Oid = Array.fill(numPartitions)(new PrimitiveVector[Long])
-      val pid2Vd = Array.fill(numPartitions)(new PrimitiveVector[VD])
-      while (iter.hasNext){
-        val (id, vd) = iter.next()
-        val pid = partitioner.getPartition(id)
-        pid2Oid(pid).+=(id)
-        pid2Vd(pid).+=(vd)
-      }
-      val res = new ArrayBuffer[(PartitionID,(Array[Long],Array[VD]))]()
-      var ind = 0
-      while (ind < numPartitions){
-        res.+=((ind, (pid2Oid(ind).trim().array, pid2Vd(ind).trim().array)))
-        ind += 1
-      }
-      res.toIterator
-    }).partitionBy(partitioner).setName("GraphxGraph2Fragment.vertices")
+    val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[VD,ED](graphShuffles).cache()
 
+    //different from edgeFileLoader, here we need the attr in the original graphx graph
+    val vertexRDD = GrapeVertexRDD.fromEdgeShuffle[VD,ED](graphShuffles,edgeRDD).cache()
+
+    val time3 = System.nanoTime()
     log.info(s"[GraphxGraph2Fragment:] construct edge rdd ${edgeRDD} cost ${(time3 - time2) / 1000000} ms")
-    val vertexRDD = GrapeVertexRDD.fromGrapeEdgeRDDAndGraphXVertexRDD[VD](edgeRDD, verticesShuffled, numPartitions, StorageLevel.MEMORY_ONLY).cache()
     log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
-    edgesShuffled.unpersist()
+    graphShuffles.unpersist()
     GrapeGraphImpl.fromExistingRDDs(vertexRDD,edgeRDD)
   }
 }
