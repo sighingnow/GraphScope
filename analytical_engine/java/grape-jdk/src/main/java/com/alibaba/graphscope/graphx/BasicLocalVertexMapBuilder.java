@@ -6,7 +6,7 @@ import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder;
 import com.alibaba.graphscope.stdcxx.StdSharedPtr;
@@ -17,7 +17,7 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_LOCAL_VERTEX_MAP_H)
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.GS_GRAPHX_LOCAL_VERTEX_MAP_BUILDER)
-public interface BasicLocalVertexMapBuilder<OID_T,VID_T> extends FFIPointer {
+public interface BasicLocalVertexMapBuilder<OID_T,VID_T> extends FFISerializable {
 
     @FFINameAlias("MySeal")
     @CXXValue StdSharedPtr<LocalVertexMap<OID_T,VID_T>> seal(@CXXReference VineyardClient client);

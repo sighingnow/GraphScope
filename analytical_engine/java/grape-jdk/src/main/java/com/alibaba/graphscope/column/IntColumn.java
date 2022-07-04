@@ -28,7 +28,7 @@ import static com.alibaba.graphscope.utils.JNILibraryName.JNI_LIBRARY_NAME;
 import com.alibaba.fastffi.CXXHead;
 import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIGen;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.ds.GSVertexArray;
 import com.alibaba.graphscope.ds.Vertex;
@@ -40,7 +40,7 @@ import com.alibaba.graphscope.ds.Vertex;
 @CXXHead(ARROW_PROJECTED_FRAGMENT_H)
 @CXXHead(GRAPE_TYPES_H)
 @FFITypeAlias(INT_COLUMN)
-public interface IntColumn<FRAG_T> extends FFIPointer {
+public interface IntColumn<FRAG_T> extends FFISerializable {
     double at(@CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex);
 
     void set(@CXXReference @FFITypeAlias(GRAPE_LONG_VERTEX) Vertex<Long> vertex, int value);

@@ -6,7 +6,7 @@ import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.fragment.GraphXStringVDFragment;
 import com.alibaba.graphscope.stdcxx.StdSharedPtr;
@@ -16,7 +16,7 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @FFIGen(library = "grape-jni")
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_GRAPHX_FRAGMENT_H)
 @FFITypeAlias(CppClassName.GRAPHX_FRAGMENT_BUILDER)
-public interface StringVDGraphXFragmentBuilder<OID_T, VID_T, VD_T, ED_T> extends FFIPointer {
+public interface StringVDGraphXFragmentBuilder<OID_T, VID_T, VD_T, ED_T> extends FFISerializable {
 
     @FFINameAlias("MySeal")
     @CXXValue StdSharedPtr<GraphXStringVDFragment<OID_T, VID_T, VD_T, ED_T>> seal(

@@ -7,7 +7,7 @@ import com.alibaba.fastffi.CXXHead;
 import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.ds.adaptor.Nbr;
 
@@ -15,7 +15,7 @@ import com.alibaba.graphscope.ds.adaptor.Nbr;
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @CXXHead(system = "cstdint")
 @FFITypeAlias(GS_DEFAULT_IMMUTABLE_CSR)
-public interface ImmutableCSR<VID_T, ED> extends FFIPointer { //grape::Nbr
+public interface ImmutableCSR<VID_T, ED> extends FFISerializable { //grape::Nbr
 
     //FIXME: implement this is immutableCSR C++
     default long partialEdgeNum(VID_T start, VID_T end){

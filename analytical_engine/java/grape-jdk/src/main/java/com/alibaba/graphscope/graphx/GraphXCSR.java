@@ -4,7 +4,7 @@ import com.alibaba.fastffi.CXXHead;
 import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.ds.ImmutableTypedArray;
 import com.alibaba.graphscope.ds.PropertyNbrUnit;
@@ -16,7 +16,7 @@ import java.io.Serializable;
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_GRAPHX_CSR_H)
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.GS_GRAPHX_CSR)
-public interface GraphXCSR<VID_T> extends FFIPointer, Serializable {
+public interface GraphXCSR<VID_T> extends FFISerializable, Serializable {
     long id();
 
     @FFINameAlias("GetInDegree")

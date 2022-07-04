@@ -9,14 +9,14 @@ import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.fastffi.FFITypeFactory;
 
 @FFIGen
 @CXXHead(value = {GS_MEMORY_MAPPED_BUFFER_H})
 @FFITypeAlias(GS_MEMORY_MAPPED_BUFFER)
-public interface MemoryMappedBuffer extends FFIPointer {
+public interface MemoryMappedBuffer extends FFISerializable {
 
     Factory factory = FFITypeFactory.getFactory(Factory.class, MemoryMappedBuffer.class);
 

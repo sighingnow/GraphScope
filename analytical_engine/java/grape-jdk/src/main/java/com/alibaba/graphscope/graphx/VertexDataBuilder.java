@@ -6,7 +6,7 @@ import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder;
 import com.alibaba.graphscope.stdcxx.FFIByteVector;
@@ -19,7 +19,7 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @FFIGen(library = "grape-jni")
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_VERTEX_DATA_H)
 @FFITypeAlias(CppClassName.GS_VERTEX_DATA_BUILDER)
-public interface VertexDataBuilder<VID,VD> extends FFIPointer {
+public interface VertexDataBuilder<VID,VD> extends FFISerializable {
 
     @FFINameAlias("Init")
     void init(long frag_vnums, VD initValue);

@@ -20,6 +20,7 @@ import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.ds.VertexRange;
 
@@ -31,7 +32,7 @@ import com.alibaba.graphscope.ds.VertexRange;
  * @param <VDATA_T> vertex data type.
  * @param <EDATA_T> edge data type.
  */
-public interface FragmentBase<OID_T, VID_T, VDATA_T, EDATA_T> extends FFIPointer {
+public interface FragmentBase<OID_T, VID_T, VDATA_T, EDATA_T> extends FFISerializable {
 
     /** @return The id of current fragment. */
     int fid();

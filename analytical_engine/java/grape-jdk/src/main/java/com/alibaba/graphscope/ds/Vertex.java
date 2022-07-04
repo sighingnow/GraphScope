@@ -29,7 +29,7 @@ import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.CXXValueRangeElement;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 
 /**
@@ -44,7 +44,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 @CXXTemplate(
         cxx = {"uint64_t"},
         java = {"Long"})
-public interface Vertex<VID_T> extends FFIPointer, CXXPointer, CXXValueRangeElement<Vertex<VID_T>> {
+public interface Vertex<VID_T> extends FFISerializable, CXXPointer, CXXValueRangeElement<Vertex<VID_T>> {
 
     /**
      * Return a <em>deep</em> copy of current vertex.

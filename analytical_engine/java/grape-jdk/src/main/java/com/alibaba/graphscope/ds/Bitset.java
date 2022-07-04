@@ -27,7 +27,7 @@ import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.fastffi.FFITypeFactory;
 
@@ -39,7 +39,7 @@ import com.alibaba.fastffi.FFITypeFactory;
  * href="https://github.com/alibaba/libgrape-lite/blob/master/grape/utils/bitset.h">grape
  * BitSet</a>, an efficient implementation for bitset.
  */
-public interface Bitset extends FFIPointer, CXXPointer {
+public interface Bitset extends FFISerializable, CXXPointer {
 
     Factory factory = FFITypeFactory.getFactory(Factory.class, Bitset.class);
 

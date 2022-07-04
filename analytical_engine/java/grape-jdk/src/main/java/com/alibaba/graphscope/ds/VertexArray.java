@@ -27,7 +27,7 @@ import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 
 /**
@@ -44,7 +44,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 @FFIGen
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(GRAPE_VERTEX_ARRAY)
-public interface VertexArray<VID, T> extends FFIPointer, CXXPointer {
+public interface VertexArray<VID, T> extends FFISerializable, CXXPointer {
 
     /**
      * Init a vertex array with a range of vertices.

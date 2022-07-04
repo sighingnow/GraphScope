@@ -20,10 +20,10 @@ import static com.alibaba.graphscope.utils.JNILibraryName.JNI_LIBRARY_NAME;
 
 import com.alibaba.fastffi.CXXPointerRangeElement;
 import com.alibaba.fastffi.FFIGen;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 
 /** A pointer to an unsigned pointer */
 @FFIGen
 @FFITypeAlias("unsigned")
-public interface FidPointer extends FFIPointer, CXXPointerRangeElement<FidPointer> {}
+public interface FidPointer extends FFISerializable, CXXPointerRangeElement<FidPointer> {}

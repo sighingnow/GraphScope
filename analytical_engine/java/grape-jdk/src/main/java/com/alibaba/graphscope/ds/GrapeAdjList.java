@@ -26,7 +26,7 @@ import com.alibaba.fastffi.CXXPointer;
 import com.alibaba.fastffi.CXXPointerRange;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 
 /**
@@ -41,7 +41,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 @CXXHead({GRAPE_ADJ_LIST_H, GRAPE_TYPES_H})
 @FFITypeAlias(GRAPE_ADJ_LIST)
 public interface GrapeAdjList<VID_T, EDATA_T>
-        extends FFIPointer, CXXPointer, CXXPointerRange<GrapeNbr<VID_T, EDATA_T>> {
+        extends FFISerializable, CXXPointer, CXXPointerRange<GrapeNbr<VID_T, EDATA_T>> {
     /**
      * Get the begin Nbr.
      *

@@ -6,13 +6,13 @@ import static com.alibaba.graphscope.utils.CppHeaderName.CORE_JAVA_TYPE_ALIAS_H;
 import com.alibaba.fastffi.CXXHead;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 
 @FFIGen
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(GS_ARROW_ARRAY)
-public interface ArrowArray<T> extends FFIPointer {
+public interface ArrowArray<T> extends FFISerializable {
 
     @FFINameAlias("Value")
     T value(long index);

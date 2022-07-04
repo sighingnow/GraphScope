@@ -22,7 +22,7 @@ import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFIGetter;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
@@ -32,7 +32,7 @@ import com.alibaba.graphscope.utils.JNILibraryName;
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.PROPERTY_NBR_UNIT)
 public interface PropertyNbrUnit<VID_T>
-        extends FFIPointer, CXXPointerRangeElement<PropertyNbrUnit<VID_T>> {
+        extends FFISerializable, CXXPointerRangeElement<PropertyNbrUnit<VID_T>> {
     @FFIGetter
     VID_T vid();
 

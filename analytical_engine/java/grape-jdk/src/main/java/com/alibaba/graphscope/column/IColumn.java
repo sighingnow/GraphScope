@@ -26,14 +26,14 @@ import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.FFIByteString;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 
 //@FFIGen
 @FFIGen
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(I_COLUMN)
-public interface IColumn extends FFIPointer {
+public interface IColumn extends FFISerializable {
     @CXXValue
     FFIByteString name();
 

@@ -28,7 +28,7 @@ import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 
 /**
@@ -39,7 +39,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 @FFIGen
 @CXXHead(value = {GRAPE_WORKER_COMM_SPEC_H, GRAPE_DENSE_VERTEX_SET_H})
 @FFITypeAlias(GRAPE_DENSE_VERTEX_SET)
-public interface DenseVertexSet<VID_T> extends FFIPointer, CXXPointer {
+public interface DenseVertexSet<VID_T> extends FFISerializable, CXXPointer {
 
     /**
      * Init the vertex set with a range of vertices.

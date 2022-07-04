@@ -25,7 +25,7 @@ import com.alibaba.fastffi.CXXPointer;
 import com.alibaba.fastffi.CXXPointerRange;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFIGetter;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 
 /**
@@ -36,7 +36,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 @FFIGen
 @CXXHead(GRAPE_ADJ_LIST_H)
 @FFITypeAlias(GRAPE_DEST_LIST)
-public interface DestList extends FFIPointer, CXXPointer, CXXPointerRange<FidPointer> {
+public interface DestList extends FFISerializable, CXXPointer, CXXPointerRange<FidPointer> {
 
     /**
      * Fetch the begin fid pointer.

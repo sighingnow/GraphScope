@@ -31,7 +31,7 @@ import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 
 /**
@@ -48,7 +48,7 @@ import com.alibaba.fastffi.FFITypeAlias;
 @CXXHead(GRAPE_VERTEX_ARRAY_H)
 @CXXHead(system = "cstdint")
 @FFITypeAlias(GS_VERTEX_ARRAY)
-public interface GSVertexArray<T> extends FFIPointer, CXXPointer {
+public interface GSVertexArray<T> extends FFISerializable, CXXPointer {
 
     /**
      * Init a vertex Array with a range of vertices.
