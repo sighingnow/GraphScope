@@ -19,7 +19,7 @@ import scala.reflect.ClassTag
  * FIXME: should not be serializable
  */
 class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
-                                                     val graphStructure: GraphStructure,
+                                                     @transient val graphStructure: GraphStructure,
                                                      @transient val client : VineyardClient,
                                                      var edatas : PrimitiveArray[ED],
                                                      val edgeReversed : Boolean = false,

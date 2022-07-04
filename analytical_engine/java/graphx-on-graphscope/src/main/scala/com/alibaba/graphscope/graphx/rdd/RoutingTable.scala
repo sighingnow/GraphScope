@@ -7,7 +7,7 @@ import org.apache.spark.internal.Logging
 
 import scala.collection.mutable.ArrayBuffer
 
-class RoutingTable(val pid2Lids : Array[Array[Long]]) {
+class RoutingTable(val pid2Lids : Array[Array[Long]]) extends Serializable {
   val numPartitions = pid2Lids.length
 
   def get(ind : Int) : Array[Long] = {
