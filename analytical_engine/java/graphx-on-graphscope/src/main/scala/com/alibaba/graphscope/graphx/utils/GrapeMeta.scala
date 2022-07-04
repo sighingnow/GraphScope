@@ -8,7 +8,7 @@ import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag
 
-class GrapeMeta[VD: ClassTag, ED: ClassTag](val partitionID: Int, val partitionNum : Int, @transient val vineyardClient : VineyardClient, val hostName : String) extends Logging with Serializable {
+class GrapeMeta[VD: ClassTag, ED: ClassTag](val partitionID: Int, val partitionNum : Int, @transient val vineyardClient : VineyardClient, val hostName : String) extends Logging {
 
   @transient var localVertexMap : LocalVertexMap[Long,Long] = null.asInstanceOf[LocalVertexMap[Long,Long]]
   var edgePartitionBuilder : GrapeEdgePartitionBuilder[VD,ED] = null.asInstanceOf[GrapeEdgePartitionBuilder[VD,ED]]
