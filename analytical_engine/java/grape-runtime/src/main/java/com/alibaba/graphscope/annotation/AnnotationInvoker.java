@@ -543,6 +543,7 @@ import com.alibaba.fastffi.FFIGenBatch;
                     , @CXXTemplate(cxx = "int64_t", java = "Long"),
                         @CXXTemplate(cxx = "double", java = "Double"),
                         @CXXTemplate(cxx = "int32_t", java = "Integer"),
+                      @CXXTemplate(cxx = "grape::Vertex<uint64_t>", java = "com.alibaba.graphscope.ds.Vertex<java.lang.Long>"),
                         @CXXTemplate(cxx = GS_VERTEX_ARRAY + "<double>",
                                      java = "com.alibaba.graphscope.ds.GSVertexArray"
                                          + "<Double>"),

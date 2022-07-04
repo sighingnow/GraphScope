@@ -49,6 +49,31 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
   override val inDegreeArray: PrimitiveArray[Int] = getInDegreeArray
   override val outDegreeArray: PrimitiveArray[Int] = getOutDegreeArray
   override val inOutDegreeArray: PrimitiveArray[Int] = getInOutDegreeArray
+  override val mirrorVertices: Array[Array[VertexId]] = getMirrorVertices
+
+  private def getMirrorVertices : Array[Array[Long]] = {
+    if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
+      val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long, Long, _, _]].asInstanceOf[ArrowProjectedFragment[Long, Long, _, _]]
+
+      val res = new Array[Array[Long]](fnum())
+      for (i <- 0 until fnum()) {
+        val vec = projectedFragment.mirrorVertices(i)
+        val size = vec.size().toInt
+        log.info(s"frag ${fid()} has ${size} mirror vertices on frag-${i}")
+        val curArray = new Array[Long](size)
+        var j =0
+        while (j < size){
+          curArray(j) = vec.get(j).GetValue()
+          j += 1
+        }
+        res(i) = curArray
+      }
+      res
+    }
+    else {
+      throw  new IllegalStateException("Not supported")
+    }
+  }
 
   private val lid2Offset : Array[Long] = {
     val res = new Array[Long](endLid.toInt + 1)

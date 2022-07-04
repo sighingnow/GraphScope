@@ -5,6 +5,7 @@ import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{GraphStructureType, GraphXFragmentStructure}
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTripletImpl, GraphStructure, ReusableEdge, ReusableEdgeImpl}
 import com.alibaba.graphscope.graphx.store.VertexDataStore
+import com.alibaba.graphscope.graphx.utils.PrimitiveVector
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
@@ -24,6 +25,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   lazy val inDegreeArray: PrimitiveArray[Int] = getInDegreeArray
   lazy val outDegreeArray: PrimitiveArray[Int] = getOutDegreeArray
   lazy val inOutDegreeArray: PrimitiveArray[Int] = getInOutDegreeArray
+  override val mirrorVertices: Array[Array[VertexId]] = getMirrorVertices
 
   val oeOffsetsArray: ImmutableTypedArray[Long] = csr.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
   val ieOffsetsArray : ImmutableTypedArray[Long] = csr.getIEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
@@ -97,6 +99,42 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
       i += 1
     }
     res
+  }
+
+  private def getMirrorVertices : Array[Array[Long]] = {
+    val res = new Array[PrimitiveVector[Long]](fnum())
+    var lid = 0;
+    val ivnum = vm.innerVertexSize().toInt
+    val curFid = fid()
+    val flags = new Array[Boolean](fnum())
+    while (lid < ivnum){
+      for (i <- flags.indices){
+        flags(i) = false
+      }
+      var begin = csr.getOEBegin(lid)
+      var end = csr.getOEEnd(lid)
+      while (begin.getAddress < end.getAddress){
+        val dstLid = begin.vid()
+        val dstFid = vm.getFragId(dstLid)
+        flags(dstFid) = true
+        begin.addV(16)
+      }
+      begin = csr.getIEBegin(lid)
+      end = csr.getIEEnd(lid)
+      while (begin.getAddress < end.getAddress){
+        val dstLid = begin.vid()
+        val dstFid = vm.getFragId(dstLid)
+        flags(dstFid) = true
+        begin.addV(16)
+      }
+      for (i <- flags.indices){
+        if (i != curFid && flags(i)){
+          res(i).+=(lid)
+        }
+      }
+      lid += 1
+    }
+    res.map(v => v.toArray)
   }
 
 //  override def getInDegree(vid: Long): Long = csr.getInDegree(vid)
@@ -280,5 +318,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     fillInNbrIds(vid, res, inDegreeArray.get(vid))
     res
   }
+
+
 }
 

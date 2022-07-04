@@ -151,6 +151,14 @@ class GraphXVertexMap
     return fid_;
   }
 
+  inline fid_t GetFragId(vid_t lid) const {
+    if (lid >= ivnum_) {
+      auto gid = outer_lid2Gids_accessor_[lid - ivnum_];
+      return id_parser_.get_fragment_id(gid);
+    }
+    return fid_;
+  }
+
   inline VID_T GetTotalVertexSize() const {
     size_t size = 0;
     for (const auto& v : oid2Lids_) {

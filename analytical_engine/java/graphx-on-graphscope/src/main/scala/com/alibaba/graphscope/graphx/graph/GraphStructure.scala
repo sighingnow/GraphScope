@@ -25,6 +25,9 @@ trait GraphStructure {
   val outDegreeArray : PrimitiveArray[Int]
   val inOutDegreeArray : PrimitiveArray[Int]
 
+  //of size (fnum, number of inner vertices which are outer vertices in frag i)
+  val mirrorVertices : Array[Array[Long]]
+
   def iterator[ED : ClassTag](edatas : PrimitiveArray[ED], activeSet: BitSet, reversed : Boolean = false) : Iterator[Edge[ED]]
 
   def tripletIterator[VD: ClassTag,ED : ClassTag](vertexDataStore: VertexDataStore[VD], edatas : PrimitiveArray[ED],  activeSet: BitSet,edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true): Iterator[EdgeTriplet[VD, ED]]
