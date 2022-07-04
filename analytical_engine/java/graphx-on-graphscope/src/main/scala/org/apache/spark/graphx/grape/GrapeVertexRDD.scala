@@ -70,12 +70,14 @@ object GrapeVertexRDD extends Logging{
     val routingTableMessage = edgeRDD.grapePartitionsRDD.mapPartitions(iter => {
       if (iter.hasNext){
         val part = iter.next()
+        log.info(s"generate routing msg")
         RoutingTable.generateMsg(part.pid, numPartitions, part.graphStructure)
       }
       else {
         Iterator.empty
       }
     }).partitionBy(new HashPartitioner(numPartitions)).cache()
+    log.info(s"Routing msg count ${routingTableMessage.count()}")
     val ePartWithRoutingTables = edgeRDD.grapePartitionsRDD.zipPartitions(routingTableMessage){
       (edgeIter,msgIter) => {
         val ePart = edgeIter.next()
