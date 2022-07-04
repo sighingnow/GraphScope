@@ -100,7 +100,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T>> {
   nbr_t* GetIEEnd(VID_T i) { return &in_edge_ptr_[GetIEOffset(i + 1)]; }
   nbr_t* GetOEEnd(VID_T i) { return &out_edge_ptr_[GetOEOffset(i + 1)]; }
 
-  // verticesNum
+  // inner verticesNum
   vid_t VertexNum() const { return local_vnum_; }
 
   int64_t GetInEdgesNum() const { return in_edges_num_; }
@@ -167,16 +167,6 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T>> {
     out_edges_num_ = GetOEOffset(local_vnum_);
     LOG(INFO) << "total in edges: " << in_edges_num_
               << " out edges : " << out_edges_num_;
-    // for (size_t i = 0; i < local_vnum_; ++i) {
-    //   nbr_t* start = &edge_ptr_[getOffset(i)];
-    //   nbr_t* end = &edge_ptr_[getOffset(i + 1)];
-    //   while (start != end) {
-    //     LOG(INFO) << "Edge (" << std::to_string(i) << ", " << start->vid
-    //               << ", eid: " << start->eid
-    //               << ", edata:" << edatas_->Value(start->eid);
-    //     start++;
-    //   }
-    // }
     LOG(INFO) << "Finish construct GraphXCSR: ";
   }
   inline int64_t GetIEOffset(vid_t lid) {

@@ -31,6 +31,7 @@ import com.alibaba.graphscope.ds.ProjectedAdjList;
 import com.alibaba.graphscope.ds.PropertyNbrUnit;
 import com.alibaba.graphscope.ds.TypedArray;
 import com.alibaba.graphscope.ds.Vertex;
+import com.alibaba.graphscope.stdcxx.StdVector;
 
 /**
  * Java wrapper for <a href=
@@ -93,4 +94,7 @@ public interface ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T>
     @FFINameAlias("GetData")
     @CXXReference
     VDATA_T getData(@CXXReference Vertex<VID_T> vertex);
+
+    @FFINameAlias("MirrorVertices")
+    @CXXReference StdVector<Vertex<VID_T>> mirrorVertices(int fid);
 }
