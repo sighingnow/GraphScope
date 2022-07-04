@@ -15,6 +15,7 @@ object OperatorTest extends Logging{
         .appName(s"${this.getClass.getSimpleName}")
         .getOrCreate()
       val sc = spark.sparkContext
+      sc.getConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
 
       val rawGraph = GraphLoader.edgeListFile(sc, fileName,false, partNum)
       val graph = rawGraph.mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong)
