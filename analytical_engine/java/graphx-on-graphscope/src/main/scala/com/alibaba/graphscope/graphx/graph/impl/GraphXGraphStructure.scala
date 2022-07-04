@@ -103,6 +103,9 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   private def getMirrorVertices : Array[Array[Long]] = {
     val res = new Array[PrimitiveVector[Long]](fnum())
+    for (i <- res.indices){
+      res(i) = new PrimitiveVector[VertexId]()
+    }
     var lid = 0;
     val ivnum = vm.innerVertexSize().toInt
     val curFid = fid()
