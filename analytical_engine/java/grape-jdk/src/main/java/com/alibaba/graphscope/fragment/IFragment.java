@@ -8,6 +8,7 @@ import com.alibaba.graphscope.ds.DestList;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.ds.VertexRange;
 import com.alibaba.graphscope.ds.adaptor.AdjList;
+import java.io.Serializable;
 
 /**
  * IFragment defines a simple fragment interface, which conforms two different simple fragment
@@ -18,7 +19,7 @@ import com.alibaba.graphscope.ds.adaptor.AdjList;
  * @param <VDATA_T> vertex data type.
  * @param <EDATA_T> edge data type.
  */
-public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
+public interface IFragment<OID_T, VID_T, VDATA_T, EDATA_T> extends Serializable {
 
     /**
      * Return the underlying fragment type,i.e. ArrowProjected or Simple.

@@ -32,6 +32,7 @@ import com.alibaba.graphscope.ds.PropertyNbrUnit;
 import com.alibaba.graphscope.ds.TypedArray;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.stdcxx.StdVector;
+import java.io.Serializable;
 
 /**
  * Java wrapper for <a href=
@@ -48,7 +49,7 @@ import com.alibaba.graphscope.stdcxx.StdVector;
 @CXXHead(system = "stdint.h")
 @FFITypeAlias(ARROW_PROJECTED_FRAGMENT)
 public interface ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T>
-        extends EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T> {
+        extends EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T>, Serializable {
     long id();
 
     @FFINameAlias("GetIncomingAdjList")

@@ -12,11 +12,12 @@ import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
 import com.alibaba.graphscope.graphx.V6dStatus;
+import java.io.Serializable;
 
 @FFIGen(library = "grape-jni")
 @CXXHead(CppHeaderName.VINEYARD_CLIENT_H)
 @FFITypeAlias(CppClassName.VINEYARD_CLIENT)
-public interface VineyardClient extends FFIPointer {
+public interface VineyardClient extends FFIPointer, Serializable {
     @FFINameAlias("Connect")
     @CXXValue V6dStatus connect(@CXXReference FFIByteString endPoint);
 

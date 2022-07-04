@@ -8,12 +8,13 @@ import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFITypeAlias;
+import java.io.Serializable;
 
 @FFIGen
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @CXXHead(system = "cstdint")
 @FFITypeAlias(GS_MUTABLE_TYPE_ARRAY)
-public interface ImmutableTypedArray<T> extends FFIPointer {
+public interface ImmutableTypedArray<T> extends FFIPointer, Serializable {
   @FFINameAlias("Get") T get(long ind);
 
 //  @FFINameAlias("Set") void set(long ind, T value);

@@ -18,7 +18,7 @@ import scala.reflect.ClassTag
 class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
                         var srcLids : PrimitiveArray[Long] = null,var dstLids : PrimitiveArray[Long] = null,
                         var srcOids : PrimitiveArray[Long] = null, var dstOids : PrimitiveArray[Long] = null,
-                        var eids : PrimitiveArray[Long] = null) extends GraphStructure with Logging{
+                        var eids : PrimitiveArray[Long] = null) extends GraphStructure with Logging with Serializable {
   val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
   val fid2Pid = new Array[Int](fragment.fnum())
 

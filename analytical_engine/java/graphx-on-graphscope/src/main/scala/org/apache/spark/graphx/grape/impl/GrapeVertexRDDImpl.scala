@@ -208,6 +208,9 @@ class GrapeVertexRDDImpl[VD] private[graphx](
         Iterator.empty
       }
     }).partitionBy(new HashPartitioner(this.grapePartitionsRDD.getNumPartitions))
+
+    val sc = SparkContext.getOrCreate()
+    //TODO: evaluate the cost of serializing grape partitions and deserialize
     val updatedVertexPartition = this.grapePartitionsRDD.zipPartitions(updateMessage,preservesPartitioning = true){
       (vIter, msgIter) => {
         val  vpart = vIter.next()
