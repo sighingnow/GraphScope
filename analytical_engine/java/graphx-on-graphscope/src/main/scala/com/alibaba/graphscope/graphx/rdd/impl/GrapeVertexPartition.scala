@@ -9,6 +9,7 @@ import com.alibaba.graphscope.graphx.utils.{GrapeUtils, IdParser, ScalaFFIFactor
 import com.alibaba.graphscope.graphx.{VertexDataBuilder, VineyardClient}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
+import org.apache.spark.Partition
 import org.apache.spark.graphx.{EdgeDirection, PartitionID, VertexId}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
@@ -20,11 +21,12 @@ class VertexDataMessage[VD: ClassTag](val dstPid : Int, val gids : Array[Long], 
 
 }
 class GrapeVertexPartition[VD : ClassTag](val pid : Int,
+                                          val preferredLocation : String,
                                           val graphStructure: GraphStructure,
                                           val vertexData: VertexDataStore[VD],
                                           val client : VineyardClient,
                                           val routingTable: RoutingTable,
-                                          var bitSet: BitSet = null) extends Logging with Serializable {
+                                          var bitSet: BitSet = null) extends Logging with Partition {
   val startLid = 0
   val endLid = graphStructure.getInnerVertexSize
   val partVnum : Long = endLid - startLid
@@ -271,14 +273,16 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   }
 
   def withNewValues[VD2 : ClassTag](vds: VertexDataStore[VD2]) : GrapeVertexPartition[VD2] = {
-    new GrapeVertexPartition[VD2](pid, graphStructure, vds,client, routingTable, bitSet)
+    new GrapeVertexPartition[VD2](pid, preferredLocation, graphStructure, vds,client, routingTable, bitSet)
   }
 
   def withMask(newMask: BitSet): GrapeVertexPartition[VD] ={
-    new GrapeVertexPartition[VD](pid, graphStructure, vertexData, client,routingTable, newMask)
+    new GrapeVertexPartition[VD](pid,preferredLocation, graphStructure, vertexData, client,routingTable, newMask)
   }
 
   override def toString: String = "GrapeVertexPartition{" + "pid=" + pid + ",startLid=" + startLid + ", endLid=" + endLid + ",active=" + bitSet.capacity + '}'
+
+  override def index: PartitionID = pid
 }
 
 object GrapeVertexPartition extends Logging{
@@ -298,6 +302,6 @@ object GrapeVertexPartition extends Logging{
       i += 1
     }
     val newVertexData = new InHeapVertexDataStore[VD](newArray,client)
-    new GrapeVertexPartition[VD](pid, graphStructure, newVertexData, client, routingTable)
+    new GrapeVertexPartition[VD](pid,Nil.asInstanceOf[String], graphStructure, newVertexData, client, routingTable)
   }
 }

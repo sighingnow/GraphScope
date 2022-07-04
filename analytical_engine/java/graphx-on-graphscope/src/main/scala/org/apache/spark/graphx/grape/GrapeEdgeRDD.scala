@@ -3,17 +3,20 @@ package org.apache.spark.graphx.grape
 import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.ds.{ImmutableTypedArray, Vertex}
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
+import com.alibaba.graphscope.graphx.rdd.EdgePartitionRDD
 import com.alibaba.graphscope.graphx.rdd.impl.{GrapeEdgePartition, GrapeEdgePartitionBuilder}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
 import com.alibaba.graphscope.graphx.utils.{ExecutorUtils, GrapeMeta, ScalaFFIFactory}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, MPIUtils}
 import org.apache.spark.graphx.grape.impl.GrapeEdgeRDDImpl
+import org.apache.spark.graphx.scheduler.cluster.ExecutorInfoHelper
 import org.apache.spark.graphx.{Edge, EdgeRDD, PartitionID, VertexId}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Dependency, SparkContext}
 
+import java.net.InetAddress
 import scala.reflect.ClassTag
 
 abstract class GrapeEdgeRDD[ED](sc: SparkContext,
@@ -143,6 +146,7 @@ object GrapeEdgeRDD extends Logging{
       else Iterator.empty
     },preservesPartitioning = true).cache()
     //clear edge partition builder to save us some memory
+    val executorInfo = ExecutorInfoHelper.getExecutorsHost2Id(SparkContext.getOrCreate())
 
     val grapeEdgePartitions = metaUpdated.mapPartitions(iter => {
       log.info("doing edge partition building")
@@ -188,16 +192,20 @@ object GrapeEdgeRDD extends Logging{
         val time1 = System.nanoTime()
         log.info(s"[Initializing edge cache in heap cost ]: ${(time1 - time0) / 1000000} ms")
         val graphStructure = new GraphXGraphStructure(meta.globalVM, meta.graphxCSR, srcLids, dstLids, srcOids, dstOids, eids)
-        Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, graphStructure, meta.vineyardClient, meta.edataArray))
+        val hostName = InetAddress.getLocalHost.getHostName
+        require(executorInfo.contains(hostName), s"host ${hostName} is not included in executor info ${executorInfo.toString()}")
+        val preferredLoc = "executor_" + hostName + "_" + executorInfo.get(hostName)
+        Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, preferredLoc, graphStructure, meta.vineyardClient, meta.edataArray))
       }
       else Iterator.empty
     },preservesPartitioning = true).cache()
-    log.info(s"finish building edge partition ${grapeEdgePartitions.count()}")
+    val edgePartitionRDD = new EdgePartitionRDD[VD,ED](SparkContext.getOrCreate(), grapeEdgePartitions)
+    log.info(s"finish building edge partition ${edgePartitionRDD.count()}")
 
     //clear cached builder memory
     metaUpdated.unpersist()
 
-    val rdd =new GrapeEdgeRDDImpl[VD,ED](grapeEdgePartitions)
+    val rdd =new GrapeEdgeRDDImpl[VD,ED](edgePartitionRDD)
     log.info(s"[GrapeEdgeRDD:] Finish Construct EdgeRDD, total edges count ${rdd.count()}")
     rdd
   }

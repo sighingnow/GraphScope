@@ -7,10 +7,12 @@ import com.alibaba.graphscope.graphx.shuffle.EdgeShuffleReceived
 import com.alibaba.graphscope.graphx.store.VertexDataStore
 import com.alibaba.graphscope.graphx.utils.{ExecutorUtils, GrapeUtils, ScalaFFIFactory}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
+import org.apache.spark.Partition
 import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.{BitSet, OpenHashSet}
 
+import java.net.InetAddress
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
@@ -19,11 +21,12 @@ import scala.reflect.ClassTag
  * FIXME: should not be serializable
  */
 class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
+                                                     val preferredLocation : String,
                                                      val graphStructure: GraphStructure,
                                                      val client : VineyardClient,
                                                      var edatas : PrimitiveArray[ED],
                                                      val edgeReversed : Boolean = false,
-                                                     var activeEdgeSet : BitSet = null) extends Logging  with Serializable{
+                                                     var activeEdgeSet : BitSet = null) extends Logging  with Partition{
   private val serialVersionUID = 6529685098267757690L
   val startLid = 0
   val endLid : Long = graphStructure.getInnerVertexSize
@@ -115,7 +118,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       }
       flag = true
     }
-    new GrapeEdgePartition[VD,ED](pid, graphStructure, client,newEdata, edgeReversed, newMask)
+    new GrapeEdgePartition[VD,ED](pid, preferredLocation, graphStructure, client,newEdata, edgeReversed, newMask)
   }
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
@@ -185,16 +188,16 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def reverse: GrapeEdgePartition[VD, ED] = {
-    new GrapeEdgePartition[VD,ED](pid, graphStructure, client,edatas,!edgeReversed, activeEdgeSet)
+    new GrapeEdgePartition[VD,ED](pid, preferredLocation, graphStructure, client,edatas,!edgeReversed, activeEdgeSet)
   }
 
   def withNewEdata[ED2: ClassTag](newEdata : PrimitiveArray[ED2]): GrapeEdgePartition[VD, ED2] = {
     log.info(s"Creating new edge partition with new edge of size ${newEdata.size()}, out edge num ${graphStructure.getOutEdgesNum}")
-    new GrapeEdgePartition[VD,ED2](pid, graphStructure, client,newEdata, edgeReversed, activeEdgeSet)
+    new GrapeEdgePartition[VD,ED2](pid,preferredLocation,  graphStructure, client,newEdata, edgeReversed, activeEdgeSet)
   }
 
   def withNewMask(newActiveSet: BitSet) : GrapeEdgePartition[VD,ED] = {
-    new GrapeEdgePartition[VD,ED](pid, graphStructure, client,edatas, edgeReversed, newActiveSet)
+    new GrapeEdgePartition[VD,ED](pid, preferredLocation, graphStructure, client,edatas, edgeReversed, newActiveSet)
   }
 
   /**  currently we only support inner join with same vertex map*/
@@ -217,12 +220,14 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       }
     }
 
-    new GrapeEdgePartition[VD,ED3](pid, graphStructure, client,newEdata,edgeReversed, newMask)
+    new GrapeEdgePartition[VD,ED3](pid, preferredLocation, graphStructure, client,newEdata,edgeReversed, newMask)
   }
 
   override def toString: String =  super.toString + "(pid=" + pid +
     ", start lid" + startLid + ", end lid " + endLid + ",graph structure" + graphStructure +
     ",out edges num" + partOutEdgeNum + ", in edges num" + partInEdgeNum +")"
+
+  override def index: PartitionID = pid
 }
 
 class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : Int,val client : VineyardClient) extends Logging{
