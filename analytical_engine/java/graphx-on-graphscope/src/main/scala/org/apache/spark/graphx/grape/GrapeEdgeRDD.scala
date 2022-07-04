@@ -192,6 +192,7 @@ object GrapeEdgeRDD extends Logging{
       }
       else Iterator.empty
     },preservesPartitioning = true).cache()
+    log.info(s"finish building edge partition ${grapeEdgePartitions.count()}")
 
     //clear cached builder memory
     metaUpdated.unpersist()
