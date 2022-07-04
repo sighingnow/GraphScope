@@ -99,7 +99,6 @@
     <dependency>
       <artifactId>grape-jdk</artifactId>
       <groupId>com.alibaba.graphscope</groupId>
-      <scope>compile</scope>
       <version>0.1</version>
     </dependency>
     <dependency>
