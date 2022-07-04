@@ -26,6 +26,7 @@ import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.ds.ProjectedAdjList;
 import com.alibaba.graphscope.ds.PropertyNbrUnit;
@@ -49,7 +50,7 @@ import java.io.Serializable;
 @CXXHead(system = "stdint.h")
 @FFITypeAlias(ARROW_PROJECTED_FRAGMENT)
 public interface ArrowProjectedFragment<OID_T, VID_T, VDATA_T, EDATA_T>
-        extends EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T>, Serializable {
+    extends EdgecutFragment<OID_T, VID_T, VDATA_T, EDATA_T>, FFISerializable {
     long id();
 
     @FFINameAlias("GetIncomingAdjList")

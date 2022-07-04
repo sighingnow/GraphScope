@@ -25,7 +25,7 @@ import com.alibaba.fastffi.FFIByteString;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
@@ -34,7 +34,7 @@ import com.alibaba.graphscope.utils.JNILibraryName;
 @FFIGen
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.PROPERTY_NBR)
-public interface PropertyNbr<VID_T> extends FFIPointer, CXXPointerRangeElement<PropertyNbr<VID_T>> {
+public interface PropertyNbr<VID_T> extends FFISerializable, CXXPointerRangeElement<PropertyNbr<VID_T>> {
     @FFINameAlias("neighbor")
     @CXXValue
     Vertex<VID_T> neighbor();

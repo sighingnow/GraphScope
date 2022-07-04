@@ -21,7 +21,7 @@ import com.alibaba.fastffi.CXXPointer;
 import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
@@ -32,7 +32,7 @@ import java.util.Iterator;
 @FFIGen
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.PROPERTY_ADJ_LIST)
-public interface PropertyAdjList<VID_T> extends FFIPointer, CXXPointer {
+public interface PropertyAdjList<VID_T> extends FFISerializable, CXXPointer {
     @FFINameAlias("begin")
     @CXXValue
     PropertyNbr<VID_T> begin();

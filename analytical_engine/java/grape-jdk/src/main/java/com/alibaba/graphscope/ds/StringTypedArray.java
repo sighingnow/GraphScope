@@ -7,7 +7,7 @@ import com.alibaba.fastffi.CXXHead;
 import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.stdcxx.StdVector;
 
@@ -15,7 +15,7 @@ import com.alibaba.graphscope.stdcxx.StdVector;
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @CXXHead(system = "cstdint")
 @FFITypeAlias(GS_STRING_MUTABLE_TYPE_ARRAY)
-public interface StringTypedArray extends FFIPointer {
+public interface StringTypedArray extends FFISerializable {
 
     @FFINameAlias("GetRawBytes")
     @CXXReference @FFITypeAlias("std::vector<char>") StdVector<Byte> getRawBytes();

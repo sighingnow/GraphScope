@@ -23,7 +23,7 @@ import static com.alibaba.graphscope.utils.JNILibraryName.JNI_LIBRARY_NAME;
 import com.alibaba.fastffi.CXXHead;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.fastffi.FFITypeFactory;
 
@@ -35,7 +35,7 @@ import com.alibaba.fastffi.FFITypeFactory;
 @FFIGen
 @CXXHead(GRAPE_TYPES_H)
 @FFITypeAlias(GRAPE_EMPTY_TYPE)
-public interface EmptyType extends FFIPointer {
+public interface EmptyType extends FFISerializable {
     Factory factory = FFITypeFactory.getFactory(Factory.class, EmptyType.class);
 
     /** Factor for EmptyType. */

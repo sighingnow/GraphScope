@@ -67,4 +67,9 @@ public class VertexImpl<VID_T> implements Vertex<VID_T> {
     public long getAddress() {
         return 0;
     }
+
+    @Override
+    public void setAddress(long l) {
+
+    }
 }

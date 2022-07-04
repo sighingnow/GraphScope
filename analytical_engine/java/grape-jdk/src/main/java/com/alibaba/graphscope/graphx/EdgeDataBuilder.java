@@ -6,7 +6,7 @@ import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder;
 import com.alibaba.graphscope.stdcxx.StdSharedPtr;
@@ -16,7 +16,7 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @FFIGen(library = "grape-jni")
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_EDGE_DATA_H)
 @FFITypeAlias(CppClassName.GS_EDGE_DATA_BUILDER)
-public interface EdgeDataBuilder<VID,ED> extends FFIPointer {
+public interface EdgeDataBuilder<VID,ED> extends FFISerializable {
 
     @FFINameAlias("Init")
     void init(@CXXReference ArrowArrayBuilder<ED> newValues);

@@ -27,7 +27,7 @@ import com.alibaba.fastffi.CXXValueRange;
 import com.alibaba.fastffi.CXXValueRangeElement;
 import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFIStringProvider;
 import com.alibaba.fastffi.FFIStringReceiver;
 import com.alibaba.fastffi.FFITypeAlias;
@@ -135,7 +135,7 @@ public interface StdString
     @FFIGen
     @CXXHead(system = "string")
     @FFITypeAlias("std::string::iterator")
-    interface Iterator extends CXXValueRangeElement<Iterator>, FFIPointer {
+    interface Iterator extends CXXValueRangeElement<Iterator>, FFISerializable {
 
         @CXXOperator("*")
         byte indirection();

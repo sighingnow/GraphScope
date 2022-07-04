@@ -25,7 +25,7 @@ import com.alibaba.fastffi.CXXHead;
 import com.alibaba.fastffi.CXXValue;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
-import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 
 import java.util.Iterator;
@@ -42,7 +42,7 @@ import java.util.Iterator;
 @CXXHead(ARROW_PROJECTED_FRAGMENT_H)
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(PROJECTED_ADJ_LIST)
-public interface ProjectedAdjList<VID_T, EDATA_T> extends FFIPointer {
+public interface ProjectedAdjList<VID_T, EDATA_T> extends FFISerializable {
 
     /**
      * Get the the first Nbr.
