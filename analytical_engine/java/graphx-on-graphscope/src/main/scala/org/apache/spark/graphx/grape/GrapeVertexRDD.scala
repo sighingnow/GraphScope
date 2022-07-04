@@ -117,7 +117,7 @@ object GrapeVertexRDD extends Logging{
         log.info(s"Partition ${ePart.pid} doing initialization with default value ${defaultVal}, frag vertices ${fragVertices}")
         val grapeVertexPartition = GrapeVertexPartition.buildPrimitiveVertexPartition(fragVertices,defaultVal,ePart.pid, ePart.client, ePart.graphStructure, RoutingTable.fromGraphStructure(ePart.graphStructure))
         Iterator(grapeVertexPartition)
-    }).cache()
+    },preservesPartitioning = true).cache()
     new GrapeVertexRDDImpl[VD](grapeVertexPartition,storageLevel)
   }
 

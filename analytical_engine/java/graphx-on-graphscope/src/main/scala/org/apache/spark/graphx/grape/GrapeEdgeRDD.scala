@@ -96,7 +96,7 @@ object GrapeEdgeRDD extends Logging{
         Iterator(ExecutorUtils.getHostName + ":" + meta.partitionID + ":" + meta.localVertexMap.id())
       }
       else Iterator.empty
-    }).collect().distinct.sorted
+    },preservesPartitioning = true).collect().distinct.sorted
 
     log.info(s"[GrapeEdgeRDD]: got distinct local vm ids ${localVertexMapIds.mkString("Array(", ", ", ")")}")
     require(localVertexMapIds.length == numPartitions, s"${localVertexMapIds.length} neq to num partitoins ${numPartitions}")
@@ -106,12 +106,14 @@ object GrapeEdgeRDD extends Logging{
     log.info(s"[GrapeEdgeRDD]: Finish constructing global vm ${globalVMIDs}")
     require(globalVMIDs.size() == numPartitions)
 
-    val metaUpdated = metaPartitions.mapPartitions(iter => {
+    val metaUpdated = metaPartitions.mapPartitionsWithIndex((index,iter) => {
       if (iter.hasNext) {
-        log.info("Doing meta update")
-        var i = 0
         val hostName = ExecutorUtils.getHostName
+        log.info(s"Doing meta update on ${hostName}, pid ${index}")
+        var i = 0
         val (pid, meta) = iter.next()
+        require(pid == index, s"${pid} neq ${index}, partition order not preserved")
+        require(pid == meta.partitionID, s"neq not possible ${pid}, ${meta.partitionID}")
         var res = null.asInstanceOf[String]
         while (i < globalVMIDs.size()) {
           val ind = globalVMIDs.get(i).indexOf(hostName)
@@ -139,7 +141,7 @@ object GrapeEdgeRDD extends Logging{
         Iterator((pid, meta))
       }
       else Iterator.empty
-    }).cache()
+    },preservesPartitioning = true).cache()
     //clear edge partition builder to save us some memory
 
     val grapeEdgePartitions = metaUpdated.mapPartitions(iter => {
@@ -189,7 +191,7 @@ object GrapeEdgeRDD extends Logging{
         Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, graphStructure, meta.vineyardClient, meta.edataArray))
       }
       else Iterator.empty
-    }).cache()
+    },preservesPartitioning = true).cache()
 
     //clear cached builder memory
     metaUpdated.unpersist()
