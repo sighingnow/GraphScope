@@ -89,6 +89,7 @@ object GrapeVertexRDD extends Logging{
         Iterator.empty
       }
     }).partitionBy(new HashPartitioner(numPartitions)).cache()
+    log.info(s"routing message count ${routingTableMessage.count()}")
     val ePartWithRoutingTables = edgeRDD.grapePartitionsRDD.zipPartitions(routingTableMessage){
       (edgeIter,msgIter) => {
         val ePart = edgeIter.next()

@@ -45,7 +45,7 @@ object TriangleCount extends Logging with Serializable{
     def sendMsg(edge: EdgeTriplet[(Int, Set[VertexId]), ED]) : Iterator[(VertexId,Array[VertexId])] = {
       if (stage == 0){
         stage = 1
-//        log.info(s"${edge.srcId} send msg to ${edge.dstId}, ${edge.srcAttr._2.toArray.mkString(",")}")
+        log.info(s"${edge.srcId} send msg to ${edge.dstId}, ${edge.srcAttr._2.toArray.mkString(",")}")
         Iterator((edge.dstId, edge.srcAttr._2.toArray))
       }
       else {
