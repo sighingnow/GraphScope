@@ -11,6 +11,7 @@ import com.alibaba.fastffi.FFIFactory;
 import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFIPointer;
+import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder;
 import com.alibaba.graphscope.graphx.VineyardClient;
@@ -21,7 +22,7 @@ import com.alibaba.graphscope.stdcxx.StdSharedPtr;
 @CXXHead(CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(ARROW_PROJECTED_FRAGMENT_MAPPER)
 public interface ArrowProjectedFragmentMapper<OID_T, VID_T, OLD_V_T, NEW_V_T, OLD_E_T, NEW_E_T> extends
-    FFIPointer {
+    FFISerializable {
 
     @FFINameAlias("Map")
     @CXXValue StdSharedPtr<ArrowProjectedFragment<OID_T, VID_T, NEW_V_T, NEW_E_T>> map(

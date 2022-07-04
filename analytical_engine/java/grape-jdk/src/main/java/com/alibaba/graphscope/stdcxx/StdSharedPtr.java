@@ -19,6 +19,7 @@ package com.alibaba.graphscope.stdcxx;
 import com.alibaba.fastffi.CXXHead;
 import com.alibaba.fastffi.CXXTemplate;
 import com.alibaba.fastffi.FFIGen;
+import com.alibaba.fastffi.FFIPointer;
 import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.utils.CppHeaderName;
@@ -31,7 +32,7 @@ import com.alibaba.graphscope.utils.JNILibraryName;
 @FFITypeAlias("std::shared_ptr")
 //@CXXTemplate(cxx = "gs::VertexData<uint64_t,std::string>", java = "com.alibaba.graphscope.graphx.StringVertexData")
 //@CXXTemplate(cxx = "gs::EdgeData<uint64_t,std::string>", java = "com.alibaba.graphscope.graphx.StringEdgeData")
-public interface StdSharedPtr<T extends FFISerializable> extends FFISerializable {
+public interface StdSharedPtr<T extends FFIPointer> extends FFISerializable {
     // & will return the pointer of T.
     // shall be cxxvalue?
     T get();
