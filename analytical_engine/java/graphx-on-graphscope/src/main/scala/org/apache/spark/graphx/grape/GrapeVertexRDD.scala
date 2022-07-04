@@ -84,13 +84,15 @@ object GrapeVertexRDD extends Logging{
     /** We assume the verticesAttr iterator contains only inner vertices */
     val newArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD], graphStructure.getVertexSize.toInt).asInstanceOf[PrimitiveArray[VD]]
     val grapeVertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
+    var verticesProcesses = 0L
     while (edgeShuffleIter.hasNext){
       val (dstPid, edgeShuffle) = edgeShuffleIter.next()
       require(dstPid == pid)
       val oids = edgeShuffle.oids
       val verticesAttr = edgeShuffle.vertexAttrs
       require(oids.length == verticesAttr.length, s"neq ${oids.length}, ${verticesAttr.length}")
-      require(oids.length == graphStructure.getVertexSize, s"vertices num neq ${oids.length}, ${graphStructure.getVertexSize}")
+//      require(oids.length == graphStructure.getVertexSize, s"vertices num neq ${oids.length}, ${graphStructure.getVertexSize}")
+      verticesProcesses += oids.length
       val len = oids.length
       var i = 0
       while (i < len){
@@ -101,6 +103,7 @@ object GrapeVertexRDD extends Logging{
         i += 1
       }
     }
+    log.info(s"frag ${graphStructure.fid()} ivnum ${graphStructure.getInnerVertexSize}, vnum ${graphStructure.getVertexSize}, vertices processed ${verticesProcesses}")
     val newVertexData = new InHeapVertexDataStore[VD](newArray,client)
     new GrapeVertexPartition[VD](pid, graphStructure, newVertexData, client, RoutingTable.fromGraphStructure(graphStructure))
   }
