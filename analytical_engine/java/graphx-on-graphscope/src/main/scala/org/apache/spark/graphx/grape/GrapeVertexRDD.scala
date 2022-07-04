@@ -66,13 +66,13 @@ object GrapeVertexRDD extends Logging{
   def fromEdgeShuffle[VD : ClassTag, ED : ClassTag](edgeShuffle : RDD[(PartitionID, EdgeShuffle[VD,ED])], edgeRDD : GrapeEdgeRDD[ED],storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
     val numPartitions = edgeRDD.getNumPartitions
     log.info(s"Creating vertex rdd from grape edgeRDD of numPartition ${numPartitions}, along with vertex attrs ")
-    val grapeVertexPartition = edgeRDD.grapePartitionsRDD.zipPartitions(edgeShuffle){
+    val grapeVertexPartition = edgeRDD.grapePartitionsRDD.zipPartitions(edgeShuffle, preservesPartitioning = true){
       (firstIter, edgeShuffleIter) => {
         val ePart = firstIter.next()
         val fragVertices = ePart.graphStructure.getVertexSize
 //        val (edgeShufflePid, edgeShuffle) = edgeShuffleIter.next()
 //        require(edgeShufflePid == ePart.pid)
-        log.info(s"Partition ${ePart.pid} doing initialization with graphx vertex attrs, frag vertices ${fragVertices}")
+        log.info(s"Partition ${ePart.pid} doing initialization with graphx vertex attrs, frag vertices ${fragVertices} fragid ${ePart.graphStructure.fid()}/${ePart.graphStructure.fnum()}")
         val grapeVertexPartition = buildPartitionFromGraphX(ePart.pid, ePart.client, ePart.graphStructure, edgeShuffleIter)
         Iterator(grapeVertexPartition)
       }

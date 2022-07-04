@@ -128,7 +128,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
 
   @transient override lazy val triplets: RDD[EdgeTriplet[VD, ED]] = {
-    grapeEdges.grapePartitionsRDD.zipPartitions(grapeVertices.grapePartitionsRDD){
+    grapeEdges.grapePartitionsRDD.zipPartitions(grapeVertices.grapePartitionsRDD, preservesPartitioning = true){
       (edgeIter, vertexIter) => {
         val edgePart = edgeIter.next()
         val vertexPart = vertexIter.next()
@@ -227,7 +227,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       logger.info(s"${grapeVertices} has done outer vertex data sync, just go to map triplets")
     }
 
-    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD){
+    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD, preservesPartitioning = true){
       (eIter,vIter) => {
         val  vPart = vIter.next()
         val epart = eIter.next()
@@ -246,7 +246,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     else {
       logger.info(s"${grapeVertices} has done outer vertex data sync, just go to map triplets")
     }
-    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD){
+    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD, preservesPartitioning = true){
       (eIter,vIter) => {
         val vPart = vIter.next()
         val epart = eIter.next()
@@ -271,7 +271,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     }
     newVertices = newVertices.mapGrapeVertexPartitions(_.filter(vpred))
 
-    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD){
+    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD, preservesPartitioning = true){
       (eIter,vIter) => {
         val vPart = vIter.next()
         val ePart = eIter.next()

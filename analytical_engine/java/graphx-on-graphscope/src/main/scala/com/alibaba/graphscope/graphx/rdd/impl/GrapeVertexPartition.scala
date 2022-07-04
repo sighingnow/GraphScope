@@ -2,6 +2,7 @@ package com.alibaba.graphscope.graphx.rdd.impl
 
 import com.alibaba.graphscope.ds.Vertex
 import com.alibaba.graphscope.graphx.graph.GraphStructure
+import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import com.alibaba.graphscope.graphx.rdd.RoutingTable
 import com.alibaba.graphscope.graphx.store.{InHeapVertexDataStore, VertexDataStore}
 import com.alibaba.graphscope.graphx.utils.{GrapeUtils, IdParser, ScalaFFIFactory}
@@ -79,6 +80,10 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   }
   def generateVertexDataMessage : Iterator[(PartitionID, VertexDataMessage[VD])] = {
     val res = new ArrayBuffer[(PartitionID,VertexDataMessage[VD])]()
+    if (graphStructure.isInstanceOf[GraphXGraphStructure]){
+      val casted = graphStructure.asInstanceOf[GraphXGraphStructure]
+      log.info(s"vm addr ${casted.vm.getAddress}")
+    }
     val curFid = graphStructure.fid()
     val idParser = new IdParser(graphStructure.fnum())
     for (i <- 0 until(routingTable.numPartitions)){
