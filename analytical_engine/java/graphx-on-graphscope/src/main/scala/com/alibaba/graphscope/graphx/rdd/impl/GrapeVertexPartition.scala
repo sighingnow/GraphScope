@@ -23,7 +23,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
                                           val vertexData: VertexDataStore[VD],
                                           val client : VineyardClient,
                                           val routingTable: RoutingTable,
-                                          var bitSet: BitSet = null) extends Logging {
+                                          var bitSet: BitSet = null) extends Logging with Serializable {
   val startLid = 0
   val endLid = graphStructure.getInnerVertexSize
   val partVnum : Long = endLid - startLid

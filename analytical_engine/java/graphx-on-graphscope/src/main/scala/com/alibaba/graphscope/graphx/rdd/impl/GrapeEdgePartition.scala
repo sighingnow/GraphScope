@@ -23,7 +23,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
                                                      val client : VineyardClient,
                                                      var edatas : PrimitiveArray[ED],
                                                      val edgeReversed : Boolean = false,
-                                                     var activeEdgeSet : BitSet = null) extends Logging {
+                                                     var activeEdgeSet : BitSet = null) extends Logging  with Serializable{
   private val serialVersionUID = 6529685098267757690L
   val startLid = 0
   val endLid : Long = graphStructure.getInnerVertexSize

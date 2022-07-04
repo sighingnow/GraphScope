@@ -18,7 +18,7 @@ object GraphStructureTypes extends Enumeration{
   val GraphXFragmentStructure,ArrowProjectedStructure = Value
 }
 
-trait GraphStructure {
+trait GraphStructure extends Serializable {
 
   val structureType : GraphStructureType
   val inDegreeArray :PrimitiveArray[Int]
