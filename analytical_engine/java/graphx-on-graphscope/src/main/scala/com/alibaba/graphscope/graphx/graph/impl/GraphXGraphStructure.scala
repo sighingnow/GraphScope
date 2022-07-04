@@ -35,6 +35,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   def getOEOffset(lid : Long) : Long = {
     oeOffsetsArray.get(lid)
   }
+
   @inline
   def getIEOffset(lid : Long) : Long = {
     ieOffsetsArray.get(lid)
@@ -321,7 +322,5 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     fillInNbrIds(vid, res, inDegreeArray.get(vid))
     res
   }
-
-
 }
 

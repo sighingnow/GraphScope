@@ -10,12 +10,13 @@ import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
+import java.io.Serializable;
 
 @FFIGen(library = "grape-jni")
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_GRAPHX_VERTEX_MAP_H)
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.GS_GRAPHX_GRAPHX_VERTEX_MAP)
-public interface GraphXVertexMap<OID_T,VID_T> extends FFIPointer {
+public interface GraphXVertexMap<OID_T,VID_T> extends FFIPointer, Serializable {
     long id();
     int fid();
     int fnum();

@@ -10,12 +10,13 @@ import com.alibaba.graphscope.ds.ImmutableTypedArray;
 import com.alibaba.graphscope.ds.PropertyNbrUnit;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
+import java.io.Serializable;
 
 @FFIGen(library = "grape-jni")
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_GRAPHX_CSR_H)
 @CXXHead(CppHeaderName.CORE_JAVA_TYPE_ALIAS_H)
 @FFITypeAlias(CppClassName.GS_GRAPHX_CSR)
-public interface GraphXCSR<VID_T> extends FFIPointer {
+public interface GraphXCSR<VID_T> extends FFIPointer, Serializable {
     long id();
 
     @FFINameAlias("GetInDegree")
