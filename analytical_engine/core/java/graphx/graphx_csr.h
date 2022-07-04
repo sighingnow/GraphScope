@@ -403,7 +403,6 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     std::vector<vid_t> srcLids, dstLids;
     srcLids.resize(edges_num_);
     dstLids.resize(edges_num_);
-    auto curFid = graphx_vertex_map.fid();
     {
       int thread_num = 16;
       std::atomic<int> current_chunk(0);
@@ -438,9 +437,6 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
       }
       for (auto& thrd : work_threads) {
         thrd.join();
-      }
-      for (auto i = 0; i < thread_num; ++i) {
-        LOG(DEBUG) << "Thread " << i << "processed: " << cnt[i] << "vertices";
       }
     }
     LOG(INFO) << "Finish building lid array";
