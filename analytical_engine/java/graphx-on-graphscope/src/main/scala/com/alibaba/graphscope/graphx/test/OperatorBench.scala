@@ -19,9 +19,9 @@ object OperatorBench extends Logging{
 
     val rawGraph = GraphLoader.edgeListFile(sc, fileName,false, partNum)
     val graphxGraph = rawGraph.mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong)
-    val grapeGraph = GraphScopeHelper.graph2Fragment[Long,Long](graph)
+    val grapeGraph = GraphScopeHelper.graph2Fragment[Long,Long](graphxGraph)
 
-    val maskGraph : Graph[Long,Long] = graph.subgraph(epred = (_ => true), vpred = (id, vd) => id % 2 == 0)
+    val maskGraph : Graph[Long,Long] = graphxGraph.subgraph(epred = (_ => true), vpred = (id, vd) => id % 2 == 0)
     val grapeMaskGraph : Graph[Long,Long] = grapeGraph.subgraph(epred = (_ => true), vpred = (id, _)=>id % 2 == 0)
 
     def mapping(graph : Graph[Long,Long])  : Graph[Long,Long] = {
