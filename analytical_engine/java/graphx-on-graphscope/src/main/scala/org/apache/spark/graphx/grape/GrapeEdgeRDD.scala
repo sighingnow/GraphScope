@@ -115,6 +115,67 @@ object GrapeEdgeRDD extends Logging{
       }
     }
     log.info(s"after zip on vineyard rdd ${vineyard3.count()}")
+
+    val metaPartitions = vineyard3.mapPartitionsWithIndex((pid,iter) => {
+      val client = iter.next()
+      log.info(s"client ${client}")
+      val grapeMeta = new GrapeMeta[VD,ED](pid, numPartitions, client, ExecutorUtils.getHostName)
+      val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions,client)
+      val localVertexMap = edgePartitionBuilder.buildLocalVertexMap()
+      grapeMeta.setLocalVertexMap(localVertexMap)
+      grapeMeta.setEdgePartitionBuilder(edgePartitionBuilder)
+      Iterator(grapeMeta)
+    },preservesPartitioning = true).cache()
+
+    val localVertexMapIds = metaPartitions.mapPartitions(iter => {
+      if (iter.hasNext){
+        val meta = iter.next()
+        Iterator(ExecutorUtils.getHostName + ":" + meta.partitionID + ":" + meta.localVertexMap.id())
+      }
+      else Iterator.empty
+    },preservesPartitioning = true).collect().distinct.sorted
+
+    log.info(s"[GrapeEdgeRDD]: got distinct local vm ids ${localVertexMapIds.mkString("Array(", ", ", ")")}")
+    require(localVertexMapIds.length == numPartitions, s"${localVertexMapIds.length} neq to num partitoins ${numPartitions}")
+
+    log.info("[GrapeEdgeRDD]: Start constructing global vm")
+    val globalVMIDs = MPIUtils.constructGlobalVM(localVertexMapIds, ExecutorUtils.vineyardEndpoint, "int64_t", "uint64_t")
+    log.info(s"[GrapeEdgeRDD]: Finish constructing global vm ${globalVMIDs}")
+    require(globalVMIDs.size() == numPartitions)
+
+    val metaPartitionsUpdated = metaPartitions.mapPartitions(iter => {
+      val meta = iter.next()
+      val hostName = InetAddress.getLocalHost.getHostName
+      log.info(s"Doing meta update on ${}, pid ${meta.partitionID}")
+      var res = null.asInstanceOf[String]
+      var i = 0
+      while (i < globalVMIDs.size()) {
+        val ind = globalVMIDs.get(i).indexOf(hostName)
+        if (ind != -1) {
+          val spltted = globalVMIDs.get(i).split(":")
+          require(spltted.length == 3) // hostname,pid,vmid
+          require(spltted(0).equals(hostName))
+          if (spltted(1).toInt == meta.partitionID) {
+            res = spltted(2)
+          }
+        }
+        i += 1
+      }
+      require(res != null, s"after iterate over received global ids, no suitable found for ${hostName}, ${meta.partitionID} : ${globalVMIDs}")
+      meta.setGlobalVM(res.toLong)
+      val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId)
+      val edatas = meta.edgePartitionBuilder.buildEdataArray(csr)
+      //raw edatas contains all edge datas, i.e. csr edata array.
+      //edatas are out edges edge cache.
+      meta.setGlobalVM(vm)
+      meta.setCSR(csr)
+      meta.setEdataArray(edatas)
+      meta.edgePartitionBuilder.clearBuilders()
+      meta.edgePartitionBuilder = null //make it null to let it be gc able
+      Iterator(meta)
+    },preservesPartitioning = true)
+
+    log.info(s"finish meta partitions updated ${metaPartitionsUpdated.count()}")
     /*
 
     val metaPartitions = edgesShuffles.mapPartitionsWithIndex((pid, iter) => {

@@ -13,15 +13,19 @@ import org.apache.spark.rdd.RDD
 import java.net.InetAddress
 
 class VineyardPartition(val ind : Int,val hostName : String) extends Partition with Logging{
-  var client: VineyardClient = null
-  if (hostName.equals(InetAddress.getLocalHost.getHostName)){
-    client = ScalaFFIFactory.newVineyardClient()
-    val ffiByteString: FFIByteString = FFITypeFactory.newByteString()
-    ffiByteString.copyFrom(socket)
-    client.connect(ffiByteString)
-  }
-  else {
-    log.info(s"This partition should be evaluated on this host since it is not on the desired host,desired host ${hostName}, cur host ${getHost}")
+  lazy val client: VineyardClient = {
+    if (hostName.equals(InetAddress.getLocalHost.getHostName)) {
+      val res = ScalaFFIFactory.newVineyardClient()
+      val ffiByteString: FFIByteString = FFITypeFactory.newByteString()
+      ffiByteString.copyFrom(socket)
+      client.connect(ffiByteString)
+      log.info(s"successfully connect to ${socket}")
+      res
+    }
+    else {
+      log.info(s"This partition should be evaluated on this host since it is not on the desired host,desired host ${hostName}, cur host ${getHost}")
+      null
+    }
   }
   override def index: Int = ind
 }
