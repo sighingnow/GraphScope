@@ -138,10 +138,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
           }
           val time1 = System.nanoTime()
           log.info(s"got edata array cost ${(time1 - time0)/ 1000000}ms")
-          val hostName = InetAddress.getLocalHost.getHostName
-          require(executorInfo.contains(hostName), s"host ${hostName} is not included in executor info ${executorInfo.toString()}")
-          val preferredLoc = "executor_" + hostName + "_" + executorInfo.get(hostName)
-          Iterator(new GrapeEdgePartition[VD,ED](pid, preferredLoc, structure, client, newEdata))
+          Iterator(new GrapeEdgePartition[VD,ED](pid, structure, client, newEdata))
         }
         else Iterator.empty
       }

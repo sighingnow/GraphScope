@@ -1,12 +1,11 @@
 package org.apache.spark.graphx.grape
 
-import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.ds.{ImmutableTypedArray, Vertex}
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
-import com.alibaba.graphscope.graphx.rdd.{EdgePartitionRDD, VineyardRDD}
+import com.alibaba.graphscope.graphx.rdd.VineyardRDD
 import com.alibaba.graphscope.graphx.rdd.impl.{GrapeEdgePartition, GrapeEdgePartitionBuilder}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
-import com.alibaba.graphscope.graphx.utils.{ExecutorUtils, GrapeMeta, ScalaFFIFactory}
+import com.alibaba.graphscope.graphx.utils.{ExecutorUtils, GrapeMeta}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, MPIUtils}
 import org.apache.spark.graphx.grape.impl.GrapeEdgeRDDImpl
@@ -175,87 +174,15 @@ object GrapeEdgeRDD extends Logging{
       meta.edgePartitionBuilder.clearBuilders()
       meta.edgePartitionBuilder = null //make it null to let it be gc able
       Iterator(meta)
-    },preservesPartitioning = true)
+    },preservesPartitioning = true).cache()
 
     log.info(s"finish meta partitions updated ${metaPartitionsUpdated.count()}")
-    /*
 
-    val metaPartitions = edgesShuffles.mapPartitionsWithIndex((pid, iter) => {
-      if (iter.hasNext){
-        val vineyardClient = ScalaFFIFactory.newVineyardClient()
-        val ffiByteString = FFITypeFactory.newByteString()
-        ffiByteString.copyFrom(ExecutorUtils.vineyardEndpoint)
-        vineyardClient.connect(ffiByteString)
-        val (_pid, shuffleReceived) = iter.next()
 
-        val grapeMeta = new GrapeMeta[VD,ED](pid, numPartitions,vineyardClient,ExecutorUtils.getHostName)
-        val localVertexMap = edgePartitionBuilder.buildLocalVertexMap()
-        grapeMeta.setLocalVertexMap(localVertexMap)
-        grapeMeta.setEdgePartitionBuilder(edgePartitionBuilder)
-        Iterator((_pid,grapeMeta))
-//        Iterator((grapeMeta, shuffleReceived))
-      }
-      else Iterator.empty
-    },preservesPartitioning = true).cache()
-
-    val localVertexMapIds = metaPartitions.mapPartitions(iter => {
-      if (iter.hasNext){
-        val (pid, meta) = iter.next()
-        Iterator(ExecutorUtils.getHostName + ":" + meta.partitionID + ":" + meta.localVertexMap.id())
-      }
-      else Iterator.empty
-    },preservesPartitioning = true).collect().distinct.sorted
-
-    log.info(s"[GrapeEdgeRDD]: got distinct local vm ids ${localVertexMapIds.mkString("Array(", ", ", ")")}")
-    require(localVertexMapIds.length == numPartitions, s"${localVertexMapIds.length} neq to num partitoins ${numPartitions}")
-
-    log.info("[GrapeEdgeRDD]: Start constructing global vm")
-    val globalVMIDs = MPIUtils.constructGlobalVM(localVertexMapIds, ExecutorUtils.vineyardEndpoint, "int64_t", "uint64_t")
-    log.info(s"[GrapeEdgeRDD]: Finish constructing global vm ${globalVMIDs}")
-    require(globalVMIDs.size() == numPartitions)
-
-    val metaUpdated = metaPartitions.mapPartitionsWithIndex((index,iter) => {
-      if (iter.hasNext) {
-        val hostName = ExecutorUtils.getHostName
-        log.info(s"Doing meta update on ${hostName}, pid ${index}")
-        var i = 0
-        val (pid, meta) = iter.next()
-        require(pid == index, s"${pid} neq ${index}, partition order not preserved")
-        require(pid == meta.partitionID, s"neq not possible ${pid}, ${meta.partitionID}")
-        var res = null.asInstanceOf[String]
-        while (i < globalVMIDs.size()) {
-          val ind = globalVMIDs.get(i).indexOf(hostName)
-          if (ind != -1) {
-            val spltted = globalVMIDs.get(i).split(":")
-            require(spltted.length == 3) // hostname,pid,vmid
-            require(spltted(0).equals(hostName))
-            if (spltted(1).toInt == meta.partitionID) {
-              res = spltted(2)
-            }
-          }
-          i += 1
-        }
-        require(res != null, s"after iterate over received global ids, no suitable found for ${hostName}, ${meta.partitionID} : ${globalVMIDs}")
-        meta.setGlobalVM(res.toLong)
-        val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId)
-        val edatas = meta.edgePartitionBuilder.buildEdataArray(csr)
-        //raw edatas contains all edge datas, i.e. csr edata array.
-        //edatas are out edges edge cache.
-        meta.setGlobalVM(vm)
-        meta.setCSR(csr)
-        meta.setEdataArray(edatas)
-        meta.edgePartitionBuilder.clearBuilders()
-        meta.edgePartitionBuilder = null //make it null to let it be gc able
-        Iterator((pid, meta))
-      }
-      else Iterator.empty
-    },preservesPartitioning = true).cache()
-    //clear edge partition builder to save us some memory
-
-    val grapeEdgePartitions = metaUpdated.mapPartitions(iter => {
+    val grapeEdgePartitions = metaPartitionsUpdated.mapPartitions(iter => {
       log.info("doing edge partition building")
       if (iter.hasNext) {
-        val (pid, meta) = iter.next()
+        val meta = iter.next()
         val time0 = System.nanoTime()
         val edgesNum = meta.graphxCSR.getOutEdgesNum.toInt
         val srcOids = PrimitiveArray.create(classOf[Long], edgesNum)
@@ -296,23 +223,17 @@ object GrapeEdgeRDD extends Logging{
         val time1 = System.nanoTime()
         log.info(s"[Initializing edge cache in heap cost ]: ${(time1 - time0) / 1000000} ms")
         val graphStructure = new GraphXGraphStructure(meta.globalVM, meta.graphxCSR, srcLids, dstLids, srcOids, dstOids, eids)
-        val hostName = InetAddress.getLocalHost.getHostName
-        require(executorInfo.contains(hostName), s"host ${hostName} is not included in executor info ${executorInfo.toString()}")
-        Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, preferredLoc, graphStructure, meta.vineyardClient, meta.edataArray))
+        Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, graphStructure, meta.vineyardClient, meta.edataArray))
       }
       else Iterator.empty
     },preservesPartitioning = true).cache()
     log.info(s"grape edge partition count ${grapeEdgePartitions.count()}")
-    val edgePartitionRDD = new EdgePartitionRDD[VD,ED](SparkContext.getOrCreate(), grapeEdgePartitions)
-    log.info(s"finish building edge partition ${edgePartitionRDD.count()}")
 
     //clear cached builder memory
-    metaUpdated.unpersist()
+    metaPartitionsUpdated.unpersist()
 
-    val rdd =new GrapeEdgeRDDImpl[VD,ED](edgePartitionRDD)
+    val rdd =new GrapeEdgeRDDImpl[VD,ED](grapeEdgePartitions)
     log.info(s"[GrapeEdgeRDD:] Finish Construct EdgeRDD, total edges count ${rdd.count()}")
     rdd
-    */
-    null
   }
 }

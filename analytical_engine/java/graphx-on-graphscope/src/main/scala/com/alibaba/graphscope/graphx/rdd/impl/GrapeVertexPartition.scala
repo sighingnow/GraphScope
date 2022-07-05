@@ -21,7 +21,6 @@ class VertexDataMessage[VD: ClassTag](val dstPid : Int, val gids : Array[Long], 
 
 }
 class GrapeVertexPartition[VD : ClassTag](val pid : Int,
-                                          val preferredLocation : String,
                                           val graphStructure: GraphStructure,
                                           val vertexData: VertexDataStore[VD],
                                           val client : VineyardClient,
@@ -273,11 +272,11 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   }
 
   def withNewValues[VD2 : ClassTag](vds: VertexDataStore[VD2]) : GrapeVertexPartition[VD2] = {
-    new GrapeVertexPartition[VD2](pid, preferredLocation, graphStructure, vds,client, routingTable, bitSet)
+    new GrapeVertexPartition[VD2](pid, graphStructure, vds,client, routingTable, bitSet)
   }
 
   def withMask(newMask: BitSet): GrapeVertexPartition[VD] ={
-    new GrapeVertexPartition[VD](pid,preferredLocation, graphStructure, vertexData, client,routingTable, newMask)
+    new GrapeVertexPartition[VD](pid, graphStructure, vertexData, client,routingTable, newMask)
   }
 
   override def toString: String = "GrapeVertexPartition{" + "pid=" + pid + ",startLid=" + startLid + ", endLid=" + endLid + ",active=" + bitSet.capacity + '}'
@@ -302,6 +301,6 @@ object GrapeVertexPartition extends Logging{
       i += 1
     }
     val newVertexData = new InHeapVertexDataStore[VD](newArray,client)
-    new GrapeVertexPartition[VD](pid,Nil.asInstanceOf[String], graphStructure, newVertexData, client, routingTable)
+    new GrapeVertexPartition[VD](pid, graphStructure, newVertexData, client, routingTable)
   }
 }

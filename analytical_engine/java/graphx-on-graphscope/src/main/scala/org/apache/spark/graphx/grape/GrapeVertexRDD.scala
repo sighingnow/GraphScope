@@ -81,7 +81,9 @@ object GrapeVertexRDD extends Logging{
         Iterator(grapeVertexPartition)
       }
     }.cache()
-    new GrapeVertexRDDImpl[VD](grapeVertexPartition, storageLevel)
+    val res = new GrapeVertexRDDImpl[VD](grapeVertexPartition, storageLevel)
+    log.info(s"Successfully created vertex rdd ${res.count()}")
+    res
   }
 
   def buildPartitionFromGraphX[VD: ClassTag](pid: Int, client: VineyardClient, graphStructure: GraphStructure, edgeShuffleIter: Iterator[(PartitionID,EdgeShuffle[VD,_])],
@@ -111,10 +113,10 @@ object GrapeVertexRDD extends Logging{
     log.info(s"frag ${graphStructure.fid()} ivnum ${graphStructure.getInnerVertexSize}, vnum ${graphStructure.getVertexSize}, vertices processed ${verticesProcesses}")
     val newVertexData = new InHeapVertexDataStore[VD](newArray,client)
 
-    val hostName = InetAddress.getLocalHost.getHostName
-    require(executorInfo.contains(hostName), s"host ${hostName} is not included in executor info ${executorInfo.toString()}")
-    val preferredLoc = "executor_" + hostName + "_" + executorInfo.get(hostName)
-    new GrapeVertexPartition[VD](pid, preferredLoc, graphStructure, newVertexData, client, RoutingTable.fromGraphStructure(graphStructure))
+//    val hostName = InetAddress.getLocalHost.getHostName
+//    require(executorInfo.contains(hostName), s"host ${hostName} is not included in executor info ${executorInfo.toString()}")
+//    val preferredLoc = "executor_" + hostName + "_" + executorInfo.get(hostName)
+    new GrapeVertexPartition[VD](pid, graphStructure, newVertexData, client, RoutingTable.fromGraphStructure(graphStructure))
   }
 
   def fromGrapeEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD, storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
@@ -144,10 +146,7 @@ object GrapeVertexRDD extends Logging{
         }
         //only set inner vertices
         val vertexDataStore = new InHeapVertexDataStore[VD](array, ePart.client)
-        val hostName = InetAddress.getLocalHost.getHostName
-        require(executorInfo.contains(hostName), s"host ${hostName} is not included in executor info ${executorInfo.toString()}")
-        val preferredLoc = "executor_" + hostName + "_" + executorInfo.get(hostName)
-        val partition = new GrapeVertexPartition[VD](ePart.pid, preferredLoc,actualStructure, vertexDataStore, ePart.client, RoutingTable.fromGraphStructure(actualStructure))
+        val partition = new GrapeVertexPartition[VD](ePart.pid,actualStructure, vertexDataStore, ePart.client, RoutingTable.fromGraphStructure(actualStructure))
         Iterator(partition)
     }).cache()
     new GrapeVertexRDDImpl[VD](grapeVertexPartitions,storageLevel)
