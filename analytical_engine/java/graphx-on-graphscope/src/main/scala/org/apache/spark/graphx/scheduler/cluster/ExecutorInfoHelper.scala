@@ -35,7 +35,7 @@ object ExecutorInfoHelper extends Logging{
   def getExecutorsHost2Id(sc : SparkContext) : mutable.HashMap[String,String] = {
     val castedBackend = sc.schedulerBackend.asInstanceOf[CoarseGrainedSchedulerBackend]
     val allFields = castedBackend.getClass.getSuperclass.getDeclaredFields
-    log.info(s"${allFields.mkString(",")}")
+//    log.info(s"${allFields.mkString(",")}")
     val field = castedBackend.getClass.getSuperclass.getDeclaredField("org$apache$spark$scheduler$cluster$CoarseGrainedSchedulerBackend$$executorDataMap")
     require(field != null)
     field.setAccessible(true)

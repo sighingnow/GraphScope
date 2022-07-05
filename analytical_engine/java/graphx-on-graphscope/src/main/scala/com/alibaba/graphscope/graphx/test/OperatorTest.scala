@@ -67,14 +67,17 @@ object OperatorTest extends Logging{
       }
 
 //      val graphxRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph))))))).mask(maskGraph).reverse
-      val graphxRes = mapTriplet(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph)))))).mask(maskGraph)
+//      val graphxRes = mapTriplet(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph)))))).mask(maskGraph)
+      val graphxRes = mapTriplet(graph)
+      val grapeRes = mapTriplet(grapeGraph)
 
-      val grapeRes = mapTriplet(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(grapeGraph)))))).mask(grapeMaskGraph)
+
+      //      val grapeRes = mapTriplet(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(grapeGraph)))))).mask(grapeMaskGraph)
 
       graphxRes.vertices.saveAsTextFile(s"/tmp/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
       grapeRes.vertices.saveAsTextFile(s"/tmp/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")
-      graphxRes.edges.saveAsTextFile(s"/tmp/operator-test-graphx-edge-${java.time.LocalDateTime.now()}")
-      grapeRes.edges.saveAsTextFile(s"/tmp/operator-test-grape-edge-${java.time.LocalDateTime.now()}")
+//      graphxRes.edges.saveAsTextFile(s"/tmp/operator-test-graphx-edge-${java.time.LocalDateTime.now()}")
+//      grapeRes.edges.saveAsTextFile(s"/tmp/operator-test-grape-edge-${java.time.LocalDateTime.now()}")
       sc.stop()
     }
   }
