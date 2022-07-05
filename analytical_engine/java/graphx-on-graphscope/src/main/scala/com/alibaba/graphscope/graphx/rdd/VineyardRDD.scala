@@ -18,7 +18,7 @@ class VineyardPartition(val ind : Int,val hostName : String) extends Partition w
       val res = ScalaFFIFactory.newVineyardClient()
       val ffiByteString: FFIByteString = FFITypeFactory.newByteString()
       ffiByteString.copyFrom(socket)
-      client.connect(ffiByteString)
+      res.connect(ffiByteString)
       log.info(s"successfully connect to ${socket}")
       res
     }
