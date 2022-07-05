@@ -199,6 +199,7 @@ object GrapeEdgeRDD extends Logging{
       }
       else Iterator.empty
     },preservesPartitioning = true).cache()
+    log.info(s"grape edge partition count ${grapeEdgePartitions.count()}")
     val edgePartitionRDD = new EdgePartitionRDD[VD,ED](SparkContext.getOrCreate(), grapeEdgePartitions)
     log.info(s"finish building edge partition ${edgePartitionRDD.count()}")
 
