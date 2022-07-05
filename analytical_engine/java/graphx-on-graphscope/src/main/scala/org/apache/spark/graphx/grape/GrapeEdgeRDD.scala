@@ -121,6 +121,8 @@ object GrapeEdgeRDD extends Logging{
       log.info(s"client ${client}")
       val grapeMeta = new GrapeMeta[VD,ED](pid, numPartitions, client, ExecutorUtils.getHostName)
       val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions,client)
+      require(EdgeShuffleReceived.data != null, s"edge shuffles should be set, but not found on ${InetAddress.getLocalHost.getHostName}, ${grapeMeta.partitionID}")
+      edgePartitionBuilder.addEdges(EdgeShuffleReceived.data.asInstanceOf[EdgeShuffleReceived[ED]])
       val localVertexMap = edgePartitionBuilder.buildLocalVertexMap()
       grapeMeta.setLocalVertexMap(localVertexMap)
       grapeMeta.setEdgePartitionBuilder(edgePartitionBuilder)
