@@ -71,11 +71,27 @@ object OperatorTest extends Logging{
       val graphxRes = mapTriplet(graph)
       val grapeRes = mapTriplet(grapeGraph)
 
+      log.info(s"after map triplets vertices ${grapeRes.vertices.count()}, edges ${grapeRes.edges.count()}")
+      log.info(s"after map triplets vertices ${graphxRes.vertices.count()}, edges ${graphxRes.edges.count()}")
+
+      val graphxRes2 = mapDifferentType(mapping(graph))
+      val grapeRes2 = mapDifferentType(mapping(grapeGraph))
+
+      log.info(s"after map, vertices ${grapeRes2.vertices.count()}, edges ${grapeRes2.edges.count()}")
+      log.info(s"after map, vertices ${graphxRes2.vertices.count()}, edges ${graphxRes2.edges.count()}")
+
+      val graphxRes3 = outerJoin(graph)
+      val grapeRes3 = outerJoin(grapeGraph)
+
+      log.info(s"after outer join vertices ${grapeRes3.vertices.count()}, edges ${grapeRes3.edges.count()}")
+      log.info(s"after outer join vertices ${graphxRes3.vertices.count()}, edges ${graphxRes3.edges.count()}")
+
+
 
       //      val grapeRes = mapTriplet(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(grapeGraph)))))).mask(grapeMaskGraph)
 
-      graphxRes.vertices.saveAsTextFile(s"/tmp/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
-      grapeRes.vertices.saveAsTextFile(s"/tmp/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")
+      graphxRes3.vertices.saveAsTextFile(s"/tmp/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
+      grapeRes3.vertices.saveAsTextFile(s"/tmp/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")
 //      graphxRes.edges.saveAsTextFile(s"/tmp/operator-test-graphx-edge-${java.time.LocalDateTime.now()}")
 //      grapeRes.edges.saveAsTextFile(s"/tmp/operator-test-grape-edge-${java.time.LocalDateTime.now()}")
       sc.stop()
