@@ -4,6 +4,7 @@ import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle.openHashSetToArray
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.OpenHashSet
 
+import java.util.concurrent.PriorityBlockingQueue
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
@@ -82,13 +83,12 @@ class EdgeShuffleReceived[ED: ClassTag](val selfPid : Int) extends Logging{
 }
 
 object EdgeShuffleReceived{
-  var data: EdgeShuffleReceived[_] = null.asInstanceOf[EdgeShuffleReceived[_]]
-  def set(in : EdgeShuffleReceived[_]): Unit = {
-    if (data == null){
-      data = in
-    }
-    else {
-      throw new IllegalStateException(s"data has been set to ${data}")
-    }
+  val queue = new PriorityBlockingQueue[EdgeShuffleReceived[_]]
+  def push(in : EdgeShuffleReceived[_]): Unit = {
+    queue.offer(in)
+  }
+
+  def get : EdgeShuffleReceived[_] = {
+    queue.poll()
   }
 }

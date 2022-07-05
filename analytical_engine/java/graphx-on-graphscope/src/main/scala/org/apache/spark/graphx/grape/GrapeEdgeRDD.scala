@@ -81,7 +81,7 @@ object GrapeEdgeRDD extends Logging{
       val hostName = InetAddress.getLocalHost.getHostName
       val (_pid,part) = iter.next()
       require(pid == _pid, s"not possible ${pid}, ${_pid}")
-      EdgeShuffleReceived.set(part)
+      EdgeShuffleReceived.push(part)
       Iterator(hostName)
     },preservesPartitioning = true).collect()
 
