@@ -80,3 +80,15 @@ class EdgeShuffleReceived[ED: ClassTag](val selfPid : Int) extends Logging{
     res
   }
 }
+
+object EdgeShuffleReceived{
+  var data: EdgeShuffleReceived[_] = null.asInstanceOf[EdgeShuffleReceived[_]]
+  def set(in : EdgeShuffleReceived[_]): Unit = {
+    if (data == null){
+      data = in
+    }
+    else {
+      throw new IllegalStateException(s"data has been set to ${data}")
+    }
+  }
+}

@@ -3,7 +3,7 @@ package org.apache.spark.graphx.grape
 import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.ds.{ImmutableTypedArray, Vertex}
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
-import com.alibaba.graphscope.graphx.rdd.EdgePartitionRDD
+import com.alibaba.graphscope.graphx.rdd.{EdgePartitionRDD, VineyardRDD}
 import com.alibaba.graphscope.graphx.rdd.impl.{GrapeEdgePartition, GrapeEdgePartitionBuilder}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
 import com.alibaba.graphscope.graphx.utils.{ExecutorUtils, GrapeMeta, ScalaFFIFactory}
@@ -73,6 +73,50 @@ object GrapeEdgeRDD extends Logging{
 
   private [graphx] def fromEdgeShuffleReceived[VD: ClassTag, ED: ClassTag](edgesShuffles: RDD[(Int, EdgeShuffleReceived[ED])]) : GrapeEdgeRDDImpl[VD,ED] = {
     val numPartitions = edgesShuffles.getNumPartitions
+    //0. collection hostNames from edgeShuffles, store data in static class.
+    //1. construct new rdd from hostNames and preferred locations.
+    //2  get the stored shuffle data from static class.
+    //3. construct rdd.
+
+    val collectHosts = edgesShuffles.mapPartitionsWithIndex((pid, iter) =>{
+      val hostName = InetAddress.getLocalHost.getHostName
+      val (_pid,part) = iter.next()
+      require(pid == _pid, s"not possible ${pid}, ${_pid}")
+      EdgeShuffleReceived.set(part)
+      Iterator(hostName)
+    },preservesPartitioning = true).collect()
+
+    log.info(s"shuffles exists on hosts ${collectHosts.mkString(",")}")
+
+    val executorInfo = ExecutorInfoHelper.getExecutorsHost2Id(SparkContext.getOrCreate())
+    val locations = collectHosts.map(host => {
+      "executor_" + host + "_" + executorInfo.get(host)
+    })
+    val sc = SparkContext.getOrCreate()
+    log.info(s"hosts ${collectHosts.mkString(",")}, locations ${locations.mkString(",")}")
+    val vineyardRDD = new VineyardRDD(sc, locations,collectHosts)
+    //test correctness
+    val tmp1 = sc.parallelize(Array(0,1), numPartitions)
+    val vineyard2 = vineyardRDD.zipPartitions(tmp1,preservesPartitioning = true){
+      (iter1, iter2) => {
+        val client = iter1.next()
+        val value = iter2.next()
+        log.info(s"got value first ${value}")
+        Iterator(client)
+      }
+    }
+    log.info(s"after zip on vineyard rdd ${vineyard2.count()}")
+    val vineyard3 = vineyardRDD.zipPartitions(vineyard2,preservesPartitioning = true){
+      (iter1, iter2) => {
+        val client = iter1.next()
+        val value = iter2.next()
+        log.info(s"got value second ${value}")
+        Iterator(client)
+      }
+    }
+    log.info(s"after zip on vineyard rdd ${vineyard3.count()}")
+    /*
+
     val metaPartitions = edgesShuffles.mapPartitionsWithIndex((pid, iter) => {
       if (iter.hasNext){
         val vineyardClient = ScalaFFIFactory.newVineyardClient()
@@ -80,10 +124,8 @@ object GrapeEdgeRDD extends Logging{
         ffiByteString.copyFrom(ExecutorUtils.vineyardEndpoint)
         vineyardClient.connect(ffiByteString)
         val (_pid, shuffleReceived) = iter.next()
-        require(pid == _pid, s"not possible ${pid}, ${_pid}")
+
         val grapeMeta = new GrapeMeta[VD,ED](pid, numPartitions,vineyardClient,ExecutorUtils.getHostName)
-        val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions, grapeMeta.vineyardClient)
-        edgePartitionBuilder.addEdges(shuffleReceived)
         val localVertexMap = edgePartitionBuilder.buildLocalVertexMap()
         grapeMeta.setLocalVertexMap(localVertexMap)
         grapeMeta.setEdgePartitionBuilder(edgePartitionBuilder)
@@ -146,7 +188,6 @@ object GrapeEdgeRDD extends Logging{
       else Iterator.empty
     },preservesPartitioning = true).cache()
     //clear edge partition builder to save us some memory
-    val executorInfo = ExecutorInfoHelper.getExecutorsHost2Id(SparkContext.getOrCreate())
 
     val grapeEdgePartitions = metaUpdated.mapPartitions(iter => {
       log.info("doing edge partition building")
@@ -194,7 +235,6 @@ object GrapeEdgeRDD extends Logging{
         val graphStructure = new GraphXGraphStructure(meta.globalVM, meta.graphxCSR, srcLids, dstLids, srcOids, dstOids, eids)
         val hostName = InetAddress.getLocalHost.getHostName
         require(executorInfo.contains(hostName), s"host ${hostName} is not included in executor info ${executorInfo.toString()}")
-        val preferredLoc = "executor_" + hostName + "_" + executorInfo.get(hostName)
         Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, preferredLoc, graphStructure, meta.vineyardClient, meta.edataArray))
       }
       else Iterator.empty
@@ -209,5 +249,7 @@ object GrapeEdgeRDD extends Logging{
     val rdd =new GrapeEdgeRDDImpl[VD,ED](edgePartitionRDD)
     log.info(s"[GrapeEdgeRDD:] Finish Construct EdgeRDD, total edges count ${rdd.count()}")
     rdd
+    */
+    null
   }
 }
