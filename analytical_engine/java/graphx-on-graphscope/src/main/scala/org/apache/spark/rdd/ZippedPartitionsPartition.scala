@@ -62,8 +62,10 @@ private[spark] abstract class ZippedPartitionsBaseRDD[V: ClassTag](
       //Return the left rdd's preferred location.
 //      val exactMatchLocations = prefs.reduce((x, y) => x.intersect(y))
 //      val locs = if (!exactMatchLocations.isEmpty) exactMatchLocations else prefs.flatten.distinct
-      log.info(s"get preferred location for first : ${rdds(0).preferredLocations(rdds(0).partitions(i))}, second ${rdds(1).preferredLocations(rdds(1).partitions(i))}")
-      new ZippedPartitionsPartition(i, rdds, rdds(0).preferredLocations(rdds(0).partitions(0)))
+      val firstPartition = rdds(0).partitions(i)
+      val secondPartition = rdds(1).partitions(i)
+      log.info(s"get preferred location for first : ${rdds(0).preferredLocations(firstPartition)}, second ${rdds(1).preferredLocations(secondPartition)}")
+      new ZippedPartitionsPartition(i, rdds, rdds(0).preferredLocations(firstPartition))
     }
   }
 
