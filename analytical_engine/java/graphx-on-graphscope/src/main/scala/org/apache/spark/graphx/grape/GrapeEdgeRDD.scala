@@ -90,7 +90,7 @@ object GrapeEdgeRDD extends Logging{
 
     val executorInfo = ExecutorInfoHelper.getExecutorsHost2Id(SparkContext.getOrCreate())
     val locations = collectHosts.map(host => {
-      "executor_" + host + "_" + executorInfo.get(host)
+      "executor_" + host + "_" + executorInfo.get(host).get
     })
     val sc = SparkContext.getOrCreate()
     log.info(s"hosts ${collectHosts.mkString(",")}, locations ${locations.mkString(",")}")
