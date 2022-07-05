@@ -95,7 +95,7 @@ object GrapeEdgeRDD extends Logging{
     log.info(s"hosts ${collectHosts.mkString(",")}, locations ${locations.mkString(",")}")
     val vineyardRDD = new VineyardRDD(sc, locations,collectHosts)
     //test correctness
-    val tmp1 = sc.parallelize(Array(0,1), numPartitions)
+    val tmp1 = sc.parallelize(0 until numPartitions, numPartitions)
     val vineyard2 = vineyardRDD.zipPartitions(tmp1,preservesPartitioning = true){
       (iter1, iter2) => {
         val client = iter1.next()
