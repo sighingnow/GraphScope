@@ -2,8 +2,8 @@ package org.apache.spark.graphx.grape.impl
 
 import com.alibaba.graphscope.graphx.rdd.impl.GrapeVertexPartition
 import org.apache.spark._
-import org.apache.spark.graphx._
-import org.apache.spark.graphx.grape.GrapeVertexRDD
+import org.apache.spark.graphx.{grape, _}
+import org.apache.spark.graphx.grape.{GrapeVertexRDD, PartitionAwareZippedBaseRDD}
 import org.apache.spark.graphx.impl.ShippableVertexPartition
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -85,8 +85,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     other match{
       case other : GrapeVertexRDDImpl[VD] if this.partitioner == other.partitioner => {
         this.withGrapePartitionsRDD[VD](
-          grapePartitionsRDD.zipPartitions(
-            other.grapePartitionsRDD, preservesPartitioning = true) {
+          PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),grapePartitionsRDD, other.grapePartitionsRDD){
             (thisIter, otherIter) =>
               val thisPartition = thisIter.next()
               val otherPartition = otherIter.next()
@@ -108,9 +107,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
         other.grapePartitionsRDD
       case _ =>  throw new IllegalArgumentException("can only minus a grape vertex rdd now")
     }
-    val newPartitionsRDD = grapePartitionsRDD.zipPartitions(
-      otherPartition, preservesPartitioning = true
-    ) { (thisIter, otherIter) =>
+    val newPartitionsRDD = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), grapePartitionsRDD,otherPartition) { (thisIter, otherIter) =>
       val thisTuple = thisIter.next()
       val otherTuple = otherIter.next()
       require(thisTuple.pid == otherTuple.pid, "partition id should match")
@@ -122,9 +119,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   override def leftZipJoin[VD2 : ClassTag, VD3 : ClassTag](other: VertexRDD[VD2])(f: (VertexId, VD, Option[VD2]) => VD3): GrapeVertexRDD[VD3] = {
     val newPartitionsRDD = other match {
       case other : GrapeVertexRDDImpl[VD2] => {
-        grapePartitionsRDD.zipPartitions(
-          other.grapePartitionsRDD, preservesPartitioning = true
-        ) { (thisIter, otherIter) =>
+        PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), grapePartitionsRDD, other.grapePartitionsRDD) { (thisIter, otherIter) =>
           val thisTuple = thisIter.next()
           val otherTuple = otherIter.next()
           Iterator(thisTuple.leftJoin(otherTuple)(f))
@@ -146,8 +141,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   override def innerZipJoin[U : ClassTag, VD2 : ClassTag](other: VertexRDD[U])(f: (VertexId, VD, U) => VD2): GrapeVertexRDD[VD2] = {
     val newPartitionsRDD = other match {
       case other : GrapeVertexRDDImpl[U] => {
-        grapePartitionsRDD.zipPartitions(
-          other.grapePartitionsRDD, preservesPartitioning = true
+          PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),grapePartitionsRDD,other.grapePartitionsRDD
         ) { (thisIter, otherIter) =>
           val thisTuple = thisIter.next()
           val otherTuple = otherIter.next()
@@ -182,7 +176,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     log.info(s"Current available executors ${executorStatus}")
     val numExecutors = executorStatus.size
     val shuffled = messages.partitionBy(new HashPartitioner(numExecutors))
-    val newPartitionsRDD = grapePartitionsRDD.zipPartitions(shuffled,true) {
+    val newPartitionsRDD = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), grapePartitionsRDD, shuffled){
       (thisIter, msgIter) =>{
         if (thisIter.hasNext){
           val tuple = thisIter.next();
@@ -199,6 +193,10 @@ class GrapeVertexRDDImpl[VD] private[graphx](
 
 
   override def syncOuterVertex : GrapeVertexRDD[VD] = {
+    if (outerVertexSynced){
+      log.info("Outer vertex already synced")
+      return this
+    }
     val updateMessage = this.grapePartitionsRDD.mapPartitions(iter => {
       if (iter.hasNext){
         val part = iter.next()
@@ -210,8 +208,9 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     }).partitionBy(new HashPartitioner(this.grapePartitionsRDD.getNumPartitions)).cache()
 
     //TODO: evaluate the cost of serializing grape partitions and deserialize
-    val updatedVertexPartition = this.grapePartitionsRDD.zipPartitions(updateMessage,preservesPartitioning = true){
-      (vIter, msgIter) => {
+//    val updatedVertexPartition = this.grapePartitionsRDD.zipPartitions(updateMessage,preservesPartitioning = true){
+    val updatedVertexPartition = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), grapePartitionsRDD, updateMessage){
+    (vIter, msgIter) => {
         val  vpart = vIter.next()
         Iterator(vpart.updateOuterVertexData(msgIter))
       }

@@ -15,7 +15,7 @@ import org.apache.hadoop.io.LongWritable
 import org.apache.spark.graphx.{EdgeRDD, Graph, PartitionID, TypeAlias, VertexId, VertexRDD}
 import org.apache.spark.graphx.impl.{EdgeRDDImpl, GraphImpl, VertexRDDImpl}
 import com.alibaba.graphscope.graphx.utils.{GrapeUtils, PrimitiveVector, ScalaFFIFactory}
-import org.apache.spark.graphx.grape.{GrapeEdgeRDD, GrapeGraphImpl, GrapeVertexRDD}
+import org.apache.spark.graphx.grape.{GrapeEdgeRDD, GrapeGraphImpl, GrapeVertexRDD, PartitionAwareZippedBaseRDD}
 import org.apache.spark.graphx.scheduler.cluster.ExecutorInfoHelper
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.{ParallelCollectionRDD, RDD}
@@ -154,7 +154,7 @@ object GraphScopeHelper extends Logging{
       case GraphStructureTypes.ArrowProjectedStructure =>
         log.info(s"Write back projected fragment for ${graph}")
         val grapeVerticesPartitions = graph.grapeVertices.grapePartitionsRDD
-        val res = graph.grapeEdges.grapePartitionsRDD.zipPartitions(grapeVerticesPartitions){
+        val res = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), graph.grapeEdges.grapePartitionsRDD, grapeVerticesPartitions){
           (edgeIter, vertexIter) => {
             val edgePart = edgeIter.next()
             val vertexPart = vertexIter.next()

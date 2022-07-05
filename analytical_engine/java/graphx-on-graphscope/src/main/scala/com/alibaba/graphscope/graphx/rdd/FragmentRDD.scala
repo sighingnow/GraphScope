@@ -12,7 +12,7 @@ import com.alibaba.graphscope.graphx.utils.{GrapeUtils, ScalaFFIFactory}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.graphx.PartitionID
 import org.apache.spark.graphx.grape.impl.GrapeEdgeRDDImpl
-import org.apache.spark.graphx.grape.{GrapeEdgeRDD, GrapeVertexRDD}
+import org.apache.spark.graphx.grape.{GrapeEdgeRDD, GrapeVertexRDD, PartitionAwareZippedBaseRDD}
 import org.apache.spark.graphx.scheduler.cluster.ExecutorInfoHelper
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
@@ -117,9 +117,8 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
       val fragmentStructure = iter.next()
       fragmentStructure.initFid2GraphxPid(pid2Fids)
     })
-    val executorInfo = ExecutorInfoHelper.getExecutorsHost2Id(SparkContext.getOrCreate())
 
-    val edgePartitions = this.zipPartitions(fragmentStructures, preservesPartitioning = true){
+      val edgePartitions = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), this, fragmentStructures){
       (fragIter, structureIter) => {
         if (fragIter.hasNext){
           val (pid,(client,frag)) = fragIter.next()

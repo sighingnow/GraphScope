@@ -96,7 +96,7 @@ object GrapeEdgeRDD extends Logging{
     val vineyardRDD = new VineyardRDD(sc, locations,collectHosts)
     //test correctness
     val tmp1 = sc.parallelize(0 until numPartitions, numPartitions)
-    val vineyard2 = vineyardRDD.zipPartitions(tmp1,preservesPartitioning = true){
+      val vineyard2 = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), vineyardRDD, tmp1){
       (iter1, iter2) => {
         val client = iter1.next()
         val value = iter2.next()
@@ -105,7 +105,7 @@ object GrapeEdgeRDD extends Logging{
       }
     }
     log.info(s"after zip on vineyard rdd ${vineyard2.count()}")
-    val vineyard3 = vineyardRDD.zipPartitions(vineyard2,preservesPartitioning = true){
+        val vineyard3 = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), vineyardRDD,vineyard2){
       (iter1, iter2) => {
         val client = iter1.next()
         val value = iter2.next()

@@ -25,20 +25,17 @@ object OperatorBench extends Logging{
     val grapeMaskGraph : Graph[Long,Long] = grapeGraph.subgraph(epred = (_ => true), vpred = (id, _)=>id % 2 == 0)
 
     def mapping(graph : Graph[Long,Long])  : Graph[Long,Long] = {
-      log.info("[Operator test]: start Mapping")
       graph.mapVertices((vid, vd) => vd + vid)
         .mapEdges(edge=> edge.srcId + edge.dstId + edge.attr)
         .mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr + triplet.attr + triplet.srcId + triplet.dstId)
     }
 
     def mapDifferentType(graph : Graph[Long,Long]) : Graph[Long,Long] = {
-      log.info("[Operator test]: start Mapping different type")
       val tmp = graph.mapVertices((vid, vd) => vd.toDouble).mapEdges(edge=> edge.attr.toDouble)
       tmp.mapVertices((vid, vd) => vd.toLong).mapEdges(edge=> edge.attr.toLong)
     }
 
     def outerJoin(graph : Graph[Long,Long]) : Graph[Long,Long] = {
-      log.info("[Operator test]: start outer join")
       val inDegrees = graph.inDegrees
       graph.joinVertices(inDegrees)((id, ovd, newVd) => {
         //          log.info(s"vertex ${id}, set vd from ${ovd} to ${newVd}")
@@ -47,18 +44,15 @@ object OperatorBench extends Logging{
     }
 
     def subGraph(graph: Graph[Long,Long]) : Graph[Long,Long] = {
-      log.info("[Operator test]: start subgraph")
       graph.subgraph(epred = { triplet => triplet.srcId > 100}, vpred = (vid,vd) => vid > 100)
     }
 
     //map edge attr to pid.
     def mapEdgeIterator(graph : Graph[Long,Long]) : Graph[Long,Long] = {
-      log.info("[Operator test]: start map edges")
       graph.mapEdges((pid,iter)=> iter.map(e=>e.srcId))
     }
 
     def mapTriplet(graph : Graph[Long,Long]) : Graph[Long,Long] = {
-      log.info("[Operator test]: start map triplets")
       val graph2 = graph.mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr)
       def f(pid : PartitionID, iter : Iterator[EdgeTriplet[Long,Long]]): Iterator[Long] = {
         iter.map(triplet=> triplet.srcId)
@@ -100,7 +94,7 @@ object OperatorBench extends Logging{
     val graphxTime31 = System.nanoTime()
 
     log.info(s"[OperatorBench]: map vertices grape time ${(grapeTime11 - grapeTime10) / 1000000} ms, graphx time ${(graphxTime11 - graphxTime10)/ 1000000} ms")
-    log.info(s"[OperatorBench]: map edges grape time ${(grapeTime21 - grapeTime20) / 1000000} ms, graphx time ${(graphxTime21 - graphxTime30)/ 1000000} ms")
+    log.info(s"[OperatorBench]: map edges grape time ${(grapeTime21 - grapeTime20) / 1000000} ms, graphx time ${(graphxTime21 - graphxTime20)/ 1000000} ms")
     log.info(s"[OperatorBench]: outer join grape time ${(grapeTime31 - grapeTime30) / 1000000} ms, graphx time ${(graphxTime31 - graphxTime30)/ 1000000} ms")
 
     sc.stop()

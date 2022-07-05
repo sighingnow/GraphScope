@@ -2,7 +2,7 @@ package org.apache.spark.graphx.grape.impl
 
 import com.alibaba.graphscope.graphx.rdd.impl.GrapeEdgePartition
 import org.apache.spark.graphx._
-import org.apache.spark.graphx.grape.GrapeEdgeRDD
+import org.apache.spark.graphx.grape.{GrapeEdgeRDD, PartitionAwareZippedBaseRDD}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{OneToOneDependency, Partition, Partitioner, TaskContext}
@@ -89,7 +89,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
   override def innerJoin[ED2: ClassTag, ED3: ClassTag]
   (other: EdgeRDD[ED2])
   (f: (VertexId, VertexId, ED, ED2) => ED3): GrapeEdgeRDD[ED3] = {
-    val newPartitions = grapePartitionsRDD.zipPartitions(other.asInstanceOf[GrapeEdgeRDD[ED2]].grapePartitionsRDD, true)({
+  val newPartitions = PartitionAwareZippedBaseRDD.zipPartitions(context, grapePartitionsRDD, other.asInstanceOf[GrapeEdgeRDD[ED2]].grapePartitionsRDD)({
       (thisIter, otherIter) => {
         val thisEpart = thisIter.next()
         val otherEpart = otherIter.next()

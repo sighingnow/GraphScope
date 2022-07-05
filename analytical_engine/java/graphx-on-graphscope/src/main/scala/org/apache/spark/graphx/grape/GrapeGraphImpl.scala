@@ -12,7 +12,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.collection.{BitSet, PrimitiveVector}
-import org.apache.spark.{HashPartitioner, Partitioner}
+import org.apache.spark.{HashPartitioner, Partitioner, SparkContext}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.mutable.ArrayBuffer
@@ -67,7 +67,10 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   lazy val fragmentIds : RDD[String] = {
     val syncedGrapeVertices = grapeVertices.syncOuterVertex
-    edges.grapePartitionsRDD.zipPartitions(syncedGrapeVertices.grapePartitionsRDD) { (edgeIter, vertexIter) => {
+
+    PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),
+      edges.grapePartitionsRDD,
+      syncedGrapeVertices.grapePartitionsRDD){(edgeIter, vertexIter) => {
       val ePart = edgeIter.next()
       val vPart = vertexIter.next()
       ePart.graphStructure match {
@@ -128,7 +131,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
 
   @transient override lazy val triplets: RDD[EdgeTriplet[VD, ED]] = {
-    grapeEdges.grapePartitionsRDD.zipPartitions(grapeVertices.grapePartitionsRDD, preservesPartitioning = true){
+    PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), grapeEdges.grapePartitionsRDD, grapeVertices.grapePartitionsRDD){
       (edgeIter, vertexIter) => {
         val edgePart = edgeIter.next()
         val vertexPart = vertexIter.next()
@@ -227,7 +230,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       logger.info(s"${grapeVertices} has done outer vertex data sync, just go to map triplets")
     }
 
-    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD, preservesPartitioning = true){
+    val newEdgePartitions = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),grapeEdges.grapePartitionsRDD, newVertices.grapePartitionsRDD){
       (eIter,vIter) => {
         val  vPart = vIter.next()
         val epart = eIter.next()
@@ -246,7 +249,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     else {
       logger.info(s"${grapeVertices} has done outer vertex data sync, just go to map triplets")
     }
-    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD, preservesPartitioning = true){
+    val newEdgePartitions = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),grapeEdges.grapePartitionsRDD, newVertices.grapePartitionsRDD){
       (eIter,vIter) => {
         val vPart = vIter.next()
         val epart = eIter.next()
@@ -271,7 +274,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     }
     newVertices = newVertices.mapGrapeVertexPartitions(_.filter(vpred))
 
-    val newEdgePartitions = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD, preservesPartitioning = true){
+    val newEdgePartitions = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),grapeEdges.grapePartitionsRDD, newVertices.grapePartitionsRDD){
       (eIter,vIter) => {
         val vPart = vIter.next()
         val ePart = eIter.next()
@@ -307,7 +310,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
   def generateDegreeRDD(edgeDirection: EdgeDirection) : GrapeVertexRDD[Int] = {
-    val newVertexPartitionRDD = grapeEdges.grapePartitionsRDD.zipPartitions(grapeVertices.grapePartitionsRDD, true){
+      val newVertexPartitionRDD = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), grapeEdges.grapePartitionsRDD, grapeVertices.grapePartitionsRDD){
       (thisIter, otherIter) => {
         val ePart = thisIter.next()
         val otherVPart = otherIter.next()

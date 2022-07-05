@@ -69,15 +69,13 @@ object GrapeVertexRDD extends Logging{
   def fromEdgeShuffle[VD : ClassTag, ED : ClassTag](edgeShuffle : RDD[(PartitionID, EdgeShuffle[VD,ED])], edgeRDD : GrapeEdgeRDD[ED],storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
     val numPartitions = edgeRDD.getNumPartitions
     log.info(s"Creating vertex rdd from grape edgeRDD of numPartition ${numPartitions}, along with vertex attrs ")
-    val executorInfo = ExecutorInfoHelper.getExecutorsHost2Id(SparkContext.getOrCreate())
-    val grapeVertexPartition = edgeRDD.grapePartitionsRDD.zipPartitions(edgeShuffle, preservesPartitioning = true){
+//    val grapeVertexPartition = edgeRDD.grapePartitionsRDD.zipPartitions(edgeShuffle, preservesPartitioning = true){
+    val grapeVertexPartition = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),edgeRDD.grapePartitionsRDD, edgeShuffle){
       (firstIter, edgeShuffleIter) => {
         val ePart = firstIter.next()
         val fragVertices = ePart.graphStructure.getVertexSize
-//        val (edgeShufflePid, edgeShuffle) = edgeShuffleIter.next()
-//        require(edgeShufflePid == ePart.pid)
         log.info(s"Partition ${ePart.pid} doing initialization with graphx vertex attrs, frag vertices ${fragVertices} fragid ${ePart.graphStructure.fid()}/${ePart.graphStructure.fnum()}")
-        val grapeVertexPartition = buildPartitionFromGraphX(ePart.pid, ePart.client, ePart.graphStructure, edgeShuffleIter,executorInfo)
+        val grapeVertexPartition = buildPartitionFromGraphX(ePart.pid, ePart.client, ePart.graphStructure, edgeShuffleIter)
         Iterator(grapeVertexPartition)
       }
     }.cache()
@@ -86,8 +84,7 @@ object GrapeVertexRDD extends Logging{
     res
   }
 
-  def buildPartitionFromGraphX[VD: ClassTag](pid: Int, client: VineyardClient, graphStructure: GraphStructure, edgeShuffleIter: Iterator[(PartitionID,EdgeShuffle[VD,_])],
-                                             executorInfo : mutable.HashMap[String,String]):GrapeVertexPartition[VD] = {
+  def buildPartitionFromGraphX[VD: ClassTag](pid: Int, client: VineyardClient, graphStructure: GraphStructure, edgeShuffleIter: Iterator[(PartitionID,EdgeShuffle[VD,_])]):GrapeVertexPartition[VD] = {
     /** We assume the verticesAttr iterator contains only inner vertices */
     val newArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD], graphStructure.getVertexSize.toInt).asInstanceOf[PrimitiveArray[VD]]
     val grapeVertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
