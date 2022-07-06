@@ -273,8 +273,8 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
           edgeTriplet.srcId = srcOids.get(offset)
           edgeTriplet.dstId = dstOids.get(offset)
           edgeTriplet.attr = edatas.get(edgeTriplet.eid)
-          edgeTriplet.srcAttr = vertexDataStore.getData(srcLids.get(offset))
-          edgeTriplet.dstAttr = vertexDataStore.getData(dstLids.get(offset))
+//          edgeTriplet.srcAttr = vertexDataStore.getData(srcLids.get(offset))
+//          edgeTriplet.dstAttr = vertexDataStore.getData(dstLids.get(offset))
           offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
           edgeTriplet
         }
