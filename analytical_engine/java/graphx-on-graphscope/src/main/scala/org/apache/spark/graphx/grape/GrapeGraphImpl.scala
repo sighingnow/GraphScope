@@ -232,7 +232,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
     val newEdgePartitions = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),grapeEdges.grapePartitionsRDD, newVertices.grapePartitionsRDD){
       (eIter,vIter) => {
-        val  vPart = vIter.next()
+        val vPart = vIter.next()
         val epart = eIter.next()
         Iterator(epart.mapTriplets(map, vPart.vertexData, tripletFields))
       }

@@ -111,16 +111,15 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   def updateOuterVertexData(vertexDataMessage: Iterator[(PartitionID,VertexDataMessage[VD])]): GrapeVertexPartition[VD] = {
     val time0 = System.nanoTime()
     log.info("Start updating outer vertex")
+    val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
     while (vertexDataMessage.hasNext){
       val (dstPid, msg) = vertexDataMessage.next()
       require(dstPid == pid)
       val outerGids = msg.gids
       val outerDatas = msg.newData
       var i = 0
-      val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
       while (i < outerGids.length){
         require(graphStructure.outerVertexGid2Vertex(outerGids(i), vertex))
-//        log.info(s"Partition ${pid} received outer vdata updating info ${vertex.GetValue()}, ${outerDatas(i)}")
         vertexData.setData(vertex.GetValue, outerDatas(i))
         i += 1
       }

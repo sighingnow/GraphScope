@@ -26,19 +26,18 @@ object OperatorBench extends Logging{
 
     def mapping(graph : Graph[Long,Long])  : Graph[Long,Long] = {
       graph.mapVertices((vid, vd) => vd + vid)
-        .mapEdges(edge=> edge.srcId + edge.dstId + edge.attr)
-        .mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr + triplet.attr + triplet.srcId + triplet.dstId)
+//        .mapEdges(edge=> edge.srcId + edge.dstId + edge.attr)
+//        .mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr + triplet.attr + triplet.srcId + triplet.dstId)
     }
 
     def mapDifferentType(graph : Graph[Long,Long]) : Graph[Long,Long] = {
-      val tmp = graph.mapVertices((vid, vd) => vd.toDouble).mapEdges(edge=> edge.attr.toDouble)
-      tmp.mapVertices((vid, vd) => vd.toLong).mapEdges(edge=> edge.attr.toLong)
+      val tmp = graph.mapVertices((vid, vd) => vd.toDouble) //.mapEdges(edge=> edge.attr.toDouble)
+      tmp.mapVertices((vid, vd) => vd.toLong) //.mapEdges(edge=> edge.attr.toLong)
     }
 
     def outerJoin(graph : Graph[Long,Long]) : Graph[Long,Long] = {
       val inDegrees = graph.inDegrees
       graph.joinVertices(inDegrees)((id, ovd, newVd) => {
-        //          log.info(s"vertex ${id}, set vd from ${ovd} to ${newVd}")
         newVd
       })
     }
@@ -63,22 +62,22 @@ object OperatorBench extends Logging{
     //0. mapping vertices
 
     val grapeTime10 = System.nanoTime()
-    val grapeGraph1 = mapDifferentType(mapDifferentType(mapping(mapping(grapeGraph))))
+    val grapeGraph1 = mapDifferentType(mapDifferentType(mapDifferentType(mapping(mapping(mapping(grapeGraph))))))
     log.info(s"Finish mapping grape vertices ${grapeGraph1.vertices.count()}")
     val grapeTime11 = System.nanoTime()
     val graphxTime10 = System.nanoTime()
-    val graphxGraph1 = mapDifferentType(mapDifferentType(mapping(mapping(graphxGraph))))
+    val graphxGraph1 = mapDifferentType(mapDifferentType(mapDifferentType(mapping(mapping(mapping(graphxGraph))))))
     log.info(s"Finish mapping graphx vertices ${graphxGraph1.vertices.count()}")
     val graphxTime11 = System.nanoTime()
 
     //1. mapping edges
 
     val grapeTime20 = System.nanoTime()
-    val grapeGraph2 = mapTriplet(mapTriplet(mapEdgeIterator(mapEdgeIterator(grapeGraph))))
+    val grapeGraph2 = mapTriplet(mapTriplet(mapTriplet(mapEdgeIterator(mapEdgeIterator(mapEdgeIterator(grapeGraph))))))
     log.info(s"Finish mapping grape edge, counts vertices ${grapeGraph2.vertices.count()}, edges ${grapeGraph2.edges.count()}")
     val grapeTime21 = System.nanoTime()
     val graphxTime20 = System.nanoTime()
-    val graphxGraph2 = mapTriplet(mapTriplet(mapEdgeIterator(mapEdgeIterator(graphxGraph))))
+    val graphxGraph2 = mapTriplet(mapTriplet(mapTriplet(mapEdgeIterator(mapEdgeIterator(mapEdgeIterator(graphxGraph))))))
     log.info(s"Finish mapping graphx edge, counts vertices ${graphxGraph2.vertices.count()} edges ${graphxGraph2.edges.count()}")
     val graphxTime21 = System.nanoTime()
 

@@ -133,9 +133,11 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def map[ED2: ClassTag](f: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2]): GrapeEdgePartition[VD, ED2] = {
+    val time0 = System.nanoTime()
     val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], allEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
     val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     val resultEdata = f(pid, iter)
+    val time1 = System.nanoTime()
     val eids = graphStructure.getEids
     var ind = activeEdgeSet.nextSetBit(0);
     while (ind >= 0 && resultEdata.hasNext){
@@ -146,15 +148,17 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     if (resultEdata.hasNext || ind >= 0){
       throw new IllegalStateException(s"impossible, two iterator should end at the same time ${ind}, ${resultEdata.hasNext}")
     }
+    val time2 = System.nanoTime()
+    log.info(s"[Perf: ] map edge iterator cost ${(time2 - time0)/1000000} ms, in which iterating cost ${(time1 - time0) / 1000000} ms")
     this.withNewEdata(newData)
   }
 
   def mapTriplets[ED2: ClassTag](f: EdgeTriplet[VD,ED] => ED2, vertexDataStore: VertexDataStore[VD], tripletFields: TripletFields): GrapeEdgePartition[VD, ED2] = {
+    val time0 = System.nanoTime()
     val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], allEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
 //    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     val iter = tripletIterator(vertexDataStore, tripletFields.useSrc, tripletFields.useDst).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
     var ind = 0;
-    val time0 = System.nanoTime()
     while (iter.hasNext){
       val edge = iter.next()
       newData.set(edge.eid, f(edge))
@@ -168,10 +172,10 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   def mapTriplets[ED2: ClassTag](f: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], vertexDataStore: VertexDataStore[VD], includeSrc  : Boolean = true, includeDst : Boolean = true): GrapeEdgePartition[VD, ED2] = {
     val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], allEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
     //    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
+    val time0 = System.nanoTime()
     val iter = tripletIterator(vertexDataStore,includeSrc,includeDst).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
     val resultEdata = f(pid, iter)
     val eids = graphStructure.getEids
-    val time0 = System.nanoTime()
     var ind = activeEdgeSet.nextSetBit(0)
     while (ind >= 0 && resultEdata.hasNext){
       val eid = eids.get(ind)
@@ -182,7 +186,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       throw new IllegalStateException(s"impossible, two iterator should end at the same time ${ind}, ${resultEdata.hasNext}")
     }
     val time1 = System.nanoTime()
-    log.info(s"[Perf:] mapping over triplets cost ${(time1 - time0)/1000000} ms")
+    log.info(s"[Perf:] mapping over triplets iterator cost ${(time1 - time0)/1000000} ms")
     this.withNewEdata(newData)
   }
 
