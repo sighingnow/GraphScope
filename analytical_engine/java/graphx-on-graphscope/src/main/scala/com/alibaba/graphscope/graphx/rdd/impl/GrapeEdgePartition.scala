@@ -143,7 +143,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     while (ind >= 0 && resultEdata.hasNext){
       val eid = eids.get(ind)
       newData.set(eid, resultEdata.next())
-      ind = activeEdgeSet.nextSetBit(ind + 1);
+      ind = activeEdgeSet.nextSetBit(ind + 1)
     }
     if (resultEdata.hasNext || ind >= 0){
       throw new IllegalStateException(s"impossible, two iterator should end at the same time ${ind}, ${resultEdata.hasNext}")
