@@ -235,48 +235,78 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   }
 
   override def tripletIterator[VD: ClassTag,ED : ClassTag](vertexDataStore: VertexDataStore[VD],edatas : PrimitiveArray[ED], activeEdgeSet : BitSet, edgeReversed : Boolean = false,
-                      includeSrc: Boolean = true, includeDst: Boolean = true)
+                      includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false)
   : Iterator[EdgeTriplet[VD, ED]] = {
+    //For input vertex data store, check its version, if its version is greater than us, update
+    //vertex data. If equal, skip. less than us is impossible.
+//    updateVertexDataCache(vertexDataStore)
     if (edgeReversed){
       new Iterator[EdgeTriplet[VD, ED]] {
         var offset: Long = activeEdgeSet.nextSetBit(0)
+        val reuseEdgeTriplet = new GSEdgeTripletImpl[VD, ED];
         override def hasNext: Boolean = {
           offset >= 0
         }
 
         override def next(): EdgeTriplet[VD, ED] = {
-          //Find srcLid of curNbr
-          val edgeTriplet = new GSEdgeTripletImpl[VD, ED];
-          edgeTriplet.eid = eids.get(offset)
-          edgeTriplet.offset = offset
-          edgeTriplet.dstId = srcOids.get(offset)
-          edgeTriplet.srcId = dstOids.get(offset)
-          edgeTriplet.attr = edatas.get(edgeTriplet.eid)
-//          edgeTriplet.dstAttr = vertexDataStore.getData(srcLids.get(offset))
-//          edgeTriplet.srcAttr = vertexDataStore.getData(dstLids.get(offset))
-          offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
-          edgeTriplet
+          if (!reuseTriplet){
+            val edgeTriplet = new GSEdgeTripletImpl[VD, ED];
+            edgeTriplet.eid = eids.get(offset)
+            edgeTriplet.offset = offset
+            edgeTriplet.dstId = srcOids.get(offset)
+            edgeTriplet.srcId = dstOids.get(offset)
+            edgeTriplet.attr = edatas.get(edgeTriplet.eid)
+            //          edgeTriplet.dstAttr = vertexDataStore.getData(srcLids.get(offset))
+            //          edgeTriplet.srcAttr = vertexDataStore.getData(dstLids.get(offset))
+            offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
+            edgeTriplet
+          }
+          else {
+            reuseEdgeTriplet.eid = eids.get(offset)
+            reuseEdgeTriplet.offset = offset
+            reuseEdgeTriplet.dstId = srcOids.get(offset)
+            reuseEdgeTriplet.srcId = dstOids.get(offset)
+            reuseEdgeTriplet.attr = edatas.get(reuseEdgeTriplet.eid)
+            //          edgeTriplet.dstAttr = vertexDataStore.getData(srcLids.get(offset))
+            //          edgeTriplet.srcAttr = vertexDataStore.getData(dstLids.get(offset))
+            offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
+            reuseEdgeTriplet
+          }
+
         }
       }
     } else {
       new Iterator[EdgeTriplet[VD, ED]] {
         var offset: Long = activeEdgeSet.nextSetBit(0)
+        val reuseEdgeTriplet = new GSEdgeTripletImpl[VD, ED];
         override def hasNext: Boolean = {
           offset >= 0
         }
 
         override def next(): EdgeTriplet[VD, ED] = {
-          //Find srcLid of curNbr
-          val edgeTriplet = new GSEdgeTripletImpl[VD, ED];
-          edgeTriplet.eid = eids.get(offset)
-          edgeTriplet.offset = offset
-          edgeTriplet.srcId = srcOids.get(offset)
-          edgeTriplet.dstId = dstOids.get(offset)
-          edgeTriplet.attr = edatas.get(edgeTriplet.eid)
-          edgeTriplet.srcAttr = vertexDataStore.getData(srcLids.get(offset))
-          edgeTriplet.dstAttr = vertexDataStore.getData(dstLids.get(offset))
-          offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
-          edgeTriplet
+          if (!reuseTriplet){
+            val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
+            edgeTriplet.eid = eids.get(offset)
+            edgeTriplet.offset = offset
+            edgeTriplet.srcId = srcOids.get(offset)
+            edgeTriplet.dstId = dstOids.get(offset)
+            edgeTriplet.attr = edatas.get(edgeTriplet.eid)
+            //          edgeTriplet.srcAttr = vertexDataStore.getData(srcLids.get(offset))
+            //          edgeTriplet.dstAttr = vertexDataStore.getData(dstLids.get(offset))
+            offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
+            edgeTriplet
+          }
+          else {
+            reuseEdgeTriplet.eid = eids.get(offset)
+            reuseEdgeTriplet.offset = offset
+            reuseEdgeTriplet.srcId = srcOids.get(offset)
+            reuseEdgeTriplet.dstId = dstOids.get(offset)
+            reuseEdgeTriplet.attr = edatas.get(reuseEdgeTriplet.eid)
+            //          edgeTriplet.srcAttr = vertexDataStore.getData(srcLids.get(offset))
+            //          edgeTriplet.dstAttr = vertexDataStore.getData(dstLids.get(offset))
+            offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
+            reuseEdgeTriplet
+          }
         }
       }
     }

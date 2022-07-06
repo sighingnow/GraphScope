@@ -108,7 +108,7 @@ object GrapeVertexRDD extends Logging{
       }
     }
     log.info(s"frag ${graphStructure.fid()} ivnum ${graphStructure.getInnerVertexSize}, vnum ${graphStructure.getVertexSize}, vertices processed ${verticesProcesses}")
-    val newVertexData = new InHeapVertexDataStore[VD](newArray,client)
+    val newVertexData = new InHeapVertexDataStore[VD](newArray,client, 0)
 
 //    val hostName = InetAddress.getLocalHost.getHostName
 //    require(executorInfo.contains(hostName), s"host ${hostName} is not included in executor info ${executorInfo.toString()}")
@@ -142,7 +142,7 @@ object GrapeVertexRDD extends Logging{
           array.set(i,frag.getData(vertex))
         }
         //only set inner vertices
-        val vertexDataStore = new InHeapVertexDataStore[VD](array, ePart.client)
+        val vertexDataStore = new InHeapVertexDataStore[VD](array, ePart.client,0)
         val partition = new GrapeVertexPartition[VD](ePart.pid,actualStructure, vertexDataStore, ePart.client, RoutingTable.fromGraphStructure(actualStructure))
         Iterator(partition)
     }).cache()

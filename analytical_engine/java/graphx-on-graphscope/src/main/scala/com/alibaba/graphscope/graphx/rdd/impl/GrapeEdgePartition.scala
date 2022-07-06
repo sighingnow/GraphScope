@@ -64,15 +64,15 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def tripletIterator(vertexDataStore: VertexDataStore[VD],
-                       includeSrc: Boolean = true, includeDst: Boolean = true)
-  : Iterator[EdgeTriplet[VD, ED]] = graphStructure.tripletIterator(vertexDataStore,edatas,activeEdgeSet,edgeReversed = edgeReversed,includeSrc = includeSrc,includeDst = includeDst)
+                       includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false)
+  : Iterator[EdgeTriplet[VD, ED]] = graphStructure.tripletIterator(vertexDataStore,edatas,activeEdgeSet,edgeReversed,includeSrc,includeDst, reuseTriplet)
 
   def filter(
               epred: EdgeTriplet[VD, ED] => Boolean,
               vpred: (VertexId, VD) => Boolean,
               vertexDataStore: VertexDataStore[VD]): GrapeEdgePartition[VD, ED] = {
     //First invalided all invalid edges from invalid vertices.
-    val tripletIter = tripletIterator(vertexDataStore).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
+    val tripletIter = tripletIterator(vertexDataStore, true, true, true).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
     val newActiveEdges = new BitSet(partOutEdgeNum.toInt)
     newActiveEdges.union(activeEdgeSet)
     while (tripletIter.hasNext){
@@ -157,7 +157,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val time0 = System.nanoTime()
     val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], allEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
 //    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
-    val iter = tripletIterator(vertexDataStore, tripletFields.useSrc, tripletFields.useDst).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
+    val iter = tripletIterator(vertexDataStore, tripletFields.useSrc, tripletFields.useDst, reuseTriplet = true).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
     var ind = 0;
     while (iter.hasNext){
       val edge = iter.next()
@@ -173,7 +173,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val newData = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED2], allEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED2]]
     //    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     val time0 = System.nanoTime()
-    val iter = tripletIterator(vertexDataStore,includeSrc,includeDst).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
+    val iter = tripletIterator(vertexDataStore,includeSrc,includeDst,reuseTriplet = true).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
     val resultEdata = f(pid, iter)
     val eids = graphStructure.getEids
     var ind = activeEdgeSet.nextSetBit(0)

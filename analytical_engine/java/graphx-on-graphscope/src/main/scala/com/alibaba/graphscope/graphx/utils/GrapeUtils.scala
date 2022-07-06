@@ -87,6 +87,22 @@ object GrapeUtils extends Logging{
     set.toArray
   }
 
+  /**
+   * used to transform offset base edata store to eids based store.
+   * @tparam T data type
+   */
+  def rearrangeArrayWithIndex[T : ClassTag](array : PrimitiveArray[T], index : PrimitiveArray[Long]) : PrimitiveArray[T] = {
+    val len = array.size()
+    require(index.size() == len, s"array size ${len} neq eids array ${index.size()}")
+    val newArray = PrimitiveArray.create(getRuntimeClass[T], len).asInstanceOf[PrimitiveArray[T]]
+    var i = 0
+    while (i < len){
+      newArray.set(i, array.get(index.get(i)))
+      i += 1
+    }
+    newArray
+  }
+
   /** true for build vertex array, false for build edge array */
   def array2ArrowArray[T : ClassTag](array : PrimitiveArray[T], client : VineyardClient, vertex : Boolean) : Long = {
     val size = array.size()

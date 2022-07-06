@@ -18,7 +18,7 @@ abstract class GSEdgeTriplet[VD,ED] extends EdgeTriplet[VD,ED]{
   def setDstOid(dst : Long): Unit
   def setAttr(edgeAttr: ED) : Unit
 }
-class GSEdgeTripletImpl[VD,ED] extends GSEdgeTriplet[VD,ED]{
+class GSEdgeTripletImpl[@specialized(Long,Int,Double)VD, @specialized(Long,Int,Double)ED] extends GSEdgeTriplet[VD,ED]{
 
   override def setSrcOid(srcId : Long, srcAttr : VD): Unit ={
     this.srcId = srcId
