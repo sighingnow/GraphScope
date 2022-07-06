@@ -171,6 +171,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
     void iterateOnEdgesImpl(Vertex<Long> vertex, GSEdgeTripletImpl<VD, ED> edgeTriplet, boolean inEdge) {
         PropertyNbrUnit<Long> begin,end;
         if (inEdge){
+            //FIXME: use first nbr + offset rather than getIEBegin
             begin = graphXFragment.getIEBegin(vertex);
             end = graphXFragment.getIEEnd(vertex);
         }

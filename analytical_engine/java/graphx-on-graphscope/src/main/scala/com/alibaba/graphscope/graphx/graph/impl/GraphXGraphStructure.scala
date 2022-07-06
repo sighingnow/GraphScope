@@ -30,6 +30,17 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   val oeOffsetsArray: ImmutableTypedArray[Long] = csr.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
   val ieOffsetsArray : ImmutableTypedArray[Long] = csr.getIEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
 
+  val lid2Oid : PrimitiveArray[Long] = {
+    val res = PrimitiveArray.create(classOf[Long], vm.getVertexSize.toInt)
+    var i = 0;
+    val limit = vm.getVertexSize.toInt
+    while (i < limit){
+      res.set(i, vm.getId(i))
+      i += 1
+    }
+    res
+  }
+
 
   @inline
   def getOEOffset(lid : Long) : Long = {
@@ -157,7 +168,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   override def fnum(): Int = vm.fnum()
 
-  override def getId(vertex: Long): Long = vm.getId(vertex)
+  override def getId(vertex: Long): Long = lid2Oid.get(vertex)
 
   override def getVertex(oid: Long, vertex: Vertex[Long]): Boolean = vm.getVertex(oid,vertex)
 
@@ -309,7 +320,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     val endNbr = csr.getIEEnd(vid)
     var i = startInd
     while (beginNbr.getAddress < endNbr.getAddress){
-      array(i) = vm.getId(beginNbr.vid())
+      array(i) = lid2Oid.get(beginNbr.vid())
       i += 1
       beginNbr.addV(16)
     }
