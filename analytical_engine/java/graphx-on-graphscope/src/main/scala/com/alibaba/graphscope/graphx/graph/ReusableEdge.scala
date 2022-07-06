@@ -11,7 +11,7 @@ trait ReusableEdge[ED] extends Edge[ED]{
   def setAttr(ed : ED)
 }
 
-class ReusableEdgeImpl[ED] extends ReusableEdge[ED] {
+class ReusableEdgeImpl[@specialized(Long,Int,Double)ED] extends ReusableEdge[ED] {
   override def setSrcId(vertexId: VertexId) = {
     this.srcId = vertexId
   }

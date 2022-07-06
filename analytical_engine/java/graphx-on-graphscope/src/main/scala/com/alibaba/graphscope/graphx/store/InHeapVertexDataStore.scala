@@ -7,7 +7,7 @@ import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag
 
-class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val vdArray : PrimitiveArray[VD], val client : VineyardClient) extends VertexDataStore [VD] with Logging {
+class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val vdArray : PrimitiveArray[VD], val client : VineyardClient, val versionId : Int) extends VertexDataStore [VD] with Logging {
 
   var vertexDataV6dId: Long = 0L
   override def size: Long = vdArray.size()
@@ -24,4 +24,12 @@ class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val vdAr
 
   @inline
   override def setData(lid: Long, vd: VD): Unit = vdArray.set(lid, vd)
+
+  /**
+   * Indicating the version of cur vertex data. used by edge partition to judge whether are left behind.
+   * */
+  override def version: Int = versionId
+
+  override def withNewValues[VD2 : ClassTag](newArr : PrimitiveArray[VD2]) : VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](newArr, client, versionId + 1)
 }
+

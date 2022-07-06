@@ -77,8 +77,9 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       newValues.set(lid, getNbrIds(lid, edgeDirection))
       lid = bitSet.nextSetBit(lid + 1);
     }
-    this.withNewValues(new InHeapVertexDataStore[Array[VertexId]](newValues,client))
+    this.withNewValues(vertexData.withNewValues(newValues))
   }
+
   def generateVertexDataMessage : Iterator[(PartitionID, VertexDataMessage[VD])] = {
     val res = new ArrayBuffer[(PartitionID,VertexDataMessage[VD])]()
     if (graphStructure.isInstanceOf[GraphXGraphStructure]){
@@ -140,7 +141,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     }
     val time1 = System.nanoTime()
     log.info(s"map vertex partition cost ${(time1 - time0) / 1000000} ms")
-    this.withNewValues(new InHeapVertexDataStore[VD2](newValues, client))
+    this.withNewValues(vertexData.withNewValues[VD2](newValues))
   }
 
   def filter(pred: (VertexId, VD) => Boolean): GrapeVertexPartition[VD] = {
@@ -180,7 +181,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         }
       }
     }
-    this.withNewValues(new InHeapVertexDataStore[VD2](newValues,client)).withMask(newMask)
+    this.withNewValues(vertexData.withNewValues(newValues)).withMask(newMask)
   }
 
   /** Hides the VertexId's that are the same between `this` and `other`. */
@@ -228,7 +229,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       }
       val time1 = System.nanoTime()
       log.info(s"Left join between ${this} and ${other} cost ${(time1 - time0) / 1000000} ms")
-      this.withNewValues(new InHeapVertexDataStore[VD3](newValues,client))
+      this.withNewValues(vertexData.withNewValues(newValues))
     }
   }
 
@@ -248,7 +249,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         newValues.set(lid, pair._2)
       }
     }
-    this.withNewValues(new InHeapVertexDataStore[VD2](newValues,client)).withMask(newMask)
+    this.withNewValues(vertexData.withNewValues(newValues)).withMask(newMask)
   }
 
   /** Inner join another VertexPartition. */
@@ -266,7 +267,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         newValues.set(i, f(this.graphStructure.getId(i), this.getData(i), other.getData(i)))
         i = newMask.nextSetBit(i + 1)
       }
-      this.withNewValues(new InHeapVertexDataStore[VD2](newValues,client)).withMask(newMask)
+      this.withNewValues(vertexData.withNewValues(newValues)).withMask(newMask)
     }
   }
 
@@ -299,7 +300,7 @@ object GrapeVertexPartition extends Logging{
       newArray.set(i, vertexData.getData(i))
       i += 1
     }
-    val newVertexData = new InHeapVertexDataStore[VD](newArray,client)
+    val newVertexData = new InHeapVertexDataStore[VD](newArray,client,0)
     new GrapeVertexPartition[VD](pid, graphStructure, newVertexData, client, routingTable)
   }
 }
