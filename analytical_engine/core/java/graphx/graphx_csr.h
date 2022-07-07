@@ -385,21 +385,21 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     auto edges_num_ = srcOids->length();
     const oid_t* src_oid_ptr = srcOids->raw_values();
     const oid_t* dst_oid_ptr = dstOids->raw_values();
-    LoadEdgesImpl(srcOids, dstOids, edges_num_, graphx_vertex_map);
+    return LoadEdgesImpl(src_oid_ptr, dst_oid_ptr, edges_num_, graphx_vertex_map);
   }
 
   boost::leaf::result<void> LoadEdges(
       std::vector<int64_t>& srcOids, std::vector<int64_t>& dstOids,
       GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map) {
-    CHECK_EQ(srcOids->size(), dstOids->size());
-    auto edges_num_ = srcOids->size();
+    CHECK_EQ(srcOids.size(), dstOids.size());
+    auto edges_num_ = srcOids.size();
     const oid_t* src_oid_ptr = srcOids.data();
     const oid_t* dst_oid_ptr = dstOids.data();
-    LoadEdgesImpl(srcOids, dstOids, edges_num_, graphx_vertex_map);
+    return LoadEdgesImpl(src_oid_ptr, dst_oid_ptr, edges_num_, graphx_vertex_map);
   }
 
   boost::leaf::result<void> LoadEdgesImpl(
-      const oid_t* src_oid_ptr, const oid_t* dst_oid_ptr, int64_t edges_num,
+      const oid_t* src_oid_ptr, const oid_t* dst_oid_ptr, int64_t edges_num_,
       GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map) {
     vnum_ = graphx_vertex_map.GetInnerVertexSize();
     std::vector<vid_t> srcLids, dstLids;
