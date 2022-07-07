@@ -16,7 +16,7 @@ import scala.reflect.ensureAccessible
 import scala.reflect.ClassTag
 
 /** the edge array only contains out edges, we use in edge as a comparison  */
-class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphXCSR[Long],  var srcLids : Array[Long],
+class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Array[Long], val csr : GraphXCSR[Long],  var srcLids : Array[Long],
                            val dstLids : Array[Long], val srcOids : Array[Long],
                            val dstOids : Array[Long],
                            val eids : Array[Long]) extends GraphStructure with Logging{
@@ -30,17 +30,6 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   val oeOffsetsArray: ImmutableTypedArray[Long] = csr.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
   val ieOffsetsArray : ImmutableTypedArray[Long] = csr.getIEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
-
-  val lid2Oid : Array[Long] = {
-    val res = new Array[Long](vm.getVertexSize.toInt)
-    var i = 0;
-    val limit = vm.getVertexSize.toInt
-    while (i < limit){
-      res(i) = vm.getId(i)
-      i += 1
-    }
-    res
-  }
 
 
   @inline
@@ -179,9 +168,9 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   override def getInnerVertexSize: Long = vm.innerVertexSize()
 
-  override def innerVertexLid2Oid(lid: Long): Long = vm.innerVertexLid2Oid(lid)
+  override def innerVertexLid2Oid(lid: Long): Long = lid2Oid(lid.toInt)
 
-  override def outerVertexLid2Oid(lid: Long): Long = vm.outerVertexLid2Oid(lid)
+  override def outerVertexLid2Oid(lid: Long): Long = lid2Oid(lid.toInt)
 
   override def getOuterVertexSize: Long = vm.getOuterVertexSize
 

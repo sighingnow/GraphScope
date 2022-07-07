@@ -136,6 +136,22 @@ vineyard::ObjectID TestGraphXCSR(
     csr_id = csr->id();
     LOG(INFO) << "Persist csr id: " << csr->id();
   }
+  {
+    gs::BasicGraphXCSRBuilder<int64_t, uint64_t> builder(client);
+    std::vector<int64_t> src{1, 2, 3, 4};
+    std::vector<int64_t> dst{2, 3, 4, 5};
+    builder.LoadEdges(src, dst, graphx_vm);
+    auto csr = std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t>>(
+        builder.Seal(client));
+
+    // VINEYARD_CHECK_OK(client.Persist(csr->id()));
+    auto tmp_id = csr->id();
+    LOG(INFO) << "Persist csr id: " << csr->id();
+    std::shared_ptr<gs::GraphXCSR<uint64_t>> csr =
+        std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t>>(
+            client.GetObject(tmp_id));
+    LOG(INFO) << "Got csr " << csr->id();
+  }
   std::shared_ptr<gs::GraphXCSR<uint64_t>> csr =
       std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t>>(
           client.GetObject(csr_id));

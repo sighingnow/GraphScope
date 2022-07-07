@@ -93,28 +93,8 @@ object GrapeEdgeRDD extends Logging{
     val sc = SparkContext.getOrCreate()
     log.info(s"hosts ${collectHosts.mkString(",")}, locations ${locations.mkString(",")}")
     val vineyardRDD = new VineyardRDD(sc, locations,collectHosts)
-    //test correctness
-    val tmp1 = sc.parallelize(0 until numPartitions, numPartitions)
-      val vineyard2 = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), vineyardRDD, tmp1){
-      (iter1, iter2) => {
-        val client = iter1.next()
-        val value = iter2.next()
-        log.info(s"got value first ${value}")
-        Iterator(client)
-      }
-    }
-    log.info(s"after zip on vineyard rdd ${vineyard2.count()}")
-        val vineyard3 = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), vineyardRDD,vineyard2){
-      (iter1, iter2) => {
-        val client = iter1.next()
-        val value = iter2.next()
-        log.info(s"got value second ${value}")
-        Iterator(client)
-      }
-    }
-    log.info(s"after zip on vineyard rdd ${vineyard3.count()}")
 
-    val metaPartitions = vineyard3.mapPartitionsWithIndex((pid,iter) => {
+    val metaPartitions = vineyardRDD.mapPartitionsWithIndex((pid,iter) => {
       val client = iter.next()
       log.info(s"client ${client}")
       val grapeMeta = new GrapeMeta[VD,ED](pid, numPartitions, client, ExecutorUtils.getHostName)
@@ -188,14 +168,23 @@ object GrapeEdgeRDD extends Logging{
         val dstOids = new Array[Long](edgesNum)
         val dstLids = new Array[Long](edgesNum)
         val eids = new Array[Long](edgesNum)
-        val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
         var curLid = 0
         val endLid = meta.globalVM.innerVertexSize()
         val vm = meta.globalVM
         val oeOffsetsArray: ImmutableTypedArray[Long] = meta.graphxCSR.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
         log.info(s"all edges num: ${meta.graphxCSR.getOutEdgesNum}")
+        val lid2Oid : Array[Long] = {
+          val res = new Array[Long](vm.getVertexSize.toInt)
+          var i = 0;
+          val limit = vm.getVertexSize.toInt
+          while (i < limit){
+            res(i) = vm.getId(i)
+            i += 1
+          }
+          res
+        }
         while (curLid < endLid){
-          val curOid = meta.globalVM.getId(curLid)
+          val curOid = lid2Oid(curLid)
           val startNbrOffset = oeOffsetsArray.get(curLid)
           val endNbrOffset = oeOffsetsArray.get(curLid + 1)
 //          log.info(s" begin offset ${startNbrOffset}, end offset ${endNbrOffset}, out degree for ${curOid} ${meta.graphxCSR.getOutDegree(curLid)}")
@@ -209,10 +198,8 @@ object GrapeEdgeRDD extends Logging{
           val nbr = meta.graphxCSR.getOEBegin(curLid)
           while (j < endNbrOffset){
             dstLids(j) = nbr.vid()
-            vertex.SetValue(nbr.vid())
-            dstOids(j) =  vm.getId(nbr.vid())
+            dstOids(j) = lid2Oid(nbr.vid().toInt)
             eids(j) = nbr.eid()
-//            log.info(s"visiting edge ${curLid}->${nbr.vid()}, eid ${nbr.eid()}")
             nbr.addV(16);
 	          j += 1
           }
@@ -220,7 +207,7 @@ object GrapeEdgeRDD extends Logging{
         }
         val time1 = System.nanoTime()
         log.info(s"[Initializing edge cache in heap cost ]: ${(time1 - time0) / 1000000} ms")
-        val graphStructure = new GraphXGraphStructure(meta.globalVM, meta.graphxCSR, srcLids, dstLids, srcOids, dstOids, eids)
+        val graphStructure = new GraphXGraphStructure(meta.globalVM,lid2Oid, meta.graphxCSR, srcLids, dstLids, srcOids, dstOids, eids)
         Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, graphStructure, meta.vineyardClient, meta.edataArray))
       }
       else Iterator.empty

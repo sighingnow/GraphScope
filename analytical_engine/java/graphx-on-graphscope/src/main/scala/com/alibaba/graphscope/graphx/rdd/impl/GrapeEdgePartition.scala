@@ -251,8 +251,10 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 }
 
 class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : Int,val client : VineyardClient) extends Logging{
-  val srcOidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
-  val dstOidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
+//  val srcOidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
+//  val dstOidBuilder: ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
+  val srcOids = ScalaFFIFactory.newLongVector
+  val dstOids = ScalaFFIFactory.newLongVector
 //  val edataBuilder : ArrowArrayBuilder[ED] = ScalaFFIFactory.newArrowArrayBuilder(GrapeUtils.getRuntimeClass[ED].asInstanceOf[Class[ED]])
   val innerOidBuilder : ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
   val outerOidBuilder : ArrowArrayBuilder[Long] = ScalaFFIFactory.newSignedLongArrayBuilder()
@@ -282,11 +284,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
       }
     }
     log.info(s"Found totally ${innerHashSet.size} in ${ExecutorUtils.getHostName}")
-    innerOidBuilder.reserve(innerHashSet.size)
-    val iter = innerHashSet.iterator
-    while (iter.hasNext){
-      innerOidBuilder.unsafeAppend(iter.next());
-    }
+    val time0 = System.nanoTime()
     //Build outer oids
     val outerHashSet = new OpenHashSet[Long]
     for (shuffle <- lists){
@@ -313,14 +311,24 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
         i += 1
       }
     }
+    val time01 = System.nanoTime()
+    innerOidBuilder.reserve(innerHashSet.size)
+    val iter = innerHashSet.iterator
+    while (iter.hasNext){
+      innerOidBuilder.unsafeAppend(iter.next());
+    }
     outerOidBuilder.reserve(outerHashSet.size)
     val outerIter = outerHashSet.iterator
     while (outerIter.hasNext){
       outerOidBuilder.unsafeAppend(outerIter.next())
     }
+    val time1 = System.nanoTime()
     val localVertexMapBuilder = ScalaFFIFactory.newLocalVertexMapBuilder(client, innerOidBuilder, outerOidBuilder)
     val localVM = localVertexMapBuilder.seal(client).get()
-    log.info(s"${ExecutorUtils.getHostName}: Finish building local vm: ${localVM.id()}, ${localVM.getInnerVerticesNum}");
+    val time2 = System.nanoTime()
+    log.info(s"${ExecutorUtils.getHostName}: Finish building local vm: ${localVM.id()}, ${localVM.getInnerVerticesNum}, " +
+      s"select out vertices cost ${(time01 - time0) / 1000000} ms adding buf take ${(time1 - time01)/ 1000000} ms," +
+      s"total building time ${(time2 - time0)/ 1000000} ms")
     localVM
   }
 
@@ -348,37 +356,36 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
   def buildCSR(globalVMID : Long): (GraphXVertexMap[Long,Long], GraphXCSR[Long]) = {
     val edgesNum = lists.map(shuffle => shuffle.totalSize()).sum
     log.info(s"Got totally ${lists.length}, edges ${edgesNum} in ${ExecutorUtils.getHostName}")
-    srcOidBuilder.reserve(edgesNum)
-    dstOidBuilder.reserve(edgesNum)
+    srcOids.resize(edgesNum)
+    dstOids.resize(edgesNum)
     log.info(s"Constructing csr with global vm ${globalVMID}")
     val graphxVertexMapGetter = ScalaFFIFactory.newVertexMapGetter()
     val graphxVertexMap = graphxVertexMapGetter.get(client, globalVMID).get()
     log.info(s"Got graphx vertex map: ${graphxVertexMap}, total vnum ${graphxVertexMap.getTotalVertexSize}, fid ${graphxVertexMap.fid()}/${graphxVertexMap.fnum()}")
+    var ind = 0
     for (shuffle <- lists){
       log.info(s"Processing ${shuffle}")
-      val (srcArrays, dstArrays, attrArrays) = shuffle.getArrays
+      val (srcArrays, dstArrays, _) = shuffle.getArrays
       var i = 0
       val outerArrayLimit = srcArrays.length
       while (i < outerArrayLimit){
         var j = 0
         val innerLimit = srcArrays(i).length
         require(dstArrays(i).length == innerLimit)
-        require(attrArrays(i).length == innerLimit)
         val srcArray = srcArrays(i)
         val dstArray = dstArrays(i)
-        val attrArray = attrArrays(i)
         while (j < innerLimit){
-          srcOidBuilder.unsafeAppend(srcArray(j))
-          dstOidBuilder.unsafeAppend(dstArray(j))
-//          edataBuilder.unsafeAppend(attrArray(j))
+          srcOids.set(ind,srcArray(j))
+          dstOids.set(ind,dstArray(j))
           j += 1
+          ind += 1
         }
         i += 1
       }
     }
     log.info("Finish adding edges to builders")
     val graphxCSRBuilder = ScalaFFIFactory.newGraphXCSRBuilder(client)
-    graphxCSRBuilder.loadEdges(srcOidBuilder,dstOidBuilder,graphxVertexMap)
+    graphxCSRBuilder.loadEdges(srcOids,dstOids,graphxVertexMap)
     val graphxCSR = graphxCSRBuilder.seal(client).get()
     (graphxVertexMap,graphxCSR)
   }

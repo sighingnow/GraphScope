@@ -5,6 +5,7 @@ import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.fragment.{ArrowProjectedFragmentMapper, IFragment}
 import com.alibaba.graphscope.graphx._
+import com.alibaba.graphscope.stdcxx.StdVector
 import org.apache.spark.internal.Logging
 
 import java.util.HashMap
@@ -41,6 +42,12 @@ object ScalaFFIFactory extends Logging{
       getArrowArrayBuilderFactory("gs::ArrowArrayBuilder<int32_t>").create().asInstanceOf[ArrowArrayBuilder[T]]
     }
     else throw new IllegalStateException("Not recognized " + clz.getName)
+  }
+
+  def newLongVector : StdVector[Long] = {
+    val factory = FFITypeFactory.getFactory(classOf[StdVector[Long]],
+      "std::vector<int64_t>").asInstanceOf[StdVector.Factory[Long]]
+    factory.create()
   }
 
   def newUnsignedLongArrayBuilder(): ArrowArrayBuilder[Long] ={

@@ -10,6 +10,7 @@ import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder;
 import com.alibaba.graphscope.stdcxx.StdSharedPtr;
+import com.alibaba.graphscope.stdcxx.StdVector;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
 
@@ -20,6 +21,10 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 public interface BasicGraphXCSRBuilder<OID_T,VID_T> extends FFISerializable {
     @FFINameAlias("LoadEdges")
     void loadEdges(@CXXReference ArrowArrayBuilder<OID_T> srcBuilder, @CXXReference ArrowArrayBuilder<OID_T> dstBuilder,
+        @CXXReference GraphXVertexMap<OID_T,VID_T> graphXVertexMap);
+
+    @FFINameAlias("LoadEdges")
+    void loadEdges(@CXXReference StdVector<OID_T> srcs, @CXXReference StdVector<OID_T> dsts,
         @CXXReference GraphXVertexMap<OID_T,VID_T> graphXVertexMap);
 
     @FFINameAlias("MySeal")
