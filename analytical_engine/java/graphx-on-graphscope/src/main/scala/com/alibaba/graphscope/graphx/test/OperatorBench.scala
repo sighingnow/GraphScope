@@ -4,6 +4,7 @@ import com.alibaba.graphscope.graphx.GraphScopeHelper
 import org.apache.spark.graphx.{EdgeTriplet, Graph, GraphLoader, PartitionID, TripletFields}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.storage.StorageLevel
 
 object OperatorBench extends Logging{
   def main(array: Array[String]) : Unit = {
@@ -68,25 +69,28 @@ object OperatorBench extends Logging{
     if (run.equals("gs")){
 
       val grapeGraph = GraphScopeHelper.edgeListFile(sc, fileName,false,partNum)
-        .mapVertices((vid,vd) => vd.toLong).mapEdges(edge=>edge.attr.toLong).cache()
+        .mapVertices((vid,vd) => vd.toLong).mapEdges(edge=>edge.attr.toLong).persist(StorageLevel.MEMORY_ONLY)
       log.info(s"grape graph ${grapeGraph.numVertices},edges ${grapeGraph.numEdges}")
 
       val grapeTime10 = System.nanoTime()
       val grapeGraph1 = mapDifferentType(mapDifferentType(mapDifferentType(mapping(mapping(mapping(grapeGraph))))))
       log.info(s"[Operator Bench------] Finish mapping grape vertices ${grapeGraph1.vertices.count()}")
       val grapeTime11 = System.nanoTime()
+      log.info(s"[OperatorBench]: map vertices grape time ${(grapeTime11 - grapeTime10) / 1000000} ms")
       grapeGraph1.unpersist()
 
       val grapeTime20 = System.nanoTime()
       val grapeGraph2 = mapEdges(mapEdges(mapEdges(grapeGraph)))
       log.info(s"[Operator Bench------]Finish mapping grape edge, counts vertices ${grapeGraph2.vertices.count()}, edges ${grapeGraph2.edges.count()}")
       val grapeTime21 = System.nanoTime()
+      log.info(s"[OperatorBench]: map [edges grape] time ${(grapeTime21 - grapeTime20) / 1000000} ms")
       grapeGraph2.unpersist()
 
       val grapeTime30 = System.nanoTime()
       val grapeGraph3 = outerJoin(outerJoin(outerJoin(grapeGraph)))
       log.info(s"[Operator Bench------]Finish join, counts vertices ${grapeGraph3.vertices.count()}, edges ${grapeGraph3.edges.count()}")
       val grapeTime31 = System.nanoTime()
+      log.info(s"[OperatorBench]: outer join grape time ${(grapeTime31 - grapeTime30) / 1000000} ms")
       grapeGraph3.unpersist()
 
       //1. map edge iterator
@@ -94,19 +98,22 @@ object OperatorBench extends Logging{
       val grapeGraph4 = mapEdgeIterator(mapEdgeIterator(mapEdgeIterator(grapeGraph)))
       log.info(s"[Operator Bench------]Finish mapping grape edge iterator, counts vertices ${grapeGraph4.vertices.count()}, edges ${grapeGraph4.edges.count()}")
       val grapeTime41 = System.nanoTime()
+      log.info(s"[OperatorBench]: map [edge iterator] grape time ${(grapeTime41 - grapeTime40) / 1000000} ms")
       grapeGraph4.unpersist()
 
       val grapeTime50 = System.nanoTime()
       val grapeGraph5 = mapTriplet(mapTriplet(mapTriplet(grapeGraph)))
       log.info(s"[Operator Bench------]Finish mapping triplet, counts vertices ${grapeGraph5.vertices.count()}, edges ${grapeGraph5.edges.count()}")
       val grapeTime51 = System.nanoTime()
+      log.info(s"[OperatorBench]: map [edge triplet] grape time ${(grapeTime51 - grapeTime50) / 1000000} ms")
       grapeGraph5.unpersist()
 
       //1. map edge triplet iterator
       val grapeTime60 = System.nanoTime()
       val grapeGraph6 = mapTripletIterator(mapTripletIterator(mapTripletIterator(grapeGraph)))
-      log.info(s"[Operator Bench------]Finish mapping triplet, counts vertices ${grapeGraph6.vertices.count()}, edges ${grapeGraph6.edges.count()}")
+      log.info(s"[Operator Bench------]Finish mapping triplet iterator, counts vertices ${grapeGraph6.vertices.count()}, edges ${grapeGraph6.edges.count()}")
       val grapeTime61 = System.nanoTime()
+      log.info(s"[OperatorBench]: map [edge triplet iterator] grape time ${(grapeTime61 - grapeTime60) / 1000000} ms")
       grapeGraph6.unpersist()
 
       log.info(s"[OperatorBench]: map vertices grape time ${(grapeTime11 - grapeTime10) / 1000000} ms")
@@ -119,7 +126,8 @@ object OperatorBench extends Logging{
     }
     else if (run.equals("graphx")){
       val rawGraph = GraphLoader.edgeListFile(sc, fileName,false, partNum)
-      val graphxGraph = rawGraph.mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong)
+      val graphxGraph = rawGraph.mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).persist(StorageLevel.MEMORY_ONLY)
+      log.info(s"graphx graph ${graphxGraph.vertices.count()}, ${graphxGraph.edges.count()}")
       val graphxTime10 = System.nanoTime()
       val graphxGraph1 = mapDifferentType(mapDifferentType(mapDifferentType(mapping(mapping(mapping(graphxGraph))))))
       log.info(s"[Operator Bench------]Finish mapping graphx vertices ${graphxGraph1.vertices.count()}")
@@ -152,7 +160,7 @@ object OperatorBench extends Logging{
 
       val graphxTime60 = System.nanoTime()
       val graphxGraph6 = mapTripletIterator(mapTripletIterator(mapTripletIterator(graphxGraph)))
-      log.info(s"[Operator Bench------]Finish mapping triplet, counts vertices ${graphxGraph6.vertices.count()} edges ${graphxGraph6.edges.count()}")
+      log.info(s"[Operator Bench------]Finish mapping triplet iterator, counts vertices ${graphxGraph6.vertices.count()} edges ${graphxGraph6.edges.count()}")
       val graphxTime61 = System.nanoTime()
       graphxGraph6.unpersist()
 

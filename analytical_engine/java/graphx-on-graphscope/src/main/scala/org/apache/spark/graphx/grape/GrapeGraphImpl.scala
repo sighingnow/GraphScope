@@ -257,7 +257,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       }
     }
     val newEdges = grapeEdges.withPartitionsRDD(newEdgePartitions)
-    new GrapeGraphImpl[VD,ED2](grapeVertices,newEdges)
+    new GrapeGraphImpl[VD,ED2](newVertices,newEdges)
   }
 
   override def reverse: Graph[VD, ED] = {
