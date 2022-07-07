@@ -5,10 +5,9 @@ import com.alibaba.graphscope.graphx.graph.GraphStructure
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import com.alibaba.graphscope.graphx.rdd.RoutingTable
 import com.alibaba.graphscope.graphx.store.{InHeapVertexDataStore, VertexDataStore}
-import com.alibaba.graphscope.graphx.utils.{GrapeUtils, IdParser, ScalaFFIFactory}
+import com.alibaba.graphscope.graphx.utils.{IdParser, ScalaFFIFactory}
 import com.alibaba.graphscope.graphx.{VertexDataBuilder, VineyardClient}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
-import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.Partition
 import org.apache.spark.graphx.{EdgeDirection, PartitionID, VertexId}
 import org.apache.spark.internal.Logging
@@ -72,9 +71,9 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
   def collectNbrIds(edgeDirection: EdgeDirection) : GrapeVertexPartition[Array[VertexId]] = {
     var lid = bitSet.nextSetBit(0)
-    val newValues = PrimitiveArray.create(classOf[Array[VertexId]], vertexData.size.toInt)
+    val newValues = new Array[Array[VertexId]](vertexData.size.toInt)
     while (lid >= 0){
-      newValues.set(lid, getNbrIds(lid, edgeDirection))
+      newValues(lid) = getNbrIds(lid, edgeDirection)
       lid = bitSet.nextSetBit(lid + 1);
     }
     this.withNewValues(vertexData.withNewValues(newValues))
@@ -133,10 +132,10 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   def map[VD2: ClassTag](f: (VertexId, VD) => VD2): GrapeVertexPartition[VD2] = {
     // Construct a view of the map transformation
     val time0 = System.nanoTime()
-    val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], graphStructure.getVertexSize.toInt).asInstanceOf[PrimitiveArray[VD2]]
+    val newValues = new Array[VD2](graphStructure.getVertexSize.toInt)
     var i = bitSet.nextSetBit(0)
     while (i >= 0) {
-      newValues.set(i, f(graphStructure.getId(i), getData(i)))
+      newValues(i) =  f(graphStructure.getId(i), getData(i))
       i = bitSet.nextSetBit(i + 1)
     }
     val time1 = System.nanoTime()
@@ -165,7 +164,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
                                           iter: Iterator[Product2[VertexId, VD2]],
                                           reduceFunc: (VD2, VD2) => VD2): GrapeVertexPartition[VD2] = {
     val newMask = new BitSet(partVnum.toInt)
-    val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], fragVnum).asInstanceOf[PrimitiveArray[VD2]]
+    val newValues = new Array[VD2](fragVnum)
 
     iter.foreach { product =>
       val oid = product._1
@@ -174,10 +173,10 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       val lid = vertex.GetValue().toInt
       if (lid >= 0) {
         if (newMask.get(lid)) {
-          newValues.set(lid,reduceFunc(newValues.get(lid), vdata))
+          newValues(lid) = reduceFunc(newValues(lid), vdata)
         } else { // otherwise just store the new value
           newMask.set(lid)
-          newValues.set(lid, vdata)
+          newValues(lid) =  vdata
         }
       }
     }
@@ -220,11 +219,11 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     } else {
       /** for vertex not represented in other, we use original vertex */
       val time0 = System.nanoTime()
-      val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD3], fragVnum).asInstanceOf[PrimitiveArray[VD3]]
+      val newValues = new Array[VD3](fragVnum)
       var i = this.bitSet.nextSetBit(0)
       while (i >= 0) {
         val otherV: Option[VD2] = if (other.bitSet.get(i)) Some(other.getData(i)) else None
-        newValues.set(i, f(this.graphStructure.getId(i), this.getData(i), otherV))
+        newValues(i) = f(this.graphStructure.getId(i), this.getData(i), otherV)
         i = this.bitSet.nextSetBit(i + 1)
       }
       val time1 = System.nanoTime()
@@ -239,14 +238,14 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   def createUsingIndex[VD2: ClassTag](iter: Iterator[Product2[VertexId, VD2]])
   : GrapeVertexPartition[VD2] = {
     val newMask = new BitSet(partVnum.toInt)
-    val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], fragVnum).asInstanceOf[PrimitiveArray[VD2]]
+    val newValues = new Array[VD2](fragVnum)
     iter.foreach { pair =>
 //      val pos = self.index.getPos(pair._1)
       val vertexFound = graphStructure.getVertex(pair._1,vertex)
       if (vertexFound){
         val lid = vertex.GetValue().toInt
         newMask.set(lid)
-        newValues.set(lid, pair._2)
+        newValues(lid) = pair._2
       }
     }
     this.withNewValues(vertexData.withNewValues(newValues)).withMask(newMask)
@@ -261,10 +260,10 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       innerJoin(createUsingIndex(other.iterator))(f)
     } else {
       val newMask = this.bitSet & other.bitSet
-      val newValues = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD2], fragVnum).asInstanceOf[PrimitiveArray[VD2]]
+      val newValues = new Array[VD2](fragVnum)
       var i = newMask.nextSetBit(startLid)
       while (i >= 0) {
-        newValues.set(i, f(this.graphStructure.getId(i), this.getData(i), other.getData(i)))
+        newValues(i) =  f(this.graphStructure.getId(i), this.getData(i), other.getData(i))
         i = newMask.nextSetBit(i + 1)
       }
       this.withNewValues(vertexData.withNewValues(newValues)).withMask(newMask)
@@ -293,11 +292,11 @@ object GrapeVertexPartition extends Logging{
     log.info(s"Partition ${pid} built vertex data ${vertexData}")
     require(graphStructure.getVertexSize == vertexData.verticesNum(), s"csr inner vertex should equal to vmap ${graphStructure.getInnerVertexSize}, ${vertexData.verticesNum()}")
     //copy to heap
-    val newArray = PrimitiveArray.create(GrapeUtils.getRuntimeClass[VD], vertexData.verticesNum().toInt).asInstanceOf[PrimitiveArray[VD]]
+    val newArray = new Array[VD](vertexData.verticesNum().toInt)
     var i = 0
     val limit = vertexData.verticesNum()
     while (i < limit){
-      newArray.set(i, vertexData.getData(i))
+      newArray(i) = vertexData.getData(i)
       i += 1
     }
     val newVertexData = new InHeapVertexDataStore[VD](newArray,client,0)

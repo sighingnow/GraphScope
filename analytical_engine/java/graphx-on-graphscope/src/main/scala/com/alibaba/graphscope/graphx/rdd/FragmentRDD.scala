@@ -8,12 +8,9 @@ import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.graphx.rdd.FragmentPartition.getHost
 import com.alibaba.graphscope.graphx.rdd.impl.GrapeEdgePartition
-import com.alibaba.graphscope.graphx.utils.{GrapeUtils, ScalaFFIFactory}
-import com.alibaba.graphscope.utils.array.PrimitiveArray
+import com.alibaba.graphscope.graphx.utils.ScalaFFIFactory
 import org.apache.spark.graphx.PartitionID
-import org.apache.spark.graphx.grape.impl.GrapeEdgeRDDImpl
 import org.apache.spark.graphx.grape.{GrapeEdgeRDD, GrapeVertexRDD, PartitionAwareZippedBaseRDD}
-import org.apache.spark.graphx.scheduler.cluster.ExecutorInfoHelper
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, SparkContext, TaskContext}
@@ -124,14 +121,14 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
           val (pid,(client,frag)) = fragIter.next()
           val structure = structureIter.next()
           val time0 = System.nanoTime()
-          val newEdata = PrimitiveArray.create(GrapeUtils.getRuntimeClass[ED], structure.getOutEdgesNum.toInt).asInstanceOf[PrimitiveArray[ED]]
+          val newEdata = new Array[ED](structure.getOutEdgesNum.toInt)
           if (frag.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
             val projectedFragment = frag.asInstanceOf[ArrowProjectedAdaptor[Long, Long, _, _]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
             val edataAccessor = projectedFragment.getEdataArrayAccessor.asInstanceOf[TypedArray[ED]]
             var i = 0
             val len = projectedFragment.getInEdgeNum + projectedFragment.getOutEdgeNum
             while (i < len){
-              newEdata.set(i, edataAccessor.get(i))
+              newEdata(i) = edataAccessor.get(i)
               i += 1
             }
           }

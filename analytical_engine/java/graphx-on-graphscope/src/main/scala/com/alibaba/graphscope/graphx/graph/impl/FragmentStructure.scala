@@ -18,7 +18,7 @@ import scala.reflect.ClassTag
 class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
                         var srcLids : PrimitiveArray[Long] = null,var dstLids : PrimitiveArray[Long] = null,
                         var srcOids : PrimitiveArray[Long] = null, var dstOids : PrimitiveArray[Long] = null,
-                        var eids : PrimitiveArray[Long] = null) extends GraphStructure with Logging with Serializable {
+                        var eids : Array[Long] = null) extends GraphStructure with Logging with Serializable {
   val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
   val fid2Pid = new Array[Int](fragment.fnum())
 
@@ -46,9 +46,9 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
   val startLid = 0
   val endLid: Long = fragment.getInnerVerticesNum()
   //FIXME: implement these
-  override val inDegreeArray: PrimitiveArray[Int] = getInDegreeArray
-  override val outDegreeArray: PrimitiveArray[Int] = getOutDegreeArray
-  override val inOutDegreeArray: PrimitiveArray[Int] = getInOutDegreeArray
+  override val inDegreeArray: Array[Int] = getInDegreeArray
+  override val outDegreeArray: Array[Int] = getOutDegreeArray
+  override val inOutDegreeArray: Array[Int] = getInOutDegreeArray
   override val mirrorVertices: Array[Array[VertexId]] = getMirrorVertices
 
   private def getMirrorVertices : Array[Array[Long]] = {
@@ -93,7 +93,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
       srcLids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
       dstOids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
       dstLids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
-      eids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
+      eids = new Array[Long](getOutEdgesNum.toInt)
       val nbr = projectedFragment.getOutEdgesPtr
 
       val time0 = System.nanoTime()
@@ -116,7 +116,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
           val dstOid = fragment.getId(vertex)
           dstLids.set(tmp, dstLid)
           dstOids.set(tmp, dstOid)
-          eids.set(tmp, nbr.eid())
+          eids(tmp.toInt) =  nbr.eid()
           nbr.addV(NBR_SIZE)
           tmp += 1
         }
@@ -130,17 +130,17 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     }
   }
 
-  private def getOutDegreeArray : PrimitiveArray[Int] = {
+  private def getOutDegreeArray : Array[Int] = {
     val time0 = System.nanoTime()
     val len = fragment.getVerticesNum.toInt
-    val res = PrimitiveArray.create(classOf[Int], len)
-    var i = 0L
+    val res = new Array[Int](len)
+    var i = 0
     while (i < endLid){
-      res.set(i, getOutDegree(i).toInt)
+      res(i) = getOutDegree(i).toInt
       i += 1
     }
     while (i < len){
-      res.set(i, 0)
+      res(i) = 0
       i += 1
     }
     val time1 = System.nanoTime()
@@ -148,17 +148,17 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     res
   }
 
-  private def getInDegreeArray : PrimitiveArray[Int] = {
+  private def getInDegreeArray : Array[Int] = {
     val time0 = System.nanoTime()
     val len = fragment.getVerticesNum.toInt
-    val res = PrimitiveArray.create(classOf[Int], len)
-    var i = 0L
+    val res = new Array[Int](len)
+    var i = 0
     while (i < endLid){
-      res.set(i, getInDegree(i).toInt)
+      res(i) = getInDegree(i).toInt
       i += 1
     }
     while (i < len){
-      res.set(i, 0)
+      res(i) = 0
       i += 1
     }
     val time1 = System.nanoTime()
@@ -166,16 +166,16 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     res
   }
 
-  private def getInOutDegreeArray : PrimitiveArray[Int] = {
+  private def getInOutDegreeArray : Array[Int] = {
     val len = fragment.getVerticesNum.toInt
-    val res = PrimitiveArray.create(classOf[Int], len)
-    var i = 0L
+    val res = new Array[Int](len)
+    var i = 0
     while (i < endLid) {
-      res.set(i, getInDegree(i).toInt + getOutDegree(i).toInt)
+      res(i) = getInDegree(i).toInt + getOutDegree(i).toInt
       i += 1
     }
     while (i < len) {
-      res.set(i, 0)
+      res(i) =  0
       i += 1
     }
     res
@@ -263,7 +263,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
   }
 
   /** For us, the input edatas should be null, and we shall not reply on it to get edge data. */
-  override def iterator[ED: ClassTag](edatas: PrimitiveArray[ED], activeSet: BitSet, edgeReversed: Boolean): Iterator[Edge[ED]] = {
+  override def iterator[ED: ClassTag](edatas: Array[ED], activeSet: BitSet, edgeReversed: Boolean): Iterator[Edge[ED]] = {
     if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)){
       val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,_,ED]]
       newProjectedIterator(projectedFragment.getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,ED]],edatas,activeSet,edgeReversed)
@@ -273,7 +273,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     }
   }
 
-  override def tripletIterator[VD: ClassTag, ED: ClassTag](vertexDataStore: VertexDataStore[VD], edatas: PrimitiveArray[ED], activeSet: BitSet,edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false): Iterator[EdgeTriplet[VD, ED]] = {
+  override def tripletIterator[VD: ClassTag, ED: ClassTag](vertexDataStore: VertexDataStore[VD], edatas: Array[ED], activeSet: BitSet,edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false): Iterator[EdgeTriplet[VD, ED]] = {
     if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)){
       val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,VD,ED]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,VD,ED]]
       log.info(s"creating triplet iterator v2 with java edata, with vd store ${vertexDataStore}")
@@ -284,11 +284,11 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     }
   }
 
-  private def newProjectedIterator[ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, _, ED], edatas : PrimitiveArray[ED], bitSet: BitSet, edgeReverse : Boolean) : Iterator[Edge[ED]] = {
+  private def newProjectedIterator[ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, _, ED], edatas : Array[ED], bitSet: BitSet, edgeReverse : Boolean) : Iterator[Edge[ED]] = {
     if (edgeReverse){
       new Iterator[Edge[ED]]{
         val edge: ReusableEdge[ED] =  new ReusableEdgeImpl[ED];
-        var offset : Long = bitSet.nextSetBit(0)
+        var offset : Int = bitSet.nextSetBit(0)
         val nbr : PropertyNbrUnit[Long]= frag.getOutEdgesPtr
         val initAddress : Long = nbr.getAddress
 
@@ -300,9 +300,9 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
           nbr.setAddress(initAddress + NBR_SIZE * offset)
           edge.srcId = dstOids.get(offset)
           edge.dstId = srcOids.get(offset)
-          edge.eid = eids.get(offset)
+          edge.eid = eids(offset)
           edge.offset = offset
-          edge.attr = edatas.get(edge.eid)
+          edge.attr = edatas(edge.eid.toInt)
           offset = bitSet.nextSetBit((offset + 1).toInt)
           edge
         }
@@ -323,9 +323,9 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
           nbr.setAddress(initAddress + NBR_SIZE * offset)
           edge.dstId = dstOids.get(offset)
           edge.srcId = srcOids.get(offset)
-          edge.eid = eids.get(offset)
+          edge.eid = eids(offset.toInt)
           edge.offset = offset
-          edge.attr = edatas.get(edge.eid)
+          edge.attr = edatas(edge.eid.toInt)
           offset = bitSet.nextSetBit((offset + 1).toInt)
           edge
         }
@@ -333,10 +333,10 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     }
 
   }
-  private def newProjectedTripletIterator[VD: ClassTag,ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, VD, ED],vertexDataStore: VertexDataStore[VD], edatas : PrimitiveArray[ED],bitSet: BitSet, edgeReversed: Boolean, includeSrc : Boolean, includeDst : Boolean) : Iterator[EdgeTriplet[VD,ED]] = {
+  private def newProjectedTripletIterator[VD: ClassTag,ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, VD, ED],vertexDataStore: VertexDataStore[VD], edatas : Array[ED],bitSet: BitSet, edgeReversed: Boolean, includeSrc : Boolean, includeDst : Boolean) : Iterator[EdgeTriplet[VD,ED]] = {
     if (edgeReversed){
       new Iterator[EdgeTriplet[VD,ED]]{
-        var offset : Long = bitSet.nextSetBit(0)
+        var offset : Int = bitSet.nextSetBit(0)
         override def hasNext: Boolean = {
           offset >= 0
         }
@@ -351,8 +351,8 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
           if (includeSrc){
             edge.srcAttr = vertexDataStore.getData(dstLids.get(offset))
           }
-          edge.eid = eids.get(offset)
-          edge.attr = edatas.get(edge.eid)
+          edge.eid = eids(offset)
+          edge.attr = edatas(edge.eid.toInt)
           edge.offset = offset
           offset = bitSet.nextSetBit((offset + 1).toInt)
           edge
@@ -361,7 +361,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     }
     else {
       new Iterator[EdgeTriplet[VD, ED]] {
-        var offset: Long = bitSet.nextSetBit(0)
+        var offset: Int = bitSet.nextSetBit(0)
 
         override def hasNext: Boolean = {
           offset >= 0
@@ -377,8 +377,8 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
           if (includeDst) {
             edge.dstAttr = vertexDataStore.getData(dstLids.get(offset))
           }
-          edge.eid = eids.get(offset)
-          edge.attr = edatas.get(edge.eid)
+          edge.eid = eids(offset)
+          edge.attr = edatas(edge.eid.toInt)
           edge.offset = offset
           offset = bitSet.nextSetBit((offset + 1).toInt)
           edge
@@ -394,7 +394,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
 
   override val structureType: GraphStructureType = ArrowProjectedStructure
 
-  override def getEids: PrimitiveArray[VertexId] = eids
+  override def getEids: Array[VertexId] = eids
 
   override def getOutNbrIds(vid: VertexId): Array[VertexId] = {
     val size = getOutDegree(vid)

@@ -1,7 +1,5 @@
 package com.alibaba.graphscope.graphx.store
 
-import com.alibaba.graphscope.utils.array.PrimitiveArray
-
 import scala.reflect.ClassTag
 
 trait VertexDataStore[VD] extends Serializable {
@@ -14,5 +12,5 @@ trait VertexDataStore[VD] extends Serializable {
    *  */
   def version : Int
 
-  def withNewValues[VD2 : ClassTag](newArr : PrimitiveArray[VD2]) : VertexDataStore[VD2]
+  def withNewValues[VD2 : ClassTag](newArr : Array[VD2]) : VertexDataStore[VD2]
 }

@@ -21,16 +21,16 @@ object GraphStructureTypes extends Enumeration{
 trait GraphStructure extends Serializable {
 
   val structureType : GraphStructureType
-  val inDegreeArray :PrimitiveArray[Int]
-  val outDegreeArray : PrimitiveArray[Int]
-  val inOutDegreeArray : PrimitiveArray[Int]
+  val inDegreeArray :Array[Int]
+  val outDegreeArray : Array[Int]
+  val inOutDegreeArray : Array[Int]
 
   //of size (fnum, number of inner vertices which are outer vertices in frag i)
   val mirrorVertices : Array[Array[Long]]
 
-  def iterator[ED : ClassTag](edatas : PrimitiveArray[ED], activeSet: BitSet, reversed : Boolean = false) : Iterator[Edge[ED]]
+  def iterator[ED : ClassTag](edatas : Array[ED], activeSet: BitSet, reversed : Boolean = false) : Iterator[Edge[ED]]
 
-  def tripletIterator[VD: ClassTag,ED : ClassTag](vertexDataStore: VertexDataStore[VD], edatas : PrimitiveArray[ED],  activeSet: BitSet,edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false): Iterator[EdgeTriplet[VD, ED]]
+  def tripletIterator[VD: ClassTag,ED : ClassTag](vertexDataStore: VertexDataStore[VD], edatas : Array[ED],  activeSet: BitSet,edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false): Iterator[EdgeTriplet[VD, ED]]
 
    def getInDegree(vid: Long): Long
 
@@ -80,5 +80,5 @@ trait GraphStructure extends Serializable {
 
   def getInnerVertex(oid : Long, vertex: Vertex[Long]) : Boolean
 
-  def getEids : PrimitiveArray[Long]
+  def getEids : Array[Long]
 }

@@ -6,7 +6,6 @@ import com.alibaba.graphscope.graphx.rdd.VineyardRDD
 import com.alibaba.graphscope.graphx.rdd.impl.{GrapeEdgePartition, GrapeEdgePartitionBuilder}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
 import com.alibaba.graphscope.graphx.utils.{ExecutorUtils, GrapeMeta}
-import com.alibaba.graphscope.utils.array.PrimitiveArray
 import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, MPIUtils}
 import org.apache.spark.graphx.grape.impl.GrapeEdgeRDDImpl
 import org.apache.spark.graphx.scheduler.cluster.ExecutorInfoHelper
@@ -184,11 +183,11 @@ object GrapeEdgeRDD extends Logging{
         val meta = iter.next()
         val time0 = System.nanoTime()
         val edgesNum = meta.graphxCSR.getOutEdgesNum.toInt
-        val srcOids = PrimitiveArray.create(classOf[Long], edgesNum)
-        val srcLids = PrimitiveArray.create(classOf[Long], edgesNum)
-        val dstOids = PrimitiveArray.create(classOf[Long], edgesNum)
-        val dstLids = PrimitiveArray.create(classOf[Long], edgesNum)
-        val eids = PrimitiveArray.create(classOf[Long], edgesNum)
+        val srcOids = new Array[Long](edgesNum)
+        val srcLids = new Array[Long](edgesNum)
+        val dstOids = new Array[Long](edgesNum)
+        val dstLids = new Array[Long](edgesNum)
+        val eids = new Array[Long](edgesNum)
         val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
         var curLid = 0
         val endLid = meta.globalVM.innerVertexSize()
@@ -200,19 +199,19 @@ object GrapeEdgeRDD extends Logging{
           val startNbrOffset = oeOffsetsArray.get(curLid)
           val endNbrOffset = oeOffsetsArray.get(curLid + 1)
 //          log.info(s" begin offset ${startNbrOffset}, end offset ${endNbrOffset}, out degree for ${curOid} ${meta.graphxCSR.getOutDegree(curLid)}")
-          var j = startNbrOffset
+          var j = startNbrOffset.toInt
           while (j < endNbrOffset){
-            srcOids.set(j, curOid)
-            srcLids.set(j, curLid)
+            srcOids(j) = curOid
+            srcLids(j) = curLid
             j += 1
           }
-          j = startNbrOffset
+          j = startNbrOffset.toInt
           val nbr = meta.graphxCSR.getOEBegin(curLid)
           while (j < endNbrOffset){
-            dstLids.set(j, nbr.vid())
+            dstLids(j) = nbr.vid()
             vertex.SetValue(nbr.vid())
-            dstOids.set(j, vm.getId(nbr.vid()))
-            eids.set(j, nbr.eid())
+            dstOids(j) =  vm.getId(nbr.vid())
+            eids(j) = nbr.eid()
 //            log.info(s"visiting edge ${curLid}->${nbr.vid()}, eid ${nbr.eid()}")
             nbr.addV(16);
 	          j += 1

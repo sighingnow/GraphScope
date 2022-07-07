@@ -2,25 +2,24 @@ package com.alibaba.graphscope.graphx
 
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
 import com.alibaba.graphscope.format.{LongLong, LongLongInputFormat}
-import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, ArrowProjectedFragmentMapper}
+import com.alibaba.graphscope.fragment.ArrowProjectedFragment
 import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.graphx.rdd.FragmentRDD
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
 import com.alibaba.graphscope.graphx.store.VertexDataStore
-import com.alibaba.graphscope.utils.array.PrimitiveArray
-import com.alibaba.graphscope.utils.GenericUtils
-import org.apache.hadoop.io.LongWritable
-import org.apache.spark.graphx.{EdgeRDD, Graph, PartitionID, TypeAlias, VertexId, VertexRDD}
-import org.apache.spark.graphx.impl.{EdgeRDDImpl, GraphImpl, VertexRDDImpl}
 import com.alibaba.graphscope.graphx.utils.{GrapeUtils, PrimitiveVector, ScalaFFIFactory}
+import com.alibaba.graphscope.utils.GenericUtils
+import com.alibaba.graphscope.utils.array.PrimitiveArray
+import org.apache.hadoop.io.LongWritable
 import org.apache.spark.graphx.grape.{GrapeEdgeRDD, GrapeGraphImpl, GrapeVertexRDD, PartitionAwareZippedBaseRDD}
+import org.apache.spark.graphx.impl.{GraphImpl, VertexRDDImpl}
 import org.apache.spark.graphx.scheduler.cluster.ExecutorInfoHelper
+import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
-import org.apache.spark.rdd.{ParallelCollectionRDD, RDD}
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.util.collection.{OpenHashSet, PrimitiveVector}
+import org.apache.spark.util.collection.OpenHashSet
 import org.apache.spark.{HashPartitioner, SparkContext}
 
 import java.util.concurrent.TimeUnit
@@ -179,7 +178,7 @@ object GraphScopeHelper extends Logging{
   def doMap[NEW_VD : ClassTag,NEW_ED : ClassTag, OLD_VD <: Any, OLD_ED <: Any](oldFrag: ArrowProjectedFragment[Long, Long, OLD_VD, OLD_ED],
                                                  oldVdClass : Class[OLD_VD], oldEdClass : Class[OLD_ED],
                                                  vdArray : VertexDataStore[NEW_VD],
-                                                 edArray : PrimitiveArray[NEW_ED],
+                                                 edArray : Array[NEW_ED],
                                                  client : VineyardClient):
   ArrowProjectedFragment[Long,Long,NEW_VD,NEW_ED] = {
     val mapper = ScalaFFIFactory.newProjectedFragmentMapper[NEW_VD,NEW_ED,OLD_VD,OLD_ED](oldVdClass,oldEdClass)
@@ -193,11 +192,11 @@ object GraphScopeHelper extends Logging{
       newVdBuilder.unsafeAppend(vdArray.getData(i))
       i += 1
     }
-    val enum = edArray.size()
+    val enum = edArray.length
     newEdBuilder.reserve(enum)
     i = 0
     while (i < enum){
-      newEdBuilder.unsafeAppend(edArray.get(i))
+      newEdBuilder.unsafeAppend(edArray(i))
       i += 1
     }
     mapper.map(oldFrag,newVdBuilder, newEdBuilder,client).get()

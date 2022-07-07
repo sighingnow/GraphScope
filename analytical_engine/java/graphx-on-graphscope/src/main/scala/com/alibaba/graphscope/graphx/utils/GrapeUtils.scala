@@ -104,8 +104,8 @@ object GrapeUtils extends Logging{
   }
 
   /** true for build vertex array, false for build edge array */
-  def array2ArrowArray[T : ClassTag](array : PrimitiveArray[T], client : VineyardClient, vertex : Boolean) : Long = {
-    val size = array.size()
+  def array2ArrowArray[T : ClassTag](array : Array[T], client : VineyardClient, vertex : Boolean) : Long = {
+    val size = array.length
     if (GrapeUtils.getRuntimeClass[T].equals(classOf[Long])
       || GrapeUtils.getRuntimeClass[T].equals(classOf[Double])
       || GrapeUtils.getRuntimeClass[T].equals(classOf[Int])){
@@ -114,7 +114,7 @@ object GrapeUtils extends Logging{
       arrowArrayBuilder.reserve(size)
       var i = 0
       while (i < size) {
-        arrowArrayBuilder.unsafeAppend(array.get(i))
+        arrowArrayBuilder.unsafeAppend(array(i))
         i += 1
       }
       if (vertex){
@@ -138,7 +138,7 @@ object GrapeUtils extends Logging{
       val limit = size
       var prevBytesWritten = 0
       while (i < limit){
-        objectOutputStream.writeObject(array.get(i))
+        objectOutputStream.writeObject(array(i))
         ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
         prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
 //        log.info(s"Writing element ${i}: ${array.get(i).toString} cost ${ffiOffset.get(i)} bytes")
