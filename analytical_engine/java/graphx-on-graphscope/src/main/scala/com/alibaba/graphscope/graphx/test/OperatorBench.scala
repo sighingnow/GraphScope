@@ -181,7 +181,7 @@ object OperatorBench extends Logging{
       log.info(s"[OperatorBench]: map vertices graphx time ${(graphxTime11 - graphxTime10)/ 1000000} ms")
       log.info(s"[OperatorBench]: outer join graphx time ${(graphxTime31 - graphxTime30)/ 1000000} ms")
       log.info(s"[OperatorBench]: get degree time ${(graphxTime301 - graphxTime300) / 1000000} ms")
-      log.info(s"[OperatorBench]: map [edges ]  graphx time ${(graphxTime21 - graphxTime20)/ 1000000} ms")
+      log.info(s"[OperatorBench]: map [edges ] graphx time ${(graphxTime21 - graphxTime20)/ 1000000} ms")
       log.info(s"[OperatorBench]: map [edge iterator] graphx time ${(graphxTime41 - graphxTime40)/ 1000000} ms")
       log.info(s"[OperatorBench]: map [edge triplet] graphx time ${(graphxTime51 - graphxTime50)/ 1000000} ms")
       log.info(s"[OperatorBench]: map [edge triplet iterator] graphx time ${(graphxTime61 - graphxTime60)/ 1000000} ms")

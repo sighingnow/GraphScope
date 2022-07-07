@@ -300,8 +300,27 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     ))
   }
 
-  override private[graphx] def aggregateMessagesWithActiveSet[A: ClassTag](sendMsg: EdgeContext[VD, ED, A] => Unit, mergeMsg: (A, A) => A, tripletFields: TripletFields, activeSetOpt: Option[(VertexRDD[_], EdgeDirection)]) : GrapeVertexRDD[A] = {
-    throw new IllegalStateException("Not implemented")
+  override private[graphx] def aggregateMessagesWithActiveSet[A: ClassTag](
+                                          sendMsg: EdgeContext[VD, ED, A] => Unit,
+                                          mergeMsg: (A, A) => A,
+                                          tripletFields: TripletFields,
+                                          activeSetOpt: Option[(VertexRDD[_], EdgeDirection)]) : VertexRDD[A] = {
+    vertices.cache()
+    val newVertices = activeSetOpt match {
+      case Some((activeSet, _)) => {
+        throw new IllegalStateException("Currently not supported aggregate with active vertex set")
+      }
+      case None => vertices.syncOuterVertex
+    }
+
+    val activeDirection = activeSetOpt.map(_._2)
+    val preAgg = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD){(eiter,viter) => {
+      val epart = eiter.next()
+      val vpart = viter.next()
+      epart.scanEdgeTriplet(vpart.vertexData,sendMsg,mergeMsg, tripletFields, activeDirection)
+    }}.setName("GraphImpl.aggregateMessages - preAgg")
+
+    newVertices.aggregateUsingIndex(preAgg, mergeMsg)
   }
 
   override def outerJoinVertices[U : ClassTag, VD2 : ClassTag](other: RDD[(VertexId, U)])(mapFunc: (VertexId, VD, Option[U]) => VD2)(implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {

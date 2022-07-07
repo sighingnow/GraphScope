@@ -6,9 +6,11 @@ import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{GraphStructureTy
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTripletImpl, GraphStructure, ReusableEdge, ReusableEdgeImpl}
 import com.alibaba.graphscope.graphx.store.VertexDataStore
 import com.alibaba.graphscope.graphx.utils.PrimitiveVector
-import org.apache.spark.graphx._
+import org.apache.spark.graphx.{EdgeTriplet, _}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
+
+import scala.reflect.ensureAccessible
 
 //import scala.collection.BitSet
 import scala.reflect.ClassTag
@@ -234,7 +236,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   }
 
   override def tripletIterator[VD: ClassTag,ED : ClassTag](vertexDataStore: VertexDataStore[VD],edatas : Array[ED], activeEdgeSet : BitSet, edgeReversed : Boolean = false,
-                      includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false)
+                      includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false)
   : Iterator[EdgeTriplet[VD, ED]] = {
     //For input vertex data store, check its version, if its version is greater than us, update
     //vertex data. If equal, skip. less than us is impossible.
@@ -257,6 +259,10 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
             edgeTriplet.attr = edatas(edgeTriplet.eid.toInt)
             //          edgeTriplet.dstAttr = vertexDataStore.getData(srcLids.get(offset))
             //          edgeTriplet.srcAttr = vertexDataStore.getData(dstLids.get(offset))
+            if (includeLid){
+              edgeTriplet.srcLid = srcLids(offset)
+              edgeTriplet.dstLid = dstLids(offset)
+            }
             offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
             edgeTriplet
           }
@@ -268,6 +274,10 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
             reuseEdgeTriplet.attr = edatas(reuseEdgeTriplet.eid.toInt)
             //          edgeTriplet.dstAttr = vertexDataStore.getData(srcLids.get(offset))
             //          edgeTriplet.srcAttr = vertexDataStore.getData(dstLids.get(offset))
+            if (includeLid){
+              reuseEdgeTriplet.srcLid = srcLids(offset)
+              reuseEdgeTriplet.dstLid = dstLids(offset)
+            }
             offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
             reuseEdgeTriplet
           }
@@ -292,6 +302,10 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
             edgeTriplet.attr = edatas(offset) //edgeTriplet.eid
             edgeTriplet.srcAttr = vertexDataStore.getData(srcLids(offset))
             edgeTriplet.dstAttr = vertexDataStore.getData(dstLids(offset))
+            if (includeLid){
+              edgeTriplet.srcLid = srcLids(offset)
+              edgeTriplet.dstLid = dstLids(offset)
+            }
             offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
             edgeTriplet
           }
@@ -303,6 +317,10 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
             reuseEdgeTriplet.attr = edatas(offset) //reuseEdgeTriplet.eid
             reuseEdgeTriplet.srcAttr = vertexDataStore.getData(srcLids(offset))
             reuseEdgeTriplet.dstAttr = vertexDataStore.getData(dstLids(offset))
+            if (includeLid){
+              reuseEdgeTriplet.srcLid = srcLids(offset)
+              reuseEdgeTriplet.dstLid = dstLids(offset)
+            }
             offset = activeEdgeSet.nextSetBit(offset.toInt + 1)
             reuseEdgeTriplet
           }
@@ -361,6 +379,43 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     fillOutNbrIds(vid, res, 0)
     fillInNbrIds(vid, res, inDegreeArray(vid.toInt))
     res
+  }
+
+  //CHECK loop unrolling.
+  override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2 : ClassTag](f: EdgeTriplet[VD,ED] => ED2,vertexDataStore: VertexDataStore[VD], edatas: Array[ED], activeSet: BitSet, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, resArray : Array[ED2]): Unit = {
+    val time0 = System.nanoTime();
+    var offset: Int = activeSet.nextSetBit(0)
+    val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
+
+    while (offset >= 0) {
+      edgeTriplet.srcAttr = vertexDataStore.getData(srcLids(offset))
+      edgeTriplet.dstAttr = vertexDataStore.getData(dstLids(offset))
+      edgeTriplet.srcId = srcOids(offset)
+      edgeTriplet.dstId = dstOids(offset)
+      val eid = eids(offset).toInt
+      edgeTriplet.attr = edatas(eid) //edgeTriplet.eid
+      resArray(eid) = f(edgeTriplet)
+      offset = activeSet.nextSetBit(offset + 1)
+    }
+    val time1 = System.nanoTime()
+    log.info(s"[GraphXGraphStructure:] iterating over edges triplet cost ${(time1 - time0)/ 1000000}ms")
+  }
+
+  override def iterateEdges[ED: ClassTag, ED2: ClassTag](f: Edge[ED] => ED2,edatas : Array[ED], activeSet: BitSet, edgeReversed: Boolean, newArray: Array[ED2]): Unit = {
+    val time0 = System.nanoTime()
+    var offset: Int = activeSet.nextSetBit(0)
+    val edge = new ReusableEdgeImpl[ED]
+
+    while (offset >= 0) {
+      edge.srcId = srcOids(offset)
+      edge.dstId = dstOids(offset)
+      val eid = eids(offset).toInt
+      edge.attr = edatas(eid)
+      newArray(eid) = f(edge)
+      offset = activeSet.nextSetBit(offset + 1)
+    }
+    val time1 = System.nanoTime()
+    log.info(s"[GraphXGraphStructure:] iterating over edges cost ${(time1 - time0)/ 1000000}ms")
   }
 }
 

@@ -30,7 +30,11 @@ trait GraphStructure extends Serializable {
 
   def iterator[ED : ClassTag](edatas : Array[ED], activeSet: BitSet, reversed : Boolean = false) : Iterator[Edge[ED]]
 
-  def tripletIterator[VD: ClassTag,ED : ClassTag](vertexDataStore: VertexDataStore[VD], edatas : Array[ED],  activeSet: BitSet,edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false): Iterator[EdgeTriplet[VD, ED]]
+  def tripletIterator[VD: ClassTag,ED : ClassTag](vertexDataStore: VertexDataStore[VD], edatas : Array[ED],  activeSet: BitSet,edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false): Iterator[EdgeTriplet[VD, ED]]
+
+  def iterateEdges[ED : ClassTag,ED2 : ClassTag](f: Edge[ED] => ED2,edatas : Array[ED], activeSet : BitSet, edgeReversed : Boolean = false, newArray : Array[ED2]) : Unit
+
+  def iterateTriplets[VD : ClassTag, ED : ClassTag,ED2 : ClassTag](f : EdgeTriplet[VD,ED] => ED2,vertexDataStore: VertexDataStore[VD], edatas : Array[ED], activeSet : BitSet, edgeReversed : Boolean = false, includeSrc : Boolean = true, includeDst : Boolean = true, newArray : Array[ED2]) : Unit
 
    def getInDegree(vid: Long): Long
 

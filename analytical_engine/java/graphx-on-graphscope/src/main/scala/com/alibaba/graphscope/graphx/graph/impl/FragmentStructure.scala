@@ -9,7 +9,7 @@ import com.alibaba.graphscope.graphx.graph.{GSEdgeTripletImpl, GraphStructure, R
 import com.alibaba.graphscope.graphx.store.VertexDataStore
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
-import org.apache.spark.graphx._
+import org.apache.spark.graphx.{EdgeTriplet, _}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 
@@ -273,11 +273,11 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     }
   }
 
-  override def tripletIterator[VD: ClassTag, ED: ClassTag](vertexDataStore: VertexDataStore[VD], edatas: Array[ED], activeSet: BitSet,edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false): Iterator[EdgeTriplet[VD, ED]] = {
+  override def tripletIterator[VD: ClassTag, ED: ClassTag](vertexDataStore: VertexDataStore[VD], edatas: Array[ED], activeSet: BitSet,edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false): Iterator[EdgeTriplet[VD, ED]] = {
     if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)){
       val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,VD,ED]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,VD,ED]]
       log.info(s"creating triplet iterator v2 with java edata, with vd store ${vertexDataStore}")
-      newProjectedTripletIterator(projectedFragment, vertexDataStore,edatas,activeSet,edgeReversed,includeSrc,includeDst)
+      newProjectedTripletIterator(projectedFragment, vertexDataStore,edatas,activeSet,edgeReversed,includeSrc,includeDst,includeLid)
     }
     else {
       throw new IllegalStateException("Not implemented")
@@ -333,7 +333,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     }
 
   }
-  private def newProjectedTripletIterator[VD: ClassTag,ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, VD, ED],vertexDataStore: VertexDataStore[VD], edatas : Array[ED],bitSet: BitSet, edgeReversed: Boolean, includeSrc : Boolean, includeDst : Boolean) : Iterator[EdgeTriplet[VD,ED]] = {
+  private def newProjectedTripletIterator[VD: ClassTag,ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, VD, ED],vertexDataStore: VertexDataStore[VD], edatas : Array[ED],bitSet: BitSet, edgeReversed: Boolean, includeSrc : Boolean, includeDst : Boolean,includeLid : Boolean = false) : Iterator[EdgeTriplet[VD,ED]] = {
     if (edgeReversed){
       new Iterator[EdgeTriplet[VD,ED]]{
         var offset : Int = bitSet.nextSetBit(0)
@@ -444,6 +444,15 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     fillOutNbrIdsImpl(vid, res, 0)
     fillInNbrIdsImpl(vid, res, getOutDegree(vid).toInt)
     res
+  }
+
+  //FIXME: implement this.
+  override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2: ClassTag](f: EdgeTriplet[VD,ED] => ED2, vertexDataStore: VertexDataStore[VD], edatas: Array[ED], activeSet: BitSet, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, newArray : Array[ED2]): Unit = {
+    throw new IllegalStateException("Not implemented")
+  }
+
+  override def iterateEdges[ED: ClassTag, ED2: ClassTag](f: Edge[ED] => ED2, edatas: Array[ED], activeSet: BitSet, edgeReversed: Boolean, newArray: Array[ED2]): Unit = {
+    throw new IllegalStateException("Not implemented")
   }
 }
 

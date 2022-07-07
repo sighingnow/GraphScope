@@ -5,7 +5,7 @@ import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTriplet, GraphStructure, ReusableEdge}
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffleReceived
 import com.alibaba.graphscope.graphx.store.VertexDataStore
-import com.alibaba.graphscope.graphx.utils.{ExecutorUtils, ScalaFFIFactory}
+import com.alibaba.graphscope.graphx.utils.{ExecutorUtils, IdParser, ScalaFFIFactory}
 import org.apache.spark.Partition
 import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
@@ -62,8 +62,8 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def tripletIterator(vertexDataStore: VertexDataStore[VD],
-                       includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false)
-  : Iterator[EdgeTriplet[VD, ED]] = graphStructure.tripletIterator(vertexDataStore,edatas,activeEdgeSet,edgeReversed,includeSrc,includeDst, reuseTriplet)
+                       includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false)
+  : Iterator[EdgeTriplet[VD, ED]] = graphStructure.tripletIterator(vertexDataStore,edatas,activeEdgeSet,edgeReversed,includeSrc,includeDst, reuseTriplet, includeLid)
 
   def filter(
               epred: EdgeTriplet[VD, ED] => Boolean,
@@ -120,13 +120,14 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
     val newData = new Array[ED2](allEdgesNum.toInt)
-    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
-    var ind = 0;
-    while (iter.hasNext){
-      val edge = iter.next()
-      newData(edge.eid.toInt) =  f(edge)
-      ind += 1
-    }
+    graphStructure.iterateEdges(f,edatas, activeEdgeSet, edgeReversed, newData)
+//    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
+//    var ind = 0;
+//    while (iter.hasNext){
+//      val edge = iter.next()
+//      newData(edge.eid.toInt) =  f(edge)
+//      ind += 1
+//    }
     this.withNewEdata(newData)
   }
 
@@ -153,15 +154,16 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 
   def mapTriplets[ED2: ClassTag](f: EdgeTriplet[VD,ED] => ED2, vertexDataStore: VertexDataStore[VD], tripletFields: TripletFields): GrapeEdgePartition[VD, ED2] = {
     val time0 = System.nanoTime()
+//    val newData = new Array[ED2](allEdgesNum.toInt)
+//    val iter = tripletIterator(vertexDataStore, tripletFields.useSrc, tripletFields.useDst, reuseTriplet = true).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
+//    var ind = 0;
+//    while (iter.hasNext){
+//      val edge = iter.next()
+//      newData(edge.eid.toInt) =  f(edge)
+//      ind += 1
+//    }
     val newData = new Array[ED2](allEdgesNum.toInt)
-//    val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
-    val iter = tripletIterator(vertexDataStore, tripletFields.useSrc, tripletFields.useDst, reuseTriplet = true).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
-    var ind = 0;
-    while (iter.hasNext){
-      val edge = iter.next()
-      newData(edge.eid.toInt) =  f(edge)
-      ind += 1
-    }
+    graphStructure.iterateTriplets(f,vertexDataStore, edatas, activeEdgeSet, edgeReversed,tripletFields.useSrc, tripletFields.useDst, newData)
     val time1 = System.nanoTime()
     log.info(s"[Perf:] mapping over triplets cost ${(time1 - time0)/1000000} ms")
     this.withNewEdata(newData)
@@ -186,6 +188,23 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val time1 = System.nanoTime()
     log.info(s"[Perf:] mapping over triplets iterator cost ${(time1 - time0)/1000000} ms")
     this.withNewEdata(newData)
+  }
+
+  def scanEdgeTriplet[A: ClassTag](vertexDataStore: VertexDataStore[VD], sendMsg: EdgeContext[VD, ED, A] => Unit, mergeMsg: (A, A) => A, tripletFields: TripletFields, directionOpt : Option[(EdgeDirection)]) : Iterator[(VertexId, A)] ={
+    val aggregates = new Array[A](vertexDataStore.size.toInt)
+    val bitset = new BitSet(aggregates.length)
+
+    val ctx = new EdgeContextImpl[VD, ED, A](mergeMsg, aggregates, bitset)
+    val tripletIter = tripletIterator(vertexDataStore, tripletFields.useSrc, tripletFields.useDst, reuseTriplet = true,includeLid = true).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
+    while (tripletIter.hasNext){
+      val triplet = tripletIter.next()
+      ctx.set(triplet.srcId, triplet.dstId, triplet.srcLid.toInt, triplet.dstLid.toInt, triplet.srcAttr,triplet.dstAttr, triplet.attr)
+      sendMsg(ctx)
+    }
+
+    val curFid = graphStructure.fid()
+    val idParser = new IdParser(graphStructure.fnum())
+    bitset.iterator.map( localId => (idParser.generateGlobalId(curFid, localId), aggregates(localId)))
   }
 
   def reverse: GrapeEdgePartition[VD, ED] = {
@@ -367,5 +386,69 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
   //call this to delete c++ ptr and release memory of arrow builders
   def clearBuilders() : Unit = {
     lists = null
+  }
+}
+
+private class EdgeContextImpl[VD, ED, A](
+                                                 mergeMsg: (A, A) => A,
+                                                 aggregates: Array[A],
+                                                 bitset: BitSet)
+  extends EdgeContext[VD, ED, A] {
+
+  private[this] var _srcId: VertexId = _
+  private[this] var _dstId: VertexId = _
+  private[this] var _localSrcId: Int = _
+  private[this] var _localDstId: Int = _
+  private[this] var _srcAttr: VD = _
+  private[this] var _dstAttr: VD = _
+  private[this] var _attr: ED = _
+
+  def set(
+           srcId: VertexId, dstId: VertexId,
+           localSrcId: Int, localDstId: Int,
+           srcAttr: VD, dstAttr: VD,
+           attr: ED): Unit = {
+    _srcId = srcId
+    _dstId = dstId
+    _localSrcId = localSrcId
+    _localDstId = localDstId
+    _srcAttr = srcAttr
+    _dstAttr = dstAttr
+    _attr = attr
+  }
+
+  def setSrcOnly(srcId: VertexId, localSrcId: Int, srcAttr: VD): Unit = {
+    _srcId = srcId
+    _localSrcId = localSrcId
+    _srcAttr = srcAttr
+  }
+
+  def setDest(dstId: VertexId, localDstId: Int, dstAttr: VD, attr: ED): Unit = {
+    _dstId = dstId
+    _localDstId = localDstId
+    _dstAttr = dstAttr
+    _attr = attr
+  }
+
+  override def srcId: VertexId = _srcId
+  override def dstId: VertexId = _dstId
+  override def srcAttr: VD = _srcAttr
+  override def dstAttr: VD = _dstAttr
+  override def attr: ED = _attr
+
+  override def sendToSrc(msg: A): Unit = {
+    send(_localSrcId, msg)
+  }
+  override def sendToDst(msg: A): Unit = {
+    send(_localDstId, msg)
+  }
+
+  @inline private def send(localId: Int, msg: A): Unit = {
+    if (bitset.get(localId)) {
+      aggregates(localId) = mergeMsg(aggregates(localId), msg)
+    } else {
+      aggregates(localId) = msg
+      bitset.set(localId)
+    }
   }
 }
