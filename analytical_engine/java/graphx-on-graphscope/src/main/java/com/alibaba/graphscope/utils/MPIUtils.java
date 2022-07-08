@@ -22,7 +22,7 @@ public class MPIUtils {
 
     private static Logger logger = LoggerFactory.getLogger(MPIUtils.class.getName());
     private static String MPI_LOG_FILE = "/tmp/graphx-mpi-log";
-    private static final String GRAPHSCOPE_CODE_HOME, SPARK_HOME, GAE_HOME, SPARK_CONF_WORKERS, LAUNCH_GRAPHX_SHELL_SCRIPT, LOAD_GRAPH_SHELL_SCRIPT;
+    private static final String GRAPHSCOPE_CODE_HOME, SPARK_HOME, GAE_HOME, SPARK_CONF_WORKERS, LAUNCH_GRAPHX_SHELL_SCRIPT;
     private static final String LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT;
     private static final String pattern = "GlobalVertexMapID:";
 
@@ -47,10 +47,6 @@ public class MPIUtils {
         if (!fileExists(LAUNCH_GRAPHX_SHELL_SCRIPT)) {
             throw new IllegalStateException(
                 "script " + LAUNCH_GRAPHX_SHELL_SCRIPT + "doesn't exist");
-        }
-        LOAD_GRAPH_SHELL_SCRIPT = GAE_HOME + "/java/load_graphx_fragment.sh";
-        if (!fileExists(LOAD_GRAPH_SHELL_SCRIPT)) {
-            throw new IllegalStateException("script " + LOAD_GRAPH_SHELL_SCRIPT + "doesn't exist");
         }
         LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT = GAE_HOME + "/java/load_graphx_vertex_map.sh";
         if (!fileExists(LOAD_GRAPHX_VERTEX_MAP_SHELL_SCRIPT)) {
