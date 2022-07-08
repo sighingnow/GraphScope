@@ -289,14 +289,13 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     val outerHashSet = new OpenHashSet[Long]
     for (shuffle <- lists){
       log.info(s"Extract outer vertices from ${shuffle}")
-      val (srcArrays, dstArrays, attrArrays) = shuffle.getArrays
+      val (srcArrays, dstArrays, _) = shuffle.getArrays
       var i = 0
       val outerArrayLimit = srcArrays.length
       while (i < outerArrayLimit){
         var j = 0
         val innerLimit = srcArrays(i).length
         require(dstArrays(i).length == innerLimit)
-        require(attrArrays(i).length == innerLimit)
         val srcArray = srcArrays(i)
         val dstArray = dstArrays(i)
         while (j < innerLimit){
