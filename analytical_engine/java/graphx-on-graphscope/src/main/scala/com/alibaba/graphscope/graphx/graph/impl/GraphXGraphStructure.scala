@@ -372,7 +372,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
 
   //CHECK loop unrolling.
   override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2 : ClassTag](f: EdgeTriplet[VD,ED] => ED2,vertexDataStore: VertexDataStore[VD], edatas: Array[ED], activeSet: BitSet, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, resArray : Array[ED2]): Unit = {
-    val time0 = System.nanoTime();
+    val time0 = System.nanoTime()
     var offset: Int = activeSet.nextSetBit(0)
     val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
 
