@@ -76,10 +76,11 @@ object OperatorBench extends Logging{
 
     //0. mapping vertices
     if (run.equals("gs")){
-
+      val grapeTime00 =System.nanoTime()
       val grapeGraph = GraphScopeHelper.edgeListFile(sc, fileName,false,partNum)
         .mapVertices((vid,vd) => vd.toLong).mapEdges(edge=>edge.attr.toLong).persist(StorageLevel.MEMORY_ONLY)
       log.info(s"grape graph ${grapeGraph.numVertices},edges ${grapeGraph.numEdges}")
+      val grapeTime01 = System.nanoTime()
 
 //      val grapeTime10 = System.nanoTime()
 //      val grapeGraph1 = mapDifferentType(mapDifferentType(mapDifferentType(mapping(mapping(mapping(grapeGraph))))))
@@ -149,18 +150,21 @@ object OperatorBench extends Logging{
 //      log.info(s"[OperatorBench]: map [edge iterator] grape time ${(grapeTime41 - grapeTime40) / 1000000} ms")
 //      log.info(s"[OperatorBench]: map [edge triplet] grape time ${(grapeTime51 - grapeTime50) / 1000000} ms")
 //      log.info(s"[OperatorBench]: map [edge triplet iterator] grape time ${(grapeTime61 - grapeTime60) / 1000000} ms")
+      log.info(s"[OperatorBench] load graph cost ${(grapeTime01 - grapeTime00)/1000000}ms")
       log.info(s"[OperatorBench]: sub graph grape time ${(grapeTime71 - grapeTime70) / 1000000} ms")
       log.info(s"[OperatorBench]: reverse graph grape time ${(grapeTime81 - grapeTime80) / 1000000} ms")
 
     }
     else if (run.equals("graphx")){
+      val graphxTime00 = System.nanoTime()
       val rawGraph = GraphLoader.edgeListFile(sc, fileName,false, partNum)
       val graphxGraph = rawGraph.mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).persist(StorageLevel.MEMORY_ONLY)
       log.info(s"graphx graph ${graphxGraph.vertices.count()}, ${graphxGraph.edges.count()}")
-      val graphxTime10 = System.nanoTime()
-      val graphxGraph1 = mapDifferentType(mapDifferentType(mapDifferentType(mapping(mapping(mapping(graphxGraph))))))
-      log.info(s"[Operator Bench------]Finish mapping graphx vertices ${graphxGraph1.vertices.count()}")
-      val graphxTime11 = System.nanoTime()
+      val graphxTime01 = System.nanoTime()
+//      val graphxTime10 = System.nanoTime()
+//      val graphxGraph1 = mapDifferentType(mapDifferentType(mapDifferentType(mapping(mapping(mapping(graphxGraph))))))
+//      log.info(s"[Operator Bench------]Finish mapping graphx vertices ${graphxGraph1.vertices.count()}")
+//      val graphxTime11 = System.nanoTime()
 //      graphxGraph1.unpersist()
 
 //      val graphxTime20 = System.nanoTime()
@@ -210,13 +214,14 @@ object OperatorBench extends Logging{
       log.info(s"[Operator Bench] Finish reverse, counts vertices ${graphxGraph8.vertices.count()} edges ${graphxGraph8.edges.count()}")
       val graphxTime81 = System.nanoTime()
 
-      log.info(s"[OperatorBench]: map vertices graphx time ${(graphxTime11 - graphxTime10)/ 1000000} ms")
+//      log.info(s"[OperatorBench]: map vertices graphx time ${(graphxTime11 - graphxTime10)/ 1000000} ms")
 //      log.info(s"[OperatorBench]: outer join graphx time ${(graphxTime31 - graphxTime30)/ 1000000} ms")
 //      log.info(s"[OperatorBench]: get degree time ${(graphxTime301 - graphxTime300) / 1000000} ms")
 //      log.info(s"[OperatorBench]: map [edges ] graphx time ${(graphxTime21 - graphxTime20)/ 1000000} ms")
 //      log.info(s"[OperatorBench]: map [edge iterator] graphx time ${(graphxTime41 - graphxTime40)/ 1000000} ms")
 //      log.info(s"[OperatorBench]: map [edge triplet] graphx time ${(graphxTime51 - graphxTime50)/ 1000000} ms")
 //      log.info(s"[OperatorBench]: map [edge triplet iterator] graphx time ${(graphxTime61 - graphxTime60)/ 1000000} ms")
+      log.info(s"[OperatorBench] load graph cost ${(graphxTime01 - graphxTime00)/1000000}ms")
       log.info(s"[OperatorBench]: subGraph cost ${(graphxTime71 - graphxTime70)/1000000} ms")
       log.info(s"[OperatorBench]: reverse graph cost ${(graphxTime81 - graphxTime80)/1000000} ms")
     }
