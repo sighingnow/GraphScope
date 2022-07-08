@@ -21,7 +21,7 @@ class EdgeShuffle[VD : ClassTag,ED : ClassTag](val fromPid : Int,
 
   def size() : Long = srcs.length
 
-  override def toString: String = "EdgeShuffle:{from "+ fromPid +",to "+ dstPid + ", oids:"+ oids.size + ",srcs: " + srcs.length + ",dsts: " + dsts.length + ",attrs:" + attrs.length;
+  override def toString: String = "EdgeShuffle:{from "+ fromPid +",to "+ dstPid + ", oids:"+ oids.size + ",srcs: " + srcs.length + ",dsts: " + dsts.length
 }
 
 object EdgeShuffle{

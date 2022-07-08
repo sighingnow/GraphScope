@@ -113,7 +113,7 @@ object GraphScopeHelper extends Logging{
       " to load the edges")
 
     val time0 = System.nanoTime()
-    val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[Int,Int](edgesShuffled).cache()
+    val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[Int,Int](edgesShuffled,defaultED = 1).cache()
     val time1 = System.nanoTime()
     log.info(s"[edgeListFile:] construct edge rdd ${edgeRDD} cost ${(time1 - time0) / 1000000} ms")
     val vertexRDD = GrapeVertexRDD.fromGrapeEdgeRDD[Int](edgeRDD, edgeRDD.grapePartitionsRDD.getNumPartitions, 1,vertexStorageLevel).cache()

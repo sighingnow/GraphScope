@@ -333,23 +333,33 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
   }
 
   /** The received edata arrays contains both in edges and out edges, but we only need these out edges's edata array */
-  def buildEdataArray(csr : GraphXCSR[Long]) : Array[ED] = {
-    val allArrays = lists.flatMap(_.getArrays._3).toArray
-    val len = allArrays.map(_.length).sum
-    val edataArray = new Array[ED](len)
-    //got all edge data array
-    var ind = 0
-
-    for (arr <- allArrays){
-      var i = 0
-      val t = arr.length
-      while (i < t){
-        edataArray(ind) =  arr(i)
-        i += 1
-        ind += 1
-      }
+  def buildEdataArray(csr : GraphXCSR[Long], defaultED : ED) : Array[ED] = {
+    if (defaultED != null && lists(0).getArrays._3 == null){
+      val edgeNum = lists.map(_.totalSize()).sum
+      Array.fill[ED](edgeNum.toInt)(defaultED)
     }
-    edataArray
+    else if (defaultED == null && lists(0).getArrays._3 != null){
+      val allArrays = lists.flatMap(_.getArrays._3).toArray
+      val len = allArrays.map(_.length).sum
+      val edataArray = new Array[ED](len)
+      //got all edge data array
+      var ind = 0
+
+      for (arr <- allArrays){
+        var i = 0
+        val t = arr.length
+        while (i < t){
+          edataArray(ind) =  arr(i)
+          i += 1
+          ind += 1
+        }
+      }
+      edataArray
+    }
+    else {
+      throw new IllegalStateException("not possible, default ed  and array is both null or bot not empty")
+    }
+
   }
 
   // no edata building is needed, we only persist edata to c++ when we run pregel

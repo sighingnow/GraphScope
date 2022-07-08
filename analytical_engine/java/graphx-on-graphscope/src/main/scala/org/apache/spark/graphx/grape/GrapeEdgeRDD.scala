@@ -43,7 +43,7 @@ object GrapeEdgeRDD extends Logging{
     null
   }
 
-  def fromEdgeShuffle[VD: ClassTag, ED : ClassTag](edgeShuffles : RDD[(PartitionID, EdgeShuffle[VD,ED])]) : GrapeEdgeRDDImpl[VD,ED] = {
+  def fromEdgeShuffle[VD: ClassTag, ED : ClassTag](edgeShuffles : RDD[(PartitionID, EdgeShuffle[VD,ED])], defaultED : ED = null.asInstanceOf[ED]) : GrapeEdgeRDDImpl[VD,ED] = {
     //combine edges shuffles to edge Partition
     val numPartitions = edgeShuffles.getNumPartitions
     log.info(s"edgeShuffles has ${numPartitions} parts")
@@ -66,10 +66,10 @@ object GrapeEdgeRDD extends Logging{
         Iterator.empty
       }
     },preservesPartitioning = true)
-    fromEdgeShuffleReceived(edgeShuffleReceived)
+    fromEdgeShuffleReceived(edgeShuffleReceived,defaultED)
   }
 
-  private [graphx] def fromEdgeShuffleReceived[VD: ClassTag, ED: ClassTag](edgesShuffles: RDD[(Int, EdgeShuffleReceived[ED])]) : GrapeEdgeRDDImpl[VD,ED] = {
+  private [graphx] def fromEdgeShuffleReceived[VD: ClassTag, ED: ClassTag](edgesShuffles: RDD[(Int, EdgeShuffleReceived[ED])], defaultED : ED) : GrapeEdgeRDDImpl[VD,ED] = {
     val numPartitions = edgesShuffles.getNumPartitions
     //0. collection hostNames from edgeShuffles, store data in static class.
     //1. construct new rdd from hostNames and preferred locations.
@@ -143,7 +143,7 @@ object GrapeEdgeRDD extends Logging{
       require(res != null, s"after iterate over received global ids, no suitable found for ${hostName}, ${meta.partitionID} : ${globalVMIDs}")
       meta.setGlobalVM(res.toLong)
       val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId)
-      val edatas = meta.edgePartitionBuilder.buildEdataArray(csr)
+      val edatas = meta.edgePartitionBuilder.buildEdataArray(csr, defaultED)
       //raw edatas contains all edge datas, i.e. csr edata array.
       //edatas are out edges edge cache.
       meta.setGlobalVM(vm)
