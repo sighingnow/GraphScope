@@ -147,10 +147,10 @@ vineyard::ObjectID TestGraphXCSR(
     // VINEYARD_CHECK_OK(client.Persist(csr->id()));
     auto tmp_id = csr->id();
     LOG(INFO) << "Persist csr id: " << csr->id();
-    std::shared_ptr<gs::GraphXCSR<uint64_t>> csr =
+    std::shared_ptr<gs::GraphXCSR<uint64_t>> csr_ =
         std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t>>(
             client.GetObject(tmp_id));
-    LOG(INFO) << "Got csr " << csr->id();
+    LOG(INFO) << "Got csr " << csr_->id();
   }
   std::shared_ptr<gs::GraphXCSR<uint64_t>> csr =
       std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t>>(
