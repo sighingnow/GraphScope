@@ -1,6 +1,7 @@
 package com.alibaba.graphscope.graphx.test
 
 import com.alibaba.graphscope.graphx.GraphScopeHelper
+import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
 import org.apache.spark.graphx.{EdgeTriplet, Graph, GraphLoader, PartitionID, TripletFields, VertexRDD}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
@@ -19,6 +20,7 @@ object OperatorBench extends Logging{
       .getOrCreate()
     val sc = spark.sparkContext
     sc.getConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+    sc.getConf.registerKryoClasses(Array(classOf[EdgeShuffle[_,_]], classOf[Array[Long]], classOf[Array[Int]]))
 
 //    val maskGraph : Graph[Long,Long] = graphxGraph.subgraph(epred = (_ => true), vpred = (id, vd) => id % 2 == 0)
 //    val grapeMaskGraph : Graph[Long,Long] = grapeGraph.subgraph(epred = (_ => true), vpred = (id, _)=>id % 2 == 0)
@@ -82,6 +84,9 @@ object OperatorBench extends Logging{
       log.info(s"grape graph ${grapeGraph.numVertices},edges ${grapeGraph.numEdges}")
       val grapeTime01 = System.nanoTime()
 
+      log.info(s"[Operator Bench:] load graph cost ${(grapeTime01 - grapeTime00)/1000000} ms")
+      return
+
       val grapeTime10 = System.nanoTime()
       val grapeGraph1 = mapDifferentType(mapDifferentType(mapDifferentType(mapping(mapping(mapping(grapeGraph))))))
       log.info(s"[Operator Bench------] Finish mapping grape vertices ${grapeGraph1.vertices.count()}")
@@ -110,13 +115,13 @@ object OperatorBench extends Logging{
       grapeGraph3.unpersist()
       inDegrees.unpersist()
 
-      //1. map edge iterator
-      val grapeTime40 = System.nanoTime()
-      val grapeGraph4 = mapEdgeIterator(mapEdgeIterator(mapEdgeIterator(grapeGraph)))
-      log.info(s"[Operator Bench------]Finish mapping grape edge iterator, counts vertices ${grapeGraph4.vertices.count()}, edges ${grapeGraph4.edges.count()}")
-      val grapeTime41 = System.nanoTime()
-      log.info(s"[OperatorBench]: map [edge iterator] grape time ${(grapeTime41 - grapeTime40) / 1000000} ms")
-      grapeGraph4.unpersist()
+//      //1. map edge iterator
+//      val grapeTime40 = System.nanoTime()
+//      val grapeGraph4 = mapEdgeIterator(mapEdgeIterator(mapEdgeIterator(grapeGraph)))
+//      log.info(s"[Operator Bench------]Finish mapping grape edge iterator, counts vertices ${grapeGraph4.vertices.count()}, edges ${grapeGraph4.edges.count()}")
+//      val grapeTime41 = System.nanoTime()
+//      log.info(s"[OperatorBench]: map [edge iterator] grape time ${(grapeTime41 - grapeTime40) / 1000000} ms")
+//      grapeGraph4.unpersist()
 
       val grapeTime50 = System.nanoTime()
       val grapeGraph5 = mapTriplet(mapTriplet(mapTriplet(grapeGraph)))
@@ -125,13 +130,13 @@ object OperatorBench extends Logging{
       log.info(s"[OperatorBench]: map [edge triplet] grape time ${(grapeTime51 - grapeTime50) / 1000000} ms")
       grapeGraph5.unpersist()
 
-      //1. map edge triplet iterator
-      val grapeTime60 = System.nanoTime()
-      val grapeGraph6 = mapTripletIterator(mapTripletIterator(mapTripletIterator(grapeGraph)))
-      log.info(s"[Operator Bench------]Finish mapping triplet iterator, counts vertices ${grapeGraph6.vertices.count()}, edges ${grapeGraph6.edges.count()}")
-      val grapeTime61 = System.nanoTime()
-      log.info(s"[OperatorBench]: map [edge triplet iterator] grape time ${(grapeTime61 - grapeTime60) / 1000000} ms")
-      grapeGraph6.unpersist()
+//      //1. map edge triplet iterator
+//      val grapeTime60 = System.nanoTime()
+//      val grapeGraph6 = mapTripletIterator(mapTripletIterator(mapTripletIterator(grapeGraph)))
+//      log.info(s"[Operator Bench------]Finish mapping triplet iterator, counts vertices ${grapeGraph6.vertices.count()}, edges ${grapeGraph6.edges.count()}")
+//      val grapeTime61 = System.nanoTime()
+//      log.info(s"[OperatorBench]: map [edge triplet iterator] grape time ${(grapeTime61 - grapeTime60) / 1000000} ms")
+//      grapeGraph6.unpersist()
 
       val grapeTime70 = System.nanoTime()
       val grapeGraph7 = subGraph(grapeGraph)
@@ -147,9 +152,9 @@ object OperatorBench extends Logging{
       log.info(s"[OperatorBench]: outer join grape time ${(grapeTime31 - grapeTime30) / 1000000} ms")
       log.info(s"[OperatorBench]: get degree time ${(grapeTime301 - grapeTime300) / 1000000} ms")
       log.info(s"[OperatorBench]: map [edges grape] time ${(grapeTime21 - grapeTime20) / 1000000} ms")
-      log.info(s"[OperatorBench]: map [edge iterator] grape time ${(grapeTime41 - grapeTime40) / 1000000} ms")
+//      log.info(s"[OperatorBench]: map [edge iterator] grape time ${(grapeTime41 - grapeTime40) / 1000000} ms")
       log.info(s"[OperatorBench]: map [edge triplet] grape time ${(grapeTime51 - grapeTime50) / 1000000} ms")
-      log.info(s"[OperatorBench]: map [edge triplet iterator] grape time ${(grapeTime61 - grapeTime60) / 1000000} ms")
+//      log.info(s"[OperatorBench]: map [edge triplet iterator] grape time ${(grapeTime61 - grapeTime60) / 1000000} ms")
       log.info(s"[OperatorBench] load graph cost ${(grapeTime01 - grapeTime00)/1000000}ms")
       log.info(s"[OperatorBench]: sub graph grape time ${(grapeTime71 - grapeTime70) / 1000000} ms")
       log.info(s"[OperatorBench]: reverse graph grape time ${(grapeTime81 - grapeTime80) / 1000000} ms")
@@ -161,6 +166,9 @@ object OperatorBench extends Logging{
       val graphxGraph = rawGraph.mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).persist(StorageLevel.MEMORY_ONLY)
       log.info(s"graphx graph ${graphxGraph.vertices.count()}, ${graphxGraph.edges.count()}")
       val graphxTime01 = System.nanoTime()
+
+      log.info(s"[Operator Bench:] load graph cost ${(graphxTime01 - graphxTime00)/1000000} ms")
+      return
 
       val graphxTime10 = System.nanoTime()
       val graphxGraph1 = mapDifferentType(mapDifferentType(mapDifferentType(mapping(mapping(mapping(graphxGraph))))))
@@ -187,11 +195,11 @@ object OperatorBench extends Logging{
       graphxGraph3.unpersist()
       inDegrees.unpersist()
 
-      val graphxTime40 = System.nanoTime()
-      val graphxGraph4 = mapEdgeIterator(mapEdgeIterator(mapEdgeIterator(graphxGraph)))
-      log.info(s"[Operator Bench------]Finish mapping graphx edge iterator, counts vertices ${graphxGraph4.vertices.count()} edges ${graphxGraph4.edges.count()}")
-      val graphxTime41 = System.nanoTime()
-      graphxGraph4.unpersist()
+//      val graphxTime40 = System.nanoTime()
+//      val graphxGraph4 = mapEdgeIterator(mapEdgeIterator(mapEdgeIterator(graphxGraph)))
+//      log.info(s"[Operator Bench------]Finish mapping graphx edge iterator, counts vertices ${graphxGraph4.vertices.count()} edges ${graphxGraph4.edges.count()}")
+//      val graphxTime41 = System.nanoTime()
+//      graphxGraph4.unpersist()
 
       val graphxTime50 = System.nanoTime()
       val graphxGraph5 = mapTriplet(mapTriplet(mapTriplet(graphxGraph)))
@@ -199,11 +207,11 @@ object OperatorBench extends Logging{
       val graphxTime51 = System.nanoTime()
       graphxGraph5.unpersist()
 
-      val graphxTime60 = System.nanoTime()
-      val graphxGraph6 = mapTripletIterator(mapTripletIterator(mapTripletIterator(graphxGraph)))
-      log.info(s"[Operator Bench------]Finish mapping triplet iterator, counts vertices ${graphxGraph6.vertices.count()} edges ${graphxGraph6.edges.count()}")
-      val graphxTime61 = System.nanoTime()
-      graphxGraph6.unpersist()
+//      val graphxTime60 = System.nanoTime()
+//      val graphxGraph6 = mapTripletIterator(mapTripletIterator(mapTripletIterator(graphxGraph)))
+//      log.info(s"[Operator Bench------]Finish mapping triplet iterator, counts vertices ${graphxGraph6.vertices.count()} edges ${graphxGraph6.edges.count()}")
+//      val graphxTime61 = System.nanoTime()
+//      graphxGraph6.unpersist()
 
       val graphxTime70 = System.nanoTime()
       val graphxGraph7 = subGraph(graphxGraph)
@@ -219,9 +227,9 @@ object OperatorBench extends Logging{
       log.info(s"[OperatorBench]: outer join graphx time ${(graphxTime31 - graphxTime30)/ 1000000} ms")
       log.info(s"[OperatorBench]: get degree time ${(graphxTime301 - graphxTime300) / 1000000} ms")
       log.info(s"[OperatorBench]: map [edges ] graphx time ${(graphxTime21 - graphxTime20)/ 1000000} ms")
-      log.info(s"[OperatorBench]: map [edge iterator] graphx time ${(graphxTime41 - graphxTime40)/ 1000000} ms")
+//      log.info(s"[OperatorBench]: map [edge iterator] graphx time ${(graphxTime41 - graphxTime40)/ 1000000} ms")
       log.info(s"[OperatorBench]: map [edge triplet] graphx time ${(graphxTime51 - graphxTime50)/ 1000000} ms")
-      log.info(s"[OperatorBench]: map [edge triplet iterator] graphx time ${(graphxTime61 - graphxTime60)/ 1000000} ms")
+//      log.info(s"[OperatorBench]: map [edge triplet iterator] graphx time ${(graphxTime61 - graphxTime60)/ 1000000} ms")
       log.info(s"[OperatorBench] load graph cost ${(graphxTime01 - graphxTime00)/1000000}ms")
       log.info(s"[OperatorBench]: subGraph cost ${(graphxTime71 - graphxTime70)/1000000} ms")
       log.info(s"[OperatorBench]: reverse graph cost ${(graphxTime81 - graphxTime80)/1000000} ms")

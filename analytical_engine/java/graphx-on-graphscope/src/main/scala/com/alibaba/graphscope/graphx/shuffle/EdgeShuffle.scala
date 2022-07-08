@@ -12,10 +12,10 @@ class EdgeShuffle[VD : ClassTag,ED : ClassTag](val fromPid : Int,
                                  val dstPid: Int,
                                  val oids : Array[Long], // all oids belong to dstPid
                                  val srcs : Array[Long],
-                                 val dsts : Array[Long], val attrs: Array[ED],
+                                 val dsts : Array[Long], val attrs: Array[ED] = null,
                                  val vertexAttrs : Array[VD] = null) extends Serializable {
-  def this(fromPid : Int, dstPid : Int, oids : OpenHashSet[Long], srcs : Array[Long], dsts : Array[Long], edgeAttrs : Array[ED]) = {
-    this(fromPid,dstPid,openHashSetToArray(oids), srcs, dsts, edgeAttrs)
+  def this(fromPid : Int, dstPid : Int, oids : OpenHashSet[Long], srcs : Array[Long], dsts : Array[Long]) = {
+    this(fromPid,dstPid,openHashSetToArray(oids), srcs, dsts)
   }
   require(srcs.length == dsts.length)
 

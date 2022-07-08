@@ -285,18 +285,13 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
 object GrapeVertexPartition extends Logging{
   def buildPrimitiveVertexPartition[VD: ClassTag](fragVnums : Long, value : VD, pid : Int, client : VineyardClient, graphStructure: GraphStructure, routingTable: RoutingTable) : GrapeVertexPartition[VD] = {
-    val vertexDataBuilder : VertexDataBuilder[Long,VD] = ScalaFFIFactory.newVertexDataBuilder[VD]()
-    vertexDataBuilder.init(fragVnums,value)
-    log.info(s"Init vertex data with ${fragVnums} ${value}")
-    val vertexData = vertexDataBuilder.seal(client).get()
-    log.info(s"Partition ${pid} built vertex data ${vertexData}")
-    require(graphStructure.getVertexSize == vertexData.verticesNum(), s"csr inner vertex should equal to vmap ${graphStructure.getInnerVertexSize}, ${vertexData.verticesNum()}")
+    require(graphStructure.getVertexSize == fragVnums, s"csr inner vertex should equal to vmap ${graphStructure.getInnerVertexSize}, ${fragVnums}")
     //copy to heap
-    val newArray = new Array[VD](vertexData.verticesNum().toInt)
+    val newArray = new Array[VD](fragVnums.toInt)
     var i = 0
-    val limit = vertexData.verticesNum()
+    val limit = fragVnums
     while (i < limit){
-      newArray(i) = vertexData.getData(i)
+      newArray(i) = value
       i += 1
     }
     val newVertexData = new InHeapVertexDataStore[VD](newArray,client,0)

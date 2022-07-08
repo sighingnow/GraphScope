@@ -72,7 +72,6 @@ object GraphScopeHelper extends Logging{
         //        iter.toArray
         val pid2src = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
         val pid2Dst = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
-        val pid2attr = Array.fill(numPartitions)(new PrimitiveVector[Int])
         val pid2Oids = Array.fill(numPartitions)(new OpenHashSet[VertexId])
         val time0 = System.nanoTime();
         while (iter.hasNext) {
@@ -86,15 +85,12 @@ object GraphScopeHelper extends Logging{
           if (srcPid == dstPid){
             pid2src(srcPid).+=(srcId)
             pid2Dst(srcPid).+=(dstId)
-            pid2attr(srcPid)+=(1)
           }
           else {
             pid2src(srcPid).+=(srcId)
             pid2Dst(srcPid).+=(dstId)
-            pid2attr(srcPid).+=(1)
             pid2src(dstPid).+=(srcId)
             pid2Dst(dstPid).+=(dstId)
-            pid2attr(dstPid).+=(1)
           }
         }
         val time1 = System.nanoTime()
@@ -103,7 +99,7 @@ object GraphScopeHelper extends Logging{
         var ind = 0
         while (ind < numPartitions){
           log.info(s"partition ${fromPid} send msg to ${ind}")
-          res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array, pid2attr(ind).trim().array)))
+          res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array)))
           ind += 1
         }
         res.toIterator
