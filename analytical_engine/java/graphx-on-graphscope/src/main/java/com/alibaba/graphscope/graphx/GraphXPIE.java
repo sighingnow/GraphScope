@@ -74,6 +74,10 @@ public class GraphXPIE<VD, ED, MSG_T> {
     private long innerVerticesNum, verticesNum;
     private BitSet curSet, nextSet;
     private EdgeDirection direction;
+    private long[] lid2Oid;
+    private PropertyNbrUnit<Long> nbr;
+    private long oeBeginAddress,ieBeginAddress;
+    private ImmutableTypedArray<Long> oeOffsetArray,ieOffsetArray;
 
     public PrimitiveArray<VD> getNewVdataArray() {
         return newVdataArray;
@@ -116,15 +120,25 @@ public class GraphXPIE<VD, ED, MSG_T> {
         curSet = new BitSet((int) verticesNum);
         nextSet = new BitSet((int) verticesNum);
         round = 0;
+        lid2Oid = new long[(int)verticesNum];
+        Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
+        for (int i = 0; i < verticesNum; ++i){
+            vertex.SetValue((long)i);
+            lid2Oid[i] = graphXFragment.getId(vertex);
+        }
+        vertex.SetValue(0L);
+        oeOffsetArray = graphXFragment.getCSR().getOEOffsetsArray();
+        ieOffsetArray = graphXFragment.getCSR().getIEOffsetsArray();
+        nbr = graphXFragment.getOEBegin(vertex);
+        oeBeginAddress = graphXFragment.getOEBegin(vertex).getAddress();
+        ieBeginAddress = graphXFragment.getIEBegin(vertex).getAddress();
         msgSendTime = vprogTime = receiveTime = flushTime = 0;
     }
 
     public void PEval() {
-        Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
         vprogTime -= System.nanoTime();
-        for (long lid = 0; lid < innerVerticesNum; ++lid) {
-            vertex.SetValue(lid);
-            Long oid = graphXFragment.getId(vertex);
+        for (int lid = 0; lid < innerVerticesNum; ++lid) {
+            long oid = lid2Oid[lid];
             VD originalVD = newVdataArray.get(lid);
             newVdataArray.set(lid, vprog.apply(oid, originalVD, initialMessage));
 //      logger.info("Running vprog on {}, oid {}, original vd {}, cur vd {}", lid,
@@ -133,11 +147,10 @@ public class GraphXPIE<VD, ED, MSG_T> {
         vprogTime += System.nanoTime();
 
         msgSendTime -= System.nanoTime();
-        for (long lid = 0; lid < innerVerticesNum; ++lid) {
-            vertex.SetValue(lid);
-            Long oid = graphXFragment.getInnerVertexId(vertex);
+        for (int lid = 0; lid < innerVerticesNum; ++lid) {
+            long oid = lid2Oid[lid];
             edgeTriplet.setSrcOid(oid, newVdataArray.get(lid));
-            iterateOnEdges(vertex, edgeTriplet);
+            iterateOnEdges(lid, edgeTriplet);
         }
         msgSendTime += System.nanoTime();
         logger.info("[PEval] Finish iterate edges for frag {}", graphXFragment.fid());
@@ -152,44 +165,42 @@ public class GraphXPIE<VD, ED, MSG_T> {
         round = 1;
     }
 
-    void iterateOnEdges(Vertex<Long> vertex, GSEdgeTripletImpl<VD, ED> edgeTriplet){
+    void iterateOnEdges(int lid, GSEdgeTripletImpl<VD, ED> edgeTriplet){
         if (direction.equals(EdgeDirection.Either())){
-            iterateOnEdgesImpl(vertex, edgeTriplet, true);
-            iterateOnEdgesImpl(vertex, edgeTriplet, false);
+            iterateOnEdgesImpl(lid, edgeTriplet, true);
+            iterateOnEdgesImpl(lid, edgeTriplet, false);
         }
         else if (direction.equals(EdgeDirection.In())){
-            iterateOnEdgesImpl(vertex, edgeTriplet, true);
+            iterateOnEdgesImpl(lid, edgeTriplet, true);
         }
         else if (direction.equals(EdgeDirection.Out())){
-            iterateOnEdgesImpl(vertex, edgeTriplet, false);
+            iterateOnEdgesImpl(lid, edgeTriplet, false);
         }
         else {
             throw new IllegalStateException("edge direction: both is not supported");
         }
     }
 
-    void iterateOnEdgesImpl(Vertex<Long> vertex, GSEdgeTripletImpl<VD, ED> edgeTriplet, boolean inEdge) {
-        PropertyNbrUnit<Long> begin,end;
+    void iterateOnEdgesImpl(int lid, GSEdgeTripletImpl<VD, ED> edgeTriplet, boolean inEdge) {
+        long beginOffset,endOffset;
         if (inEdge){
-            //FIXME: use first nbr + offset rather than getIEBegin
-            begin = graphXFragment.getIEBegin(vertex);
-            end = graphXFragment.getIEEnd(vertex);
+            beginOffset = oeOffsetArray.get(lid);
+            endOffset = oeOffsetArray.get(lid);
+            nbr.setAddress(beginOffset * 16 + oeBeginAddress);
         }
         else {
-            begin = graphXFragment.geOEBegin(vertex);
-            end = graphXFragment.getOEEnd(vertex);
+            beginOffset = ieOffsetArray.get(lid);
+            endOffset = ieOffsetArray.get(lid);
+            nbr.setAddress(beginOffset * 16 + ieBeginAddress);
         }
-
-        Vertex<Long> nbrVertex = FFITypeFactoryhelper.newVertexLong();
-
-        while (begin.getAddress() != end.getAddress()) {
-            Long nbrVid = begin.vid();
-            nbrVertex.SetValue(nbrVid);
-            edgeTriplet.setDstOid(graphXFragment.getId(nbrVertex), newVdataArray.get(nbrVid));
-            edgeTriplet.setAttr(newEdataArray.get(begin.eid()));
+        while (beginOffset < endOffset) {
+            long nbrVid = nbr.vid();
+            edgeTriplet.setDstOid(lid2Oid[(int) nbrVid], newVdataArray.get(nbrVid));
+            edgeTriplet.setAttr(newEdataArray.get(nbr.eid()));
             Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
             messageStore.addMessages(msgs, graphXFragment, nextSet);
-            begin.addV(16);
+            nbr.addV(16);
+            beginOffset += 1;
         }
     }
 
@@ -205,15 +216,12 @@ public class GraphXPIE<VD, ED, MSG_T> {
         /////////////////////////////////////Receive message////////////////////
         receiveMessage();
 
-        Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
-
         if (curSet.cardinality() > 0) {
             logger.info("Before running round {}, frag [{}] has {} active vertices", round,
                 graphXFragment.fid(), curSet.cardinality());
             vprogTime -= System.nanoTime();
             for (int lid = curSet.nextSetBit(0); lid >= 0 && lid < innerVerticesNum; lid = curSet.nextSetBit(lid + 1)) {
-                vertex.SetValue((long) lid);
-                Long oid = graphXFragment.getId(vertex);
+                Long oid = lid2Oid[lid];
                 VD originalVD = newVdataArray.get(lid);
                 newVdataArray.set(lid, vprog.apply(oid, originalVD, messageStore.get(lid)));
             }
@@ -221,10 +229,9 @@ public class GraphXPIE<VD, ED, MSG_T> {
 
             msgSendTime -= System.nanoTime();
             for (int lid = curSet.nextSetBit(0); lid >= 0; lid = curSet.nextSetBit(lid + 1)) {
-                vertex.SetValue((long) lid);
-                Long oid = graphXFragment.getId(vertex);
+                Long oid = lid2Oid[lid];
                 edgeTriplet.setSrcOid(oid, newVdataArray.get(lid));
-                iterateOnEdges(vertex, edgeTriplet);
+                iterateOnEdges(lid, edgeTriplet);
             }
             msgSendTime += System.nanoTime();
             logger.info("[IncEval {}] Finish iterate edges for frag {}", round,

@@ -16,12 +16,7 @@ import scala.reflect.ensureAccessible
 import scala.reflect.ClassTag
 
 /** the edge array only contains out edges, we use in edge as a comparison  */
-class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Array[Long], val csr : GraphXCSR[Long],
-//                           var srcLids : Array[Long],
-//                           val dstLids : Array[Long], val srcOids : Array[Long],
-//                           val dstOids : Array[Long],
-//                           val eids : Array[Long]
-                          ) extends GraphStructure with Logging{
+class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Array[Long], val csr : GraphXCSR[Long]) extends GraphStructure with Logging{
   val startLid = 0
   val endLid: Long = vm.innerVertexSize()
   val oeBeginNbr = csr.getOEBegin(0)
@@ -211,11 +206,11 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
         var curEndOffset = getOEOffset(curLid + 1)
         edge.srcId = lid2Oid(curLid)
         override def hasNext: Boolean = {
-          if (curOffset < curEndOffset) true
+          if (curOffset < curEndOffset && curOffset >= 0) true
           else {
-            while (curLid < endLid && curOffset >= curEndOffset) {
-              curEndOffset = getOEOffset(curLid + 1)
+            while (curOffset >= curEndOffset && curLid < endLid) {
               curLid += 1
+              curEndOffset = getOEOffset(curLid + 1)
             }
             if (curLid >= endLid) return false
             edge.srcId = lid2Oid(curLid)
@@ -243,11 +238,11 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
         var curEndOffset = getOEOffset(curLid + 1)
         edge.dstId = lid2Oid(curLid)
         override def hasNext: Boolean = {
-          if (curOffset < curEndOffset) true
+          if (curOffset < curEndOffset && curOffset >= 0) true
           else {
-            while (curLid < endLid && curOffset >= curEndOffset) {
-              curEndOffset = getOEOffset(curLid + 1)
+            while (curOffset >= curEndOffset && curLid < endLid) {
               curLid += 1
+              curEndOffset = getOEOffset(curLid + 1)
             }
             if (curLid >= endLid) return false
             edge.srcId = lid2Oid(curLid)
@@ -270,7 +265,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
   override def tripletIterator[VD: ClassTag,ED : ClassTag](vertexDataStore: VertexDataStore[VD],edatas : Array[ED], activeEdgeSet : BitSet, edgeReversed : Boolean = false,
                       includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false)
   : Iterator[EdgeTriplet[VD, ED]] = {
-    if (edgeReversed){
+    if (!edgeReversed){
       new Iterator[EdgeTriplet[VD, ED]] {
         var curOffset = activeEdgeSet.nextSetBit(0)
         var curLid = 0
@@ -280,11 +275,11 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
         var curEndOffset = getOEOffset(curLid + 1)
 
         override def hasNext: Boolean = {
-          if (curOffset < curEndOffset) true
+          if (curOffset < curEndOffset && curOffset >= 0) true
           else {
-            while (curLid < endLid && curOffset >= curEndOffset) {
-              curEndOffset = getOEOffset(curLid + 1)
+            while (curOffset >= curEndOffset && curLid < endLid) {
               curLid += 1
+              curEndOffset = getOEOffset(curLid + 1) // +2 = getOeEnd of (curLid + 1)
             }
             if (curLid >= endLid) return false
             srcId = lid2Oid(curLid)
@@ -319,11 +314,11 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
         var curEndOffset = getOEOffset(curLid + 1)
 
         override def hasNext: Boolean = {
-          if (curOffset < curEndOffset) true
+          if (curOffset < curEndOffset && curOffset >= 0) true
           else {
-            while (curLid < endLid && curOffset >= curEndOffset) {
-              curEndOffset = getOEOffset(curLid + 1)
+            while (curOffset >= curEndOffset && curLid < endLid) {
               curLid += 1
+              curEndOffset = getOEOffset(curLid + 1)
             }
             if (curLid >= endLid) return false
             dstId = lid2Oid(curLid)

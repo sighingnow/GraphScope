@@ -53,7 +53,7 @@ object GraphScopeHelper extends Logging{
    edgeStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
    vertexStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   : Graph[Int, Int] = {
-    val fakeNumPartitions = numPartitions * 2
+    val fakeNumPartitions = numPartitions * 4
     // Parse the edge data table directly into edge partitions
     val lines = {
       if (numPartitions > 0) {
