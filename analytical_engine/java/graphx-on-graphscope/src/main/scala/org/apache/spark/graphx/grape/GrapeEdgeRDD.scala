@@ -93,6 +93,7 @@ object GrapeEdgeRDD extends Logging{
     val locations = collectHosts.map(host => {
       "executor_" + host + "_" + executorInfo.get(host).get
     })
+    val numExecutors = executorInfo.size
     val sc = SparkContext.getOrCreate()
     log.info(s"hosts ${collectHosts.mkString(",")}, locations ${locations.mkString(",")}")
     val vineyardRDD = new VineyardRDD(sc, locations,collectHosts)
@@ -151,7 +152,7 @@ object GrapeEdgeRDD extends Logging{
         }
         require(res != null, s"after iterate over received global ids, no suitable found for ${hostName}, ${meta.partitionID} : ${globalVMIDs}")
         meta.setGlobalVM(res.toLong)
-        val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId)
+        val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId,numExecutors)
         val edatas = meta.edgePartitionBuilder.buildEdataArray(csr, defaultED)
         //raw edatas contains all edge datas, i.e. csr edata array.
         //edatas are out edges edge cache.

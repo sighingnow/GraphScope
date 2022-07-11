@@ -21,11 +21,11 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 public interface BasicGraphXCSRBuilder<OID_T,VID_T> extends FFISerializable {
     @FFINameAlias("LoadEdges")
     void loadEdges(@CXXReference ArrowArrayBuilder<OID_T> srcBuilder, @CXXReference ArrowArrayBuilder<OID_T> dstBuilder,
-        @CXXReference GraphXVertexMap<OID_T,VID_T> graphXVertexMap);
+        @CXXReference GraphXVertexMap<OID_T,VID_T> graphXVertexMap, int localNum);
 
     @FFINameAlias("LoadEdges")
     void loadEdges(@CXXReference StdVector<OID_T> srcs, @CXXReference StdVector<OID_T> dsts,
-        @CXXReference GraphXVertexMap<OID_T,VID_T> graphXVertexMap);
+        @CXXReference GraphXVertexMap<OID_T,VID_T> graphXVertexMap, int localNum);
 
     @FFINameAlias("MySeal")
     @CXXValue StdSharedPtr<GraphXCSR<VID_T>> seal(@CXXReference VineyardClient client);
