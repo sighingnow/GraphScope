@@ -232,9 +232,12 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
     val newEdgePartitions = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),grapeEdges.grapePartitionsRDD, newVertices.grapePartitionsRDD){
       (eIter,vIter) => {
-        val vPart = vIter.next()
-        val epart = eIter.next()
-        Iterator(epart.mapTriplets(map, vPart.vertexData, tripletFields))
+        if (vIter.hasNext){
+          val vPart = vIter.next()
+          val epart = eIter.next()
+          Iterator(epart.mapTriplets(map, vPart.vertexData, tripletFields))
+        }
+        else Iterator.empty
       }
     }
     val newEdges = grapeEdges.withPartitionsRDD(newEdgePartitions)
@@ -251,9 +254,12 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     }
     val newEdgePartitions = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),grapeEdges.grapePartitionsRDD, newVertices.grapePartitionsRDD){
       (eIter,vIter) => {
-        val vPart = vIter.next()
-        val epart = eIter.next()
-        Iterator(epart.mapTriplets(f, vPart.vertexData, true, true))
+        if (vIter.hasNext) {
+          val vPart = vIter.next()
+          val epart = eIter.next()
+          Iterator(epart.mapTriplets(f, vPart.vertexData, true, true))
+        }
+        else Iterator.empty
       }
     }
     val newEdges = grapeEdges.withPartitionsRDD(newEdgePartitions)
@@ -276,9 +282,12 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
     val newEdgePartitions = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),grapeEdges.grapePartitionsRDD, newVertices.grapePartitionsRDD){
       (eIter,vIter) => {
-        val vPart = vIter.next()
-        val ePart = eIter.next()
-        Iterator(ePart.filter(epred,vpred, vPart.vertexData))
+        if (vIter.hasNext) {
+          val vPart = vIter.next()
+          val ePart = eIter.next()
+          Iterator(ePart.filter(epred, vpred, vPart.vertexData))
+        }
+        else Iterator.empty
       }
     }
     val newEdges = grapeEdges.withPartitionsRDD(newEdgePartitions)
@@ -294,8 +303,11 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   override def groupEdges(merge: (ED, ED) => ED): Graph[VD, ED] = {
     new GrapeGraphImpl(vertices, grapeEdges.withPartitionsRDD(
       grapeEdges.grapePartitionsRDD.mapPartitions(iter => {
-        val part = iter.next()
-        Iterator(part.groupEdges(merge))
+        if (iter.hasNext) {
+          val part = iter.next()
+          Iterator(part.groupEdges(merge))
+        }
+        else Iterator.empty
       })
     ))
   }
@@ -331,25 +343,28 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   def generateDegreeRDD(edgeDirection: EdgeDirection) : GrapeVertexRDD[Int] = {
       val newVertexPartitionRDD = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), grapeEdges.grapePartitionsRDD, grapeVertices.grapePartitionsRDD){
       (thisIter, otherIter) => {
-        val ePart = thisIter.next()
-        val otherVPart = otherIter.next()
-        //VertexPartition id range should be same with edge partition
-        val newVdArray = ePart.getDegreeArray(edgeDirection)
-        require(otherVPart.vertexData.size == newVdArray.length)
-        val newVPart = otherVPart.withNewValues(otherVPart.vertexData.withNewValues(newVdArray))
-        //IN native graphx impl, the vertex with degree 0 is not returned. But we return them as well.
-        //to make the result same, we set all vertices with zero degree to inactive.
-        val ivnum = otherVPart.partVnum.toInt
-        val activeSet = new BitSet(ivnum)
-        activeSet.setUntil(ivnum)
-        var i = 0
-        while (i < ivnum){
-          if (newVdArray(i) == 0){
-            activeSet.unset(i)
+        if (thisIter.hasNext) {
+          val ePart = thisIter.next()
+          val otherVPart = otherIter.next()
+          //VertexPartition id range should be same with edge partition
+          val newVdArray = ePart.getDegreeArray(edgeDirection)
+          require(otherVPart.vertexData.size == newVdArray.length)
+          val newVPart = otherVPart.withNewValues(otherVPart.vertexData.withNewValues(newVdArray))
+          //IN native graphx impl, the vertex with degree 0 is not returned. But we return them as well.
+          //to make the result same, we set all vertices with zero degree to inactive.
+          val ivnum = otherVPart.partVnum.toInt
+          val activeSet = new BitSet(ivnum)
+          activeSet.setUntil(ivnum)
+          var i = 0
+          while (i < ivnum) {
+            if (newVdArray(i) == 0) {
+              activeSet.unset(i)
+            }
+            i += 1
           }
-          i += 1
+          Iterator(newVPart.withMask(activeSet))
         }
-        Iterator(newVPart.withMask(activeSet))
+        else Iterator.empty
       }
     }
     grapeVertices.withGrapePartitionsRDD(newVertexPartitionRDD)

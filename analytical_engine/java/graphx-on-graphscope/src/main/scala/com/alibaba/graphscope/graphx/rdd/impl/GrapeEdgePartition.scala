@@ -267,7 +267,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
   /**
    * @return the built local vertex map id.
    */
-  def buildLocalVertexMap() : LocalVertexMap[Long,Long] = {
+  def buildLocalVertexMap(pid : Int) : LocalVertexMap[Long,Long] = {
     //We need to get oid->lid mappings in this executor.
     val innerHashSet = new OpenHashSet[Long]
     val outerHashSet = new OpenHashSet[Long]
@@ -293,6 +293,10 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
       }
     }
     log.info(s"Found totally ${innerHashSet.size} in ${ExecutorUtils.getHostName}")
+    if (innerHashSet.size == 0 && outerHashSet.size == 0){
+      log.info(s"partition ${pid} empty")
+      return null
+    }
     val time01 = System.nanoTime()
     innerOidBuilder.reserve(innerHashSet.size)
     val iter = innerHashSet.iterator

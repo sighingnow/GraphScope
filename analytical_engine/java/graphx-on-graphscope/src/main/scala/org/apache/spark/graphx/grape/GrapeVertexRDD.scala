@@ -115,11 +115,14 @@ object GrapeVertexRDD extends Logging{
   def fromGrapeEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD, storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
     log.info(s"Driver: Creating vertex rdd from graphx edgeRDD of numPartition ${numPartitions}, default val ${defaultVal}")
     val grapeVertexPartition = edgeRDD.grapePartitionsRDD.mapPartitions(iter =>{
+      if (iter.hasNext){
         val ePart = iter.next()
         val fragVertices = ePart.graphStructure.getVertexSize
         log.info(s"Partition ${ePart.pid} doing initialization with default value ${defaultVal}, frag vertices ${fragVertices}")
         val grapeVertexPartition = GrapeVertexPartition.buildPrimitiveVertexPartition(fragVertices,defaultVal,ePart.pid, ePart.client, ePart.graphStructure, RoutingTable.fromGraphStructure(ePart.graphStructure))
         Iterator(grapeVertexPartition)
+      }
+      else Iterator.empty
     },preservesPartitioning = true).cache()
     new GrapeVertexRDDImpl[VD](grapeVertexPartition,storageLevel)
   }

@@ -91,9 +91,12 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
   (f: (VertexId, VertexId, ED, ED2) => ED3): GrapeEdgeRDD[ED3] = {
   val newPartitions = PartitionAwareZippedBaseRDD.zipPartitions(context, grapePartitionsRDD, other.asInstanceOf[GrapeEdgeRDD[ED2]].grapePartitionsRDD)({
       (thisIter, otherIter) => {
-        val thisEpart = thisIter.next()
-        val otherEpart = otherIter.next()
-        Iterator(thisEpart.innerJoin(otherEpart)(f))
+        if (thisIter.hasNext) {
+          val thisEpart = thisIter.next()
+          val otherEpart = otherIter.next()
+          Iterator(thisEpart.innerJoin(otherEpart)(f))
+        }
+        else Iterator.empty
       }
     })
     this.withPartitionsRDD[VD,ED3](newPartitions)

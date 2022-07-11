@@ -87,10 +87,13 @@ class GrapeVertexRDDImpl[VD] private[graphx](
         this.withGrapePartitionsRDD[VD](
           PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),grapePartitionsRDD, other.grapePartitionsRDD){
             (thisIter, otherIter) =>
-              val thisPartition = thisIter.next()
-              val otherPartition = otherIter.next()
-              require(thisPartition.pid == otherPartition.pid, "partition id should match")
-              Iterator( thisPartition.minus(otherPartition))
+              if (thisIter.hasNext) {
+                val thisPartition = thisIter.next()
+                val otherPartition = otherIter.next()
+                require(thisPartition.pid == otherPartition.pid, "partition id should match")
+                Iterator(thisPartition.minus(otherPartition))
+              }
+              else Iterator.empty
           })
       }
       case _ =>  throw new IllegalArgumentException("can only minus a grape vertex rdd now")
