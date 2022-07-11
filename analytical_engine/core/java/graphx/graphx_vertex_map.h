@@ -34,7 +34,6 @@
 #include "grape/grape.h"
 #include "grape/util.h"
 #include "grape/worker/comm_spec.h"
-#include "vineyard/graph/utils/error.h"
 #include "vineyard/basic/ds/array.h"
 #include "vineyard/basic/ds/arrow.h"
 #include "vineyard/basic/ds/arrow_utils.h"
@@ -127,13 +126,6 @@ class GraphXVertexMap
 
     LOG(INFO) << "Finish constructing global vertex map, ivnum: " << ivnum_
               << "ovnum: " << ovnum_ << " tvnum: " << tvnum_;
-
-    for (size_t i = 0; i < oid2Lids_.size(); ++i) {
-      LOG(INFO) << "oid2Lids_" << i << ", size " << oid2Lids_[i].size();
-    }
-    for (size_t i = 0; i < lid2Oids_.size(); ++i) {
-      LOG(INFO) << "lid2Oids_" << i << ", size " << lid2Oids_[i]->length();
-    }
   }
   fid_t fid() const { return fid_; }
   fid_t fnum() const { return fnum_; }
@@ -372,7 +364,7 @@ class GraphXVertexMap
     return id_parser_.generate_global_id(fid, lid);
   }
 
- boost::leaf::result<void> InitOuterGids() {
+  boost::leaf::result<void> InitOuterGids() {
     vid_array_builder_t gid_builder;
 
     auto ovnum = outer_lid2Oids_->length();
@@ -575,13 +567,14 @@ class BasicGraphXVertexMapBuilder
         partial_vmap->GetInnerLid2Oid().GetArray();
 
     CHECK(vineyard::FragmentAllGatherArray<oid_t>(comm_spec_, our_oids,
-                                            collected_oids).ok());
+                                                  collected_oids)
+              .ok());
     CHECK_EQ(collected_oids.size(), comm_spec_.worker_num());
-    for (auto i = 0; i < comm_spec_.worker_num(); ++i) {
-      auto array = collected_oids[i];
-      LOG(INFO) << "Worker [" << comm_spec_.worker_id() << " Receives "
-                << array->length() << "from worker: " << i;
-    }
+    // for (auto i = 0; i < comm_spec_.worker_num(); ++i) {
+    //   auto array = collected_oids[i];
+    //   LOG(INFO) << "Worker [" << comm_spec_.worker_id() << " Receives "
+    //             << array->length() << "from worker: " << i;
+    // }
 
     grape::fid_t curFid = comm_spec_.fid();
     int thread_num = comm_spec_.worker_num();
@@ -638,9 +631,6 @@ class BasicGraphXVertexMapBuilder
       MPI_Allgather(&tmp_graphx_pid, 1, MPI_INT, graphx_pids.data(), 1, MPI_INT,
                     comm_spec_.comm());
 
-      for (auto v : graphx_pids) {
-        LOG(INFO) << v;
-      }
       LOG(INFO) << "Received graphx pids: "
                 << std::string(graphx_pids.begin(), graphx_pids.end());
       arrow::Int32Builder builder;

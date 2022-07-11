@@ -370,39 +370,118 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     res
   }
 
-  //CHECK loop unrolling.
   override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2 : ClassTag](f: EdgeTriplet[VD,ED] => ED2,vertexDataStore: VertexDataStore[VD], edatas: Array[ED], activeSet: BitSet, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, resArray : Array[ED2]): Unit = {
     val time0 = System.nanoTime()
-    var offset: Int = activeSet.nextSetBit(0)
+//    var offset: Int = activeSet.nextSetBit(0)
+//    val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
+//
+//    while (offset >= 0) {
+//      edgeTriplet.srcAttr = vertexDataStore.getData(srcLids(offset))
+//      edgeTriplet.dstAttr = vertexDataStore.getData(dstLids(offset))
+//      edgeTriplet.srcId = srcOids(offset)
+//      edgeTriplet.dstId = dstOids(offset)
+//      val eid = eids(offset).toInt
+//      edgeTriplet.attr = edatas(eid) //edgeTriplet.eid
+//      resArray(eid) = f(edgeTriplet)
+//      offset = activeSet.nextSetBit(offset + 1)
+//    }
+    var curLid = 0
+    val nbr = csr.getOEBegin(0)
     val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
-
-    while (offset >= 0) {
-      edgeTriplet.srcAttr = vertexDataStore.getData(srcLids(offset))
-      edgeTriplet.dstAttr = vertexDataStore.getData(dstLids(offset))
-      edgeTriplet.srcId = srcOids(offset)
-      edgeTriplet.dstId = dstOids(offset)
-      val eid = eids(offset).toInt
-      edgeTriplet.attr = edatas(eid) //edgeTriplet.eid
-      resArray(eid) = f(edgeTriplet)
-      offset = activeSet.nextSetBit(offset + 1)
+    var curOffset = 0
+    if (!edgeReversed){
+      while (curLid < endLid){
+        val curEndOffset = getOEOffset(curLid + 1)
+        edgeTriplet.srcId = lid2Oid(curLid)
+        edgeTriplet.srcAttr = vertexDataStore.getData(curLid)
+        while (curOffset < curEndOffset){
+          if (activeSet.get(curOffset)){
+            val dstLid = nbr.vid()
+            edgeTriplet.dstId = lid2Oid(dstLid.toInt)
+            edgeTriplet.dstAttr = vertexDataStore.getData(dstLid)
+            edgeTriplet.attr = edatas(nbr.eid().toInt)
+          }
+          curOffset += 1
+          nbr.addV(16)
+        }
+        curLid += 1
+      }
     }
+    else {
+      while (curLid < endLid){
+        val curEndOffset = getOEOffset(curLid + 1)
+        edgeTriplet.dstId = lid2Oid(curLid)
+        edgeTriplet.dstAttr = vertexDataStore.getData(curLid)
+        while (curOffset < curEndOffset){
+          if (activeSet.get(curOffset)){
+            val dstLid = nbr.vid()
+            edgeTriplet.srcId = lid2Oid(dstLid.toInt)
+            edgeTriplet.srcAttr = vertexDataStore.getData(dstLid)
+            edgeTriplet.attr = edatas(nbr.eid().toInt)
+          }
+          curOffset += 1
+          nbr.addV(16)
+        }
+        curLid += 1
+      }
+    }
+
+
     val time1 = System.nanoTime()
     log.info(s"[GraphXGraphStructure:] iterating over edges triplet cost ${(time1 - time0)/ 1000000}ms")
   }
 
   override def iterateEdges[ED: ClassTag, ED2: ClassTag](f: Edge[ED] => ED2,edatas : Array[ED], activeSet: BitSet, edgeReversed: Boolean, newArray: Array[ED2]): Unit = {
     val time0 = System.nanoTime()
-    var offset: Int = activeSet.nextSetBit(0)
+//    var offset: Int = activeSet.nextSetBit(0)
+//    val edge = new ReusableEdgeImpl[ED]
+//
+//    while (offset >= 0) {
+//      edge.srcId = srcOids(offset)
+//      edge.dstId = dstOids(offset)
+//      val eid = eids(offset).toInt
+//      edge.attr = edatas(eid)
+//      newArray(eid) = f(edge)
+//      offset = activeSet.nextSetBit(offset + 1)
+//    }
+    var curLid = 0
+    val nbr = csr.getOEBegin(0)
     val edge = new ReusableEdgeImpl[ED]
-
-    while (offset >= 0) {
-      edge.srcId = srcOids(offset)
-      edge.dstId = dstOids(offset)
-      val eid = eids(offset).toInt
-      edge.attr = edatas(eid)
-      newArray(eid) = f(edge)
-      offset = activeSet.nextSetBit(offset + 1)
+    var curOffset = 0
+    if (!edgeReversed){
+      while (curLid < endLid){
+        val curEndOffset = getOEOffset(curLid + 1)
+        edge.srcId = lid2Oid(curLid)
+        while (curOffset < curEndOffset){
+          if (activeSet.get(curOffset)){
+            val dstLid = nbr.vid()
+            edge.dstId = lid2Oid(dstLid.toInt)
+            edge.attr = edatas(nbr.eid().toInt)
+          }
+          curOffset += 1
+          nbr.addV(16)
+        }
+        curLid += 1
+      }
     }
+    else {
+      while (curLid < endLid){
+        val curEndOffset = getOEOffset(curLid + 1)
+        edge.dstId = lid2Oid(curLid)
+        while (curOffset < curEndOffset){
+          if (activeSet.get(curOffset)){
+            val dstLid = nbr.vid()
+            edge.srcId = lid2Oid(dstLid.toInt)
+            edge.attr = edatas(nbr.eid().toInt)
+          }
+          curOffset += 1
+          nbr.addV(16)
+        }
+        curLid += 1
+      }
+    }
+
+
     val time1 = System.nanoTime()
     log.info(s"[GraphXGraphStructure:] iterating over edges cost ${(time1 - time0)/ 1000000}ms")
   }

@@ -11,7 +11,7 @@ import org.apache.spark.graphx.impl.GraphImpl
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.util.collection.{BitSet, PrimitiveVector}
+import org.apache.spark.util.collection.{BitSet, OpenHashSet, PrimitiveVector}
 import org.apache.spark.{HashPartitioner, Partitioner, SparkContext}
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -392,6 +392,7 @@ object GrapeGraphImpl extends Logging{
       val pid2Dst = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
       val pid2EdgeAttr = Array.fill(numPartitions)(new PrimitiveVector[ED])
       val pid2Oids = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
+      val pid2OuterOids = Array.fill(numPartitions)(new OpenHashSet[VertexId])
       val pid2VertexAttr = Array.fill(numPartitions)(new PrimitiveVector[VD])
 
       //shatter vertices
@@ -418,9 +419,11 @@ object GrapeGraphImpl extends Logging{
           pid2src(srcPid).+=(srcOid)
           pid2Dst(srcPid).+=(dstOid)
           pid2EdgeAttr(srcPid).+=(edgeAttr(i))
+          pid2OuterOids(srcPid).add(dstOid)
           pid2src(dstPid).+=(srcOid)
           pid2Dst(dstPid).+=(dstOid)
           pid2EdgeAttr(dstPid).+=(edgeAttr(i))
+          pid2OuterOids(dstPid).add(srcOid)
         }
         i += 1
       }
@@ -428,7 +431,7 @@ object GrapeGraphImpl extends Logging{
       var ind = 0
       while (ind < numPartitions){
         log.info(s"partition ${fromPid} send msg to ${ind}")
-        res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind).trim().array, pid2src(ind).trim().array, pid2Dst(ind).trim().array, pid2EdgeAttr(ind).trim().array,pid2VertexAttr(ind).trim().array)))
+        res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind).trim().array, pid2OuterOids(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array, pid2EdgeAttr(ind).trim().array,pid2VertexAttr(ind).trim().array)))
         ind += 1
       }
       res.toIterator
