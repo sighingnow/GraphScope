@@ -100,9 +100,14 @@ object GrapeEdgeRDD extends Logging{
       val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions,client)
       edgePartitionBuilder.addEdges(EdgeShuffleReceived.get.asInstanceOf[EdgeShuffleReceived[ED]])
       val localVertexMap = edgePartitionBuilder.buildLocalVertexMap()
-      grapeMeta.setLocalVertexMap(localVertexMap)
-      grapeMeta.setEdgePartitionBuilder(edgePartitionBuilder)
-      Iterator(grapeMeta)
+      if (localVertexMap == null){
+        Iterator.empty
+      }
+      else {
+        grapeMeta.setLocalVertexMap(localVertexMap)
+        grapeMeta.setEdgePartitionBuilder(edgePartitionBuilder)
+        Iterator(grapeMeta)
+      }
     },preservesPartitioning = true).cache()
 
     val localVertexMapIds = metaPartitions.mapPartitions(iter => {
@@ -123,35 +128,38 @@ object GrapeEdgeRDD extends Logging{
     require(globalVMIDs.size() == numPartitions)
 
     val metaPartitionsUpdated = metaPartitions.mapPartitions(iter => {
-      val meta = iter.next()
-      val hostName = InetAddress.getLocalHost.getHostName
-      log.info(s"Doing meta update on ${}, pid ${meta.partitionID}")
-      var res = null.asInstanceOf[String]
-      var i = 0
-      while (i < globalVMIDs.size()) {
-        val ind = globalVMIDs.get(i).indexOf(hostName)
-        if (ind != -1) {
-          val spltted = globalVMIDs.get(i).split(":")
-          require(spltted.length == 3) // hostname,pid,vmid
-          require(spltted(0).equals(hostName))
-          if (spltted(1).toInt == meta.partitionID) {
-            res = spltted(2)
+      if (iter.hasNext) {
+        val meta = iter.next()
+        val hostName = InetAddress.getLocalHost.getHostName
+        log.info(s"Doing meta update on ${}, pid ${meta.partitionID}")
+        var res = null.asInstanceOf[String]
+        var i = 0
+        while (i < globalVMIDs.size()) {
+          val ind = globalVMIDs.get(i).indexOf(hostName)
+          if (ind != -1) {
+            val spltted = globalVMIDs.get(i).split(":")
+            require(spltted.length == 3) // hostname,pid,vmid
+            require(spltted(0).equals(hostName))
+            if (spltted(1).toInt == meta.partitionID) {
+              res = spltted(2)
+            }
           }
+          i += 1
         }
-        i += 1
+        require(res != null, s"after iterate over received global ids, no suitable found for ${hostName}, ${meta.partitionID} : ${globalVMIDs}")
+        meta.setGlobalVM(res.toLong)
+        val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId)
+        val edatas = meta.edgePartitionBuilder.buildEdataArray(csr, defaultED)
+        //raw edatas contains all edge datas, i.e. csr edata array.
+        //edatas are out edges edge cache.
+        meta.setGlobalVM(vm)
+        meta.setCSR(csr)
+        meta.setEdataArray(edatas)
+        meta.edgePartitionBuilder.clearBuilders()
+        meta.edgePartitionBuilder = null //make it null to let it be gc able
+        Iterator(meta)
       }
-      require(res != null, s"after iterate over received global ids, no suitable found for ${hostName}, ${meta.partitionID} : ${globalVMIDs}")
-      meta.setGlobalVM(res.toLong)
-      val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId)
-      val edatas = meta.edgePartitionBuilder.buildEdataArray(csr, defaultED)
-      //raw edatas contains all edge datas, i.e. csr edata array.
-      //edatas are out edges edge cache.
-      meta.setGlobalVM(vm)
-      meta.setCSR(csr)
-      meta.setEdataArray(edatas)
-      meta.edgePartitionBuilder.clearBuilders()
-      meta.edgePartitionBuilder = null //make it null to let it be gc able
-      Iterator(meta)
+      else Iterator.empty
     },preservesPartitioning = true).cache()
 
     log.info(s"finish meta partitions updated ${metaPartitionsUpdated.count()}")
