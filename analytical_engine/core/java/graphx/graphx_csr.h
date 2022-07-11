@@ -385,7 +385,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     auto edges_num_ = srcOids->length();
     const oid_t* src_oid_ptr = srcOids->raw_values();
     const oid_t* dst_oid_ptr = dstOids->raw_values();
-    return LoadEdgesImpl(src_oid_ptr, dst_oid_ptr, edges_num_, graphx_vertex_map);
+    return LoadEdgesImpl(src_oid_ptr, dst_oid_ptr, edges_num_,
+                         graphx_vertex_map);
   }
 
   boost::leaf::result<void> LoadEdges(
@@ -395,7 +396,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     auto edges_num_ = srcOids.size();
     const oid_t* src_oid_ptr = srcOids.data();
     const oid_t* dst_oid_ptr = dstOids.data();
-    return LoadEdgesImpl(src_oid_ptr, dst_oid_ptr, edges_num_, graphx_vertex_map);
+    return LoadEdgesImpl(src_oid_ptr, dst_oid_ptr, edges_num_,
+                         graphx_vertex_map);
   }
 
   boost::leaf::result<void> LoadEdgesImpl(
@@ -406,7 +408,9 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     srcLids.resize(edges_num_);
     dstLids.resize(edges_num_);
     {
-      int thread_num = 16;
+      int thread_num =
+          (std::thread::hardware_concurrency() + comm_spec_.local_num() - 1) /
+          comm_spec_.local_num();
       std::atomic<int> current_chunk(0);
       int64_t chunkSize = 4096;
       int64_t num_chunks = (edges_num_ + chunkSize - 1) / chunkSize;
