@@ -59,7 +59,7 @@ object GrapeEdgeRDD extends Logging{
               edgeShuffleReceived.add(shuffle)
 	        }
         }
-        log.info(s"Partition ${ind} collect received partitions ${edgeShuffleReceived}")
+//        log.info(s"Partition ${ind} collect received partitions ${edgeShuffleReceived}")
         Iterator((ind, edgeShuffleReceived))
       }
       else {
@@ -241,7 +241,7 @@ object GrapeEdgeRDD extends Logging{
     metaPartitions.unpersist()
     edgesShuffles.unpersist()
 
-    val rdd =new GrapeEdgeRDDImpl[VD,ED](grapeEdgePartitions)
+    val rdd = new GrapeEdgeRDDImpl[VD,ED](grapeEdgePartitions)
     log.info(s"[GrapeEdgeRDD:] Finish Construct EdgeRDD, total edges count ${rdd.count()}")
     rdd
   }
