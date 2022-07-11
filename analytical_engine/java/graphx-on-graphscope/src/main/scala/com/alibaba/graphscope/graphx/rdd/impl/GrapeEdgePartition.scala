@@ -270,33 +270,29 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
   def buildLocalVertexMap() : LocalVertexMap[Long,Long] = {
     //We need to get oid->lid mappings in this executor.
     val innerHashSet = new OpenHashSet[Long]
+    val outerHashSet = new OpenHashSet[Long]
+    val time0 = System.nanoTime()
     for (edgeShuffleReceive <- lists){
-      if (edgeShuffleReceive == null || edgeShuffleReceive.fromPid2Shuffle == null){
-        return null
-      }
-      for (edgeShuffle <- edgeShuffleReceive.fromPid2Shuffle){
-        val receivedOids = edgeShuffle.oids
-        var i = 0
-        while (i < receivedOids.length){
-          innerHashSet.add(receivedOids(i))
-          i += 1
+      if (edgeShuffleReceive != null){
+        for (edgeShuffle <- edgeShuffleReceive.fromPid2Shuffle){
+          if (edgeShuffle != null){
+            val receivedOids = edgeShuffle.oids
+            val receivedOuterIds = edgeShuffle.outerOids
+            var i = 0
+            while (i < receivedOids.length){
+              innerHashSet.add(receivedOids(i))
+              i += 1
+            }
+            i = 0
+            while (i < receivedOuterIds.length){
+              outerHashSet.add(receivedOuterIds(i))
+              i += 1
+            }
+          }
         }
       }
     }
     log.info(s"Found totally ${innerHashSet.size} in ${ExecutorUtils.getHostName}")
-    val time0 = System.nanoTime()
-    //Build outer oids
-    val outerHashSet = new OpenHashSet[Long]
-    for (edgeShuffleReceive <- lists){
-      for (edgeShuffle <- edgeShuffleReceive.fromPid2Shuffle){
-        val receivedOuterIds = edgeShuffle.outerOids
-        var i = 0
-        while (i < receivedOuterIds.length){
-          outerHashSet.add(receivedOuterIds(i))
-          i += 1
-        }
-      }
-    }
     val time01 = System.nanoTime()
     innerOidBuilder.reserve(innerHashSet.size)
     val iter = innerHashSet.iterator
