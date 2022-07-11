@@ -94,7 +94,7 @@ void Load(const std::string local_vm_ids_str, vineyard::Client& client) {
     gs::BasicGraphXVertexMapBuilder<int64_t, uint64_t> builder(
         client, comm_spec, graphx_pid, partial_map);
 
-    global_vm_id = builder.Seal(client);
+    global_vm_id = builder.Seal(client)->id();
     VINEYARD_CHECK_OK(client.Persist(global_vm_id));
   }
   LOG(INFO) << "GlobalVertexMapID:" << getHostName() << ":" << graphx_pid << ":"
