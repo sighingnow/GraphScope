@@ -272,42 +272,26 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     val innerHashSet = new OpenHashSet[Long]
     for (edgeShuffleReceive <- lists){
       for (edgeShuffle <- edgeShuffleReceive.fromPid2Shuffle){
-        log.info(s"edge shuffle ${edgeShuffle} size ${edgeShuffle.size()}")
         val receivedOids = edgeShuffle.oids
-        log.info(s"Before union with ${receivedOids.size}, size ${innerHashSet.size}")
         var i = 0
         while (i < receivedOids.length){
           innerHashSet.add(receivedOids(i))
           i += 1
         }
-        log.info(s"after ${innerHashSet.size}")
       }
     }
     log.info(s"Found totally ${innerHashSet.size} in ${ExecutorUtils.getHostName}")
     val time0 = System.nanoTime()
     //Build outer oids
     val outerHashSet = new OpenHashSet[Long]
-    for (shuffle <- lists){
-      log.info(s"Extract outer vertices from ${shuffle}")
-      val (srcArrays, dstArrays, _) = shuffle.getArrays
-      var i = 0
-      val outerArrayLimit = srcArrays.length
-      while (i < outerArrayLimit){
-        var j = 0
-        val innerLimit = srcArrays(i).length
-        require(dstArrays(i).length == innerLimit)
-        val srcArray = srcArrays(i)
-        val dstArray = dstArrays(i)
-        while (j < innerLimit){
-          if (!innerHashSet.contains(srcArray(j))){
-            outerHashSet.add(srcArray(j))
-          }
-          if (!innerHashSet.contains(dstArray(j))){
-            outerHashSet.add(dstArray(j))
-          }
-          j += 1
+    for (edgeShuffleReceive <- lists){
+      for (edgeShuffle <- edgeShuffleReceive.fromPid2Shuffle){
+        val receivedOuterIds = edgeShuffle.outerOids
+        var i = 0
+        while (i < receivedOuterIds.length){
+          outerHashSet.add(receivedOuterIds(i))
+          i += 1
         }
-        i += 1
       }
     }
     val time01 = System.nanoTime()
@@ -358,11 +342,11 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     else {
       throw new IllegalStateException("not possible, default ed  and array is both null or bot not empty")
     }
-
   }
 
   // no edata building is needed, we only persist edata to c++ when we run pregel
   def buildCSR(globalVMID : Long): (GraphXVertexMap[Long,Long], GraphXCSR[Long]) = {
+    val time0 = System.nanoTime()
     val edgesNum = lists.map(shuffle => shuffle.totalSize()).sum
     log.info(s"Got totally ${lists.length}, edges ${edgesNum} in ${ExecutorUtils.getHostName}")
     srcOids.resize(edgesNum)
@@ -373,7 +357,6 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     log.info(s"Got graphx vertex map: ${graphxVertexMap}, total vnum ${graphxVertexMap.getTotalVertexSize}, fid ${graphxVertexMap.fid()}/${graphxVertexMap.fnum()}")
     var ind = 0
     for (shuffle <- lists){
-      log.info(s"Processing ${shuffle}")
       val (srcArrays, dstArrays, _) = shuffle.getArrays
       var i = 0
       val outerArrayLimit = srcArrays.length
@@ -396,6 +379,8 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     val graphxCSRBuilder = ScalaFFIFactory.newGraphXCSRBuilder(client)
     graphxCSRBuilder.loadEdges(srcOids,dstOids,graphxVertexMap)
     val graphxCSR = graphxCSRBuilder.seal(client).get()
+    val time1 = System.nanoTime()
+    log.info(s"Finish building graphx csr ${graphxVertexMap.fid()}, cost ${(time1 - time0)/1000000} ms")
     (graphxVertexMap,graphxCSR)
   }
 
