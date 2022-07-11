@@ -577,43 +577,52 @@ class BasicGraphXVertexMapBuilder
     // }
 
     grape::fid_t curFid = comm_spec_.fid();
-    int thread_num = comm_spec_.worker_num();
+    std::atomic<grape::fid_t> current_fid(0);
+    int thread_num =
+        (std::thread::hardware_concurrency() + comm_spec_.local_num() - 1) /
+        comm_spec_.local_num();
     std::vector<std::thread> threads(thread_num);
     for (int i = 0; i < thread_num; ++i) {
       threads[i] = std::thread(
           [&](int fid) {
-            grape::fid_t cur_fid = static_cast<grape::fid_t>(fid);
-            if (cur_fid == curFid) {
-              this->SetOidArray(cur_fid, partial_vmap->GetInnerLid2Oid());
-              this->SetSelfOuterOidArray(cur_fid,
-                                         partial_vmap->GetOuterLid2Oid());
-              this->SetOid2Lid(cur_fid, partial_vmap->GetInnerOid2Lid());
-              // builder for outer lid 2 gid
-            } else {
-              vineyard::HashmapBuilder<oid_t, vid_t> builder(client);
-              auto array = collected_oids[cur_fid];
-              {
-                vid_t cur_lid = 0;
-                int64_t vnum = array->length();
-                // builder.reserve(static_cast<size_t>(vnum));
-                for (int64_t k = 0; k < vnum; ++k) {
-                  builder.emplace(array->GetView(k), cur_lid);
-                  ++cur_lid;
-                }
+            grape::fid_t cur_fid;
+            while (true) {
+              cur_fid = current_fid.fetch_add(1, std::memory_order_relaxed);
+              if (cur_fid > comm_spec_.worker_num()) {
+                break;
               }
-              // may be reuse local vm.
-              {
-                typename vineyard::InternalType<oid_t>::vineyard_builder_type
-                    array_builder(client, array);
-                this->SetOidArray(
-                    cur_fid,
-                    *std::dynamic_pointer_cast<vineyard::NumericArray<oid_t>>(
-                        array_builder.Seal(client)));
+              if (cur_fid == curFid) {
+                this->SetOidArray(cur_fid, partial_vmap->GetInnerLid2Oid());
+                this->SetSelfOuterOidArray(cur_fid,
+                                           partial_vmap->GetOuterLid2Oid());
+                this->SetOid2Lid(cur_fid, partial_vmap->GetInnerOid2Lid());
+                // builder for outer lid 2 gid
+              } else {
+                vineyard::HashmapBuilder<oid_t, vid_t> builder(client);
+                auto array = collected_oids[cur_fid];
+                {
+                  vid_t cur_lid = 0;
+                  int64_t vnum = array->length();
+                  // builder.reserve(static_cast<size_t>(vnum));
+                  for (int64_t k = 0; k < vnum; ++k) {
+                    builder.emplace(array->GetView(k), cur_lid);
+                    ++cur_lid;
+                  }
+                }
+                // may be reuse local vm.
+                {
+                  typename vineyard::InternalType<oid_t>::vineyard_builder_type
+                      array_builder(client, array);
+                  this->SetOidArray(
+                      cur_fid,
+                      *std::dynamic_pointer_cast<vineyard::NumericArray<oid_t>>(
+                          array_builder.Seal(client)));
 
-                this->SetOid2Lid(
-                    cur_fid,
-                    *std::dynamic_pointer_cast<vineyard::Hashmap<oid_t, vid_t>>(
-                        builder.Seal(client)));
+                  this->SetOid2Lid(cur_fid,
+                                   *std::dynamic_pointer_cast<
+                                       vineyard::Hashmap<oid_t, vid_t>>(
+                                       builder.Seal(client)));
+                }
               }
             }
           },
