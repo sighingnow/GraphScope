@@ -87,7 +87,7 @@ class EdgeShuffleReceived[ED: ClassTag](val selfPid : Int) extends Logging{
 }
 
 object EdgeShuffleReceived{
-  val queue = new ArrayBlockingQueue[EdgeShuffleReceived[_]](16)
+  val queue = new ArrayBlockingQueue[EdgeShuffleReceived[_]](1024)
   def push(in : EdgeShuffleReceived[_]): Unit = {
     require(queue.offer(in))
   }
