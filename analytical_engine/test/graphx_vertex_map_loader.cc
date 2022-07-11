@@ -99,17 +99,12 @@ void Load(const std::string local_vm_ids_str, vineyard::Client& client) {
 
     VINEYARD_CHECK_OK(client.Persist(graphx_vm->id()));
     global_vm_id = graphx_vm->id();
-    LOG(INFO) << "Persist csr id: " << graphx_vm->id();
   }
-  // LOG(INFO) << "GlobalVertexMapID:" << getHostName() << ":" << graphx_pid <<
-  // ":"
-  //           << global_vm_id;
+  LOG(INFO) << "GlobalVertexMapID:" << getHostName() << ":" << graphx_pid << ":"
+            << global_vm_id;
 }
 
-void Finalize() {
-  grape::FinalizeMPIComm();
-  VLOG(1) << "Workers finalized.";
-}
+void Finalize() { grape::FinalizeMPIComm(); }
 
 int main(int argc, char* argv[]) {
   FLAGS_stderrthreshold = 0;
@@ -129,7 +124,6 @@ int main(int argc, char* argv[]) {
   Init();
   vineyard::Client client;
   VINEYARD_CHECK_OK(client.Connect(FLAGS_ipc_socket));
-  LOG(INFO) << "Connected to " << FLAGS_ipc_socket;
 
   if (FLAGS_oid_type == "int64_t" && FLAGS_vid_type == "uint64_t") {
     Load<int64_t, uint64_t>(FLAGS_local_vm_ids, client);
@@ -138,8 +132,6 @@ int main(int argc, char* argv[]) {
   }
 
   Finalize();
-
-  VLOG(1) << "Finish Querying.";
 
   google::ShutdownGoogleLogging();
 }
