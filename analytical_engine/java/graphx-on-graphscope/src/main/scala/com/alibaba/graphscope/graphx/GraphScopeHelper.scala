@@ -53,18 +53,16 @@ object GraphScopeHelper extends Logging{
    edgeStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
    vertexStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   : Graph[Int, Int] = {
-    val startTimeNs = System.nanoTime()
     // Parse the edge data table directly into edge partitions
     val lines = {
       if (numPartitions > 0) {
-        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong]).coalesce(numPartitions).setName(path)
+        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong]).coalesce(numPartitions * 2).setName(path)
       } else {
         sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong]).setName(path)
       }
     }.map(pair => (pair._2.first, pair._2.second))
     lines.cache()
     val linesTime = System.nanoTime()
-    log.info("[edgeListFile]: load partitions cost " + (linesTime - startTimeNs) / 1000000 + "ms")
     //    val numLines = lines.count() / numPartitions
     val partitioner = new HashPartitioner(numPartitions)
     val edgesShuffled = lines.mapPartitionsWithIndex (
@@ -104,21 +102,19 @@ object GraphScopeHelper extends Logging{
         }
         res.toIterator
       }
-    ).partitionBy(partitioner).setName("GraphScopeHelper.edgeListFile - edges (%s)".format(path))
+    ).partitionBy(partitioner).setName("GraphScopeHelper.edgeListFile - edges (%s)".format(path)).cache()
     val edgeShufflesNum = edgesShuffled.count()
-    val edgeShuffleTime = System.nanoTime()
-    log.info(s"Repartition ${edgeShufflesNum} edges cost ${(edgeShuffleTime - linesTime)/ 1000000} ms ")
 
-    logInfo(s"It took ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTimeNs)} ms" +
-      " to load the edges")
+    logInfo(s"It took ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - linesTime)} ms" +
+      s" to load the edges size ${edgeShufflesNum}")
 
     val time0 = System.nanoTime()
     val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[Int,Int](edgesShuffled,defaultED = 1).cache()
-    val time1 = System.nanoTime()
-    log.info(s"[edgeListFile:] construct edge rdd ${edgeRDD} cost ${(time1 - time0) / 1000000} ms")
     val vertexRDD = GrapeVertexRDD.fromGrapeEdgeRDD[Int](edgeRDD, edgeRDD.grapePartitionsRDD.getNumPartitions, 1,vertexStorageLevel).cache()
     log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
     lines.unpersist()
+    val time1 = System.nanoTime()
+    log.info(s"[edgeListFile:] construct grape edge rdd ${edgeRDD.count()} and vertex rdd ${vertexRDD.count()} cost ${(time1 - time0) / 1000000} ms")
     GrapeGraphImpl.fromExistingRDDs(vertexRDD,edgeRDD)
   }
 
