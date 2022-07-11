@@ -53,6 +53,7 @@ class GraphXShuffleBuilder : public vineyard::ObjectBuilder {
                                 vineyard::Client& client) {
     vineyard_array_builder_t src_builder(client, src_oids);
     vineyard_array_builder_t dst_builder(client, dst_oids);
+    src_builder.Seal(client);
   }
 
   vineyard::Status Build(vineyard::Client& client) override {}
@@ -60,6 +61,7 @@ class GraphXShuffleBuilder : public vineyard::ObjectBuilder {
   std::shared_ptr<vineyard::Object> _Seal(vineyard::Client& client) {}
 
  private:
+  vineyard_array_t src_oid_array, dst_oid_array;
 };
 
 }  // namespace gs

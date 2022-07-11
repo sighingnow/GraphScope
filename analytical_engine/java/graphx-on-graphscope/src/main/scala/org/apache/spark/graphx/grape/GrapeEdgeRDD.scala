@@ -188,7 +188,6 @@ object GrapeEdgeRDD extends Logging{
           val curOid = lid2Oid(curLid)
           val startNbrOffset = oeOffsetsArray.get(curLid)
           val endNbrOffset = oeOffsetsArray.get(curLid + 1)
-//          log.info(s" begin offset ${startNbrOffset}, end offset ${endNbrOffset}, out degree for ${curOid} ${meta.graphxCSR.getOutDegree(curLid)}")
           var j = startNbrOffset.toInt
           while (j < endNbrOffset){
             srcOids(j) = curOid

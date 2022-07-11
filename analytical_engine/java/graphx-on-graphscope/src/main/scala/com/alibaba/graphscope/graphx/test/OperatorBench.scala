@@ -91,8 +91,17 @@ object OperatorBench extends Logging{
       log.info(s"[OperatorBench]: map [edges grape] time ${(grapeTime21 - grapeTime20) / 1000000} ms")
       grapeGraph2.unpersist()
 
+      val grapeTime50 = System.nanoTime()
+      val grapeGraph5 = mapTriplet(mapTriplet(mapTriplet(grapeGraph)))
+      log.info(s"[Operator Bench------]Finish mapping triplet, counts vertices ${grapeGraph5.vertices.count()}, edges ${grapeGraph5.edges.count()}")
+      val grapeTime51 = System.nanoTime()
+      log.info(s"[OperatorBench]: map [edge triplet] grape time ${(grapeTime51 - grapeTime50) / 1000000} ms")
+      grapeGraph5.unpersist()
+
       log.info(s"[Operator Bench:] load graph cost ${(grapeTime01 - grapeTime00)/1000000} ms")
       log.info(s"[OperatorBench]: map [edges grape] time ${(grapeTime21 - grapeTime20) / 1000000} ms")
+      log.info(s"[OperatorBench]: map [edge triplet] grape time ${(grapeTime51 - grapeTime50) / 1000000} ms")
+
       return
 
       /*
@@ -182,8 +191,16 @@ object OperatorBench extends Logging{
       val graphxTime21 = System.nanoTime()
       graphxGraph2.unpersist()
 
+      val graphxTime50 = System.nanoTime()
+      val graphxGraph5 = mapTriplet(mapTriplet(mapTriplet(graphxGraph)))
+      log.info(s"[Operator Bench------]Finish mapping triplet, counts vertices ${graphxGraph5.vertices.count()} edges ${graphxGraph5.edges.count()}")
+      val graphxTime51 = System.nanoTime()
+      graphxGraph5.unpersist()
+
       log.info(s"[Operator Bench:] load graph cost ${(graphxTime01 - graphxTime00)/1000000} ms")
       log.info(s"[OperatorBench]: map [edges ] graphx time ${(graphxTime21 - graphxTime20)/ 1000000} ms")
+      log.info(s"[OperatorBench]: map [edge triplet] graphx time ${(graphxTime51 - graphxTime50)/ 1000000} ms")
+
       return
 
       /*
