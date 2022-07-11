@@ -99,7 +99,7 @@ object GrapeEdgeRDD extends Logging{
       val grapeMeta = new GrapeMeta[VD,ED](pid, numPartitions, client, ExecutorUtils.getHostName)
       val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions,client)
       edgePartitionBuilder.addEdges(EdgeShuffleReceived.get.asInstanceOf[EdgeShuffleReceived[ED]])
-      val localVertexMap = edgePartitionBuilder.buildLocalVertexMap()
+      val localVertexMap = edgePartitionBuilder.buildLocalVertexMap(pid)
       if (localVertexMap == null){
         Iterator.empty
       }
@@ -119,7 +119,7 @@ object GrapeEdgeRDD extends Logging{
     },preservesPartitioning = true).collect().distinct.sorted
 
     log.info(s"[GrapeEdgeRDD]: got distinct local vm ids ${localVertexMapIds.mkString("Array(", ", ", ")")}")
-    require(localVertexMapIds.length == numPartitions, s"${localVertexMapIds.length} neq to num partitoins ${numPartitions}")
+//    require(localVertexMapIds.length == numPartitions, s"${localVertexMapIds.length} neq to num partitoins ${numPartitions}")
 
     log.info("[GrapeEdgeRDD]: Start constructing global vm")
     val time0 = System.nanoTime()
