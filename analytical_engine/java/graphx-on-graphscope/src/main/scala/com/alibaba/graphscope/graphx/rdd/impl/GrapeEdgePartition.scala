@@ -348,7 +348,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
   }
 
   // no edata building is needed, we only persist edata to c++ when we run pregel
-  def buildCSR(globalVMID : Long): (GraphXVertexMap[Long,Long], GraphXCSR[Long]) = {
+  def buildCSR(globalVMID : Long,numExecutors : Int): (GraphXVertexMap[Long,Long], GraphXCSR[Long]) = {
     val time0 = System.nanoTime()
     val edgesNum = lists.map(shuffle => shuffle.totalSize()).sum
     log.info(s"Got totally ${lists.length}, edges ${edgesNum} in ${ExecutorUtils.getHostName}")
@@ -380,7 +380,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     }
     log.info("Finish adding edges to builders")
     val graphxCSRBuilder = ScalaFFIFactory.newGraphXCSRBuilder(client)
-    graphxCSRBuilder.loadEdges(srcOids,dstOids,graphxVertexMap)
+    graphxCSRBuilder.loadEdges(srcOids,dstOids,graphxVertexMap,graphxVertexMap.fnum() / numExecutors)
     val graphxCSR = graphxCSRBuilder.seal(client).get()
     val time1 = System.nanoTime()
     log.info(s"Finish building graphx csr ${graphxVertexMap.fid()}, cost ${(time1 - time0)/1000000} ms")
