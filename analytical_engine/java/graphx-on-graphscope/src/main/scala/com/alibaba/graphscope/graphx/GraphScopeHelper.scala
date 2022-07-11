@@ -57,12 +57,11 @@ object GraphScopeHelper extends Logging{
     // Parse the edge data table directly into edge partitions
     val lines = {
       if (numPartitions > 0) {
-        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong]).coalesce(fakeNumPartitions).setName(path)
+        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong]).setName(path) //coalesce(fakeNumPartitions)
       } else {
         sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong]).setName(path)
       }
     }.map(pair => (pair._2.first, pair._2.second))
-    lines.cache()
     val linesTime = System.nanoTime()
     //    val numLines = lines.count() / numPartitions
     val partitioner = new HashPartitioner(numPartitions)

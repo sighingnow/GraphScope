@@ -85,14 +85,14 @@ object OperatorBench extends Logging{
       val grapeTime01 = System.nanoTime()
 
       val grapeTime20 = System.nanoTime()
-      val grapeGraph2 = mapEdges(mapEdges(mapEdges(grapeGraph)))
+      val grapeGraph2 = mapEdges(mapEdges(mapEdges(mapEdges(mapEdges(grapeGraph)))))
       log.info(s"[Operator Bench------]Finish mapping grape edge, counts vertices ${grapeGraph2.vertices.count()}, edges ${grapeGraph2.edges.count()}")
       val grapeTime21 = System.nanoTime()
       log.info(s"[OperatorBench]: map [edges grape] time ${(grapeTime21 - grapeTime20) / 1000000} ms")
       grapeGraph2.unpersist()
 
       val grapeTime50 = System.nanoTime()
-      val grapeGraph5 = mapTriplet(mapTriplet(mapTriplet(grapeGraph)))
+      val grapeGraph5 = mapTriplet(mapTriplet(mapTriplet(mapTriplet(mapTriplet(grapeGraph)))))
       log.info(s"[Operator Bench------]Finish mapping triplet, counts vertices ${grapeGraph5.vertices.count()}, edges ${grapeGraph5.edges.count()}")
       val grapeTime51 = System.nanoTime()
       log.info(s"[OperatorBench]: map [edge triplet] grape time ${(grapeTime51 - grapeTime50) / 1000000} ms")
@@ -186,13 +186,13 @@ object OperatorBench extends Logging{
       val graphxTime01 = System.nanoTime()
 
       val graphxTime20 = System.nanoTime()
-      val graphxGraph2 = mapEdges(mapEdges(mapEdges(graphxGraph)))
+      val graphxGraph2 = mapEdges(mapEdges(mapEdges(mapEdges(mapEdges(graphxGraph)))))
       log.info(s"[Operator Bench------]Finish mapping graphx edge, counts vertices ${graphxGraph2.vertices.count()} edges ${graphxGraph2.edges.count()}")
       val graphxTime21 = System.nanoTime()
       graphxGraph2.unpersist()
 
       val graphxTime50 = System.nanoTime()
-      val graphxGraph5 = mapTriplet(mapTriplet(mapTriplet(graphxGraph)))
+      val graphxGraph5 = mapTriplet(mapTriplet(mapTriplet(mapTriplet(mapTriplet(graphxGraph)))))
       log.info(s"[Operator Bench------]Finish mapping triplet, counts vertices ${graphxGraph5.vertices.count()} edges ${graphxGraph5.edges.count()}")
       val graphxTime51 = System.nanoTime()
       graphxGraph5.unpersist()
