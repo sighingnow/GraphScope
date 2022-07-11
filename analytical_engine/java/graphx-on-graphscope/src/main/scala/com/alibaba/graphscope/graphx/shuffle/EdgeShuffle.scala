@@ -19,7 +19,7 @@ class EdgeShuffle[VD : ClassTag,ED : ClassTag](val fromPid : Int,
     this(fromPid,dstPid,openHashSetToArray(oids), openHashSetToArray(outerOids), srcs, dsts)
   }
   def this(fromPid : Int, dstPid : Int, oids : Array[Long], outerOids: OpenHashSet[Long], srcs : Array[Long], dsts : Array[Long], attrs : Array[ED], vertexAttrs : Array[VD]) = {
-    this(fromPid,dstPid,oids, openHashSetToArray(outerOids), srcs, dsts)
+    this(fromPid,dstPid,oids, openHashSetToArray(outerOids), srcs, dsts,attrs,vertexAttrs)
   }
   require(srcs.length == dsts.length)
 
@@ -89,7 +89,7 @@ class EdgeShuffleReceived[ED: ClassTag](val selfPid : Int) extends Logging{
 object EdgeShuffleReceived{
   val queue = new ArrayBlockingQueue[EdgeShuffleReceived[_]](16)
   def push(in : EdgeShuffleReceived[_]): Unit = {
-    queue.offer(in)
+    require(queue.offer(in))
   }
 
   def get : EdgeShuffleReceived[_] = {

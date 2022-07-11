@@ -77,11 +77,14 @@ object GrapeEdgeRDD extends Logging{
     //3. construct rdd.
 
     val collectHosts = edgesShuffles.mapPartitionsWithIndex((pid, iter) =>{
-      val hostName = InetAddress.getLocalHost.getHostName
-      val (_pid,part) = iter.next()
-      require(pid == _pid, s"not possible ${pid}, ${_pid}")
-      EdgeShuffleReceived.push(part)
-      Iterator(hostName)
+      if (iter.hasNext) {
+        val hostName = InetAddress.getLocalHost.getHostName
+        val (_pid, part) = iter.next()
+        require(pid == _pid, s"not possible ${pid}, ${_pid}")
+        EdgeShuffleReceived.push(part)
+        Iterator(hostName)
+      }
+      else Iterator.empty
     },preservesPartitioning = true).collect()
 
     log.info(s"shuffles exists on hosts ${collectHosts.mkString(",")}")
