@@ -55,7 +55,7 @@ object GrapeEdgeRDD extends Logging{
           val (pid, shuffle) = iter.next()
 //          require(pid == ind)
           if (shuffle != null){
-              log.info(s"partition ${ind} receives msg from ${shuffle.fromPid}")
+//              log.info(s"partition ${ind} receives msg from ${shuffle.fromPid}")
               edgeShuffleReceived.add(shuffle)
 	        }
         }
@@ -96,7 +96,6 @@ object GrapeEdgeRDD extends Logging{
 
     val metaPartitions = vineyardRDD.mapPartitionsWithIndex((pid,iter) => {
       val client = iter.next()
-      log.info(s"client ${client}")
       val grapeMeta = new GrapeMeta[VD,ED](pid, numPartitions, client, ExecutorUtils.getHostName)
       val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions,client)
       edgePartitionBuilder.addEdges(EdgeShuffleReceived.get.asInstanceOf[EdgeShuffleReceived[ED]])

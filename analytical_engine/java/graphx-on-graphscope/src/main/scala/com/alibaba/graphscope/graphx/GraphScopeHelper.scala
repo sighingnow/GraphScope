@@ -53,7 +53,7 @@ object GraphScopeHelper extends Logging{
    edgeStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
    vertexStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   : Graph[Int, Int] = {
-    val fakeNumPartitions = numPartitions * 4
+    val fakeNumPartitions = numPartitions * 2
     // Parse the edge data table directly into edge partitions
     val lines = {
       if (numPartitions > 0) {
@@ -100,7 +100,7 @@ object GraphScopeHelper extends Logging{
         val res = new ArrayBuffer[(PartitionID,EdgeShuffle[Int,Int])]
         var ind = 0
         while (ind < numPartitions){
-          log.info(s"partition ${fromPid} send msg to ${ind}")
+//          log.info(s"partition ${fromPid} send msg to ${ind}")
           res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind),pid2OuterIds(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array)))
           ind += 1
         }
