@@ -631,8 +631,6 @@ class BasicGraphXVertexMapBuilder
       MPI_Allgather(&tmp_graphx_pid, 1, MPI_INT, graphx_pids.data(), 1, MPI_INT,
                     comm_spec_.comm());
 
-      LOG(INFO) << "Received graphx pids: "
-                << std::string(graphx_pids.begin(), graphx_pids.end());
       arrow::Int32Builder builder;
       CHECK(builder.AppendValues(graphx_pids).ok());
       std::shared_ptr<arrow::Int32Array> graphx_pids_array;
