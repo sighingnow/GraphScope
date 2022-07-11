@@ -271,7 +271,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     //We need to get oid->lid mappings in this executor.
     val innerHashSet = new OpenHashSet[Long]
     for (edgeShuffleReceive <- lists){
-      if (edgeShuffleReceive.fromPid2Shuffle == null){
+      if (edgeShuffleReceive == null || edgeShuffleReceive.fromPid2Shuffle == null){
         return null
       }
       for (edgeShuffle <- edgeShuffleReceive.fromPid2Shuffle){
