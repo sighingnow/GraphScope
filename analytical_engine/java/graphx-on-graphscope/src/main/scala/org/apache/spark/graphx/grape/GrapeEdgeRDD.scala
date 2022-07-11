@@ -158,60 +158,83 @@ object GrapeEdgeRDD extends Logging{
     log.info(s"finish meta partitions updated ${metaPartitionsUpdated.count()}")
 
 
-    val grapeEdgePartitions = metaPartitionsUpdated.mapPartitions(iter => {
-      log.info("doing edge partition building")
-      if (iter.hasNext) {
-        val meta = iter.next()
-        val time0 = System.nanoTime()
-        val edgesNum = meta.graphxCSR.getOutEdgesNum.toInt
-        val srcOids = new Array[Long](edgesNum)
-        val srcLids = new Array[Long](edgesNum)
-        val dstOids = new Array[Long](edgesNum)
-        val dstLids = new Array[Long](edgesNum)
-        val eids = new Array[Long](edgesNum)
-        var curLid = 0
-        val endLid = meta.globalVM.innerVertexSize()
-        val vm = meta.globalVM
-        val oeOffsetsArray: ImmutableTypedArray[Long] = meta.graphxCSR.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
-        log.info(s"all edges num: ${meta.graphxCSR.getOutEdgesNum}")
-        val lid2Oid : Array[Long] = {
-          val res = new Array[Long](vm.getVertexSize.toInt)
-          var i = 0;
-          val limit = vm.getVertexSize.toInt
-          while (i < limit){
-            res(i) = vm.getId(i)
-            i += 1
+//    val grapeEdgePartitions = metaPartitionsUpdated.mapPartitions(iter => {
+//      log.info("doing edge partition building")
+//      if (iter.hasNext) {
+//        val meta = iter.next()
+//        val time0 = System.nanoTime()
+//        val edgesNum = meta.graphxCSR.getOutEdgesNum.toInt
+//        val srcOids = new Array[Long](edgesNum)
+//        val srcLids = new Array[Long](edgesNum)
+//        val dstOids = new Array[Long](edgesNum)
+//        val dstLids = new Array[Long](edgesNum)
+//        val eids = new Array[Long](edgesNum)
+//        var curLid = 0
+//        val endLid = meta.globalVM.innerVertexSize()
+//        val vm = meta.globalVM
+//        val oeOffsetsArray: ImmutableTypedArray[Long] = meta.graphxCSR.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
+//        log.info(s"all edges num: ${meta.graphxCSR.getOutEdgesNum}")
+//        val lid2Oid : Array[Long] = {
+//          val res = new Array[Long](vm.getVertexSize.toInt)
+//          var i = 0;
+//          val limit = vm.getVertexSize.toInt
+//          while (i < limit){
+//            res(i) = vm.getId(i)
+//            i += 1
+//          }
+//          res
+//        }
+//        while (curLid < endLid){
+//          val curOid = lid2Oid(curLid)
+//          val startNbrOffset = oeOffsetsArray.get(curLid)
+//          val endNbrOffset = oeOffsetsArray.get(curLid + 1)
+//          var j = startNbrOffset.toInt
+//          while (j < endNbrOffset){
+//            srcOids(j) = curOid
+//            srcLids(j) = curLid
+//            j += 1
+//          }
+//          j = startNbrOffset.toInt
+//          val nbr = meta.graphxCSR.getOEBegin(curLid)
+//          while (j < endNbrOffset){
+//            dstLids(j) = nbr.vid()
+//            dstOids(j) = lid2Oid(nbr.vid().toInt)
+//            eids(j) = nbr.eid()
+//            nbr.addV(16);
+//	          j += 1
+//          }
+//          curLid += 1
+//        }
+//        val time1 = System.nanoTime()
+//        log.info(s"[Initializing edge cache in heap cost ]: ${(time1 - time0) / 1000000} ms")
+//        val graphStructure = new GraphXGraphStructure(meta.globalVM,lid2Oid, meta.graphxCSR, srcLids, dstLids, srcOids, dstOids, eids)
+//        Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, graphStructure, meta.vineyardClient, meta.edataArray))
+//      }
+//      else Iterator.empty
+//    },preservesPartitioning = true).cache()
+      val grapeEdgePartitions = metaPartitionsUpdated.mapPartitions(iter => {
+        log.info("doing edge partition building")
+        if (iter.hasNext) {
+          val meta = iter.next()
+          val time0 = System.nanoTime()
+          val vm = meta.globalVM
+          val lid2Oid : Array[Long] = {
+            val res = new Array[Long](vm.getVertexSize.toInt)
+            var i = 0;
+            val limit = vm.getVertexSize.toInt
+            while (i < limit){
+              res(i) = vm.getId(i)
+              i += 1
+            }
+            res
           }
-          res
+          val time1 = System.nanoTime()
+          val graphStructure = new GraphXGraphStructure(meta.globalVM,lid2Oid, meta.graphxCSR)
+          log.info(s"[Creating graph structure cost ]: ${(time1 - time0) / 1000000} ms")
+          Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, graphStructure, meta.vineyardClient, meta.edataArray))
         }
-        while (curLid < endLid){
-          val curOid = lid2Oid(curLid)
-          val startNbrOffset = oeOffsetsArray.get(curLid)
-          val endNbrOffset = oeOffsetsArray.get(curLid + 1)
-          var j = startNbrOffset.toInt
-          while (j < endNbrOffset){
-            srcOids(j) = curOid
-            srcLids(j) = curLid
-            j += 1
-          }
-          j = startNbrOffset.toInt
-          val nbr = meta.graphxCSR.getOEBegin(curLid)
-          while (j < endNbrOffset){
-            dstLids(j) = nbr.vid()
-            dstOids(j) = lid2Oid(nbr.vid().toInt)
-            eids(j) = nbr.eid()
-            nbr.addV(16);
-	          j += 1
-          }
-          curLid += 1
-        }
-        val time1 = System.nanoTime()
-        log.info(s"[Initializing edge cache in heap cost ]: ${(time1 - time0) / 1000000} ms")
-        val graphStructure = new GraphXGraphStructure(meta.globalVM,lid2Oid, meta.graphxCSR, srcLids, dstLids, srcOids, dstOids, eids)
-        Iterator(new GrapeEdgePartition[VD, ED](meta.partitionID, graphStructure, meta.vineyardClient, meta.edataArray))
-      }
-      else Iterator.empty
-    },preservesPartitioning = true).cache()
+        else Iterator.empty
+      },preservesPartitioning = true).cache()
     log.info(s"grape edge partition count ${grapeEdgePartitions.count()}")
 
     //clear cached builder memory
