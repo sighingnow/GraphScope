@@ -53,10 +53,11 @@ object GraphScopeHelper extends Logging{
    edgeStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY,
    vertexStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   : Graph[Int, Int] = {
+    val fakeNumPartitions = numPartitions * 2
     // Parse the edge data table directly into edge partitions
     val lines = {
       if (numPartitions > 0) {
-        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong]).coalesce(numPartitions * 2).setName(path)
+        sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong]).coalesce(fakeNumPartitions).setName(path)
       } else {
         sc.hadoopFile(path, classOf[LongLongInputFormat], classOf[LongWritable],classOf[LongLong]).setName(path)
       }
@@ -64,13 +65,13 @@ object GraphScopeHelper extends Logging{
     lines.cache()
     val linesTime = System.nanoTime()
     //    val numLines = lines.count() / numPartitions
-    val partitioner = new HashPartitioner(numPartitions)
+    val partitioner = new HashPartitioner(fakeNumPartitions)
     val edgesShuffled = lines.mapPartitionsWithIndex (
       (fromPid, iter) => {
         //        iter.toArray
-        val pid2src = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
-        val pid2Dst = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
-        val pid2Oids = Array.fill(numPartitions)(new OpenHashSet[VertexId])
+        val pid2src = Array.fill(fakeNumPartitions)(new PrimitiveVector[VertexId])
+        val pid2Dst = Array.fill(fakeNumPartitions)(new PrimitiveVector[VertexId])
+        val pid2Oids = Array.fill(fakeNumPartitions)(new OpenHashSet[VertexId])
         val time0 = System.nanoTime();
         while (iter.hasNext) {
           val line = iter.next()
@@ -102,7 +103,7 @@ object GraphScopeHelper extends Logging{
         }
         res.toIterator
       }
-    ).partitionBy(partitioner).setName("GraphScopeHelper.edgeListFile - edges (%s)".format(path)).cache()
+    ).partitionBy(partitioner).setName("GraphScopeHelper.edgeListFile - edges (%s)".format(path)).coalesce(numPartitions).cache()
     val edgeShufflesNum = edgesShuffled.count()
 
     logInfo(s"It took ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - linesTime)} ms" +
