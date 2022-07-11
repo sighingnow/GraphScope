@@ -88,9 +88,9 @@ void Load(const std::string local_vm_ids_str, vineyard::Client& client) {
       graphx_pid = std::stoi(graphx_pid_vm_id[0]);
     }
 
-    LOG(INFO) << "Worker: [" << comm_spec.worker_id() << "], local id ["
-              << comm_spec.local_id() << "] local vm: " << partial_map
-              << ", graphx pid: " << graphx_pid;
+    // LOG(INFO) << "Worker: [" << comm_spec.worker_id() << "], local id ["
+    //           << comm_spec.local_id() << "] local vm: " << partial_map
+    //           << ", graphx pid: " << graphx_pid;
     gs::BasicGraphXVertexMapBuilder<int64_t, uint64_t> builder(
         client, comm_spec, graphx_pid, partial_map);
     auto graphx_vm =
@@ -101,8 +101,9 @@ void Load(const std::string local_vm_ids_str, vineyard::Client& client) {
     global_vm_id = graphx_vm->id();
     LOG(INFO) << "Persist csr id: " << graphx_vm->id();
   }
-  LOG(INFO) << "GlobalVertexMapID:" << getHostName() << ":" << graphx_pid << ":"
-            << global_vm_id;
+  // LOG(INFO) << "GlobalVertexMapID:" << getHostName() << ":" << graphx_pid <<
+  // ":"
+  //           << global_vm_id;
 }
 
 void Finalize() {
