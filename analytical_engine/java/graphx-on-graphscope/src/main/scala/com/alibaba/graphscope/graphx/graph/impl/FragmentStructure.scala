@@ -15,10 +15,7 @@ import org.apache.spark.util.collection.BitSet
 
 import scala.reflect.ClassTag
 
-class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
-                        var srcLids : PrimitiveArray[Long] = null,var dstLids : PrimitiveArray[Long] = null,
-                        var srcOids : PrimitiveArray[Long] = null, var dstOids : PrimitiveArray[Long] = null,
-                        var eids : Array[Long] = null) extends GraphStructure with Logging with Serializable {
+class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphStructure with Logging with Serializable {
   val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
   val fid2Pid = new Array[Int](fragment.fnum())
 
@@ -27,20 +24,45 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
   var oePtrStartAddr,iePtrStartAddr : Long = 0
   var oeOffsetBeginArray,ieOffsetBeginArray : TypedArray[Long] = null
   var oeOffsetEndArray,ieOffsetEndArray : TypedArray[Long] = null
+  var eids : Array[Long] = null
   if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
     val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,_,_]].asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
     oePtr = projectedFragment.getOutEdgesPtr
-    iePtr =projectedFragment.getInEdgesPtr
+    iePtr = projectedFragment.getInEdgesPtr
     oePtrStartAddr = oePtr.getAddress
     iePtrStartAddr = iePtr.getAddress
     oeOffsetBeginArray = projectedFragment.getOEOffsetsBeginAccessor.asInstanceOf[TypedArray[Long]]
     ieOffsetBeginArray = projectedFragment.getIEOffsetsBeginAccessor.asInstanceOf[TypedArray[Long]]
     oeOffsetEndArray = projectedFragment.getOEOffsetsEndAccessor.asInstanceOf[TypedArray[Long]]
     ieOffsetEndArray = projectedFragment.getIEOffsetsEndAccessor.asInstanceOf[TypedArray[Long]]
+    eids = {
+      val edgeNum = getOutEdgesNum
+      val res = new Array[Long](edgeNum.toInt)
+      val nbr = projectedFragment.getOutEdgesPtr
+      var i = 0
+      while (i < edgeNum){
+        res(i) = nbr.eid()
+        nbr.addV(16)
+        i += 1
+      }
+      res
+    }
 
   }
   else {
     throw new IllegalStateException(s"not supported type ${fragment.fragmentType()}")
+  }
+
+  val lid2Oid : Array[Long] = {
+    val res = new Array[Long](fragment.getVerticesNum.toInt)
+    var i = 0L
+    val limit = res.length
+    while (i < limit){
+      vertex.SetValue(i)
+      res(i.toInt) = fragment.getId(vertex)
+      i += 1
+    }
+    res
   }
 
   val startLid = 0
@@ -83,51 +105,6 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     }
     log.info("initialize lid2offset")
     res
-  }
-
-  if (srcLids == null){
-    require(dstLids == null && srcOids == null && dstOids == null)
-    if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
-      val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long, Long, _, _]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
-      srcOids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
-      srcLids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
-      dstOids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
-      dstLids = PrimitiveArray.create(classOf[Long], getOutEdgesNum.toInt)
-      eids = new Array[Long](getOutEdgesNum.toInt)
-      val nbr = projectedFragment.getOutEdgesPtr
-
-      val time0 = System.nanoTime()
-      var curLid = 0
-      while (curLid < endLid){
-        vertex.SetValue(curLid)
-        val curOid = fragment.getId(vertex)
-        val startOffset = lid2Offset(curLid)
-        val endOffset = lid2Offset(curLid + 1)
-        var tmp = startOffset
-        while (tmp < endOffset){
-          srcLids.set(tmp, curLid)
-          srcOids.set(tmp, curOid)
-          tmp += 1
-        }
-        tmp = startOffset
-        while (tmp < endOffset){
-          val dstLid = nbr.vid()
-          vertex.SetValue(dstLid)
-          val dstOid = fragment.getId(vertex)
-          dstLids.set(tmp, dstLid)
-          dstOids.set(tmp, dstOid)
-          eids(tmp.toInt) =  nbr.eid()
-          nbr.addV(NBR_SIZE)
-          tmp += 1
-        }
-        curLid += 1
-      }
-      val time1 = System.nanoTime()
-      log.info(s"initialize arrays cost ${(time1 - time0)/1000000} ms")
-    }
-    else {
-      throw new IllegalStateException(s"No implementation for ${fragment.fragmentType()}")
-    }
   }
 
   private def getOutDegreeArray : Array[Int] = {
@@ -284,104 +261,150 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_],
     }
   }
 
-  private def newProjectedIterator[ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, _, ED], edatas : Array[ED], bitSet: BitSet, edgeReverse : Boolean) : Iterator[Edge[ED]] = {
+  private def newProjectedIterator[ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, _, ED], edatas : Array[ED], activeEdgeSet: BitSet, edgeReverse : Boolean) : Iterator[Edge[ED]] = {
     if (edgeReverse){
-      new Iterator[Edge[ED]]{
-        val edge: ReusableEdge[ED] =  new ReusableEdgeImpl[ED];
-        var offset : Int = bitSet.nextSetBit(0)
-        val nbr : PropertyNbrUnit[Long]= frag.getOutEdgesPtr
-        val initAddress : Long = nbr.getAddress
-
+      new Iterator[Edge[ED]] {
+        var curOffset = activeEdgeSet.nextSetBit(0)
+        val edge = new ReusableEdgeImpl[ED]
+        var curLid = 0
+        val beginAddr = frag.getOutEdgesPtr.getAddress
+        val nbr = frag.getOutEdgesPtr
+        var curEndOffset = oeOffsetEndArray.get(curLid)
+        edge.dstId = lid2Oid(curLid)
         override def hasNext: Boolean = {
-          offset >= 0
+          if (curOffset < curEndOffset && curOffset >= 0) true
+          else {
+            while (curOffset >= curEndOffset && curLid < endLid) {
+              curEndOffset = oeOffsetEndArray.get(curLid + 1)
+              curLid += 1
+            }
+            if (curLid >= endLid) return false
+            edge.srcId = lid2Oid(curLid)
+            true
+          }
         }
 
         override def next(): Edge[ED] = {
-          nbr.setAddress(initAddress + NBR_SIZE * offset)
-          edge.srcId = dstOids.get(offset)
-          edge.dstId = srcOids.get(offset)
-          edge.eid = eids(offset)
-          edge.offset = offset
-          edge.attr = edatas(edge.eid.toInt)
-          offset = bitSet.nextSetBit((offset + 1).toInt)
+          nbr.setAddress(beginAddr + curOffset * 16)
+          val dstLid = nbr.vid()
+          edge.srcId = lid2Oid(dstLid.toInt)
+          edge.attr = edatas(nbr.eid().toInt)
+          curOffset = activeEdgeSet.nextSetBit(curOffset)
           edge
         }
       }
     }
     else {
-      new Iterator[Edge[ED]]{
-        val edge: ReusableEdge[ED] =  new ReusableEdgeImpl[ED];
-        var offset : Long = bitSet.nextSetBit(0)
-        val nbr : PropertyNbrUnit[Long]= frag.getOutEdgesPtr
-        val initAddress : Long = nbr.getAddress
-
+      new Iterator[Edge[ED]] {
+        var curOffset = activeEdgeSet.nextSetBit(0)
+        val edge = new ReusableEdgeImpl[ED]
+        var curLid = 0
+        val beginAddr = frag.getOutEdgesPtr.getAddress
+        val nbr = frag.getOutEdgesPtr
+        var curEndOffset = oeOffsetEndArray.get(curLid)
+        edge.srcId = lid2Oid(curLid)
         override def hasNext: Boolean = {
-          offset >= 0
+          if (curOffset < curEndOffset && curOffset >= 0) true
+          else {
+            while (curOffset >= curEndOffset && curLid < endLid) {
+              curEndOffset = oeOffsetEndArray.get(curLid + 1)
+              curLid += 1
+            }
+            if (curLid >= endLid) return false
+            edge.srcId = lid2Oid(curLid)
+            true
+          }
         }
 
         override def next(): Edge[ED] = {
-          nbr.setAddress(initAddress + NBR_SIZE * offset)
-          edge.dstId = dstOids.get(offset)
-          edge.srcId = srcOids.get(offset)
-          edge.eid = eids(offset.toInt)
-          edge.offset = offset
-          edge.attr = edatas(edge.eid.toInt)
-          offset = bitSet.nextSetBit((offset + 1).toInt)
+          nbr.setAddress(beginAddr + curOffset * 16)
+          val dstLid = nbr.vid()
+          edge.dstId = lid2Oid(dstLid.toInt)
+          edge.attr = edatas(nbr.eid().toInt)
+          curOffset = activeEdgeSet.nextSetBit(curOffset)
           edge
         }
       }
     }
 
   }
-  private def newProjectedTripletIterator[VD: ClassTag,ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, VD, ED],vertexDataStore: VertexDataStore[VD], edatas : Array[ED],bitSet: BitSet, edgeReversed: Boolean, includeSrc : Boolean, includeDst : Boolean,includeLid : Boolean = false) : Iterator[EdgeTriplet[VD,ED]] = {
-    if (edgeReversed){
-      new Iterator[EdgeTriplet[VD,ED]]{
-        var offset : Int = bitSet.nextSetBit(0)
-        override def hasNext: Boolean = {
-          offset >= 0
-        }
-
-        override def next(): EdgeTriplet[VD,ED] = {
-          val edge = new GSEdgeTripletImpl[VD,ED]
-          edge.dstId = srcOids.get(offset)
-          if (includeDst){
-            edge.dstAttr = vertexDataStore.getData(srcLids.get(offset))
-          }
-          edge.srcId = dstOids.get(offset)
-          if (includeSrc){
-            edge.srcAttr = vertexDataStore.getData(dstLids.get(offset))
-          }
-          edge.eid = eids(offset)
-          edge.attr = edatas(edge.eid.toInt)
-          edge.offset = offset
-          offset = bitSet.nextSetBit((offset + 1).toInt)
-          edge
-        }
-      }
-    }
-    else {
+  private def newProjectedTripletIterator[VD: ClassTag,ED : ClassTag](frag: ArrowProjectedFragment[Long, Long, VD, ED],vertexDataStore: VertexDataStore[VD], edatas : Array[ED],activeEdgeSet: BitSet, edgeReversed: Boolean, includeSrc : Boolean, includeDst : Boolean,includeLid : Boolean = false) : Iterator[EdgeTriplet[VD,ED]] = {
+    if (!edgeReversed){
       new Iterator[EdgeTriplet[VD, ED]] {
-        var offset: Int = bitSet.nextSetBit(0)
+        var curOffset = activeEdgeSet.nextSetBit(0)
+        var curLid = 0
+        var srcId = 0 : Long
+        val beginAddr = frag.getOutEdgesPtr.getAddress
+        val nbr = frag.getOutEdgesPtr
+        var curEndOffset = oeOffsetEndArray.get(curLid)
 
         override def hasNext: Boolean = {
-          offset >= 0
+          if (curOffset < curEndOffset && curOffset >= 0) true
+          else {
+            while (curOffset >= curEndOffset && curLid < endLid) {
+              curEndOffset = oeOffsetEndArray.get(curLid + 1)
+              curLid += 1
+            }
+            if (curLid >= endLid) return false
+            srcId = lid2Oid(curLid)
+            true
+          }
         }
 
         override def next(): EdgeTriplet[VD, ED] = {
-          val edge = new GSEdgeTripletImpl[VD, ED]
-          edge.srcId = srcOids.get(offset)
-          if (includeSrc) {
-            edge.srcAttr = vertexDataStore.getData(srcLids.get(offset))
+          val edgeTriplet = new GSEdgeTripletImpl[VD, ED];
+          nbr.setAddress(beginAddr + curOffset * 16)
+          val dstLid = nbr.vid().toInt
+          edgeTriplet.eid = nbr.eid()
+          edgeTriplet.offset = curOffset
+          edgeTriplet.dstId = lid2Oid(dstLid)
+          edgeTriplet.srcId = srcId
+          edgeTriplet.attr = edatas(edgeTriplet.eid.toInt)
+          if (includeLid){
+            edgeTriplet.srcLid = curLid
+            edgeTriplet.dstLid = dstLid
           }
-          edge.dstId = dstOids.get(offset)
-          if (includeDst) {
-            edge.dstAttr = vertexDataStore.getData(dstLids.get(offset))
+          curOffset = activeEdgeSet.nextSetBit(curOffset + 1)
+          edgeTriplet
+        }
+      }
+    } else {
+      new Iterator[EdgeTriplet[VD, ED]] {
+        var curOffset = activeEdgeSet.nextSetBit(0)
+        var curLid = 0
+        var dstId = 0 : Long
+        val beginAddr = frag.getOutEdgesPtr.getAddress
+        val nbr = frag.getOutEdgesPtr
+        var curEndOffset = oeOffsetEndArray.get(curLid)
+
+        override def hasNext: Boolean = {
+          if (curOffset < curEndOffset && curOffset >= 0) true
+          else {
+            while (curOffset >= curEndOffset && curLid < endLid) {
+              curEndOffset = oeOffsetEndArray.get(curLid + 1)
+              curLid += 1
+            }
+            if (curLid >= endLid) return false
+            dstId = lid2Oid(curLid)
+            true
           }
-          edge.eid = eids(offset)
-          edge.attr = edatas(edge.eid.toInt)
-          edge.offset = offset
-          offset = bitSet.nextSetBit((offset + 1).toInt)
-          edge
+        }
+
+        override def next(): EdgeTriplet[VD, ED] = {
+          val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
+          nbr.setAddress(beginAddr + curOffset * 16)
+          val srcLid = nbr.vid().toInt
+          edgeTriplet.eid = nbr.eid()
+          edgeTriplet.offset = curOffset
+          edgeTriplet.srcId = lid2Oid(srcLid)
+          edgeTriplet.dstId = dstId
+          edgeTriplet.attr = edatas(edgeTriplet.eid.toInt)
+          if (includeLid){
+            edgeTriplet.dstLid = curLid
+            edgeTriplet.srcLid = srcLid
+          }
+          curOffset = activeEdgeSet.nextSetBit(curOffset + 1)
+          edgeTriplet
         }
       }
     }
