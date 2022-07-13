@@ -248,11 +248,10 @@ object GrapeEdgeRDD extends Logging{
       partitionIds(i) = splited(1).toInt
     }
 
-    val oldSize = hostNames.length
     var i = size
     while (i < targetLength){
-      hostNames(i) = hostNames(i % oldSize)
-      locations(i) = locations(i % oldSize)
+      hostNames(i) = hostNames(i % size)
+      locations(i) = locations(i % size)
       partitionIds(i) = i
       i += 1
     }
