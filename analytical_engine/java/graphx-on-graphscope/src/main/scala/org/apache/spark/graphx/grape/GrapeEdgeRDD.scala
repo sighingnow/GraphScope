@@ -217,9 +217,9 @@ object GrapeEdgeRDD extends Logging{
       if (iter.hasNext){
         val grapeEdgePartition = GrapeEdgePartition.get[VD,ED](pid)
         log.info(s"part ${pid} got grapeEdgePart ${grapeEdgePartition.toString}")
-        val fid = grapeEdgePartition.graphStructure.fid()
-        val ppid = grapeEdgePartition.graphStructure.fid2GraphxPid(fid)
-        require(pid == ppid, s"partition id ${pid} neq ${ppid}")
+//        val fid = grapeEdgePartition.graphStructure.fid()
+//        val ppid = grapeEdgePartition.graphStructure.fid2GraphxPid(fid)
+//        require(pid == ppid, s"partition id ${pid} neq ${ppid}")
         Iterator(grapeEdgePartition)
       }
       else Iterator.empty
