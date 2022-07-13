@@ -208,7 +208,7 @@ object GrapeEdgeRDD extends Logging{
     })
     emptyRDD.foreachPartition(iter => {
       if (iter.hasNext){
-        GrapeEdgePartition.createPartitions(iter.next().ind)
+        GrapeEdgePartition.createPartitions[VD,ED](iter.next().ind)
       }
     })
     log.info(s"empty rdd size ${emptyRDD.getNumPartitions}")
