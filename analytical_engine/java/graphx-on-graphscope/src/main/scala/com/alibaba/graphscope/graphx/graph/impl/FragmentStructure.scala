@@ -287,7 +287,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
           nbr.setAddress(beginAddr + curOffset * 16)
           val dstLid = nbr.vid()
           edge.srcId = lid2Oid(dstLid.toInt)
-          edge.attr = edatas(nbr.eid().toInt)
+          edge.attr = edatas(curOffset)
           curOffset = activeEdgeSet.nextSetBit(curOffset)
           edge
         }
@@ -320,7 +320,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
           nbr.setAddress(beginAddr + curOffset * 16)
           val dstLid = nbr.vid()
           edge.dstId = lid2Oid(dstLid.toInt)
-          edge.attr = edatas(nbr.eid().toInt)
+          edge.attr = edatas(curOffset)
           curOffset = activeEdgeSet.nextSetBit(curOffset)
           edge
         }
@@ -369,7 +369,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
           }
           edgeTriplet.srcId = srcId
           edgeTriplet.srcAttr = srcAttr
-          edgeTriplet.attr = edatas(edgeTriplet.eid.toInt)
+          edgeTriplet.attr = edatas(curOffset)
           if (includeLid){
             edgeTriplet.srcLid = curLid
             edgeTriplet.dstLid = dstLid
@@ -416,7 +416,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
           }
           edgeTriplet.dstId = dstId
           edgeTriplet.dstAttr = dstAttr
-          edgeTriplet.attr = edatas(edgeTriplet.eid.toInt)
+          edgeTriplet.attr = edatas(curOffset)
           if (includeLid){
             edgeTriplet.dstLid = curLid
             edgeTriplet.srcLid = srcLid
