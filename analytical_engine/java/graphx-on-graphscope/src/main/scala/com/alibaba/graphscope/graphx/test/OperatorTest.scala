@@ -60,12 +60,12 @@ object OperatorTest extends Logging{
       def mapTriplet(graph : Graph[Long,Long]) : Graph[Long,Long] = {
         log.info("[Operator test]: start map triplets")
         val graph2 = graph.mapTriplets(triplet => {
-          log.info(s"triplet v1 ${triplet.srcId}(${triplet.srcAttr})->${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")
+//          log.info(s"triplet v1 ${triplet.srcId}(${triplet.srcAttr})->${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")
           triplet.srcAttr + triplet.dstAttr
         })
         def f(pid : PartitionID, iter : Iterator[EdgeTriplet[Long,Long]]): Iterator[Long] = {
           iter.map(triplet=> {
-            log.info(s"triplet v2 ${triplet.srcId}(${triplet.srcAttr})->${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")
+//            log.info(s"triplet v2 ${triplet.srcId}(${triplet.srcAttr})->${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")
             triplet.srcId
           })
         }
