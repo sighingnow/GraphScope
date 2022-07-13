@@ -206,6 +206,11 @@ object GrapeEdgeRDD extends Logging{
         GrapeEdgePartition.incCount
       }
     })
+    emptyRDD.foreachPartition(iter => {
+      if (iter.hasNext){
+        GrapeEdgePartition.createPartitions(iter.next().ind)
+      }
+    })
     log.info(s"empty rdd size ${emptyRDD.getNumPartitions}")
 
     val grapeEdgePartitions = emptyRDD.mapPartitionsWithIndex((pid, iter) => {
@@ -249,8 +254,8 @@ object GrapeEdgeRDD extends Logging{
       i += 1
     }
     log.info(s"expanded partitions,host names ${hostNames.mkString("Array(", ", ", ")")}")
-    log.info(s"expanded partitions,locations ${hostNames.mkString("Array(", ", ", ")")}")
-    log.info(s"expanded partitions,partitionIds ${hostNames.mkString("Array(", ", ", ")")}")
+    log.info(s"expanded partitions,locations ${locations.mkString("Array(", ", ", ")")}")
+    log.info(s"expanded partitions,partitionIds ${partitionIds.mkString("Array(", ", ", ")")}")
     (hostNames, locations, partitionIds)
   }
 }

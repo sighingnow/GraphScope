@@ -72,8 +72,6 @@ object OperatorTest extends Logging{
         graph2.mapTriplets[Long]((pid,iter)=>f(pid,iter), TripletFields.All)
       }
 
-//      val graphxRes = mapTriplet(mapEdgeIterator(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph))))))).mask(maskGraph).reverse
-//      val graphxRes = mapTriplet(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(graph)))))).mask(maskGraph)
       val graphxRes = mapTriplet(graph)
       val grapeRes = mapTriplet(grapeGraph)
 
@@ -91,7 +89,6 @@ object OperatorTest extends Logging{
 
       log.info(s"after outer join vertices ${grapeRes3.vertices.count()}, edges ${grapeRes3.edges.count()}")
       log.info(s"after outer join vertices ${graphxRes3.vertices.count()}, edges ${graphxRes3.edges.count()}")
-
 
       //      val grapeRes = mapTriplet(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(grapeGraph)))))).mask(grapeMaskGraph)
 
