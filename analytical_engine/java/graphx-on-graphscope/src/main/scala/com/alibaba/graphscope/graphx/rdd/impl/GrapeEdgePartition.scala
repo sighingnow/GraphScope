@@ -165,11 +165,9 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val time0 = System.nanoTime()
     val iter = tripletIterator(innerVertexDataStore,outerVertexDataStore,includeSrc,includeDst,reuseTriplet = true).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
     val resultEdata = f(pid, iter)
-    val eids = graphStructure.getEids
     var ind = activeEdgeSet.nextSetBit(activeEdgeSet.startBit)
     while (ind >= 0 && resultEdata.hasNext){
-      val eid = eids(ind)
-      newData(eid.toInt) = resultEdata.next()
+      newData(ind) = resultEdata.next()
       ind = activeEdgeSet.nextSetBit(ind + 1)
     }
     if (ind >=0 || resultEdata.hasNext){
