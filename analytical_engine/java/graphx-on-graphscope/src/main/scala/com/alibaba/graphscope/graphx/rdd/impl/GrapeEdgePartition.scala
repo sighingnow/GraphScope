@@ -420,9 +420,9 @@ object GrapeEdgePartition extends Logging {
             log.info(s"Totally $size ele in queue, registered partition num ${pidQueue.size()}")
             for (_ <- 0 until size){
               val tuple = tupleQueue.poll()
-              val dstPid = pidQueue.poll()
-              pid2EdgePartition(dstPid) = new GrapeEdgePartition[VD,ED](dstPid, 0,0, tuple._2.getInnerVertexSize, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
-              GrapeVertexPartition.setOuterVertexStore(dstPid, tuple._5)
+              val _ = pidQueue.poll()
+              pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1, 0,0, tuple._2.getInnerVertexSize, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
+              GrapeVertexPartition.setOuterVertexStore(tuple._1, tuple._5)
             }
           }
           else {

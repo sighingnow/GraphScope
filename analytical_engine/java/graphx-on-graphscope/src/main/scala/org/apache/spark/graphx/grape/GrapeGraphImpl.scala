@@ -448,7 +448,7 @@ object GrapeGraphImpl extends Logging{
       val res = new ArrayBuffer[(PartitionID,EdgeShuffle[VD,ED])]
       var ind = 0
       while (ind < numPartitions){
-        log.info(s"partition ${fromPid} send msg to ${ind}")
+//        log.info(s"partition ${fromPid} send msg to ${ind}")
         res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind).trim().array, pid2OuterOids(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array, pid2EdgeAttr(ind).trim().array,pid2VertexAttr(ind).trim().array)))
         ind += 1
       }
