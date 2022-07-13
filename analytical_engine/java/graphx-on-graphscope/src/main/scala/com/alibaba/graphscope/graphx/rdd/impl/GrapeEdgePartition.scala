@@ -352,8 +352,8 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     val time0 = System.nanoTime()
     val edgesNum = lists.map(shuffle => shuffle.totalSize()).sum
     log.info(s"Got totally ${lists.length}, edges ${edgesNum} in ${ExecutorUtils.getHostName}")
-    srcOids.resize(edgesNum)
-    dstOids.resize(edgesNum)
+    srcOids.reserve(edgesNum)
+    dstOids.reserve(edgesNum)
     log.info(s"Constructing csr with global vm ${globalVMID}")
     val graphxVertexMapGetter = ScalaFFIFactory.newVertexMapGetter()
     val graphxVertexMap = graphxVertexMapGetter.get(client, globalVMID).get()
@@ -370,8 +370,8 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
         val srcArray = srcArrays(i)
         val dstArray = dstArrays(i)
         while (j < innerLimit){
-          srcOids.set(ind,srcArray(j))
-          dstOids.set(ind,dstArray(j))
+          srcOids.push_back(srcArray(j))
+          dstOids.push_back(dstArray(j))
           j += 1
           ind += 1
         }

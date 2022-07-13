@@ -116,7 +116,7 @@ class GraphXFragment
   inline fid_t fid() const { return fid_; }
   inline fid_t fnum() const { return fnum_; }
 
-  csr_t& GetCSR() const { return csr_; }
+  csr_t& GetCSR() { return csr_; }
 
   inline int64_t GetEdgeNum() const { return csr_.GetTotalEdgesNum(); }
   inline int64_t GetInEdgeNum() const { return csr_.GetInEdgesNum(); }

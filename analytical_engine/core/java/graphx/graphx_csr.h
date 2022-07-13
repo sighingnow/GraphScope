@@ -373,7 +373,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
 
   boost::leaf::result<void> LoadEdges(
       oid_array_builder_t& srcOidsBuilder, oid_array_builder_t& dstOidsBuilder,
-      GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map) {
+      GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map, int local_num) {
     std::shared_ptr<oid_array_t> srcOids, dstOids;
     // std::shared_ptr<edata_array_t> edatas;
     {
@@ -386,31 +386,31 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     const oid_t* src_oid_ptr = srcOids->raw_values();
     const oid_t* dst_oid_ptr = dstOids->raw_values();
     return LoadEdgesImpl(src_oid_ptr, dst_oid_ptr, edges_num_,
-                         graphx_vertex_map);
+                         graphx_vertex_map,local_num);
   }
 
   boost::leaf::result<void> LoadEdges(
       std::vector<int64_t>& srcOids, std::vector<int64_t>& dstOids,
-      GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map) {
+      GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map, int local_num) {
     CHECK_EQ(srcOids.size(), dstOids.size());
     auto edges_num_ = srcOids.size();
     const oid_t* src_oid_ptr = srcOids.data();
     const oid_t* dst_oid_ptr = dstOids.data();
     return LoadEdgesImpl(src_oid_ptr, dst_oid_ptr, edges_num_,
-                         graphx_vertex_map);
+                         graphx_vertex_map,local_num);
   }
 
   boost::leaf::result<void> LoadEdgesImpl(
       const oid_t* src_oid_ptr, const oid_t* dst_oid_ptr, int64_t edges_num_,
-      GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map) {
+      GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map,int local_num) {
     vnum_ = graphx_vertex_map.GetInnerVertexSize();
     std::vector<vid_t> srcLids, dstLids;
     srcLids.resize(edges_num_);
     dstLids.resize(edges_num_);
     {
       int thread_num =
-          (std::thread::hardware_concurrency() + comm_spec_.local_num() - 1) /
-          comm_spec_.local_num();
+          (std::thread::hardware_concurrency() + local_num - 1) /
+          local_num;
       std::atomic<int> current_chunk(0);
       int64_t chunkSize = 4096;
       int64_t num_chunks = (edges_num_ + chunkSize - 1) / chunkSize;

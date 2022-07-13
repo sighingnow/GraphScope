@@ -588,7 +588,7 @@ class BasicGraphXVertexMapBuilder
             grape::fid_t cur_fid;
             while (true) {
               cur_fid = current_fid.fetch_add(1, std::memory_order_relaxed);
-              if (cur_fid > comm_spec_.worker_num()) {
+              if (cur_fid >= comm_spec_.worker_num()) {
                 break;
               }
               if (cur_fid == curFid) {

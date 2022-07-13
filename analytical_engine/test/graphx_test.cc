@@ -128,7 +128,7 @@ vineyard::ObjectID TestGraphXCSR(
   vineyard::ObjectID csr_id;
   {
     gs::BasicGraphXCSRBuilder<int64_t, uint64_t> builder(client);
-    builder.LoadEdges(srcBuilder, dstBuilder, graphx_vm);
+    builder.LoadEdges(srcBuilder, dstBuilder, graphx_vm,comm_spec.local_num());
     auto csr = std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t>>(
         builder.Seal(client));
 
@@ -140,7 +140,7 @@ vineyard::ObjectID TestGraphXCSR(
     gs::BasicGraphXCSRBuilder<int64_t, uint64_t> builder(client);
     std::vector<int64_t> src{1, 2, 3, 4};
     std::vector<int64_t> dst{2, 3, 4, 5};
-    builder.LoadEdges(src, dst, graphx_vm);
+    builder.LoadEdges(src, dst, graphx_vm, comm_spec.local_num());
     auto csr = std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t>>(
         builder.Seal(client));
 
