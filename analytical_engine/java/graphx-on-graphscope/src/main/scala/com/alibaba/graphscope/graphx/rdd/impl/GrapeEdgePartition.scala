@@ -407,11 +407,11 @@ object GrapeEdgePartition extends Logging {
     require(queue.offer(in))
   }
 
-  def incCount : Unit = {
+  def incCount : Unit = synchronized{
     cnt.addAndGet(1)
   }
 
-  def get[VD: ClassTag, ED: ClassTag](pid : Int) : GrapeEdgePartition[VD,ED] = {
+  def get[VD: ClassTag, ED: ClassTag](pid : Int) : GrapeEdgePartition[VD,ED] = synchronized{
     if (array == null){
       val size = queue.size()
       if (size == cnt.get()){
