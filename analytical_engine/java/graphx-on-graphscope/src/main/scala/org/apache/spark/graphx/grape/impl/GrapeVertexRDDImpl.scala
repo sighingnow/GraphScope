@@ -214,7 +214,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     val updatedVertexPartition = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), grapePartitionsRDD, updateMessage){
     (vIter, msgIter) => {
         if (vIter.hasNext && msgIter.hasNext){
-           val  vpart = vIter.next()
+           val vpart = vIter.next()
            Iterator(vpart.updateOuterVertexData(msgIter))
         }
         else Iterator.empty

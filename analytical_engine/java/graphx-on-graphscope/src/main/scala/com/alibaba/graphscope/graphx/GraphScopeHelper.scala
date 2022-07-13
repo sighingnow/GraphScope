@@ -9,7 +9,7 @@ import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.graphx.rdd.FragmentRDD
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
 import com.alibaba.graphscope.graphx.store.VertexDataStore
-import com.alibaba.graphscope.graphx.utils.{GrapeUtils, PrimitiveVector, ScalaFFIFactory}
+import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, GrapeUtils, PrimitiveVector, ScalaFFIFactory}
 import com.alibaba.graphscope.utils.GenericUtils
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.hadoop.io.LongWritable
@@ -27,6 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 object GraphScopeHelper extends Logging{
+  val MAX_FNUM_PER_EXECUTOR = 16
 
   def loadFragmentAsRDD[VD: ClassTag, ED: ClassTag](sc : SparkContext, objectIDs : String, fragName : String) : (GrapeVertexRDD[VD],GrapeEdgeRDD[ED]) = {
 
@@ -45,6 +46,17 @@ object GraphScopeHelper extends Logging{
     new GSSession(sc)
   }
 
+  def getNumFrag(executorNum: Int, userNumPart: Int) : Int = {
+    val maxFnum = MAX_FNUM_PER_EXECUTOR * executorNum
+    var numFrag = userNumPart
+    while (numFrag > maxFnum){
+      numFrag = numFrag / 2
+    }
+    numFrag
+  }
+
+  /** too many partition is not a good option for fragment-based rdd, so we need to use smaller
+   * fnum, and wrap 1 fragment into several partitions*/
   def edgeListFile
   (sc: SparkContext,
    path: String,
@@ -62,15 +74,18 @@ object GraphScopeHelper extends Logging{
       }
     }.map(pair => (pair._2.first, pair._2.second))
     val linesTime = System.nanoTime()
-    //    val numLines = lines.count() / numPartitions
-    val partitioner = new HashPartitioner(numPartitions)
+    val executorInfo = ExecutorInfoHelper.getExecutorsHost2Id(SparkContext.getOrCreate())
+    val executorNum = executorInfo.size
+    val numFrag = getNumFrag(executorNum, numPartitions)
+    log.info(s"Using fnum ${numFrag}, rather than ${numPartitions}")
+    val partitioner = new HashPartitioner(numFrag)
     val edgesShuffled = lines.mapPartitionsWithIndex (
       (fromPid, iter) => {
         //        iter.toArray
-        val pid2src = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
-        val pid2Dst = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
-        val pid2Oids = Array.fill(numPartitions)(new OpenHashSet[VertexId])
-        val pid2OuterIds = Array.fill(numPartitions)(new OpenHashSet[VertexId])
+        val pid2src = Array.fill(numFrag)(new PrimitiveVector[VertexId])
+        val pid2Dst = Array.fill(numFrag)(new PrimitiveVector[VertexId])
+        val pid2Oids = Array.fill(numFrag)(new OpenHashSet[VertexId])
+        val pid2OuterIds = Array.fill(numFrag)(new OpenHashSet[VertexId])
         val time0 = System.nanoTime();
         while (iter.hasNext) {
           val line = iter.next()
@@ -97,8 +112,7 @@ object GraphScopeHelper extends Logging{
         log.info("[edgeListFile: ] iterating over edge cost " + (time1 - time0) / 1000000 + "ms")
         val res = new ArrayBuffer[(PartitionID,EdgeShuffle[Int,Int])]
         var ind = 0
-        while (ind < numPartitions){
-//          log.info(s"partition ${fromPid} send msg to ${ind}")
+        while (ind < numFrag){
           res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind),pid2OuterIds(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array)))
           ind += 1
         }
@@ -111,7 +125,8 @@ object GraphScopeHelper extends Logging{
       s" to load the edges size ${edgeShufflesNum}")
 
     val time0 = System.nanoTime()
-    val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[Int,Int](edgesShuffled,defaultED = 1).cache()
+    val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[Int,Int](edgesShuffled,defaultED = 1,numPartitions).cache()
+    require(edgeRDD.grapePartitionsRDD.getNumPartitions == numPartitions)
     val vertexRDD = GrapeVertexRDD.fromGrapeEdgeRDD[Int](edgeRDD, edgeRDD.grapePartitionsRDD.getNumPartitions, 1,vertexStorageLevel).cache()
     log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
     lines.unpersist()
@@ -159,7 +174,7 @@ object GraphScopeHelper extends Logging{
             val (vdClass,edClass) = (typeParams(2), typeParams(3))
             log.info(s"Original vd class ${vdClass} ed class ${edClass}")
             //create mapper
-            val resFrag = doMap(oldProjectedFrag.asInstanceOf[ArrowProjectedFragment[Long,Long,Any,Any]],vdClass.asInstanceOf[Class[Any]], edClass.asInstanceOf[Class[Any]], vertexPart.vertexData, edgePart.edatas, edgePart.client)
+            val resFrag = doMap(oldProjectedFrag.asInstanceOf[ArrowProjectedFragment[Long,Long,Any,Any]],vdClass.asInstanceOf[Class[Any]], edClass.asInstanceOf[Class[Any]], vertexPart.innerVertexData, edgePart.edatas, edgePart.client)
             Iterator(GrapeUtils.getSelfHostName + ":" + resFrag.id())
           }
         }
@@ -169,11 +184,12 @@ object GraphScopeHelper extends Logging{
     }
   }
 
+  //FIXME: support 1 frag to multiple part mapping
   def doMap[NEW_VD : ClassTag,NEW_ED : ClassTag, OLD_VD <: Any, OLD_ED <: Any](oldFrag: ArrowProjectedFragment[Long, Long, OLD_VD, OLD_ED],
-                                                 oldVdClass : Class[OLD_VD], oldEdClass : Class[OLD_ED],
-                                                 vdArray : VertexDataStore[NEW_VD],
-                                                 edArray : Array[NEW_ED],
-                                                 client : VineyardClient):
+                                                                               oldVdClass : Class[OLD_VD], oldEdClass : Class[OLD_ED],
+                                                                               vdArray : VertexDataStore[NEW_VD],
+                                                                               edArray : ArrayWithOffset[NEW_ED],
+                                                                               client : VineyardClient):
   ArrowProjectedFragment[Long,Long,NEW_VD,NEW_ED] = {
     val mapper = ScalaFFIFactory.newProjectedFragmentMapper[NEW_VD,NEW_ED,OLD_VD,OLD_ED](oldVdClass,oldEdClass)
     val newVdBuilder : ArrowArrayBuilder[NEW_VD] = ScalaFFIFactory.newArrowArrayBuilder[NEW_VD](GrapeUtils.getRuntimeClass[NEW_VD].asInstanceOf[Class[NEW_VD]])
@@ -226,7 +242,7 @@ object GraphScopeHelper extends Logging{
       s" to load the edges,shuffle count ${edgeShufflesNum}")
 
     val time2 = System.nanoTime()
-    val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[VD,ED](graphShuffles).cache()
+    val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[VD,ED](graphShuffles, null.asInstanceOf[ED],numPartitions).cache()
 
     //different from edgeFileLoader, here we need the attr in the original graphx graph
     val vertexRDD = GrapeVertexRDD.fromEdgeShuffle[VD,ED](graphShuffles,edgeRDD).cache()

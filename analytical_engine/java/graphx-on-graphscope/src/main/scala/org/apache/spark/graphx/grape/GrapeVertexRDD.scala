@@ -69,9 +69,8 @@ object GrapeVertexRDD extends Logging{
     val grapeVertexPartition = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),edgeRDD.grapePartitionsRDD, edgeShuffle){
       (firstIter, edgeShuffleIter) => {
         val ePart = firstIter.next()
-        val fragVertices = ePart.graphStructure.getVertexSize
-        log.info(s"Partition ${ePart.pid} doing initialization with graphx vertex attrs, frag vertices ${fragVertices} fragid ${ePart.graphStructure.fid()}/${ePart.graphStructure.fnum()}")
-        val grapeVertexPartition = buildPartitionFromGraphX(ePart.pid, ePart.client, ePart.graphStructure, edgeShuffleIter)
+        log.info(s"Partition ${ePart.pid} doing initialization with graphx vertex attrs, from ${ePart.startLid} to ${ePart.endLid} fragid ${ePart.graphStructure.fid()}/${ePart.graphStructure.fnum()}")
+        val grapeVertexPartition = buildPartitionFromGraphX(ePart.pid, ePart.startLid, ePart.endLid, ePart.client, ePart.graphStructure, edgeShuffleIter)
         Iterator(grapeVertexPartition)
       }
     }.cache()
@@ -80,9 +79,10 @@ object GrapeVertexRDD extends Logging{
     res
   }
 
-  def buildPartitionFromGraphX[VD: ClassTag](pid: Int, client: VineyardClient, graphStructure: GraphStructure, edgeShuffleIter: Iterator[(PartitionID,EdgeShuffle[VD,_])]):GrapeVertexPartition[VD] = {
-    /** We assume the verticesAttr iterator contains only inner vertices */
-    val newArray = new Array[VD](graphStructure.getVertexSize.toInt)
+  //When using this, we assume
+  def buildPartitionFromGraphX[VD: ClassTag](pid: Int, startLid : Long, endLid : Long, client: VineyardClient, graphStructure: GraphStructure, edgeShuffleIter: Iterator[(PartitionID,EdgeShuffle[VD,_])]):GrapeVertexPartition[VD] = {
+    val innerVertexDataStore = new InHeapVertexDataStore[VD](startLid.toInt, (endLid - startLid).toInt, client)
+
     val grapeVertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
     var verticesProcesses = 0L
     while (edgeShuffleIter.hasNext){
@@ -99,17 +99,15 @@ object GrapeVertexRDD extends Logging{
         val oid = oids(i)
         val vdata = verticesAttr(i)
         require(graphStructure.getVertex(oid,grapeVertex))
-        newArray(grapeVertex.GetValue().toInt) = vdata
+        innerVertexDataStore.setData(grapeVertex.GetValue().toInt, vdata)
         i += 1
       }
     }
-    log.info(s"frag ${graphStructure.fid()} ivnum ${graphStructure.getInnerVertexSize}, vnum ${graphStructure.getVertexSize}, vertices processed ${verticesProcesses}")
-    val newVertexData = new InHeapVertexDataStore[VD](newArray,client, 0)
-
+    log.info(s"frag ${graphStructure.fid()} part ${pid} start ${startLid} end ${endLid}, vertices processed ${verticesProcesses}")
 //    val hostName = InetAddress.getLocalHost.getHostName
 //    require(executorInfo.contains(hostName), s"host ${hostName} is not included in executor info ${executorInfo.toString()}")
 //    val preferredLoc = "executor_" + hostName + "_" + executorInfo.get(hostName)
-    new GrapeVertexPartition[VD](pid, graphStructure, newVertexData, client, RoutingTable.fromGraphStructure(graphStructure))
+    new GrapeVertexPartition[VD](pid,startLid.toInt, endLid.toInt, graphStructure, innerVertexDataStore,GrapeVertexPartition.pid2OuterVertexStore(pid).asInstanceOf[InHeapVertexDataStore[VD]], client, RoutingTable.fromGraphStructure(graphStructure))
   }
 
   def fromGrapeEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD, storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
@@ -117,32 +115,34 @@ object GrapeVertexRDD extends Logging{
     val grapeVertexPartition = edgeRDD.grapePartitionsRDD.mapPartitions(iter =>{
       if (iter.hasNext){
         val ePart = iter.next()
-        val fragVertices = ePart.graphStructure.getVertexSize
-        log.info(s"Partition ${ePart.pid} doing initialization with default value ${defaultVal}, frag vertices ${fragVertices}")
-        val grapeVertexPartition = GrapeVertexPartition.buildPrimitiveVertexPartition(fragVertices,defaultVal,ePart.pid, ePart.client, ePart.graphStructure, RoutingTable.fromGraphStructure(ePart.graphStructure))
+        //vertex partition include the all the vertices in this frag, including inner vertices and outer vertices.
+        log.info(s"Vertex partition ${ePart.pid} doing initialization with default value ${defaultVal}, from ${ePart.startLid} to ${ePart.endLid}")
+        val grapeVertexPartition = GrapeVertexPartition.buildPrimitiveVertexPartition(defaultVal,ePart.pid, ePart.startLid, ePart.endLid, ePart.client, ePart.graphStructure,RoutingTable.fromGraphStructure(ePart.graphStructure))
         Iterator(grapeVertexPartition)
       }
       else Iterator.empty
     },preservesPartitioning = true).cache()
-    new GrapeVertexRDDImpl[VD](grapeVertexPartition,storageLevel)
+    new GrapeVertexRDDImpl[VD](grapeVertexPartition, storageLevel)
   }
 
   def fromFragmentEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
     log.info(s"Driver: Creating vertex rdd from fragment edgeRDD of numPartition ${numPartitions}")
     val executorInfo = ExecutorInfoHelper.getExecutorsHost2Id(SparkContext.getOrCreate())
     val grapeVertexPartitions = edgeRDD.grapePartitionsRDD.mapPartitions(iter =>{
-        val ePart = iter.next()
-        val array = new Array[VD](ePart.graphStructure.getVertexSize.toInt)
-        val actualStructure = ePart.graphStructure.asInstanceOf[FragmentStructure]
+      val ePart = iter.next()
+//      val array = new Array[VD](ePart.graphStructure.getVertexSize.toInt)
+      val outerVertexDataStore = new InHeapVertexDataStore[VD](ePart.graphStructure.getInnerVertexSize.toInt, ePart.graphStructure.getOuterVertexSize.toInt, ePart.client)
+      val innerVertexDataStore = new InHeapVertexDataStore[VD](ePart.graphStructure.getInnerVertexSize.toInt, ePart.graphStructure.getOuterVertexSize.toInt, ePart.client)
+      val actualStructure = ePart.graphStructure.asInstanceOf[FragmentStructure]
         val frag = actualStructure.fragment.asInstanceOf[IFragment[Long,Long,VD,_]]
         val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
         for (i <- 0 until ePart.graphStructure.getInnerVertexSize.toInt){
           vertex.SetValue(i)
-          array(i) = frag.getData(vertex)
+          innerVertexDataStore.setData(i,frag.getData(vertex))
         }
         //only set inner vertices
-        val vertexDataStore = new InHeapVertexDataStore[VD](array, ePart.client,0)
-        val partition = new GrapeVertexPartition[VD](ePart.pid,actualStructure, vertexDataStore, ePart.client, RoutingTable.fromGraphStructure(actualStructure))
+//        val vertexDataStore = new InHeapVertexDataStore[VD](array, ePart.client,0)
+        val partition = new GrapeVertexPartition[VD](ePart.pid, 0,frag.getInnerVerticesNum.toInt, actualStructure, innerVertexDataStore,outerVertexDataStore, ePart.client, RoutingTable.fromGraphStructure(actualStructure))
         Iterator(partition)
     }).cache()
     new GrapeVertexRDDImpl[VD](grapeVertexPartitions,storageLevel)

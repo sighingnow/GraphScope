@@ -3,9 +3,8 @@ package com.alibaba.graphscope.graphx.graph
 import com.alibaba.graphscope.ds.Vertex
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.graphx.store.VertexDataStore
-import com.alibaba.graphscope.utils.array.PrimitiveArray
+import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, BitSetWithOffset}
 import org.apache.spark.graphx.{Edge, EdgeTriplet}
-import org.apache.spark.util.collection.BitSet
 
 import scala.reflect.ClassTag
 
@@ -21,20 +20,20 @@ object GraphStructureTypes extends Enumeration{
 trait GraphStructure extends Serializable {
 
   val structureType : GraphStructureType
-  val inDegreeArray :Array[Int]
-  val outDegreeArray : Array[Int]
-  val inOutDegreeArray : Array[Int]
+  def inDegreeArray(startLid : Long, endLid : Long) :Array[Int]
+  def outDegreeArray(startLid : Long, endLid : Long) : Array[Int]
+  def inOutDegreeArray(startLid : Long, endLid : Long) : Array[Int]
 
   //of size (fnum, number of inner vertices which are outer vertices in frag i)
   val mirrorVertices : Array[Array[Long]]
 
-  def iterator[ED : ClassTag](edatas : Array[ED], activeSet: BitSet, reversed : Boolean = false) : Iterator[Edge[ED]]
+  def iterator[ED : ClassTag](startLid : Long, endLid : Long, edatas : ArrayWithOffset[ED], activeSet: BitSetWithOffset, reversed : Boolean = false) : Iterator[Edge[ED]]
 
-  def tripletIterator[VD: ClassTag,ED : ClassTag](vertexDataStore: VertexDataStore[VD], edatas : Array[ED],  activeSet: BitSet,edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false): Iterator[EdgeTriplet[VD, ED]]
+  def tripletIterator[VD: ClassTag,ED : ClassTag](startLid : Long, endLid : Long,vertexDataStore: VertexDataStore[VD],outerVertexDataStore: VertexDataStore[VD], edatas : ArrayWithOffset[ED],  activeSet: BitSetWithOffset,edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false): Iterator[EdgeTriplet[VD, ED]]
 
-  def iterateEdges[ED : ClassTag,ED2 : ClassTag](f: Edge[ED] => ED2,edatas : Array[ED], activeSet : BitSet, edgeReversed : Boolean = false, newArray : Array[ED2]) : Unit
+  def iterateEdges[ED : ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long, f: Edge[ED] => ED2, edatas : ArrayWithOffset[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, newArray : ArrayWithOffset[ED2]) : Unit
 
-  def iterateTriplets[VD : ClassTag, ED : ClassTag,ED2 : ClassTag](f : EdgeTriplet[VD,ED] => ED2,vertexDataStore: VertexDataStore[VD], edatas : Array[ED], activeSet : BitSet, edgeReversed : Boolean = false, includeSrc : Boolean = true, includeDst : Boolean = true, newArray : Array[ED2]) : Unit
+  def iterateTriplets[VD : ClassTag, ED : ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long,f : EdgeTriplet[VD,ED] => ED2,innerVertexDataStore: VertexDataStore[VD], outerVertexDataStore: VertexDataStore[VD], edatas : ArrayWithOffset[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, includeSrc : Boolean = true, includeDst : Boolean = true, newArray : ArrayWithOffset[ED2]) : Unit
 
    def getInDegree(vid: Long): Long
 
@@ -85,4 +84,6 @@ trait GraphStructure extends Serializable {
   def getInnerVertex(oid : Long, vertex: Vertex[Long]) : Boolean
 
   def getEids : Array[Long]
+
+  def getOEOffsetRange(startLid : Long, endLid : Long) : (Long,Long)
 }

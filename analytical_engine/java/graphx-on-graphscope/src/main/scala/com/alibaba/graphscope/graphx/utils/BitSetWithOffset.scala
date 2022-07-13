@@ -1,0 +1,66 @@
+package com.alibaba.graphscope.graphx.utils
+
+import org.apache.spark.util.collection.BitSet
+
+class BitSetWithOffset(val startBit : Int, val endBit : Int, val bitset : BitSet) {
+  def this(startBit: Int, endBit : Int)  = {
+    this(startBit,endBit,new BitSet(endBit - startBit))
+  }
+  require(endBit > startBit)
+  val size = endBit - startBit
+
+  def set(bit : Int) : Unit = {
+    check(bit)
+    bitset.set(bit - startBit)
+  }
+
+  def set(a : Int, b :Int) : Unit = {
+    require(a >= startBit && a < endBit, s"${a} out of range ${startBit},${endBit}")
+    require(b > a && b > startBit && b <= endBit, s"${a} out of range ${startBit},${endBit}")
+    var i = a
+    while (i < b){
+      bitset.set(i)
+      i += 1
+    }
+  }
+
+  def get(bit : Int) : Boolean = {
+    check(bit)
+    bitset.get(bit - startBit)
+  }
+
+  def unset(bit : Int) : Unit = {
+    check(bit)
+    bitset.unset(bit - startBit)
+  }
+
+  def check(bit : Int) : Unit = {
+    require(bit >= startBit && bit < endBit)
+  }
+
+  def union(other : BitSetWithOffset): Unit ={
+    require(size == other.size && (startBit == other.startBit) && (endBit == other.endBit), s"can not union between ${this.toString} and ${other.toString}")
+    bitset.union(other.bitset)
+  }
+
+  def &(other : BitSetWithOffset) : BitSetWithOffset = {
+    require(size == other.size && (startBit == other.startBit) && (endBit == other.endBit), s"can not union between ${this.toString} and ${other.toString}")
+    new BitSetWithOffset(startBit, endBit, bitset & other.bitset)
+  }
+
+  def cardinality() : Int = bitset.cardinality()
+
+  def capacity : Int = bitset.capacity
+
+  def nextSetBit(bit : Int) : Int = {
+    check(bit)
+    bitset.nextSetBit(bit)
+  }
+
+  def andNot(other: BitSetWithOffset) : BitSetWithOffset = {
+    require(size == other.size && (startBit == other.startBit) && (endBit == other.endBit), s"can not union between ${this.toString} and ${other.toString}")
+    new BitSetWithOffset(startBit,endBit, bitset.andNot(other.bitset))
+  }
+
+  override def toString: String = "BitSetWithOffset(start=" + startBit + ",end=" + endBit;
+}
