@@ -316,19 +316,24 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
       val allArrays = lists.flatMap(_.getArrays._3).toArray
       val len = allArrays.map(_.length).sum
       val edataArray = new Array[ED](len)
-      //got all edge data array
+      //flat array
       var ind = 0
-
       for (arr <- allArrays){
         var i = 0
         val t = arr.length
         while (i < t){
-          edataArray(ind) = arr(eids(i).toInt)
+          edataArray(ind) = arr(i)
           i += 1
           ind += 1
         }
       }
-      edataArray
+      val resArray = new Array[ED](len)
+      var i = 0
+      while (i < len){
+        resArray(i) = edataArray(eids(i).toInt)
+        i += 1
+      }
+      resArray
     }
     else {
       throw new IllegalStateException("not possible, default ed  and array is both null or bot not empty")
