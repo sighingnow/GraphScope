@@ -409,7 +409,7 @@ object GrapeEdgePartition extends Logging {
     cnt.addAndGet(1)
   }
 
-  def get[VD: ClassTag, ED: ClassTag](pid : Int) : GrapeEdgePartition[VD,ED] = synchronized{
+  def createPartitions[VD: ClassTag, ED: ClassTag](pid : Int) : Unit = synchronized{
     if (array == null){
       val size = queue.size()
       if (size == cnt.get()){
@@ -469,6 +469,13 @@ object GrapeEdgePartition extends Logging {
       }
       require(queue.size() == 0, "queue shoud be empty now")
     }
+    else {
+      log.info("partition skip building since array is already created")
+    }
+  }
+
+  def get[VD: ClassTag, ED: ClassTag](pid : Int) : GrapeEdgePartition[VD,ED] = synchronized{
+    require(array != null, "call create partitions first")
     array(pid).asInstanceOf[GrapeEdgePartition[VD,ED]]
   }
 }
