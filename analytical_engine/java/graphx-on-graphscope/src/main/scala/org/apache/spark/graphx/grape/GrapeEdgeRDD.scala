@@ -153,6 +153,7 @@ object GrapeEdgeRDD extends Logging{
         val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId,numExecutors)
         val eids = meta.edgePartitionBuilder.createEids(csr.getOutEdgesNum.toInt, csr.getOEBegin(0))
         val edatas = meta.edgePartitionBuilder.buildEdataArray(eids, defaultED)
+        require(edatas.length == eids.length, s"neq ${edatas.length}, ${eids.length}")
         //raw edatas contains all edge datas, i.e. csr edata array.
         //edatas are out edges edge cache.
         meta.setGlobalVM(vm)
