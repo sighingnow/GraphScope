@@ -100,7 +100,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         while (j >= 0 && j < endLid){
           gids.+=(idParser.generateGlobalId(curFid, j))
           newData.+=(getData(j))
-          j += 1
+          j = lids.nextSetBit(j + 1)
         }
         val msg = new VertexDataMessage[VD](i, gids.trim().array,newData.trim().array)
         res.+=((i, msg))
