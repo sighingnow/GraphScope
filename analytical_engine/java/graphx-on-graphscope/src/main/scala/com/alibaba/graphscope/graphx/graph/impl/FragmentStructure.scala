@@ -272,6 +272,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         override def hasNext: Boolean = {
           if (curOffset < curEndOffset && curOffset >= 0) true
           else {
+            if (curOffset < 0) return false
             while (curOffset >= curEndOffset && curLid < endLid) {
               curEndOffset = oeOffsetEndArray.get(curLid + 1)
               curLid += 1
@@ -304,6 +305,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         override def hasNext: Boolean = {
           if (curOffset < curEndOffset && curOffset >= 0) true
           else {
+            if (curOffset < 0) return false
             while (curOffset >= curEndOffset && curLid < endLid) {
               curEndOffset = oeOffsetEndArray.get(curLid + 1)
               curLid += 1
@@ -332,7 +334,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         var curOffset = activeEdgeSet.nextSetBit(activeEdgeSet.startBit)
         var curLid = startLid.toInt
         var srcId = lid2Oid(curLid)
-        val srcAttr = innerVertexDataStore.getData(curLid)
+        var srcAttr = innerVertexDataStore.getData(curLid)
         val beginAddr = frag.getOutEdgesPtr.getAddress
         val nbr = frag.getOutEdgesPtr
         var curEndOffset = oeOffsetEndArray.get(curLid)
@@ -340,12 +342,14 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         override def hasNext: Boolean = {
           if (curOffset < curEndOffset && curOffset >= 0) true
           else {
+            if (curOffset < 0) return false
             while (curOffset >= curEndOffset && curLid < endLid) {
               curEndOffset = oeOffsetEndArray.get(curLid + 1)
               curLid += 1
             }
             if (curLid >= endLid) return false
             srcId = lid2Oid(curLid)
+            srcAttr = innerVertexDataStore.getData(curLid)
             true
           }
         }
@@ -387,6 +391,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         override def hasNext: Boolean = {
           if (curOffset < curEndOffset && curOffset >= 0) true
           else {
+            if (curOffset < 0) return false
             while (curOffset >= curEndOffset && curLid < endLid) {
               curEndOffset = oeOffsetEndArray.get(curLid + 1)
               curLid += 1
