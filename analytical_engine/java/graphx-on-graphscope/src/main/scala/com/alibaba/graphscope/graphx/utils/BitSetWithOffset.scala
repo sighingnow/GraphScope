@@ -35,8 +35,9 @@ class BitSetWithOffset(val startBit : Int, val endBit : Int, val bitset : BitSet
     bitset.unset(bit - startBit)
   }
 
+  @inline
   def check(bit : Int) : Unit = {
-    require(bit >= startBit && bit < endBit)
+    require(bit >= startBit && bit <= endBit, s"index of range ${bit}, range [${startBit},${endBit})")
   }
 
   def union(other : BitSetWithOffset): Unit ={
@@ -54,6 +55,7 @@ class BitSetWithOffset(val startBit : Int, val endBit : Int, val bitset : BitSet
   def capacity : Int = bitset.capacity
 
   def nextSetBit(bit : Int) : Int = {
+    if (bit >= endBit) return -1
     check(bit)
     bitset.nextSetBit(bit)
   }
