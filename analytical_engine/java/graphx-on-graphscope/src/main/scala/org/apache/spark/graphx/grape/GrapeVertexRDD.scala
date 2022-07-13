@@ -82,6 +82,8 @@ object GrapeVertexRDD extends Logging{
   //When using this, we assume
   def buildPartitionFromGraphX[VD: ClassTag](pid: Int, startLid : Long, endLid : Long, client: VineyardClient, graphStructure: GraphStructure, edgeShuffleIter: Iterator[(PartitionID,EdgeShuffle[VD,_])]):GrapeVertexPartition[VD] = {
     val innerVertexDataStore = new InHeapVertexDataStore[VD](startLid.toInt, (endLid - startLid).toInt, client)
+    val outerVertexDataStore = GrapeVertexPartition.pid2OuterVertexStore(pid).asInstanceOf[InHeapVertexDataStore[VD]]
+    require(outerVertexDataStore != null, "outer vertex data store null")
 
     val grapeVertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
     var verticesProcesses = 0L
@@ -95,11 +97,16 @@ object GrapeVertexRDD extends Logging{
       verticesProcesses += oids.length
       val len = oids.length
       var i = 0
+      val ivnum = graphStructure.getInnerVertexSize.toInt
       while (i < len){
         val oid = oids(i)
         val vdata = verticesAttr(i)
         require(graphStructure.getVertex(oid,grapeVertex))
-        innerVertexDataStore.setData(grapeVertex.GetValue().toInt, vdata)
+        val lid = grapeVertex.GetValue().toInt
+        if (lid < ivnum) {
+          innerVertexDataStore.setData(lid, vdata)
+        }
+        else outerVertexDataStore.setData(lid, vdata)
         i += 1
       }
     }
@@ -107,7 +114,7 @@ object GrapeVertexRDD extends Logging{
 //    val hostName = InetAddress.getLocalHost.getHostName
 //    require(executorInfo.contains(hostName), s"host ${hostName} is not included in executor info ${executorInfo.toString()}")
 //    val preferredLoc = "executor_" + hostName + "_" + executorInfo.get(hostName)
-    new GrapeVertexPartition[VD](pid,startLid.toInt, endLid.toInt, graphStructure, innerVertexDataStore,GrapeVertexPartition.pid2OuterVertexStore(pid).asInstanceOf[InHeapVertexDataStore[VD]], client, RoutingTable.fromGraphStructure(graphStructure))
+    new GrapeVertexPartition[VD](pid,startLid.toInt, endLid.toInt, graphStructure, innerVertexDataStore, client, RoutingTable.fromGraphStructure(graphStructure))
   }
 
   def fromGrapeEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD, storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
