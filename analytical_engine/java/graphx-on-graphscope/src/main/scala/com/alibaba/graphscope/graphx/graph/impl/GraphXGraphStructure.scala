@@ -8,6 +8,7 @@ import com.alibaba.graphscope.graphx.store.VertexDataStore
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, BitSetWithOffset, PrimitiveVector}
 import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
+import org.apache.spark.util.collection.BitSet
 
 import scala.reflect.ClassTag
 
@@ -20,7 +21,8 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
 //  lazy val inDegreeArray: Array[Int] = getInDegreeArray
 //  lazy val outDegreeArray: Array[Int] = getOutDegreeArray
 //  lazy val inOutDegreeArray: Array[Int] = getInOutDegreeArray
-  override val mirrorVertices: Array[Array[VertexId]] = getMirrorVertices
+  //FIXME: bitset for long
+  override val mirrorVertices: Array[BitSet] = getMirrorVertices
 
   val oeOffsetsArray: ImmutableTypedArray[Long] = csr.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
   val ieOffsetsArray : ImmutableTypedArray[Long] = csr.getIEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
@@ -86,13 +88,13 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     res
   }
 
-  private def getMirrorVertices : Array[Array[Long]] = {
-    val res = new Array[PrimitiveVector[Long]](fnum())
+  private def getMirrorVertices : Array[BitSet] = {
+    val res = new Array[BitSet](fnum())
+    val ivnum = vm.innerVertexSize().toInt
     for (i <- res.indices){
-      res(i) = new PrimitiveVector[VertexId]()
+      res(i) = new BitSet(ivnum)
     }
     var lid = 0;
-    val ivnum = vm.innerVertexSize().toInt
     val curFid = fid()
     val flags = new Array[Boolean](fnum())
     while (lid < ivnum){
@@ -117,12 +119,12 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
       }
       for (i <- flags.indices){
         if (i != curFid && flags(i)){
-          res(i).+=(lid)
+          res(i).set(lid)
         }
       }
       lid += 1
     }
-    res.map(v => v.toArray)
+    res
   }
 
 //  override def getInDegree(vid: Long): Long = csr.getInDegree(vid)

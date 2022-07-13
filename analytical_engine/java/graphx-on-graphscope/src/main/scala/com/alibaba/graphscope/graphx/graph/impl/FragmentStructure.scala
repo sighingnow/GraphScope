@@ -10,6 +10,7 @@ import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, BitSetWithOffset}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
+import org.apache.spark.util.collection.BitSet
 
 import scala.reflect.ClassTag
 
@@ -69,21 +70,21 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
 //  override val inDegreeArray: Array[Int] = getInDegreeArray
 //  override val outDegreeArray: Array[Int] = getOutDegreeArray
 //  override val inOutDegreeArray: Array[Int] = getInOutDegreeArray
-  override val mirrorVertices: Array[Array[VertexId]] = getMirrorVertices
+  override val mirrorVertices: Array[BitSet] = getMirrorVertices
 
-  private def getMirrorVertices : Array[Array[Long]] = {
+  private def getMirrorVertices : Array[BitSet] = {
     if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
       val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long, Long, _, _]].asInstanceOf[ArrowProjectedFragment[Long, Long, _, _]]
 
-      val res = new Array[Array[Long]](fnum())
+      val res = new Array[BitSet](fnum())
       for (i <- 0 until fnum()) {
         val vec = projectedFragment.mirrorVertices(i)
         val size = vec.size().toInt
         log.info(s"frag ${fid()} has ${size} mirror vertices on frag-${i}")
-        val curArray = new Array[Long](size)
+        val curArray = new BitSet(size)
         var j =0
         while (j < size){
-          curArray(j) = vec.get(j).GetValue()
+          curArray.set(vec.get(j).GetValue().toInt)
           j += 1
         }
         res(i) = curArray

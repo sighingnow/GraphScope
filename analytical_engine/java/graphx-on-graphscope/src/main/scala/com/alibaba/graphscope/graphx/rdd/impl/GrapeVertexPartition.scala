@@ -6,7 +6,7 @@ import com.alibaba.graphscope.graphx.graph.GraphStructure
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import com.alibaba.graphscope.graphx.rdd.RoutingTable
 import com.alibaba.graphscope.graphx.store.{InHeapVertexDataStore, VertexDataStore}
-import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, IdParser}
+import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, IdParser, PrimitiveVector}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.Partition
 import org.apache.spark.graphx.{EdgeDirection, PartitionID, VertexId}
@@ -31,6 +31,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
   val partVnum : Long = endLid - startLid
   val fragVnum : Int = graphStructure.getVertexSize.toInt
+  val ivnum = graphStructure.getInnerVertexSize.toInt
   val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
   if (bitSet ==null){
     bitSet = new BitSetWithOffset(startBit = startLid,endBit = endLid)
@@ -38,7 +39,8 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   }
 
   def getData(lid : Int) : VD = {
-    innerVertexData.getData(lid)
+    if (lid < ivnum) innerVertexData.getData(lid)
+    else outerVertexData.getData(lid)
   }
 
   def iterator : Iterator[(VertexId,VD)] = {
@@ -92,17 +94,17 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     for (i <- 0 until(routingTable.numPartitions)){
       val lids = routingTable.get(i)
       if (lids != null){
-        val gids = new Array[Long](lids.length)
-        val newData = new Array[VD](lids.length)
-        var j = 0
-        while (j < lids.length){
-          gids(j) = idParser.generateGlobalId(curFid, lids(j))
-          newData(j) = getData(lids(j).toInt)
+        val gids = new PrimitiveVector[Long]
+        val newData = new PrimitiveVector[VD]
+        var j = lids.nextSetBit(startLid)
+        while (j >= 0 && j < endLid){
+          gids.+=(idParser.generateGlobalId(curFid, j))
+          newData.+=(getData(j))
           j += 1
         }
-        val msg = new VertexDataMessage[VD](i, gids,newData)
+        val msg = new VertexDataMessage[VD](i, gids.trim().array,newData.trim().array)
         res.+=((i, msg))
-        log.info(s"Partitoin ${pid} send vertex data to ${i}, size ${lids.length}")
+        log.info(s"Partitoin ${pid} send vertex data to ${i}, size ${msg.gids.length}")
       }
     }
     res.toIterator
