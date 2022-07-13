@@ -189,7 +189,7 @@ object GrapeEdgeRDD extends Logging{
         val time1 = System.nanoTime()
         val graphStructure = new GraphXGraphStructure(meta.globalVM,lid2Oid,meta.eids, meta.graphxCSR)
         log.info(s"[Creating graph structure cost ]: ${(time1 - time0) / 1000000} ms")
-        GrapeEdgePartition.push((graphStructure, meta.vineyardClient, new ArrayWithOffset[ED](0,meta.edataArray), outerVertexDataStore))
+        GrapeEdgePartition.push((meta.partitionID,graphStructure, meta.vineyardClient, new ArrayWithOffset[ED](0,meta.edataArray), outerVertexDataStore))
       }
     })
 
