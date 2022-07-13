@@ -14,7 +14,8 @@ class BitSetWithOffset(val startBit : Int, val endBit : Int, val bitset : BitSet
     bitset.set(bit - startBit)
   }
 
-  def set(a : Int, b :Int) : Unit = {
+  /** [a,b) */
+  def setRange(a : Int, b :Int) : Unit = {
     require(a >= startBit && a < endBit, s"${a} out of range ${startBit},${endBit}")
     require(b > a && b > startBit && b <= endBit, s"${a} out of range ${startBit},${endBit}")
     var i = a

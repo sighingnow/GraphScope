@@ -34,6 +34,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
   if (bitSet ==null){
     bitSet = new BitSetWithOffset(startBit = startLid,endBit = endLid)
+    bitSet.setRange(startLid,endLid)
   }
 
   def getData(lid : Int) : VD = {
