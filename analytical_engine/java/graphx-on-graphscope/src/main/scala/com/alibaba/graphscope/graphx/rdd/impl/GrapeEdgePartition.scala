@@ -315,6 +315,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     else if (defaultED == null && lists(0).getArrays._3(0) != null){
       val allArrays = lists.flatMap(_.getArrays._3).toArray
       val len = allArrays.map(_.length).sum
+      log.info(s"eids size ${eids.length}, len ${len}")
       val edataArray = new Array[ED](len)
       //flat array
       var ind = 0
@@ -330,6 +331,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
       val resArray = new Array[ED](len)
       var i = 0
       while (i < len){
+        log.info(s"ind ${i}, eids ${eids(i)}")
         resArray(i) = edataArray(eids(i).toInt)
         i += 1
       }
