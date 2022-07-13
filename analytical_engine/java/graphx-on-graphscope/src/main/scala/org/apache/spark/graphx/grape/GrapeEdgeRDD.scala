@@ -201,14 +201,14 @@ object GrapeEdgeRDD extends Logging{
     val emptyRDD = new LocationAwareRDD(sc, expandedLocations,expandedHosts,expandedPartitionIds)
     emptyRDD.foreachPartition(iter => {
       if (iter.hasNext){
-        val host = iter.next().hostName
-        require(InetAddress.getLocalHost.getHostName.equals(host), s"host name neq ${host}, ${InetAddress.getLocalHost.getHostName}")
-        GrapeEdgePartition.incCount
+        val part = iter.next()
+        require(InetAddress.getLocalHost.getHostName.equals(part.hostName), s"host name neq ${part.hostName}, ${InetAddress.getLocalHost.getHostName}")
+        GrapeEdgePartition.incCount(part.ind)
       }
     })
     emptyRDD.foreachPartition(iter => {
       if (iter.hasNext){
-        GrapeEdgePartition.createPartitions[VD,ED](iter.next().ind)
+        GrapeEdgePartition.createPartitions[VD,ED](iter.next().ind,numPartitions)
       }
     })
     log.info(s"empty rdd size ${emptyRDD.getNumPartitions}")
