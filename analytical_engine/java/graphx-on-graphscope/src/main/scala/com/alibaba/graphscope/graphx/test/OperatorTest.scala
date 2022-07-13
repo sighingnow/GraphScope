@@ -95,10 +95,10 @@ object OperatorTest extends Logging{
 
       //      val grapeRes = mapTriplet(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(grapeGraph)))))).mask(grapeMaskGraph)
 
-      graphxRes3.vertices.saveAsTextFile(s"/tmp/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
-      grapeRes3.vertices.saveAsTextFile(s"/tmp/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")
-      graphxRes.edges.saveAsTextFile(s"/tmp/operator-test-graphx-edge-${java.time.LocalDateTime.now()}")
-      grapeRes.edges.saveAsTextFile(s"/tmp/operator-test-grape-edge-${java.time.LocalDateTime.now()}")
+      graphxRes3.vertices.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
+      grapeRes3.vertices.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")
+      graphxRes.edges.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-graphx-edge-${java.time.LocalDateTime.now()}")
+      grapeRes.edges.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-grape-edge-${java.time.LocalDateTime.now()}")
       sc.stop()
     }
   }
