@@ -399,11 +399,11 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
   }
 }
 object GrapeEdgePartition extends Logging {
-  val queue = new ArrayBlockingQueue[(GraphStructure,VineyardClient,ArrayWithOffset[_],InHeapVertexDataStore[_])](1024)
+  val queue = new ArrayBlockingQueue[(Int,GraphStructure,VineyardClient,ArrayWithOffset[_],InHeapVertexDataStore[_])](1024)
   var array = null.asInstanceOf[Array[GrapeEdgePartition[_,_]]]
   val cnt = new AtomicInteger(0)
   //edata.
-  def push(in : (GraphStructure,VineyardClient,ArrayWithOffset[_],InHeapVertexDataStore[_])): Unit = {
+  def push(in : (Int,GraphStructure,VineyardClient,ArrayWithOffset[_],InHeapVertexDataStore[_])): Unit = {
     require(queue.offer(in))
   }
 
@@ -419,8 +419,8 @@ object GrapeEdgePartition extends Logging {
         array = new Array[GrapeEdgePartition[VD,ED]](size).asInstanceOf[Array[GrapeEdgePartition[_,_]]]
         for (i <- array.indices){
           val tuple = queue.poll()
-          array(i) = new GrapeEdgePartition[VD,ED](i, 0,0, tuple._1.getInnerVertexSize, tuple._1, tuple._2, tuple._3.asInstanceOf[ArrayWithOffset[ED]])
-          GrapeVertexPartition.setOuterVertexStore(i, tuple._4)
+          array(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1, 0,0, tuple._2.getInnerVertexSize, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
+          GrapeVertexPartition.setOuterVertexStore(i, tuple._5)
         }
       }
       else {
@@ -430,11 +430,11 @@ object GrapeEdgePartition extends Logging {
         val numLargestSplit = (registeredNum - (maxTimes - 1) * size)
         log.info(s"Totally ${size} ele in queue, registered partition num ${cnt.get()}, first ${numLargestSplit} frags are splited into ${maxTimes}, others are splited into ${maxTimes - 1} times")
         array = new Array[GrapeEdgePartition[VD,ED]](registeredNum).asInstanceOf[Array[GrapeEdgePartition[_,_]]]
-        var i = 0
+        //for i in (0,numLargestSplit), make several partition at (i, i + size, i + size * 2)
         for (i <- 0 until numLargestSplit){
           val tuple = queue.poll()
           require(tuple != null, "fetch null ele from queue")
-          val totalIvnum = tuple._1.getInnerVertexSize
+          val totalIvnum = tuple._2.getInnerVertexSize
           val chunkSize = (totalIvnum + maxTimes - 1) / maxTimes
           for (j <- 0 until maxTimes){
             val startLid = Math.min(totalIvnum,chunkSize * j)
@@ -442,14 +442,16 @@ object GrapeEdgePartition extends Logging {
             if (j == maxTimes - 1){
               require(endLid == totalIvnum)
             }
-            array(i) = new GrapeEdgePartition[VD,ED](i,  j, startLid, endLid, tuple._1, tuple._2, tuple._3.asInstanceOf[ArrayWithOffset[ED]])
-            GrapeVertexPartition.setOuterVertexStore(i, tuple._4)
+            val pid = i + (size * j)
+            require(pid < registeredNum, s"pid larger then registered num ${pid}, ${registeredNum}")
+            array(i) = new GrapeEdgePartition[VD,ED](pid,  j, startLid, endLid, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
+            GrapeVertexPartition.setOuterVertexStore(pid, tuple._5)
           }
         }
-        for (i <- 0 until (size - numLargestSplit)){
+        for (i <- numLargestSplit until size){
           val tuple = queue.poll()
           require(tuple != null, "fetch null ele from queue")
-          val totalIvnum = tuple._1.getInnerVertexSize
+          val totalIvnum = tuple._2.getInnerVertexSize
           val chunkSize = (totalIvnum + otherTimes - 1) / otherTimes
           for (j <- 0 until otherTimes){
             val startLid = Math.min(totalIvnum,chunkSize * j)
@@ -457,10 +459,15 @@ object GrapeEdgePartition extends Logging {
             if (j == otherTimes - 1){
               require(endLid == totalIvnum)
             }
-            array(i) = new GrapeEdgePartition[VD,ED](i, j, startLid, endLid, tuple._1, tuple._2, tuple._3.asInstanceOf[ArrayWithOffset[ED]])
-            GrapeVertexPartition.setOuterVertexStore(i, tuple._4)
+            val pid = i + (size * j)
+            require(pid < registeredNum, s"pid larger then registered num ${pid}, ${registeredNum}")
+            array(i) = new GrapeEdgePartition[VD,ED](pid, j, startLid, endLid, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
+            GrapeVertexPartition.setOuterVertexStore(i, tuple._5)
           }
         }
+      }
+      for (i <- array.indices){
+        require(array(i) != null, s"pid ${i}'s partition is null'")
       }
       require(queue.size() == 0, "queue shoud be empty now")
     }
