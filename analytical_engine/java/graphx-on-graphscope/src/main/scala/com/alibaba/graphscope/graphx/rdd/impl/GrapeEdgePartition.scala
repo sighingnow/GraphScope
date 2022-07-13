@@ -44,7 +44,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   if (activeEdgeSet == null){
     val (startOffset,endOffset) = graphStructure.getOEOffsetRange(startLid,endLid)
     activeEdgeSet = new BitSetWithOffset(startBit = startOffset.toInt,endBit = endOffset.toInt)
-    activeEdgeSet.setRange(startOffset, endOffset)
+    activeEdgeSet.setRange(startOffset.toInt, endOffset.toInt)
   }
   val NBR_SIZE = 16L
   //to avoid the difficult to get srcLid in iterating over edges.
