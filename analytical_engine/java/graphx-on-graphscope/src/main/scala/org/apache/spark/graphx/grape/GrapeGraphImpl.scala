@@ -357,7 +357,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
           val startLid = otherVPart.startLid
           val endLid = otherVPart.endLid
           val activeSet = new BitSetWithOffset(startLid,endLid)
-          activeSet.set(startLid, endLid)
+          activeSet.setRange(startLid, endLid)
           var i = startLid
           while (i < endLid) {
             if (newVdArray(i) == 0) {
