@@ -420,7 +420,7 @@ object GrapeEdgePartition extends Logging {
         for (i <- array.indices){
           val tuple = queue.poll()
           array(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1, 0,0, tuple._2.getInnerVertexSize, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
-          GrapeVertexPartition.setOuterVertexStore(i, tuple._5)
+          GrapeVertexPartition.setOuterVertexStore(tuple._1, tuple._5)
         }
       }
       else {
@@ -444,7 +444,7 @@ object GrapeEdgePartition extends Logging {
             }
             val pid = i + (size * j)
             require(pid < registeredNum, s"pid larger then registered num ${pid}, ${registeredNum}")
-            array(i) = new GrapeEdgePartition[VD,ED](pid,  j, startLid, endLid, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
+            array(pid) = new GrapeEdgePartition[VD,ED](pid,  j, startLid, endLid, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
             GrapeVertexPartition.setOuterVertexStore(pid, tuple._5)
           }
         }
@@ -461,8 +461,8 @@ object GrapeEdgePartition extends Logging {
             }
             val pid = i + (size * j)
             require(pid < registeredNum, s"pid larger then registered num ${pid}, ${registeredNum}")
-            array(i) = new GrapeEdgePartition[VD,ED](pid, j, startLid, endLid, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
-            GrapeVertexPartition.setOuterVertexStore(i, tuple._5)
+            array(pid) = new GrapeEdgePartition[VD,ED](pid, j, startLid, endLid, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
+            GrapeVertexPartition.setOuterVertexStore(pid, tuple._5)
           }
         }
       }
