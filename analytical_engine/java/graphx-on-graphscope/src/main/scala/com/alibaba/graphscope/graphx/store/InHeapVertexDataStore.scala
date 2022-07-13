@@ -27,7 +27,7 @@ class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offs
   }
 
   @inline
-  override def setData(lid: Int, vd: VD): Unit = vdArray(lid.toInt - offset) = vd
+  override def setData(lid: Int, vd: VD): Unit = vdArray(lid - offset) = vd
 
 
 //  override def withNewValues[VD2 : ClassTag](newArr : Array[VD2]) : VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset,newArr, client, versionId + 1)

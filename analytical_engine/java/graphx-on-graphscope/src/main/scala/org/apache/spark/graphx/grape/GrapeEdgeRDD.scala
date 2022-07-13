@@ -185,7 +185,7 @@ object GrapeEdgeRDD extends Logging{
           }
           res
         }
-        val outerVertexDataStore = new InHeapVertexDataStore[VD](vm.getVertexSize.toInt, vm.getOuterVertexSize.toInt, meta.vineyardClient)
+        val outerVertexDataStore = new InHeapVertexDataStore[VD](vm.innerVertexSize().toInt, vm.getOuterVertexSize.toInt, meta.vineyardClient)
         val time1 = System.nanoTime()
         val graphStructure = new GraphXGraphStructure(meta.globalVM,lid2Oid,meta.eids, meta.graphxCSR)
         log.info(s"[Creating graph structure cost ]: ${(time1 - time0) / 1000000} ms")
