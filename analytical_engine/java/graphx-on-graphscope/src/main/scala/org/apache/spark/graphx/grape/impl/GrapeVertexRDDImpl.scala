@@ -213,7 +213,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     //TODO: evaluate the cost of serializing grape partitions and deserialize
     val updatedVertexPartition = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), grapePartitionsRDD, updateMessage){
     (vIter, msgIter) => {
-        val  vpart = vIter.next()
+        val vpart = vIter.next()
         Iterator(vpart.updateOuterVertexData(msgIter))
       }
     }.cache()

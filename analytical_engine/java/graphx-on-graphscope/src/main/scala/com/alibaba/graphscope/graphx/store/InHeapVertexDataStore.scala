@@ -6,29 +6,43 @@ import org.apache.spark.internal.Logging
 
 import scala.reflect.ClassTag
 
-class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val vdArray : Array[VD], val client : VineyardClient, val versionId : Int) extends VertexDataStore [VD] with Logging {
+class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offset : Int, val length : Int, val client : VineyardClient,val vdArray : Array[VD]) extends VertexDataStore [VD] with Logging {
 
+  def this(offset : Int, length : Int, client : VineyardClient) = {
+    this(offset,length,client,new Array[VD](length))
+  }
   var vertexDataV6dId: Long = 0L
-  override def size: Long = vdArray.length
+  var resultArray : InHeapVertexDataStore[_] = null.asInstanceOf[InHeapVertexDataStore[_]]
+  override def size: Int = vdArray.length
 
   @inline
-  override def getData(lid: Long): VD = vdArray(lid.toInt)
+  override def getData(lid: Int): VD = vdArray(lid.toInt - offset)
 
   override def vineyardID: Long = {
     if (vertexDataV6dId == 0) {
+      //FIXME. merge array to one.
       vertexDataV6dId = GrapeUtils.array2ArrowArray[VD](vdArray, client,true)
     }
     vertexDataV6dId
   }
 
   @inline
-  override def setData(lid: Long, vd: VD): Unit = vdArray(lid.toInt) = vd
+  override def setData(lid: Int, vd: VD): Unit = vdArray(lid.toInt - offset) = vd
 
-  /**
-   * Indicating the version of cur vertex data. used by edge partition to judge whether are left behind.
-   * */
-  override def version: Int = versionId
 
-  override def withNewValues[VD2 : ClassTag](newArr : Array[VD2]) : VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](newArr, client, versionId + 1)
+//  override def withNewValues[VD2 : ClassTag](newArr : Array[VD2]) : VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset,newArr, client, versionId + 1)
+
+  /** create a new store from current, all the same except for vertex data type */
+  override def create[VD2: ClassTag]: VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset, length, client)
+
+  override def getOrCreate[VD2: ClassTag]: VertexDataStore[VD2] = synchronized{
+    if (resultArray == null){
+      log.info("creating result array")
+      resultArray = new InHeapVertexDataStore[VD2](offset,length,client).asInstanceOf[InHeapVertexDataStore[_]]
+    }
+    resultArray.asInstanceOf[VertexDataStore[VD2]]
+  }
+
+  override def create[VD2: ClassTag](newArr: Array[VD2]): VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset,length,client,newArr)
 }
 

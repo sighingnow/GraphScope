@@ -3,14 +3,15 @@ package com.alibaba.graphscope.graphx.store
 import scala.reflect.ClassTag
 
 trait VertexDataStore[VD] extends Serializable {
-  def size : Long
-  def getData(lid: Long) : VD
-  def setData(lid : Long, vd : VD) : Unit
+  def size : Int
+  def getData(lid: Int) : VD
+  def setData(lid : Int, vd : VD) : Unit
   def vineyardID : Long
-  /**
-   * Indicating the version of cur vertex data. used by edge partition to judge whether are left behind.
-   *  */
-  def version : Int
 
-  def withNewValues[VD2 : ClassTag](newArr : Array[VD2]) : VertexDataStore[VD2]
+  /** create a new store from current, all the same except for vertex data type */
+  def create[VD2 : ClassTag] : VertexDataStore[VD2]
+
+  def create[VD2 : ClassTag](newArr : Array[VD2]) : VertexDataStore[VD2]
+
+  def getOrCreate[VD2: ClassTag] : VertexDataStore[VD2]
 }

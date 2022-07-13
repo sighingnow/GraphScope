@@ -4,7 +4,7 @@ import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureTyp
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
 import com.alibaba.graphscope.graphx.store.InHeapVertexDataStore
-import com.alibaba.graphscope.graphx.utils.{ExecutorUtils, GrapeUtils, ScalaFFIFactory}
+import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, ExecutorUtils, GrapeUtils, ScalaFFIFactory}
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.grape.impl.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
 import org.apache.spark.graphx.impl.GraphImpl
@@ -77,8 +77,9 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         case casted: GraphXGraphStructure =>
           val vmId = casted.vm.id() //vm id will never change
           val csrId = casted.csr.id()
-          val vdId = vPart.vertexData.vineyardID
-          val edId = GrapeUtils.array2ArrowArray[ED](ePart.edatas,ePart.client,false)
+          val vdId = vPart.innerVertexData.vineyardID
+          //FIXME: merge edata array together.
+          val edId = GrapeUtils.array2ArrowArray[ED](ePart.edatas.array,ePart.client,false)
 
           logger.info(s"vm id ${vmId}, csr id ${csrId}, vd id ${vdId}, ed id ${edId}")
 
@@ -135,7 +136,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       (edgeIter, vertexIter) => {
         val edgePart = edgeIter.next()
         val vertexPart = vertexIter.next()
-        edgePart.tripletIterator(vertexPart.vertexData)
+        edgePart.tripletIterator(vertexPart.innerVertexData,vertexPart.outerVertexData)
       }
     }
   }
@@ -235,7 +236,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         if (vIter.hasNext){
           val vPart = vIter.next()
           val epart = eIter.next()
-          Iterator(epart.mapTriplets(map, vPart.vertexData, tripletFields))
+          Iterator(epart.mapTriplets(map, vPart.innerVertexData, vPart.outerVertexData, tripletFields))
         }
         else Iterator.empty
       }
@@ -257,7 +258,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         if (vIter.hasNext) {
           val vPart = vIter.next()
           val epart = eIter.next()
-          Iterator(epart.mapTriplets(f, vPart.vertexData, true, true))
+          Iterator(epart.mapTriplets(f, vPart.innerVertexData, vPart.outerVertexData, true, true))
         }
         else Iterator.empty
       }
@@ -285,7 +286,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         if (vIter.hasNext) {
           val vPart = vIter.next()
           val ePart = eIter.next()
-          Iterator(ePart.filter(epred, vpred, vPart.vertexData))
+          Iterator(ePart.filter(epred, vpred, vPart.innerVertexData,vPart.outerVertexData))
         }
         else Iterator.empty
       }
@@ -329,7 +330,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     val preAgg = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD){(eiter,viter) => {
       val epart = eiter.next()
       val vpart = viter.next()
-      epart.scanEdgeTriplet(vpart.vertexData,sendMsg,mergeMsg, tripletFields, activeDirection)
+      epart.scanEdgeTriplet(vpart.innerVertexData, vpart.outerVertexData,sendMsg,mergeMsg, tripletFields, activeDirection)
     }}.setName("GraphImpl.aggregateMessages - preAgg")
 
     newVertices.aggregateUsingIndex(preAgg, mergeMsg)
@@ -348,15 +349,17 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
           val otherVPart = otherIter.next()
           //VertexPartition id range should be same with edge partition
           val newVdArray = ePart.getDegreeArray(edgeDirection)
-          require(otherVPart.vertexData.size == newVdArray.length)
-          val newVPart = otherVPart.withNewValues(otherVPart.vertexData.withNewValues(newVdArray))
+          val newValues = otherVPart.innerVertexData.create[Int](newVdArray)
+          require(otherVPart.innerVertexData.size == newVdArray.length)
+          val newVPart = otherVPart.withNewValues(newValues)
           //IN native graphx impl, the vertex with degree 0 is not returned. But we return them as well.
           //to make the result same, we set all vertices with zero degree to inactive.
-          val ivnum = otherVPart.partVnum.toInt
-          val activeSet = new BitSet(ivnum)
-          activeSet.setUntil(ivnum)
-          var i = 0
-          while (i < ivnum) {
+          val startLid = otherVPart.startLid
+          val endLid = otherVPart.endLid
+          val activeSet = new BitSetWithOffset(startLid,endLid)
+          activeSet.set(startLid, endLid)
+          var i = startLid
+          while (i < endLid) {
             if (newVdArray(i) == 0) {
               activeSet.unset(i)
             }
