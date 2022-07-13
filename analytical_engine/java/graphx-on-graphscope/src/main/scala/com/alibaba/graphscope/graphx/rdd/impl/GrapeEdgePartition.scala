@@ -309,14 +309,14 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
   /** The received edata arrays contains both in edges and out edges, but we only need these out edges's edata array */
   def buildEdataArray(eids : Array[Long], defaultED : ED) : Array[ED] = {
     if (defaultED != null && lists(0).getArrays._3(0) == null){
-      val edgeNum = lists.map(_.totalSize()).sum
-      Array.fill[ED](edgeNum.toInt)(defaultED)
+//      val edgeNum = lists.map(_.totalSize()).sum
+      Array.fill[ED](eids.length)(defaultED)
     }
     else if (defaultED == null && lists(0).getArrays._3(0) != null){
       val allArrays = lists.flatMap(_.getArrays._3).toArray
-      val len = allArrays.map(_.length).sum
-      log.info(s"eids size ${eids.length}, len ${len}")
-      val edataArray = new Array[ED](len)
+      val rawEdgesNum = allArrays.map(_.length).sum
+      log.info(s"eids size ${eids.length}, raw edge num ${rawEdgesNum}")
+      val edataArray = new Array[ED](rawEdgesNum)
       //flat array
       var ind = 0
       for (arr <- allArrays){
@@ -328,9 +328,9 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
           ind += 1
         }
       }
-      val resArray = new Array[ED](len)
+      val resArray = new Array[ED](eids.length)
       var i = 0
-      while (i < len){
+      while (i < resArray.length){
         log.info(s"ind ${i}, eids ${eids(i)}")
         resArray(i) = edataArray(eids(i).toInt)
         i += 1
