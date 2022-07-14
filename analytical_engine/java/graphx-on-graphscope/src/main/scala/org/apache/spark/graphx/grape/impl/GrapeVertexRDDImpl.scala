@@ -55,7 +55,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
 //  }
   override private[graphx] def mapGrapeVertexPartitions[VD2: ClassTag](f: GrapeVertexPartition[VD] => GrapeVertexPartition[VD2])
   : GrapeVertexRDD[VD2] = {
-    val newPartitionsRDD  = grapePartitionsRDD.mapPartitions(
+  val newPartitionsRDD  = grapePartitionsRDD.mapPartitions(
       iter => {
         if (iter.hasNext){
           val part = iter.next();
@@ -66,7 +66,8 @@ class GrapeVertexRDDImpl[VD] private[graphx](
         }
       },preservesPartitioning = true
     )
-    this.withGrapePartitionsRDD(newPartitionsRDD)
+  clearStore()
+  this.withGrapePartitionsRDD(newPartitionsRDD)
   }
 
   override def mapValues[VD2](f: VD => VD2)(implicit evidence$2: ClassTag[VD2]): VertexRDD[VD2] = {
@@ -129,6 +130,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
         }
       }
     }
+    clearStore()
     this.withGrapePartitionsRDD(newPartitionsRDD)
   }
 
@@ -152,6 +154,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
         }
       }
     }
+    clearStore()
     this.withGrapePartitionsRDD(newPartitionsRDD)
   }
 
@@ -191,6 +194,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
         }
       }
     }
+    clearStore()
     this.withGrapePartitionsRDD[VD2](newPartitionsRDD)
   }
 
@@ -259,7 +263,17 @@ class GrapeVertexRDDImpl[VD] private[graphx](
       val part = iter.next()
       Iterator(part.collectNbrIds(direction))
     })
+    clearStore()
     this.withGrapePartitionsRDD(part)
+  }
+
+  private def clearStore() : Unit = {
+    this.grapePartitionsRDD.foreachPartition(iter => {
+      if (iter.hasNext){
+        val part = iter.next()
+        part.innerVertexData.clearCreatedArray()
+      }
+    })
   }
 
   override private[graphx] def mapVertexPartitions[VD2](f: ShippableVertexPartition[VD] => ShippableVertexPartition[VD2])(implicit evidence$1: ClassTag[VD2]) = {

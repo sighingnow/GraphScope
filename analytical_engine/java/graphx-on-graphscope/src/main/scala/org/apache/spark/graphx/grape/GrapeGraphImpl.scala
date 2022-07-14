@@ -349,9 +349,9 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
           val otherVPart = otherIter.next()
           //VertexPartition id range should be same with edge partition
           val newVdArray = ePart.getDegreeArray(edgeDirection)
-          val newValues = otherVPart.innerVertexData.create[Int](newVdArray)
+//          val newValues = otherVPart.innerVertexData.create[Int](newVdArray)
+          val newValues = otherVPart.innerVertexData.getOrCreate[Int]
           require(otherVPart.innerVertexData.size == newVdArray.length)
-          val newVPart = otherVPart.withNewValues(newValues)
           //IN native graphx impl, the vertex with degree 0 is not returned. But we return them as well.
           //to make the result same, we set all vertices with zero degree to inactive.
           val startLid = otherVPart.startLid
@@ -363,8 +363,12 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
             if (newVdArray(i) == 0) {
               activeSet.unset(i)
             }
+            else {
+              newValues.setData(i, newVdArray(i))
+            }
             i += 1
           }
+          val newVPart = otherVPart.withNewValues(newValues)
           Iterator(newVPart.withMask(activeSet))
         }
         else Iterator.empty

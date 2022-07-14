@@ -16,7 +16,7 @@ class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offs
   override def size: Int = vdArray.length
 
   @inline
-  override def getData(lid: Int): VD = vdArray(lid.toInt - offset)
+  override def getData(lid: Int): VD = vdArray(lid - offset)
 
   override def vineyardID: Long = {
     if (vertexDataV6dId == 0) {
@@ -29,11 +29,8 @@ class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offs
   @inline
   override def setData(lid: Int, vd: VD): Unit = vdArray(lid - offset) = vd
 
-
-//  override def withNewValues[VD2 : ClassTag](newArr : Array[VD2]) : VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset,newArr, client, versionId + 1)
-
   /** create a new store from current, all the same except for vertex data type */
-  override def create[VD2: ClassTag]: VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset, length, client)
+//  override def create[VD2: ClassTag]: VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset, length, client)
 
   override def getOrCreate[VD2: ClassTag]: VertexDataStore[VD2] = synchronized{
     if (resultArray == null){
@@ -43,6 +40,9 @@ class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offs
     resultArray.asInstanceOf[VertexDataStore[VD2]]
   }
 
-  override def create[VD2: ClassTag](newArr: Array[VD2]): VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset,length,client,newArr)
+//  override def create[VD2: ClassTag](newArr: Array[VD2]): VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset,length,client,newArr)
+
+  /** set the created result array to null, for accepting new transformations. */
+  override def clearCreatedArray(): Unit = resultArray = null
 }
 

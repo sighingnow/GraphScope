@@ -8,7 +8,7 @@ import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.graphx.rdd.RoutingTable
 import com.alibaba.graphscope.graphx.rdd.impl.GrapeVertexPartition
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
-import com.alibaba.graphscope.graphx.store.InHeapVertexDataStore
+import com.alibaba.graphscope.graphx.store.{InHeapVertexDataStore, VertexDataStoreView}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.grape.impl.GrapeVertexRDDImpl
@@ -81,7 +81,9 @@ object GrapeVertexRDD extends Logging{
 
   //When using this, we assume
   def buildPartitionFromGraphX[VD: ClassTag](pid: Int, startLid : Long, endLid : Long, client: VineyardClient, graphStructure: GraphStructure, edgeShuffleIter: Iterator[(PartitionID,EdgeShuffle[VD,_])]):GrapeVertexPartition[VD] = {
-    val innerVertexDataStore = new InHeapVertexDataStore[VD](startLid.toInt, (endLid - startLid).toInt, client)
+//    val innerVertexDataStore = new InHeapVertexDataStore[VD](startLid.toInt, (endLid - startLid).toInt, client)
+    val innerVertexDataStore = GrapeVertexPartition.pid2InnerVertexStore(pid).asInstanceOf[InHeapVertexDataStore[VD]]
+    val innerVertexDataView = new VertexDataStoreView[VD](innerVertexDataStore,startLid.toInt,endLid.toInt)
     val outerVertexDataStore = GrapeVertexPartition.pid2OuterVertexStore(pid).asInstanceOf[InHeapVertexDataStore[VD]]
     require(outerVertexDataStore != null, "outer vertex data store null")
 
@@ -104,7 +106,7 @@ object GrapeVertexRDD extends Logging{
         require(graphStructure.getVertex(oid,grapeVertex))
         val lid = grapeVertex.GetValue().toInt
         if (lid < ivnum) {
-          innerVertexDataStore.setData(lid, vdata)
+          innerVertexDataView.setData(lid, vdata)
         }
         else outerVertexDataStore.setData(lid, vdata)
         i += 1
@@ -114,7 +116,7 @@ object GrapeVertexRDD extends Logging{
 //    val hostName = InetAddress.getLocalHost.getHostName
 //    require(executorInfo.contains(hostName), s"host ${hostName} is not included in executor info ${executorInfo.toString()}")
 //    val preferredLoc = "executor_" + hostName + "_" + executorInfo.get(hostName)
-    new GrapeVertexPartition[VD](pid,startLid.toInt, endLid.toInt, graphStructure, innerVertexDataStore,outerVertexDataStore, client, RoutingTable.fromGraphStructure(graphStructure))
+    new GrapeVertexPartition[VD](pid,startLid.toInt, endLid.toInt, graphStructure, innerVertexDataView,outerVertexDataStore, client, RoutingTable.fromGraphStructure(graphStructure))
   }
 
   def fromGrapeEdgeRDD[VD: ClassTag](edgeRDD: GrapeEdgeRDD[_], numPartitions : Int, defaultVal : VD, storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY) : GrapeVertexRDDImpl[VD] = {
