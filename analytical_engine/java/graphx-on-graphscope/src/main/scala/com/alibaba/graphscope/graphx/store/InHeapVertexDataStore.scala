@@ -50,7 +50,7 @@ class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offs
   }
 
   override def toString: String = {
-    "InHeapVertexDataStore@(offset=" + offset + ",length=" + length + ",type=" + ${GrapeUtils.getRuntimeClass[VD].getSimpleName} + ")"
+    "InHeapVertexDataStore@(offset=" + offset + ",length=" + length + ",type=" + GrapeUtils.getRuntimeClass[VD].getSimpleName + ")"
   }
 }
 

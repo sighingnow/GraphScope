@@ -375,7 +375,12 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       }
     }
     //Why not working
-    grapeVertices.clearStore()
+    grapeVertices.grapePartitionsRDD.foreachPartition(iter => {
+      if (iter.hasNext){
+        val part = iter.next()
+        part.innerVertexData.clearCreatedArray()
+      }
+    })
     grapeVertices.withGrapePartitionsRDD(newVertexPartitionRDD)
   }
 }

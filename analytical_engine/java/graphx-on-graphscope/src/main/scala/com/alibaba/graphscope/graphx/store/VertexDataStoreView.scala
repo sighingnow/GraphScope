@@ -26,6 +26,6 @@ class VertexDataStoreView[@specialized(Long,Double,Int) VD: ClassTag](val vertex
   override def clearCreatedArray(): Unit = vertexDataStore.clearCreatedArray()
 
   override def toString: String = {
-    "VertexDataStoreView@(type=" + ${GrapeUtils.getRuntimeClass[VD].getSimpleName} + ",start=" + startLid + ",end=" + endLid + ",impl="+ vertexDataStore.toString + ")"
+    "VertexDataStoreView@(type=" + GrapeUtils.getRuntimeClass[VD].getSimpleName + ",start=" + startLid + ",end=" + endLid + ",impl="+ vertexDataStore.toString + ")"
   }
 }
