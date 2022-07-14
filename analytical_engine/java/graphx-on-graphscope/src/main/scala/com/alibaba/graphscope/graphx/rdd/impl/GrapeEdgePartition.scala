@@ -427,7 +427,9 @@ object GrapeEdgePartition extends Logging {
               val tuple = tupleQueue.poll()
               val _ = pidQueue.poll()
               pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1, 0,0, tuple._2.getInnerVertexSize, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
-              GrapeVertexPartition.setInnerVertexStore(tuple._1,tuple._5)
+              val innerStore = tuple._5
+              innerStore.setNumSplit(1)
+              GrapeVertexPartition.setInnerVertexStore(tuple._1,innerStore)
               GrapeVertexPartition.setOuterVertexStore(tuple._1, tuple._6)
             }
           }
@@ -460,16 +462,18 @@ object GrapeEdgePartition extends Logging {
                 if (j == times - 1){
                   require(endLid == totalIvnum)
                 }
+                val innerStore = tuple._5
+                innerStore.setNumSplit(times)
                 if (j == 0){
                   pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1,  j, startLid, endLid, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
-                  GrapeVertexPartition.setInnerVertexStore(tuple._1,tuple._5)
+                  GrapeVertexPartition.setInnerVertexStore(tuple._1,innerStore)
                   GrapeVertexPartition.setOuterVertexStore(tuple._1, tuple._6)
                   log.info(s"creating partition for pid ${tuple._1}, (${startLid},${endLid}), fid ${tuple._2.fid()}")
                 }
                 else {
                   val dstPid = candidates.dequeue()
                   pid2EdgePartition(dstPid) = new GrapeEdgePartition[VD,ED](dstPid,  j, startLid, endLid, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
-                  GrapeVertexPartition.setInnerVertexStore(dstPid,tuple._5)
+                  GrapeVertexPartition.setInnerVertexStore(dstPid,innerStore)
                   GrapeVertexPartition.setOuterVertexStore(dstPid, tuple._6)
                   log.info(s"creating partition for pid ${dstPid}, (${startLid},${endLid}), fid ${tuple._2.fid()}")
                 }

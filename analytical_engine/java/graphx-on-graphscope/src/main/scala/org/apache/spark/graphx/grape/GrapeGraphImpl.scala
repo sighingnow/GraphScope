@@ -375,7 +375,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       }
     }
     //Why not working
-    grapeVertices.clearStore()
+//    grapeVertices.clearStore()
     grapeVertices.withGrapePartitionsRDD(newVertexPartitionRDD)
   }
 }

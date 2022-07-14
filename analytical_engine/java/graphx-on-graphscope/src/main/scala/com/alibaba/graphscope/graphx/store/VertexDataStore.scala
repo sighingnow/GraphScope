@@ -14,7 +14,4 @@ trait VertexDataStore[VD] extends Serializable {
 //  def create[VD2 : ClassTag](newArr : Array[VD2]) : VertexDataStore[VD2]
 
   def getOrCreate[VD2: ClassTag] : VertexDataStore[VD2]
-
-  /** set the created result array to null, for accepting new transformations. */
-  def clearCreatedArray() : Unit
 }

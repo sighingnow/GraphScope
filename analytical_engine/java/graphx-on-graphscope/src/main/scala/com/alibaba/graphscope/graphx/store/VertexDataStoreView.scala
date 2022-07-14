@@ -22,9 +22,6 @@ class VertexDataStoreView[@specialized(Long,Double,Int) VD: ClassTag](val vertex
     new VertexDataStoreView[VD2](res, startLid, endLid)
   }
 
-  /** set the created result array to null, for accepting new transformations. */
-  override def clearCreatedArray(): Unit = vertexDataStore.clearCreatedArray()
-
   override def toString: String = {
     "VertexDataStoreView@(type=" + ${GrapeUtils.getRuntimeClass[VD].getSimpleName} + ",start=" + startLid + ",end=" + endLid + ",impl="+ vertexDataStore.toString + ")"
   }
