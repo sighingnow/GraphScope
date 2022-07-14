@@ -464,7 +464,7 @@ object GrapeEdgePartition extends Logging {
                 else {
                   val dstPid = candidates.dequeue()
                   pid2EdgePartition(dstPid) = new GrapeEdgePartition[VD,ED](dstPid,  j, startLid, endLid, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
-                  GrapeVertexPartition.setInnerVertexStore(tuple._1,tuple._5)
+                  GrapeVertexPartition.setInnerVertexStore(dstPid,tuple._5)
                   GrapeVertexPartition.setOuterVertexStore(dstPid, tuple._6)
                   log.info(s"creating partition for pid ${dstPid}, (${startLid},${endLid}), fid ${tuple._2.fid()}")
                 }
