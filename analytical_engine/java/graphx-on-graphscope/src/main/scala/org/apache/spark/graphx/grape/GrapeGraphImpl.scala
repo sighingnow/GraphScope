@@ -337,7 +337,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   }
 
   override def outerJoinVertices[U : ClassTag, VD2 : ClassTag](other: RDD[(VertexId, U)])(mapFunc: (VertexId, VD, Option[U]) => VD2)(implicit eq: VD =:= VD2 = null): Graph[VD2, ED] = {
-    val newVertices = vertices.leftJoin(other)(mapFunc)
+    val newVertices = vertices.leftJoin[U,VD2](other)(mapFunc)
     new GrapeGraphImpl[VD2,ED](newVertices,edges)
   }
 

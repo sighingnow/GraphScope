@@ -126,7 +126,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
         PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), grapePartitionsRDD, other.grapePartitionsRDD) { (thisIter, otherIter) =>
           val thisTuple = thisIter.next()
           val otherTuple = otherIter.next()
-          Iterator(thisTuple.leftJoin(otherTuple)(f))
+          Iterator(thisTuple.leftJoin[VD2,VD3](otherTuple)(f))
         }
       }
     }
@@ -137,7 +137,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   override def leftJoin[VD2 : ClassTag, VD3 : ClassTag](other: RDD[(VertexId, VD2)])(f: (VertexId, VD, Option[VD2]) => VD3): GrapeVertexRDD[VD3] = {
     other match {
       case other: GrapeVertexRDDImpl[VD2] =>
-        leftZipJoin(other)(f)
+        leftZipJoin[VD2,VD3](other)(f)
       case _ =>
         throw new IllegalArgumentException("currently not support to join with non-grape vertex rdd")
     }
