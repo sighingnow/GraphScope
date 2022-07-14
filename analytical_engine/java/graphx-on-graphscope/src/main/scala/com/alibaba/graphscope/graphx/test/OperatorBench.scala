@@ -85,14 +85,14 @@ object OperatorBench extends Logging{
       val grapeTime01 = System.nanoTime()
 
       val grapeTime20 = System.nanoTime()
-      val grapeGraph2 = mapEdges(mapEdges(mapEdges(mapEdges(mapEdges(grapeGraph)))))
+      val grapeGraph2 = mapEdges(mapEdges(mapEdges(grapeGraph)))
       log.info(s"[Operator Bench------]Finish mapping grape edge, counts vertices ${grapeGraph2.vertices.count()}, edges ${grapeGraph2.edges.count()}")
       val grapeTime21 = System.nanoTime()
       log.info(s"[OperatorBench]: map [edges grape] time ${(grapeTime21 - grapeTime20) / 1000000} ms")
       grapeGraph2.unpersist()
 
       val grapeTime50 = System.nanoTime()
-      val grapeGraph5 = mapTriplet(mapTriplet(mapTriplet(mapTriplet(mapTriplet(grapeGraph)))))
+      val grapeGraph5 = mapTriplet(mapTriplet(mapTriplet(grapeGraph)))
       log.info(s"[Operator Bench------]Finish mapping triplet, counts vertices ${grapeGraph5.vertices.count()}, edges ${grapeGraph5.edges.count()}")
       val grapeTime51 = System.nanoTime()
       log.info(s"[OperatorBench]: map [edge triplet] grape time ${(grapeTime51 - grapeTime50) / 1000000} ms")

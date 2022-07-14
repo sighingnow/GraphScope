@@ -123,13 +123,13 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         var i = 0
         while (i < outerGids.length) {
           require(graphStructure.outerVertexGid2Vertex(outerGids(i), vertex))
-          require(vertex.GetValue() >= graphStructure.getInnerVertexSize)
+//          require(vertex.GetValue() >= graphStructure.getInnerVertexSize)
           outerVertexData.setData(vertex.GetValue.toInt, outerDatas(i))
           i += 1
         }
       }
       val time1 = System.nanoTime()
-      log.info(s"[Perf: ] updating outer vertex data cost ${(time1 - time0) / 1000000}ms")
+      log.info(s"[Perf: ] updating outer vertex data cost ${(time1 - time0) / 1000000}ms, size ${}")
     }
     else {
       log.info(s"[Perf]: part ${pid} receives no outer vertex data, startLid ${startLid}")
