@@ -40,7 +40,7 @@ object OperatorTest extends Logging{
       def outerJoin(graph : Graph[Long,Long]) : Graph[Long,Long] = {
         log.info("[Operator test]: start outer join")
         val inDegrees = graph.inDegrees
-        graph.joinVertices(inDegrees)((id, ovd, newVd) => {
+        graph.joinVertices[Int](inDegrees)((id, ovd, newVd) => {
 //          log.info(s"vertex ${id}, set vd from ${ovd} to ${newVd}")
           newVd
         })
