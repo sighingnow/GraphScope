@@ -270,8 +270,10 @@ class GrapeVertexRDDImpl[VD] private[graphx](
 
   def clearStore() : Unit = {
     this.grapePartitionsRDD.foreachPartition(iter => {
+      log.info(s"clearing inner store ")
       if (iter.hasNext){
         val part = iter.next()
+        log.info(s"clearing inner store for ${part.pid} ${part.innerVertexData}")
         part.innerVertexData.clearCreatedArray()
       }
     })
