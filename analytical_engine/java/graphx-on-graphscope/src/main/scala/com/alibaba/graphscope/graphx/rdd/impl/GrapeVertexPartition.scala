@@ -6,7 +6,7 @@ import com.alibaba.graphscope.graphx.graph.GraphStructure
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import com.alibaba.graphscope.graphx.rdd.RoutingTable
 import com.alibaba.graphscope.graphx.store.{InHeapVertexDataStore, VertexDataStore, VertexDataStoreView}
-import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, IdParser, PrimitiveVector}
+import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, GrapeUtils, IdParser, PrimitiveVector}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.Partition
 import org.apache.spark.graphx.{EdgeDirection, PartitionID, VertexId}
@@ -229,7 +229,9 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       var i = this.bitSet.nextSetBit(startLid)
       while (i >= 0) {
         val otherV: Option[VD2] = if (other.bitSet.get(i)) Some(other.getData(i)) else None
-        newValues.setData(i, f(this.graphStructure.getId(i), this.getData(i), otherV))
+        val t = f(this.graphStructure.getId(i), this.getData(i), otherV)
+        log.info(s"vd3 ${GrapeUtils.getRuntimeClass[VD3].getSimpleName}, value ${t}, clz ${t.getClass.getSimpleName}")
+        newValues.setData(i, t)
         i = this.bitSet.nextSetBit(i + 1)
       }
       val time1 = System.nanoTime()
