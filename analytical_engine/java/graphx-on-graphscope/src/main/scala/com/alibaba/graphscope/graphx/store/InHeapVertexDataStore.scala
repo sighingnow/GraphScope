@@ -48,5 +48,9 @@ class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offs
     log.info("clear result array")
     resultArray = null
   }
+
+  override def toString: String = {
+    "InHeapVertexDataStore@(offset=" + offset + ",length=" + length + ",type=" + ${GrapeUtils.getRuntimeClass[VD].getSimpleName} + ")"
+  }
 }
 

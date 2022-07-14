@@ -1,8 +1,11 @@
 package com.alibaba.graphscope.graphx.store
 
+import com.alibaba.graphscope.graphx.utils.GrapeUtils
+import org.apache.spark.internal.Logging
+
 import scala.reflect.ClassTag
 
-class VertexDataStoreView[@specialized(Long,Double,Int) VD: ClassTag](val vertexDataStore: VertexDataStore[VD], val startLid : Int, val endLid : Int) extends VertexDataStore[VD] {
+class VertexDataStoreView[@specialized(Long,Double,Int) VD: ClassTag](val vertexDataStore: VertexDataStore[VD], val startLid : Int, val endLid : Int) extends VertexDataStore[VD] with Logging{
   override def size: Int = endLid - startLid
 
   override def getData(lid: Int): VD = vertexDataStore.getData(lid)
@@ -15,9 +18,14 @@ class VertexDataStoreView[@specialized(Long,Double,Int) VD: ClassTag](val vertex
 
   override def getOrCreate[VD2: ClassTag]: VertexDataStore[VD2] = {
     val res = vertexDataStore.getOrCreate[VD2]
+    log.info(s"creating view with store ${res.toString}")
     new VertexDataStoreView[VD2](res, startLid, endLid)
   }
 
   /** set the created result array to null, for accepting new transformations. */
   override def clearCreatedArray(): Unit = vertexDataStore.clearCreatedArray()
+
+  override def toString: String = {
+    "VertexDataStoreView@(type=" + ${GrapeUtils.getRuntimeClass[VD].getSimpleName} + ",start=" + startLid + ",end=" + endLid + ",impl="+ vertexDataStore.toString + ")"
+  }
 }
