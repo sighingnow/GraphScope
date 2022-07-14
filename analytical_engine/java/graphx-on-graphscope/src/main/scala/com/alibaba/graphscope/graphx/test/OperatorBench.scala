@@ -200,6 +200,7 @@ object OperatorBench extends Logging{
       log.info(s"[Operator Bench:] load graph cost ${(graphxTime01 - graphxTime00)/1000000} ms")
       log.info(s"[OperatorBench]: map [edges ] graphx time ${(graphxTime21 - graphxTime20)/ 1000000} ms")
       log.info(s"[OperatorBench]: map [edge triplet] graphx time ${(graphxTime51 - graphxTime50)/ 1000000} ms")
+      log.info(s"[OperatorBench]: partition num ${graphxGraph.vertices.getNumPartitions}")
 
       return
 
