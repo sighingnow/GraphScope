@@ -357,8 +357,8 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     val time0 = System.nanoTime()
     val edgesNum = lists.map(shuffle => shuffle.totalSize()).sum
     log.info(s"Got totally ${lists.length}, edges ${edgesNum} in ${ExecutorUtils.getHostName}")
-    srcOids.reserve(edgesNum)
-    dstOids.reserve(edgesNum)
+    srcOids.resize(edgesNum)
+    dstOids.resize(edgesNum)
     log.info(s"Constructing csr with global vm ${globalVMID}")
     val graphxVertexMapGetter = ScalaFFIFactory.newVertexMapGetter()
     val graphxVertexMap = graphxVertexMapGetter.get(client, globalVMID).get()
@@ -375,17 +375,19 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
         val srcArray = srcArrays(i)
         val dstArray = dstArrays(i)
         while (j < innerLimit){
-          srcOids.push_back(srcArray(j))
-          dstOids.push_back(dstArray(j))
+          srcOids.set(ind,srcArray(j))
+          dstOids.set(ind,dstArray(j))
           j += 1
           ind += 1
         }
         i += 1
       }
     }
+    require(ind == edgesNum, s"after iterating over edge shuffle, ind ${ind} neq ${edgesNum}")
     log.info("Finish adding edges to builders")
     val graphxCSRBuilder = ScalaFFIFactory.newGraphXCSRBuilder(client)
     log.info(s"building csr with local num ${graphxVertexMap.fnum()/numExecutors}")
+    require(srcOids.size() == edgesNum && dstOids.size() == edgesNum, s"src size ${srcOids.size()} dst size ${dstOids.size()}, edgenum ${edgesNum}")
     graphxCSRBuilder.loadEdges(srcOids,dstOids,graphxVertexMap,graphxVertexMap.fnum() / numExecutors)
     val graphxCSR = graphxCSRBuilder.seal(client).get()
     val time1 = System.nanoTime()
