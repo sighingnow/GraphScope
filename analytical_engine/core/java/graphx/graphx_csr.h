@@ -411,7 +411,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
       // int thread_num =
       //     (std::thread::hardware_concurrency() / 2 + local_num - 1) /
       //     local_num;
-      int thread_num = 1 std::atomic<int> current_chunk(0);
+      int thread_num = 1;
+       std::atomic<int> current_chunk(0);
       int64_t chunkSize = 8192000;
       int64_t num_chunks = (edges_num_ + chunkSize - 1) / chunkSize;
       LOG(INFO) << "thread num " << thread_num << ", chunk size: " << chunkSize

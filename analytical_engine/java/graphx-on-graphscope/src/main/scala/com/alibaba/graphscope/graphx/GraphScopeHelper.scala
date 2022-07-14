@@ -27,7 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 object GraphScopeHelper extends Logging{
-  val MAX_FNUM_PER_EXECUTOR = 16
+  val MAX_FNUM_PER_EXECUTOR = 8
 
   def loadFragmentAsRDD[VD: ClassTag, ED: ClassTag](sc : SparkContext, objectIDs : String, fragName : String) : (GrapeVertexRDD[VD],GrapeEdgeRDD[ED]) = {
 
