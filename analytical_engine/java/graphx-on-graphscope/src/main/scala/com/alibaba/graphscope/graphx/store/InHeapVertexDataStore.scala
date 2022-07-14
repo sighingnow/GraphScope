@@ -34,15 +34,19 @@ class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offs
 
   override def getOrCreate[VD2: ClassTag]: VertexDataStore[VD2] = synchronized{
     if (resultArray == null){
-      log.info("creating result array")
+      log.info(s"creating result array of type ${GrapeUtils.getRuntimeClass[VD2].getSimpleName}")
       resultArray = new InHeapVertexDataStore[VD2](offset,length,client).asInstanceOf[InHeapVertexDataStore[_]]
     }
-    resultArray.asInstanceOf[VertexDataStore[VD2]]
+  log.info(s"using already exiting res array ${resultArray}")
+  resultArray.asInstanceOf[VertexDataStore[VD2]]
   }
 
 //  override def create[VD2: ClassTag](newArr: Array[VD2]): VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset,length,client,newArr)
 
   /** set the created result array to null, for accepting new transformations. */
-  override def clearCreatedArray(): Unit = resultArray = null
+  override def clearCreatedArray(): Unit = {
+    log.info("clear result array")
+    resultArray = null
+  }
 }
 
