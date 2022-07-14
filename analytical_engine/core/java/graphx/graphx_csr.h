@@ -401,7 +401,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
   }
 
   boost::leaf::result<void> LoadEdgesImpl(
-      const oid_t* src_oid_ptr, const oid_t* dst_oid_ptr, int64_t edges_num_,
+      const oid_t*& src_oid_ptr, const oid_t*& dst_oid_ptr, int64_t edges_num_,
       GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map, int local_num) {
     vnum_ = graphx_vertex_map.GetInnerVertexSize();
     std::vector<vid_t> srcLids, dstLids;
@@ -411,7 +411,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
       int thread_num =
           (std::thread::hardware_concurrency() / 2 + local_num - 1) / local_num;
       std::atomic<int> current_chunk(0);
-      int64_t chunkSize = 4096;
+      int64_t chunkSize = 8192;
       int64_t num_chunks = (edges_num_ + chunkSize - 1) / chunkSize;
       LOG(INFO) << "thread num " << thread_num << ", chunk size: " << chunkSize
                 << "num chunks " << num_chunks;
@@ -428,6 +428,9 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
             }
             begin = std::min(edges_num_, got * chunkSize);
             end = std::min(edges_num_, begin + chunkSize);
+            LOG(INFO) << "thread: " << tid << "got range(" << begin << ","
+                      << end << ")"
+                      << ", limit" << edges_num_;
             for (auto cur = begin; cur < end; ++cur) {
               auto src_lid = graphx_vertex_map.GetLid(src_oid_ptr[cur]);
               srcLids[cur] = src_lid;
@@ -472,10 +475,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     }
 
     build_offsets();
-    LOG(INFO) << "finish offset building";
     add_edges(srcLids, dstLids, in_edge_active, out_edge_active);
     sort();
-    LOG(INFO) << "Finish loading edges";
     return {};
   }
 
