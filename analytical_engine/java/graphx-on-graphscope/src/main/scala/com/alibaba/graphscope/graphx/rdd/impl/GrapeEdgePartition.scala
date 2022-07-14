@@ -279,7 +279,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
         }
       }
     }
-    log.info(s"Found totally ${innerHashSet.size} in ${ExecutorUtils.getHostName}")
+    log.info(s"Found totally ${innerHashSet.size} in ${ExecutorUtils.getHostName}:${pid}")
     if (innerHashSet.size == 0 && outerHashSet.size == 0){
       log.info(s"partition ${pid} empty")
       return null
@@ -385,6 +385,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     }
     log.info("Finish adding edges to builders")
     val graphxCSRBuilder = ScalaFFIFactory.newGraphXCSRBuilder(client)
+    log.info(s"building csr with local num ${graphxVertexMap.fnum()/numExecutors}")
     graphxCSRBuilder.loadEdges(srcOids,dstOids,graphxVertexMap,graphxVertexMap.fnum() / numExecutors)
     val graphxCSR = graphxCSRBuilder.seal(client).get()
     val time1 = System.nanoTime()
