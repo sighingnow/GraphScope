@@ -230,7 +230,6 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       while (i >= 0) {
         val otherV: Option[VD2] = if (other.bitSet.get(i)) Some(other.getData(i)) else None
         val t = f(this.graphStructure.getId(i), this.getData(i), otherV)
-        log.info(s"vd3 ${GrapeUtils.getRuntimeClass[VD3].getSimpleName}, value ${t}, clz ${t.getClass.getSimpleName}")
         newValues.setData(i, t)
         i = this.bitSet.nextSetBit(i + 1)
       }
