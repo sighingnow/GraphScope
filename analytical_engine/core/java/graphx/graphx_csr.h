@@ -408,42 +408,41 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     srcLids.resize(edges_num_);
     dstLids.resize(edges_num_);
     {
-      // int thread_num =
-      //     (std::thread::hardware_concurrency() / 2 + local_num - 1) /
-      //     local_num;
-      int thread_num = 1;
-       std::atomic<int> current_chunk(0);
-      int64_t chunkSize = 8192000;
+      int thread_num =
+          (std::thread::hardware_concurrency() + local_num - 1) / local_num;
+      // int thread_num = 1;
+      std::atomic<int> current_chunk(0);
+      int64_t chunkSize = 81920;
       int64_t num_chunks = (edges_num_ + chunkSize - 1) / chunkSize;
       LOG(INFO) << "thread num " << thread_num << ", chunk size: " << chunkSize
                 << "num chunks " << num_chunks;
       std::vector<std::thread> work_threads(thread_num);
-      std::vector<int> cnt(thread_num);
-      for (int tid = 0; tid < thread_num; ++tid) {
-        work_threads[tid] = std::thread([&] {
-          int got;
-          int64_t begin, end;
-          while (true) {
-            got = current_chunk.fetch_add(1, std::memory_order_relaxed);
-            if (got >= num_chunks) {
-              break;
-            }
-            begin = std::min(edges_num_, got * chunkSize);
-            end = std::min(edges_num_, begin + chunkSize);
-            LOG(INFO) << "thread: " << tid << "got range(" << begin << ","
-                      << end << ")"
-                      << ", limit" << edges_num_;
-            for (auto cur = begin; cur < end; ++cur) {
-              auto src_lid = graphx_vertex_map.GetLid(src_oid_ptr[cur]);
-              srcLids[cur] = src_lid;
-            }
-            for (auto cur = begin; cur < end; ++cur) {
-              auto dst_lid = graphx_vertex_map.GetLid(dst_oid_ptr[cur]);
-              dstLids[cur] = dst_lid;
-            }
-            cnt[tid] += (end - begin);
-          }
-        });
+      for (int i = 0; i < thread_num; ++i) {
+        work_threads[i] = std::thread(
+            [&](int tid) {
+              int got;
+              int64_t begin, end;
+              while (true) {
+                got = current_chunk.fetch_add(1, std::memory_order_relaxed);
+                if (got >= num_chunks) {
+                  break;
+                }
+                begin = std::min(edges_num_, got * chunkSize);
+                end = std::min(edges_num_, begin + chunkSize);
+                LOG(INFO) << "thread: " << tid << "got range(" << begin << ","
+                          << end << ")"
+                          << ", limit" << edges_num_;
+                for (auto cur = begin; cur < end; ++cur) {
+                  auto src_lid = graphx_vertex_map.GetLid(src_oid_ptr[cur]);
+                  srcLids[cur] = src_lid;
+                }
+                for (auto cur = begin; cur < end; ++cur) {
+                  auto dst_lid = graphx_vertex_map.GetLid(dst_oid_ptr[cur]);
+                  dstLids[cur] = dst_lid;
+                }
+              }
+            },
+            i);
       }
       for (auto& thrd : work_threads) {
         thrd.join();
