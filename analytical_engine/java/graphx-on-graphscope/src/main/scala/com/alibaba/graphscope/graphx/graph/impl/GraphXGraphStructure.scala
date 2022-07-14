@@ -35,9 +35,9 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     val limit = csr.getOEOffset(ivnum)
     while (offset < limit){
       val dstLid = nbr.vid().toInt
-      offset += 1
       dstOids(offset) = lid2Oid(dstLid)
       dstLids(offset) = dstLid
+      offset += 1
       nbr.addV(16)
     }
   }
