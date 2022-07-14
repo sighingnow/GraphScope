@@ -225,6 +225,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     } else {
       /** for vertex not represented in other, we use original vertex */
       val time0 = System.nanoTime()
+      log.info(s"${GrapeUtils.getRuntimeClass[VD3].getSimpleName}")
       val newValues = innerVertexData.getOrCreate[VD3]
       var i = this.bitSet.nextSetBit(startLid)
       while (i >= 0) {

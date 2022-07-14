@@ -409,7 +409,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     dstLids.resize(edges_num_);
     {
       int thread_num =
-          (std::thread::hardware_concurrency() / 2 + local_num - 1) / local_num;
+          (std::thread::hardware_concurrency() + local_num - 1) / local_num;
       // int thread_num = 1;
       std::atomic<int> current_chunk(0);
       int64_t chunkSize = 81920;
@@ -417,7 +417,6 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
       LOG(INFO) << "thread num " << thread_num << ", chunk size: " << chunkSize
                 << "num chunks " << num_chunks;
       std::vector<std::thread> work_threads(thread_num);
-      std::vector<int> cnt(thread_num);
       for (int i = 0; i < thread_num; ++i) {
         work_threads[i] = std::thread(
             [&](int tid) {
@@ -441,7 +440,6 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
                   auto dst_lid = graphx_vertex_map.GetLid(dst_oid_ptr[cur]);
                   dstLids[cur] = dst_lid;
                 }
-                cnt[tid] += (end - begin);
               }
             },
             i);
