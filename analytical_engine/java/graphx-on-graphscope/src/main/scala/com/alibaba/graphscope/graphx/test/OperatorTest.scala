@@ -18,8 +18,8 @@ object OperatorTest extends Logging{
       sc.getConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
 
       val rawGraph = GraphLoader.edgeListFile(sc, fileName,false, partNum)
-      val graph = rawGraph.mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong)
-      val grapeGraph = GraphScopeHelper.graph2Fragment[Long,Long](graph)
+      val graph = rawGraph.mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).cache()
+      val grapeGraph = GraphScopeHelper.graph2Fragment[Long,Long](graph).cache()
 
       val maskGraph : Graph[Long,Long] = graph.subgraph(epred = (_ => true), vpred = (id, vd) => id % 2 == 0)
       val grapeMaskGraph : Graph[Long,Long] = grapeGraph.subgraph(epred = (_ => true), vpred = (id, _)=>id % 2 == 0)
@@ -40,9 +40,9 @@ object OperatorTest extends Logging{
       def outerJoin(graph : Graph[Long,Long]) : Graph[Long,Long] = {
         log.info("[Operator test]: start outer join")
         val inDegrees = graph.inDegrees
-        graph.joinVertices(inDegrees)((id, ovd, newVd) => {
+        graph.joinVertices[Int](inDegrees)((id, ovd, newVd) => {
 //          log.info(s"vertex ${id}, set vd from ${ovd} to ${newVd}")
-          newVd
+          newVd.toLong
         })
       }
 
@@ -72,17 +72,17 @@ object OperatorTest extends Logging{
         graph2.mapTriplets[Long]((pid,iter)=>f(pid,iter), TripletFields.All)
       }
 
-      val graphxRes = mapTriplet(graph)
-      val grapeRes = mapTriplet(grapeGraph)
-
-      log.info(s"after map triplets vertices ${grapeRes.vertices.count()}, edges ${grapeRes.edges.count()}")
-      log.info(s"after map triplets vertices ${graphxRes.vertices.count()}, edges ${graphxRes.edges.count()}")
-
-      val graphxRes2 = mapDifferentType(mapping(graph))
-      val grapeRes2 = mapDifferentType(mapping(grapeGraph))
-
-      log.info(s"after map, vertices ${grapeRes2.vertices.count()}, edges ${grapeRes2.edges.count()}")
-      log.info(s"after map, vertices ${graphxRes2.vertices.count()}, edges ${graphxRes2.edges.count()}")
+//      val graphxRes = mapTriplet(graph)
+//      val grapeRes = mapTriplet(grapeGraph)
+//
+//      log.info(s"after map triplets vertices ${grapeRes.vertices.count()}, edges ${grapeRes.edges.count()}")
+//      log.info(s"after map triplets vertices ${graphxRes.vertices.count()}, edges ${graphxRes.edges.count()}")
+//
+//      val graphxRes2 = mapDifferentType(mapping(graph))
+//      val grapeRes2 = mapDifferentType(mapping(grapeGraph))
+//
+//      log.info(s"after map, vertices ${grapeRes2.vertices.count()}, edges ${grapeRes2.edges.count()}")
+//      log.info(s"after map, vertices ${graphxRes2.vertices.count()}, edges ${graphxRes2.edges.count()}")
 
       val graphxRes3 = outerJoin(graph)
       val grapeRes3 = outerJoin(grapeGraph)
@@ -94,8 +94,8 @@ object OperatorTest extends Logging{
 
       graphxRes3.vertices.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
       grapeRes3.vertices.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")
-      graphxRes.edges.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-graphx-edge-${java.time.LocalDateTime.now()}")
-      grapeRes.edges.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-grape-edge-${java.time.LocalDateTime.now()}")
+//      graphxRes.edges.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-graphx-edge-${java.time.LocalDateTime.now()}")
+//      grapeRes.edges.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-grape-edge-${java.time.LocalDateTime.now()}")
       sc.stop()
     }
   }
