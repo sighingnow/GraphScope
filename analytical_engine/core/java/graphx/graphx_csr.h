@@ -386,7 +386,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     const oid_t* src_oid_ptr = srcOids->raw_values();
     const oid_t* dst_oid_ptr = dstOids->raw_values();
     return LoadEdgesImpl(src_oid_ptr, dst_oid_ptr, edges_num_,
-                         graphx_vertex_map,local_num);
+                         graphx_vertex_map, local_num);
   }
 
   boost::leaf::result<void> LoadEdges(
@@ -397,25 +397,24 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     const oid_t* src_oid_ptr = srcOids.data();
     const oid_t* dst_oid_ptr = dstOids.data();
     return LoadEdgesImpl(src_oid_ptr, dst_oid_ptr, edges_num_,
-                         graphx_vertex_map,local_num);
+                         graphx_vertex_map, local_num);
   }
 
   boost::leaf::result<void> LoadEdgesImpl(
       const oid_t* src_oid_ptr, const oid_t* dst_oid_ptr, int64_t edges_num_,
-      GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map,int local_num) {
+      GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map, int local_num) {
     vnum_ = graphx_vertex_map.GetInnerVertexSize();
     std::vector<vid_t> srcLids, dstLids;
     srcLids.resize(edges_num_);
     dstLids.resize(edges_num_);
     {
       int thread_num =
-          (std::thread::hardware_concurrency() + local_num - 1) /
-          local_num;
+          (std::thread::hardware_concurrency() / 2 + local_num - 1) / local_num;
       std::atomic<int> current_chunk(0);
       int64_t chunkSize = 4096;
       int64_t num_chunks = (edges_num_ + chunkSize - 1) / chunkSize;
-      LOG(INFO) << "thread num 4, chunk size: " << chunkSize << "num chunks "
-                << num_chunks;
+      LOG(INFO) << "thread num " << thread_num << ", chunk size: " << chunkSize
+                << "num chunks " << num_chunks;
       std::vector<std::thread> work_threads(thread_num);
       std::vector<int> cnt(thread_num);
       for (int tid = 0; tid < thread_num; ++tid) {
