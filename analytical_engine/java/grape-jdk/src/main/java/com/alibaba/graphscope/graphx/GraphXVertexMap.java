@@ -64,4 +64,7 @@ public interface GraphXVertexMap<OID_T,VID_T> extends FFISerializable, Serializa
     default long innerVertexSize(){
         return getInnerVertexSize(fid());
     }
+
+    @FFINameAlias("InitOuterGids")
+    void initOuterGids();
 }

@@ -105,6 +105,7 @@ gs::GraphXVertexMap<int64_t, uint64_t> TestGraphXVertexMap(
   std::shared_ptr<gs::GraphXVertexMap<int64_t, uint64_t>> vm =
       std::dynamic_pointer_cast<gs::GraphXVertexMap<int64_t, uint64_t>>(
           client.GetObject(vm_id));
+  vm->InitOuterGids();
   LOG(INFO) << "worker " << comm_spec.worker_id() << " Got graphx vm "
             << vm->id();
   LOG(INFO) << "worker " << comm_spec.worker_id()
@@ -128,7 +129,7 @@ vineyard::ObjectID TestGraphXCSR(
   vineyard::ObjectID csr_id;
   {
     gs::BasicGraphXCSRBuilder<int64_t, uint64_t> builder(client);
-    builder.LoadEdges(srcBuilder, dstBuilder, graphx_vm,comm_spec.local_num());
+    builder.LoadEdges(srcBuilder, dstBuilder, graphx_vm, comm_spec.local_num());
     auto csr = std::dynamic_pointer_cast<gs::GraphXCSR<uint64_t>>(
         builder.Seal(client));
 

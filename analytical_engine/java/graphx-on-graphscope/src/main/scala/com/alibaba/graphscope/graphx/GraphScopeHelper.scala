@@ -126,12 +126,14 @@ object GraphScopeHelper extends Logging{
 
     val time0 = System.nanoTime()
     val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[Int,Int](edgesShuffled,defaultED = 1,numPartitions).cache()
+    edgesShuffled.unpersist()
     require(edgeRDD.grapePartitionsRDD.getNumPartitions == numPartitions)
+    val time01 = System.nanoTime()
     val vertexRDD = GrapeVertexRDD.fromGrapeEdgeRDD[Int](edgeRDD, edgeRDD.grapePartitionsRDD.getNumPartitions, 1,vertexStorageLevel).cache()
     log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
     lines.unpersist()
     val time1 = System.nanoTime()
-    log.info(s"[edgeListFile:] construct grape edge rdd ${edgeRDD.count()} and vertex rdd ${vertexRDD.count()} cost ${(time1 - time0) / 1000000} ms")
+    log.info(s"[edgeListFile:] construct grape edge rdd ${edgeRDD.count()} cost ${(time01 - time0) / 1000000}ms and vertex rdd ${vertexRDD.count()} cost ${(time1 - time01) / 1000000} ms")
     GrapeGraphImpl.fromExistingRDDs(vertexRDD,edgeRDD)
   }
 

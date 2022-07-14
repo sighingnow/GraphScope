@@ -80,6 +80,7 @@ class GraphXVertexMap
             new GraphXVertexMap<OID_T, VID_T>()});
   }
 
+  // FIXME: we have to call initOuterGids after construct!
   void Construct(const vineyard::ObjectMeta& meta) override {
     this->meta_ = meta;
     this->id_ = meta.GetId();
@@ -108,7 +109,6 @@ class GraphXVertexMap
       outer_lid2Oids_ = array.GetArray();
       outer_lid2Oids_accessor_ = outer_lid2Oids_->raw_values();
     }
-    InitOuterGids();
     {
       vineyard::NumericArray<int32_t> array;
       array.Construct(meta.GetMemberMeta("graphx_pids_array"));
@@ -477,7 +477,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     vertex_map->graphx_pids_array_ = graphx_pids_array_.GetArray();
 
     // Initiate outer gids rather than sealing them
-    vertex_map->InitOuterGids();
+    // vertex_map->InitOuterGids();
     // vertex_map->outer_lid2Gids_ = outer_gid_array_.GetArray();
     vertex_map->ivnum_ = vertex_map->lid2Oids_[fid_]->length();
     vertex_map->ovnum_ = vertex_map->outer_lid2Oids_->length();
