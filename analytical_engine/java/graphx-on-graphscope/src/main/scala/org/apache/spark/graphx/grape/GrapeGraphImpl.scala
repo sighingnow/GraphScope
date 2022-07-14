@@ -374,6 +374,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         else Iterator.empty
       }
     }
+    grapeVertices.clearStore()
     grapeVertices.withGrapePartitionsRDD(newVertexPartitionRDD)
   }
 }

@@ -268,7 +268,7 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     this.withGrapePartitionsRDD(part)
   }
 
-  private def clearStore() : Unit = {
+  def clearStore() : Unit = {
     this.grapePartitionsRDD.foreachPartition(iter => {
       if (iter.hasNext){
         val part = iter.next()
