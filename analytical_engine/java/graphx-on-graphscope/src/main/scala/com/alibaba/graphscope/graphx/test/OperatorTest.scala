@@ -57,19 +57,27 @@ object OperatorTest extends Logging{
         graph.mapEdges((pid,iter)=> iter.map(e=>e.srcId))
       }
 
+      def mapEdges(graph: Graph[Long,Long]) : Graph[Long,Long] = {
+        log.info("[Operator test]: start map edges")
+        graph.mapEdges(edge=> {
+          log.info(s"edge ${edge.srcId}-> ${edge.dstId}, ${edge.attr}")
+          edge.dstId + edge.srcId
+        })
+      }
+
       def mapTriplet(graph : Graph[Long,Long]) : Graph[Long,Long] = {
         log.info("[Operator test]: start map triplets")
-        val graph2 = graph.mapTriplets(triplet => {
-//          log.info(s"triplet v1 ${triplet.srcId}(${triplet.srcAttr})->${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")
+        graph.mapTriplets(triplet => {
+          log.info(s"triplet v1 ${triplet.srcId}(${triplet.srcAttr})->${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")
           triplet.srcAttr + triplet.dstAttr
         })
-        def f(pid : PartitionID, iter : Iterator[EdgeTriplet[Long,Long]]): Iterator[Long] = {
-          iter.map(triplet=> {
-//            log.info(s"triplet v2 ${triplet.srcId}(${triplet.srcAttr})->${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")
-            triplet.srcId
-          })
-        }
-        graph2.mapTriplets[Long]((pid,iter)=>f(pid,iter), TripletFields.All)
+//        def f(pid : PartitionID, iter : Iterator[EdgeTriplet[Long,Long]]): Iterator[Long] = {
+//          iter.map(triplet=> {
+////            log.info(s"triplet v2 ${triplet.srcId}(${triplet.srcAttr})->${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")
+//            triplet.srcId
+//          })
+//        }
+//        graph2.mapTriplets[Long]((pid,iter)=>f(pid,iter), TripletFields.All)
       }
 
 //      val graphxRes = mapTriplet(graph)
@@ -84,18 +92,20 @@ object OperatorTest extends Logging{
 //      log.info(s"after map, vertices ${grapeRes2.vertices.count()}, edges ${grapeRes2.edges.count()}")
 //      log.info(s"after map, vertices ${graphxRes2.vertices.count()}, edges ${graphxRes2.edges.count()}")
 
-      val graphxRes3 = outerJoin(graph)
-      val grapeRes3 = outerJoin(grapeGraph)
+//      val graphxRes3 = outerJoin(graph)
+//      val grapeRes3 = outerJoin(grapeGraph)
+      val graphxRes = mapTriplet(mapEdges(graph))
+      val grapeRes = mapTriplet(mapEdges(grapeGraph))
 
-      log.info(s"after outer join vertices ${grapeRes3.vertices.count()}, edges ${grapeRes3.edges.count()}")
-      log.info(s"after outer join vertices ${graphxRes3.vertices.count()}, edges ${graphxRes3.edges.count()}")
+      log.info(s"graphx res vertices ${graphxRes.vertices.count()}, edges ${graphxRes.edges.count()}")
+      log.info(s"grape res vertices ${grapeRes.vertices.count()}, edges ${grapeRes.edges.count()}")
 
       //      val grapeRes = mapTriplet(mapEdgeIterator(subGraph(outerJoin(mapDifferentType(mapping(grapeGraph)))))).mask(grapeMaskGraph)
 
-      graphxRes3.vertices.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
-      grapeRes3.vertices.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")
-//      graphxRes.edges.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-graphx-edge-${java.time.LocalDateTime.now()}")
-//      grapeRes.edges.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-grape-edge-${java.time.LocalDateTime.now()}")
+      graphxRes.vertices.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-graphx-vertex-${java.time.LocalDateTime.now()}")
+      grapeRes.vertices.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-grape-vertex-${java.time.LocalDateTime.now()}")
+      graphxRes.edges.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-graphx-edge-${java.time.LocalDateTime.now()}")
+      grapeRes.edges.saveAsTextFile(s"/home/graphscope/data/spark-res/operator-test-grape-edge-${java.time.LocalDateTime.now()}")
       sc.stop()
     }
   }
