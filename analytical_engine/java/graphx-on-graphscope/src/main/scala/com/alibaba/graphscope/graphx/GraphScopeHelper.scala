@@ -236,7 +236,7 @@ object GraphScopeHelper extends Logging{
     //We can not separate the shuffling stage into to distinct ones. Because the result partitions
     //has inconsistent pids.
 
-    val graphShuffles = GrapeGraphImpl.generateGraphShuffle(originGraph,partitioner)
+    val graphShuffles = GrapeGraphImpl.generateGraphShuffle(originGraph,partitioner).cache()
 
     val edgeShufflesNum = graphShuffles.count()
     val time1 = System.nanoTime()
@@ -248,11 +248,11 @@ object GraphScopeHelper extends Logging{
 
     //different from edgeFileLoader, here we need the attr in the original graphx graph
     val vertexRDD = GrapeVertexRDD.fromEdgeShuffle[VD,ED](graphShuffles,edgeRDD).cache()
+    graphShuffles.unpersist()
 
     val time3 = System.nanoTime()
     log.info(s"[GraphScopeHelper:] construct vertex and edge rdd ${edgeRDD} cost ${(time3 - time2) / 1000000} ms")
     log.info(s"num vertices ${vertexRDD.count()}, num edges ${edgeRDD.count()}")
-    graphShuffles.unpersist()
     GrapeGraphImpl.fromExistingRDDs(vertexRDD,edgeRDD)
   }
 }
