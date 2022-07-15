@@ -7,7 +7,7 @@ import org.apache.spark.internal.Logging
 import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.ClassTag
 
-class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offset : Int, val length : Int, val client : VineyardClient, var numSplit : Int, val outer : Boolean = false, val vdArray : Array[VD]) extends VertexDataStore [VD] with Logging {
+class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offset : Int, val length : Int, val client : VineyardClient, var numSplit : Int, val outer : Boolean, val vdArray : Array[VD]) extends VertexDataStore [VD] with Logging {
 
   def this(offset : Int, length : Int, client : VineyardClient, numSplit : Int, outer : Boolean = false) = {
     this(offset,length,client, numSplit, outer,new Array[VD](length))
@@ -54,15 +54,9 @@ class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offs
 
 //  override def create[VD2: ClassTag](newArr: Array[VD2]): VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset,length,client,newArr)
 
-  /** set the created result array to null, for accepting new transformations. */
-  override def clearCreatedArray(): Unit = {
-    log.info("clear result array")
-    resultArray = null
-  }
-
   override def toString: String = {
     val res = if (outer) "Outer" else "Inner"
-    res + "InHeapVertexDataStore@(offset=" + offset + ",length=" + length + ",type=" + ${GrapeUtils.getRuntimeClass[VD].getSimpleName} + ")"
+    res + "InHeapVertexDataStore@(offset=" + offset + ",length=" + length + ",type=" + GrapeUtils.getRuntimeClass[VD].getSimpleName + ")"
   }
 }
 
