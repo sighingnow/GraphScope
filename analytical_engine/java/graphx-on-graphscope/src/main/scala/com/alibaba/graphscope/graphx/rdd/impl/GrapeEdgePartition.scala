@@ -1,12 +1,13 @@
 package com.alibaba.graphscope.graphx.rdd.impl
 
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder
-import com.alibaba.graphscope.ds.PropertyNbrUnit
+import com.alibaba.graphscope.ds.{PropertyNbrUnit, Vertex}
 import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTriplet, GraphStructure, ReusableEdge}
-import com.alibaba.graphscope.graphx.shuffle.EdgeShuffleReceived
+import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
 import com.alibaba.graphscope.graphx.store.{InHeapVertexDataStore, VertexDataStore}
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, BitSetWithOffset, ExecutorUtils, IdParser, ScalaFFIFactory}
+import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.Partition
 import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
@@ -397,10 +398,40 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     (graphxVertexMap,graphxCSR)
   }
 
+  def fillVertexData(innerVertexData : VertexDataStore[VD], graphStructure: GraphStructure) : Unit = {
+    for (edgeShuffleReceived <- lists){
+      for (shuffle <- edgeShuffleReceived.fromPid2Shuffle){
+        val edgeShuffle = shuffle.asInstanceOf[EdgeShuffle[VD,_]]
+        val innerOids = edgeShuffle.oids
+        val vertexAttrs = edgeShuffle.vertexAttrs
+        if (vertexAttrs == null || vertexAttrs.length == 0){
+          log.info("no vertex attrs found in shuffle")
+        }
+        else {
+          var i = 0
+          val limit = innerOids.length
+          val grapeVertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
+          require(limit == vertexAttrs.length, s"size neq ${limit}, ${vertexAttrs.length}")
+          val ivnum = graphStructure.getInnerVertexSize.toInt
+          while (i < limit){
+            val oid = innerOids(i)
+            val vdata = vertexAttrs(i)
+            require(graphStructure.getVertex(oid,grapeVertex))
+            val lid = grapeVertex.GetValue().toInt
+            require(lid < ivnum, s"expect no outer vertex ${lid}, ${ivnum}")
+            innerVertexData.setData(lid, vdata)
+            i += 1
+          }
+        }
+      }
+    }
+  }
+
   //call this to delete c++ ptr and release memory of arrow builders
   def clearBuilders() : Unit = {
     lists = null
   }
+
 }
 object GrapeEdgePartition extends Logging {
   val tupleQueue = new ArrayBlockingQueue[(Int,GraphStructure,VineyardClient,ArrayWithOffset[_],InHeapVertexDataStore[_],InHeapVertexDataStore[_])](1024)

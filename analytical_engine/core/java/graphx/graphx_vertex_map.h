@@ -173,8 +173,7 @@ class GraphXVertexMap
       LOG(ERROR) << "worker " << fid_ << "Get gid from oid faild: oid" << oid;
       return false;
     }
-    Gid2Vertex(gid, v);
-    return true;
+    return Gid2Vertex(gid, v);
   }
 
   bool GetInnerVertex(const oid_t& oid, vertex_t& v) {

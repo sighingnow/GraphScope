@@ -87,36 +87,7 @@ object GrapeVertexRDD extends Logging{
     val outerVertexDataStore = GrapeVertexPartition.pid2OuterVertexStore(pid).asInstanceOf[InHeapVertexDataStore[VD]]
     require(outerVertexDataStore != null, "outer vertex data store null")
 
-    val grapeVertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
-    var verticesProcesses = 0L
-    while (edgeShuffleIter.hasNext){
-      val (dstPid, edgeShuffle) = edgeShuffleIter.next()
-      require(dstPid == pid)
-      val oids = edgeShuffle.oids
-      val verticesAttr = edgeShuffle.vertexAttrs
-      require(oids.length == verticesAttr.length, s"neq ${oids.length}, ${verticesAttr.length}")
-//      require(oids.length == graphStructure.getVertexSize, s"vertices num neq ${oids.length}, ${graphStructure.getVertexSize}")
-      log.info(s"setting vertex attr for with received vertex attr ${verticesAttr.length}")
-      verticesProcesses += oids.length
-      val len = oids.length
-      var i = 0
-      val ivnum = graphStructure.getInnerVertexSize.toInt
-      while (i < len){
-        val oid = oids(i)
-        val vdata = verticesAttr(i)
-        require(graphStructure.getVertex(oid,grapeVertex))
-        val lid = grapeVertex.GetValue().toInt
-        if (lid < ivnum) {
-          innerVertexDataView.setData(lid, vdata)
-        }
-        else outerVertexDataStore.setData(lid, vdata)
-        i += 1
-      }
-    }
-    log.info(s"frag ${graphStructure.fid()} part ${pid} start ${startLid} end ${endLid}, vertices processed ${verticesProcesses}")
-//    val hostName = InetAddress.getLocalHost.getHostName
-//    require(executorInfo.contains(hostName), s"host ${hostName} is not included in executor info ${executorInfo.toString()}")
-//    val preferredLoc = "executor_" + hostName + "_" + executorInfo.get(hostName)
+    log.info(s"frag ${graphStructure.fid()} part ${pid} start ${startLid} end ${endLid}")
     new GrapeVertexPartition[VD](pid,startLid.toInt, endLid.toInt, graphStructure, innerVertexDataView,outerVertexDataStore, client, RoutingTable.fromGraphStructure(graphStructure))
   }
 
