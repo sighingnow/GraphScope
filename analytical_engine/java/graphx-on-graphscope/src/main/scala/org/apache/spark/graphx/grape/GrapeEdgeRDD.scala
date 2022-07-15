@@ -232,7 +232,6 @@ object GrapeEdgeRDD extends Logging{
     //clear cached builder memory
     metaPartitionsUpdated.unpersist()
     metaPartitions.unpersist()
-    edgesShuffles.unpersist()
 
     val rdd = new GrapeEdgeRDDImpl[VD,ED](grapeEdgePartitions)
     log.info(s"[GrapeEdgeRDD:] Finish Construct EdgeRDD, total edges count ${rdd.count()}")

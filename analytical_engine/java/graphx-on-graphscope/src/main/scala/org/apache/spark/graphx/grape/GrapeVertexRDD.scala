@@ -96,6 +96,7 @@ object GrapeVertexRDD extends Logging{
       val verticesAttr = edgeShuffle.vertexAttrs
       require(oids.length == verticesAttr.length, s"neq ${oids.length}, ${verticesAttr.length}")
 //      require(oids.length == graphStructure.getVertexSize, s"vertices num neq ${oids.length}, ${graphStructure.getVertexSize}")
+      log.info(s"setting vertex attr for with received vertex attr ${verticesAttr.length}")
       verticesProcesses += oids.length
       val len = oids.length
       var i = 0
