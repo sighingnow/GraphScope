@@ -204,7 +204,8 @@ object GrapeEdgeRDD extends Logging{
     emptyRDD.foreachPartition(iter => {
       if (iter.hasNext){
         val part = iter.next()
-        require(InetAddress.getLocalHost.getHostName.equals(part.hostName), s"host name neq ${part.hostName}, ${InetAddress.getLocalHost.getHostName}")
+        lazy val hostName = InetAddress.getLocalHost.getHostName
+        require(hostName.equals(part.hostName), s"part ${part.ind} host name neq ${part.hostName}, ${InetAddress.getLocalHost.getHostName}")
         GrapeEdgePartition.incCount(part.ind)
       }
     })
