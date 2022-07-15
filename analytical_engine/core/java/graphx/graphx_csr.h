@@ -429,9 +429,10 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
                 }
                 begin = std::min(edges_num_, got * chunkSize);
                 end = std::min(edges_num_, begin + chunkSize);
-                LOG(INFO) << "thread: " << tid << "got range(" << begin << ","
-                          << end << ")"
-                          << ", limit" << edges_num_;
+                // LOG(INFO) << "thread: " << tid << "got range(" << begin <<
+                // ","
+                //           << end << ")"
+                //           << ", limit" << edges_num_;
                 for (auto cur = begin; cur < end; ++cur) {
                   auto src_lid = graphx_vertex_map.GetLid(src_oid_ptr[cur]);
                   srcLids[cur] = src_lid;

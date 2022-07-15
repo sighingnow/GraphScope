@@ -148,7 +148,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       throw new IllegalStateException(s"impossible, two iterator should end at the same time ${ind}, ${resultEdata.hasNext}")
     }
     val time2 = System.nanoTime()
-    log.info(s"[Perf: ] map edge iterator cost ${(time2 - time0)/1000000} ms, in which iterating cost ${(time1 - time0) / 1000000} ms")
+//    log.info(s"[Perf: ] map edge iterator cost ${(time2 - time0)/1000000} ms, in which iterating cost ${(time1 - time0) / 1000000} ms")
     this.withNewEdata(newData)
   }
 
@@ -157,7 +157,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
     graphStructure.iterateTriplets(startLid, endLid, f,innerVertexDataStore,outerVertexDataStore, edatas, activeEdgeSet, edgeReversed,tripletFields.useSrc, tripletFields.useDst, newData)
     val time1 = System.nanoTime()
-    log.info(s"[Perf:] mapping over triplets cost ${(time1 - time0)/1000000} ms")
+//    log.info(s"[Perf:] mapping over triplets cost ${(time1 - time0)/1000000} ms")
     this.withNewEdata(newData)
   }
 
@@ -175,7 +175,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       throw new IllegalStateException(s"impossible, two iterator should end at the same time ${ind}, ${resultEdata.hasNext}")
     }
     val time1 = System.nanoTime()
-    log.info(s"[Perf:] mapping over triplets iterator cost ${(time1 - time0)/1000000} ms")
+//    log.info(s"[Perf:] mapping over triplets iterator cost ${(time1 - time0)/1000000} ms")
     this.withNewEdata(newData)
   }
 
@@ -201,7 +201,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def withNewEdata[ED2: ClassTag](newEdata : ArrayWithOffset[ED2]): GrapeEdgePartition[VD, ED2] = {
-    log.info(s"Creating new edge partition with new edge of size ${newEdata.length}, out edge num ${graphStructure.getOutEdgesNum}")
+//    log.info(s"Creating new edge partition with new edge of size ${newEdata.length}, out edge num ${graphStructure.getOutEdgesNum}")
     new GrapeEdgePartition[VD,ED2](pid,localId,startLid,endLid,  graphStructure, client,newEdata, edgeReversed, activeEdgeSet)
   }
 
@@ -444,8 +444,8 @@ object GrapeEdgePartition extends Logging {
             val registeredNum = pidQueue.size()
             val maxTimes = (registeredNum + size - 1) / size // the largest split num
             val numLargestSplit = (registeredNum - (maxTimes - 1) * size)
+
             log.info(s"Totally ${size} ele in queue, registered partition num ${pidQueue.size()}, first ${numLargestSplit} frags are splited into ${maxTimes}, others are splited into ${maxTimes - 1} times")
-            //for i in (0,numLargestSplit), make several partition at (i, i + size, i + size * 2)
             for (i <- 0 until size){
               val tuple = tupleQueue.poll()
               val totalIvnum = tuple._2.getInnerVertexSize
@@ -456,26 +456,29 @@ object GrapeEdgePartition extends Logging {
               val chunkSize = (totalIvnum + times - 1) / times
               //first set the first one
 
+              val graphStructure = tuple._2
+              //split into partitions where each partition has rarely even number of edges.
+              val ranges = splitFragAccordingToEdges(graphStructure, times)
               for (j <- 0 until times){
-                val startLid = Math.min(totalIvnum,chunkSize * j)
-                val endLid = Math.min(totalIvnum, startLid + chunkSize)
+                val startLid = ranges(j)._1
+                val endLid = ranges(j)._2
                 if (j == times - 1){
                   require(endLid == totalIvnum)
                 }
                 val innerStore = tuple._5
                 innerStore.setNumSplit(times)
                 if (j == 0){
-                  pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1,  j, startLid, endLid, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
+                  pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1,  j, startLid, endLid, graphStructure, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
                   GrapeVertexPartition.setInnerVertexStore(tuple._1,innerStore)
                   GrapeVertexPartition.setOuterVertexStore(tuple._1, tuple._6)
-                  log.info(s"creating partition for pid ${tuple._1}, (${startLid},${endLid}), fid ${tuple._2.fid()}")
+                  log.info(s"creating partition for pid ${tuple._1}, (${startLid},${endLid}), fid ${graphStructure.fid()}")
                 }
                 else {
                   val dstPid = candidates.dequeue()
-                  pid2EdgePartition(dstPid) = new GrapeEdgePartition[VD,ED](dstPid,  j, startLid, endLid, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
+                  pid2EdgePartition(dstPid) = new GrapeEdgePartition[VD,ED](dstPid,  j, startLid, endLid, graphStructure, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
                   GrapeVertexPartition.setInnerVertexStore(dstPid,innerStore)
                   GrapeVertexPartition.setOuterVertexStore(dstPid, tuple._6)
-                  log.info(s"creating partition for pid ${dstPid}, (${startLid},${endLid}), fid ${tuple._2.fid()}")
+                  log.info(s"creating partition for pid ${dstPid}, (${startLid},${endLid}), fid ${graphStructure.fid()}")
                 }
               }
             }
@@ -492,6 +495,24 @@ object GrapeEdgePartition extends Logging {
   def get[VD: ClassTag, ED: ClassTag](pid : Int) : GrapeEdgePartition[VD,ED] = synchronized{
     require(pid2EdgePartition != null, "call create partitions first")
     pid2EdgePartition(pid).asInstanceOf[GrapeEdgePartition[VD,ED]]
+  }
+
+  def splitFragAccordingToEdges(graphStructure: GraphStructure, numPart : Int) : Array[(Int,Int)] = {
+    val numEdges = graphStructure.getOutEdgesNum
+    val edgesPerSplit = (numEdges + numPart - 1) / numPart
+    var curLid = 0
+    val res = new Array[(Int,Int)](numPart)
+    for (i <- 0 until numPart){
+      val targetOffset = Math.min(edgesPerSplit * (i + 1), numEdges)
+      val beginLid = curLid
+      while (graphStructure.getOEBeginOffset(curLid) < targetOffset){
+        curLid += 1
+      }
+      res(i) = (beginLid, curLid)
+      log.info(s"For part ${i}, startLid ${beginLid}, endLid${curLid}, num edges in this part ${graphStructure.getOEBeginOffset(curLid) - graphStructure.getOEBeginOffset(beginLid)}, total edges ${numEdges}, edges per split ${edgesPerSplit}")
+    }
+    require(curLid == graphStructure.getInnerVertexSize, s"after split, should iterate over all ivertex ${curLid}, ${graphStructure.getInnerVertexSize}")
+    res
   }
 }
 

@@ -45,13 +45,23 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
 
 
   @inline
-  def getOEOffset(lid : Long) : Long = {
+  override def getOEBeginOffset(lid : Long) : Long = {
     oeOffsetsArray.get(lid)
   }
 
   @inline
-  def getIEOffset(lid : Long) : Long = {
+  override def getIEBeginOffset(lid : Long) : Long = {
     ieOffsetsArray.get(lid)
+  }
+
+  @inline
+  override def getOEEndOffset(lid : Long) : Long = {
+    oeOffsetsArray.get(lid + 1)
+  }
+
+  @inline
+  override def getIEEndOffset(lid : Long) : Long = {
+    ieOffsetsArray.get(lid + 1)
   }
 
   @inline
@@ -193,7 +203,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
         var curLid = startLid.toInt
         val beginAddr = csr.getOEBegin(0).getAddress
         val nbr = csr.getOEBegin(0)
-        var curEndOffset = getOEOffset(curLid + 1)
+        var curEndOffset = getOEEndOffset(curLid)
         edge.srcId = lid2Oid(curLid)
         override def hasNext: Boolean = {
           if (curOffset < curEndOffset && curOffset >= 0) true
@@ -201,7 +211,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
             if (curOffset < 0) return false
             while (curOffset >= curEndOffset && curLid < endLid) {
               curLid += 1
-              curEndOffset = getOEOffset(curLid + 1)
+              curEndOffset = getOEEndOffset(curLid)
             }
             if (curLid >= endLid) return false
             edge.srcId = lid2Oid(curLid)
@@ -226,7 +236,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
         var curLid = startLid.toInt
         val beginAddr = csr.getOEBegin(0).getAddress
         val nbr = csr.getOEBegin(0)
-        var curEndOffset = getOEOffset(curLid + 1)
+        var curEndOffset = getOEEndOffset(curLid)
         edge.dstId = lid2Oid(curLid)
         override def hasNext: Boolean = {
           if (curOffset < curEndOffset && curOffset >= 0) true
@@ -234,7 +244,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
             if (curOffset < 0) return false
             while (curOffset >= curEndOffset && curLid < endLid) {
               curLid += 1
-              curEndOffset = getOEOffset(curLid + 1)
+              curEndOffset = getOEEndOffset(curLid)
             }
             if (curLid >= endLid) return false
             edge.srcId = lid2Oid(curLid)
@@ -265,7 +275,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
         var srcAttr :VD = innerVertexDataStore.getData(curLid)
         val beginAddr = csr.getOEBegin(0).getAddress
         val nbr = csr.getOEBegin(0)
-        var curEndOffset = getOEOffset(curLid + 1)
+        var curEndOffset = getOEEndOffset(curLid)
 
         override def hasNext: Boolean = {
           if (curOffset < curEndOffset && curOffset >= 0) true
@@ -273,7 +283,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
             if (curOffset < 0) return false
             while (curOffset >= curEndOffset && curLid < endLid) {
               curLid += 1
-              curEndOffset = getOEOffset(curLid + 1) // +2 = getOeEnd of (curLid + 1)
+              curEndOffset = getOEEndOffset(curLid)
             }
             if (curLid >= endLid) return false
             srcId = lid2Oid(curLid)
@@ -314,7 +324,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
         var dstAttr :VD = innerVertexDataStore.getData(curLid)
         val beginAddr = csr.getOEBegin(0).getAddress
         val nbr = csr.getOEBegin(0)
-        var curEndOffset = getOEOffset(curLid + 1)
+        var curEndOffset = getOEEndOffset(curLid)
 
         override def hasNext: Boolean = {
           if (curOffset < curEndOffset && curOffset >= 0) true
@@ -322,7 +332,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
             if (curOffset < 0) return false
             while (curOffset >= curEndOffset && curLid < endLid) {
               curLid += 1
-              curEndOffset = getOEOffset(curLid + 1)
+              curEndOffset = getOEEndOffset(curLid)
             }
             if (curLid >= endLid) return false
             dstId = lid2Oid(curLid)
@@ -374,8 +384,8 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
   }
 
   def fillOutNbrIds(vid : VertexId, array: Array[VertexId],startInd : Int = 0) : Unit = {
-    var cur = getOEOffset(vid)
-    val end = getOEOffset(vid + 1)
+    var cur = getOEBeginOffset(vid)
+    val end = getOEEndOffset(vid)
     oeBeginNbr.setAddress(cur * 16 + oeBeginAddr)
     var i = startInd
     while (cur < end){
@@ -420,7 +430,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     var curOffset = activeSet.nextSetBit(activeSet.startBit)
     if (!edgeReversed){
       while (curLid < endLid && curOffset >= 0){
-        val curEndOffset = getOEOffset(curLid + 1)
+        val curEndOffset = getOEEndOffset(curLid)
         edgeTriplet.srcId = lid2Oid(curLid)
         edgeTriplet.srcAttr = innerVertexDataStore.getData(curLid)
         while (curOffset < curEndOffset && curOffset >= 0){
@@ -441,7 +451,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     }
     else {
       while (curLid < endLid && curOffset >= 0){
-        val curEndOffset = getOEOffset(curLid + 1)
+        val curEndOffset = getOEEndOffset(curLid)
         edgeTriplet.dstId = lid2Oid(curLid)
         edgeTriplet.dstAttr = innerVertexDataStore.getData(curLid)
         while (curOffset < curEndOffset && curOffset >= 0){
@@ -472,7 +482,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     var curOffset = activeSet.nextSetBit(activeSet.startBit)
     if (!edgeReversed){
       while (curLid < endLid && curOffset >= 0){
-        val curEndOffset = getOEOffset(curLid + 1)
+        val curEndOffset = getOEEndOffset(curLid)
         edge.srcId = lid2Oid(curLid)
         while (curOffset < curEndOffset && curOffset >= 0){
           edge.dstId = dstOids(curOffset)
@@ -485,7 +495,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     }
     else {
       while (curLid < endLid && curOffset >= 0){
-        val curEndOffset = getOEOffset(curLid + 1)
+        val curEndOffset = getOEEndOffset(curLid)
         edge.dstId = lid2Oid(curLid)
         while (curOffset < curEndOffset && curOffset >= 0){
           edge.srcId = dstOids(curOffset)

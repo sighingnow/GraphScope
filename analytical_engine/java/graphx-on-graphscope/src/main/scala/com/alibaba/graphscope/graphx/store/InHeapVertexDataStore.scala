@@ -42,12 +42,12 @@ class InHeapVertexDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offs
   override def getOrCreate[VD2: ClassTag]: VertexDataStore[VD2] = synchronized{
     if (resultArray == null || count.get() == 0){
       synchronized {
-        log.info(s"creating result array of type ${GrapeUtils.getRuntimeClass[VD2].getSimpleName}")
+//        log.info(s"creating result array of type ${GrapeUtils.getRuntimeClass[VD2].getSimpleName}")
         resultArray = new InHeapVertexDataStore[VD2](offset, length, client, numSplit, outer).asInstanceOf[InHeapVertexDataStore[_]]
         count.set(numSplit)
       }
     }
-  log.info(s"using already exiting res array ${resultArray}")
+//  log.info(s"using already exiting res array ${resultArray}")
   count.decrementAndGet()
   resultArray.asInstanceOf[VertexDataStore[VD2]]
   }

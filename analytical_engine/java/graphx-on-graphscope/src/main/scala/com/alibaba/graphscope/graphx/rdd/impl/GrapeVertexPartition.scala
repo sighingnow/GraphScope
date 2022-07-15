@@ -85,10 +85,6 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
   def generateVertexDataMessage : Iterator[(PartitionID, VertexDataMessage[VD])] = {
     val res = new ArrayBuffer[(PartitionID,VertexDataMessage[VD])]()
-    if (graphStructure.isInstanceOf[GraphXGraphStructure]){
-      val casted = graphStructure.asInstanceOf[GraphXGraphStructure]
-      log.info(s"vm addr ${casted.vm.getAddress}")
-    }
     val curFid = graphStructure.fid()
     val idParser = new IdParser(graphStructure.fnum())
     for (i <- 0 until(routingTable.numPartitions)){
@@ -104,7 +100,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         }
         val msg = new VertexDataMessage[VD](i, gids.trim().array,newData.trim().array)
         res.+=((i, msg))
-        log.info(s"Partitoin ${pid} send vertex data to ${i}, size ${msg.gids.length}")
+//        log.info(s"Partitoin ${pid} send vertex data to ${i}, size ${msg.gids.length}")
       }
     }
     res.toIterator

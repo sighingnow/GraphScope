@@ -38,6 +38,16 @@ trait GraphStructure extends Serializable {
 
    def getInDegree(vid: Long): Long
 
+  /** get the oe begin offset */
+  def getOEBeginOffset(vid: Long) : Long
+
+  def getOEEndOffset(vid: Long) : Long
+
+  /** get the oe begin offset */
+  def getIEBeginOffset(vid: Long) : Long
+
+  def getIEEndOffset(vid: Long) : Long
+
    def getOutDegree(vid: Long): Long
 
   def getOutNbrIds(vid : Long) : Array[Long]

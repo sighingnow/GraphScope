@@ -110,7 +110,7 @@ object GrapeEdgeRDD extends Logging{
         grapeMeta.setEdgePartitionBuilder(edgePartitionBuilder)
         Iterator(grapeMeta)
       }
-    },preservesPartitioning = true).cache()
+    },preservesPartitioning = true)
 
     val localVertexMapIds = metaPartitions.mapPartitions(iter => {
       if (iter.hasNext){

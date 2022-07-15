@@ -18,7 +18,6 @@ class VertexDataStoreView[@specialized(Long,Double,Int) VD: ClassTag](val vertex
 
   override def getOrCreate[VD2: ClassTag]: VertexDataStore[VD2] = {
     val res = vertexDataStore.getOrCreate[VD2]
-    log.info(s"creating view with store ${res.toString}")
     new VertexDataStoreView[VD2](res, startLid, endLid)
   }
 

@@ -45,8 +45,8 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
                                                             @transient val vertices: GrapeVertexRDD[VD],
                                                             @transient val edges: GrapeEdgeRDD[ED]) extends Graph[VD, ED] with Serializable {
   val logger: Logger = LoggerFactory.getLogger(classOf[GrapeGraphImpl[_,_]].toString)
-  vertices.cache()
-  edges.cache()
+//  vertices.cache()
+//  edges.cache()
 
 
   lazy val backend: GraphStructureType = vertices.grapePartitionsRDD.mapPartitions(iter => {
@@ -382,7 +382,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 object GrapeGraphImpl extends Logging{
 
   def fromExistingRDDs[VD: ClassTag,ED :ClassTag](vertices: GrapeVertexRDD[VD], edges: GrapeEdgeRDD[ED]): GrapeGraphImpl[VD,ED] ={
-    new GrapeGraphImpl[VD,ED](vertices, edges)
+    new GrapeGraphImpl[VD,ED](vertices.cache(), edges.cache())
   }
 
   def toGraphXGraph[VD:ClassTag, ED : ClassTag](graph : Graph[VD,ED]) : Graph[VD,ED] = {
@@ -457,6 +457,6 @@ object GrapeGraphImpl extends Logging{
         ind += 1
       }
       res.toIterator
-    }).partitionBy(partitioner).setName("GraphxGraph2Fragment.graphShuffle").cache()
+    }).partitionBy(partitioner).setName("GraphxGraph2Fragment.graphShuffle")
   }
 }

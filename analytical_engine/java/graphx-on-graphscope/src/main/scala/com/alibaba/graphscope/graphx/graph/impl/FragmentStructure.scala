@@ -72,6 +72,26 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
 //  override val inOutDegreeArray: Array[Int] = getInOutDegreeArray
   override val mirrorVertices: Array[BitSet] = getMirrorVertices
 
+  @inline
+  override def getOEBeginOffset(lid : Long) : Long = {
+    oeOffsetBeginArray.get(lid)
+  }
+
+  @inline
+  override def getIEBeginOffset(lid : Long) : Long = {
+    ieOffsetBeginArray.get(lid)
+  }
+
+  @inline
+  override def getOEEndOffset(lid : Long) : Long = {
+    oeOffsetEndArray.get(lid + 1)
+  }
+
+  @inline
+  override def getIEEndOffset(lid : Long) : Long = {
+    ieOffsetEndArray.get(lid + 1)
+  }
+
   private def getMirrorVertices : Array[BitSet] = {
     if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
       val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long, Long, _, _]].asInstanceOf[ArrowProjectedFragment[Long, Long, _, _]]
