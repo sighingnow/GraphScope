@@ -135,7 +135,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
           }
           val time1 = System.nanoTime()
           log.info(s"got edata array cost ${(time1 - time0)/ 1000000}ms")
-          Iterator(new GrapeEdgePartition[VD,ED](pid,0,0,frag.getInnerVerticesNum, structure, client, new ArrayWithOffset[ED](0,newEdata)))
+          Iterator(new GrapeEdgePartition[VD,ED](pid,0,1,0,frag.getInnerVerticesNum, structure, client, new ArrayWithOffset[ED](0,newEdata)))
         }
         else Iterator.empty
       }

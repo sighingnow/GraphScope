@@ -25,7 +25,7 @@ import scala.reflect.ClassTag
  */
 class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
                                                      val localId : Int, // the order of partition in this fragment.
-                                                     val localNUm : Int,// how many part in this frag.
+                                                     val localNum : Int, // how many part in this frag.
                                                      val startLid : Long,
                                                      val endLid : Long,
                                                      val graphStructure: GraphStructure,
@@ -126,7 +126,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       }
       flag = true
     }
-    new GrapeEdgePartition[VD,ED](pid,localId, startLid, endLid, graphStructure, client,newEdata, edgeReversed, newMask)
+    new GrapeEdgePartition[VD,ED](pid,localId,localNum, startLid, endLid, graphStructure, client,newEdata, edgeReversed, newMask)
   }
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
@@ -199,16 +199,16 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def reverse: GrapeEdgePartition[VD, ED] = {
-    new GrapeEdgePartition[VD,ED](pid, localId,startLid,endLid, graphStructure, client,edatas,!edgeReversed, activeEdgeSet)
+    new GrapeEdgePartition[VD,ED](pid, localId,localNum,startLid,endLid, graphStructure, client,edatas,!edgeReversed, activeEdgeSet)
   }
 
   def withNewEdata[ED2: ClassTag](newEdata : ArrayWithOffset[ED2]): GrapeEdgePartition[VD, ED2] = {
 //    log.info(s"Creating new edge partition with new edge of size ${newEdata.length}, out edge num ${graphStructure.getOutEdgesNum}")
-    new GrapeEdgePartition[VD,ED2](pid,localId,startLid,endLid,  graphStructure, client,newEdata, edgeReversed, activeEdgeSet)
+    new GrapeEdgePartition[VD,ED2](pid,localId,localNum,startLid,endLid,  graphStructure, client,newEdata, edgeReversed, activeEdgeSet)
   }
 
   def withNewMask(newActiveSet: BitSetWithOffset) : GrapeEdgePartition[VD,ED] = {
-    new GrapeEdgePartition[VD,ED](pid,localId,startLid,endLid, graphStructure, client,edatas, edgeReversed, newActiveSet)
+    new GrapeEdgePartition[VD,ED](pid,localId,localNum,startLid,endLid, graphStructure, client,edatas, edgeReversed, newActiveSet)
   }
 
   /**  currently we only support inner join with same vertex map*/
@@ -232,7 +232,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       }
     }
 
-    new GrapeEdgePartition[VD,ED3](pid,localId,startLid,endLid, graphStructure, client,newEData,edgeReversed, newMask)
+    new GrapeEdgePartition[VD,ED3](pid,localId,localNum,startLid,endLid, graphStructure, client,newEData,edgeReversed, newMask)
   }
 
   override def toString: String =  super.toString + "(pid=" + pid + ",local id" + localId +
