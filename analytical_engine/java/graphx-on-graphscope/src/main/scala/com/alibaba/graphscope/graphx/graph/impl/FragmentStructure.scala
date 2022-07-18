@@ -73,22 +73,22 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
   override val mirrorVertices: Array[BitSet] = getMirrorVertices
 
   @inline
-  override def getOEBeginOffset(lid : Long) : Long = {
+  override def getOEBeginOffset(lid : Int) : Long = {
     oeOffsetBeginArray.get(lid)
   }
 
   @inline
-  override def getIEBeginOffset(lid : Long) : Long = {
+  override def getIEBeginOffset(lid : Int) : Long = {
     ieOffsetBeginArray.get(lid)
   }
 
   @inline
-  override def getOEEndOffset(lid : Long) : Long = {
+  override def getOEEndOffset(lid : Int) : Long = {
     oeOffsetEndArray.get(lid + 1)
   }
 
   @inline
-  override def getIEEndOffset(lid : Long) : Long = {
+  override def getIEEndOffset(lid : Int) : Long = {
     ieOffsetEndArray.get(lid + 1)
   }
 
@@ -177,12 +177,12 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     res
   }
 
-  override def getInDegree(vid: Long): Long = {
+  override def getInDegree(vid: Int): Long = {
     vertex.SetValue(vid)
     fragment.getLocalInDegree(vertex)
   }
 
-  override def getOutDegree(vid: Long): Long = {
+  override def getOutDegree(vid: Int): Long = {
     vertex.SetValue(vid)
     fragment.getLocalOutDegree(vertex)
   }
@@ -458,7 +458,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
 
   override def getEids: Array[VertexId] = eids
 
-  override def getOutNbrIds(vid: VertexId): Array[VertexId] = {
+  override def getOutNbrIds(vid: Int): Array[VertexId] = {
     val size = getOutDegree(vid)
     val res = new Array[VertexId](size.toInt)
     fillOutNbrIdsImpl(vid, res)
@@ -479,14 +479,14 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     }
   }
 
-  override def getInNbrIds(vid: VertexId): Array[VertexId] = {
+  override def getInNbrIds(vid: Int): Array[VertexId] = {
     val size = getInDegree(vid)
     val res = new Array[VertexId](size.toInt)
     fillInNbrIdsImpl(vid, res)
     res
   }
 
-  def fillInNbrIdsImpl(vid : VertexId, array : Array[VertexId], startInd : Int = 0) : Unit = {
+  def fillInNbrIdsImpl(vid : Int, array : Array[VertexId], startInd : Int = 0) : Unit = {
     var curOff = ieOffsetBeginArray.get(vid)
     val endOff = ieOffsetEndArray.get(vid)
     iePtr.setAddress(iePtrStartAddr + curOff * 16)
@@ -500,7 +500,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     }
   }
 
-  override def getInOutNbrIds(vid: VertexId): Array[VertexId] = {
+  override def getInOutNbrIds(vid: Int): Array[VertexId] = {
     val size = getInDegree(vid) + getOutDegree(vid)
     val res = new Array[VertexId](size.toInt)
     fillOutNbrIdsImpl(vid, res, 0)

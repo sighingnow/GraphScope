@@ -36,25 +36,25 @@ trait GraphStructure extends Serializable {
 
   def iterateTriplets[VD : ClassTag, ED : ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long,f : EdgeTriplet[VD,ED] => ED2,innerVertexDataStore: VertexDataStore[VD], outerVertexDataStore: VertexDataStore[VD], edatas : ArrayWithOffset[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, includeSrc : Boolean = true, includeDst : Boolean = true, newArray : ArrayWithOffset[ED2]) : Unit
 
-   def getInDegree(vid: Long): Long
+   def getInDegree(vid: Int): Long
 
   /** get the oe begin offset */
-  def getOEBeginOffset(vid: Long) : Long
+  def getOEBeginOffset(vid: Int) : Long
 
-  def getOEEndOffset(vid: Long) : Long
+  def getOEEndOffset(vid: Int) : Long
 
   /** get the oe begin offset */
-  def getIEBeginOffset(vid: Long) : Long
+  def getIEBeginOffset(vid: Int) : Long
 
-  def getIEEndOffset(vid: Long) : Long
+  def getIEEndOffset(vid: Int) : Long
 
-   def getOutDegree(vid: Long): Long
+   def getOutDegree(vid: Int): Long
 
-  def getOutNbrIds(vid : Long) : Array[Long]
+  def getOutNbrIds(vid : Int) : Array[Long]
 
-  def getInNbrIds(vid : Long) : Array[Long]
+  def getInNbrIds(vid : Int) : Array[Long]
 
-  def getInOutNbrIds(vid : Long) : Array[Long]
+  def getInOutNbrIds(vid : Int) : Array[Long]
 
    def isInEdgesEmpty(vid: Long): Boolean
 

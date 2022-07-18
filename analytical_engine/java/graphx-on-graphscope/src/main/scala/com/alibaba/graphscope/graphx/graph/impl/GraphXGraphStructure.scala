@@ -24,8 +24,28 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
   //FIXME: bitset for long
   override val mirrorVertices: Array[BitSet] = getMirrorVertices
 
-  val oeOffsetsArray: ImmutableTypedArray[Long] = csr.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
-  val ieOffsetsArray : ImmutableTypedArray[Long] = csr.getIEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
+  val oeOffsetsArray: Array[Long] = {
+    val tmp : ImmutableTypedArray[Long] = csr.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
+    val res = new Array[Long](tmp.getLength.toInt)
+    require(res.length == ivnum)
+    var i = 0
+    while (i < res.length){
+      res(i) = tmp.get(i)
+      i += 1
+    }
+    res
+  }
+  val ieOffsetsArray : Array[Long] = {
+    val tmp : ImmutableTypedArray[Long] = csr.getIEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
+    val res = new Array[Long](tmp.getLength.toInt)
+    require(res.length == ivnum)
+    var i = 0
+    while (i < res.length){
+      res(i) = tmp.get(i)
+      i += 1
+    }
+    res
+  }
 
   val dstOids : Array[Long] = new Array[Long](csr.getOutEdgesNum.toInt)
   val dstLids : Array[Int] = new Array[Int](csr.getOutEdgesNum.toInt)
@@ -45,33 +65,33 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
 
 
   @inline
-  override def getOEBeginOffset(lid : Long) : Long = {
-    oeOffsetsArray.get(lid)
+  override def getOEBeginOffset(lid : Int) : Long = {
+    oeOffsetsArray(lid)
   }
 
   @inline
-  override def getIEBeginOffset(lid : Long) : Long = {
-    ieOffsetsArray.get(lid)
+  override def getIEBeginOffset(lid : Int) : Long = {
+    ieOffsetsArray(lid)
   }
 
   @inline
-  override def getOEEndOffset(lid : Long) : Long = {
-    oeOffsetsArray.get(lid + 1)
+  override def getOEEndOffset(lid : Int) : Long = {
+    oeOffsetsArray(lid + 1)
   }
 
   @inline
-  override def getIEEndOffset(lid : Long) : Long = {
-    ieOffsetsArray.get(lid + 1)
+  override def getIEEndOffset(lid : Int) : Long = {
+    ieOffsetsArray(lid + 1)
   }
 
   @inline
-  def getOutDegree(l: Long) : Long = {
-    oeOffsetsArray.get(l + 1) - oeOffsetsArray.get(l)
+  def getOutDegree(l: Int) : Long = {
+    oeOffsetsArray(l + 1) - oeOffsetsArray(l)
   }
 
   @inline
-  def getInDegree(l: Long) : Long = {
-    ieOffsetsArray.get(l + 1) - ieOffsetsArray.get(l)
+  def getInDegree(l: Int) : Long = {
+    ieOffsetsArray(l + 1) - ieOffsetsArray(l)
   }
 
   def outDegreeArray(startLid : Long, endLid : Long) : Array[Int] = {
@@ -377,13 +397,13 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
 
   override def getEids: Array[VertexId] = eids
 
-  override def getOutNbrIds(vid: VertexId): Array[VertexId] = {
+  override def getOutNbrIds(vid: Int): Array[VertexId] = {
     val res = new Array[VertexId](getOutDegree(vid.toInt).toInt)
     fillOutNbrIds(vid, res)
     res
   }
 
-  def fillOutNbrIds(vid : VertexId, array: Array[VertexId],startInd : Int = 0) : Unit = {
+  def fillOutNbrIds(vid : Int, array: Array[VertexId],startInd : Int = 0) : Unit = {
     var cur = getOEBeginOffset(vid)
     val end = getOEEndOffset(vid)
     oeBeginNbr.setAddress(cur * 16 + oeBeginAddr)
@@ -397,13 +417,13 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     }
   }
 
-  override def getInNbrIds(vid: VertexId): Array[VertexId] = {
+  override def getInNbrIds(vid: Int): Array[VertexId] = {
     val res = new Array[VertexId](getInDegree(vid.toInt).toInt)
     fillInNbrIds(vid, res)
     res
   }
 
-  def fillInNbrIds(vid :VertexId, array : Array[VertexId], startInd : Int = 0) : Unit = {
+  def fillInNbrIds(vid :Int, array : Array[VertexId], startInd : Int = 0) : Unit = {
     val beginNbr = csr.getIEBegin(vid)
     val endNbr = csr.getIEEnd(vid)
     var i = startInd
@@ -414,7 +434,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     }
   }
 
-  override def getInOutNbrIds(vid: VertexId): Array[VertexId] = {
+  override def getInOutNbrIds(vid: Int): Array[VertexId] = {
     val size = getInDegree(vid.toInt) + getOutDegree(vid.toInt)
     val res = new Array[VertexId](size.toInt)
     fillOutNbrIds(vid, res, 0)
