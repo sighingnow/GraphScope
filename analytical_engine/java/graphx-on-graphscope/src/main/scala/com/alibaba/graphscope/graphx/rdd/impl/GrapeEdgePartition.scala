@@ -394,7 +394,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     require(ind == edgesNum, s"after iterating over edge shuffle, ind ${ind} neq ${edgesNum}")
     log.info("Finish adding edges to builders")
     val graphxCSRBuilder = ScalaFFIFactory.newGraphXCSRBuilder(client)
-    log.info(s"building csr with local num ${graphxVertexMap.fnum()/numExecutors}")
+    log.info(s"building csr with local num ${graphxVertexMap.fnum()}/${numExecutors}")
     require(srcOids.size() == edgesNum && dstOids.size() == edgesNum, s"src size ${srcOids.size()} dst size ${dstOids.size()}, edgenum ${edgesNum}")
     graphxCSRBuilder.loadEdges(srcOids,dstOids,graphxVertexMap,graphxVertexMap.fnum() / numExecutors)
     val graphxCSR = graphxCSRBuilder.seal(client).get()
