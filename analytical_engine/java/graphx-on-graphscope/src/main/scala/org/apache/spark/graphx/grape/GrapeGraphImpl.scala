@@ -68,46 +68,52 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   lazy val fragmentIds : RDD[String] = {
     val syncedGrapeVertices = grapeVertices.syncOuterVertex
 
+    //we only use numFrags partitions, each with number of `numThread` for parallelization.
     PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),
       edges.grapePartitionsRDD,
       syncedGrapeVertices.grapePartitionsRDD){(edgeIter, vertexIter) => {
       val ePart = edgeIter.next()
       val vPart = vertexIter.next()
-      ePart.graphStructure match {
-        case casted: GraphXGraphStructure =>
-          val vmId = casted.vm.id() //vm id will never change
-          val csrId = casted.csr.id()
-          val vdId = vPart.innerVertexData.vineyardID
-          //FIXME: merge edata array together.
-          val edId = GrapeUtils.array2ArrowArray[ED](ePart.edatas.array,ePart.client,false)
+      if (ePart.localId != 0){
+        Iterator.empty
+      }
+      else {
+        ePart.graphStructure match {
+          case casted: GraphXGraphStructure =>
+            val vmId = casted.vm.id() //vm id will never change
+            val csrId = casted.csr.id()
+            val vdId = vPart.innerVertexData.vineyardID
+            //FIXME: merge edata array together.
+            val edId = GrapeUtils.array2ArrowArray[ED](ePart.edatas.array, ePart.client, false)
 
-          logger.info(s"vm id ${vmId}, csr id ${csrId}, vd id ${vdId}, ed id ${edId}")
+            logger.info(s"vm id ${vmId}, csr id ${csrId}, vd id ${vdId}, ed id ${edId}")
 
-          var fragId = null.asInstanceOf[Long]
-          if (GrapeUtils.isPrimitive[VD] && GrapeUtils.isPrimitive[ED]){
-            logger.info("VD and ED both primitive")
-            val fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD, ED](ePart.client, vmId, csrId, vdId,edId)
-            fragId = fragBuilder.seal(ePart.client).get().id()
-          }
-          else if (GrapeUtils.isPrimitive[VD]){
-            logger.info("only vd primitive")
-            val fragBuilder = ScalaFFIFactory.newGraphXStringEDFragmentBuilder[VD](ePart.client, vmId, csrId, vdId, edId)
-            fragId = fragBuilder.seal(ePart.client).get().id()
-          }
-          else if (GrapeUtils.isPrimitive[ED]){
-            logger.info("only ed primitive")
-            val fragBuilder = ScalaFFIFactory.newGraphXStringVDFragmentBuiler[ED](ePart.client, vmId, csrId, vdId,edId)
-            fragId = fragBuilder.seal(ePart.client).get().id()
-          }
-          else {
-            logger.info("vd and ed are both complex")
-            val fragBuilder = ScalaFFIFactory.newGraphXStringVEDFragmentBuilder(ePart.client, vmId, csrId, vdId, edId)
-            fragId = fragBuilder.seal(ePart.client).get().id()
-          }
-          logger.info(s"Got built frag: ${fragId}")
-          Iterator(ExecutorUtils.getHostName + ":" + ePart.pid + ":" + fragId)
-        case _ =>
-          throw new IllegalStateException("Not implemented now!")
+            var fragId = null.asInstanceOf[Long]
+            if (GrapeUtils.isPrimitive[VD] && GrapeUtils.isPrimitive[ED]) {
+              logger.info("VD and ED both primitive")
+              val fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD, ED](ePart.client, vmId, csrId, vdId, edId)
+              fragId = fragBuilder.seal(ePart.client).get().id()
+            }
+            else if (GrapeUtils.isPrimitive[VD]) {
+              logger.info("only vd primitive")
+              val fragBuilder = ScalaFFIFactory.newGraphXStringEDFragmentBuilder[VD](ePart.client, vmId, csrId, vdId, edId)
+              fragId = fragBuilder.seal(ePart.client).get().id()
+            }
+            else if (GrapeUtils.isPrimitive[ED]) {
+              logger.info("only ed primitive")
+              val fragBuilder = ScalaFFIFactory.newGraphXStringVDFragmentBuiler[ED](ePart.client, vmId, csrId, vdId, edId)
+              fragId = fragBuilder.seal(ePart.client).get().id()
+            }
+            else {
+              logger.info("vd and ed are both complex")
+              val fragBuilder = ScalaFFIFactory.newGraphXStringVEDFragmentBuilder(ePart.client, vmId, csrId, vdId, edId)
+              fragId = fragBuilder.seal(ePart.client).get().id()
+            }
+            logger.info(s"Got built frag: ${fragId}")
+            Iterator(ExecutorUtils.getHostName + ":" + ePart.pid + ":" + fragId)
+          case _ =>
+            throw new IllegalStateException("Not implemented now!")
+        }
       }
     }}
   }

@@ -25,6 +25,7 @@ import scala.reflect.ClassTag
  */
 class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
                                                      val localId : Int, // the order of partition in this fragment.
+                                                     val localNUm : Int,// how many part in this frag.
                                                      val startLid : Long,
                                                      val endLid : Long,
                                                      val graphStructure: GraphStructure,
@@ -457,7 +458,7 @@ object GrapeEdgePartition extends Logging {
             for (_ <- 0 until size){
               val tuple = tupleQueue.poll()
               val _ = pidQueue.poll()
-              pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1, 0,0, tuple._2.getInnerVertexSize, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
+              pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1, 0, 1, 0, tuple._2.getInnerVertexSize, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
               val innerStore = tuple._5
               innerStore.setNumSplit(1)
               GrapeVertexPartition.setInnerVertexStore(tuple._1,innerStore)
@@ -499,14 +500,14 @@ object GrapeEdgePartition extends Logging {
                 val innerStore = tuple._5
                 innerStore.setNumSplit(times)
                 if (j == 0){
-                  pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1,  j, startLid, endLid, graphStructure, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
+                  pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1,  j, times, startLid, endLid, graphStructure, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
                   GrapeVertexPartition.setInnerVertexStore(tuple._1,innerStore)
                   GrapeVertexPartition.setOuterVertexStore(tuple._1, tuple._6)
                   log.info(s"creating partition for pid ${tuple._1}, (${startLid},${endLid}), fid ${graphStructure.fid()}")
                 }
                 else {
                   val dstPid = candidates.dequeue()
-                  pid2EdgePartition(dstPid) = new GrapeEdgePartition[VD,ED](dstPid,  j, startLid, endLid, graphStructure, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
+                  pid2EdgePartition(dstPid) = new GrapeEdgePartition[VD,ED](dstPid,  j, times, startLid, endLid, graphStructure, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
                   GrapeVertexPartition.setInnerVertexStore(dstPid,innerStore)
                   GrapeVertexPartition.setOuterVertexStore(dstPid, tuple._6)
                   log.info(s"creating partition for pid ${dstPid}, (${startLid},${endLid}), fid ${graphStructure.fid()}")
