@@ -62,7 +62,7 @@ public class MPIUtils {
     public static <MSG, VD, ED> void launchGraphX(
         String[] fragIds, Class<? extends VD> vdClass, Class<? extends ED> edClass,
         Class<? extends MSG> msgClass,
-        String serialPath, int maxIteration) {
+        String serialPath, int maxIteration, int numPart) {
         int numWorkers = fragIds.length;
         String hostNameSlots = generateHostNameAndSlotsFromIDs(fragIds);
         logger.info("running mpi with {} workers", numWorkers);
@@ -70,7 +70,7 @@ public class MPIUtils {
             hostNameSlots,
             GrapeUtils.classToStr(vdClass), GrapeUtils.classToStr(edClass),
             GrapeUtils.classToStr(msgClass),
-            String.join(",", fragIds), serialPath, String.valueOf(maxIteration)};
+            String.join(",", fragIds), serialPath, String.valueOf(maxIteration), String.valueOf(numPart)};
 
         logger.info("Running with commands: " + String.join(" ", commands));
         long startTime = System.nanoTime();

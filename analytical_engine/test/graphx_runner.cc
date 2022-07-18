@@ -44,6 +44,7 @@ DEFINE_string(msg_class, "", "int64_t,int32_t,double,std::string");
 DEFINE_int32(max_iterations, 100, "max iterations");
 DEFINE_string(frag_ids, "", "frag ids");
 DEFINE_string(serial_path, "", "serial path");
+DEFINE_string(num_part, "", "num partition in total, specified in graphx");
 
 std::string build_generic_class(const std::string& base_class,
                                 const std::string& vd_class,
@@ -74,6 +75,7 @@ std::string flags2JsonStr() {
   pt.put("ed_class", FLAGS_ed_class);
   pt.put("max_iterations", FLAGS_max_iterations);
   pt.put("serial_path", FLAGS_serial_path);
+  pt.put("num_part", FLAGS_num_part);
 
   std::stringstream ss;
   boost::property_tree::json_parser::write_json(ss, pt);
