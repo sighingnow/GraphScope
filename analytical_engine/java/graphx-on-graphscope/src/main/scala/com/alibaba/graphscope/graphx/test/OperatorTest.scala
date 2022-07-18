@@ -19,7 +19,8 @@ object OperatorTest extends Logging{
 
       val rawGraph = GraphLoader.edgeListFile(sc, fileName,false, partNum)
       val graph = rawGraph.mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).cache()
-      val grapeGraph = GraphScopeHelper.edgeListFile(sc, fileName, false, partNum).cache()
+      val grapeGraph = GraphScopeHelper.graph2Fragment[Long,Long](graph).cache()
+      //val grapeGraph = GraphScopeHelper.edgeListFile(sc, fileName, false, partNum).cache()
 
       val maskGraph : Graph[Long,Long] = graph.subgraph(epred = (_ => true), vpred = (id, vd) => id % 2 == 0)
       val grapeMaskGraph : Graph[Long,Long] = grapeGraph.subgraph(epred = (_ => true), vpred = (id, _)=>id % 2 == 0)
