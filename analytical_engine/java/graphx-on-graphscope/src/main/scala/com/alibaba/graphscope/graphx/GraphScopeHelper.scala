@@ -48,11 +48,7 @@ object GraphScopeHelper extends Logging{
 
   def getNumFrag(executorNum: Int, userNumPart: Int) : Int = {
     val maxFnum = MAX_FNUM_PER_EXECUTOR * executorNum
-    var numFrag = userNumPart
-    while (numFrag > maxFnum){
-      numFrag = numFrag / 2
-    }
-    numFrag
+    Math.min(userNumPart, maxFnum) //max 32
   }
 
   /** too many partition is not a good option for fragment-based rdd, so we need to use smaller
@@ -241,7 +237,7 @@ object GraphScopeHelper extends Logging{
     val edgeShufflesNum = graphShuffles.count()
     val time1 = System.nanoTime()
     logInfo(s"It took ${TimeUnit.NANOSECONDS.toMillis(time1 - time0)} ms" +
-      s" to load the edges,shuffle count ${edgeShufflesNum}")
+      s" to generate edge shuffles,shuffle count ${edgeShufflesNum}")
 
     val time2 = System.nanoTime()
     val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[VD,ED](graphShuffles, null.asInstanceOf[ED],numPartitions).cache()

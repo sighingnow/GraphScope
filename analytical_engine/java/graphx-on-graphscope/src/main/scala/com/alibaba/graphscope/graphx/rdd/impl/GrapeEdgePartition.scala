@@ -405,7 +405,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
         val innerOids = edgeShuffle.oids
         val vertexAttrs = edgeShuffle.vertexAttrs
         if (vertexAttrs == null || vertexAttrs.length == 0){
-          log.info("no vertex attrs found in shuffle")
+//          log.info("no vertex attrs found in shuffle")
         }
         else {
           var i = 0
@@ -545,6 +545,7 @@ object GrapeEdgePartition extends Logging {
       res(i) = (beginLid, curLid)
       log.info(s"For part ${i}, startLid ${beginLid}, endLid${curLid}, num edges in this part ${graphStructure.getOEBeginOffset(curLid) - graphStructure.getOEBeginOffset(beginLid)}, total edges ${numEdges}, edges per split ${edgesPerSplit}")
     }
+    //it is possible that the last vertices has no out edges.
     require(curLid == graphStructure.getInnerVertexSize, s"after split, should iterate over all ivertex ${curLid}, ${graphStructure.getInnerVertexSize}")
     res
   }
