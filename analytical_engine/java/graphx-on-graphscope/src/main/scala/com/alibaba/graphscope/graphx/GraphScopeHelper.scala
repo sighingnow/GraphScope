@@ -172,7 +172,7 @@ object GraphScopeHelper extends Logging{
             val (vdClass,edClass) = (typeParams(2), typeParams(3))
             log.info(s"Original vd class ${vdClass} ed class ${edClass}")
             //create mapper
-            val resFrag = doMap(oldProjectedFrag.asInstanceOf[ArrowProjectedFragment[Long,Long,Any,Any]],vdClass.asInstanceOf[Class[Any]], edClass.asInstanceOf[Class[Any]], vertexPart.innerVertexData, edgePart.edatas, edgePart.client)
+            val resFrag = doMap(oldProjectedFrag.asInstanceOf[ArrowProjectedFragment[Long,Long,Any,Any]],vdClass.asInstanceOf[Class[Any]], edClass.asInstanceOf[Class[Any]], vertexPart.vertexData, edgePart.edatas, edgePart.client)
             Iterator(GrapeUtils.getSelfHostName + ":" + resFrag.id())
           }
         }

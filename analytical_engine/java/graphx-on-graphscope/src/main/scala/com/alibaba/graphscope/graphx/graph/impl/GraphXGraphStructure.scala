@@ -276,7 +276,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     }
   }
 
-  override def tripletIterator[VD: ClassTag,ED : ClassTag](startLid : Long, endLid : Long,innerVertexDataStore: VertexDataStore[VD],outerVertexDataStore: VertexDataStore[VD],edatas : ArrayWithOffset[ED], activeEdgeSet : BitSetWithOffset, edgeReversed : Boolean = false,
+  override def tripletIterator[VD: ClassTag,ED : ClassTag](startLid : Long, endLid : Long,innerVertexDataStore: VertexDataStore[VD],edatas : ArrayWithOffset[ED], activeEdgeSet : BitSetWithOffset, edgeReversed : Boolean = false,
                       includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false)
   : Iterator[EdgeTriplet[VD, ED]] = {
     if (!edgeReversed){
@@ -311,12 +311,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
           edgeTriplet.eid = nbr.eid()
           edgeTriplet.offset = curOffset
           edgeTriplet.dstId = lid2Oid(dstLid)
-          edgeTriplet.dstAttr = {
-            if (dstLid >=ivnum){
-              outerVertexDataStore.getData(dstLid)
-            }
-            else innerVertexDataStore.getData(dstLid)
-          }
+          edgeTriplet.dstAttr = innerVertexDataStore.getData(dstLid)
           edgeTriplet.srcId = srcId
           edgeTriplet.srcAttr = srcAttr
           edgeTriplet.attr = edatas(curOffset)
@@ -359,12 +354,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
           edgeTriplet.eid = nbr.eid()
           edgeTriplet.offset = curOffset
           edgeTriplet.srcId = lid2Oid(srcLid)
-          edgeTriplet.srcAttr = {
-            if (srcLid >= ivnum){
-              outerVertexDataStore.getData(srcLid)
-            }
-            else innerVertexDataStore.getData(srcLid)
-          }
+          edgeTriplet.srcAttr = innerVertexDataStore.getData(srcLid)
           edgeTriplet.dstId = dstId
           edgeTriplet.dstAttr = dstAttr
           edgeTriplet.attr = edatas(curOffset)
@@ -434,7 +424,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     res
   }
 
-  override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long,f: EdgeTriplet[VD,ED] => ED2,innerVertexDataStore: VertexDataStore[VD],outerVertexDataStore: VertexDataStore[VD], edatas: ArrayWithOffset[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, resArray : ArrayWithOffset[ED2]): Unit = {
+  override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long, f: EdgeTriplet[VD,ED] => ED2, vertexDataStore: VertexDataStore[VD], edatas: ArrayWithOffset[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, resArray : ArrayWithOffset[ED2]): Unit = {
     val time0 = System.nanoTime()
 
     var curLid = startLid.toInt
@@ -444,16 +434,11 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
       while (curLid < endLid && curOffset >= 0){
         val curEndOffset = getOEEndOffset(curLid)
         edgeTriplet.srcId = lid2Oid(curLid)
-        edgeTriplet.srcAttr = innerVertexDataStore.getData(curLid)
+        edgeTriplet.srcAttr = vertexDataStore.getData(curLid)
         while (curOffset < curEndOffset && curOffset >= 0){
           edgeTriplet.dstId = dstOids(curOffset)
           val dstLid = dstLids(curOffset)
-          if (dstLid >= ivnum){
-            edgeTriplet.dstAttr = outerVertexDataStore.getData(dstLid)
-          }
-          else {
-            edgeTriplet.dstAttr = innerVertexDataStore.getData(dstLid)
-          }
+          edgeTriplet.dstAttr = vertexDataStore.getData(dstLid)
           edgeTriplet.attr = edatas(curOffset)
           resArray(curOffset) = f(edgeTriplet)
           curOffset = activeSet.nextSetBit(curOffset + 1)
@@ -465,16 +450,11 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
       while (curLid < endLid && curOffset >= 0){
         val curEndOffset = getOEEndOffset(curLid)
         edgeTriplet.dstId = lid2Oid(curLid)
-        edgeTriplet.dstAttr = innerVertexDataStore.getData(curLid)
+        edgeTriplet.dstAttr = vertexDataStore.getData(curLid)
         while (curOffset < curEndOffset && curOffset >= 0){
           edgeTriplet.srcId = dstOids(curOffset)
           val dstLid = dstLids(curOffset)
-          if (dstLid >= ivnum){
-            edgeTriplet.srcAttr = outerVertexDataStore.getData(dstLid)
-          }
-          else {
-            edgeTriplet.srcAttr = innerVertexDataStore.getData(dstLid)
-          }
+          edgeTriplet.srcAttr = vertexDataStore.getData(dstLid)
           edgeTriplet.attr = edatas(curOffset)
           resArray(curOffset) = f(edgeTriplet)
           curOffset = activeSet.nextSetBit(curOffset + 1)
