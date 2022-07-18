@@ -428,6 +428,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     var curLid = startLid.toInt
     val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
     var curOffset = activeSet.nextSetBit(activeSet.startBit)
+    if (curOffset < 0) return
     if (!edgeReversed){
       while (curLid < endLid){
         val curEndOffset = getOEEndOffset(curLid)
@@ -464,7 +465,6 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     var curLid = startLid.toInt
     val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
     var curOffset = activeSet.nextSetBit(activeSet.startBit)
-    if (curOffset < 0) return
     if (!edgeReversed){
       while (curLid < endLid && curOffset >= 0){
         val curEndOffset = getOEEndOffset(curLid)
