@@ -27,7 +27,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
   val oeOffsetsArray: Array[Long] = {
     val tmp : ImmutableTypedArray[Long] = csr.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
     val res = new Array[Long](tmp.getLength.toInt)
-    require(res.length == ivnum)
+    require(res.length == ivnum + 1)
     var i = 0
     while (i < res.length){
       res(i) = tmp.get(i)
@@ -38,7 +38,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
   val ieOffsetsArray : Array[Long] = {
     val tmp : ImmutableTypedArray[Long] = csr.getIEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
     val res = new Array[Long](tmp.getLength.toInt)
-    require(res.length == ivnum)
+    require(res.length == ivnum + 1)
     var i = 0
     while (i < res.length){
       res(i) = tmp.get(i)
