@@ -30,9 +30,29 @@ object ComprehensiveTest extends Logging{
         if (iter.hasNext){
           val part = iter.next()
           part.emptyIteration
+        }
+      })
+      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
+        if (iter.hasNext){
+          val part = iter.next()
           part.emptyIteration
+        }
+      })
+      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
+        if (iter.hasNext){
+          val part = iter.next()
           part.emptyIteration
+        }
+      })
+      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
+        if (iter.hasNext){
+          val part = iter.next()
           part.emptyIteration
+        }
+      })
+      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
+        if (iter.hasNext){
+          val part = iter.next()
           part.emptyIteration
         }
       })
@@ -43,16 +63,22 @@ object ComprehensiveTest extends Logging{
 
     def runGrapeTriplet(graph : GrapeGraphImpl[Long,Long]) : Long = {
       val time0 = System.nanoTime()
-      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
-        if (iter.hasNext){
-          val part = iter.next()
-          part.emptyIterationTriplet
-          part.emptyIterationTriplet
-          part.emptyIterationTriplet
-          part.emptyIterationTriplet
-          part.emptyIterationTriplet
+      val tmp1 = graph.grapeEdges.grapePartitionsRDD.zipPartitions(graph.grapeVertices.grapePartitionsRDD){
+        (eIter,vIter) =>{
+          if (eIter.hasNext){
+            val ePart = eIter.next()
+            val vPart = vIter.next()
+            ePart.emptyIterationTriplet(vPart.vertexData)
+            ePart.emptyIterationTriplet(vPart.vertexData)
+            ePart.emptyIterationTriplet(vPart.vertexData)
+            ePart.emptyIterationTriplet(vPart.vertexData)
+            ePart.emptyIterationTriplet(vPart.vertexData)
+            Iterator(1)
+          }
+          else Iterator.empty
         }
-      })
+      }
+      log.info(s"collect ${tmp1.count()}")
       val time1 = System.nanoTime()
       time1 - time0
       //      log.info(s"Iterate over grape cost ${(time1 - time0)/1000000} ms")
