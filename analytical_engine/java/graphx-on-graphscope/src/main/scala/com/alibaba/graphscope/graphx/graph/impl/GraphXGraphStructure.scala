@@ -429,31 +429,31 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
     var curOffset = activeSet.nextSetBit(activeSet.startBit)
     if (!edgeReversed){
-      while (curLid < endLid && curOffset >= 0){
+      while (curLid < endLid){
         val curEndOffset = getOEEndOffset(curLid)
         edgeTriplet.srcId = lid2Oid(curLid)
         edgeTriplet.srcAttr = vertexDataStore.getData(curLid)
-        while (curOffset < curEndOffset && curOffset >= 0){
+        while (curOffset < curEndOffset){
           edgeTriplet.dstId = dstOids(curOffset)
           val dstLid = dstLids(curOffset)
-          edgeTriplet.dstAttr = vertexDataStore.getData(dstLid)
           edgeTriplet.attr = edatas.getData(curOffset)
-          curOffset = activeSet.nextSetBit(curOffset + 1)
+          edgeTriplet.dstAttr = vertexDataStore.getData(dstLid)
+          curOffset = curOffset + 1
         }
         curLid += 1
       }
     }
     else {
-      while (curLid < endLid && curOffset >= 0){
+      while (curLid < endLid){
         val curEndOffset = getOEEndOffset(curLid)
         edgeTriplet.dstId = lid2Oid(curLid)
         edgeTriplet.dstAttr = vertexDataStore.getData(curLid)
-        while (curOffset < curEndOffset && curOffset >= 0){
+        while (curOffset < curEndOffset){
           edgeTriplet.srcId = dstOids(curOffset)
           val dstLid = dstLids(curOffset)
-          edgeTriplet.srcAttr = vertexDataStore.getData(dstLid)
           edgeTriplet.attr = edatas.getData(curOffset)
-          curOffset = activeSet.nextSetBit(curOffset + 1)
+          edgeTriplet.srcAttr = vertexDataStore.getData(dstLid)
+          curOffset = curOffset + 1
         }
         curLid += 1
       }
@@ -504,25 +504,25 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     val edge = new ReusableEdgeImpl[ED]
     var curOffset = activeSet.nextSetBit(activeSet.startBit)
     if (!edgeReversed){
-      while (curLid < endLid && curOffset >= 0){
+      while (curLid < endLid){
         val curEndOffset = getOEEndOffset(curLid)
         edge.srcId = lid2Oid(curLid)
-        while (curOffset < curEndOffset && curOffset >= 0){
+        while (curOffset < curEndOffset){
           edge.dstId = dstOids(curOffset)
           edge.attr = edatas.getData(curOffset)
-          curOffset = activeSet.nextSetBit(curOffset + 1)
+          curOffset = curOffset + 1
         }
         curLid += 1
       }
     }
     else {
-      while (curLid < endLid && curOffset >= 0){
+      while (curLid < endLid){
         val curEndOffset = getOEEndOffset(curLid)
         edge.dstId = lid2Oid(curLid)
-        while (curOffset < curEndOffset && curOffset >= 0){
+        while (curOffset < curEndOffset){
           edge.srcId = dstOids(curOffset)
           edge.attr = edatas.getData(curOffset)
-          curOffset = activeSet.nextSetBit(curOffset + 1)
+          curOffset = curOffset + 1
         }
         curLid += 1
       }
