@@ -47,7 +47,7 @@ abstract class PartitionAwareZippedBaseRDD[V: ClassTag](
     Array.tabulate[Partition](numParts) { i =>
       val firstPartition = rdds(0).partitions(i)
       val secondPartition = rdds(1).partitions(i)
-      log.info(s"get preferred location for first : ${rdds(0).preferredLocations(firstPartition)}, second ${rdds(1).preferredLocations(secondPartition)}")
+//      log.info(s"get preferred location for first : ${rdds(0).preferredLocations(firstPartition)}, second ${rdds(1).preferredLocations(secondPartition)}")
       new ZippedPartitionsPartition(i, rdds, rdds(0).preferredLocations(firstPartition))
     }
   }
