@@ -15,12 +15,16 @@ shift
 SERIAL_PATH=$1
 shift
 MAX_ITERATION=$1
+shift
+NUM_PART$1
+shift
 
 echo "serial path         "${SERIAL_PATH}
 echo "num workers:        "${NUM_WORKERS}
 echo "host file           "${HOST_SLOT}
 echo "frag ids:           "${FRAG_IDS}
 echo "max iter            "${MAX_ITERATION}
+echo "num part:           "${NUM_PART}
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source ${SCRIPT_DIR}/prepare_mpi.sh
@@ -37,6 +41,6 @@ cmd="GLOG_v=10 mpirun --mca btl_tcp_if_include bond0 -n ${NUM_WORKERS} -host ${H
 -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} \
 --vd_class ${VD_CLASS} --ed_class ${ED_CLASS} --msg_class ${MSG_CLASS} \
 --serial_path ${SERIAL_PATH} --frag_ids ${FRAG_IDS} \
---max_iterations ${MAX_ITERATION}"
+--max_iterations ${MAX_ITERATION} --num_part ${NUM_PART}"
 echo "running cmd: "$cmd >&2
 eval $cmd

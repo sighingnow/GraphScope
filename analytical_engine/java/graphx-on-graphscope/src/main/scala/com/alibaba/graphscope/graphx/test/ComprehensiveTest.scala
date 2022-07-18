@@ -33,7 +33,16 @@ object ComprehensiveTest extends Logging{
       })
       val time1 = System.nanoTime()
       time1 - time0
-//      log.info(s"Iterate over grape cost ${(time1 - time0)/1000000} ms")
+    }
+
+    def runGrapeTriplet(graph : GrapeGraphImpl[Long,Long]) : Long = {
+      val time0 = System.nanoTime()
+      val res = graph.mapTriplets(triplet => triplet.attr).mapTriplets(triplet => triplet.attr).mapTriplets(triplet => triplet.attr)
+        .mapTriplets(triplet => triplet.attr).mapTriplets(triplet => triplet.attr)
+      log.info(s"num edges ${res.numEdges}")
+      val time1 = System.nanoTime()
+      time1 - time0
+      //      log.info(s"Iterate over grape cost ${(time1 - time0)/1000000} ms")
     }
 
     def runGraphx(graph : Graph[Long,Long]) : Long = {
@@ -45,7 +54,15 @@ object ComprehensiveTest extends Logging{
       })
       val time1 = System.nanoTime()
       time1 - time0
-//      log.info(s"Iterate over graphx cost ${(time1 - time0)/1000000} ms")
+    }
+
+    def runTriplet(graph : Graph[Long,Long]) : Long = {
+      val time0 = System.nanoTime()
+      val res = graph.mapTriplets(triplet => triplet.attr).mapTriplets(triplet=>triplet.attr).mapTriplets(triplet=>triplet.attr)
+        .mapTriplets(triplet=>triplet.attr).mapTriplets(triplet=>triplet.attr)
+      log.info(s"num edges ${res.numEdges}")
+      val time1 = System.nanoTime()
+      time1 - time0
     }
 
     if (engine.equals("gs")) {
@@ -57,9 +74,12 @@ object ComprehensiveTest extends Logging{
       log.info(s"[Comprehensive] load graph cost ${(grapeTime01 - grapeTime00)/1000000} ms")
       val iterPart = runGrape(grapeGraph.asInstanceOf[GrapeGraphImpl[Long,Long]])
       val iteratorTime = runGraphx(grapeGraph)
+      val tripletTime = runGrapeTriplet(grapeGraph.asInstanceOf[GrapeGraphImpl[Long,Long]])
 
       log.info(s"[Comprehensive] grape iterate edges partitions cost ${iterPart/ 1000000} ms")
       log.info(s"[Comprehensive] grape iterate edges cost ${iteratorTime/1000000} ms")
+      log.info(s"[Comprehensive] grape iterate edges triplet cost ${tripletTime/1000000} ms")
+
     }
     else if (engine.equals("graphx")){
       val graphxTime00 = System.nanoTime()
@@ -70,8 +90,9 @@ object ComprehensiveTest extends Logging{
 
       log.info(s"[Comprehensive] load graph cost ${(graphxTime01 - graphxTime00)/1000000} ms")
       val iteratorTime = runGraphx(graphxGraph)
-
+      val tripletTime = runTriplet(graphxGraph)
       log.info(s"[Comprehensive] graphx iterate edges cost ${iteratorTime/1000000} ms")
+      log.info(s"[Comprehensive] graphx iterate triplet cost ${tripletTime/1000000} ms")
     }
 
   }

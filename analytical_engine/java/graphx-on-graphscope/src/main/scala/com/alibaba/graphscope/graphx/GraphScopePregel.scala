@@ -25,6 +25,7 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     log.info("[Driver:] start serialization functions.")
     SerializationUtils.write(SERIAL_PATH, vdClass, edClass, msgClass, vprog, sendMsg, mergeMsg, initialMsg, sc.appName,activeDirection)
 
+    val numPart = grapeGraph.grapeVertices.getNumPartitions
     //launch mpi processes. and run.
     val t0 = System.nanoTime()
 
@@ -32,10 +33,10 @@ class GraphScopePregel[VD: ClassTag, ED: ClassTag, MSG: ClassTag]
     /** Generate a json string contains necessary info to reconstruct a graphx graph, can be like
      * workerName:*/
     val fragIds = grapeGraph.fragmentIds.collect()
-    log.info(s"[GraphScopePregel]: Collected frag ids ${fragIds.mkString(",")}")
+    log.info(s"[GraphScopePregel]: Collected frag ids ${fragIds.mkString(",")}, numPartitions = ${numPart}")
 
     //running pregel will not change vertex data type.
-    MPIUtils.launchGraphX[MSG,VD,ED](fragIds,vdClass,edClass,msgClass, SERIAL_PATH,maxIteration)
+    MPIUtils.launchGraphX[MSG,VD,ED](fragIds,vdClass,edClass,msgClass, SERIAL_PATH,maxIteration, numPart)
     //usually we need to construct graph vertices attributes from vineyard array.
 
     val t1 = System.nanoTime()

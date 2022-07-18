@@ -74,6 +74,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       syncedGrapeVertices.grapePartitionsRDD){(edgeIter, vertexIter) => {
       val ePart = edgeIter.next()
       val vPart = vertexIter.next()
+      require(ePart.pid == vPart.pid)
       if (ePart.localId != 0){
         Iterator.empty
       }
@@ -84,6 +85,8 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
             val csrId = casted.csr.id()
             val vdId = vPart.innerVertexData.vineyardID
             //FIXME: merge edata array together.
+            val edataArray = ePart.edatas.array
+            require(edataArray.length == ePart.partOutEdgeNum)
             val edId = GrapeUtils.array2ArrowArray[ED](ePart.edatas.array, ePart.client, false)
 
             logger.info(s"vm id ${vmId}, csr id ${csrId}, vd id ${vdId}, ed id ${edId}")
