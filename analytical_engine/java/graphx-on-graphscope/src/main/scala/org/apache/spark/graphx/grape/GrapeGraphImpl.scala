@@ -45,9 +45,6 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
                                                             @transient val vertices: GrapeVertexRDD[VD],
                                                             @transient val edges: GrapeEdgeRDD[ED]) extends Graph[VD, ED] with Serializable {
   val logger: Logger = LoggerFactory.getLogger(classOf[GrapeGraphImpl[_,_]].toString)
-//  vertices.cache()
-//  edges.cache()
-
 
   lazy val backend: GraphStructureType = vertices.grapePartitionsRDD.mapPartitions(iter => {
     val part = iter.next()
@@ -83,7 +80,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
           case casted: GraphXGraphStructure =>
             val vmId = casted.vm.id() //vm id will never change
             val csrId = casted.csr.id()
-            val vdId = vPart.innerVertexData.vineyardID
+            val vdId = vPart.vertexData.vineyardID
             //FIXME: merge edata array together.
             val edataArray = ePart.edatas.array
             require(edataArray.length == ePart.partOutEdgeNum)
@@ -145,7 +142,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       (edgeIter, vertexIter) => {
         val edgePart = edgeIter.next()
         val vertexPart = vertexIter.next()
-        edgePart.tripletIterator(vertexPart.innerVertexData,vertexPart.outerVertexData)
+        edgePart.tripletIterator(vertexPart.vertexData)
       }
     }
   }
@@ -245,7 +242,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         if (vIter.hasNext){
           val vPart = vIter.next()
           val epart = eIter.next()
-          Iterator(epart.mapTriplets(map, vPart.innerVertexData, vPart.outerVertexData, tripletFields))
+          Iterator(epart.mapTriplets(map, vPart.vertexData, tripletFields))
         }
         else Iterator.empty
       }
@@ -267,7 +264,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         if (vIter.hasNext) {
           val vPart = vIter.next()
           val epart = eIter.next()
-          Iterator(epart.mapTriplets(f, vPart.innerVertexData, vPart.outerVertexData, true, true))
+          Iterator(epart.mapTriplets(f, vPart.vertexData, true, true))
         }
         else Iterator.empty
       }
@@ -295,7 +292,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         if (vIter.hasNext) {
           val vPart = vIter.next()
           val ePart = eIter.next()
-          Iterator(ePart.filter(epred, vpred, vPart.innerVertexData,vPart.outerVertexData))
+          Iterator(ePart.filter(epred, vpred, vPart.vertexData))
         }
         else Iterator.empty
       }
@@ -339,7 +336,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
     val preAgg = grapeEdges.grapePartitionsRDD.zipPartitions(newVertices.grapePartitionsRDD){(eiter,viter) => {
       val epart = eiter.next()
       val vpart = viter.next()
-      epart.scanEdgeTriplet(vpart.innerVertexData, vpart.outerVertexData,sendMsg,mergeMsg, tripletFields, activeDirection)
+      epart.scanEdgeTriplet(vpart.vertexData,sendMsg,mergeMsg, tripletFields, activeDirection)
     }}.setName("GraphImpl.aggregateMessages - preAgg")
 
     newVertices.aggregateUsingIndex(preAgg, mergeMsg)
@@ -359,8 +356,8 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
           //VertexPartition id range should be same with edge partition
           val newVdArray = ePart.getDegreeArray(edgeDirection)
 //          val newValues = otherVPart.innerVertexData.create[Int](newVdArray)
-          val newValues = otherVPart.innerVertexData.getOrCreate[Int]
-          require(otherVPart.innerVertexData.size == newVdArray.length)
+          val newValues = otherVPart.vertexData.getOrCreate[Int]
+          require(otherVPart.vertexData.size == newVdArray.length)
           //IN native graphx impl, the vertex with degree 0 is not returned. But we return them as well.
           //to make the result same, we set all vertices with zero degree to inactive.
           val startLid = otherVPart.startLid
