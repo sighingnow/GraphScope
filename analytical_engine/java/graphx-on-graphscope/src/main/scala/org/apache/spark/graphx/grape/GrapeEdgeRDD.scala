@@ -110,7 +110,7 @@ object GrapeEdgeRDD extends Logging{
         grapeMeta.setEdgePartitionBuilder(edgePartitionBuilder)
         Iterator(grapeMeta)
       }
-    },preservesPartitioning = true)
+    },preservesPartitioning = true).cache()
 
     val localVertexMapIds = metaPartitions.mapPartitions(iter => {
       if (iter.hasNext){
@@ -128,6 +128,7 @@ object GrapeEdgeRDD extends Logging{
     val globalVMIDs = MPIUtils.constructGlobalVM(localVertexMapIds, ExecutorUtils.vineyardEndpoint, "int64_t", "uint64_t")
     log.info(s"[GrapeEdgeRDD]: Finish constructing global vm ${globalVMIDs}, cost ${(System.nanoTime() - time0)/1000000} ms")
     require(globalVMIDs.size() == numPartitions)
+    log.info(s"meta partition size ${metaPartitions.count}")
 
     val metaPartitionsUpdated = metaPartitions.mapPartitions(iter => {
       if (iter.hasNext) {

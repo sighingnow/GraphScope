@@ -20,6 +20,7 @@ object OperatorTest extends Logging{
       val rawGraph = GraphLoader.edgeListFile(sc, fileName,false, partNum)
       val graph = rawGraph.mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).cache()
       val grapeGraph = GraphScopeHelper.graph2Fragment[Long,Long](graph).cache()
+      //val grapeGraph = GraphScopeHelper.edgeListFile(sc, fileName, false, partNum).cache()
 
       val maskGraph : Graph[Long,Long] = graph.subgraph(epred = (_ => true), vpred = (id, vd) => id % 2 == 0)
       val grapeMaskGraph : Graph[Long,Long] = grapeGraph.subgraph(epred = (_ => true), vpred = (id, _)=>id % 2 == 0)
@@ -60,7 +61,7 @@ object OperatorTest extends Logging{
       def mapEdges(graph: Graph[Long,Long]) : Graph[Long,Long] = {
         log.info("[Operator test]: start map edges")
         graph.mapEdges(edge=> {
-          log.info(s"edge ${edge.srcId}-> ${edge.dstId}, ${edge.attr}")
+//          log.info(s"edge ${edge.srcId}-> ${edge.dstId}, ${edge.attr}")
           edge.dstId + edge.srcId
         })
       }
@@ -68,8 +69,8 @@ object OperatorTest extends Logging{
       def mapTriplet(graph : Graph[Long,Long]) : Graph[Long,Long] = {
         log.info("[Operator test]: start map triplets")
         graph.mapTriplets(triplet => {
-          log.info(s"triplet v1 ${triplet.srcId}(${triplet.srcAttr})->${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")
-          triplet.srcAttr + triplet.dstAttr
+//          log.info(s"triplet v1 ${triplet.srcId}(${triplet.srcAttr})->${triplet.dstId}(${triplet.dstAttr}), attr ${triplet.attr}")
+          triplet.srcId + triplet.dstId - triplet.attr
         })
 //        def f(pid : PartitionID, iter : Iterator[EdgeTriplet[Long,Long]]): Iterator[Long] = {
 //          iter.map(triplet=> {

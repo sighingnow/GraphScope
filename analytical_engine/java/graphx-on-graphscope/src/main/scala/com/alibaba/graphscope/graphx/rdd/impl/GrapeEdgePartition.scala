@@ -544,6 +544,9 @@ object GrapeEdgePartition extends Logging {
       while (graphStructure.getOEBeginOffset(curLid) < targetOffset){
         curLid += 1
       }
+      if (i == numPart - 1){
+        curLid = Math.max(curLid, graphStructure.getInnerVertexSize.toInt)
+      }
       res(i) = (beginLid, curLid)
       log.info(s"For part ${i}, startLid ${beginLid}, endLid${curLid}, num edges in this part ${graphStructure.getOEBeginOffset(curLid) - graphStructure.getOEBeginOffset(beginLid)}, total edges ${numEdges}, edges per split ${edgesPerSplit}")
     }

@@ -77,8 +77,8 @@ object OperatorBench extends Logging{
       val tmp5 = tmp4.mapEdges(edge => {
         edge.dstId + edge.srcId
       })
-      val time1 = System.nanoTime()
       log.info(s"[Operator Bench------]Finish mapping edge, counts edges ${tmp5.edges.count()}")
+      val time1 = System.nanoTime()
       tmp5.unpersist()
       tmp4.unpersist()
       tmp3.unpersist()
@@ -96,8 +96,8 @@ object OperatorBench extends Logging{
       val tmp3 = tmp2.mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr)
       val tmp4 = tmp3.mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr)
       val tmp5 = tmp4.mapTriplets(triplet => triplet.srcAttr + triplet.dstAttr)
-      val time1 = System.nanoTime()
       log.info(s"[Operator Bench------]Finish mapping triplet, edges ${tmp5.edges.count()}")
+      val time1 = System.nanoTime()
       tmp5.unpersist()
       tmp4.unpersist()
       tmp3.unpersist()

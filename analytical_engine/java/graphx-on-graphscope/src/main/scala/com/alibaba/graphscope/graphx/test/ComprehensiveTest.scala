@@ -31,6 +31,32 @@ object ComprehensiveTest extends Logging{
           part.emptyIteration
         }
       })
+      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
+        if (iter.hasNext){
+          val part = iter.next()
+          part.emptyIteration
+        }
+      })
+      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
+        if (iter.hasNext){
+          val part = iter.next()
+          part.emptyIteration
+        }
+      })
+      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
+        if (iter.hasNext){
+          val part = iter.next()
+          part.emptyIteration
+        }
+      })
+
+      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
+        if (iter.hasNext){
+          val part = iter.next()
+          part.emptyIteration
+        }
+      })
+
       val time1 = System.nanoTime()
       time1 - time0
     }
@@ -52,6 +78,29 @@ object ComprehensiveTest extends Logging{
           val tuple = iter.next()
         }
       })
+      graph.edges.foreachPartition(iter => {
+        while (iter.hasNext){
+          val tuple = iter.next()
+        }
+      })
+
+      graph.edges.foreachPartition(iter => {
+        while (iter.hasNext){
+          val tuple = iter.next()
+        }
+      })
+
+      graph.edges.foreachPartition(iter => {
+        while (iter.hasNext){
+          val tuple = iter.next()
+        }
+      })
+      graph.edges.foreachPartition(iter => {
+        while (iter.hasNext){
+          val tuple = iter.next()
+        }
+      })
+
       val time1 = System.nanoTime()
       time1 - time0
     }
