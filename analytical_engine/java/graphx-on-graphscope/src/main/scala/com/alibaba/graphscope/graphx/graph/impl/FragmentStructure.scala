@@ -520,6 +520,8 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
   override def getOEOffsetRange(startLid: VertexId, endLid: VertexId): (VertexId, VertexId) = {
     (oeOffsetBeginArray.get(startLid), oeOffsetEndArray.get(endLid - 1))
   }
+
+  override def emptyIterateEdges[ED: ClassTag](startLid: VertexId, endLid: VertexId, edatas: ArrayWithOffset[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean): Unit = ???
 }
 
 object FragmentStructure{

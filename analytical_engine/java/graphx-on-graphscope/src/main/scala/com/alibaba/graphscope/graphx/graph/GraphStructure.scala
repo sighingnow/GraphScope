@@ -34,6 +34,8 @@ trait GraphStructure extends Serializable {
 
   def iterateEdges[ED : ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long, f: Edge[ED] => ED2, edatas : ArrayWithOffset[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, newArray : ArrayWithOffset[ED2]) : Unit
 
+  def emptyIterateEdges[ED: ClassTag](startLid : Long, endLid : Long, edatas : ArrayWithOffset[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false) : Unit
+
   def iterateTriplets[VD : ClassTag, ED : ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long,f : EdgeTriplet[VD,ED] => ED2,innerVertexDataStore: VertexDataStore[VD], outerVertexDataStore: VertexDataStore[VD], edatas : ArrayWithOffset[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, includeSrc : Boolean = true, includeDst : Boolean = true, newArray : ArrayWithOffset[ED2]) : Unit
 
    def getInDegree(vid: Int): Long
