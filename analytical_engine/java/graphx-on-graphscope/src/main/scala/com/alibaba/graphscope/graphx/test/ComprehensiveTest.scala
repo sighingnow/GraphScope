@@ -3,6 +3,7 @@ package com.alibaba.graphscope.graphx.test
 import com.alibaba.graphscope.graphx.GraphScopeHelper
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
 import org.apache.spark.graphx.grape.GrapeGraphImpl
+import org.apache.spark.graphx.impl.GraphImpl
 import org.apache.spark.graphx.{Graph, GraphLoader}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
@@ -23,36 +24,15 @@ object ComprehensiveTest extends Logging{
     sc.getConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     sc.getConf.registerKryoClasses(Array(classOf[EdgeShuffle[_,_]], classOf[Array[Long]], classOf[Array[Int]]))
 
-    def runGrape(graph : GrapeGraphImpl[Long,Long]) : Long = {
+    def runGrapeEdge(graph : GrapeGraphImpl[Long,Long]) : Long = {
       val time0 = System.nanoTime()
       graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
         if (iter.hasNext){
           val part = iter.next()
           part.emptyIteration
-        }
-      })
-      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
-        if (iter.hasNext){
-          val part = iter.next()
           part.emptyIteration
-        }
-      })
-      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
-        if (iter.hasNext){
-          val part = iter.next()
           part.emptyIteration
-        }
-      })
-      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
-        if (iter.hasNext){
-          val part = iter.next()
           part.emptyIteration
-        }
-      })
-
-      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
-        if (iter.hasNext){
-          val part = iter.next()
           part.emptyIteration
         }
       })
@@ -63,53 +43,119 @@ object ComprehensiveTest extends Logging{
 
     def runGrapeTriplet(graph : GrapeGraphImpl[Long,Long]) : Long = {
       val time0 = System.nanoTime()
-      val res = graph.mapTriplets(triplet => triplet.attr).mapTriplets(triplet => triplet.attr).mapTriplets(triplet => triplet.attr)
-        .mapTriplets(triplet => triplet.attr).mapTriplets(triplet => triplet.attr)
-      log.info(s"num edges ${res.numEdges}")
+      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
+        if (iter.hasNext){
+          val part = iter.next()
+          part.emptyIterationTriplet
+          part.emptyIterationTriplet
+          part.emptyIterationTriplet
+          part.emptyIterationTriplet
+          part.emptyIterationTriplet
+        }
+      })
       val time1 = System.nanoTime()
       time1 - time0
       //      log.info(s"Iterate over grape cost ${(time1 - time0)/1000000} ms")
     }
 
-    def runGraphx(graph : Graph[Long,Long]) : Long = {
+    def runGraphxEdge(graph : GraphImpl[Long,Long]) : Long = {
       val time0 = System.nanoTime()
-      graph.edges.foreachPartition(iter => {
-        while (iter.hasNext){
-          val tuple = iter.next()
+      graph.edges.partitionsRDD.foreachPartition(iter=>{
+        if (iter.hasNext){
+          val part = iter.next()._2
+          val partIter = part.iterator
+          while (partIter.hasNext){
+            partIter.next()
+          }
         }
       })
-      graph.edges.foreachPartition(iter => {
-        while (iter.hasNext){
-          val tuple = iter.next()
+      graph.edges.partitionsRDD.foreachPartition(iter=>{
+        if (iter.hasNext){
+          val part = iter.next()._2
+          val partIter = part.iterator
+          while (partIter.hasNext){
+            partIter.next()
+          }
         }
       })
-
-      graph.edges.foreachPartition(iter => {
-        while (iter.hasNext){
-          val tuple = iter.next()
+      graph.edges.partitionsRDD.foreachPartition(iter=>{
+        if (iter.hasNext){
+          val part = iter.next()._2
+          val partIter = part.iterator
+          while (partIter.hasNext){
+            partIter.next()
+          }
         }
       })
-
-      graph.edges.foreachPartition(iter => {
-        while (iter.hasNext){
-          val tuple = iter.next()
+      graph.edges.partitionsRDD.foreachPartition(iter=>{
+        if (iter.hasNext){
+          val part = iter.next()._2
+          val partIter = part.iterator
+          while (partIter.hasNext){
+            partIter.next()
+          }
         }
       })
-      graph.edges.foreachPartition(iter => {
-        while (iter.hasNext){
-          val tuple = iter.next()
+      graph.edges.partitionsRDD.foreachPartition(iter=>{
+        if (iter.hasNext){
+          val part = iter.next()._2
+          val partIter = part.iterator
+          while (partIter.hasNext){
+            partIter.next()
+          }
         }
       })
-
       val time1 = System.nanoTime()
       time1 - time0
     }
 
-    def runTriplet(graph : Graph[Long,Long]) : Long = {
+    def runGraphxTriplet(graph : GraphImpl[Long,Long]) : Long = {
       val time0 = System.nanoTime()
-      val res = graph.mapTriplets(triplet => triplet.attr).mapTriplets(triplet=>triplet.attr).mapTriplets(triplet=>triplet.attr)
-        .mapTriplets(triplet=>triplet.attr).mapTriplets(triplet=>triplet.attr)
-      log.info(s"num edges ${res.numEdges}")
+      graph.edges.partitionsRDD.foreachPartition(iter=>{
+        if (iter.hasNext){
+          val part = iter.next()._2
+          val partIter = part.tripletIterator(true,true)
+          while (partIter.hasNext){
+            partIter.next()
+          }
+        }
+      })
+      graph.edges.partitionsRDD.foreachPartition(iter=>{
+        if (iter.hasNext){
+          val part = iter.next()._2
+          val partIter = part.tripletIterator(true,true)
+          while (partIter.hasNext){
+            partIter.next()
+          }
+        }
+      })
+      graph.edges.partitionsRDD.foreachPartition(iter=>{
+        if (iter.hasNext){
+          val part = iter.next()._2
+          val partIter = part.tripletIterator(true,true)
+          while (partIter.hasNext){
+            partIter.next()
+          }
+        }
+      })
+      graph.edges.partitionsRDD.foreachPartition(iter=>{
+        if (iter.hasNext){
+          val part = iter.next()._2
+          val partIter = part.tripletIterator(true,true)
+          while (partIter.hasNext){
+            partIter.next()
+          }
+        }
+      })
+      graph.edges.partitionsRDD.foreachPartition(iter=>{
+        if (iter.hasNext){
+          val part = iter.next()._2
+          val partIter = part.tripletIterator(true,true)
+          while (partIter.hasNext){
+            partIter.next()
+          }
+        }
+      })
       val time1 = System.nanoTime()
       time1 - time0
     }
@@ -117,29 +163,27 @@ object ComprehensiveTest extends Logging{
     if (engine.equals("gs")) {
       val grapeTime00 = System.nanoTime()
       val grapeGraph = GraphScopeHelper.edgeListFile(sc, fileName, false, partNum)
-        .mapVertices((vid, vd) => vd.toLong).mapEdges(edge => edge.attr.toLong).persist(StorageLevel.MEMORY_ONLY)
+        .mapVertices((vid, vd) => vd.toLong).mapEdges(edge => edge.attr.toLong).persist(StorageLevel.MEMORY_ONLY).asInstanceOf[GrapeGraphImpl[Long,Long]]
       log.info(s"grape graph ${grapeGraph.numVertices},edges ${grapeGraph.numEdges}")
       val grapeTime01 = System.nanoTime()
       log.info(s"[Comprehensive] load graph cost ${(grapeTime01 - grapeTime00)/1000000} ms")
-      val iterPart = runGrape(grapeGraph.asInstanceOf[GrapeGraphImpl[Long,Long]])
-      val iteratorTime = runGraphx(grapeGraph)
-      val tripletTime = runGrapeTriplet(grapeGraph.asInstanceOf[GrapeGraphImpl[Long,Long]])
+      val iterPart = runGrapeEdge(grapeGraph)
+      val tripletTime = runGrapeTriplet(grapeGraph)
 
       log.info(s"[Comprehensive] grape iterate edges partitions cost ${iterPart/ 1000000} ms")
-      log.info(s"[Comprehensive] grape iterate edges cost ${iteratorTime/1000000} ms")
       log.info(s"[Comprehensive] grape iterate edges triplet cost ${tripletTime/1000000} ms")
 
     }
     else if (engine.equals("graphx")){
       val graphxTime00 = System.nanoTime()
       val rawGraph = GraphLoader.edgeListFile(sc, fileName,false, partNum)
-      val graphxGraph = rawGraph.mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).persist(StorageLevel.MEMORY_ONLY)
+      val graphxGraph = rawGraph.mapVertices((vid,vd)=>vd.toLong).mapEdges(edge=>edge.attr.toLong).persist(StorageLevel.MEMORY_ONLY).asInstanceOf[GraphImpl[Long,Long]]
       log.info(s"graphx graph ${graphxGraph.vertices.count()}, ${graphxGraph.edges.count()}")
       val graphxTime01 = System.nanoTime()
 
       log.info(s"[Comprehensive] load graph cost ${(graphxTime01 - graphxTime00)/1000000} ms")
-      val iteratorTime = runGraphx(graphxGraph)
-      val tripletTime = runTriplet(graphxGraph)
+      val iteratorTime = runGraphxEdge(graphxGraph)
+      val tripletTime = runGraphxTriplet(graphxGraph)
       log.info(s"[Comprehensive] graphx iterate edges cost ${iteratorTime/1000000} ms")
       log.info(s"[Comprehensive] graphx iterate triplet cost ${tripletTime/1000000} ms")
     }

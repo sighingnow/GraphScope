@@ -138,6 +138,9 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   def emptyIteration : Unit = {
     graphStructure.emptyIterateEdges(startLid, endLid, edatas,activeEdgeSet, edgeReversed)
   }
+  def emptyIterationTriplet : Unit = {
+    graphStructure.emptyIterateEdges(startLid, endLid, edatas,activeEdgeSet, edgeReversed)
+  }
 
   def map[ED2: ClassTag](f: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2]): GrapeEdgePartition[VD, ED2] = {
     val time0 = System.nanoTime()

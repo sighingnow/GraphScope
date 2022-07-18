@@ -514,6 +514,8 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
   }
 
   override def emptyIterateEdges[ED: ClassTag](startLid: VertexId, endLid: VertexId, edatas: ArrayWithOffset[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean): Unit = ???
+
+  override def emptyIterateTriplets[VD: ClassTag, ED: ClassTag](startLid: VertexId, endLid: VertexId, innerVertexDataStore: VertexDataStore[VD], edatas: ArrayWithOffset[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean): Unit = ???
 }
 
 object FragmentStructure{
