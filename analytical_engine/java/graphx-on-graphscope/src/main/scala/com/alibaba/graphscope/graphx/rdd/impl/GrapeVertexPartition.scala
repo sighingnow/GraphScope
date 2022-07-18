@@ -125,10 +125,10 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         }
       }
       val time1 = System.nanoTime()
-      log.info(s"[Perf: ] updating outer vertex data cost ${(time1 - time0) / 1000000}ms, size ${}")
+//      log.info(s"[Perf: ] updating outer vertex data cost ${(time1 - time0) / 1000000}ms, size ${}")
     }
     else {
-      log.info(s"[Perf]: part ${pid} receives no outer vertex data, startLid ${startLid}")
+//      log.info(s"[Perf]: part ${pid} receives no outer vertex data, startLid ${startLid}")
     }
     this
   }

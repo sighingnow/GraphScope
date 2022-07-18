@@ -47,7 +47,11 @@ class GrapeVertexRDDImpl[VD] private[graphx](
   }
 
   override def count(): Long = {
-    grapePartitionsRDD.map(_.bitSet.cardinality()).fold(0)(_ + _)
+//    grapePartitionsRDD.mapPartitions(iter => {
+//      val part = iter.next()
+//      Iterator(part.bitSet.cardinality().toLong)
+//    }).collect().sum
+    grapePartitionsRDD.map(_.bitSet.cardinality()).reduce(_ + _)
   }
 
 //  override private[graphx] def mapVertexPartitions[VD2](f: ShippableVertexPartition[VD] => ShippableVertexPartition[VD2])(implicit evidence$1: ClassTag[VD2]) = {
