@@ -4,7 +4,7 @@ import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import com.alibaba.graphscope.graphx.rdd.impl.{GrapeEdgePartition, GrapeEdgePartitionBuilder}
 import com.alibaba.graphscope.graphx.rdd.{LocationAwareRDD, VineyardRDD}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
-import com.alibaba.graphscope.graphx.store.InHeapVertexDataStore
+import com.alibaba.graphscope.graphx.store.InHeapDataStore
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, ExecutorUtils, GrapeMeta}
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.grape.impl.GrapeEdgeRDDImpl
@@ -185,7 +185,7 @@ object GrapeEdgeRDD extends Logging{
           res
         }
         //set numSplit later
-        val vertexDataStore = new InHeapVertexDataStore[VD](0, vm.getVertexSize.toInt, meta.vineyardClient, 0)
+        val vertexDataStore = new InHeapDataStore[VD](0, vm.getVertexSize.toInt, meta.vineyardClient, 0)
 //        val outerVertexDataStore = new InHeapVertexDataStore[VD](vm.innerVertexSize().toInt, vm.getOuterVertexSize.toInt, meta.vineyardClient,1, outer = true)
 //        val innerVertexDataStore = new InHeapVertexDataStore[VD](0, vm.innerVertexSize().toInt, meta.vineyardClient,0)
         //If vertex attr are in edge shuffles, we init the inner vertex Data store.
@@ -194,7 +194,8 @@ object GrapeEdgeRDD extends Logging{
         edgeBuilder.fillVertexData(vertexDataStore,graphStructure)
         val time1 = System.nanoTime()
         log.info(s"[Creating graph structure cost ]: ${(time1 - time0) / 1000000} ms")
-        GrapeEdgePartition.push((meta.partitionID,graphStructure, meta.vineyardClient, new ArrayWithOffset[ED](0,meta.edataArray),vertexDataStore))
+        val edataStore = new InHeapDataStore[ED](offset = 0,length = meta.graphxCSR.getOutEdgesNum.toInt, client = meta.vineyardClient, numSplit = 1, meta.edataArray)
+        GrapeEdgePartition.push((meta.partitionID,graphStructure, meta.vineyardClient,edataStore,vertexDataStore))
         meta.edgePartitionBuilder.clearBuilders()
         meta.edgePartitionBuilder = null //make it null to let it be gc able
       }

@@ -3,7 +3,7 @@ package org.apache.spark.graphx.grape
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
-import com.alibaba.graphscope.graphx.store.InHeapVertexDataStore
+import com.alibaba.graphscope.graphx.store.InHeapDataStore
 import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, ExecutorUtils, GrapeUtils, ScalaFFIFactory}
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.grape.impl.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
@@ -82,9 +82,9 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
             val csrId = casted.csr.id()
             val vdId = vPart.vertexData.vineyardID
             //FIXME: merge edata array together.
-            val edataArray = ePart.edatas.array
-            require(edataArray.length == ePart.partOutEdgeNum)
-            val edId = GrapeUtils.array2ArrowArray[ED](ePart.edatas.array, ePart.client, false)
+            val edataArray = ePart.edatas
+            require(edataArray.size == ePart.partOutEdgeNum)
+            val edId = GrapeUtils.array2ArrowArray[ED](ePart.edatas.asInstanceOf[InHeapDataStore[ED]].vdArray, ePart.client, false)
 
             logger.info(s"vm id ${vmId}, csr id ${csrId}, vd id ${vdId}, ed id ${edId}")
 

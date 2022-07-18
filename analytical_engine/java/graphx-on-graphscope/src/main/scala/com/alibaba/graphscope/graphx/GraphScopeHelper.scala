@@ -8,7 +8,7 @@ import com.alibaba.graphscope.graphx.graph.GraphStructureTypes
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.graphx.rdd.FragmentRDD
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
-import com.alibaba.graphscope.graphx.store.VertexDataStore
+import com.alibaba.graphscope.graphx.store.DataStore
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, GrapeUtils, PrimitiveVector, ScalaFFIFactory}
 import com.alibaba.graphscope.utils.GenericUtils
 import com.alibaba.graphscope.utils.array.PrimitiveArray
@@ -185,8 +185,8 @@ object GraphScopeHelper extends Logging{
   //FIXME: support 1 frag to multiple part mapping
   def doMap[NEW_VD : ClassTag,NEW_ED : ClassTag, OLD_VD <: Any, OLD_ED <: Any](oldFrag: ArrowProjectedFragment[Long, Long, OLD_VD, OLD_ED],
                                                                                oldVdClass : Class[OLD_VD], oldEdClass : Class[OLD_ED],
-                                                                               vdArray : VertexDataStore[NEW_VD],
-                                                                               edArray : ArrayWithOffset[NEW_ED],
+                                                                               vdArray : DataStore[NEW_VD],
+                                                                               edArray : DataStore[NEW_ED],
                                                                                client : VineyardClient):
   ArrowProjectedFragment[Long,Long,NEW_VD,NEW_ED] = {
     val mapper = ScalaFFIFactory.newProjectedFragmentMapper[NEW_VD,NEW_ED,OLD_VD,OLD_ED](oldVdClass,oldEdClass)
@@ -200,11 +200,11 @@ object GraphScopeHelper extends Logging{
       newVdBuilder.unsafeAppend(vdArray.getData(i))
       i += 1
     }
-    val enum = edArray.length
+    val enum = edArray.size
     newEdBuilder.reserve(enum)
     i = 0
     while (i < enum){
-      newEdBuilder.unsafeAppend(edArray(i))
+      newEdBuilder.unsafeAppend(edArray.getData(i))
       i += 1
     }
     mapper.map(oldFrag,newVdBuilder, newEdBuilder,client).get()

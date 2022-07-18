@@ -5,7 +5,7 @@ import com.alibaba.graphscope.ds.{PropertyNbrUnit, Vertex}
 import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTriplet, GraphStructure, ReusableEdge}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
-import com.alibaba.graphscope.graphx.store.{InHeapVertexDataStore, VertexDataStore}
+import com.alibaba.graphscope.graphx.store.{InHeapDataStore, DataStore}
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, BitSetWithOffset, ExecutorUtils, IdParser, ScalaFFIFactory}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.Partition
@@ -30,7 +30,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
                                                      val endLid : Long,
                                                      val graphStructure: GraphStructure,
                                                      val client : VineyardClient,
-                                                     var edatas : ArrayWithOffset[ED],
+                                                     var edatas : DataStore[ED],
                                                      //the original edatas are fully-specified,i.e. length equal to oeEdgeNum. but later we will use array with offset.
                                                      val edgeReversed : Boolean = false,
                                                      var activeEdgeSet : BitSetWithOffset = null) extends Logging  with Partition{
@@ -72,14 +72,14 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     graphStructure.iterator(startLid, endLid,edatas,activeEdgeSet,edgeReversed)
   }
 
-  def tripletIterator(innerVertexDataStore: VertexDataStore[VD],
-                       includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false)
+  def tripletIterator(innerVertexDataStore: DataStore[VD],
+                      includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false)
   : Iterator[EdgeTriplet[VD, ED]] = graphStructure.tripletIterator(startLid,endLid,innerVertexDataStore,edatas,activeEdgeSet,edgeReversed,includeSrc,includeDst, reuseTriplet, includeLid)
 
   def filter(
               epred: EdgeTriplet[VD, ED] => Boolean,
               vpred: (VertexId, VD) => Boolean,
-              innerVertexDataStore: VertexDataStore[VD]): GrapeEdgePartition[VD, ED] = {
+              innerVertexDataStore: DataStore[VD]): GrapeEdgePartition[VD, ED] = {
     //First invalided all invalid edges from invalid vertices.
     val tripletIter = tripletIterator(innerVertexDataStore, true, true, true).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
     val newActiveEdges = new BitSetWithOffset(activeEdgeSet.startBit,activeEdgeSet.endBit)
@@ -102,7 +102,8 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     var attrSum = null.asInstanceOf[ED]
     val newMask = new BitSetWithOffset(activeEdgeSet.startBit,activeEdgeSet.endBit)
     newMask.union(activeEdgeSet)
-    val newEdata = new ArrayWithOffset[ED](activeEdgeSet.startBit,activeEdgeSet.size)// new Array[ED](allEdgesNum.toInt)
+//    val newEdata = new ArrayWithOffset[ED](activeEdgeSet.startBit,activeEdgeSet.size)// new Array[ED](allEdgesNum.toInt)
+    val newEdata = edatas.getOrCreate[ED]
     while (iter.hasNext){
       val edge = iter.next()
       val curIndex = edge.offset
@@ -116,7 +117,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       else {
         if (flag){
           //a new round start, we add new Edata to this edge
-          newEdata(prevEdgeInd.toInt) = attrSum
+          newEdata.setData(prevEdgeInd.toInt, attrSum)
           log.info(s"end of acculating edge ${curSrcId}, ${curDstId}, ${attrSum}")
         }
         curSrcId = edge.srcId
@@ -130,7 +131,8 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
-    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)// new Array[ED2](allEdgesNum.toInt)
+//    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)// new Array[ED2](allEdgesNum.toInt)
+    val newData = edatas.getOrCreate[ED2]
     graphStructure.iterateEdges(startLid, endLid,f,edatas, activeEdgeSet, edgeReversed, newData)
     this.withNewEdata(newData)
   }
@@ -138,19 +140,20 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   def emptyIteration : Unit = {
     graphStructure.emptyIterateEdges(startLid, endLid, edatas,activeEdgeSet, edgeReversed)
   }
-  def emptyIterationTriplet(innerVertexDataStore: VertexDataStore[VD]) : Unit = {
+  def emptyIterationTriplet(innerVertexDataStore: DataStore[VD]) : Unit = {
     graphStructure.emptyIterateTriplets(startLid, endLid, innerVertexDataStore,edatas,activeEdgeSet, edgeReversed)
   }
 
   def map[ED2: ClassTag](f: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2]): GrapeEdgePartition[VD, ED2] = {
     val time0 = System.nanoTime()
-    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
+//    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
+    val newData = edatas.getOrCreate[ED2]
     val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     val resultEdata = f(pid, iter)
     val time1 = System.nanoTime()
     var ind = activeEdgeSet.nextSetBit(activeEdgeSet.startBit)
     while (ind >= 0 && resultEdata.hasNext){
-      newData(ind) = resultEdata.next()
+      newData.setData(ind,resultEdata.next())
       ind = activeEdgeSet.nextSetBit(ind + 1)
     }
     if (resultEdata.hasNext || ind >= 0){
@@ -161,23 +164,25 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     this.withNewEdata(newData)
   }
 
-  def mapTriplets[ED2: ClassTag](f: EdgeTriplet[VD,ED] => ED2, innerVertexDataStore: VertexDataStore[VD], tripletFields: TripletFields): GrapeEdgePartition[VD, ED2] = {
+  def mapTriplets[ED2: ClassTag](f: EdgeTriplet[VD,ED] => ED2, innerVertexDataStore: DataStore[VD], tripletFields: TripletFields): GrapeEdgePartition[VD, ED2] = {
     val time0 = System.nanoTime()
-    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
+//    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
+    val newData = edatas.getOrCreate[ED2]
     graphStructure.iterateTriplets(startLid, endLid, f,innerVertexDataStore, edatas, activeEdgeSet, edgeReversed,tripletFields.useSrc, tripletFields.useDst, newData)
     val time1 = System.nanoTime()
 //    log.info(s"[Perf:] mapping over triplets cost ${(time1 - time0)/1000000} ms")
     this.withNewEdata(newData)
   }
 
-  def mapTriplets[ED2: ClassTag](f: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], innerVertexDataStore: VertexDataStore[VD], includeSrc  : Boolean = true, includeDst : Boolean = true): GrapeEdgePartition[VD, ED2] = {
-    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
+  def mapTriplets[ED2: ClassTag](f: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], innerVertexDataStore: DataStore[VD], includeSrc  : Boolean = true, includeDst : Boolean = true): GrapeEdgePartition[VD, ED2] = {
+//    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
+    val newData = edatas.getOrCreate[ED2]
     val time0 = System.nanoTime()
     val iter = tripletIterator(innerVertexDataStore,includeSrc,includeDst,reuseTriplet = true).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
     val resultEdata = f(pid, iter)
     var ind = activeEdgeSet.nextSetBit(activeEdgeSet.startBit)
     while (ind >= 0 && resultEdata.hasNext){
-      newData(ind) = resultEdata.next()
+      newData.setData(ind,resultEdata.next())
       ind = activeEdgeSet.nextSetBit(ind + 1)
     }
     if (ind >=0 || resultEdata.hasNext){
@@ -188,7 +193,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     this.withNewEdata(newData)
   }
 
-  def scanEdgeTriplet[A: ClassTag](innerVertexDataStore: VertexDataStore[VD], sendMsg: EdgeContext[VD, ED, A] => Unit, mergeMsg: (A, A) => A, tripletFields: TripletFields, directionOpt : Option[(EdgeDirection)]) : Iterator[(VertexId, A)] ={
+  def scanEdgeTriplet[A: ClassTag](innerVertexDataStore: DataStore[VD], sendMsg: EdgeContext[VD, ED, A] => Unit, mergeMsg: (A, A) => A, tripletFields: TripletFields, directionOpt : Option[(EdgeDirection)]) : Iterator[(VertexId, A)] ={
     val aggregates = new Array[A](innerVertexDataStore.size)
     val bitset = new BitSet(aggregates.length)
 
@@ -209,7 +214,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     new GrapeEdgePartition[VD,ED](pid, localId,localNum,startLid,endLid, graphStructure, client,edatas,!edgeReversed, activeEdgeSet)
   }
 
-  def withNewEdata[ED2: ClassTag](newEdata : ArrayWithOffset[ED2]): GrapeEdgePartition[VD, ED2] = {
+  def withNewEdata[ED2: ClassTag](newEdata : DataStore[ED2]): GrapeEdgePartition[VD, ED2] = {
 //    log.info(s"Creating new edge partition with new edge of size ${newEdata.length}, out edge num ${graphStructure.getOutEdgesNum}")
     new GrapeEdgePartition[VD,ED2](pid,localId,localNum,startLid,endLid,  graphStructure, client,newEdata, edgeReversed, activeEdgeSet)
   }
@@ -228,14 +233,15 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val newMask = this.activeEdgeSet & other.activeEdgeSet
     log.info(s"Inner join edgePartition 0 has ${this.activeEdgeSet.cardinality()} actives edges, the other has ${other.activeEdgeSet} active edges")
     log.info(s"after join ${newMask.cardinality()} active edges")
-    val newEData = new ArrayWithOffset[ED3](activeEdgeSet.startBit, activeEdgeSet.size)
+//    val newEData = new ArrayWithOffset[ED3](activeEdgeSet.startBit, activeEdgeSet.size)
+    val newEData = edatas.getOrCreate[ED3]
     val oldIter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     while (oldIter.hasNext){
       val oldEdge = oldIter.next()
       val oldIndex = oldEdge.offset.toInt
       if (newMask.get(oldIndex)){
         //FIXME: we should not use eid.
-        newEData(oldEdge.offset.toInt) =  f(oldEdge.srcId, oldEdge.dstId, oldEdge.attr, other.edatas(oldEdge.offset.toInt)) //FIXME: edatas can be null
+        newEData.setData(oldEdge.offset.toInt, f(oldEdge.srcId, oldEdge.dstId, oldEdge.attr, other.edatas.getData(oldEdge.offset.toInt))) //FIXME: edatas can be null
       }
     }
 
@@ -406,7 +412,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     (graphxVertexMap,graphxCSR)
   }
 
-  def fillVertexData(innerVertexData : VertexDataStore[VD], graphStructure: GraphStructure) : Unit = {
+  def fillVertexData(innerVertexData : DataStore[VD], graphStructure: GraphStructure) : Unit = {
     for (edgeShuffleReceived <- lists){
       for (shuffle <- edgeShuffleReceived.fromPid2Shuffle){
         val edgeShuffle = shuffle.asInstanceOf[EdgeShuffle[VD,_]]
@@ -442,11 +448,11 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
 
 }
 object GrapeEdgePartition extends Logging {
-  val tupleQueue = new ArrayBlockingQueue[(Int,GraphStructure,VineyardClient,ArrayWithOffset[_],InHeapVertexDataStore[_])](1024)
+  val tupleQueue = new ArrayBlockingQueue[(Int,GraphStructure,VineyardClient,InHeapDataStore[_],InHeapDataStore[_])](1024)
   val pidQueue = new ArrayBlockingQueue[Int](1024)
   var pid2EdgePartition = null.asInstanceOf[mutable.HashMap[Int,GrapeEdgePartition[_,_]]]
   //edata.
-  def push(in : (Int,GraphStructure,VineyardClient,ArrayWithOffset[_],InHeapVertexDataStore[_])): Unit = {
+  def push(in : (Int,GraphStructure,VineyardClient,InHeapDataStore[_],InHeapDataStore[_])): Unit = {
     require(tupleQueue.offer(in))
   }
 
@@ -464,8 +470,9 @@ object GrapeEdgePartition extends Logging {
             log.info(s"Totally $size ele in queue, registered partition num ${pidQueue.size()}")
             for (_ <- 0 until size){
               val tuple = tupleQueue.poll()
+              val edataStore = tuple._4.asInstanceOf[DataStore[ED]]
               val _ = pidQueue.poll()
-              pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1, 0, 1, 0, tuple._2.getInnerVertexSize, tuple._2, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
+              pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1, 0, 1, 0, tuple._2.getInnerVertexSize, tuple._2, tuple._3, edataStore)
               val innerStore = tuple._5
               innerStore.setNumSplit(1)
               GrapeVertexPartition.setVertexStore(tuple._1,innerStore)
@@ -506,16 +513,18 @@ object GrapeEdgePartition extends Logging {
                 }
                 val innerStore = tuple._5
                 innerStore.setNumSplit(times)
+                val edataStore = tuple._4
+                edataStore.setNumSplit(times)
                 if (j == 0){
-                  pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1,  j, times, startLid, endLid, graphStructure, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
-                  GrapeVertexPartition.setVertexStore(tuple._1,innerStore)
+                  pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1,  j, times, startLid, endLid, graphStructure, tuple._3,edataStore.asInstanceOf[DataStore[ED]])
+                  GrapeVertexPartition.setVertexStore(tuple._1, innerStore)
 //                  GrapeVertexPartition.setOuterVertexStore(tuple._1, tuple._6)
                   log.info(s"creating partition for pid ${tuple._1}, (${startLid},${endLid}), fid ${graphStructure.fid()}")
                 }
                 else {
                   val dstPid = candidates.dequeue()
-                  pid2EdgePartition(dstPid) = new GrapeEdgePartition[VD,ED](dstPid,  j, times, startLid, endLid, graphStructure, tuple._3, tuple._4.asInstanceOf[ArrayWithOffset[ED]])
-                  GrapeVertexPartition.setVertexStore(dstPid,innerStore)
+                  pid2EdgePartition(dstPid) = new GrapeEdgePartition[VD,ED](dstPid,  j, times, startLid, endLid, graphStructure, tuple._3, edataStore.asInstanceOf[DataStore[ED]])
+                  GrapeVertexPartition.setVertexStore(dstPid, innerStore)
 //                  GrapeVertexPartition.setOuterVertexStore(dstPid, tuple._6)
                   log.info(s"creating partition for pid ${dstPid}, (${startLid},${endLid}), fid ${graphStructure.fid()}")
                 }

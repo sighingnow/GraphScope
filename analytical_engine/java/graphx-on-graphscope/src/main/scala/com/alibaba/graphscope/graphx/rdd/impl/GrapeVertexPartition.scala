@@ -4,7 +4,7 @@ import com.alibaba.graphscope.ds.Vertex
 import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.graph.GraphStructure
 import com.alibaba.graphscope.graphx.rdd.RoutingTable
-import com.alibaba.graphscope.graphx.store.{InHeapVertexDataStore, VertexDataStore}
+import com.alibaba.graphscope.graphx.store.{InHeapDataStore, DataStore}
 import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, GrapeUtils, IdParser, PrimitiveVector}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.Partition
@@ -22,7 +22,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
                                           val startLid : Int,
                                           val endLid : Int,
                                           val graphStructure: GraphStructure,
-                                          val vertexData: VertexDataStore[VD],
+                                          val vertexData: DataStore[VD],
                                           val client : VineyardClient,
                                           val routingTable: RoutingTable,
                                           var bitSet: BitSetWithOffset = null) extends Logging with Partition {
@@ -273,7 +273,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     }
   }
 
-  def withNewValues[VD2 : ClassTag](vds: VertexDataStore[VD2]) : GrapeVertexPartition[VD2] = {
+  def withNewValues[VD2 : ClassTag](vds: DataStore[VD2]) : GrapeVertexPartition[VD2] = {
     new GrapeVertexPartition[VD2](pid, startLid,endLid,graphStructure, vds, client, routingTable, bitSet)
   }
 
@@ -288,9 +288,9 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
 object GrapeVertexPartition extends Logging{
 //  val pid2OuterVertexStore : mutable.HashMap[Int,InHeapVertexDataStore[_]] = new mutable.HashMap[Int,InHeapVertexDataStore[_]]
-  val pid2VertexStore : mutable.HashMap[Int,InHeapVertexDataStore[_]] = new mutable.HashMap[Int,InHeapVertexDataStore[_]]
+  val pid2VertexStore : mutable.HashMap[Int,InHeapDataStore[_]] = new mutable.HashMap[Int,InHeapDataStore[_]]
 
-  def setVertexStore(pid : Int, store:InHeapVertexDataStore[_]) : Unit = {
+  def setVertexStore(pid : Int, store:InHeapDataStore[_]) : Unit = {
     require(!pid2VertexStore.contains(pid))
     pid2VertexStore(pid) = store
     log.info(s"storing part ${pid}'s inner vd store ${store.toString}'")
@@ -300,7 +300,7 @@ object GrapeVertexPartition extends Logging{
 //    require(graphStructure.getVertexSize == fragVnums, s"csr inner vertex should equal to vmap ${graphStructure.getInnerVertexSize}, ${fragVnums}")
     //copy to heap
 //    val newVertexData = new InHeapVertexDataStore[VD](offset = startLid.toInt, (endLid - startLid).toInt,client)
-    val vertexStore = pid2VertexStore(pid).asInstanceOf[InHeapVertexDataStore[VD]]
+    val vertexStore = pid2VertexStore(pid).asInstanceOf[InHeapDataStore[VD]]
 //    val innerStoreView = new VertexDataStoreView[VD](vertexStore, startLid.toInt, endLid.toInt)
     var i = startLid.toInt
     val limit = endLid

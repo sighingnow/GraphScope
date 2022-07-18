@@ -2,7 +2,7 @@ package com.alibaba.graphscope.graphx.store
 
 import scala.reflect.ClassTag
 
-trait VertexDataStore[VD] extends Serializable {
+trait DataStore[VD] extends Serializable {
   def size : Int
   def getData(lid: Int) : VD
   def setData(lid : Int, vd : VD) : Unit
@@ -13,5 +13,5 @@ trait VertexDataStore[VD] extends Serializable {
 
 //  def create[VD2 : ClassTag](newArr : Array[VD2]) : VertexDataStore[VD2]
 
-  def getOrCreate[VD2: ClassTag] : VertexDataStore[VD2]
+  def getOrCreate[VD2: ClassTag] : DataStore[VD2]
 }

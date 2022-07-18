@@ -8,7 +8,7 @@ import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.graphx.rdd.RoutingTable
 import com.alibaba.graphscope.graphx.rdd.impl.GrapeVertexPartition
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
-import com.alibaba.graphscope.graphx.store.{InHeapVertexDataStore}
+import com.alibaba.graphscope.graphx.store.{InHeapDataStore}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.grape.impl.GrapeVertexRDDImpl
@@ -82,7 +82,7 @@ object GrapeVertexRDD extends Logging{
   //When using this, we assume
   def buildPartitionFromGraphX[VD: ClassTag](pid: Int, startLid : Long, endLid : Long, client: VineyardClient, graphStructure: GraphStructure, edgeShuffleIter: Iterator[(PartitionID,EdgeShuffle[VD,_])]):GrapeVertexPartition[VD] = {
 //    val innerVertexDataStore = new InHeapVertexDataStore[VD](startLid.toInt, (endLid - startLid).toInt, client)
-    val vertexDataStore = GrapeVertexPartition.pid2VertexStore(pid).asInstanceOf[InHeapVertexDataStore[VD]]
+    val vertexDataStore = GrapeVertexPartition.pid2VertexStore(pid).asInstanceOf[InHeapDataStore[VD]]
 //    val vertexDataView = new VertexDataStoreView[VD](vertexDataStore,startLid.toInt,endLid.toInt)
 
     log.info(s"frag ${graphStructure.fid()} part ${pid} start ${startLid} end ${endLid}")
@@ -110,7 +110,7 @@ object GrapeVertexRDD extends Logging{
     val grapeVertexPartitions = edgeRDD.grapePartitionsRDD.mapPartitions(iter =>{
       val ePart = iter.next()
 //      val array = new Array[VD](ePart.graphStructure.getVertexSize.toInt)
-      val vertexDataStore = new InHeapVertexDataStore[VD](ePart.graphStructure.getInnerVertexSize.toInt, ePart.graphStructure.getOuterVertexSize.toInt, ePart.client, 1)
+      val vertexDataStore = new InHeapDataStore[VD](ePart.graphStructure.getInnerVertexSize.toInt, ePart.graphStructure.getOuterVertexSize.toInt, ePart.client, 1)
 //      val innerVertexDataStore = new InHeapVertexDataStore[VD](ePart.graphStructure.getInnerVertexSize.toInt, ePart.graphStructure.getOuterVertexSize.toInt, ePart.client, 1)
       val actualStructure = ePart.graphStructure.asInstanceOf[FragmentStructure]
         val frag = actualStructure.fragment.asInstanceOf[IFragment[Long,Long,VD,_]]
