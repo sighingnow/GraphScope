@@ -70,7 +70,7 @@ class GrapeEdgeRDDImpl [VD: ClassTag, ED: ClassTag] private[graphx](@transient o
   //FIXME: count active edges
   override def count(): Long = {
 //    grapePartitionsRDD.map(_.activeEdgeSet.cardinality()).fold(0)(_ + _)
-    grapePartitionsRDD.map(_.activeEdgeSet.cardinality()).reduce(_ + _)
+    grapePartitionsRDD.map(_.activeEdgeNum).fold(0)(_ + _)
   }
 
   override def mapValues[ED2 :ClassTag](f: Edge[ED] => ED2): GrapeEdgeRDDImpl[VD,ED2] = {

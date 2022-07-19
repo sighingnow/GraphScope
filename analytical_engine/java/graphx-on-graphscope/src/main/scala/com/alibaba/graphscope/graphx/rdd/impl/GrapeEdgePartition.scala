@@ -28,6 +28,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
                                                      val localNum : Int, // how many part in this frag.
                                                      val startLid : Long,
                                                      val endLid : Long,
+                                                     var activeEdgeNum : Int = 0, //use a instant variable to accelerate count.
                                                      val graphStructure: GraphStructure,
                                                      val client : VineyardClient,
                                                      var edatas : DataStore[ED],
@@ -48,6 +49,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val (startOffset,endOffset) = graphStructure.getOEOffsetRange(startLid,endLid)
     activeEdgeSet = new BitSetWithOffset(startBit = startOffset.toInt,endBit = endOffset.toInt)
     activeEdgeSet.setRange(startOffset.toInt, endOffset.toInt)
+    activeEdgeNum = endOffset.toInt - startOffset.toInt
   }
   val NBR_SIZE = 16L
   //to avoid the difficult to get srcLid in iterating over edges.
@@ -127,7 +129,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       }
       flag = true
     }
-    new GrapeEdgePartition[VD,ED](pid,localId,localNum, startLid, endLid, graphStructure, client,newEdata, edgeReversed, newMask)
+    new GrapeEdgePartition[VD,ED](pid,localId,localNum, startLid, endLid, newMask.cardinality(), graphStructure, client,newEdata, edgeReversed, newMask)
   }
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
@@ -213,16 +215,16 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def reverse: GrapeEdgePartition[VD, ED] = {
-    new GrapeEdgePartition[VD,ED](pid, localId,localNum,startLid,endLid, graphStructure, client,edatas,!edgeReversed, activeEdgeSet)
+    new GrapeEdgePartition[VD,ED](pid, localId,localNum,startLid,endLid,activeEdgeNum, graphStructure, client,edatas,!edgeReversed, activeEdgeSet)
   }
 
   def withNewEdata[ED2: ClassTag](newEdata : DataStore[ED2]): GrapeEdgePartition[VD, ED2] = {
 //    log.info(s"Creating new edge partition with new edge of size ${newEdata.length}, out edge num ${graphStructure.getOutEdgesNum}")
-    new GrapeEdgePartition[VD,ED2](pid,localId,localNum,startLid,endLid,  graphStructure, client,newEdata, edgeReversed, activeEdgeSet)
+    new GrapeEdgePartition[VD,ED2](pid,localId,localNum,startLid,endLid,activeEdgeNum,  graphStructure, client,newEdata, edgeReversed, activeEdgeSet)
   }
 
   def withNewMask(newActiveSet: BitSetWithOffset) : GrapeEdgePartition[VD,ED] = {
-    new GrapeEdgePartition[VD,ED](pid,localId,localNum,startLid,endLid, graphStructure, client,edatas, edgeReversed, newActiveSet)
+    new GrapeEdgePartition[VD,ED](pid,localId,localNum,startLid,endLid, newActiveSet.cardinality(), graphStructure, client,edatas, edgeReversed, newActiveSet)
   }
 
   /**  currently we only support inner join with same vertex map*/
@@ -233,6 +235,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       throw new IllegalStateException("Currently we only support inner join with same index")
     }
     val newMask = this.activeEdgeSet & other.activeEdgeSet
+    val newActiveEdgesNum = newMask.cardinality()
     log.info(s"Inner join edgePartition 0 has ${this.activeEdgeSet.cardinality()} actives edges, the other has ${other.activeEdgeSet} active edges")
     log.info(s"after join ${newMask.cardinality()} active edges")
 //    val newEData = new ArrayWithOffset[ED3](activeEdgeSet.startBit, activeEdgeSet.size)
@@ -247,7 +250,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
       }
     }
 
-    new GrapeEdgePartition[VD,ED3](pid,localId,localNum,startLid,endLid, graphStructure, client,newEData,edgeReversed, newMask)
+    new GrapeEdgePartition[VD,ED3](pid,localId,localNum,startLid,endLid, newActiveEdgesNum, graphStructure, client,newEData,edgeReversed, newMask)
   }
 
   override def toString: String =  super.toString + "(pid=" + pid + ",local id" + localId +
@@ -474,7 +477,7 @@ object GrapeEdgePartition extends Logging {
               val tuple = tupleQueue.poll()
               val edataStore = tuple._4.asInstanceOf[DataStore[ED]]
               val _ = pidQueue.poll()
-              pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1, 0, 1, 0, tuple._2.getInnerVertexSize, tuple._2, tuple._3, edataStore)
+              pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1, 0, 1, 0,  tuple._2.getInnerVertexSize,tuple._2.getOutEdgesNum.toInt, tuple._2, tuple._3, edataStore)
               val innerStore = tuple._5
               innerStore.setNumSplit(1)
               GrapeVertexPartition.setVertexStore(tuple._1,innerStore)
@@ -518,14 +521,14 @@ object GrapeEdgePartition extends Logging {
                 val edataStore = tuple._4
                 edataStore.setNumSplit(times)
                 if (j == 0){
-                  pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1,  j, times, startLid, endLid, graphStructure, tuple._3,edataStore.asInstanceOf[DataStore[ED]])
+                  pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1,  j, times, startLid, endLid,0, graphStructure, tuple._3,edataStore.asInstanceOf[DataStore[ED]])
                   GrapeVertexPartition.setVertexStore(tuple._1, innerStore)
 //                  GrapeVertexPartition.setOuterVertexStore(tuple._1, tuple._6)
                   log.info(s"creating partition for pid ${tuple._1}, (${startLid},${endLid}), fid ${graphStructure.fid()}")
                 }
                 else {
                   val dstPid = candidates.dequeue()
-                  pid2EdgePartition(dstPid) = new GrapeEdgePartition[VD,ED](dstPid,  j, times, startLid, endLid, graphStructure, tuple._3, edataStore.asInstanceOf[DataStore[ED]])
+                  pid2EdgePartition(dstPid) = new GrapeEdgePartition[VD,ED](dstPid,  j, times, startLid, endLid,0, graphStructure, tuple._3, edataStore.asInstanceOf[DataStore[ED]])
                   GrapeVertexPartition.setVertexStore(dstPid, innerStore)
 //                  GrapeVertexPartition.setOuterVertexStore(dstPid, tuple._6)
                   log.info(s"creating partition for pid ${dstPid}, (${startLid},${endLid}), fid ${graphStructure.fid()}")
