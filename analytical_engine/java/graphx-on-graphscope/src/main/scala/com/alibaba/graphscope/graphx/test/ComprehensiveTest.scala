@@ -26,33 +26,14 @@ object ComprehensiveTest extends Logging{
 
     def runGrapeEdge(graph : GrapeGraphImpl[Long,Long]) : Long = {
       val time0 = System.nanoTime()
+
       graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
         if (iter.hasNext){
           val part = iter.next()
           part.emptyIteration
-        }
-      })
-      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
-        if (iter.hasNext){
-          val part = iter.next()
           part.emptyIteration
-        }
-      })
-      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
-        if (iter.hasNext){
-          val part = iter.next()
           part.emptyIteration
-        }
-      })
-      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
-        if (iter.hasNext){
-          val part = iter.next()
           part.emptyIteration
-        }
-      })
-      graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
-        if (iter.hasNext){
-          val part = iter.next()
           part.emptyIteration
         }
       })
@@ -89,45 +70,13 @@ object ComprehensiveTest extends Logging{
       graph.edges.partitionsRDD.foreachPartition(iter=>{
         if (iter.hasNext){
           val part = iter.next()._2
-          val partIter = part.iterator
-          while (partIter.hasNext){
-            partIter.next()
-          }
-        }
-      })
-      graph.edges.partitionsRDD.foreachPartition(iter=>{
-        if (iter.hasNext){
-          val part = iter.next()._2
-          val partIter = part.iterator
-          while (partIter.hasNext){
-            partIter.next()
-          }
-        }
-      })
-      graph.edges.partitionsRDD.foreachPartition(iter=>{
-        if (iter.hasNext){
-          val part = iter.next()._2
-          val partIter = part.iterator
-          while (partIter.hasNext){
-            partIter.next()
-          }
-        }
-      })
-      graph.edges.partitionsRDD.foreachPartition(iter=>{
-        if (iter.hasNext){
-          val part = iter.next()._2
-          val partIter = part.iterator
-          while (partIter.hasNext){
-            partIter.next()
-          }
-        }
-      })
-      graph.edges.partitionsRDD.foreachPartition(iter=>{
-        if (iter.hasNext){
-          val part = iter.next()._2
-          val partIter = part.iterator
-          while (partIter.hasNext){
-            partIter.next()
+          var i = 0
+          while (i < 5){
+            val partIter = part.iterator
+            while (partIter.hasNext){
+              partIter.next()
+            }
+            i += 1
           }
         }
       })
@@ -140,45 +89,13 @@ object ComprehensiveTest extends Logging{
       graph.edges.partitionsRDD.foreachPartition(iter=>{
         if (iter.hasNext){
           val part = iter.next()._2
-          val partIter = part.tripletIterator(true,true)
-          while (partIter.hasNext){
-            partIter.next()
-          }
-        }
-      })
-      graph.edges.partitionsRDD.foreachPartition(iter=>{
-        if (iter.hasNext){
-          val part = iter.next()._2
-          val partIter = part.tripletIterator(true,true)
-          while (partIter.hasNext){
-            partIter.next()
-          }
-        }
-      })
-      graph.edges.partitionsRDD.foreachPartition(iter=>{
-        if (iter.hasNext){
-          val part = iter.next()._2
-          val partIter = part.tripletIterator(true,true)
-          while (partIter.hasNext){
-            partIter.next()
-          }
-        }
-      })
-      graph.edges.partitionsRDD.foreachPartition(iter=>{
-        if (iter.hasNext){
-          val part = iter.next()._2
-          val partIter = part.tripletIterator(true,true)
-          while (partIter.hasNext){
-            partIter.next()
-          }
-        }
-      })
-      graph.edges.partitionsRDD.foreachPartition(iter=>{
-        if (iter.hasNext){
-          val part = iter.next()._2
-          val partIter = part.tripletIterator(true,true)
-          while (partIter.hasNext){
-            partIter.next()
+          var i = 0
+          while (i < 5) {
+            val partIter = part.tripletIterator(true, true)
+            while (partIter.hasNext) {
+              partIter.next()
+            }
+            i += 1
           }
         }
       })

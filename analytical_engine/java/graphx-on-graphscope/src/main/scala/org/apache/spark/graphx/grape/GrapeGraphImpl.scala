@@ -61,7 +61,6 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
   def numEdges: Long = edges.count()
 
-
   lazy val fragmentIds : RDD[String] = {
     val syncedGrapeVertices = grapeVertices.syncOuterVertex
 
