@@ -7,10 +7,10 @@ import org.apache.spark.internal.Logging
 import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.ClassTag
 
-class InHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offset : Int, val length : Int, val client : VineyardClient, var numSplit : Int, val vdArray : Array[VD]) extends DataStore [VD] with Logging {
+class InHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val length : Int, val client : VineyardClient, var numSplit : Int, val vdArray : Array[VD]) extends DataStore [VD] with Logging {
 
-  def this(offset : Int, length : Int, client : VineyardClient, numSplit : Int) = {
-    this(offset,length,client, numSplit,new Array[VD](length))
+  def this(length : Int, client : VineyardClient, numSplit : Int) = {
+    this(length,client, numSplit,new Array[VD](length))
   }
   var v6dId: Long = 0L
   var resultArray : InHeapDataStore[_] = null.asInstanceOf[InHeapDataStore[_]]
@@ -23,7 +23,7 @@ class InHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offset : I
   }
 
   @inline
-  override def getData(lid: Int): VD = vdArray(lid - offset)
+  override def getData(lid: Int): VD = vdArray(lid)
 
   override def vineyardID: Long = {
     if (v6dId == 0) {
@@ -34,7 +34,7 @@ class InHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offset : I
   }
 
   @inline
-  override def setData(lid: Int, vd: VD): Unit = vdArray(lid - offset) = vd
+  override def setData(lid: Int, vd: VD): Unit = vdArray(lid) = vd
 
   /** create a new store from current, all the same except for vertex data type */
 //  override def create[VD2: ClassTag]: VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset, length, client)
@@ -43,7 +43,7 @@ class InHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offset : I
     if (resultArray == null || count.get() == 0){
       synchronized {
 //        log.info(s"creating result array of type ${GrapeUtils.getRuntimeClass[VD2].getSimpleName}")
-        resultArray = new InHeapDataStore[VD2](offset, length, client, numSplit).asInstanceOf[InHeapDataStore[_]]
+        resultArray = new InHeapDataStore[VD2](length, client, numSplit).asInstanceOf[InHeapDataStore[_]]
         count.set(numSplit)
       }
     }
@@ -55,7 +55,7 @@ class InHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val offset : I
 //  override def create[VD2: ClassTag](newArr: Array[VD2]): VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset,length,client,newArr)
 
   override def toString: String = {
-    "InHeapDataStore@(offset=" + offset + ",length=" + length + ",type=" + GrapeUtils.getRuntimeClass[VD].getSimpleName + ")"
+    "InHeapDataStore@(length=" + length + ",type=" + GrapeUtils.getRuntimeClass[VD].getSimpleName + ")"
   }
 }
 

@@ -185,7 +185,7 @@ object GrapeEdgeRDD extends Logging{
           res
         }
         //set numSplit later
-        val vertexDataStore = new InHeapDataStore[VD](0, vm.getVertexSize.toInt, meta.vineyardClient, 0)
+        val vertexDataStore = new InHeapDataStore[VD](vm.getVertexSize.toInt, meta.vineyardClient, 0)
 //        val outerVertexDataStore = new InHeapVertexDataStore[VD](vm.innerVertexSize().toInt, vm.getOuterVertexSize.toInt, meta.vineyardClient,1, outer = true)
 //        val innerVertexDataStore = new InHeapVertexDataStore[VD](0, vm.innerVertexSize().toInt, meta.vineyardClient,0)
         //If vertex attr are in edge shuffles, we init the inner vertex Data store.
@@ -194,7 +194,7 @@ object GrapeEdgeRDD extends Logging{
         edgeBuilder.fillVertexData(vertexDataStore,graphStructure)
         val time1 = System.nanoTime()
         log.info(s"[Creating graph structure cost ]: ${(time1 - time0) / 1000000} ms")
-        val edataStore = new InHeapDataStore[ED](offset = 0,length = meta.graphxCSR.getOutEdgesNum.toInt, client = meta.vineyardClient, numSplit = 1, meta.edataArray)
+        val edataStore = new InHeapDataStore[ED](length = meta.graphxCSR.getOutEdgesNum.toInt, client = meta.vineyardClient, numSplit = 1, meta.edataArray)
         GrapeEdgePartition.push((meta.partitionID,graphStructure, meta.vineyardClient,edataStore,vertexDataStore))
         meta.edgePartitionBuilder.clearBuilders()
         meta.edgePartitionBuilder = null //make it null to let it be gc able
