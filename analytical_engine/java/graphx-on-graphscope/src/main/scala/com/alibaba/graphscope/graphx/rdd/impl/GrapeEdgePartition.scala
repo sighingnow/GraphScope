@@ -140,12 +140,12 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def emptyIteration : Unit = {
-    val newEdata = edatas.getOrCreate[ED]
-    graphStructure.emptyIterateEdges[ED](startLid, endLid, edatas,activeEdgeSet, edgeReversed, newEdata)
+//    val newEdata = edatas.getOrCreate[ED]
+    graphStructure.emptyIterateEdges[ED](startLid, endLid, edatas,activeEdgeSet, edgeReversed, edatas)
   }
   def emptyIterationTriplet(innerVertexDataStore: DataStore[VD]) : Unit = {
-    val newEdata = edatas.getOrCreate[ED]
-    graphStructure.emptyIterateTriplets[VD,ED](startLid, endLid, innerVertexDataStore,edatas,activeEdgeSet, edgeReversed,true, true, newEdata)
+//    val newEdata = edatas.getOrCreate[ED]
+    graphStructure.emptyIterateTriplets[VD,ED](startLid, endLid, innerVertexDataStore,edatas,activeEdgeSet, edgeReversed,true, true, edatas)
   }
 
   def map[ED2: ClassTag](f: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2]): GrapeEdgePartition[VD, ED2] = {
