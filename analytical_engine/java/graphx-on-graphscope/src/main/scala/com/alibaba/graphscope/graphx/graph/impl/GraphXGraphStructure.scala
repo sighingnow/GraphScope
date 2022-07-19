@@ -425,6 +425,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
   }
 
   override def emptyIterateTriplets[VD: ClassTag, ED: ClassTag](startLid : Long, endLid : Long, vertexDataStore: DataStore[VD], edatas: DataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean,newArray : DataStore[ED]): Unit = {
+    val time0 = System.nanoTime()
     var curLid = startLid.toInt
     val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
     var curOffset = activeSet.nextSetBit(activeSet.startBit)
@@ -434,15 +435,15 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     if (curOffset < 0) return
     if (!edgeReversed){
       while (curLid < endLid){
-        val curEndOffset = getOEEndOffset(curLid)
         edgeTriplet.srcId = lid2Oid(curLid)
         edgeTriplet.srcAttr = vDataArray(curLid)
+        
+        val curEndOffset = getOEEndOffset(curLid)
         while (curOffset < curEndOffset){
           edgeTriplet.dstId = dstOids(curOffset)
           val dstLid = dstLids(curOffset)
-          edgeTriplet.attr = oldEDataArray(curOffset)
           edgeTriplet.dstAttr = vDataArray(dstLid)
-          newEdataArray(curOffset) = edgeTriplet.attr
+          edgeTriplet.attr = oldEDataArray(curOffset)
           curOffset = curOffset + 1
         }
         curLid += 1
@@ -464,6 +465,8 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
         curLid += 1
       }
     }
+    val time1 = System.nanoTime()
+    log.info(s"Empty iterate triplets from ${startLid} to ${endLid} cost ${(time1 - time0) / 1000000} ms")
   }
 
   override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long, f: EdgeTriplet[VD,ED] => ED2, vertexDataStore: DataStore[VD], edatas: DataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, resArray : DataStore[ED2]): Unit = {
@@ -517,15 +520,15 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     if (curOffset < 0) return
     if (!edgeReversed){
       while (curLid < endLid){
-        val curEndOffset = getOEEndOffset(curLid)
         edge.srcId = lid2Oid(curLid)
+        
+        val curEndOffset = getOEEndOffset(curLid)
         while (curOffset < curEndOffset){
           edge.dstId = dstOids(curOffset)
           edge.attr = oldEdataArray(curOffset)
-          newEdataArray(curOffset) = edge.attr
           curOffset = curOffset + 1
         }
-        curLid += 1
+       curLid += 1
       }
     }
     else {
@@ -541,6 +544,8 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
         curLid += 1
       }
     }
+    val time1 = System.nanoTime()
+    log.info(s"Empty iterate edges from ${startLid} to ${endLid} cost ${(time1 - time0)/1000000} ms")
   }
 
 
