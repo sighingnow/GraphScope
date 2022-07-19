@@ -513,9 +513,9 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     (oeOffsetBeginArray.get(startLid), oeOffsetEndArray.get(endLid - 1))
   }
 
-  override def emptyIterateEdges[ED: ClassTag](startLid: VertexId, endLid: VertexId, edatas: DataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean): Unit = ???
+  override def emptyIterateEdges[ED: ClassTag](startLid: VertexId, endLid: VertexId, edatas: DataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, newArray : DataStore[ED]): Unit = ???
 
-  override def emptyIterateTriplets[VD: ClassTag, ED: ClassTag](startLid: VertexId, endLid: VertexId, innerVertexDataStore: DataStore[VD], edatas: DataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean): Unit = ???
+  override def emptyIterateTriplets[VD: ClassTag, ED: ClassTag](startLid: VertexId, endLid: VertexId, innerVertexDataStore: DataStore[VD], edatas: DataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, newArray : DataStore[ED]): Unit = ???
 }
 
 object FragmentStructure{

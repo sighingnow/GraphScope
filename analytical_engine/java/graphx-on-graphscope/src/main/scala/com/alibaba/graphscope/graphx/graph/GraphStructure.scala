@@ -34,11 +34,11 @@ trait GraphStructure extends Serializable {
 
   def iterateEdges[ED : ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long, f: Edge[ED] => ED2, edatas : DataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, newArray : DataStore[ED2]) : Unit
 
-  def emptyIterateEdges[ED: ClassTag](startLid : Long, endLid : Long, edatas : DataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false) : Unit
+  def emptyIterateEdges[ED: ClassTag](startLid : Long, endLid : Long, edatas : DataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false,newEdata : DataStore[ED]) : Unit
 
   def iterateTriplets[VD : ClassTag, ED : ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long, f : EdgeTriplet[VD,ED] => ED2, innerVertexDataStore: DataStore[VD], edatas : DataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, includeSrc : Boolean = true, includeDst : Boolean = true, newArray : DataStore[ED2]) : Unit
 
-  def emptyIterateTriplets[VD: ClassTag,ED: ClassTag](startLid : Long, endLid : Long, innerVertexDataStore: DataStore[VD], edatas : DataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, includeSrc : Boolean = true, includeDst : Boolean = true) : Unit
+  def emptyIterateTriplets[VD: ClassTag,ED: ClassTag](startLid : Long, endLid : Long, innerVertexDataStore: DataStore[VD], edatas : DataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, includeSrc : Boolean = true, includeDst : Boolean = true,newArray : DataStore[ED]) : Unit
 
   def getInDegree(vid: Int): Long
 
