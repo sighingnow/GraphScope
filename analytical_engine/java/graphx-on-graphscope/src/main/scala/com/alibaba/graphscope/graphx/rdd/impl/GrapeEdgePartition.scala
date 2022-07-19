@@ -54,7 +54,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   val NBR_SIZE = 16L
   //to avoid the difficult to get srcLid in iterating over edges.
 
-  log.info(s"Got edge partition ${this.toString}")
+//  log.info(s"Got edge partition ${this.toString}")
 
 
   def getDegreeArray(edgeDirection: EdgeDirection): Array[Int] = {
@@ -172,9 +172,10 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val time0 = System.nanoTime()
 //    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
     val newData = edatas.getOrCreate[ED2]
+    val time01 = System.nanoTime()
     graphStructure.iterateTriplets(startLid, endLid, f,innerVertexDataStore, edatas, activeEdgeSet, edgeReversed,tripletFields.useSrc, tripletFields.useDst, newData)
     val time1 = System.nanoTime()
-//    log.info(s"[Perf:] mapping over triplets cost ${(time1 - time0)/1000000} ms")
+    log.info(s"[Perf:] part ${pid}, lid ${localId}, mapping over triplets size ${activeEdgeNum} cost ${(time1 - time0)/1000000} ms, create array cost ${(time01 - time0)/1000000}ms")
     this.withNewEdata(newData)
   }
 
