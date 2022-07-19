@@ -30,11 +30,14 @@ object ComprehensiveTest extends Logging{
       graph.grapeEdges.grapePartitionsRDD.foreachPartition(iter => {
         if (iter.hasNext){
           val part = iter.next()
+          val timea = System.nanoTime()
           part.emptyIteration
           part.emptyIteration
           part.emptyIteration
           part.emptyIteration
           part.emptyIteration
+          val timeb = System.nanoTime()
+          log.info(s"5 iteration cost ${(timeb - timea) / 1000000}ms")
         }
       })
 
@@ -47,6 +50,7 @@ object ComprehensiveTest extends Logging{
       val tmp1 = graph.grapeEdges.grapePartitionsRDD.zipPartitions(graph.grapeVertices.grapePartitionsRDD){
         (eIter,vIter) =>{
           if (eIter.hasNext){
+            val timea = System.nanoTime()
             val ePart = eIter.next()
             val vPart = vIter.next()
             ePart.emptyIterationTriplet(vPart.vertexData)
@@ -54,6 +58,8 @@ object ComprehensiveTest extends Logging{
             ePart.emptyIterationTriplet(vPart.vertexData)
             ePart.emptyIterationTriplet(vPart.vertexData)
             ePart.emptyIterationTriplet(vPart.vertexData)
+            val timeb = System.nanoTime()
+            log.info(s"5 iteration cost ${(timeb - timea) / 1000000}ms")
             Iterator(1)
           }
           else Iterator.empty
