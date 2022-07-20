@@ -17,13 +17,14 @@ import scala.Tuple2;
 public class LongMessageStore implements MessageStore<Long>{
     private Logger logger = LoggerFactory.getLogger(LongMessageStore.class.getName());
 
-    private long[] values;
+//    private long[] values;
+    private AtomicLongArrayWrapper values;
     private Function2<Long,Long,Long> mergeMessage;
     private Vertex<Long> tmpVertex;
     private FFIByteVectorOutputStream[] outputStream;
 
     public LongMessageStore(int len,int fnum, Function2<Long,Long,Long> mergeMessage){
-        values = new long[len];
+        values = new AtomicLongArrayWrapper(len);
         this.mergeMessage = mergeMessage;
         tmpVertex = FFITypeFactoryhelper.newVertexLong();
         outputStream = new FFIByteVectorOutputStream[fnum];
@@ -34,17 +35,17 @@ public class LongMessageStore implements MessageStore<Long>{
 
     @Override
     public Long get(int index) {
-        return values[index];
+        return values.get(index);
     }
 
     @Override
     public void set(int index, Long value) {
-        values[index] =value;
+        values.compareAndSet(index,value);
     }
 
     @Override
     public int size() {
-        return values.length;
+        return values.getSize();
     }
 
     @Override
@@ -57,11 +58,11 @@ public class LongMessageStore implements MessageStore<Long>{
             }
             int lid = tmpVertex.GetValue().intValue();
             if (nextSet.get(lid)){
-                long original = values[lid];
-                values[lid] = mergeMessage.apply(original, msg._2());
+                long original = values.get(lid);
+                values.compareAndSet(lid, mergeMessage.apply(original, msg._2()));
             }
             else {
-                values[lid] = msg._2();
+                values.compareAndSet(lid,msg._2());
                 nextSet.set(lid);
             }
         }
@@ -76,7 +77,7 @@ public class LongMessageStore implements MessageStore<Long>{
             tmpVertex.SetValue((long) i);
             int dstFid = fragment.getFragId(tmpVertex);
             outputStream[dstFid].writeLong(fragment.getOuterVertexGid(tmpVertex));
-            outputStream[dstFid].writeLong(values[i]);
+            outputStream[dstFid].writeLong(values.get(i));
             cnt += 1;
         }
         logger.info("Frag [{}] try to send {} msg to outer vertices", fragment.fid(), cnt);
@@ -109,12 +110,12 @@ public class LongMessageStore implements MessageStore<Long>{
                 fragment.innerVertexGid2Vertex(gid, tmpVertex);
                 int lid = tmpVertex.GetValue().intValue();
                 if (curSet.get(lid)){
-                    values[lid] = mergeMessage.apply(values[lid], msg);
+                    values.set(lid, mergeMessage.apply(values.get(lid), msg));
                 }
                 else {
                     //no update in curSet when the message store is not changed, although we receive vertices.
-                    if (values[lid] != msg){
-                        values[lid] = msg;
+                    if (values.get(lid) != msg){
+                        values.set(lid, msg);
                         curSet.set(lid);
                     }
                 }
