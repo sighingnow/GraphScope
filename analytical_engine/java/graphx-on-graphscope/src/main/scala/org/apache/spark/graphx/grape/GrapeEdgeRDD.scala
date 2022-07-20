@@ -4,7 +4,7 @@ import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import com.alibaba.graphscope.graphx.rdd.impl.{GrapeEdgePartition, GrapeEdgePartitionBuilder}
 import com.alibaba.graphscope.graphx.rdd.{LocationAwareRDD, VineyardRDD}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
-import com.alibaba.graphscope.graphx.store.InHeapDataStore
+import com.alibaba.graphscope.graphx.store.{EdgeDataStore, InHeapDataStore}
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, ExecutorUtils, GrapeMeta}
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.grape.impl.GrapeEdgeRDDImpl
@@ -152,13 +152,15 @@ object GrapeEdgeRDD extends Logging{
         require(res != null, s"after iterate over received global ids, no suitable found for ${hostName}, ${meta.partitionID} : ${globalVMIDs}")
         meta.setGlobalVM(res.toLong)
         val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId,numExecutors)
-        val eids = meta.edgePartitionBuilder.createEids(csr.getOutEdgesNum.toInt, csr.getOEBegin(0))
-        val edatas = meta.edgePartitionBuilder.buildEdataArray(eids, defaultED)
-        require(edatas.length == eids.length, s"neq ${edatas.length}, ${eids.length}")
+        val oeOffsetToEid = meta.edgePartitionBuilder.createEids(csr.getOutEdgesNum.toInt, csr.getOEBegin(0))
+        //We will build a store which underlying is a simple array with length csr.getTotalEdgesNum,
+        //but we can get out edge data from it with oeoffset, with some what conversion.
+        val edatas = meta.edgePartitionBuilder.buildEdataArray(defaultED, csr.getTotalEdgesNum)
+        require(edatas.length == oeOffsetToEid.length, s"neq ${edatas.length}, ${oeOffsetToEid.length}")
         //raw edatas contains all edge datas, i.e. csr edata array.
         //edatas are out edges edge cache.
         meta.setGlobalVM(vm)
-        meta.setEids(eids)
+        meta.setEids(oeOffsetToEid)
         meta.setCSR(csr)
         meta.setEdataArray(edatas)
         Iterator(meta)
@@ -194,7 +196,8 @@ object GrapeEdgeRDD extends Logging{
         edgeBuilder.fillVertexData(vertexDataStore,graphStructure)
         val time1 = System.nanoTime()
         log.info(s"[Creating graph structure cost ]: ${(time1 - time0) / 1000000} ms")
-        val edataStore = new InHeapDataStore[ED](length = meta.graphxCSR.getOutEdgesNum.toInt, client = meta.vineyardClient, numSplit = 1, meta.edataArray)
+//        val edataStore = new InHeapDataStore[ED](length = meta.graphxCSR.getOutEdgesNum.toInt, client = meta.vineyardClient, numSplit = 1, meta.edataArray)
+        val edataStore = new EdgeDataStore[ED](length = meta.edataArray.length, client = meta.vineyardClient, numSplit = 1, meta.edataArray,meta.eids)
         GrapeEdgePartition.push((meta.partitionID,graphStructure, meta.vineyardClient,edataStore,vertexDataStore))
         meta.edgePartitionBuilder.clearBuilders()
         meta.edgePartitionBuilder = null //make it null to let it be gc able

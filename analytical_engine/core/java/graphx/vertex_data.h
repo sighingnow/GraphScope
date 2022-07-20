@@ -27,11 +27,11 @@
 #include "vineyard/basic/ds/arrow.h"
 #include "vineyard/basic/ds/arrow_utils.h"
 #include "vineyard/client/client.h"
-#include "vineyard/graph/utils/error.h"
 #include "vineyard/common/util/functions.h"
 #include "vineyard/common/util/typename.h"
 #include "vineyard/graph/fragment/property_graph_types.h"
 #include "vineyard/graph/fragment/property_graph_utils.h"
+#include "vineyard/graph/utils/error.h"
 
 #include "core/error.h"
 #include "core/io/property_parser.h"
@@ -61,7 +61,7 @@ class VertexData : public vineyard::Registered<VertexData<VID_T, VD_T>> {
     this->meta_ = meta;
     this->id_ = meta.GetId();
     this->frag_vnums_ = meta.GetKeyValue<fid_t>("frag_vnums");
-    LOG(INFO) << "frag_vnums: " << frag_vnums_;
+    // LOG(INFO) << "frag_vnums: " << frag_vnums_;
     vineyard::NumericArray<vdata_t> vineyard_array;
     vineyard_array.Construct(meta.GetMemberMeta("vdatas"));
     vdatas_ = vineyard_array.GetArray();
@@ -134,7 +134,9 @@ class VertexData<VID_T, std::string>
 
   vid_t VerticesNum() { return frag_vnums_; }
 
-  arrow::util::string_view GetData(const vid_t& lid) { return vdatas_->GetView(lid); }
+  arrow::util::string_view GetData(const vid_t& lid) {
+    return vdatas_->GetView(lid);
+  }
 
   arrow::util::string_view GetData(const vertex_t& v) {
     return vdatas_->GetView(v.GetValue());
@@ -275,7 +277,8 @@ class VertexDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
     LOG(INFO) << "Init vertex data with " << frag_vnums_;
   }
 
-  std::shared_ptr<VertexData<vid_t, std::string>> MySeal(vineyard::Client& client) {
+  std::shared_ptr<VertexData<vid_t, std::string>> MySeal(
+      vineyard::Client& client) {
     return std::dynamic_pointer_cast<VertexData<vid_t, std::string>>(
         this->Seal(client));
   }

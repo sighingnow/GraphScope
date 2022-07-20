@@ -220,7 +220,6 @@ class JavaPIEProjectedDefaultContext : public JavaPIEProjectedContext<FRAG_T> {
 
   void Init(grape::DefaultMessageManager& messages, const std::string& params,
             const std::string& lib_path) {
-    VLOG(1) << "lib path: " << lib_path;
     JavaPIEProjectedContext<FRAG_T>::init(reinterpret_cast<jlong>(&messages),
                                           _java_projected_message_manager_name,
                                           params, lib_path);

@@ -154,7 +154,7 @@ void CreateAndQuery(std::string params, const std::string& frag_name) {
 
   vineyard::Client client;
   VINEYARD_CHECK_OK(client.Connect(FLAGS_ipc_socket));
-  VLOG(1) << "Connected to IPCServer: " << FLAGS_ipc_socket;
+  // VLOG(1) << "Connected to IPCServer: " << FLAGS_ipc_socket;
 
   auto fragment_id =
       LoadFragment<OID_T, VID_T, VD_T, ED_T>(client, comm_spec, FLAGS_frag_ids);

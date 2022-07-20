@@ -82,8 +82,8 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
             val vdId = vPart.vertexData.vineyardID
             //FIXME: merge edata array together.
             val edataArray = ePart.edatas
-            require(edataArray.size == ePart.partOutEdgeNum)
-            val edId = GrapeUtils.array2ArrowArray[ED](ePart.edatas.asInstanceOf[InHeapDataStore[ED]].vdArray, ePart.client, false)
+            require(edataArray.size == ePart.totalFragEdgeNum)
+            val edId = GrapeUtils.array2ArrowArray[ED](ePart.edatas.asInstanceOf[InHeapDataStore[ED]].array, ePart.client, false)
 
             logger.info(s"vm id ${vmId}, csr id ${csrId}, vd id ${vdId}, ed id ${edId}")
 

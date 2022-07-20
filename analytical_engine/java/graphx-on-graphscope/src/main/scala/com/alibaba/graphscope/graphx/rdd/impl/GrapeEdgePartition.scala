@@ -5,8 +5,8 @@ import com.alibaba.graphscope.ds.{PropertyNbrUnit, Vertex}
 import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTriplet, GraphStructure, ReusableEdge}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
-import com.alibaba.graphscope.graphx.store.{InHeapDataStore, DataStore}
-import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, BitSetWithOffset, ExecutorUtils, IdParser, ScalaFFIFactory}
+import com.alibaba.graphscope.graphx.store.{DataStore, EdgeDataStore, InHeapDataStore}
+import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, ExecutorUtils, IdParser, ScalaFFIFactory}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.Partition
 import org.apache.spark.graphx._
@@ -14,7 +14,6 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.{BitSet, OpenHashSet}
 
 import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -31,7 +30,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
                                                      var activeEdgeNum : Int = 0, //use a instant variable to accelerate count.
                                                      val graphStructure: GraphStructure,
                                                      val client : VineyardClient,
-                                                     var edatas : DataStore[ED],
+                                                     var edatas : EdgeDataStore[ED],
                                                      //the original edatas are fully-specified,i.e. length equal to oeEdgeNum. but later we will use array with offset.
                                                      val edgeReversed : Boolean = false,
                                                      var activeEdgeSet : BitSetWithOffset = null) extends Logging  with Partition{
@@ -42,7 +41,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   /** regard to our design, the card(activeEdgeSet) == partOutEdgeNum, len(edatas) == allEdgesNum, indexed by eid */
   val partOutEdgeNum : Long = graphStructure.getOutEdgesNum
   val partInEdgeNum : Long = graphStructure.getInEdgesNum
-  val allEdgesNum = partInEdgeNum + partOutEdgeNum
+  val totalFragEdgeNum : Long = graphStructure.getTotalEdgesNum
 
 
   if (activeEdgeSet == null){
@@ -105,7 +104,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val newMask = new BitSetWithOffset(activeEdgeSet.startBit,activeEdgeSet.endBit)
     newMask.union(activeEdgeSet)
 //    val newEdata = new ArrayWithOffset[ED](activeEdgeSet.startBit,activeEdgeSet.size)// new Array[ED](allEdgesNum.toInt)
-    val newEdata = edatas.getOrCreate[ED]
+    val newEdata = edatas.getOrCreate[ED].asInstanceOf[EdgeDataStore[ED]]
     while (iter.hasNext){
       val edge = iter.next()
       val curIndex = edge.offset
@@ -134,7 +133,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
 //    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)// new Array[ED2](allEdgesNum.toInt)
-    val newData = edatas.getOrCreate[ED2]
+    val newData = edatas.getOrCreate[ED2].asInstanceOf[EdgeDataStore[ED2]]
     graphStructure.iterateEdges(startLid, endLid,f,edatas, activeEdgeSet, edgeReversed, newData)
     this.withNewEdata(newData)
   }
@@ -151,7 +150,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   def map[ED2: ClassTag](f: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2]): GrapeEdgePartition[VD, ED2] = {
     val time0 = System.nanoTime()
 //    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
-    val newData = edatas.getOrCreate[ED2]
+    val newData = edatas.getOrCreate[ED2].asInstanceOf[EdgeDataStore[ED2]]
     val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     val resultEdata = f(pid, iter)
     val time1 = System.nanoTime()
@@ -171,7 +170,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   def mapTriplets[ED2: ClassTag](f: EdgeTriplet[VD,ED] => ED2, innerVertexDataStore: DataStore[VD], tripletFields: TripletFields): GrapeEdgePartition[VD, ED2] = {
     val time0 = System.nanoTime()
 //    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
-    val newData = edatas.getOrCreate[ED2]
+    val newData = edatas.getOrCreate[ED2].asInstanceOf[EdgeDataStore[ED2]]
     val time01 = System.nanoTime()
     graphStructure.iterateTriplets(startLid, endLid, f,innerVertexDataStore, edatas, activeEdgeSet, edgeReversed,tripletFields.useSrc, tripletFields.useDst, newData)
     val time1 = System.nanoTime()
@@ -181,7 +180,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 
   def mapTriplets[ED2: ClassTag](f: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], innerVertexDataStore: DataStore[VD], includeSrc  : Boolean = true, includeDst : Boolean = true): GrapeEdgePartition[VD, ED2] = {
 //    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
-    val newData = edatas.getOrCreate[ED2]
+    val newData = edatas.getOrCreate[ED2].asInstanceOf[EdgeDataStore[ED2]]
     val time0 = System.nanoTime()
     val iter = tripletIterator(innerVertexDataStore,includeSrc,includeDst,reuseTriplet = true).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
     val resultEdata = f(pid, iter)
@@ -219,7 +218,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     new GrapeEdgePartition[VD,ED](pid, localId,localNum,startLid,endLid,activeEdgeNum, graphStructure, client,edatas,!edgeReversed, activeEdgeSet)
   }
 
-  def withNewEdata[ED2: ClassTag](newEdata : DataStore[ED2]): GrapeEdgePartition[VD, ED2] = {
+  def withNewEdata[ED2: ClassTag](newEdata : EdgeDataStore[ED2]): GrapeEdgePartition[VD, ED2] = {
 //    log.info(s"Creating new edge partition with new edge of size ${newEdata.length}, out edge num ${graphStructure.getOutEdgesNum}")
     new GrapeEdgePartition[VD,ED2](pid,localId,localNum,startLid,endLid,activeEdgeNum,  graphStructure, client,newEdata, edgeReversed, activeEdgeSet)
   }
@@ -240,7 +239,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     log.info(s"Inner join edgePartition 0 has ${this.activeEdgeSet.cardinality()} actives edges, the other has ${other.activeEdgeSet} active edges")
     log.info(s"after join ${newMask.cardinality()} active edges")
 //    val newEData = new ArrayWithOffset[ED3](activeEdgeSet.startBit, activeEdgeSet.size)
-    val newEData = edatas.getOrCreate[ED3]
+    val newEData = edatas.getOrCreate[ED3].asInstanceOf[EdgeDataStore[ED3]]
     val oldIter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     while (oldIter.hasNext){
       val oldEdge = oldIter.next()
@@ -327,14 +326,15 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
   }
 
   /** The received edata arrays contains both in edges and out edges, but we only need these out edges's edata array */
-  def buildEdataArray(eids : Array[Long], defaultED : ED) : Array[ED] = {
+  def buildEdataArray(defaultED : ED, totalEdgeNum : Long) : Array[ED] = {
     if (defaultED != null && lists(0).getArrays._3(0) == null){
 //      val edgeNum = lists.map(_.totalSize()).sum
-      Array.fill[ED](eids.length)(defaultED)
+      Array.fill[ED](totalEdgeNum.toInt)(defaultED)
     }
     else if (defaultED == null && lists(0).getArrays._3(0) != null){
       val allArrays = lists.flatMap(_.getArrays._3).toArray
       val rawEdgesNum = allArrays.map(_.length).sum
+      require(rawEdgesNum == totalEdgeNum, s"edge num neq ${rawEdgesNum}, ${totalEdgeNum}")
 //      log.info(s"eids size ${eids.length}, raw edge num ${rawEdgesNum}")
       val edataArray = new Array[ED](rawEdgesNum)
       //flat array
@@ -348,14 +348,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
           ind += 1
         }
       }
-      val resArray = new Array[ED](eids.length)
-      var i = 0
-      while (i < resArray.length){
-//        log.info(s"ind ${i}, eids ${eids(i)}")
-        resArray(i) = edataArray(eids(i).toInt)
-        i += 1
-      }
-      resArray
+      edataArray
     }
     else {
       throw new IllegalStateException("not possible, default ed  and array is both null or bot not empty")
@@ -477,7 +470,7 @@ object GrapeEdgePartition extends Logging {
             for (_ <- 0 until size){
               val tuple = tupleQueue.poll()
               tuple._4.setNumSplit(1)
-              val edataStore = tuple._4.asInstanceOf[DataStore[ED]]
+              val edataStore = tuple._4.asInstanceOf[EdgeDataStore[ED]]
               val _ = pidQueue.poll()
               pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1, 0, 1, 0,  tuple._2.getInnerVertexSize,tuple._2.getOutEdgesNum.toInt, tuple._2, tuple._3, edataStore)
               val innerStore = tuple._5
@@ -520,17 +513,17 @@ object GrapeEdgePartition extends Logging {
                 }
                 val innerStore = tuple._5
                 innerStore.setNumSplit(times)
-                val edataStore = tuple._4
+                val edataStore = tuple._4.asInstanceOf[EdgeDataStore[ED]]
                 edataStore.setNumSplit(times)
                 if (j == 0){
-                  pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1,  j, times, startLid, endLid,0, graphStructure, tuple._3,edataStore.asInstanceOf[DataStore[ED]])
+                  pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1,  j, times, startLid, endLid,0, graphStructure, tuple._3,edataStore)
                   GrapeVertexPartition.setVertexStore(tuple._1, innerStore)
 //                  GrapeVertexPartition.setOuterVertexStore(tuple._1, tuple._6)
                   log.info(s"creating partition for pid ${tuple._1}, (${startLid},${endLid}), fid ${graphStructure.fid()}")
                 }
                 else {
                   val dstPid = candidates.dequeue()
-                  pid2EdgePartition(dstPid) = new GrapeEdgePartition[VD,ED](dstPid,  j, times, startLid, endLid,0, graphStructure, tuple._3, edataStore.asInstanceOf[DataStore[ED]])
+                  pid2EdgePartition(dstPid) = new GrapeEdgePartition[VD,ED](dstPid,  j, times, startLid, endLid,0, graphStructure, tuple._3, edataStore)
                   GrapeVertexPartition.setVertexStore(dstPid, innerStore)
 //                  GrapeVertexPartition.setOuterVertexStore(dstPid, tuple._6)
                   log.info(s"creating partition for pid ${dstPid}, (${startLid},${endLid}), fid ${graphStructure.fid()}")

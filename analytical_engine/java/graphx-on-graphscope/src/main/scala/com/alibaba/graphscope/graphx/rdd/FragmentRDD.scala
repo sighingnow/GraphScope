@@ -8,7 +8,7 @@ import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.graphx.rdd.FragmentPartition.getHost
 import com.alibaba.graphscope.graphx.rdd.impl.GrapeEdgePartition
-import com.alibaba.graphscope.graphx.store.InHeapDataStore
+import com.alibaba.graphscope.graphx.store.{EdgeDataStore, InHeapDataStore}
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, ScalaFFIFactory}
 import org.apache.spark.graphx.PartitionID
 import org.apache.spark.graphx.grape.{GrapeEdgeRDD, GrapeVertexRDD, PartitionAwareZippedBaseRDD}
@@ -122,21 +122,22 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
           val (pid,(client,frag)) = fragIter.next()
           val structure = structureIter.next()
           val time0 = System.nanoTime()
-          val newEdata = new Array[ED](structure.getOutEdgesNum.toInt)
-          val eids = structure.eids
+          val newEdata = new Array[ED](structure.getTotalEdgesNum.toInt)
+//          val eids = structure.eids
           if (frag.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
             val projectedFragment = frag.asInstanceOf[ArrowProjectedAdaptor[Long, Long, _, _]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
             val edataAccessor = projectedFragment.getEdataArrayAccessor.asInstanceOf[TypedArray[ED]]
             var i = 0
-            val len = projectedFragment.getInEdgeNum + projectedFragment.getOutEdgeNum
+            val len = structure.getTotalEdgesNum.toInt
             while (i < len){
-              newEdata(i) = edataAccessor.get(eids(i))
+              newEdata(i) = edataAccessor.get(i)
               i += 1
             }
           }
           val time1 = System.nanoTime()
+          val edgeStore = new EdgeDataStore[ED](newEdata.length,client,1, newEdata,structure.eids)
           log.info(s"got edata array cost ${(time1 - time0)/ 1000000}ms")
-          Iterator(new GrapeEdgePartition[VD,ED](pid,0,1,0,frag.getInnerVerticesNum, structure.getOutEdgesNum.toInt, structure, client, new InHeapDataStore[ED](newEdata.length,client,1, newEdata)))
+          Iterator(new GrapeEdgePartition[VD,ED](pid,0,1,0,frag.getInnerVerticesNum, structure.getOutEdgesNum.toInt, structure, client, edgeStore))
         }
         else Iterator.empty
       }
