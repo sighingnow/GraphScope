@@ -38,7 +38,8 @@ public class GraphXAdaptor<VDATA_T, EDATA_T, MSG> extends Communicator implement
         DefaultMessageManager messageManager) {
         GraphXAdaptorContext<VDATA_T, EDATA_T, MSG> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>) context;
         GraphXPIE<VDATA_T, EDATA_T, MSG> proxy = ctx.getGraphXProxy();
-        proxy.PEval();
+//        proxy.PEval();
+        proxy.ParallelPEval();
         messageManager.ForceContinue();
     }
 
@@ -49,7 +50,8 @@ public class GraphXAdaptor<VDATA_T, EDATA_T, MSG> extends Communicator implement
         GraphXAdaptorContext<VDATA_T, EDATA_T, MSG> ctx = (GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>) context;
         //if (ctx.round > 5) return ;
         GraphXPIE<VDATA_T, EDATA_T, MSG> proxy = ctx.getGraphXProxy();
-        boolean maxIterationReached = proxy.IncEval();
+//        boolean maxIterationReached = proxy.IncEval();
+        boolean maxIterationReached = proxy.ParallelIncEval();
         if (!maxIterationReached) {
             messageManager.ForceContinue();
         }

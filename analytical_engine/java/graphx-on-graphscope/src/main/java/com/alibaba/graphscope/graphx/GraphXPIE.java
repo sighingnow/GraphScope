@@ -17,17 +17,26 @@ import com.alibaba.graphscope.fragment.adaptor.GraphXStringVDFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringVEDFragmentAdaptor;
 import com.alibaba.graphscope.graphx.graph.GSEdgeTripletImpl;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
+import com.alibaba.graphscope.parallel.MessageInBuffer;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
 import com.alibaba.graphscope.stdcxx.FFIByteVector;
 import com.alibaba.graphscope.stdcxx.FFIByteVectorFactory;
 import com.alibaba.graphscope.stdcxx.StdVector;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
 import com.alibaba.graphscope.utils.MessageStore;
+import com.alibaba.graphscope.utils.TriConsumer;
 import com.alibaba.graphscope.utils.array.PrimitiveArray;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.BitSet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
+import java.util.function.Function;
 import org.apache.spark.graphx.EdgeDirection;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
@@ -35,12 +44,14 @@ import org.slf4j.LoggerFactory;
 import scala.Function1;
 import scala.Function2;
 import scala.Function3;
+import scala.Int;
 import scala.Tuple2;
 import scala.collection.Iterator;
 
 public class GraphXPIE<VD, ED, MSG_T> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphXPIE.class.getName());
+    private static int BATCH_SIZE = 4096;
     /**
      * User vertex program: vprog: (VertexId, VD, A) => VD
      */
@@ -57,10 +68,11 @@ public class GraphXPIE<VD, ED, MSG_T> {
     protected BaseGraphXFragment<Long, Long, VD, ED> graphXFragment;
     private MSG_T initialMessage;
     private ExecutorService executorService;
+    private CountDownLatch countDownLatch;
     private int numCores, maxIterations, round;
     private long vprogTime, msgSendTime, receiveTime, flushTime;
     private GraphXConf<VD, ED, MSG_T> conf;
-    private GSEdgeTripletImpl<VD, ED> edgeTriplet;
+//    private GSEdgeTripletImpl<VD, ED> edgeTriplet;
     DefaultMessageManager messageManager;
     private PrimitiveArray<VD> newVdataArray;
     private PrimitiveArray<ED> newEdataArray;
@@ -71,7 +83,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
      * after flush, clear message store.
      */
     private MessageStore<MSG_T> messageStore;
-    private long innerVerticesNum, verticesNum;
+    private int innerVerticesNum, verticesNum;
     private BitSet curSet, nextSet;
     private EdgeDirection direction;
     private long[] lid2Oid;
@@ -90,13 +102,13 @@ public class GraphXPIE<VD, ED, MSG_T> {
         this.vprog = vprog;
         this.sendMsg = sendMsg;
         this.mergeMsg = mergeMsg;
-        this.edgeTriplet = new GSEdgeTripletImpl<>();
+//        this.
         this.initialMessage = initialMessage;
         this.direction = direction;
     }
 
     public void init(IFragment<Long, Long, VD, ED> fragment, DefaultMessageManager messageManager,
-        int maxIterations) throws IOException, ClassNotFoundException {
+        int maxIterations, int parallelism) throws IOException, ClassNotFoundException {
         this.iFragment = fragment;
         if (!(iFragment.fragmentType().equals(FragmentType.GraphXFragment)
             || iFragment.fragmentType().equals(FragmentType.GraphXStringVDFragment)
@@ -112,8 +124,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
 
         this.messageManager = messageManager;
         this.maxIterations = maxIterations;
-        innerVerticesNum = graphXFragment.getInnerVerticesNum();
-        verticesNum = graphXFragment.getVerticesNum();
+        innerVerticesNum = (int) graphXFragment.getInnerVerticesNum();
+        verticesNum =  graphXFragment.getVerticesNum().intValue();
         this.messageStore = MessageStore.create((int) verticesNum, fragment.fnum(),
             conf.getMsgClass(), mergeMsg);
         logger.info("ivnum {}, tvnum {}", innerVerticesNum, verticesNum);
@@ -132,26 +144,85 @@ public class GraphXPIE<VD, ED, MSG_T> {
         nbr = graphXFragment.getOEBegin(vertex);
         oeBeginAddress = graphXFragment.getOEBegin(vertex).getAddress();
         ieBeginAddress = graphXFragment.getIEBegin(vertex).getAddress();
+        numCores = parallelism;
+        executorService = Executors.newFixedThreadPool(numCores);
         msgSendTime = vprogTime = receiveTime = flushTime = 0;
     }
 
-    public void PEval() {
-        vprogTime -= System.nanoTime();
-        for (int lid = 0; lid < innerVerticesNum; ++lid) {
+    private void runVProg(int startLid, int endLid, boolean firstRound){
+        for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid; lid = curSet.nextSetBit(lid + 1)) {
             long oid = lid2Oid[lid];
             VD originalVD = newVdataArray.get(lid);
-            newVdataArray.set(lid, vprog.apply(oid, originalVD, initialMessage));
-//      logger.info("Running vprog on {}, oid {}, original vd {}, cur vd {}", lid,
-//                  graphXFragment.getId(vertex), originalVD, newVdataArray.get(lid));
+            if (firstRound){
+                newVdataArray.set(lid, vprog.apply(oid, originalVD, initialMessage));
+            }
+            else {
+                newVdataArray.set(lid, vprog.apply(oid, originalVD, messageStore.get(lid)));
+            }
         }
-        vprogTime += System.nanoTime();
+    }
 
-        msgSendTime -= System.nanoTime();
-        for (int lid = 0; lid < innerVerticesNum; ++lid) {
+    private void iterateEdge(int startLid, int endLid){
+        GSEdgeTripletImpl<VD,ED> edgeTriplet = new GSEdgeTripletImpl<>();
+        for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid; lid = curSet.nextSetBit(lid + 1)) {
             long oid = lid2Oid[lid];
             edgeTriplet.setSrcOid(oid, newVdataArray.get(lid));
             iterateOnEdges(lid, edgeTriplet);
         }
+    }
+
+    public void parallelExecute(BiConsumer<Integer, Integer> function){
+        AtomicInteger getter = new AtomicInteger(0);
+        for (int tid = 0; tid < numCores; ++tid) {
+            final int finalTid = tid;
+            executorService.execute(
+                () -> {
+                    int begin, end;
+                    while (true) {
+                        begin = Math.min(getter.getAndAdd(BATCH_SIZE), innerVerticesNum);
+                        end = Math.min(begin + BATCH_SIZE, innerVerticesNum);
+                        if (begin >= end)
+                            break;
+                        function.accept(begin, end);
+                    }
+                    countDownLatch.countDown();
+                });
+        }
+        try {
+            countDownLatch.await();
+        } catch (Exception e) {
+            e.printStackTrace();
+            executorService.shutdown();
+        }
+    }
+
+    public void ParallelPEval(){
+        vprogTime -= System.nanoTime();
+        parallelExecute((begin, end) -> runVProg(begin,end, true));
+        vprogTime += System.nanoTime();
+
+        msgSendTime -= System.nanoTime();
+        parallelExecute((begin,end)-> iterateEdge(begin, innerVerticesNum));
+        msgSendTime += System.nanoTime();
+        logger.info("[PEval] Finish iterate edges for frag {}", graphXFragment.fid());
+        flushTime -= System.nanoTime();
+        try {
+            messageStore.flushMessages(nextSet, messageManager, graphXFragment);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        nextSet.clear((int) innerVerticesNum, (int) verticesNum);
+        flushTime += System.nanoTime();
+        round = 1;
+    }
+
+    public void PEval() {
+        vprogTime -= System.nanoTime();
+        runVProg(0, (int) innerVerticesNum, true);
+        vprogTime += System.nanoTime();
+
+        msgSendTime -= System.nanoTime();
+        iterateEdge(0, (int) innerVerticesNum);
         msgSendTime += System.nanoTime();
         logger.info("[PEval] Finish iterate edges for frag {}", graphXFragment.fid());
         flushTime -= System.nanoTime();
@@ -204,7 +275,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         }
     }
 
-    public boolean IncEval() {
+    public boolean ParallelIncEval() {
         if (round >= maxIterations) {
             return true;
         }
@@ -220,19 +291,11 @@ public class GraphXPIE<VD, ED, MSG_T> {
             logger.info("Before running round {}, frag [{}] has {} active vertices", round,
                 graphXFragment.fid(), curSet.cardinality());
             vprogTime -= System.nanoTime();
-            for (int lid = curSet.nextSetBit(0); lid >= 0 && lid < innerVerticesNum; lid = curSet.nextSetBit(lid + 1)) {
-                Long oid = lid2Oid[lid];
-                VD originalVD = newVdataArray.get(lid);
-                newVdataArray.set(lid, vprog.apply(oid, originalVD, messageStore.get(lid)));
-            }
+            parallelExecute((begin, end) -> runVProg(begin,end, false));
             vprogTime += System.nanoTime();
 
             msgSendTime -= System.nanoTime();
-            for (int lid = curSet.nextSetBit(0); lid >= 0; lid = curSet.nextSetBit(lid + 1)) {
-                Long oid = lid2Oid[lid];
-                edgeTriplet.setSrcOid(oid, newVdataArray.get(lid));
-                iterateOnEdges(lid, edgeTriplet);
-            }
+            parallelExecute((begin,end)-> iterateEdge(begin, innerVerticesNum));
             msgSendTime += System.nanoTime();
             logger.info("[IncEval {}] Finish iterate edges for frag {}", round,
                 graphXFragment.fid());
@@ -255,8 +318,47 @@ public class GraphXPIE<VD, ED, MSG_T> {
         return false;
     }
 
-    public void postApp() {
-        logger.info("Post app");
+    public boolean IncEval() {
+        if (round >= maxIterations) {
+            return true;
+        }
+        //set nextSet(0, ivnum) to curSet(0, ivnum).
+        curSet.clear();
+        curSet.or(nextSet);
+        nextSet.clear();
+
+        /////////////////////////////////////Receive message////////////////////
+        receiveMessage();
+
+        if (curSet.cardinality() > 0) {
+            logger.info("Before running round {}, frag [{}] has {} active vertices", round,
+                graphXFragment.fid(), curSet.cardinality());
+            vprogTime -= System.nanoTime();
+            runVProg(0, (int) innerVerticesNum, false);
+            vprogTime += System.nanoTime();
+
+            msgSendTime -= System.nanoTime();
+            iterateEdge(0, (int) innerVerticesNum);
+            msgSendTime += System.nanoTime();
+            logger.info("[IncEval {}] Finish iterate edges for frag {}", round,
+                graphXFragment.fid());
+            flushTime -= System.nanoTime();
+            try {
+                messageStore.flushMessages(nextSet, messageManager, graphXFragment);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            nextSet.clear((int) innerVerticesNum, (int) verticesNum);
+            flushTime += System.nanoTime();
+        } else {
+            logger.info("Frag {} No message received", graphXFragment.fid());
+            round += 1;
+            return true;
+        }
+        round += 1;
+        logger.info("Round [{}] vprog {}, msgSend {} flushMsg {}", round, vprogTime / 1000000,
+            msgSendTime / 1000000, flushTime / 1000000);
+        return false;
     }
 
     /**

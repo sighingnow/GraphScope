@@ -100,9 +100,13 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
 
         int maxIterations = jsonObject.getInteger("max_iterations");
         logger.info("Max iterations: " + maxIterations);
+        int numPart = jsonObject.getInteger("num_part");
+        int fnum = frag.fnum();
+        int splitSize = (numPart + fnum - 1) / fnum;
+        int myParallelism = calcMyParallelism(numPart,splitSize, frag.fid());
 
         try {
-            graphXProxy.init(frag, messageManager, maxIterations);
+            graphXProxy.init(frag, messageManager, maxIterations,myParallelism);
         }
         catch (Exception e){
             e.printStackTrace();
@@ -136,5 +140,11 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    int calcMyParallelism(int limit, int splitSize, int fid){
+        int begin = Math.min(limit, splitSize * fid);
+        int end = Math.min(limit, begin + splitSize);
+        return end - begin;
     }
 }

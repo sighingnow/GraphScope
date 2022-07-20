@@ -16,7 +16,7 @@ SERIAL_PATH=$1
 shift
 MAX_ITERATION=$1
 shift
-NUM_PART$1
+NUM_PART=$1
 shift
 
 echo "serial path         "${SERIAL_PATH}
