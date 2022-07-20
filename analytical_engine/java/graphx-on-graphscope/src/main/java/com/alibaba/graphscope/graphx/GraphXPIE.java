@@ -68,7 +68,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
     protected BaseGraphXFragment<Long, Long, VD, ED> graphXFragment;
     private MSG_T initialMessage;
     private ExecutorService executorService;
-    private CountDownLatch countDownLatch;
     private int numCores, maxIterations, round;
     private long vprogTime, msgSendTime, receiveTime, flushTime;
     private GraphXConf<VD, ED, MSG_T> conf;
@@ -173,6 +172,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
 
     public void parallelExecute(BiConsumer<Integer, Integer> function){
         AtomicInteger getter = new AtomicInteger(0);
+        CountDownLatch countDownLatch = new CountDownLatch(numCores);
         for (int tid = 0; tid < numCores; ++tid) {
             final int finalTid = tid;
             executorService.execute(
@@ -256,12 +256,12 @@ public class GraphXPIE<VD, ED, MSG_T> {
         long beginOffset,endOffset;
         if (inEdge){
             beginOffset = oeOffsetArray.get(lid);
-            endOffset = oeOffsetArray.get(lid);
+            endOffset = oeOffsetArray.get(lid + 1);
             nbr.setAddress(beginOffset * 16 + oeBeginAddress);
         }
         else {
             beginOffset = ieOffsetArray.get(lid);
-            endOffset = ieOffsetArray.get(lid);
+            endOffset = ieOffsetArray.get(lid + 1);
             nbr.setAddress(beginOffset * 16 + ieBeginAddress);
         }
         while (beginOffset < endOffset) {
