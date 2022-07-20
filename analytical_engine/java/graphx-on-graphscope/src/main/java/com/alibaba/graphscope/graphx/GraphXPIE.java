@@ -258,12 +258,12 @@ public class GraphXPIE<VD, ED, MSG_T> {
         long beginOffset,endOffset;
         if (inEdge){
             beginOffset = oeOffsetArray.get(lid);
-            endOffset = oeOffsetArray.get(lid);
+            endOffset = oeOffsetArray.get(lid + 1);
             nbr.setAddress(beginOffset * 16 + oeBeginAddress);
         }
         else {
             beginOffset = ieOffsetArray.get(lid);
-            endOffset = ieOffsetArray.get(lid);
+            endOffset = ieOffsetArray.get(lid + 1);
             nbr.setAddress(beginOffset * 16 + ieBeginAddress);
         }
         while (beginOffset < endOffset) {
