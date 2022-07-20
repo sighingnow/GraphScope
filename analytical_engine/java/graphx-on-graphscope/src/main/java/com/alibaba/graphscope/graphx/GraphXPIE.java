@@ -257,13 +257,13 @@ public class GraphXPIE<VD, ED, MSG_T> {
     void iterateOnEdgesImpl(int lid, GSEdgeTripletImpl<VD, ED> edgeTriplet, boolean inEdge) {
         long beginOffset,endOffset;
         if (inEdge){
-            beginOffset = oeOffsetArray.get(lid);
-            endOffset = oeOffsetArray.get(lid + 1);
+            beginOffset = ieOffsetArray.get(lid);
+            endOffset = ieOffsetArray.get(lid + 1);
             nbr.setAddress(beginOffset * 16 + oeBeginAddress);
         }
         else {
-            beginOffset = ieOffsetArray.get(lid);
-            endOffset = ieOffsetArray.get(lid + 1);
+            beginOffset = oeOffsetArray.get(lid);
+            endOffset = oeOffsetArray.get(lid + 1);
             nbr.setAddress(beginOffset * 16 + ieBeginAddress);
         }
         while (beginOffset < endOffset) {
