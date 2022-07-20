@@ -17,7 +17,6 @@ import com.alibaba.graphscope.fragment.adaptor.GraphXStringVDFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringVEDFragmentAdaptor;
 import com.alibaba.graphscope.graphx.graph.GSEdgeTripletImpl;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
-import com.alibaba.graphscope.parallel.MessageInBuffer;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
 import com.alibaba.graphscope.stdcxx.FFIByteVector;
 import com.alibaba.graphscope.stdcxx.FFIByteVectorFactory;
@@ -33,10 +32,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
-import java.util.function.Function;
 import org.apache.spark.graphx.EdgeDirection;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
@@ -44,7 +39,6 @@ import org.slf4j.LoggerFactory;
 import scala.Function1;
 import scala.Function2;
 import scala.Function3;
-import scala.Int;
 import scala.Tuple2;
 import scala.collection.Iterator;
 
@@ -71,7 +65,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
     private int numCores, maxIterations, round;
     private long vprogTime, msgSendTime, receiveTime, flushTime;
     private GraphXConf<VD, ED, MSG_T> conf;
-//    private GSEdgeTripletImpl<VD, ED> edgeTriplet;
+    //    private GSEdgeTripletImpl<VD, ED> edgeTriplet;
     DefaultMessageManager messageManager;
     private PrimitiveArray<VD> newVdataArray;
     private PrimitiveArray<ED> newEdataArray;
@@ -86,9 +80,9 @@ public class GraphXPIE<VD, ED, MSG_T> {
     private BitSet curSet, nextSet;
     private EdgeDirection direction;
     private long[] lid2Oid;
-    private PropertyNbrUnit<Long> nbr;
-    private long oeBeginAddress,ieBeginAddress;
-    private ImmutableTypedArray<Long> oeOffsetArray,ieOffsetArray;
+    private PropertyNbrUnit<Long>[] nbrs;
+    private long oeBeginAddress, ieBeginAddress;
+    private ImmutableTypedArray<Long> oeOffsetArray, ieOffsetArray;
 
     public PrimitiveArray<VD> getNewVdataArray() {
         return newVdataArray;
@@ -124,23 +118,27 @@ public class GraphXPIE<VD, ED, MSG_T> {
         this.messageManager = messageManager;
         this.maxIterations = maxIterations;
         innerVerticesNum = (int) graphXFragment.getInnerVerticesNum();
-        verticesNum =  graphXFragment.getVerticesNum().intValue();
+        verticesNum = graphXFragment.getVerticesNum().intValue();
         this.messageStore = MessageStore.create((int) verticesNum, fragment.fnum(),
             conf.getMsgClass(), mergeMsg);
         logger.info("ivnum {}, tvnum {}", innerVerticesNum, verticesNum);
         curSet = new BitSet((int) verticesNum);
         nextSet = new BitSet((int) verticesNum);
         round = 0;
-        lid2Oid = new long[(int)verticesNum];
+        lid2Oid = new long[(int) verticesNum];
         Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
-        for (int i = 0; i < verticesNum; ++i){
-            vertex.SetValue((long)i);
+        for (int i = 0; i < verticesNum; ++i) {
+            vertex.SetValue((long) i);
             lid2Oid[i] = graphXFragment.getId(vertex);
         }
         vertex.SetValue(0L);
         oeOffsetArray = graphXFragment.getCSR().getOEOffsetsArray();
         ieOffsetArray = graphXFragment.getCSR().getIEOffsetsArray();
-        nbr = graphXFragment.getOEBegin(vertex);
+        nbrs = new PropertyNbrUnit[parallelism];
+        for (int i = 0; i < parallelism; ++i) {
+            nbrs[i] = graphXFragment.getOEBegin(vertex);
+        }
+
         oeBeginAddress = graphXFragment.getOEBegin(vertex).getAddress();
         ieBeginAddress = graphXFragment.getIEBegin(vertex).getAddress();
         numCores = parallelism;
@@ -148,29 +146,44 @@ public class GraphXPIE<VD, ED, MSG_T> {
         msgSendTime = vprogTime = receiveTime = flushTime = 0;
     }
 
-    private void runVProg(int startLid, int endLid, boolean firstRound){
-        for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid; lid = curSet.nextSetBit(lid + 1)) {
+    private void runVProg(int startLid, int endLid, boolean firstRound) {
+        for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid;
+            lid = curSet.nextSetBit(lid + 1)) {
             long oid = lid2Oid[lid];
             VD originalVD = newVdataArray.get(lid);
-            if (firstRound){
+            if (firstRound) {
                 newVdataArray.set(lid, vprog.apply(oid, originalVD, initialMessage));
-            }
-            else {
+            } else {
                 newVdataArray.set(lid, vprog.apply(oid, originalVD, messageStore.get(lid)));
             }
         }
     }
 
-    private void iterateEdge(int startLid, int endLid){
-        GSEdgeTripletImpl<VD,ED> edgeTriplet = new GSEdgeTripletImpl<>();
-        for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid; lid = curSet.nextSetBit(lid + 1)) {
+    private void iterateEdge(int startLid, int endLid, int threadId) {
+        GSEdgeTripletImpl<VD, ED> edgeTriplet = new GSEdgeTripletImpl<>();
+        PropertyNbrUnit<Long> nbr = nbrs[threadId];
+        for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid;
+            lid = curSet.nextSetBit(lid + 1)) {
             long oid = lid2Oid[lid];
-            edgeTriplet.setSrcOid(oid, newVdataArray.get(lid));
-            iterateOnEdges(lid, edgeTriplet);
+            VD vAttr = newVdataArray.get(lid);
+            if (direction.equals(EdgeDirection.Either())) {
+                edgeTriplet.setDstOid(oid, vAttr);
+                iterateOnInEdgesImpl(lid, edgeTriplet, nbr);
+                edgeTriplet.setSrcOid(oid, vAttr);
+                iterateOnOutEdgesImpl(lid, edgeTriplet, nbr);
+            } else if (direction.equals(EdgeDirection.Out())) {
+                edgeTriplet.setSrcOid(oid, vAttr);
+                iterateOnOutEdgesImpl(lid, edgeTriplet, nbr);
+            } else if (direction.equals(EdgeDirection.In())) {
+                edgeTriplet.setDstOid(oid, vAttr);
+                iterateOnInEdgesImpl(lid, edgeTriplet, nbr);
+            } else {
+                throw new IllegalStateException("edge direction: both is not supported");
+            }
         }
     }
 
-    public void parallelExecute(BiConsumer<Integer, Integer> function){
+    public void parallelExecute(TriConsumer<Integer, Integer, Integer> function) {
         AtomicInteger getter = new AtomicInteger(0);
         CountDownLatch countDownLatch = new CountDownLatch(numCores);
         for (int tid = 0; tid < numCores; ++tid) {
@@ -181,9 +194,10 @@ public class GraphXPIE<VD, ED, MSG_T> {
                     while (true) {
                         begin = Math.min(getter.getAndAdd(BATCH_SIZE), innerVerticesNum);
                         end = Math.min(begin + BATCH_SIZE, innerVerticesNum);
-                        if (begin >= end)
+                        if (begin >= end) {
                             break;
-                        function.accept(begin, end);
+                        }
+                        function.accept(begin, end, finalTid);
                     }
                     countDownLatch.countDown();
                 });
@@ -196,13 +210,13 @@ public class GraphXPIE<VD, ED, MSG_T> {
         }
     }
 
-    public void ParallelPEval(){
+    public void ParallelPEval() {
         vprogTime -= System.nanoTime();
-        parallelExecute((begin, end) -> runVProg(begin,end, true));
+        parallelExecute((begin, end, threadId) -> runVProg(begin, end, true));
         vprogTime += System.nanoTime();
 
         msgSendTime -= System.nanoTime();
-        parallelExecute((begin,end)-> iterateEdge(begin, innerVerticesNum));
+        parallelExecute((begin, end, threadId) -> iterateEdge(begin, innerVerticesNum, threadId));
         msgSendTime += System.nanoTime();
         logger.info("[PEval] Finish iterate edges for frag {}", graphXFragment.fid());
         flushTime -= System.nanoTime();
@@ -222,7 +236,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         vprogTime += System.nanoTime();
 
         msgSendTime -= System.nanoTime();
-        iterateEdge(0, (int) innerVerticesNum);
+        iterateEdge(0, (int) innerVerticesNum, 1);
         msgSendTime += System.nanoTime();
         logger.info("[PEval] Finish iterate edges for frag {}", graphXFragment.fid());
         flushTime -= System.nanoTime();
@@ -236,37 +250,32 @@ public class GraphXPIE<VD, ED, MSG_T> {
         round = 1;
     }
 
-    void iterateOnEdges(int lid, GSEdgeTripletImpl<VD, ED> edgeTriplet){
-        if (direction.equals(EdgeDirection.Either())){
-            iterateOnEdgesImpl(lid, edgeTriplet, true);
-            iterateOnEdgesImpl(lid, edgeTriplet, false);
-        }
-        else if (direction.equals(EdgeDirection.In())){
-            iterateOnEdgesImpl(lid, edgeTriplet, true);
-        }
-        else if (direction.equals(EdgeDirection.Out())){
-            iterateOnEdgesImpl(lid, edgeTriplet, false);
-        }
-        else {
-            throw new IllegalStateException("edge direction: both is not supported");
-        }
-    }
-
-    void iterateOnEdgesImpl(int lid, GSEdgeTripletImpl<VD, ED> edgeTriplet, boolean inEdge) {
-        long beginOffset,endOffset;
-        if (inEdge){
-            beginOffset = ieOffsetArray.get(lid);
-            endOffset = ieOffsetArray.get(lid + 1);
-            nbr.setAddress(beginOffset * 16 + oeBeginAddress);
-        }
-        else {
-            beginOffset = oeOffsetArray.get(lid);
-            endOffset = oeOffsetArray.get(lid + 1);
-            nbr.setAddress(beginOffset * 16 + ieBeginAddress);
-        }
+    void iterateOnOutEdgesImpl(int lid, GSEdgeTripletImpl<VD, ED> edgeTriplet,
+        PropertyNbrUnit<Long> nbr) {
+        long beginOffset, endOffset;
+        beginOffset = oeOffsetArray.get(lid);
+        endOffset = oeOffsetArray.get(lid + 1);
+        nbr.setAddress(beginOffset * 16 + ieBeginAddress);
         while (beginOffset < endOffset) {
             long nbrVid = nbr.vid();
             edgeTriplet.setDstOid(lid2Oid[(int) nbrVid], newVdataArray.get(nbrVid));
+            edgeTriplet.setAttr(newEdataArray.get(nbr.eid()));
+            Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
+            messageStore.addMessages(msgs, graphXFragment, nextSet);
+            nbr.addV(16);
+            beginOffset += 1;
+        }
+    }
+
+    void iterateOnInEdgesImpl(int lid, GSEdgeTripletImpl<VD, ED> edgeTriplet,
+        PropertyNbrUnit<Long> nbr) {
+        long beginOffset, endOffset;
+        beginOffset = ieOffsetArray.get(lid);
+        endOffset = ieOffsetArray.get(lid + 1);
+        nbr.setAddress(beginOffset * 16 + oeBeginAddress);
+        while (beginOffset < endOffset) {
+            long nbrVid = nbr.vid();
+            edgeTriplet.setSrcOid(lid2Oid[(int) nbrVid], newVdataArray.get(nbrVid));
             edgeTriplet.setAttr(newEdataArray.get(nbr.eid()));
             Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
             messageStore.addMessages(msgs, graphXFragment, nextSet);
@@ -291,11 +300,12 @@ public class GraphXPIE<VD, ED, MSG_T> {
             logger.info("Before running round {}, frag [{}] has {} active vertices", round,
                 graphXFragment.fid(), curSet.cardinality());
             vprogTime -= System.nanoTime();
-            parallelExecute((begin, end) -> runVProg(begin,end, false));
+            parallelExecute((begin, end, threadId) -> runVProg(begin, end, false));
             vprogTime += System.nanoTime();
 
             msgSendTime -= System.nanoTime();
-            parallelExecute((begin,end)-> iterateEdge(begin, innerVerticesNum));
+            parallelExecute(
+                (begin, end, threadId) -> iterateEdge(begin, innerVerticesNum, threadId));
             msgSendTime += System.nanoTime();
             logger.info("[IncEval {}] Finish iterate edges for frag {}", round,
                 graphXFragment.fid());
@@ -338,7 +348,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
             vprogTime += System.nanoTime();
 
             msgSendTime -= System.nanoTime();
-            iterateEdge(0, (int) innerVerticesNum);
+            iterateEdge(0, (int) innerVerticesNum, 1);
             msgSendTime += System.nanoTime();
             logger.info("[IncEval {}] Finish iterate edges for frag {}", round,
                 graphXFragment.fid());
