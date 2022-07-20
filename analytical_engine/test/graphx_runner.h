@@ -58,7 +58,7 @@ DECLARE_string(msg_class);
 DECLARE_string(initial_msg);
 DECLARE_int32(max_iterations);
 DECLARE_string(frag_ids);
-DECALRE_string(num_part);
+DECLARE_string(num_part);
 
 namespace gs {
 

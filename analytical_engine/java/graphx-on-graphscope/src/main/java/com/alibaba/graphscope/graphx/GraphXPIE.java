@@ -68,7 +68,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
     protected BaseGraphXFragment<Long, Long, VD, ED> graphXFragment;
     private MSG_T initialMessage;
     private ExecutorService executorService;
-    private CountDownLatch countDownLatch;
     private int numCores, maxIterations, round;
     private long vprogTime, msgSendTime, receiveTime, flushTime;
     private GraphXConf<VD, ED, MSG_T> conf;
@@ -130,6 +129,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
             conf.getMsgClass(), mergeMsg);
         logger.info("ivnum {}, tvnum {}", innerVerticesNum, verticesNum);
         curSet = new BitSet((int) verticesNum);
+        //initially activate all vertices
+        curSet.set(0, verticesNum);
         nextSet = new BitSet((int) verticesNum);
         round = 0;
         lid2Oid = new long[(int)verticesNum];
@@ -173,6 +174,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
 
     public void parallelExecute(BiConsumer<Integer, Integer> function){
         AtomicInteger getter = new AtomicInteger(0);
+        CountDownLatch countDownLatch = new CountDownLatch(numCores);
         for (int tid = 0; tid < numCores; ++tid) {
             final int finalTid = tid;
             executorService.execute(
