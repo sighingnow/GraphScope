@@ -156,7 +156,7 @@ object GrapeEdgeRDD extends Logging{
         //We will build a store which underlying is a simple array with length csr.getTotalEdgesNum,
         //but we can get out edge data from it with oeoffset, with some what conversion.
         val edatas = meta.edgePartitionBuilder.buildEdataArray(defaultED, csr.getTotalEdgesNum)
-        require(edatas.length == oeOffsetToEid.length, s"neq ${edatas.length}, ${oeOffsetToEid.length}")
+        //require(edatas.length == oeOffsetToEid.length, s"neq ${edatas.length}, ${oeOffsetToEid.length}")
         //raw edatas contains all edge datas, i.e. csr edata array.
         //edatas are out edges edge cache.
         meta.setGlobalVM(vm)

@@ -296,7 +296,7 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
     graphx_csr->meta_.SetTypeName(type_name<GraphXCSR<vid_t>>());
 
     size_t nBytes = 0;
-    graphx_csr_->total_edge_num_ = total_edge_num_;
+    graphx_csr->total_edge_num_ = total_edge_num_;
     graphx_csr->ie_offsets_ = ie_offsets.GetArray();
     graphx_csr->ie_offsets_accessor_.Init(graphx_csr->ie_offsets_);
     nBytes += ie_offsets.nbytes();
