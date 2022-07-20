@@ -30,6 +30,7 @@ object SSSPTest extends Logging{
           math.min(dist, newDist); // Vertex Program
       },
       triplet => {  // Send Message
+//        log.info(s"visting triplet ${triplet.srcId}(${triplet.srcAttr})->${triplet.dstId}(${triplet.dstAttr}), ${triplet.attr}")
         if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
           Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
         } else {

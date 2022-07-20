@@ -257,7 +257,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         long beginOffset, endOffset;
         beginOffset = oeOffsetArray.get(lid);
         endOffset = oeOffsetArray.get(lid + 1);
-        nbr.setAddress(beginOffset * 16 + ieBeginAddress);
+        nbr.setAddress(beginOffset * 16 + oeBeginAddress);
         while (beginOffset < endOffset) {
             long nbrVid = nbr.vid();
             edgeTriplet.setDstOid(lid2Oid[(int) nbrVid], newVdataArray.get(nbrVid));
@@ -274,7 +274,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         long beginOffset, endOffset;
         beginOffset = ieOffsetArray.get(lid);
         endOffset = ieOffsetArray.get(lid + 1);
-        nbr.setAddress(beginOffset * 16 + oeBeginAddress);
+        nbr.setAddress(beginOffset * 16 + ieBeginAddress);
         while (beginOffset < endOffset) {
             long nbrVid = nbr.vid();
             edgeTriplet.setSrcOid(lid2Oid[(int) nbrVid], newVdataArray.get(nbrVid));
