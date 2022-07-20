@@ -118,7 +118,7 @@ object Pregel extends Logging {
   (graph: Graph[VD, ED],
    initialMsg: A,
    maxIterations: Int = Int.MaxValue,
-   activeDirection: EdgeDirection = EdgeDirection.Out)
+   activeDirection: EdgeDirection = EdgeDirection.Either)
   (vprog: (VertexId, VD, A) => VD,
    sendMsg: EdgeTriplet[VD, ED] => Iterator[(VertexId, A)],
    mergeMsg: (A, A) => A)
