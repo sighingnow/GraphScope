@@ -180,8 +180,8 @@ class ImmutableTypedArray {
   void initVector() {
     auto tmp_ptr = reinterpret_cast<char*>(buffer_);
     raw_bytes_.resize(sizeof(T) * length);
-    LOG(INFO) << "Raw bytes of immutable array " << (sizeof(T) * length)
-              << "bytes";
+    // LOG(INFO) << "Raw bytes of immutable array " << (sizeof(T) * length)
+    //           << "bytes";
     memcpy(raw_bytes_.data(), tmp_ptr, sizeof(T) * length);
   }
   T* buffer_;
@@ -232,8 +232,8 @@ struct ImmutableTypedArray<std::string> {
 
     LOG(INFO) << "bytes in array: " << bytes_in_array;
     raw_bytes_.resize(sizeof(char) * bytes_in_array);
-    LOG(INFO) << "Raw bytes of immutable array "
-              << (sizeof(char) * bytes_in_array) << "bytes";
+    // LOG(INFO) << "Raw bytes of immutable array "
+    //           << (sizeof(char) * bytes_in_array) << "bytes";
     memcpy(raw_bytes_.data(), tmp_ptr, sizeof(char) * bytes_in_array);
     LOG(INFO) << "after copy" << raw_bytes_.size();
   }

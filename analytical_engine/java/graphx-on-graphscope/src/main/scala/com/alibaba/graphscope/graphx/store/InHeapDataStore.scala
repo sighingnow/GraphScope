@@ -7,14 +7,14 @@ import org.apache.spark.internal.Logging
 import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.ClassTag
 
-class InHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val length : Int, val client : VineyardClient, var numSplit : Int, val vdArray : Array[VD]) extends DataStore [VD] with Logging {
+class InHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val length : Int, val client : VineyardClient, var numSplit : Int, val array : Array[VD]) extends DataStore [VD] with Logging {
 
   def this(length : Int, client : VineyardClient, numSplit : Int) = {
     this(length,client, numSplit,new Array[VD](length))
   }
   var v6dId: Long = 0L
   var resultArray : InHeapDataStore[_] = null.asInstanceOf[InHeapDataStore[_]]
-  override def size: Int = vdArray.length
+  override def size: Int = array.length
   val count = new AtomicInteger(numSplit)
 
   def setNumSplit(split : Int) : Unit = {
@@ -23,18 +23,18 @@ class InHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val length : I
   }
 
   @inline
-  override def getData(lid: Int): VD = vdArray(lid)
+  override def getData(lid: Int): VD = array(lid)
 
   override def vineyardID: Long = {
     if (v6dId == 0) {
       //FIXME. merge array to one.
-      v6dId = GrapeUtils.array2ArrowArray[VD](vdArray, client,true)
+      v6dId = GrapeUtils.array2ArrowArray[VD](array, client,true)
     }
     v6dId
   }
 
   @inline
-  override def setData(lid: Int, vd: VD): Unit = vdArray(lid) = vd
+  override def setData(lid: Int, vd: VD): Unit = array(lid) = vd
 
   /** create a new store from current, all the same except for vertex data type */
 //  override def create[VD2: ClassTag]: VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset, length, client)

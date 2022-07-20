@@ -107,7 +107,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T>> {
 
   int64_t GetOutEdgesNum() const { return out_edges_num_; }
 
-  int64_t GetTotalEdgesNum() const { return in_edges_num_ + out_edges_num_; }
+  int64_t GetTotalEdgesNum() const { return total_edge_num_; }
 
   int64_t GetPartialInEdgesNum(vid_t from, vid_t end) const {  //[from,end)
     CHECK_LT(from, end);
@@ -125,6 +125,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T>> {
   void Construct(const vineyard::ObjectMeta& meta) override {
     this->meta_ = meta;
     this->id_ = meta.GetId();
+    this->total_edge_num_ = meta.GetKeyValue<eid_t>("total_edge_num");
     {
       vineyard_edges_array_t v6d_edges;
       v6d_edges.Construct(meta.GetMemberMeta("in_edges"));
@@ -190,6 +191,7 @@ class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T>> {
 
  private:
   vid_t local_vnum_;
+  eid_t total_edge_num_;
   int64_t in_edges_num_, out_edges_num_;
   nbr_t *in_edge_ptr_, *out_edge_ptr_;
   std::shared_ptr<arrow::FixedSizeBinaryArray> in_edges_, out_edges_;
@@ -281,6 +283,7 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
   void SetOEOffsetArray(const vineyard::NumericArray<int64_t>& array) {
     this->oe_offsets = array;
   }
+  void SetTotalEdgesNum(eid_t edge_num) { this->total_edge_num_ = edge_num; }
   // void SetEdataArray(const vineyard::NumericArray<edata_t>& array) {
   //   this->edatas = array;
   // }
@@ -293,6 +296,7 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
     graphx_csr->meta_.SetTypeName(type_name<GraphXCSR<vid_t>>());
 
     size_t nBytes = 0;
+    graphx_csr_->total_edge_num_ = total_edge_num_;
     graphx_csr->ie_offsets_ = ie_offsets.GetArray();
     graphx_csr->ie_offsets_accessor_.Init(graphx_csr->ie_offsets_);
     nBytes += ie_offsets.nbytes();
@@ -323,6 +327,7 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
 
     graphx_csr->meta_.AddMember("ie_offsets", ie_offsets.meta());
     graphx_csr->meta_.AddMember("oe_offsets", oe_offsets.meta());
+    graphx_csr->meta_.AddKeyValue("total_edge_num", total_edge_num_);
     // graphx_csr->meta_.AddMember("edatas", edatas.meta());
     graphx_csr->meta_.SetNBytes(nBytes);
 
@@ -335,6 +340,7 @@ class GraphXCSRBuilder : public vineyard::ObjectBuilder {
   }
 
  private:
+  eid_t total_edge_num_;
   vineyard::Client& client_;
   vineyard::FixedSizeBinaryArray in_edges, out_edges;
   vineyard::NumericArray<int64_t> ie_offsets, oe_offsets;
@@ -403,6 +409,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
   boost::leaf::result<void> LoadEdgesImpl(
       const oid_t*& src_oid_ptr, const oid_t*& dst_oid_ptr, int64_t edges_num_,
       GraphXVertexMap<oid_t, vid_t>& graphx_vertex_map, int local_num) {
+    this->total_edge_num_ = edges_num_;
     vnum_ = graphx_vertex_map.GetInnerVertexSize();
     std::vector<vid_t> srcLids, dstLids;
     srcLids.resize(edges_num_);
@@ -483,6 +490,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
   }
 
   vineyard::Status Build(vineyard::Client& client) override {
+    this->SetTotalEdgesNum(total_edge_num_);
     {
       std::shared_ptr<arrow::FixedSizeBinaryArray> edges;
       CHECK(in_edge_builder_.Finish(&edges).ok());
@@ -682,6 +690,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
   }
 
   vid_t vnum_;
+  eid_t total_edge_num_;
   int64_t in_edges_num_, out_edges_num_;
 
   std::vector<int> ie_degree_, oe_degree_;

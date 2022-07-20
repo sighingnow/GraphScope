@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
   google::InstallFailureSignalHandler();
 
   std::string params = flags2JsonStr();
-  VLOG(1) << "Finish option parsing" << params;
+  // VLOG(1) << "Finish option parsing" << params;
   //  if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&
   //      std::strcmp(FLAGS_ed_class.c_str(), "int64_t") == 0) {
   if (std::strcmp(FLAGS_vd_class.c_str(), "int64_t") == 0 &&

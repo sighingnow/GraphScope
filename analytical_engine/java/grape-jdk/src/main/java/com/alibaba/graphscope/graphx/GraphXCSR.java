@@ -67,6 +67,9 @@ public interface GraphXCSR<VID_T> extends FFISerializable, Serializable {
 
     @FFINameAlias("GetOutEdgesNum")
     long getOutEdgesNum();
+
+    @FFINameAlias("GetTotalEdgesNum")
+    long getTotalEdgesNum();
     /**
      *
      * @param begin inclusive

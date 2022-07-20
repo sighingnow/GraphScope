@@ -67,6 +67,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
     private GraphXConf<VD, ED, MSG_T> conf;
     //    private GSEdgeTripletImpl<VD, ED> edgeTriplet;
     DefaultMessageManager messageManager;
+    //FIXME: for primitive ones, can we avoid copying?
     private PrimitiveArray<VD> newVdataArray;
     private PrimitiveArray<ED> newEdataArray;
     /**
