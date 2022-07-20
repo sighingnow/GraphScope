@@ -474,7 +474,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
     var curOffset = activeSet.nextSetBit(activeSet.startBit)
     val oldEDataArray = edatas.asInstanceOf[InHeapDataStore[ED]].vdArray
-    val newEdataArray = edatas.asInstanceOf[InHeapDataStore[ED2]].vdArray
+    val newEdataArray = resArray.asInstanceOf[InHeapDataStore[ED2]].vdArray
     val vDataArray = vertexDataStore.asInstanceOf[InHeapDataStore[VD]].vdArray
     if (!edgeReversed){
       while (curLid < endLid && curOffset >= 0){

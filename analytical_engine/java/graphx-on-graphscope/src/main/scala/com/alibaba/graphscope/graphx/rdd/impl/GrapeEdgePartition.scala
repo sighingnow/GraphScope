@@ -476,6 +476,7 @@ object GrapeEdgePartition extends Logging {
             log.info(s"Totally $size ele in queue, registered partition num ${pidQueue.size()}")
             for (_ <- 0 until size){
               val tuple = tupleQueue.poll()
+              tuple._4.setNumSplit(1)
               val edataStore = tuple._4.asInstanceOf[DataStore[ED]]
               val _ = pidQueue.poll()
               pid2EdgePartition(tuple._1) = new GrapeEdgePartition[VD,ED](tuple._1, 0, 1, 0,  tuple._2.getInnerVertexSize,tuple._2.getOutEdgesNum.toInt, tuple._2, tuple._3, edataStore)
