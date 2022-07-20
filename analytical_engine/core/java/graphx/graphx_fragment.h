@@ -104,6 +104,7 @@ class GraphXFragment
 
     this->csr_.Construct(meta.GetMemberMeta("csr"));
     this->vm_.Construct(meta.GetMemberMeta("vm"));
+    this->vm_.InitOuterGids();
     this->vdata_.Construct(meta.GetMemberMeta("vdata"));
     this->edata_.Construct(meta.GetMemberMeta("edata"));
     CHECK_EQ(vm_.GetVertexSize(), vdata_.VerticesNum());
