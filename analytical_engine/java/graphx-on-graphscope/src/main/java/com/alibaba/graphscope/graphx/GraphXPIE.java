@@ -241,7 +241,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        nextSet.clear((int) innerVerticesNum, (int) verticesNum);
+//        nextSet.clear((int) innerVerticesNum, (int) verticesNum);
         flushTime += System.nanoTime();
         round = 1;
     }
@@ -338,7 +338,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            nextSet.clear((int) innerVerticesNum, (int) verticesNum);
+//            nextSet.clear((int) innerVerticesNum, (int) verticesNum);
             flushTime += System.nanoTime();
         } else {
             logger.info("Frag {} No message received", graphXFragment.fid());
