@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
                << FLAGS_ed_class;
   }
 
-  VLOG(1) << "Finish Querying.";
+  // VLOG(1) << "Finish Querying.";
 
   google::ShutdownGoogleLogging();
 }

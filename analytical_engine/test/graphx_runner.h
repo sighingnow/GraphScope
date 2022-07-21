@@ -69,7 +69,7 @@ void Init() {
 }
 void Finalize() {
   grape::FinalizeMPIComm();
-  VLOG(1) << "Workers finalized.";
+  VLOG(10) << "Workers finalized.";
 }
 std::string getHostName() { return boost::asio::ip::host_name(); }
 

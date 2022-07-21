@@ -401,7 +401,7 @@ void InitJavaCommunicator(JNIEnv* env, const jobject& url_class_loader,
     VLOG(1) << "Successfully init communicator.";
     return;
   }
-  VLOG(1) << "No initing since not a sub class from Communicator.";
+  VLOG(10) << "No initing since not a sub class from Communicator.";
 }
 
 std::string GetJavaProperty(JNIEnv* env, const char* property_name) {
