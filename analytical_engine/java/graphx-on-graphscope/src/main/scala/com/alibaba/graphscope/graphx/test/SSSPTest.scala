@@ -13,16 +13,26 @@ object SSSPTest extends Logging{
       .appName(s"${this.getClass.getSimpleName}")
       .getOrCreate()
     val sc = spark.sparkContext
-    if (args.length < 3) {
-      println("Expect 1 args")
+    if (args.length < 4) {
+      println("Expect 4 args")
       return 0;
     }
     val efile = args(0)
     val partNum = args(1).toInt
     val sourceId = args(2).toLong
-    val graph: Graph[Int, Double] =
-//      GraphLoader.edgeListFile(sc, efile,canonicalOrientation = false, partNum).mapEdges(e => e.attr.toDouble)
-    GraphScopeHelper.edgeListFile(sc, efile,canonicalOrientation = false,partNum).mapEdges(e => e.attr.toDouble).cache()
+    val engine = args(3)
+    val graph: Graph[Int, Double] = {
+      if (engine.equals("gs")) {
+        //      GraphLoader.edgeListFile(sc, efile,canonicalOrientation = false, partNum).mapEdges(e => e.attr.toDouble)
+        GraphScopeHelper.edgeListFile(sc, efile, canonicalOrientation = false, partNum).mapEdges(e => e.attr.toDouble).cache()
+      }
+      else if (engine.equals("graphx")){
+          GraphLoader.edgeListFile(sc, efile,canonicalOrientation = false, partNum).mapEdges(e => e.attr.toDouble)
+      }
+      else {
+        throw new IllegalStateException("gs or graphx")
+      }
+    }
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, _) =>
       if (id == sourceId) 0.0 else Double.PositiveInfinity)
