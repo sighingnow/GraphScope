@@ -37,7 +37,7 @@ do
 done
 
 #cmd="GLOG_v=10 mpirun -n 1 -hostfile ${SPARK_CONF_WORKER} -x GLOG_v -x GRAPHSCOPE_CODE_HOME -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} --user_class ${USER_CLASS} --vertex_mm_file_prefix ${V_FILE_PREFIX} --edge_mm_file_prefix ${E_FILE_PREFIX}"
-cmd="GLOG_v=10 mpirun --mca btl_tcp_if_include bond0 -n ${NUM_WORKERS} -host ${HOST_SLOT} -x LD_PRELOAD -x GLOG_v \
+cmd="GLOG_v=2 mpirun --mca btl_tcp_if_include bond0 -n ${NUM_WORKERS} -host ${HOST_SLOT} -x LD_PRELOAD -x GLOG_v \
 -x USER_JAR_PATH -x GRAPE_JVM_OPTS ${GRAPHX_RUNNER} \
 --vd_class ${VD_CLASS} --ed_class ${ED_CLASS} --msg_class ${MSG_CLASS} \
 --serial_path ${SERIAL_PATH} --frag_ids ${FRAG_IDS} \

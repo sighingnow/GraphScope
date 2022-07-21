@@ -88,7 +88,7 @@ class JavaContextBase : public grape::ContextBase {
     if (m.env()) {
       m.env()->DeleteGlobalRef(url_class_loader_object_);
       // InvokeGC(m.env());
-      VLOG(1) << "Delete URL class loader";
+      VLOG(10) << "Delete URL class loader";
     } else {
       LOG(ERROR) << "JNI env not available.";
     }
@@ -207,7 +207,7 @@ class JavaContextBase : public grape::ContextBase {
       }
 
       {
-        VLOG(1) << "Creating app object: " << app_class_name_;
+        VLOG(10) << "Creating app object: " << app_class_name_;
         app_object_ = LoadAndCreate(env, url_class_loader_object_,
                                     app_class_name_, serial_path.c_str());
         VLOG(1) << "Successfully created app object with class loader:"
@@ -223,17 +223,18 @@ class JavaContextBase : public grape::ContextBase {
           context_object_ =
               LoadAndCreate(env, url_class_loader_object_,
                             graphx_context_name.c_str(), serial_path.c_str());
-          VLOG(1) << "Succcessfully loaded graphx context: " << context_object_;
+          VLOG(10) << "Succcessfully loaded graphx context: "
+                   << context_object_;
         } else {
           std::string _context_class_name_str =
               getCtxClassNameFromAppObject(env);
-          VLOG(1) << "Context class name: " << _context_class_name_str;
+          VLOG(10) << "Context class name: " << _context_class_name_str;
           context_object_ = LoadAndCreate(env, url_class_loader_object_,
                                           _context_class_name_str.c_str(),
                                           serial_path.c_str());
-          VLOG(1) << "Successfully created ctx object with class loader:"
-                  << &url_class_loader_object_
-                  << ", of type: " << _context_class_name_str;
+          VLOG(10) << "Successfully created ctx object with class loader:"
+                   << &url_class_loader_object_
+                   << ", of type: " << _context_class_name_str;
         }
       }
       jclass context_class = env->GetObjectClass(context_object_);
@@ -250,7 +251,7 @@ class JavaContextBase : public grape::ContextBase {
       if (graph_type_str_.find("Immutable") != std::string::npos ||
           graph_type_str_.find("ArrowProjected") != std::string::npos ||
           graph_type_str_.find("GraphXFragment") != std::string::npos) {
-        VLOG(1) << "Creating IFragment";
+        VLOG(10) << "Creating IFragment";
         // jobject fragment_object_impl_ = env->NewGlobalRef(fragObject);
         // For immutableFragment and ArrowProjectedFragment, we use a wrapper
         // Load IFragmentHelper class, and call it functions.
@@ -269,7 +270,7 @@ class JavaContextBase : public grape::ContextBase {
         fragment_object_ = env->NewGlobalRef(res);
       } else {
         fragment_object_ = env->NewGlobalRef(fragObject);
-        VLOG(1) << "Creating ArrowFragment";
+        VLOG(10) << "Creating ArrowFragment";
       }
 
       // 2. Create Message manager Java object
@@ -293,7 +294,7 @@ class JavaContextBase : public grape::ContextBase {
             json_class, "parseObject",
             "(Ljava/lang/String;)Lcom/alibaba/fastjson/JSONObject;");
         CHECK_NOTNULL(parse_method);
-        VLOG(1) << "User defined kw args: " << args_str;
+        VLOG(10) << "User defined kw args: " << args_str;
         jstring args_jstring = env->NewStringUTF(args_str.c_str());
         jobject json_object =
             env->CallStaticObjectMethod(json_class, parse_method, args_jstring);
@@ -422,11 +423,11 @@ class JavaContextBase : public grape::ContextBase {
 
     std::string jar_name = pt.get<std::string>("jar_name");
     CHECK(!jar_name.empty());
-    VLOG(1) << "Parse jar name: " << jar_name;
+    VLOG(10) << "Parse jar name: " << jar_name;
 
     std::string app_class_name = pt.get<std::string>("app_class");
     CHECK(!app_class_name.empty());
-    VLOG(1) << "Parse app class name: " << app_class_name;
+    VLOG(10) << "Parse app class name: " << app_class_name;
     const char* ch = app_class_name.c_str();
     app_class_name_ = new char[strlen(ch) + 1];
     memcpy(app_class_name_, ch, strlen(ch));
@@ -450,11 +451,11 @@ class JavaContextBase : public grape::ContextBase {
 
       user_library_name = lib_path_fs.string();
       CHECK(!user_library_name.empty());
-      VLOG(1) << "User library name " << user_library_name;
+      VLOG(10) << "User library name " << user_library_name;
     }
 
     user_class_path = libPath2UserClassPath(lib_dir, lib_path_fs, jar_name);
-    VLOG(1) << "user cp: " << user_class_path;
+    VLOG(10) << "user cp: " << user_class_path;
 
     // Giraph adaptor context need to map java graph data to
     // vineyard_id(frag_group_id)
@@ -463,7 +464,7 @@ class JavaContextBase : public grape::ContextBase {
     // JVM runtime opt should consists of java.libaray.path and
     // java.class.path maybe this should be set by the backend not user.
     if (getenv("GRAPE_JVM_OPTS")) {
-      VLOG(1) << "OK, GRAPE_JVM_OPTS has been set.";
+      VLOG(10) << "OK, GRAPE_JVM_OPTS has been set.";
     } else {
       LOG(ERROR) << "Cannot find GRAPE_JVM_OPTS env";
     }
