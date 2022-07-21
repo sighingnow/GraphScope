@@ -91,9 +91,7 @@ class GraphXFragment
   }
 
   void PrepareToRunApp(const grape::CommSpec& comm_spec,
-                       grape::PrepareConf conf) {
-    LOG(INFO) << "no preparation";
-  }
+                       grape::PrepareConf conf) {}
 
   void Construct(const vineyard::ObjectMeta& meta) override {
     this->meta_ = meta;
@@ -112,7 +110,7 @@ class GraphXFragment
     this->outer_vertices_.SetRange(vm_.GetInnerVertexSize(),
                                    vm_.GetVertexSize());
     this->vertices_.SetRange(0, vm_.GetVertexSize());
-    LOG(INFO) << "GraphXFragment finish construction : " << fid_;
+    VLOG(10) << "GraphXFragment finish construction : " << fid_;
   }
   inline fid_t fid() const { return fid_; }
   inline fid_t fnum() const { return fnum_; }

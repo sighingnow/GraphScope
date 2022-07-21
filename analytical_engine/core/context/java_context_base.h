@@ -435,14 +435,8 @@ class JavaContextBase : public grape::ContextBase {
     pt.erase("app_class");
 
     context_class_name = pt.get<std::string>("graphx_context_class");
-    if (!context_class_name.empty()) {
-      LOG(INFO) << "Found graph context class: " << context_class_name;
-    }
 
     serial_path = pt.get<std::string>("serial_path", "");
-    if (!serial_path.empty()) {
-      LOG(INFO) << "Found serial path " << serial_path;
-    }
 
     boost::filesystem::path lib_path_fs, lib_dir;
     if (!lib_path.empty()) {

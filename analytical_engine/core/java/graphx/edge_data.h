@@ -68,7 +68,7 @@ class EdgeData : public vineyard::Registered<EdgeData<VID_T, ED_T>> {
     CHECK_EQ(edatas_->length(), edge_num_);
 
     edatas_accessor_.Init(edatas_);
-    LOG(INFO) << "Finish construct edge data, edge num: " << edge_num_;
+    VLOG(10) << "Finish construct edge data, edge num: " << edge_num_;
   }
 
   ED_T GetEdgeDataByEid(const eid_t& eid) { return edatas_accessor_[eid]; }
