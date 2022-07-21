@@ -128,7 +128,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         verticesNum = graphXFragment.getVerticesNum().intValue();
         this.messageStore = MessageStore.create((int) verticesNum, fragment.fnum(), numCores,
             conf.getMsgClass(), mergeMsg);
-        logger.info("ivnum {}, tvnum {}", innerVerticesNum, verticesNum);
+        logger.debug("ivnum {}, tvnum {}", innerVerticesNum, verticesNum);
         curSet = new BitSet((int) verticesNum);
         //initially activate all vertices
         curSet.set(0, verticesNum);
@@ -236,7 +236,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         msgSendTime -= System.nanoTime();
         parallelExecute(this::iterateEdge, innerVerticesNum);
         msgSendTime += System.nanoTime();
-        logger.info("[PEval] Finish iterate edges for frag {}", graphXFragment.fid());
+        logger.debug("[PEval] Finish iterate edges for frag {}", graphXFragment.fid());
         flushTime -= System.nanoTime();
         try {
             messageStore.flushMessages(nextSet, messageManager, graphXFragment, fid2WorkerId);
@@ -327,7 +327,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
             msgSendTime -= System.nanoTime();
             parallelExecute(this::iterateEdge,innerVerticesNum);
             msgSendTime += System.nanoTime();
-            logger.info("[IncEval {}] Finish iterate edges for frag {}", round,
+            logger.debug("[IncEval {}] Finish iterate edges for frag {}", round,
                 graphXFragment.fid());
             flushTime -= System.nanoTime();
             try {
@@ -516,7 +516,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
             newArray.set(i, oldArray.get(i));
         }
         long time1 = System.nanoTime();
-//        logger.info("[Coping array cost:  {}ms", (time1 - time0) / 1000000);
         return newArray;
     }
 
