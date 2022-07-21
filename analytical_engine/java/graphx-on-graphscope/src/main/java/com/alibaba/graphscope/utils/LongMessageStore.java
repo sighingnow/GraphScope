@@ -88,7 +88,7 @@ public class LongMessageStore implements MessageStore<Long>{
                 if (outputStream[i].getVector().size() > 0){
                     int workerId = fid2WorkerId[i];
                     messageManager.sendToFragment(workerId, outputStream[i].getVector());
-                    logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(), outputStream[i].getVector().size(), i);
+//                    logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(), outputStream[i].getVector().size(), i);
                 }
                 outputStream[i].reset();
             }
@@ -103,7 +103,7 @@ public class LongMessageStore implements MessageStore<Long>{
             throw new IllegalStateException("The received vector can not be empty");
         }
 
-        logger.debug("IntMessageStore digest FFIVector size {}", size);
+//        logger.debug("IntMessageStore digest FFIVector size {}", size);
         try {
             while (inputStream.available() > 0) {
                 long gid = inputStream.readLong();

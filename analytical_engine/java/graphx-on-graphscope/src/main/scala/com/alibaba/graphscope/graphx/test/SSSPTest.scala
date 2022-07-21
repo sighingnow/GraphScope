@@ -24,7 +24,7 @@ object SSSPTest extends Logging{
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, _) =>
       if (id == sourceId) 0.0 else Double.PositiveInfinity)
-    val sssp = initialGraph.pregel(Double.PositiveInfinity, 20)(
+    val sssp = initialGraph.pregel(Double.PositiveInfinity)(
       (id, dist, newDist) =>{
 //        log.info(s"vertex ${id} receive msg ${newDist}, original ${dist}")
           math.min(dist, newDist); // Vertex Program

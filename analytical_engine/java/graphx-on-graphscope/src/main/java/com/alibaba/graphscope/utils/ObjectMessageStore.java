@@ -101,7 +101,7 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
                 if (ffiOutStream[i].getVector().size() > 0){
                     int workerId = fid2WorkerId[i];
                     messageManager.sendToFragment(workerId, ffiOutStream[i].getVector());
-                    logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(), ffiOutStream[i].getVector().size(), i);
+//                    logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(), ffiOutStream[i].getVector().size(), i);
                 }
                 ffiOutStream[i].reset();
                 outputStream[i] = new ObjectOutputStream(ffiOutStream[i]);
@@ -123,13 +123,13 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
         }
 
         try {
-            logger.info("DefaultMessageStore digest FFIVector size {}, available {}", size, inputStream.available());
+//            logger.info("DefaultMessageStore digest FFIVector size {}, available {}", size, inputStream.available());
             while (inputStream.available() > 0) {
                 long gid = inputStream.readLong();
                 T msg = (T) inputStream.readObject();
                 fragment.innerVertexGid2Vertex(gid, tmpVertex);
                 int lid = tmpVertex.GetValue().intValue();
-                logger.info("Digesting message for lid {}, msg {} curSet status {}", tmpVertex.GetValue(), msg, curSet.get(lid));
+//                logger.info("Digesting message for lid {}, msg {} curSet status {}", tmpVertex.GetValue(), msg, curSet.get(lid));
                 if (curSet.get(lid)){
                     values[lid] = mergeMessage.apply(values[lid], msg);
                 }
