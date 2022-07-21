@@ -90,7 +90,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
                 if (outputStream[i].getVector().size() > 0){
                     int workerId = fid2WorkerId[i];
                     messageManager.sendToFragment(workerId, outputStream[i].getVector());
-                    logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(), outputStream[i].getVector().size(), i);
+//                    logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(), outputStream[i].getVector().size(), i);
                 }
                 outputStream[i].reset();
             }
@@ -105,7 +105,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
             throw new IllegalStateException("The received vector can not be empty");
         }
 
-        logger.debug("DefaultMessageStore digest FFIVector size {}", size);
+//        logger.debug("DefaultMessageStore digest FFIVector size {}", size);
         try {
             while (inputStream.available() > 0) {
                 long gid = inputStream.readLong();
