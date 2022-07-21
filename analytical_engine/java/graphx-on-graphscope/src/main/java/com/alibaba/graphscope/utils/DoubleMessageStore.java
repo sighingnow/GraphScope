@@ -2,6 +2,7 @@ package com.alibaba.graphscope.utils;
 
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.BaseGraphXFragment;
+import com.alibaba.graphscope.graphx.utils.IdParser;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream;
@@ -22,6 +23,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
     private Function2<Double,Double,Double> mergeMessage;
     private Vertex<Long> tmpVertex;
     private FFIByteVectorOutputStream[] outputStream;
+    private IdParser idParser;
 
     public DoubleMessageStore(int len, int fnum, Function2<Double,Double,Double> function2) {
         values = new AtomicDoubleArrayWrapper(len);
@@ -31,6 +33,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
         for (int i = 0; i < fnum; ++i){
             outputStream[i] = new FFIByteVectorOutputStream();
         }
+        idParser = new IdParser(fnum);
     }
 
     @Override
@@ -54,6 +57,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
         Iterator<Tuple2<Long, Double>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment, BitSet nextSet) {
         while (msgs.hasNext()) {
             Tuple2<Long, Double> msg = msgs.next();
+            //the oid must from src or dst, we first find with lid.
             if (!fragment.getVertex(msg._1(), tmpVertex)) {
                 throw new IllegalStateException("get vertex for oid failed: " + msg._1());
             }
@@ -110,7 +114,13 @@ public class DoubleMessageStore implements MessageStore<Double> {
             while (inputStream.available() > 0) {
                 long gid = inputStream.readLong();
                 double msg = inputStream.readDouble();
-                fragment.innerVertexGid2Vertex(gid, tmpVertex);
+                int fid = idParser.getFragId(gid);
+                if (fid != fragment.fid()){
+                    throw new IllegalStateException("receive a non inner vertex gid: "+ gid + ", parsed fid: " + fid + ", our fid: " + fragment.fid());
+                }
+                if (!fragment.innerVertexGid2Vertex(gid, tmpVertex)){
+                    throw new IllegalStateException("inner vertex gid 2 vertex failed");
+                }
                 int lid = tmpVertex.GetValue().intValue();
                 if (curSet.get(lid)){
                     values.set(lid, mergeMessage.apply(values.get(lid), msg));
