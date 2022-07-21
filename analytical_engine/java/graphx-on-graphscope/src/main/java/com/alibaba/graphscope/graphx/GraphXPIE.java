@@ -169,23 +169,22 @@ public class GraphXPIE<VD, ED, MSG_T> {
     private void iterateEdge(int startLid, int endLid, int threadId) {
         GSEdgeTripletImpl<VD, ED> edgeTriplet = new GSEdgeTripletImpl<>();
         PropertyNbrUnit<Long> nbr = nbrs[threadId];
-        for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid;
-            lid = curSet.nextSetBit(lid + 1)) {
-            long oid = lid2Oid[lid];
-            VD vAttr = newVdataArray.get(lid);
-            if (direction.equals(EdgeDirection.Either())) {
-                edgeTriplet.setDstOid(oid, vAttr);
-                iterateOnInEdgesImpl(lid, edgeTriplet, nbr);
+        if (direction.equals(EdgeDirection.Either()) || direction.equals(EdgeDirection.Out())){
+            for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid;
+                lid = curSet.nextSetBit(lid + 1)) {
+                long oid = lid2Oid[lid];
+                VD vAttr = newVdataArray.get(lid);
                 edgeTriplet.setSrcOid(oid, vAttr);
                 iterateOnOutEdgesImpl(lid, edgeTriplet, nbr);
-            } else if (direction.equals(EdgeDirection.Out())) {
-                edgeTriplet.setSrcOid(oid, vAttr);
-                iterateOnOutEdgesImpl(lid, edgeTriplet, nbr);
-            } else if (direction.equals(EdgeDirection.In())) {
+            }
+        }
+        if (direction.equals(EdgeDirection.Either()) || direction.equals(EdgeDirection.In())){
+            for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid;
+                lid = curSet.nextSetBit(lid + 1)) {
+                long oid = lid2Oid[lid];
+                VD vAttr = newVdataArray.get(lid);
                 edgeTriplet.setDstOid(oid, vAttr);
                 iterateOnInEdgesImpl(lid, edgeTriplet, nbr);
-            } else {
-                throw new IllegalStateException("edge direction: both is not supported");
             }
         }
     }
