@@ -89,49 +89,49 @@ class DefaultWorker {
     auto& graph = context_->fragment();
 
     MPI_Barrier(comm_spec_.comm());
-    
-    for (int i = 0; i < 1; ++i){
-    context_->Init(messages_, std::forward<Args>(args)...);
 
-    MPI_Barrier(comm_spec_.comm());
-    int round = 0;
-    double t = -grape::GetCurrentTime();
-    messages_.Start();
+    for (int i = 0; i < 1; ++i) {
+      context_->Init(messages_, std::forward<Args>(args)...);
 
-    messages_.StartARound();
+      MPI_Barrier(comm_spec_.comm());
+      int round = 0;
+      double t = -grape::GetCurrentTime();
+      messages_.Start();
 
-    app_->PEval(graph, *context_, messages_);
-
-    messages_.FinishARound();
-
-    if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
-      VLOG(1) << "[Coordinator]: Finished PEval";
-    }
-
-    int step = 1;
-
-    while (!messages_.ToTerminate()) {
-      round++;
       messages_.StartARound();
 
-      app_->IncEval(graph, *context_, messages_);
+      app_->PEval(graph, *context_, messages_);
 
       messages_.FinishARound();
 
       if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
-        VLOG(1) << "[Coordinator]: Finished IncEval - " << step;
+        VLOG(1) << "[Coordinator]: Finished PEval";
       }
-      ++step;
-    }
 
-    MPI_Barrier(comm_spec_.comm());
-   t += grape::GetCurrentTime();
-    if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
-	VLOG(1) << "[Only query time]: " << t;
-    } 
+      int step = 1;
+
+      while (!messages_.ToTerminate()) {
+        round++;
+        messages_.StartARound();
+
+        app_->IncEval(graph, *context_, messages_);
+
+        messages_.FinishARound();
+
+        if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
+          VLOG(1) << "[Coordinator]: Finished IncEval - " << step;
+        }
+        ++step;
+      }
+
+      MPI_Barrier(comm_spec_.comm());
+      t += grape::GetCurrentTime();
+      if (comm_spec_.worker_id() == grape::kCoordinatorRank) {
+        VLOG(1) << "[Only query time]: " << t;
+      }
     }
     messages_.Finalize();
-     
+
     finishQuery();
   }
 

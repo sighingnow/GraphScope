@@ -9,7 +9,7 @@ import com.alibaba.graphscope.graphx.utils.SerializationUtils;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import java.net.URLClassLoader;
 
-public class GraphXAdaptor<VDATA_T, EDATA_T, MSG> extends Communicator implements
+public class GraphXAdaptor<VDATA_T, EDATA_T, MSG> implements
     DefaultAppBase<Long, Long, VDATA_T, EDATA_T, GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>> {
 
     public static <VD, ED, M> GraphXAdaptor<VD, ED, M> createImpl(

@@ -143,7 +143,8 @@ class JavaContextBase : public grape::ContextBase {
 
   // Set frag_group_id to zero inidicate not available.
   void init(jlong messages_addr, const char* java_message_manager_name,
-            const std::string& params, const std::string& lib_path) {
+            const std::string& params, const std::string& lib_path,
+            int local_num = 1) {
     if (params.empty()) {
       LOG(ERROR) << "no args received";
       return;
@@ -154,7 +155,7 @@ class JavaContextBase : public grape::ContextBase {
     std::string serial_path = "";          // should only be used by graphx;
     std::string args_str = parseParamsAndSetupJVMEnv(
         params, lib_path, user_library_name, user_class_path,
-        graphx_context_name, serial_path);
+        graphx_context_name, serial_path, local_num);
 
     JavaVM* jvm = GetJavaVM();
     (void) jvm;
@@ -325,7 +326,7 @@ class JavaContextBase : public grape::ContextBase {
           env->ExceptionClear();
           LOG(ERROR) << "Exception in context Init";
         }
-        VLOG(1) << "Successfully invokd ctx init method.";
+        VLOG(10) << "Successfully invokd ctx init method.";
         // 5. to output the result, we need the c++ context held by java
         // object.
         jfieldID inner_ctx_address_field =
@@ -335,7 +336,7 @@ class JavaContextBase : public grape::ContextBase {
         inner_ctx_addr_ =
             env->GetLongField(context_object_, inner_ctx_address_field);
         CHECK_NE(inner_ctx_addr_, 0);
-        VLOG(1) << "Successfully obtained inner ctx address";
+        VLOG(10) << "Successfully obtained inner ctx address";
       }
     } else {
       LOG(ERROR) << "JNI env not available.";
@@ -400,7 +401,8 @@ class JavaContextBase : public grape::ContextBase {
                                         std::string& user_library_name,
                                         std::string& user_class_path,
                                         std::string& context_class_name,
-                                        std::string& serial_path) {
+                                        std::string& serial_path,
+                                        int local_num) {
     boost::property_tree::ptree pt;
     std::stringstream ss;
     {
@@ -465,7 +467,7 @@ class JavaContextBase : public grape::ContextBase {
     } else {
       LOG(ERROR) << "Cannot find GRAPE_JVM_OPTS env";
     }
-    SetupEnv(1);
+    SetupEnv(local_num);
     ss.str("");  // reset the stream buffer
     boost::property_tree::json_parser::write_json(ss, pt);
     return ss.str();

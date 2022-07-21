@@ -79,7 +79,10 @@ public class DoubleMessageStore implements MessageStore<Double> {
             }
             if (nextSet.get(lid)){
                 double original = values.get(lid);
-                values.compareAndSet(lid, mergeMessage.apply(original, msg._2()));
+                double newMsg = msg._2();
+                if (original != newMsg){
+                    values.compareAndSet(lid, mergeMessage.apply(original, msg._2()));
+                }
             }
             else {
                 values.compareAndSet(lid, msg._2());
@@ -102,7 +105,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
             outputStream[dstFid].writeDouble(values.get(i));
             cnt += 1;
         }
-        logger.info("Frag [{}] try to send {} msg to outer vertices", fragment.fid(), cnt);
+        logger.debug("Frag [{}] try to send {} msg to outer vertices", fragment.fid(), cnt);
         //finish stream
         for (int i = 0; i < fragment.fnum(); ++i){
             if (i != fragment.fid()){
@@ -140,26 +143,13 @@ public class DoubleMessageStore implements MessageStore<Double> {
                 }
                 int lid = vertex.GetValue().intValue();
                 if (curSet.get(lid)){
-                    if (lid < 5) {
-                        logger.info("merge msg for lid {}, prev {}, received {}", lid,
-                            values.get(lid), msg);
-                    }
                     values.set(lid, mergeMessage.apply(values.get(lid), msg));
                 }
                 else {
                     //no update in curSet when the message store is not changed, although we receive vertices.
                     if (values.get(lid) != msg){
-                        if (lid < 5) {
-                            logger.info("merge msg for lid {}, prev {}, received {}", lid,
-                                values.get(lid), msg);
-                        }
                         values.set(lid, msg);
                         curSet.set(lid);
-                    }
-                    if (lid < 5) {
-                        logger.info(
-                            "skip seting message since the old value is same as input {}, old {} msg{}",
-                            lid, values.get(lid), msg);
                     }
                 }
             }

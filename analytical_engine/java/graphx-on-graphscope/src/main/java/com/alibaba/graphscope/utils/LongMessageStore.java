@@ -97,7 +97,7 @@ public class LongMessageStore implements MessageStore<Long>{
             outputStream[dstFid].writeLong(values.get(i));
             cnt += 1;
         }
-        logger.info("Frag [{}] try to send {} msg to outer vertices", fragment.fid(), cnt);
+        logger.debug("Frag [{}] try to send {} msg to outer vertices", fragment.fid(), cnt);
         //finish stream
         for (int i = 0; i < fragment.fnum(); ++i){
             if (i != fragment.fid()){

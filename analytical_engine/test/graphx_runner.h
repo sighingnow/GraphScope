@@ -131,7 +131,7 @@ void Query(grape::CommSpec& comm_spec, std::shared_ptr<FRAG_T> fragment,
 
   MPI_Barrier(comm_spec.comm());
   double t = -grape::GetCurrentTime();
-  worker->Query(params_str, user_lib_path);
+  worker->Query(params_str, user_lib_path, comm_spec.local_num());
   t += grape::GetCurrentTime();
   MPI_Barrier(comm_spec.comm());
   if (comm_spec.worker_id() == grape::kCoordinatorRank) {
@@ -162,9 +162,13 @@ void CreateAndQuery(std::string params, const std::string& frag_name) {
   VLOG(10) << "[worker " << comm_spec.worker_id()
            << "] loaded frag id: " << fragment_id;
 
+  double t = -grape::GetCurrentTime();
   std::shared_ptr<GraphXFragmentType> fragment =
       std::dynamic_pointer_cast<GraphXFragmentType>(
           client.GetObject(fragment_id));
+  t += grape::GetCurrentTime();
+  VLOG(10) << "Work [" << comm_spec.worker_id() << " load fragment cost: " << t
+           << " second";
 
   // As the comm_spec world in this mpirun run may differs from the old
   // fid->comm_spec mapping, we need to know the mapping by gathering info.
@@ -179,7 +183,7 @@ void CreateAndQuery(std::string params, const std::string& frag_name) {
       ss << ";" << i << ":" << worker_id_to_fid[i];
     }
     auto worker_id_to_fid_str = ss.str().substr(1);
-    LOG(INFO) << "worker_id_to_fid_str: " << worker_id_to_fid_str;
+    // LOG(INFO) << "worker_id_to_fid_str: " << worker_id_to_fid_str;
     pt.put("worker_id_to_fid", worker_id_to_fid_str);
   }
 
@@ -214,7 +218,7 @@ void Run(std::string& params) {
                           TypeName<VID_T>::Get() + "," + TypeName<VD_T>::Get() +
                           "," + TypeName<ED_T>::Get() + ">";
 
-  LOG(INFO) << "Running for: " << frag_name;
+  // LOG(INFO) << "Running for: " << frag_name;
   gs::Init();
   gs::CreateAndQuery<OID_T, VID_T, VD_T, ED_T>(params, frag_name);
   gs::Finalize();
