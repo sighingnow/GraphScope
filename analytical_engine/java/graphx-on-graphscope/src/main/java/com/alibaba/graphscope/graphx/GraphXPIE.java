@@ -115,8 +115,10 @@ public class GraphXPIE<VD, ED, MSG_T> {
             throw new IllegalStateException("Only support graphx fragment");
         }
         this.graphXFragment = getBaseGraphXFragment(iFragment);
+        long time00 = System.nanoTime();
         Tuple2<PrimitiveArray<VD>, PrimitiveArray<ED>> tuple = initOldAndNewArrays(graphXFragment,
             conf);
+        long time01 = System.nanoTime();
         newVdataArray = tuple._1();
         newEdataArray = tuple._2();
 
@@ -155,7 +157,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         fillFid2WorkerId(workerIdToFid);
         msgSendTime = vprogTime = receiveTime = flushTime = 0;
         long time1 = System.nanoTime();
-        logger.info("[Perf:] init cost {}ms", (time1 - time0)/ 1000000);
+        logger.info("[Perf:] init cost {}ms, copy array cost {}ms", (time1 - time0)/ 1000000, (time01 - time00) / 1000000);
     }
 
     private void runVProg(int startLid, int endLid, boolean firstRound) {
@@ -514,7 +516,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
             newArray.set(i, oldArray.get(i));
         }
         long time1 = System.nanoTime();
-        logger.info("[Coping array cost:  {}ms", (time1 - time0) / 1000000);
+//        logger.info("[Coping array cost:  {}ms", (time1 - time0) / 1000000);
         return newArray;
     }
 

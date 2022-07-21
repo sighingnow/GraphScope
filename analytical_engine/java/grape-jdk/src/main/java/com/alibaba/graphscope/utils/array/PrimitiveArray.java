@@ -26,15 +26,15 @@ public interface PrimitiveArray<T> extends Serializable{
 
     static <TT>PrimitiveArray<TT> create(Class<? extends TT> clz, int len){
         if (clz.equals(double.class) || clz.equals(Double.class)){
-            logger.info("creating double primitive array");
+//            logger.info("creating double primitive array");
             return (PrimitiveArray<TT>) new DoubleArray(len);
         }
         else if (clz.equals(long.class) || clz.equals(Long.class)){
-            logger.info("creating long primitive array");
+//            logger.info("creating long primitive array");
             return (PrimitiveArray<TT>) new LongArray(len);
         }
         else if (clz.equals(int.class) || clz.equals(Integer.class)){
-            logger.info("creating int primitive array");
+//            logger.info("creating int primitive array");
             return (PrimitiveArray<TT>) new IntArray(len);
         }
         else {

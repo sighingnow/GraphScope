@@ -54,7 +54,6 @@ public class GraphScopeClassLoader {
                 GS_HOME = "/opt/graphscope";
             }
             System.load(GS_HOME + "/lib/libgrape-jni.so");
-            logger.info("loaded jni lib");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -71,9 +70,9 @@ public class GraphScopeClassLoader {
     public static URLClassLoader newGraphScopeClassLoader(String classPath)
             throws IllegalAccessException {
         String[] libraries = ClassScope.getLoadedLibraries(ClassLoader.getSystemClassLoader());
-        logger.info("Loaded lib: " + String.join(" ", libraries));
+        logger.debug("Loaded lib: " + String.join(" ", libraries));
         URLClassLoader urlClassLoader = new URLClassLoader(classPath2URLArray(classPath));
-        logger.info(
+        logger.debug(
                 "URLClassLoader loaded lib: "
                         + String.join(",", ClassScope.getLoadedLibraries(urlClassLoader)));
         logger.info(
@@ -92,7 +91,7 @@ public class GraphScopeClassLoader {
      */
     public static URLClassLoader newGraphScopeClassLoader() throws IllegalAccessException {
         String[] libraries = ClassScope.getLoadedLibraries(ClassLoader.getSystemClassLoader());
-        logger.info("Loaded lib: " + String.join(" ", libraries));
+        logger.debug("Loaded lib: " + String.join(" ", libraries));
         // CAUTION: add '.' to avoid empty url.
         return new URLClassLoader(
                 classPath2URLArray("."), Thread.currentThread().getContextClassLoader());
@@ -172,7 +171,7 @@ public class GraphScopeClassLoader {
             }
             logger.info("No Suitable constructors found.");
         }
-        logger.info("Loaded null class.");
+        logger.error("Loaded null class.");
         return null;
     }
 
@@ -186,7 +185,7 @@ public class GraphScopeClassLoader {
      */
     public static Class<?> loadClass(URLClassLoader classLoader, String className)
             throws ClassNotFoundException {
-        logger.info("Loading class " + className);
+        // logger.info("Loading class " + className);
         return classLoader.loadClass(formatting(className));
     }
 
@@ -215,7 +214,7 @@ public class GraphScopeClassLoader {
             return new URL[] {};
         }
         String[] splited = classPath.split(":");
-        logger.info("Splited class path: " + String.join(",", splited));
+        logger.debug("Splited class path: " + String.join(",", splited));
         List<URL> res =
                 Arrays.stream(splited)
                         .map(File::new)
@@ -229,7 +228,7 @@ public class GraphScopeClassLoader {
                                     return null;
                                 })
                         .collect(Collectors.toList());
-        logger.info(
+        logger.debug(
                 "Extracted URL: "
                         + String.join(
                                 ":", res.stream().map(URL::toString).collect(Collectors.toList())));
@@ -271,13 +270,13 @@ public class GraphScopeClassLoader {
                     ClassNotFoundException {
         // FFITypeFactor class need to be ensure loaded in current classLoader,
         // don't make it static.
-        logger.info(
+        logger.debug(
                 "class loader path: "
                         + (Arrays.stream(classLoader.getURLs())
                                 .map(URL::toString)
                                 .collect(Collectors.joining())));
         Class<?> ffiTypeFactoryClass = classLoader.loadClass(FFI_TYPE_FACTORY_CLASS);
-        logger.info(
+        logger.debug(
                 "Creating FFIPointer, typename ["
                         + foreignName
                         + "], address ["
@@ -354,13 +353,13 @@ public class GraphScopeClassLoader {
 //            throw new IllegalStateException("Not possible legnth: " + t2.length);
 //        }
         Object obj = method.invoke(null,classLoader,serialPath);
-        logger.info("Successfully invoked method, got" + obj);
+        logger.debug("Successfully invoked method, got" + obj);
         return obj;
     }
 
     private static Object loadGraphxAdaptorCtx(String serialPath,URLClassLoader classLoader)
         throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        logger.info("Trying create graphx adaptor context from: " + serialPath + " with class loader: " + classLoader);
+        logger.debug("Trying create graphx adaptor context from: " + serialPath + " with class loader: " + classLoader);
         Class<?> graphxClz = classLoader.loadClass("com.alibaba.graphscope.context.GraphXAdaptorContext");
         logger.info("Load clz : {}", graphxClz.getName());
         Method method = graphxClz.getDeclaredMethod("create", URLClassLoader.class, String.class);
@@ -376,7 +375,7 @@ public class GraphScopeClassLoader {
 //            throw new IllegalStateException("Not possible legnth: " + t2.length);
 //        }
         Object obj = method.invoke(null, classLoader, serialPath);
-        logger.info("Successfully invoked method, got" + obj);
+        logger.debug("Successfully invoked method, got" + obj);
         return obj;
     }
 }
