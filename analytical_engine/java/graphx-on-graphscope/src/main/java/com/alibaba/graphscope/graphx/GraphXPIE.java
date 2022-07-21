@@ -197,7 +197,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
 */
     }
 
-    public void parallelExecute(TriConsumer<Integer, Integer, Integer> function) {
+    public void parallelExecute(TriConsumer<Integer, Integer, Integer> function, int  limit) {
         AtomicInteger getter = new AtomicInteger(0);
         CountDownLatch countDownLatch = new CountDownLatch(numCores);
         for (int tid = 0; tid < numCores; ++tid) {
@@ -206,8 +206,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
                 () -> {
                     int begin, end;
                     while (true) {
-                        begin = Math.min(getter.getAndAdd(BATCH_SIZE), innerVerticesNum);
-                        end = Math.min(begin + BATCH_SIZE, innerVerticesNum);
+                        begin = Math.min(getter.getAndAdd(BATCH_SIZE), limit);
+                        end = Math.min(begin + BATCH_SIZE, limit);
                         if (begin >= end) {
                             break;
                         }
@@ -226,11 +226,13 @@ public class GraphXPIE<VD, ED, MSG_T> {
 
     public void ParallelPEval() {
         vprogTime -= System.nanoTime();
-        parallelExecute((begin, end, threadId) -> runVProg(begin, end, true));
+            //We need to update outer vertex message to vd array, otherwise, we will send out message
+            //infinitely.
+        parallelExecute((begin, end, threadId) -> runVProg(begin, end, true), verticesNum);
         vprogTime += System.nanoTime();
 
         msgSendTime -= System.nanoTime();
-        parallelExecute(this::iterateEdge);
+        parallelExecute(this::iterateEdge, innerVerticesNum);
         msgSendTime += System.nanoTime();
         logger.info("[PEval] Finish iterate edges for frag {}", graphXFragment.fid());
         flushTime -= System.nanoTime();
@@ -322,11 +324,11 @@ public class GraphXPIE<VD, ED, MSG_T> {
             logger.info("Before running round {}, frag [{}] has {} active vertices", round,
                 graphXFragment.fid(), curSet.cardinality());
             vprogTime -= System.nanoTime();
-            parallelExecute((begin, end, threadId) -> runVProg(begin, end, false));
+            parallelExecute((begin, end, threadId) -> runVProg(begin, end, false),verticesNum);
             vprogTime += System.nanoTime();
 
             msgSendTime -= System.nanoTime();
-            parallelExecute(this::iterateEdge);
+            parallelExecute(this::iterateEdge,innerVerticesNum);
             msgSendTime += System.nanoTime();
             logger.info("[IncEval {}] Finish iterate edges for frag {}", round,
                 graphXFragment.fid());
