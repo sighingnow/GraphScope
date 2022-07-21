@@ -31,6 +31,12 @@ public interface GraphXVertexMap<OID_T,VID_T> extends FFISerializable, Serializa
     @FFINameAlias("GetVertex")
     boolean getVertex(OID_T oid, @CXXReference Vertex<VID_T> vertex);
 
+    @FFINameAlias("GetInnerVertex")
+    boolean getInnerVertex(OID_T oid, @CXXReference Vertex<VID_T> vertex);
+
+    @FFINameAlias("GetOuterVertex")
+    boolean getOuterVertex(OID_T oid, @CXXReference Vertex<VID_T> vertex);
+
     @FFINameAlias("GetTotalVertexSize")
     long getTotalVertexSize();
 

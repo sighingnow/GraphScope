@@ -419,9 +419,10 @@ object GrapeGraphImpl extends Logging{
       val pid2Dst = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
       val pid2EdgeAttr = Array.fill(numPartitions)(new PrimitiveVector[ED])
       val pid2Oids = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
-      val pid2OuterOids = Array.fill(numPartitions)(new OpenHashSet[VertexId])
+      val pid2OuterLids = Array.fill(numPartitions)(new OpenHashSet[Int])
+      val pid2OuterOids = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
       val pid2VertexAttr = Array.fill(numPartitions)(new PrimitiveVector[VD])
-
+      val pid2OuterVertexAttr = Array.fill(numPartitions)(new PrimitiveVector[VD])
       //shatter vertices
       var i = 0
       while (i < verticesNum){
@@ -446,19 +447,29 @@ object GrapeGraphImpl extends Logging{
           pid2src(srcPid).+=(srcOid)
           pid2Dst(srcPid).+=(dstOid)
           pid2EdgeAttr(srcPid).+=(edgeAttr(i))
-          pid2OuterOids(srcPid).add(dstOid)
+          pid2OuterLids(srcPid).add(dstLids(i))
           pid2src(dstPid).+=(srcOid)
           pid2Dst(dstPid).+=(dstOid)
           pid2EdgeAttr(dstPid).+=(edgeAttr(i))
-          pid2OuterOids(dstPid).add(srcOid)
+          pid2OuterLids(dstPid).add(srcLids(i))
         }
         i += 1
       }
+      //got outer oids
+      for (i <- 0 until numPartitions){
+        val outerLidIter = pid2OuterLids(i).iterator
+        while (outerLidIter.hasNext){
+          val outerLid = outerLidIter.next()
+          pid2OuterOids(i).+=(lid2Oid(outerLid))
+          pid2OuterVertexAttr(i).+=(vertexAttr(outerLid))
+        }
+      }
+
       val res = new ArrayBuffer[(PartitionID,EdgeShuffle[VD,ED])]
       var ind = 0
       while (ind < numPartitions){
 //        log.info(s"partition ${fromPid} send msg to ${ind}")
-        res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind).trim().array, pid2OuterOids(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array, pid2EdgeAttr(ind).trim().array,pid2VertexAttr(ind).trim().array)))
+        res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind).trim().array, pid2OuterOids(ind).trim().array, pid2src(ind).trim().array, pid2Dst(ind).trim().array, pid2EdgeAttr(ind).trim().array,pid2VertexAttr(ind).trim().array, pid2OuterVertexAttr(ind).trim().array)))
         ind += 1
       }
       res.toIterator

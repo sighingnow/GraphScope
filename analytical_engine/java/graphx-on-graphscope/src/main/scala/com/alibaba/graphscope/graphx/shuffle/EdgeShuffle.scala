@@ -14,7 +14,8 @@ class EdgeShuffle[VD : ClassTag,ED : ClassTag](val fromPid : Int,
                                   val outerOids : Array[Long],
                                  val srcs : Array[Long],
                                  val dsts : Array[Long], val attrs: Array[ED] = null,
-                                 val vertexAttrs : Array[VD] = null) extends Serializable {
+                                 val innerVertexAttrs : Array[VD] = null,
+                                 val outerVertexAttrs : Array[VD] = null) extends Serializable {
   def this(fromPid : Int, dstPid : Int, oids : OpenHashSet[Long], outerOids: OpenHashSet[Long], srcs : Array[Long], dsts : Array[Long]) = {
     this(fromPid,dstPid,openHashSetToArray(oids), openHashSetToArray(outerOids), srcs, dsts)
   }

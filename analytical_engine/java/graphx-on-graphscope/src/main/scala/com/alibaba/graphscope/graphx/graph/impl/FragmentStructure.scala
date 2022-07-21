@@ -460,6 +460,11 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     true
   }
 
+  override def getOuterVertex(oid: Long, vertex: Vertex[Long]): Boolean = {
+    require(fragment.getOuterVertex(oid,vertex))
+    true
+  }
+
   override val structureType: GraphStructureType = ArrowProjectedStructure
 
   override def getEids: Array[VertexId] = eids

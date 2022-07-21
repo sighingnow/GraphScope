@@ -416,22 +416,37 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
       for (shuffle <- edgeShuffleReceived.fromPid2Shuffle){
         val edgeShuffle = shuffle.asInstanceOf[EdgeShuffle[VD,_]]
         val innerOids = edgeShuffle.oids
-        val vertexAttrs = edgeShuffle.vertexAttrs
-        if (vertexAttrs == null || vertexAttrs.length == 0){
+        val innerVertexAttrs = edgeShuffle.innerVertexAttrs
+        val outerOids = edgeShuffle.outerOids
+        val outerVertexAttrs = edgeShuffle.outerVertexAttrs
+        if (innerVertexAttrs == null || innerVertexAttrs.length == 0){
 //          log.info("no vertex attrs found in shuffle")
         }
         else {
           var i = 0
-          val limit = innerOids.length
+          var limit = innerOids.length
           val grapeVertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
-          require(limit == vertexAttrs.length, s"size neq ${limit}, ${vertexAttrs.length}")
+          require(limit == innerVertexAttrs.length, s"size neq ${limit}, ${innerVertexAttrs.length}")
           val ivnum = graphStructure.getInnerVertexSize.toInt
           while (i < limit){
             val oid = innerOids(i)
-            val vdata = vertexAttrs(i)
-            require(graphStructure.getVertex(oid,grapeVertex))
+            val vdata = innerVertexAttrs(i)
+            require(graphStructure.getInnerVertex(oid,grapeVertex))
             val lid = grapeVertex.GetValue().toInt
             require(lid < ivnum, s"expect no outer vertex ${lid}, ${ivnum}")
+            innerVertexData.setData(lid, vdata)
+            i += 1
+          }
+          //map outer vertices
+          i = 0
+          limit = outerOids.length
+          require(limit == outerVertexAttrs.length, s"size neq ${limit}, ${outerVertexAttrs.length}")
+          while (i < limit){
+            val oid = outerOids(i)
+            val vdata = outerVertexAttrs(i)
+            require(graphStructure.getOuterVertex(oid,grapeVertex))
+            val lid = grapeVertex.GetValue().toInt
+            require(lid >= ivnum, s"expect no outer vertex ${lid}, ${ivnum}")
             innerVertexData.setData(lid, vdata)
             i += 1
           }

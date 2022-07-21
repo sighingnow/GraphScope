@@ -79,6 +79,10 @@ trait GraphStructure extends Serializable {
 
    def getVertex(oid: Long, vertex: Vertex[Long]): Boolean
 
+  def getOuterVertex(oid : Long, vertex : Vertex[Long]) : Boolean
+
+  def getInnerVertex(oid : Long, vertex: Vertex[Long]) : Boolean
+
    def getTotalVertexSize: Long
 
    def getVertexSize: Long
@@ -99,7 +103,7 @@ trait GraphStructure extends Serializable {
 
    def outerVertexGid2Vertex(gid: Long, vertex: Vertex[Long]): Boolean
 
-  def getInnerVertex(oid : Long, vertex: Vertex[Long]) : Boolean
+
 
   def getEids : Array[Long]
 
