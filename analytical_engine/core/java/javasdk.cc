@@ -108,7 +108,7 @@ inline uint64_t getTotalSystemMemory() {
   uint64_t pages = sysconf(_SC_PHYS_PAGES);
   uint64_t page_size = sysconf(_SC_PAGE_SIZE);
   uint64_t ret = pages * page_size;
-  VLOG(1) << "---> getTotalSystemMemory() -> " << ret;
+  VLOG(10) << "---> getTotalSystemMemory() -> " << ret;
   ret = ret / 1024;
   ret = ret / 1024;
   ret = ret / 1024;
@@ -120,9 +120,9 @@ void SetupEnv(const int local_num) {
   int systemMemoryPerWorker = std::max(systemMemory / local_num, 1);
   int mnPerWorker = std::max(systemMemoryPerWorker * 9 / 12, 1);
 
-  VLOG(1) << "Xmx: " << systemMemoryPerWorker
-          << "g,Xms: " << systemMemoryPerWorker << "g,-Xmn: " << mnPerWorker
-          << "g";
+  VLOG(10) << "Xmx: " << systemMemoryPerWorker
+           << "g,Xms: " << systemMemoryPerWorker << "g,-Xmn: " << mnPerWorker
+           << "g";
   char kvPair[32000];
   snprintf(kvPair, sizeof(kvPair), "-Xmx%dg -Xms%dg -Xmn%dg",
            systemMemoryPerWorker, systemMemoryPerWorker, mnPerWorker);
