@@ -178,6 +178,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
                 iterateOnOutEdgesImpl(lid, edgeTriplet, nbr);
             }
         }
+/*
         if (direction.equals(EdgeDirection.Either()) || direction.equals(EdgeDirection.In())){
             for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid;
                 lid = curSet.nextSetBit(lid + 1)) {
@@ -187,6 +188,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
                 iterateOnInEdgesImpl(lid, edgeTriplet, nbr);
             }
         }
+*/
     }
 
     public void parallelExecute(TriConsumer<Integer, Integer, Integer> function) {

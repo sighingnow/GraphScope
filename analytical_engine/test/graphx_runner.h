@@ -170,13 +170,13 @@ void CreateAndQuery(std::string params, const std::string& frag_name) {
   // fid->comm_spec mapping, we need to know the mapping by gathering info.
   {
     std::vector<int32_t> worker_id_to_fid;
-    worker_id_to_fid.resize(comm_spec_.fnum());
+    worker_id_to_fid.resize(comm_spec.fnum());
     auto fid = fragment->fid();
     MPI_Allgather(&fid, 1, MPI_INT, worker_id_to_fid.data(), 1, MPI_INT,
-                  comm_spec_.comm());
+                  comm_spec.comm());
     std::stringstream ss;
-    for (int i = 0; i < comm_spec.fnum(); ++i) {
-      ss << ";" << i << ":" << worker_id_fid[i];
+    for (grape::fid_t i = 0; i < comm_spec.fnum(); ++i) {
+      ss << ";" << i << ":" << worker_id_to_fid[i];
     }
     auto worker_id_to_fid_str = ss.str().substr(1);
     LOG(INFO) << "worker_id_to_fid_str: " << worker_id_to_fid_str;
