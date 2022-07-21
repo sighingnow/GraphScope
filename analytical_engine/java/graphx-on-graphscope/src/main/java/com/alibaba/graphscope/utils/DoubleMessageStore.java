@@ -71,7 +71,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
 
     @Override
     public void flushMessages(BitSet nextSet, DefaultMessageManager messageManager,
-        BaseGraphXFragment<Long, Long, ?, ?> fragment) throws IOException {
+        BaseGraphXFragment<Long, Long, ?, ?> fragment, int[] fid2WorkerId) throws IOException {
         int ivnum = (int) fragment.getInnerVerticesNum();
         int cnt = 0;
 
@@ -88,7 +88,8 @@ public class DoubleMessageStore implements MessageStore<Double> {
             if (i != fragment.fid()){
                 outputStream[i].finishSetting();
                 if (outputStream[i].getVector().size() > 0){
-                    messageManager.sendToFragment(i, outputStream[i].getVector());
+                    int workerId = fid2WorkerId[i];
+                    messageManager.sendToFragment(workerId, outputStream[i].getVector());
                     logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(), outputStream[i].getVector().size(), i);
                 }
                 outputStream[i].reset();

@@ -32,6 +32,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import jnr.ffi.annotations.In;
 import org.apache.spark.graphx.EdgeDirection;
 import org.apache.spark.graphx.EdgeTriplet;
 import org.slf4j.Logger;
@@ -84,6 +85,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
     private PropertyNbrUnit<Long>[] nbrs;
     private long oeBeginAddress, ieBeginAddress;
     private ImmutableTypedArray<Long> oeOffsetArray, ieOffsetArray;
+    private int[] fid2WorkerId;
 
     public PrimitiveArray<VD> getNewVdataArray() {
         return newVdataArray;
@@ -102,7 +104,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
     }
 
     public void init(IFragment<Long, Long, VD, ED> fragment, DefaultMessageManager messageManager,
-        int maxIterations, int parallelism) throws IOException, ClassNotFoundException {
+        int maxIterations, int parallelism, String workerIdToFid) throws IOException, ClassNotFoundException {
         this.iFragment = fragment;
         if (!(iFragment.fragmentType().equals(FragmentType.GraphXFragment)
             || iFragment.fragmentType().equals(FragmentType.GraphXStringVDFragment)
@@ -146,6 +148,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
         ieBeginAddress = graphXFragment.getIEBegin(vertex).getAddress();
         numCores = parallelism;
         executorService = Executors.newFixedThreadPool(numCores);
+        fid2WorkerId = new int[graphXFragment.fnum()];
+        fillFid2WorkerId(workerIdToFid);
         msgSendTime = vprogTime = receiveTime = flushTime = 0;
     }
 
@@ -219,12 +223,12 @@ public class GraphXPIE<VD, ED, MSG_T> {
         vprogTime += System.nanoTime();
 
         msgSendTime -= System.nanoTime();
-        parallelExecute((begin, end, threadId) -> iterateEdge(begin, innerVerticesNum, threadId));
+        parallelExecute(this::iterateEdge);
         msgSendTime += System.nanoTime();
         logger.info("[PEval] Finish iterate edges for frag {}", graphXFragment.fid());
         flushTime -= System.nanoTime();
         try {
-            messageStore.flushMessages(nextSet, messageManager, graphXFragment);
+            messageStore.flushMessages(nextSet, messageManager, graphXFragment, fid2WorkerId);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -244,7 +248,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         logger.info("[PEval] Finish iterate edges for frag {}", graphXFragment.fid());
         flushTime -= System.nanoTime();
         try {
-            messageStore.flushMessages(nextSet, messageManager, graphXFragment);
+            messageStore.flushMessages(nextSet, messageManager, graphXFragment,fid2WorkerId);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -307,14 +311,13 @@ public class GraphXPIE<VD, ED, MSG_T> {
             vprogTime += System.nanoTime();
 
             msgSendTime -= System.nanoTime();
-            parallelExecute(
-                (begin, end, threadId) -> iterateEdge(begin, innerVerticesNum, threadId));
+            parallelExecute(this::iterateEdge);
             msgSendTime += System.nanoTime();
             logger.info("[IncEval {}] Finish iterate edges for frag {}", round,
                 graphXFragment.fid());
             flushTime -= System.nanoTime();
             try {
-                messageStore.flushMessages(nextSet, messageManager, graphXFragment);
+                messageStore.flushMessages(nextSet, messageManager, graphXFragment,fid2WorkerId);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -357,7 +360,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
                 graphXFragment.fid());
             flushTime -= System.nanoTime();
             try {
-                messageStore.flushMessages(nextSet, messageManager, graphXFragment);
+                messageStore.flushMessages(nextSet, messageManager, graphXFragment,fid2WorkerId);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -514,6 +517,22 @@ public class GraphXPIE<VD, ED, MSG_T> {
             return ((GraphXStringVEDFragmentAdaptor<Long, Long, VD, ED>) iFragment).getFragment();
         } else {
             throw new IllegalStateException("Not implemented" + iFragment);
+        }
+    }
+    private void fillFid2WorkerId(String str){
+        logger.info("try to parse " + str);
+        String[] splited = str.split(";");
+        if (splited.length != fid2WorkerId.length){
+            throw new IllegalStateException("length neq " + splited.length + "," + fid2WorkerId.length);
+        }
+        for (String tuple : splited){
+            String[] tmp = tuple.split(":");
+            if (tmp.length != 2){
+                throw new IllegalStateException("length neq 2" + tmp.length);
+            }
+            int workerId = Integer.parseInt(tmp[0]);
+            int fid = Integer.parseInt(tmp[1]);
+            fid2WorkerId[fid] = workerId;
         }
     }
 }

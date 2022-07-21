@@ -166,6 +166,23 @@ void CreateAndQuery(std::string params, const std::string& frag_name) {
       std::dynamic_pointer_cast<GraphXFragmentType>(
           client.GetObject(fragment_id));
 
+  // As the comm_spec world in this mpirun run may differs from the old
+  // fid->comm_spec mapping, we need to know the mapping by gathering info.
+  {
+    std::vector<int32_t> worker_id_to_fid;
+    worker_id_to_fid.resize(comm_spec_.fnum());
+    auto fid = fragment->fid();
+    MPI_Allgather(&fid, 1, MPI_INT, worker_id_to_fid.data(), 1, MPI_INT,
+                  comm_spec_.comm());
+    std::stringstream ss;
+    for (int i = 0; i < comm_spec.fnum(); ++i) {
+      ss << ";" << i << ":" << worker_id_fid[i];
+    }
+    auto worker_id_to_fid_str = ss.str().substr(1);
+    LOG(INFO) << "worker_id_to_fid_str: " << worker_id_to_fid_str;
+    pt.put("worker_id_to_fid", worker_id_to_fid_str);
+  }
+
   pt.put("frag_name", frag_name);
 
   if (getenv("USER_JAR_PATH")) {

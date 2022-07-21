@@ -81,7 +81,7 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
     }
     @Override
     public void flushMessages(BitSet nextSet, DefaultMessageManager messageManager,
-        BaseGraphXFragment<Long, Long, ?, ?> fragment) throws IOException {
+        BaseGraphXFragment<Long, Long, ?, ?> fragment, int[] fid2WorkerId) throws IOException {
         int ivnum = (int) fragment.getInnerVerticesNum();
         int cnt = 0;
 
@@ -99,7 +99,8 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
                 outputStream[i].flush();
                 ffiOutStream[i].finishSetting();
                 if (ffiOutStream[i].getVector().size() > 0){
-                    messageManager.sendToFragment(i, ffiOutStream[i].getVector());
+                    int workerId = fid2WorkerId[i];
+                    messageManager.sendToFragment(workerId, ffiOutStream[i].getVector());
                     logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(), ffiOutStream[i].getVector().size(), i);
                 }
                 ffiOutStream[i].reset();
