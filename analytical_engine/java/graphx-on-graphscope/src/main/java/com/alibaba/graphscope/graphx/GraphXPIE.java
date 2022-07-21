@@ -534,7 +534,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         }
     }
     private void fillFid2WorkerId(String str){
-        logger.info("try to parse " + str);
+        // logger.info("try to parse " + str);
         String[] splited = str.split(";");
         if (splited.length != fid2WorkerId.length){
             throw new IllegalStateException("length neq " + splited.length + "," + fid2WorkerId.length);
