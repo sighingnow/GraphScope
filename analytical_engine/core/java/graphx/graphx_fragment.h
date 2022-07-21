@@ -94,6 +94,7 @@ class GraphXFragment
                        grape::PrepareConf conf) {}
 
   void Construct(const vineyard::ObjectMeta& meta) override {
+    auto time = -grape::GetCurrentTime();
     this->meta_ = meta;
     this->id_ = meta.GetId();
 
@@ -110,7 +111,9 @@ class GraphXFragment
     this->outer_vertices_.SetRange(vm_.GetInnerVertexSize(),
                                    vm_.GetVertexSize());
     this->vertices_.SetRange(0, vm_.GetVertexSize());
-    VLOG(10) << "GraphXFragment finish construction : " << fid_;
+    time += grape::GetCurrentTime();
+    VLOG(10) << "GraphXFragment finish construction : " << fid_
+             << ", took: " << time << "s";
   }
   inline fid_t fid() const { return fid_; }
   inline fid_t fnum() const { return fnum_; }
