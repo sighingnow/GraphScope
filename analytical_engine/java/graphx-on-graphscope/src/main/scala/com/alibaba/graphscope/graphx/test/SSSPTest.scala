@@ -1,5 +1,6 @@
 package com.alibaba.graphscope.graphx.test
 
+import com.alibaba.graphscope.graphx.GraphScopeHelper
 import org.apache.spark.graphx.{Graph, GraphLoader, VertexId}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
@@ -20,7 +21,8 @@ object SSSPTest extends Logging{
     val partNum = args(1).toInt
     val sourceId = args(2).toLong
     val graph: Graph[Int, Double] =
-      GraphLoader.edgeListFile(sc, efile,canonicalOrientation = false, partNum).mapEdges(e => e.attr.toDouble)
+//      GraphLoader.edgeListFile(sc, efile,canonicalOrientation = false, partNum).mapEdges(e => e.attr.toDouble)
+    GraphScopeHelper.edgeListFile(sc, efile,canonicalOrientation = false,partNum).mapEdges(e => e.attr.toDouble).cache()
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, _) =>
       if (id == sourceId) 0.0 else Double.PositiveInfinity)
