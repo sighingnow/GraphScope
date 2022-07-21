@@ -2,6 +2,7 @@ package com.alibaba.graphscope.utils;
 
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.BaseGraphXFragment;
+import com.alibaba.graphscope.graphx.graph.GSEdgeTripletImpl;
 import com.alibaba.graphscope.graphx.utils.IdParser;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
@@ -21,14 +22,17 @@ public class DoubleMessageStore implements MessageStore<Double> {
 //    private double[] values;
     private AtomicDoubleArrayWrapper values;
     private Function2<Double,Double,Double> mergeMessage;
-    private Vertex<Long> tmpVertex;
+    private Vertex<Long> tmpVertex[];
     private FFIByteVectorOutputStream[] outputStream;
     private IdParser idParser;
 
-    public DoubleMessageStore(int len, int fnum, Function2<Double,Double,Double> function2) {
+    public DoubleMessageStore(int len, int fnum,int numCores, Function2<Double,Double,Double> function2) {
         values = new AtomicDoubleArrayWrapper(len);
         mergeMessage = function2;
-        tmpVertex = FFITypeFactoryhelper.newVertexLong();
+        tmpVertex = new Vertex[numCores];
+        for (int i = 0; i < numCores; ++i){
+            tmpVertex[i]= FFITypeFactoryhelper.newVertexLong();
+        }
         outputStream = new FFIByteVectorOutputStream[fnum];
         for (int i = 0; i < fnum; ++i){
             outputStream[i] = new FFIByteVectorOutputStream();
@@ -54,14 +58,25 @@ public class DoubleMessageStore implements MessageStore<Double> {
 
     @Override
     public void addMessages(
-        Iterator<Tuple2<Long, Double>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment, BitSet nextSet) {
+        Iterator<Tuple2<Long, Double>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment, BitSet nextSet, int threadId, GSEdgeTripletImpl edgeTriplet) {
+        Vertex<Long> vertex = tmpVertex[threadId];
         while (msgs.hasNext()) {
             Tuple2<Long, Double> msg = msgs.next();
             //the oid must from src or dst, we first find with lid.
-            if (!fragment.getVertex(msg._1(), tmpVertex)) {
-                throw new IllegalStateException("get vertex for oid failed: " + msg._1());
+            long oid = msg._1();
+            int lid;
+            if (oid == edgeTriplet.srcId()){
+                lid = (int) edgeTriplet.srcLid();
             }
-            int lid = tmpVertex.GetValue().intValue();
+            else if (oid == edgeTriplet.dstId()){
+                lid = (int) edgeTriplet.dstLid();
+            }
+            else {
+                if (!fragment.getVertex(msg._1(), vertex)) {
+                    throw new IllegalStateException("get vertex for oid failed: " + msg._1());
+                }
+                lid = vertex.GetValue().intValue();
+            }
             if (nextSet.get(lid)){
                 double original = values.get(lid);
                 values.compareAndSet(lid, mergeMessage.apply(original, msg._2()));
@@ -78,11 +93,12 @@ public class DoubleMessageStore implements MessageStore<Double> {
         BaseGraphXFragment<Long, Long, ?, ?> fragment, int[] fid2WorkerId) throws IOException {
         int ivnum = (int) fragment.getInnerVerticesNum();
         int cnt = 0;
+        Vertex<Long> vertex = tmpVertex[0];
 
         for (int i = nextSet.nextSetBit(ivnum); i >= 0; i = nextSet.nextSetBit(i + 1)) {
-            tmpVertex.SetValue((long) i);
-            int dstFid = fragment.getFragId(tmpVertex);
-            outputStream[dstFid].writeLong(fragment.getOuterVertexGid(tmpVertex));
+            vertex.SetValue((long) i);
+            int dstFid = fragment.getFragId(vertex);
+            outputStream[dstFid].writeLong(fragment.getOuterVertexGid(vertex));
             outputStream[dstFid].writeDouble(values.get(i));
             cnt += 1;
         }
@@ -108,6 +124,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
         if (size <= 0) {
             throw new IllegalStateException("The received vector can not be empty");
         }
+        Vertex<Long> vertex = tmpVertex[0];
 
 //        logger.debug("DefaultMessageStore digest FFIVector size {}", size);
         try {
@@ -118,18 +135,31 @@ public class DoubleMessageStore implements MessageStore<Double> {
                 if (fid != fragment.fid()){
                     throw new IllegalStateException("receive a non inner vertex gid: "+ gid + ", parsed fid: " + fid + ", our fid: " + fragment.fid());
                 }
-                if (!fragment.innerVertexGid2Vertex(gid, tmpVertex)){
+                if (!fragment.innerVertexGid2Vertex(gid, vertex)){
                     throw new IllegalStateException("inner vertex gid 2 vertex failed");
                 }
-                int lid = tmpVertex.GetValue().intValue();
+                int lid = vertex.GetValue().intValue();
                 if (curSet.get(lid)){
+                    if (lid < 5) {
+                        logger.info("merge msg for lid {}, prev {}, received {}", lid,
+                            values.get(lid), msg);
+                    }
                     values.set(lid, mergeMessage.apply(values.get(lid), msg));
                 }
                 else {
                     //no update in curSet when the message store is not changed, although we receive vertices.
                     if (values.get(lid) != msg){
+                        if (lid < 5) {
+                            logger.info("merge msg for lid {}, prev {}, received {}", lid,
+                                values.get(lid), msg);
+                        }
                         values.set(lid, msg);
                         curSet.set(lid);
+                    }
+                    if (lid < 5) {
+                        logger.info(
+                            "skip seting message since the old value is same as input {}, old {} msg{}",
+                            lid, values.get(lid), msg);
                     }
                 }
             }

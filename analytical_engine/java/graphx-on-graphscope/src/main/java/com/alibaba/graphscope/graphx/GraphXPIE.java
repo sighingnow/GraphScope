@@ -122,7 +122,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         this.maxIterations = maxIterations;
         innerVerticesNum = (int) graphXFragment.getInnerVerticesNum();
         verticesNum = graphXFragment.getVerticesNum().intValue();
-        this.messageStore = MessageStore.create((int) verticesNum, fragment.fnum(),
+        this.messageStore = MessageStore.create((int) verticesNum, fragment.fnum(), numCores,
             conf.getMsgClass(), mergeMsg);
         logger.info("ivnum {}, tvnum {}", innerVerticesNum, verticesNum);
         curSet = new BitSet((int) verticesNum);
@@ -148,6 +148,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         ieBeginAddress = graphXFragment.getIEBegin(vertex).getAddress();
         numCores = parallelism;
         executorService = Executors.newFixedThreadPool(numCores);
+        logger.info("Parallelism for frag {} is {}", graphXFragment.fid(), numCores);
         fid2WorkerId = new int[graphXFragment.fnum()];
         fillFid2WorkerId(workerIdToFid);
         msgSendTime = vprogTime = receiveTime = flushTime = 0;
@@ -161,6 +162,9 @@ public class GraphXPIE<VD, ED, MSG_T> {
             if (firstRound) {
                 newVdataArray.set(lid, vprog.apply(oid, originalVD, initialMessage));
             } else {
+                if (lid < 5){
+                    logger.info("vprog for {}({}) old vd {}, msg{}", lid, oid, originalVD, messageStore.get(lid));
+                }
                 newVdataArray.set(lid, vprog.apply(oid, originalVD, messageStore.get(lid)));
             }
         }
@@ -175,7 +179,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
                 long oid = lid2Oid[lid];
                 VD vAttr = newVdataArray.get(lid);
                 edgeTriplet.setSrcOid(oid, vAttr);
-                iterateOnOutEdgesImpl(lid, edgeTriplet, nbr);
+                edgeTriplet.setSrcLid(lid);
+                iterateOnOutEdgesImpl(lid, edgeTriplet, nbr,threadId);
             }
         }
 /*
@@ -259,24 +264,28 @@ public class GraphXPIE<VD, ED, MSG_T> {
     }
 
     void iterateOnOutEdgesImpl(int lid, GSEdgeTripletImpl<VD, ED> edgeTriplet,
-        PropertyNbrUnit<Long> nbr) {
+        PropertyNbrUnit<Long> nbr, int threadId) {
         long beginOffset, endOffset;
         beginOffset = oeOffsetArray.get(lid);
         endOffset = oeOffsetArray.get(lid + 1);
         nbr.setAddress(beginOffset * 16 + oeBeginAddress);
         while (beginOffset < endOffset) {
             long nbrVid = nbr.vid();
+            edgeTriplet.setDstLid(nbrVid);
             edgeTriplet.setDstOid(lid2Oid[(int) nbrVid], newVdataArray.get(nbrVid));
             edgeTriplet.setAttr(newEdataArray.get(nbr.eid()));
+            if (lid < 5){
+                logger.info("visiting triplet {}", edgeTriplet);
+            }
             Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
-            messageStore.addMessages(msgs, graphXFragment, nextSet);
+            messageStore.addMessages(msgs, graphXFragment, nextSet, threadId,edgeTriplet);
             nbr.addV(16);
             beginOffset += 1;
         }
     }
 
     void iterateOnInEdgesImpl(int lid, GSEdgeTripletImpl<VD, ED> edgeTriplet,
-        PropertyNbrUnit<Long> nbr) {
+        PropertyNbrUnit<Long> nbr, int threadId) {
         long beginOffset, endOffset;
         beginOffset = ieOffsetArray.get(lid);
         endOffset = ieOffsetArray.get(lid + 1);
@@ -286,7 +295,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
             edgeTriplet.setSrcOid(lid2Oid[(int) nbrVid], newVdataArray.get(nbrVid));
             edgeTriplet.setAttr(newEdataArray.get(nbr.eid()));
             Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
-            messageStore.addMessages(msgs, graphXFragment, nextSet);
+            messageStore.addMessages(msgs, graphXFragment, nextSet,threadId,edgeTriplet);
             nbr.addV(16);
             beginOffset += 1;
         }
@@ -302,7 +311,11 @@ public class GraphXPIE<VD, ED, MSG_T> {
         nextSet.clear();
 
         /////////////////////////////////////Receive message////////////////////
+        int active0 = curSet.cardinality();
         receiveMessage();
+        int active1 = curSet.cardinality();
+        logger.info("[IncEval {}]Frag [{}] before receive msg has {} active vertices, after has {} active vertices", round,
+            graphXFragment.fid(), active0, active1);
 
         if (curSet.cardinality() > 0) {
             logger.info("Before running round {}, frag [{}] has {} active vertices", round,
@@ -348,8 +361,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
         receiveMessage();
 
         if (curSet.cardinality() > 0) {
-            logger.info("Before running round {}, frag [{}] has {} active vertices", round,
-                graphXFragment.fid(), curSet.cardinality());
+            logger.info("Before running round {}, frag [{}] has {} active vertices, ivnum [{}]", round,
+                graphXFragment.fid(), curSet.cardinality(), innerVerticesNum);
             vprogTime -= System.nanoTime();
             runVProg(0, (int) innerVerticesNum, false);
             vprogTime += System.nanoTime();
@@ -357,8 +370,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
             msgSendTime -= System.nanoTime();
             iterateEdge(0, (int) innerVerticesNum, 1);
             msgSendTime += System.nanoTime();
-            logger.info("[IncEval {}] Finish iterate edges for frag {}", round,
-                graphXFragment.fid());
+            logger.info("[IncEval {}] Finish iterate edges for frag {}, active [{}] vertices", round,
+                graphXFragment.fid(), nextSet.cardinality());
             flushTime -= System.nanoTime();
             try {
                 messageStore.flushMessages(nextSet, messageManager, graphXFragment,fid2WorkerId);
@@ -367,6 +380,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
             }
             nextSet.clear((int) innerVerticesNum, (int) verticesNum);
             flushTime += System.nanoTime();
+            logger.info("[IncEval {}] Finish flush outer vertices of frag {}, active inner vertices [{}]", round, graphXFragment.fid(), nextSet.cardinality());
         } else {
             logger.info("Frag {} No message received", graphXFragment.fid());
             round += 1;

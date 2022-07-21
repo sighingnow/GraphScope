@@ -2,6 +2,7 @@ package com.alibaba.graphscope.utils;
 
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.BaseGraphXFragment;
+import com.alibaba.graphscope.graphx.graph.GSEdgeTripletImpl;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream;
@@ -20,13 +21,16 @@ public class IntMessageStore implements MessageStore<Integer> {
 
     private int[] values;
     private Function2<Integer, Integer, Integer> mergeMessage;
-    private Vertex<Long> tmpVertex;
+    private Vertex<Long>[] tmpVertex;
     private FFIByteVectorOutputStream[] outputStream;
 
-    public IntMessageStore(int len, int fnum, Function2<Integer, Integer, Integer> function2) {
+    public IntMessageStore(int len, int fnum, int numCores, Function2<Integer, Integer, Integer> function2) {
         values = new int[len];
         mergeMessage = function2;
-        tmpVertex = FFITypeFactoryhelper.newVertexLong();
+        tmpVertex = new Vertex[numCores];
+        for (int i = 0; i < numCores; ++i) {
+            tmpVertex[i] = FFITypeFactoryhelper.newVertexLong();
+        }
         outputStream = new FFIByteVectorOutputStream[fnum];
         for (int i = 0; i < fnum; ++i) {
             outputStream[i] = new FFIByteVectorOutputStream();
@@ -50,13 +54,24 @@ public class IntMessageStore implements MessageStore<Integer> {
 
     @Override
     public void addMessages(Iterator<Tuple2<Long, Integer>> msgs,
-        BaseGraphXFragment<Long, Long, ?, ?> fragment, BitSet nextSet) {
+        BaseGraphXFragment<Long, Long, ?, ?> fragment, BitSet nextSet, int threadId, GSEdgeTripletImpl edgeTriplet) {
+        Vertex<Long> vertex = tmpVertex[threadId];
         while (msgs.hasNext()) {
             Tuple2<Long, Integer> msg = msgs.next();
-            if (!fragment.getVertex(msg._1(), tmpVertex)) {
-                throw new IllegalStateException("get vertex for oid failed: " + msg._1());
+            long oid = msg._1();
+            int lid;
+            if (oid == edgeTriplet.srcId()){
+                lid = (int) edgeTriplet.srcLid();
             }
-            int lid = tmpVertex.GetValue().intValue();
+            else if (oid == edgeTriplet.dstId()){
+                lid = (int) edgeTriplet.dstLid();
+            }
+            else {
+                if (!fragment.getVertex(msg._1(), vertex)) {
+                    throw new IllegalStateException("get vertex for oid failed: " + msg._1());
+                }
+                lid = vertex.GetValue().intValue();
+            }
             if (nextSet.get(lid)) {
                 int original = values[lid];
                 values[lid] = mergeMessage.apply(original, msg._2());
@@ -72,11 +87,12 @@ public class IntMessageStore implements MessageStore<Integer> {
         BaseGraphXFragment<Long, Long, ?, ?> fragment, int[] fid2WorkerId) throws IOException {
         int ivnum = (int) fragment.getInnerVerticesNum();
         int cnt = 0;
+        Vertex<Long> vertex = tmpVertex[0];
 
         for (int i = nextSet.nextSetBit(ivnum); i >= 0; i = nextSet.nextSetBit(i + 1)) {
-            tmpVertex.SetValue((long) i);
-            int dstFid = fragment.getFragId(tmpVertex);
-            outputStream[dstFid].writeLong(fragment.getOuterVertexGid(tmpVertex));
+            vertex.SetValue((long) i);
+            int dstFid = fragment.getFragId(vertex);
+            outputStream[dstFid].writeLong(fragment.getOuterVertexGid(vertex));
             outputStream[dstFid].writeInt(values[i]);
             cnt += 1;
         }
@@ -102,14 +118,15 @@ public class IntMessageStore implements MessageStore<Integer> {
         if (size <= 0) {
             throw new IllegalStateException("The received vector can not be empty");
         }
+        Vertex<Long> vertex = tmpVertex[0];
 
 //        logger.debug("IntMessageStore digest FFIVector size {}", size);
         try {
             while (inputStream.available() > 0) {
                 long gid = inputStream.readLong();
                 int msg = inputStream.readInt();
-                fragment.innerVertexGid2Vertex(gid, tmpVertex);
-                int lid = tmpVertex.GetValue().intValue();
+                fragment.innerVertexGid2Vertex(gid, vertex);
+                int lid = vertex.GetValue().intValue();
                 if (curSet.get(lid)){
                     values[lid] = mergeMessage.apply(values[lid], msg);
                 }

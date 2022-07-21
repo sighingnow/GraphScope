@@ -23,6 +23,13 @@ abstract class GSEdgeTriplet[VD,ED] extends EdgeTriplet[VD,ED]{
 }
 class GSEdgeTripletImpl[@specialized(Long,Int,Double)VD, @specialized(Long,Int,Double)ED] extends GSEdgeTriplet[VD,ED]{
 
+  def setSrcLid(srcLid : Long) : Unit = {
+    this.srcLid = srcLid;
+  }
+  def setDstLid(dstLid : Long) : Unit = {
+    this.dstLid = dstLid;
+  }
+
   override def setSrcOid(srcId : Long, srcAttr : VD): Unit ={
     this.srcId = srcId
     this.srcAttr = srcAttr
