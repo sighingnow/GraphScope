@@ -106,6 +106,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
     public void init(IFragment<Long, Long, VD, ED> fragment, DefaultMessageManager messageManager,
         int maxIterations, int parallelism, String workerIdToFid) throws IOException, ClassNotFoundException {
         this.iFragment = fragment;
+        this.numCores = parallelism;
         if (!(iFragment.fragmentType().equals(FragmentType.GraphXFragment)
             || iFragment.fragmentType().equals(FragmentType.GraphXStringVDFragment)
             || iFragment.fragmentType().equals(FragmentType.GraphXStringEDFragment)
@@ -146,7 +147,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
 
         oeBeginAddress = graphXFragment.getOEBegin(vertex).getAddress();
         ieBeginAddress = graphXFragment.getIEBegin(vertex).getAddress();
-        numCores = parallelism;
+
         executorService = Executors.newFixedThreadPool(numCores);
         logger.info("Parallelism for frag {} is {}", graphXFragment.fid(), numCores);
         fid2WorkerId = new int[graphXFragment.fnum()];
