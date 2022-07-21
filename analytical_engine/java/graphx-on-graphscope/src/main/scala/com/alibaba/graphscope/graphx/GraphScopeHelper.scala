@@ -226,13 +226,12 @@ object GraphScopeHelper extends Logging{
 
   private [graphx] def graphxGraph2Fragment[VD: ClassTag,ED : ClassTag](originGraph: GraphImpl[VD, ED]) : GrapeGraphImpl[VD,ED] = {
     val numPartitions = originGraph.vertices.getNumPartitions
-    val partitioner = new HashPartitioner(numPartitions)
     val time0 = System.nanoTime()
     //Note: Before convert to graphx graph, we need to get edges and vertices attr on two endpoint.
     //We can not separate the shuffling stage into to distinct ones. Because the result partitions
     //has inconsistent pids.
 
-    val graphShuffles = GrapeGraphImpl.generateGraphShuffle(originGraph,partitioner).cache()
+    val graphShuffles = GrapeGraphImpl.generateGraphShuffle(originGraph).cache()
 
     val edgeShufflesNum = graphShuffles.count()
     val time1 = System.nanoTime()

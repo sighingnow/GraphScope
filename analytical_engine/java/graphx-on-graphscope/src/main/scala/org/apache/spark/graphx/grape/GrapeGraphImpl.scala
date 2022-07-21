@@ -1,5 +1,6 @@
 package org.apache.spark.graphx.grape
 
+import com.alibaba.graphscope.graphx.GraphScopeHelper
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
@@ -11,10 +12,11 @@ import org.apache.spark.graphx.impl.GraphImpl
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.util.collection.{BitSet, OpenHashSet, PrimitiveVector}
-import org.apache.spark.{HashPartitioner, Partitioner, SparkContext}
+import org.apache.spark.util.collection.{OpenHashSet, PrimitiveVector}
+import org.apache.spark.{HashPartitioner, SparkContext}
 import org.slf4j.{Logger, LoggerFactory}
 
+import java.net.InetAddress
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.{ClassTag, classTag}
 
@@ -394,10 +396,21 @@ object GrapeGraphImpl extends Logging{
     null
   }
 
-  def generateGraphShuffle[VD : ClassTag, ED : ClassTag](graph : GraphImpl[VD,ED], partitioner : Partitioner) = {
+  def generateGraphShuffle[VD : ClassTag, ED : ClassTag](graph : GraphImpl[VD,ED]) = {
     graph.replicatedVertexView.upgrade(graph.vertices,includeSrc = true,includeDst = true)
-    val numPartitions = graph.vertices.getNumPartitions
+    //gather hosts names
+    val collectHosts = graph.vertices.mapPartitions(iter =>{
+      if (iter.hasNext) {
+        val hostName = InetAddress.getLocalHost.getHostName
+        Iterator(hostName)
+      }
+      else Iterator.empty
+    },preservesPartitioning = true).collect().distinct
+    log.info(s"Previous GraphX graph exists on ${collectHosts.length} workers")
+    val prevNumPartition = graph.vertices.getNumPartitions
+    val numPartitions = Math.min(prevNumPartition, GraphScopeHelper.MAX_FNUM_PER_EXECUTOR * collectHosts.length)
     val partitioner = new HashPartitioner(numPartitions)
+    log.info(s"Shrink partition num from ${prevNumPartition} to ${numPartitions}")
     graph.replicatedVertexView.edges.partitionsRDD.mapPartitions(iter => {
       val (fromPid, part) = iter.next()
       val srcLids = part.localSrcIds
