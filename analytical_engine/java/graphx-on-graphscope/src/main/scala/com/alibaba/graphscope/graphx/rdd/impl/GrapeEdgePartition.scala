@@ -376,8 +376,6 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     log.info(s"Constructing csr with global vm ${globalVMID}")
     val graphxVertexMapGetter = ScalaFFIFactory.newVertexMapGetter()
     val graphxVertexMap = graphxVertexMapGetter.get(client, globalVMID).get()
-    //Init outer vertices here, cost 20s
-    graphxVertexMap.initOuterGids()
     log.info(s"Got graphx vertex map: ${graphxVertexMap}, total vnum ${graphxVertexMap.getTotalVertexSize}, fid ${graphxVertexMap.fid()}/${graphxVertexMap.fnum()}")
     var ind = 0
     for (shuffle <- lists){
