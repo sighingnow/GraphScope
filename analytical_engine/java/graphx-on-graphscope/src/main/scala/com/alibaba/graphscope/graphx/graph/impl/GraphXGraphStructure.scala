@@ -372,8 +372,14 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
   }
 
   override def getInnerVertex(oid: Long, vertex: Vertex[Long]): Boolean = {
-    require(vm.getVertex(oid, vertex))
-    require(vertex.GetValue() < vm.innerVertexSize())
+    require(vm.getInnerVertex(oid, vertex))
+    require(vertex.GetValue() < ivnum)
+    true
+  }
+
+  override def getOuterVertex(oid: Long, vertex: Vertex[Long]): Boolean = {
+    require(vm.getOuterVertex(oid, vertex))
+    require(vertex.GetValue() >= ivnum)
     true
   }
 

@@ -416,6 +416,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
             }
             PrimitiveArray<ED_T> newEdataArray = processPrimitiveArray(oldEdataArray,
                 conf.getEdClass());
+            //Should contain outer vertices
             PrimitiveArray<VD_T> newVdataArray = processPrimitiveArray(oldVdataArray,
                 conf.getVdClass());
             return new Tuple2<>(newVdataArray, newEdataArray);
