@@ -18,7 +18,7 @@ public interface MessageStore<T> extends PrimitiveArray<T> {
 
     void addMessages(Iterator<Tuple2<Long,T>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment, BitSet nextSet);
 
-    void flushMessages(BitSet nextSet, DefaultMessageManager messageManager,BaseGraphXFragment<Long,Long,?,?> fragment)
+    void flushMessages(BitSet nextSet, DefaultMessageManager messageManager,BaseGraphXFragment<Long,Long,?,?> fragment, int [] fid2WorkerId)
         throws IOException;
 
     void digest(FFIByteVector vector,BaseGraphXFragment<Long,Long,?,?> fragment, BitSet curSet);
