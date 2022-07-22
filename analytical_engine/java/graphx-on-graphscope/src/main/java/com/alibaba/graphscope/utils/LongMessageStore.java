@@ -23,8 +23,9 @@ public class LongMessageStore implements MessageStore<Long>{
     private Function2<Long,Long,Long> mergeMessage;
     private Vertex<Long>[] tmpVertex;
     private FFIByteVectorOutputStream[] outputStream;
+    private BitSet nextSet;
 
-    public LongMessageStore(int len,int fnum, int numCores, Function2<Long,Long,Long> mergeMessage){
+    public LongMessageStore(int len,int fnum, int numCores, Function2<Long,Long,Long> mergeMessage, BitSet nextSet){
         values = new AtomicLongArrayWrapper(len);
         this.mergeMessage = mergeMessage;
         tmpVertex = new Vertex[numCores];
@@ -35,6 +36,7 @@ public class LongMessageStore implements MessageStore<Long>{
         for (int i = 0; i < fnum; ++i){
             outputStream[i] = new FFIByteVectorOutputStream();
         }
+        this.nextSet = nextSet;
     }
 
     @Override
@@ -54,7 +56,7 @@ public class LongMessageStore implements MessageStore<Long>{
 
     @Override
     public void addMessages(
-        Iterator<Tuple2<Long, Long>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment, BitSet nextSet, int threadId,
+        Iterator<Tuple2<Long, Long>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment,  int threadId,
         GSEdgeTripletImpl edgeTriplet) {
         Vertex<Long> vertex = tmpVertex[threadId];
         while (msgs.hasNext()) {

@@ -23,8 +23,9 @@ public class IntMessageStore implements MessageStore<Integer> {
     private Function2<Integer, Integer, Integer> mergeMessage;
     private Vertex<Long>[] tmpVertex;
     private FFIByteVectorOutputStream[] outputStream;
+    private BitSet nextSet;
 
-    public IntMessageStore(int len, int fnum, int numCores, Function2<Integer, Integer, Integer> function2) {
+    public IntMessageStore(int len, int fnum, int numCores, Function2<Integer, Integer, Integer> function2, BitSet nextSet) {
         values = new int[len];
         mergeMessage = function2;
         tmpVertex = new Vertex[numCores];
@@ -35,6 +36,7 @@ public class IntMessageStore implements MessageStore<Integer> {
         for (int i = 0; i < fnum; ++i) {
             outputStream[i] = new FFIByteVectorOutputStream();
         }
+        this.nextSet = nextSet;
     }
 
     @Override
@@ -54,7 +56,7 @@ public class IntMessageStore implements MessageStore<Integer> {
 
     @Override
     public void addMessages(Iterator<Tuple2<Long, Integer>> msgs,
-        BaseGraphXFragment<Long, Long, ?, ?> fragment, BitSet nextSet, int threadId, GSEdgeTripletImpl edgeTriplet) {
+        BaseGraphXFragment<Long, Long, ?, ?> fragment, int threadId, GSEdgeTripletImpl edgeTriplet) {
         Vertex<Long> vertex = tmpVertex[threadId];
         while (msgs.hasNext()) {
             Tuple2<Long, Integer> msg = msgs.next();

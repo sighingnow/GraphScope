@@ -27,8 +27,9 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
     private Vertex<Long>[] tmpVertex;
     private FFIByteVectorOutputStream[] ffiOutStream;
     private ObjectOutputStream[] outputStream;
+    private BitSet nextSet;
 
-    public ObjectMessageStore(int len,int fnum, int numCores, Class<? extends T>clz, Function2<T,T,T> function2)
+    public ObjectMessageStore(int len,int fnum, int numCores, Class<? extends T>clz, Function2<T,T,T> function2, BitSet nextSet)
     {
         this.clz = clz;
         values = (T[]) new Object[len];
@@ -47,6 +48,7 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
                 e.printStackTrace();
             }
         }
+        this.nextSet = nextSet;
     }
 
     @Override
@@ -66,7 +68,7 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
 
     @Override
     public void addMessages(
-        Iterator<Tuple2<Long, T>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment, BitSet nextSet, int threadId,
+        Iterator<Tuple2<Long, T>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment, int threadId,
         GSEdgeTripletImpl edgeTriplet) {
         Vertex<Long> vertex = tmpVertex[threadId];
         while (msgs.hasNext()) {
