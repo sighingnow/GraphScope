@@ -531,8 +531,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
     }
 
     private static <T> PrimitiveArray<T> wrapReadOnlyArray(ImmutableTypedArray<T> oldArray, Class<? extends T> clz){
-        PrimitiveArray<T> newArray = new TypedBackendPrimitiveArray<T>(oldArray);
-        return newArray;
+        return PrimitiveArray.createImmutable(oldArray,clz);
     }
 
     private static <T> PrimitiveArray<T> processPrimitiveArray(ImmutableTypedArray<T> oldArray,
