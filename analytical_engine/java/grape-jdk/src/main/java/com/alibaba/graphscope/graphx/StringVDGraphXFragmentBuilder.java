@@ -28,7 +28,7 @@ public interface StringVDGraphXFragmentBuilder<OID_T, VID_T, VD_T, ED_T> extends
         StringVDGraphXFragmentBuilder<OID_T, VID_T, VD_T, ED_T> create(
             @CXXReference VineyardClient vineyardClient, long vmId, long csrId, long vdataId, long edId);
         StringVDGraphXFragmentBuilder<OID_T, VID_T, VD_T, ED_T> create(
-            @CXXReference VineyardClient vineyardClient, GraphXVertexMap<OID_T,VID_T> vm, GraphXCSR<VID_T> csr, StringVertexData<VID_T,VD_T> vdata, EdgeData<VID_T,ED_T> edata);
+            @CXXReference VineyardClient vineyardClient, @CXXReference GraphXVertexMap<OID_T,VID_T> vm, @CXXReference GraphXCSR<VID_T> csr, @CXXReference StringVertexData<VID_T,VD_T> vdata, @CXXReference EdgeData<VID_T,ED_T> edata);
 
     }
 }
