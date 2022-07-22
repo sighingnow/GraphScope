@@ -24,7 +24,7 @@ object SSSPTest extends Logging{
     val graph: Graph[Int, Double] = {
       if (engine.equals("gs")) {
         //      GraphLoader.edgeListFile(sc, efile,canonicalOrientation = false, partNum).mapEdges(e => e.attr.toDouble)
-        GraphScopeHelper.edgeListFile(sc, efile, canonicalOrientation = false, partNum).mapEdges(e => e.attr.toDouble).cache()
+        GraphScopeHelper.edgeListFile(sc, efile, canonicalOrientation = false, partNum).mapEdges(e => e.attr.toDouble)
       }
       else if (engine.equals("graphx")){
           GraphLoader.edgeListFile(sc, efile,canonicalOrientation = false, partNum).mapEdges(e => e.attr.toDouble)
@@ -35,7 +35,10 @@ object SSSPTest extends Logging{
     }
     // Initialize the graph such that all vertices except the root have distance infinity.
     val initialGraph = graph.mapVertices((id, _) =>
-      if (id == sourceId) 0.0 else Double.PositiveInfinity)
+      if (id == sourceId) 0.0 else Double.PositiveInfinity).cache()
+    log.info(s"initial graph count ${initialGraph.numVertices}, ${initialGraph.numEdges}")
+    val time0 = System.nanoTime()
+
     val sssp = initialGraph.pregel(Double.PositiveInfinity)(
       (id, dist, newDist) =>{
 //        log.info(s"vertex ${id} receive msg ${newDist}, original ${dist}")
@@ -51,8 +54,11 @@ object SSSPTest extends Logging{
       },
       (a, b) => math.min(a, b) // Merge Message
     )
+    log.info(s"initial graph count ${sssp.numVertices}, ${sssp.numEdges}")
+    val time1 = System.nanoTime()
+    log.info(s"Pregel took ${(time1 - time0)/1000000}ms")
 //    println(sssp.vertices.collect.mkString("\n"))
-    sssp.vertices.saveAsTextFile(s"/tmp/sssp-test-${java.time.LocalDateTime.now()}")
+//    sssp.vertices.saveAsTextFile(s"/tmp/sssp-test-${java.time.LocalDateTime.now()}")
     // $example off$
 
   }
