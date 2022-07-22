@@ -182,9 +182,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         long beginOffset, endOffset;
         for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid;
             lid = curSet.nextSetBit(lid + 1)) {
-            long oid = lid2Oid[lid];
-            VD vAttr = newVdataArray.get(lid);
-            edgeTriplet.setSrcOid(oid, vAttr);
+            edgeTriplet.setSrcOid(lid2Oid[lid], newVdataArray.get(lid));
 
             beginOffset = oeOffsetArray.get(lid);
             endOffset = oeOffsetArray.get(lid + 1);

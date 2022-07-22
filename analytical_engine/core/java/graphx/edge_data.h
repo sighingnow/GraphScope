@@ -44,9 +44,7 @@ class EdgeData : public vineyard::Registered<EdgeData<VID_T, ED_T>> {
   using vid_t = VID_T;
   using edata_t = ED_T;
   using eid_t = uint64_t;
-  using vid_array_t = typename vineyard::ConvertToArrowType<vid_t>::ArrayType;
-  using edata_array_t =
-      typename vineyard::ConvertToArrowType<edata_t>::ArrayType;
+  using edata_array_t = typename vineyard::Array<edata_t>;
   using vertex_t = grape::Vertex<VID_T>;
 
  public:
@@ -61,9 +59,7 @@ class EdgeData : public vineyard::Registered<EdgeData<VID_T, ED_T>> {
     this->meta_ = meta;
     this->id_ = meta.GetId();
     this->edge_num_ = meta.GetKeyValue<eid_t>("edge_num");
-    vineyard::NumericArray<edata_t> vineyard_array;
-    vineyard_array.Construct(meta.GetMemberMeta("edatas"));
-    edatas_ = vineyard_array.GetArray();
+    edatas_->Construct(meta.GetMemberMeta("edatas"));
 
     CHECK_EQ(edatas_->length(), edge_num_);
 
@@ -94,7 +90,6 @@ class EdgeData<VID_T, std::string>
   using vid_t = VID_T;
   using edata_t = std::string;
   using eid_t = uint64_t;
-  using vid_array_t = typename vineyard::ConvertToArrowType<vid_t>::ArrayType;
   using edata_array_t = arrow::LargeStringArray;
   using vertex_t = grape::Vertex<VID_T>;
 
@@ -145,18 +140,16 @@ class EdgeDataBuilder : public vineyard::ObjectBuilder {
   using vid_t = VID_T;
   using edata_t = ED_T;
   using eid_t = uint64_t;
-  using edata_array_builder_t =
-      typename vineyard::ConvertToArrowType<edata_t>::BuilderType;
-  using edata_array_t =
-      typename vineyard::ConvertToArrowType<edata_t>::ArrayType;
+  using edata_array_builder_t = typename vineyard::ArrayBuilder<edata_t>;
+  using edata_array_t = typename vineyard::Array<edata_t>;
 
  public:
   EdgeDataBuilder() {}
   ~EdgeDataBuilder() {}
 
   void Init(edata_array_builder_t& edata_builder) {
-    edata_builder.Finish(&edata_array_);
-    edge_num_ = edata_array_->length();
+    edge_num_ = edata_builder.size();
+    this->edata_builder_ = edata_builder;
     LOG(INFO) << "edge num: " << edge_num_;
   }
 
@@ -173,12 +166,12 @@ class EdgeDataBuilder : public vineyard::ObjectBuilder {
     edge_data->meta_.SetTypeName(type_name<EdgeData<vid_t, edata_t>>());
 
     size_t nBytes = 0;
-    edge_data->edatas_ = vineyard_array.GetArray();
+    edge_data->edatas_ = edata_array_;
     edge_data->edge_num_ = edge_num_;
-    edge_data->edatas_accessor_.Init(edge_data->edatas_);
+    edge_data->edatas_accessor_.Init(edata_array_);
     edge_data->meta_.AddKeyValue("edge_num", edge_num_);
-    edge_data->meta_.AddMember("edatas", vineyard_array.meta());
-    nBytes += vineyard_array.nbytes();
+    edge_data->meta_.AddMember("edatas", edata_array_->meta());
+    nBytes += edata_array_->nbytes();
     LOG(INFO) << "total bytes: " << nBytes;
     edge_data->meta_.SetNBytes(nBytes);
     VINEYARD_CHECK_OK(client.CreateMetaData(edge_data->meta_, edge_data->id_));
@@ -188,19 +181,16 @@ class EdgeDataBuilder : public vineyard::ObjectBuilder {
   }
 
   vineyard::Status Build(vineyard::Client& client) override {
-    typename vineyard::InternalType<edata_t>::vineyard_builder_type
-        edata_builder(client, this->edata_array_);
-    vineyard_array =
-        *std::dynamic_pointer_cast<vineyard::NumericArray<edata_t>>(
-            edata_builder.Seal(client));
+    edata_array_ =
+        std::dynamic_pointer_cast<edata_array_t>(edata_builder_.Seal(client));
     LOG(INFO) << "Finish building edge data;";
     return vineyard::Status::OK();
   }
 
  private:
   eid_t edge_num_;
+  edata_builder_t edata_builder_;
   std::shared_ptr<edata_array_t> edata_array_;
-  vineyard::NumericArray<edata_t> vineyard_array;
 };
 
 template <typename VID_T>

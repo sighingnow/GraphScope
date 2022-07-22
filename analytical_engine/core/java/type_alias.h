@@ -163,7 +163,19 @@ class ImmutableTypedArray {
               ->raw_values();
       buffer_ = const_cast<T*>(const_buffer_);
       length = array->length();
-      initVector();
+      // initVector();
+    }
+  }
+
+  void Init(std::shared_ptr<vineyard::Array<T>> array) {
+    if (array == nullptr) {
+      buffer_ = NULL;
+      length = 0;
+    } else {
+      auto const_buffer_ = array.data();
+      buffer_ = const_cast<T*>(const_buffer_);
+      length = array->size();
+      // initVector();
     }
   }
 
@@ -174,18 +186,18 @@ class ImmutableTypedArray {
   // void Set(size_t loc, value_type newValue) { buffer_[loc] = newValue; }
   size_t GetLength() const { return length; }
 
-  std::vector<char>& GetRawBytes() { return raw_bytes_; }
+  // std::vector<char>& GetRawBytes() { return raw_bytes_; }
 
  private:
-  void initVector() {
-    auto tmp_ptr = reinterpret_cast<char*>(buffer_);
-    raw_bytes_.resize(sizeof(T) * length);
-    // LOG(INFO) << "Raw bytes of immutable array " << (sizeof(T) * length)
-    //           << "bytes";
-    memcpy(raw_bytes_.data(), tmp_ptr, sizeof(T) * length);
-  }
+  // void initVector() {
+  //   auto tmp_ptr = reinterpret_cast<char*>(buffer_);
+  //   raw_bytes_.resize(sizeof(T) * length);
+  //   // LOG(INFO) << "Raw bytes of immutable array " << (sizeof(T) * length)
+  //   //           << "bytes";
+  //   memcpy(raw_bytes_.data(), tmp_ptr, sizeof(T) * length);
+  // }
   T* buffer_;
-  std::vector<char> raw_bytes_;
+  // std::vector<char> raw_bytes_;
   size_t length;
 };
 template <>
