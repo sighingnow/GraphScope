@@ -48,7 +48,7 @@ import scala.collection.Iterator;
 public class GraphXPIE<VD, ED, MSG_T> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphXPIE.class.getName());
-    private static int BATCH_SIZE = 4096;
+    private static int BATCH_SIZE = 8192;
     /**
      * User vertex program: vprog: (VertexId, VD, A) => VD
      */
