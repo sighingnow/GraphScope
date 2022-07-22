@@ -218,14 +218,14 @@ void TestGraphXFragment(vineyard::Client& client, vineyard::ObjectID vm_id,
 
 boost::leaf::result<void> generateData(arrow::Int64Builder& srcBuilder,
                                        arrow::Int64Builder& dstBuilder,
-                                       arrow::Int64Builder& edataBuilder) {
+                                       std::vector<int64_t> r& edataBuilder) {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
 
   // if (comm_spec.worker_id() == 0) {
   ARROW_OK_OR_RAISE(srcBuilder.Reserve(6));
   ARROW_OK_OR_RAISE(dstBuilder.Reserve(6));
-  ARROW_OK_OR_RAISE(edataBuilder.Reserve(6));
+  ARROW_OK_OR_RAISE(edataBuilder.reserve(6));
   srcBuilder.UnsafeAppend(1);
   srcBuilder.UnsafeAppend(1);
   srcBuilder.UnsafeAppend(2);
@@ -240,12 +240,12 @@ boost::leaf::result<void> generateData(arrow::Int64Builder& srcBuilder,
   dstBuilder.UnsafeAppend(6);
   dstBuilder.UnsafeAppend(4);
 
-  edataBuilder.UnsafeAppend(1);
-  edataBuilder.UnsafeAppend(2);
-  edataBuilder.UnsafeAppend(3);
-  edataBuilder.UnsafeAppend(4);
-  edataBuilder.UnsafeAppend(5);
-  edataBuilder.UnsafeAppend(6);
+  edataBuilder.push_back(1);
+  edataBuilder.push_back(2);
+  edataBuilder.push_back(3);
+  edataBuilder.push_back(4);
+  edataBuilder.push_back(5);
+  edataBuilder.push_back(6);
   // } else {
   //   srcBuilder.Reserve(3);
   //   dstBuilder.Reserve(3);
@@ -280,7 +280,7 @@ int main(int argc, char* argv[]) {
   Init();
 
   arrow::Int64Builder srcBuilder, dstBuilder;
-  arrow::Int64Builder edataBuilder;
+  std::vector<int64_t> edataBuilder;
   generateData(srcBuilder, dstBuilder, edataBuilder);
 
   // TestLocalVertexMap(client);
