@@ -1,8 +1,11 @@
 package com.alibaba.graphscope.graphx.utils
 
-import com.alibaba.graphscope.graphx.VineyardClient
+import com.alibaba.fastffi.impl.CXXStdString
+import com.alibaba.graphscope.arrow.array.{ArrowArray, ArrowArrayBuilder}
+import com.alibaba.graphscope.graphx.{EdgeData, StringEdgeData, StringEdgeDataBuilder, StringVertexData, VertexData, VineyardClient}
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream
-import com.alibaba.graphscope.stdcxx.{FFIIntVector, FFIIntVectorFactory}
+import com.alibaba.graphscope.stdcxx.{FFIByteVector, FFIIntVector, FFIIntVectorFactory, StdVector}
+import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.internal.Logging
 
@@ -103,61 +106,66 @@ object GrapeUtils extends Logging{
     newArray
   }
 
-  /** true for build vertex array, false for build edge array */
-  def array2ArrowArray[T : ClassTag](array : Array[T], client : VineyardClient, vertex : Boolean) : Long = {
+  def fillPrimitiveArrowArrayBuilder[T : ClassTag](array: Array[T]) : ArrowArrayBuilder[T] = {
     val size = array.length
-    if (GrapeUtils.getRuntimeClass[T].equals(classOf[Long])
-      || GrapeUtils.getRuntimeClass[T].equals(classOf[Double])
-      || GrapeUtils.getRuntimeClass[T].equals(classOf[Int])){
+    val arrowArrayBuilder = ScalaFFIFactory.newArrowArrayBuilder[T](GrapeUtils.getRuntimeClass[T].asInstanceOf[Class[T]])
+    arrowArrayBuilder.reserve(size)
+    var i = 0
+    while (i < size) {
+      arrowArrayBuilder.unsafeAppend(array(i))
+      i += 1
+    }
+    arrowArrayBuilder
+  }
+  def fillStringArrowArray[T : ClassTag](array: Array[T]) : (FFIByteVector, FFIIntVector) = {
+    val size = array.length
+    val ffiByteVectorOutput = new FFIByteVectorOutputStream()
+    val ffiOffset = FFIIntVectorFactory.INSTANCE.create().asInstanceOf[FFIIntVector]
+    ffiOffset.resize(size)
+    ffiOffset.touch()
+    val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
+    var i = 0
+    val limit = size
+    var prevBytesWritten = 0
+    while (i < limit){
+      objectOutputStream.writeObject(array(i))
+      ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
+      prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
+      //        log.info(s"Writing element ${i}: ${array.get(i).toString} cost ${ffiOffset.get(i)} bytes")
+      i += 1
+    }
+    objectOutputStream.flush()
+    ffiByteVectorOutput.finishSetting()
+    val writenBytes = ffiByteVectorOutput.bytesWriten()
+    log.info(s"write data array ${limit} of type ${GrapeUtils.getRuntimeClass[T].getName}, writen bytes ${writenBytes}")
+    (ffiByteVectorOutput.getVector,ffiOffset)
+  }
 
-      val arrowArrayBuilder = ScalaFFIFactory.newArrowArrayBuilder[T](GrapeUtils.getRuntimeClass[T].asInstanceOf[Class[T]])
-      arrowArrayBuilder.reserve(size)
-      var i = 0
-      while (i < size) {
-        arrowArrayBuilder.unsafeAppend(array(i))
-        i += 1
-      }
-      if (vertex){
-        val newVdataBuilder = ScalaFFIFactory.newVertexDataBuilder[T]()
-        newVdataBuilder.init(arrowArrayBuilder)
-        newVdataBuilder.seal(client).get().id()
-      }
-      else {
-        val newEdataBuilder = ScalaFFIFactory.newEdgeDataBuilder[T]()
-        newEdataBuilder.init(arrowArrayBuilder)
-        newEdataBuilder.seal(client).get().id()
-      }
-    }
-    else {
-      val ffiByteVectorOutput = new FFIByteVectorOutputStream()
-      val ffiOffset = FFIIntVectorFactory.INSTANCE.create().asInstanceOf[FFIIntVector]
-      ffiOffset.resize(size)
-      ffiOffset.touch()
-      val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
-      var i = 0
-      val limit = size
-      var prevBytesWritten = 0
-      while (i < limit){
-        objectOutputStream.writeObject(array(i))
-        ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
-        prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
-//        log.info(s"Writing element ${i}: ${array.get(i).toString} cost ${ffiOffset.get(i)} bytes")
-        i += 1
-      }
-      objectOutputStream.flush()
-      ffiByteVectorOutput.finishSetting()
-      val writenBytes = ffiByteVectorOutput.bytesWriten()
-      log.info(s"write data array ${limit} of type ${GrapeUtils.getRuntimeClass[T].getName}, writen bytes ${writenBytes}")
-      if (vertex){
-        val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder()
-        newVdataBuilder.init(size, ffiByteVectorOutput.getVector, ffiOffset)
-        newVdataBuilder.seal(client).get().id()
-      }
-      else {
-        val newEdataBuilder = ScalaFFIFactory.newStringEdgeDataBuilder()
-        newEdataBuilder.init(size, ffiByteVectorOutput.getVector, ffiOffset)
-        newEdataBuilder.seal(client).get().id()
-      }
-    }
+  def array2PrimitiveVertexData[T: ClassTag](array : Array[T], client : VineyardClient) : VertexData[Long,T] = {
+    val builder = fillPrimitiveArrowArrayBuilder(array)
+    val newVdataBuilder = ScalaFFIFactory.newVertexDataBuilder[T]()
+    newVdataBuilder.init(builder)
+    newVdataBuilder.seal(client).get()
+  }
+
+  def array2PrimitiveEdgeData[T: ClassTag](array : Array[T], client : VineyardClient) : EdgeData[Long,T] = {
+    val builder = fillPrimitiveArrowArrayBuilder(array)
+    val newEdataBuilder = ScalaFFIFactory.newEdgeDataBuilder[T]()
+    newEdataBuilder.init(builder)
+    newEdataBuilder.seal(client).get()
+  }
+
+  def array2StringVertexData[T : ClassTag](array: Array[T],client: VineyardClient) : StringVertexData[Long,CXXStdString] = {
+    val (ffiByteVector,ffiIntVector) = fillStringArrowArray(array)
+    val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder()
+    newVdataBuilder.init(array.length, ffiByteVector, ffiIntVector)
+    newVdataBuilder.seal(client).get()
+  }
+
+  def array2StringEdgeData[T : ClassTag](array: Array[T],client: VineyardClient) : StringEdgeData[Long,CXXStdString] = {
+    val (ffiByteVector,ffiIntVector) = fillStringArrowArray(array)
+    val newEdataBuilder = ScalaFFIFactory.newStringEdgeDataBuilder()
+    newEdataBuilder.init(array.length, ffiByteVector, ffiIntVector)
+    newEdataBuilder.seal(client).get()
   }
 }
