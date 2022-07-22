@@ -1,9 +1,11 @@
 package com.alibaba.graphscope.utils.array;
 
+import com.alibaba.graphscope.ds.ImmutableTypedArray;
 import com.alibaba.graphscope.utils.array.impl.DoubleArray;
 import com.alibaba.graphscope.utils.array.impl.IntArray;
 import com.alibaba.graphscope.utils.array.impl.LongArray;
 import com.alibaba.graphscope.utils.array.impl.ObjectArray;
+import com.alibaba.graphscope.utils.array.impl.TypedBackendPrimitiveArray;
 import java.io.Serializable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,5 +42,8 @@ public interface PrimitiveArray<T> extends Serializable{
         else {
             return (PrimitiveArray<TT>) new ObjectArray(clz,len);
         }
+    }
+    static <TT>PrimitiveArray<TT> createImmutable(ImmutableTypedArray<TT> arrray,Class<? extends TT> clz){
+        return new TypedBackendPrimitiveArray<>(arrray);
     }
 }
