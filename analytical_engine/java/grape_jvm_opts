@@ -33,7 +33,7 @@ then
     echo "find env RUNTIME_LLVM4JNI_OUTPUT, append to init java class path"
     class_path=${RUNTIME_LLVM4JNI_OUTPUT}:${GRAPHSCOPE_HOME}/lib/grape-runtime-0.1-shaded.jar:${GRAPHX_GRAPE_SDK}
 else 
-    class_path=${GRAPHSCOPE_HOME}/lib/grape-runtime-0.1-shaded.jar:${GRAPHX_GRAPE_SDK}
+    class_path=/tmp/fastffi:${GRAPHSCOPE_HOME}/lib/grape-runtime-0.1-shaded.jar:${GRAPHX_GRAPE_SDK}
 fi
 spark_jars=`cat ${SCRIPT_DIR}/graphx-on-graphscope/cp.txt`
 class_path=${class_path}:${spark_jars}

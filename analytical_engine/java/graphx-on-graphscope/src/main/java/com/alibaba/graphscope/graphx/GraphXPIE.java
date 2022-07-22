@@ -301,7 +301,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
             edgeTriplet.setDstOid(lid2Oid[(int) nbrVid], newVdataArray.get(nbrVid));
             edgeTriplet.setAttr(newEdataArray.get(nbr.eid()));
             Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
-            messageStore.addMessages(msgs, graphXFragment, threadId,edgeTriplet);
+     //       messageStore.addMessages(msgs, graphXFragment, threadId,edgeTriplet);
             nbr.addV(16);
             beginOffset += 1;
         }

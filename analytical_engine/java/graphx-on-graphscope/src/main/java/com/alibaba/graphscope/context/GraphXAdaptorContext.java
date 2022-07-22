@@ -120,7 +120,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
         //FIXME: Currently we don't use this context provided vdata array, just use long class as
         //default vdata class, and we don't use it.
         createFFIContext(frag, (Class<? extends VDATA_T>) Long.class, false);
-        System.gc();
+        //System.gc();
     }
 
     @Override
