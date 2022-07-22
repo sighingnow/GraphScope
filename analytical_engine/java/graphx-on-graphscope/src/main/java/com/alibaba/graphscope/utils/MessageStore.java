@@ -17,7 +17,7 @@ import scala.collection.Iterator;
  */
 public interface MessageStore<T> extends PrimitiveArray<T> {
 
-    void addMessages(Iterator<Tuple2<Long,T>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment, int threadId, GSEdgeTripletImpl triplet)
+    void addMessages(Iterator<Tuple2<Long,T>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment, int threadId, GSEdgeTripletImpl triplet, int srcLid, int dstLid)
         throws InterruptedException;
 
     void flushMessages(BitSet nextSet, DefaultMessageManager messageManager,BaseGraphXFragment<Long,Long,?,?> fragment, int [] fid2WorkerId)

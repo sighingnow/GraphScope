@@ -5,8 +5,6 @@ import org.apache.spark.graphx.EdgeTriplet
 abstract class GSEdgeTriplet[VD,ED] extends EdgeTriplet[VD,ED]{
   var eid : Long = -1
   var offset : Long = -1;
-  var srcLid : Long = -1;
-  var dstLid : Long = -1;
 
 //  var eid : Long = -1
   def getSrcOid : Long = srcId
@@ -23,18 +21,13 @@ abstract class GSEdgeTriplet[VD,ED] extends EdgeTriplet[VD,ED]{
 }
 class GSEdgeTripletImpl[@specialized(Long,Int,Double)VD, @specialized(Long,Int,Double)ED] extends GSEdgeTriplet[VD,ED]{
 
-  def setSrcLid(srcLid : Long) : Unit = {
-    this.srcLid = srcLid;
-  }
-  def setDstLid(dstLid : Long) : Unit = {
-    this.dstLid = dstLid;
-  }
-
+  @inline
   override def setSrcOid(srcId : Long, srcAttr : VD): Unit ={
     this.srcId = srcId
     this.srcAttr = srcAttr
   }
 
+  @inline
   override def setDstOid(dstId : Long, dstAttr : VD): Unit ={
     this.dstId = dstId;
     this.dstAttr = dstAttr

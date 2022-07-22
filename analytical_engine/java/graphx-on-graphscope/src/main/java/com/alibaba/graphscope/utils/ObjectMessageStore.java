@@ -69,23 +69,16 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
     @Override
     public void addMessages(
         Iterator<Tuple2<Long, T>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment, int threadId,
-        GSEdgeTripletImpl edgeTriplet) {
-        Vertex<Long> vertex = tmpVertex[threadId];
+        GSEdgeTripletImpl edgeTriplet, int srcLid, int dstLid) {
         while (msgs.hasNext()) {
             Tuple2<Long, T> msg = msgs.next();
             long oid = msg._1();
             int lid;
-            if (oid == edgeTriplet.srcId()){
-                lid = (int) edgeTriplet.srcLid();
-            }
-            else if (oid == edgeTriplet.dstId()){
-                lid = (int) edgeTriplet.dstLid();
+            if (oid == edgeTriplet.dstId()){
+                lid = dstLid;
             }
             else {
-                if (!fragment.getVertex(msg._1(), vertex)) {
-                    throw new IllegalStateException("get vertex for oid failed: " + msg._1());
-                }
-                lid = vertex.GetValue().intValue();
+                lid = srcLid;
             }
             if (nextSet.get(lid)){
                 T original = values[lid];

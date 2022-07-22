@@ -88,25 +88,18 @@ public class DoubleMessageStore implements MessageStore<Double> {
 
     @Override
     public void addMessages(
-        Iterator<Tuple2<Long, Double>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment, int threadId, GSEdgeTripletImpl edgeTriplet)
+        Iterator<Tuple2<Long, Double>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment, int threadId, GSEdgeTripletImpl edgeTriplet, int srcLid, int dstLid)
         throws InterruptedException {
-        Vertex<Long> vertex = tmpVertex[threadId];
         while (msgs.hasNext()) {
             Tuple2<Long, Double> msg = msgs.next();
             //the oid must from src or dst, we first find with lid.
             long oid = msg._1();
             int lid;
-            if (oid == edgeTriplet.srcId()){
-                lid = (int) edgeTriplet.srcLid();
-            }
-            else if (oid == edgeTriplet.dstId()){
-                lid = (int) edgeTriplet.dstLid();
+            if (oid == edgeTriplet.dstId()){
+                lid = dstLid;
             }
             else {
-                if (!fragment.getVertex(msg._1(), vertex)) {
-                    throw new IllegalStateException("get vertex for oid failed: " + msg._1());
-                }
-                lid = vertex.GetValue().intValue();
+                lid = srcLid;
             }
             if (nextSet.get(lid)){
                 double original = values[lid];
