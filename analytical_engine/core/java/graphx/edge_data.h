@@ -118,7 +118,7 @@ class EdgeData<VID_T, std::string>
     CHECK_EQ(edatas_->length(), edge_num_);
 
     edatas_accessor_.Init(edatas_);
-    LOG(INFO) << "Finish construct vertex data, edge nums: " << edge_num_;
+    LOG(INFO) << "Finish construct edge data, edge nums: " << edge_num_;
   }
 
   arrow::util::string_view GetEdgeDataByEid(const eid_t& eid) {

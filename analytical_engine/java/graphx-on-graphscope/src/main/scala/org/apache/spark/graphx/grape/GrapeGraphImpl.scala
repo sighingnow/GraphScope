@@ -79,35 +79,40 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
       else {
         ePart.graphStructure match {
           case casted: GraphXGraphStructure =>
-            val vmId = casted.vm.id() //vm id will never change
-            val csrId = casted.csr.id()
-            val vdId = vPart.vertexData.vineyardID
-            //FIXME: merge edata array together.
-            val edataArray = ePart.edatas
-            require(edataArray.size == ePart.totalFragEdgeNum)
-            val edId = GrapeUtils.array2ArrowArray[ED](ePart.edatas.asInstanceOf[InHeapDataStore[ED]].array, ePart.client, false)
-
-            logger.info(s"vm id ${vmId}, csr id ${csrId}, vd id ${vdId}, ed id ${edId}")
+            val vm = casted.vm
+            val csr = casted.csr
 
             var fragId = null.asInstanceOf[Long]
             if (GrapeUtils.isPrimitive[VD] && GrapeUtils.isPrimitive[ED]) {
-              logger.info("VD and ED both primitive")
-              val fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD, ED](ePart.client, vmId, csrId, vdId, edId)
+              val vertexData = GrapeUtils.array2PrimitiveVertexData(vPart.vertexData.asInstanceOf[InHeapDataStore[VD]].array, ePart.client)
+              val edataArray = ePart.edatas
+              require(edataArray.size == ePart.totalFragEdgeNum)
+              val edgeData = GrapeUtils.array2PrimitiveEdgeData(edataArray.asInstanceOf[InHeapDataStore[ED]].array, ePart.client)
+              val fragBuilder = ScalaFFIFactory.newGraphXFragmentBuilder[VD, ED](ePart.client, vm, csr, vertexData, edgeData)
               fragId = fragBuilder.seal(ePart.client).get().id()
             }
             else if (GrapeUtils.isPrimitive[VD]) {
-              logger.info("only vd primitive")
-              val fragBuilder = ScalaFFIFactory.newGraphXStringEDFragmentBuilder[VD](ePart.client, vmId, csrId, vdId, edId)
+              val vertexData = GrapeUtils.array2PrimitiveVertexData(vPart.vertexData.asInstanceOf[InHeapDataStore[VD]].array, ePart.client)
+              val edataArray = ePart.edatas
+              require(edataArray.size == ePart.totalFragEdgeNum)
+              val edgeData = GrapeUtils.array2StringEdgeData(edataArray.asInstanceOf[InHeapDataStore[ED]].array, ePart.client)
+              val fragBuilder = ScalaFFIFactory.newGraphXStringEDFragmentBuilder[VD](ePart.client, vm, csr, vertexData, edgeData)
               fragId = fragBuilder.seal(ePart.client).get().id()
             }
             else if (GrapeUtils.isPrimitive[ED]) {
-              logger.info("only ed primitive")
-              val fragBuilder = ScalaFFIFactory.newGraphXStringVDFragmentBuiler[ED](ePart.client, vmId, csrId, vdId, edId)
+              val vertexData = GrapeUtils.array2StringVertexData(vPart.vertexData.asInstanceOf[InHeapDataStore[VD]].array, ePart.client)
+              val edataArray = ePart.edatas
+              require(edataArray.size == ePart.totalFragEdgeNum)
+              val edgeData = GrapeUtils.array2PrimitiveEdgeData(edataArray.asInstanceOf[InHeapDataStore[ED]].array, ePart.client)
+              val fragBuilder = ScalaFFIFactory.newGraphXStringVDFragmentBuiler[ED](ePart.client, vm, csr, vertexData, edgeData)
               fragId = fragBuilder.seal(ePart.client).get().id()
             }
             else {
-              logger.info("vd and ed are both complex")
-              val fragBuilder = ScalaFFIFactory.newGraphXStringVEDFragmentBuilder(ePart.client, vmId, csrId, vdId, edId)
+              val vertexData = GrapeUtils.array2StringVertexData(vPart.vertexData.asInstanceOf[InHeapDataStore[VD]].array, ePart.client)
+              val edataArray = ePart.edatas
+              require(edataArray.size == ePart.totalFragEdgeNum)
+              val edgeData = GrapeUtils.array2StringEdgeData(edataArray.asInstanceOf[InHeapDataStore[ED]].array, ePart.client)
+              val fragBuilder = ScalaFFIFactory.newGraphXStringVEDFragmentBuilder(ePart.client, vm, csr, vertexData, edgeData)
               fragId = fragBuilder.seal(ePart.client).get().id()
             }
             logger.info(s"Got built frag: ${fragId}")

@@ -25,14 +25,6 @@ class InHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val length : I
   @inline
   override def getData(lid: Int): VD = array(lid)
 
-  override def vineyardID: Long = {
-    if (v6dId == 0) {
-      //FIXME. merge array to one.
-      v6dId = GrapeUtils.array2ArrowArray[VD](array, client,true)
-    }
-    v6dId
-  }
-
   @inline
   override def setData(lid: Int, vd: VD): Unit = array(lid) = vd
 
