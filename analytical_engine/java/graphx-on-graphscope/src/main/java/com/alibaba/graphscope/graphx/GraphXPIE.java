@@ -24,6 +24,7 @@ import com.alibaba.graphscope.stdcxx.StdVector;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
 import com.alibaba.graphscope.utils.MessageStore;
 import com.alibaba.graphscope.utils.TriConsumer;
+import com.alibaba.graphscope.utils.TriConsumerV2;
 import com.alibaba.graphscope.utils.array.PrimitiveArray;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -214,7 +215,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
 */
     }
 
-    public void parallelExecute(TriConsumer<Integer, Integer, Integer> function, int  limit) {
+    public void parallelExecute(TriConsumerV2<Integer, Integer, Integer> function, int  limit) {
         AtomicInteger getter = new AtomicInteger(0);
         CountDownLatch countDownLatch = new CountDownLatch(numCores);
         for (int tid = 0; tid < numCores; ++tid) {
