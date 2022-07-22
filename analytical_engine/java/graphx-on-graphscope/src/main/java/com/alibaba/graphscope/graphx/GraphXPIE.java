@@ -26,6 +26,7 @@ import com.alibaba.graphscope.utils.MessageStore;
 import com.alibaba.graphscope.utils.TriConsumer;
 import com.alibaba.graphscope.utils.TriConsumerV2;
 import com.alibaba.graphscope.utils.array.PrimitiveArray;
+import com.alibaba.graphscope.utils.array.impl.TypedBackendPrimitiveArray;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.BitSet;
@@ -454,8 +455,9 @@ public class GraphXPIE<VD, ED, MSG_T> {
                 throw new IllegalStateException("not equal" + oldVdataArray.getLength() + ","
                     + graphXFragment.getVerticesNum());
             }
-            PrimitiveArray<ED_T> newEdataArray = processPrimitiveArray(oldEdataArray,
-                conf.getEdClass());
+//            PrimitiveArray<ED_T> newEdataArray = processPrimitiveArray(oldEdataArray,
+//                conf.getEdClass());
+            PrimitiveArray<ED_T> newEdataArray = wrapReadOnlyArray(oldEdataArray, conf.getEdClass());
             //Should contain outer vertices
             PrimitiveArray<VD_T> newVdataArray = processPrimitiveArray(oldVdataArray,
                 conf.getVdClass());
@@ -469,8 +471,9 @@ public class GraphXPIE<VD, ED, MSG_T> {
             logger.info("total bytes in vd array {}, vertices num {}", oldVdataArray.getLength(),
                 graphXFragment.getVerticesNum());
 
-            PrimitiveArray<ED_T> newEdataArray = processPrimitiveArray(oldEdataArray,
-                conf.getEdClass());
+//            PrimitiveArray<ED_T> newEdataArray = processPrimitiveArray(oldEdataArray,
+//                conf.getEdClass());
+            PrimitiveArray<ED_T> newEdataArray = wrapReadOnlyArray(oldEdataArray, conf.getEdClass());
             PrimitiveArray<VD_T> newVdataArray = processComplexArray(oldVdataArray,
                 conf.getVdClass());
             return new Tuple2<>(newVdataArray, newEdataArray);
@@ -524,6 +527,11 @@ public class GraphXPIE<VD, ED, MSG_T> {
             T obj = (T) objectInputStream.readObject();
             newArray.set(i, obj);
         }
+        return newArray;
+    }
+
+    private static <T> PrimitiveArray<T> wrapReadOnlyArray(ImmutableTypedArray<T> oldArray, Class<? extends T> clz){
+        PrimitiveArray<T> newArray = new TypedBackendPrimitiveArray<T>(oldArray);
         return newArray;
     }
 
