@@ -175,45 +175,30 @@ public class GraphXPIE<VD, ED, MSG_T> {
             }
         }
     }
-    private void iterateEdgeFirstRound(int startLid, int endLid, int threadId)
-        throws InterruptedException {
-        GSEdgeTripletImpl<VD, ED> edgeTriplet = new GSEdgeTripletImpl<>();
-        PropertyNbrUnit<Long> nbr = nbrs[threadId];
-        if (direction.equals(EdgeDirection.Either()) || direction.equals(EdgeDirection.Out())) {
-            for (int lid = startLid;lid < endLid; lid ++) {
-                long oid = lid2Oid[lid];
-                VD vAttr = newVdataArray.get(lid);
-                edgeTriplet.setSrcOid(oid, vAttr);
-                edgeTriplet.setSrcLid(lid);
-                iterateOnOutEdgesImpl(lid, edgeTriplet, nbr, threadId);
-            }
-        }
-    }
 
     private void iterateEdge(int startLid, int endLid, int threadId) throws InterruptedException {
         GSEdgeTripletImpl<VD, ED> edgeTriplet = new GSEdgeTripletImpl<>();
         PropertyNbrUnit<Long> nbr = nbrs[threadId];
-        if (direction.equals(EdgeDirection.Either()) || direction.equals(EdgeDirection.Out())){
-            for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid;
-                lid = curSet.nextSetBit(lid + 1)) {
-                long oid = lid2Oid[lid];
-                VD vAttr = newVdataArray.get(lid);
-                edgeTriplet.setSrcOid(oid, vAttr);
-                edgeTriplet.setSrcLid(lid);
-                iterateOnOutEdgesImpl(lid, edgeTriplet, nbr,threadId);
+        long beginOffset, endOffset;
+        for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid;
+            lid = curSet.nextSetBit(lid + 1)) {
+            long oid = lid2Oid[lid];
+            VD vAttr = newVdataArray.get(lid);
+            edgeTriplet.setSrcOid(oid, vAttr);
+
+            beginOffset = oeOffsetArray.get(lid);
+            endOffset = oeOffsetArray.get(lid + 1);
+            nbr.setAddress(beginOffset * 16 + oeBeginAddress);
+            while (beginOffset < endOffset) {
+                int nbrVid = nbr.vid().intValue();
+                edgeTriplet.setDstOid(lid2Oid[nbrVid], newVdataArray.get(nbrVid));
+                edgeTriplet.setAttr(newEdataArray.get(nbr.eid()));
+                Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
+                messageStore.addMessages(msgs, graphXFragment, threadId, edgeTriplet,lid,nbrVid);
+                nbr.addV(16);
+                beginOffset += 1;
             }
         }
-/*
-        if (direction.equals(EdgeDirection.Either()) || direction.equals(EdgeDirection.In())){
-            for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid;
-                lid = curSet.nextSetBit(lid + 1)) {
-                long oid = lid2Oid[lid];
-                VD vAttr = newVdataArray.get(lid);
-                edgeTriplet.setDstOid(oid, vAttr);
-                iterateOnInEdgesImpl(lid, edgeTriplet, nbr);
-            }
-        }
-*/
     }
 
     public void parallelExecute(TriConsumerV2<Integer, Integer, Integer> function, int  limit) {
@@ -255,7 +240,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         vprogTime += System.nanoTime();
 
         msgSendTime -= System.nanoTime();
-        parallelExecute(this::iterateEdgeFirstRound, innerVerticesNum);
+        parallelExecute(this::iterateEdge, innerVerticesNum);
         msgSendTime += System.nanoTime();
         logger.debug("[PEval] Finish iterate edges for frag {}", graphXFragment.fid());
         flushTime -= System.nanoTime();
@@ -287,41 +272,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
 //        nextSet.clear((int) innerVerticesNum, (int) verticesNum);
         flushTime += System.nanoTime();
         round = 1;
-    }
-
-    void iterateOnOutEdgesImpl(int lid, GSEdgeTripletImpl<VD, ED> edgeTriplet,
-        PropertyNbrUnit<Long> nbr, int threadId) throws InterruptedException {
-        long beginOffset, endOffset;
-        beginOffset = oeOffsetArray.get(lid);
-        endOffset = oeOffsetArray.get(lid + 1);
-        nbr.setAddress(beginOffset * 16 + oeBeginAddress);
-        while (beginOffset < endOffset) {
-            long nbrVid = nbr.vid();
-            edgeTriplet.setDstLid(nbrVid);
-            edgeTriplet.setDstOid(lid2Oid[(int) nbrVid], newVdataArray.get(nbrVid));
-            edgeTriplet.setAttr(newEdataArray.get(nbr.eid()));
-            Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
-     //       messageStore.addMessages(msgs, graphXFragment, threadId,edgeTriplet);
-            nbr.addV(16);
-            beginOffset += 1;
-        }
-    }
-
-    void iterateOnInEdgesImpl(int lid, GSEdgeTripletImpl<VD, ED> edgeTriplet,
-        PropertyNbrUnit<Long> nbr, int threadId) throws InterruptedException {
-        long beginOffset, endOffset;
-        beginOffset = ieOffsetArray.get(lid);
-        endOffset = ieOffsetArray.get(lid + 1);
-        nbr.setAddress(beginOffset * 16 + ieBeginAddress);
-        while (beginOffset < endOffset) {
-            long nbrVid = nbr.vid();
-            edgeTriplet.setSrcOid(lid2Oid[(int) nbrVid], newVdataArray.get(nbrVid));
-            edgeTriplet.setAttr(newEdataArray.get(nbr.eid()));
-            Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
-            messageStore.addMessages(msgs, graphXFragment,threadId,edgeTriplet);
-            nbr.addV(16);
-            beginOffset += 1;
-        }
     }
 
     public boolean ParallelIncEval() {
