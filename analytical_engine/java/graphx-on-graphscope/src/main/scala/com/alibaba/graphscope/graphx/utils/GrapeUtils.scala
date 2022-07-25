@@ -12,9 +12,11 @@ import org.apache.spark.internal.Logging
 import java.io.ObjectOutputStream
 import java.lang.reflect.Method
 import java.net.{InetAddress, UnknownHostException}
+import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.ClassTag
 
 object GrapeUtils extends Logging{
+  val BATCH_SIZE = 4096
 
   def class2Int(value: Class[_]): Int = {
     if (value.equals(classOf[java.lang.Long]) || value.equals(classOf[Long])) {
@@ -117,15 +119,39 @@ object GrapeUtils extends Logging{
     }
     arrowArrayBuilder
   }
-  def fillPrimitiveVector[T : ClassTag](array: Array[T]) : StdVector[T] = {
+  def fillPrimitiveVector[T : ClassTag](array: Array[T], numThread : Int) : StdVector[T] = {
+    val time0 = System.nanoTime()
     val size = array.length
     val vector = ScalaFFIFactory.newVector[T]
     vector.resize(size)
-    var i = 0
-    while (i < size){
-      vector.set(i, array(i))
-      i += 1
+    val threadArray = new Array[Thread](numThread)
+    val atomic = new AtomicInteger(0)
+    for (i <- 0 until numThread){
+      threadArray(i) = new Thread(){
+        override def run(): Unit ={
+          var flag = true
+          while (flag){
+            val begin = Math.min(atomic.getAndAdd(BATCH_SIZE), size)
+            val end = Math.min(begin + BATCH_SIZE, size)
+            if (begin >= end){
+              flag = false
+            }
+            else {
+              var i = begin
+              while (i < end){
+                vector.set(i, array(i))
+                i += 1
+              }
+            }
+          }
+        }
+      }
     }
+    for (i <- 0 until numThread){
+      threadArray(i).join()
+    }
+    val time1 = System.nanoTime()
+    log.info(s"Building primitive array size ${size} with num thread ${numThread} cost ${(time1 - time0)/1000000}ms")
     vector
   }
 
@@ -160,8 +186,8 @@ object GrapeUtils extends Logging{
     newVdataBuilder.seal(client).get()
   }
 
-  def array2PrimitiveEdgeData[T: ClassTag](array : Array[T], client : VineyardClient) : EdgeData[Long,T] = {
-    val vector = fillPrimitiveVector(array)
+  def array2PrimitiveEdgeData[T: ClassTag](array : Array[T], client : VineyardClient, numThread : Int) : EdgeData[Long,T] = {
+    val vector = fillPrimitiveVector(array, numThread)
     val newEdataBuilder = ScalaFFIFactory.newEdgeDataBuilder[T](client,vector)
     newEdataBuilder.seal(client).get()
   }
