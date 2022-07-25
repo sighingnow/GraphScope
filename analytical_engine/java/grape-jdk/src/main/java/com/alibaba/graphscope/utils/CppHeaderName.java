@@ -83,4 +83,5 @@ public class CppHeaderName {
 
     public static final String VINEYARD_CLIENT_H = "vineyard/client/client.h";
     public static final String VINEYARD_STATUS_H = "vineyard/common/util/status.h";
+    public static final String VINEYARD_ARRAY_BUILDER_H = "vineyard/basic/ds/array.h";
 }

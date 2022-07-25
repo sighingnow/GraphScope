@@ -117,6 +117,18 @@ object GrapeUtils extends Logging{
     }
     arrowArrayBuilder
   }
+  def fillPrimitiveVector[T : ClassTag](array: Array[T]) : StdVector[T] = {
+    val size = array.length
+    val vector = ScalaFFIFactory.newVector[T]
+    vector.resize(size)
+    var i = 0
+    while (i < size){
+      vector.set(i, array(i))
+      i += 1
+    }
+    vector
+  }
+
   def fillStringArrowArray[T : ClassTag](array: Array[T]) : (FFIByteVector, FFIIntVector) = {
     val size = array.length
     val ffiByteVectorOutput = new FFIByteVectorOutputStream()
@@ -149,9 +161,10 @@ object GrapeUtils extends Logging{
   }
 
   def array2PrimitiveEdgeData[T: ClassTag](array : Array[T], client : VineyardClient) : EdgeData[Long,T] = {
-    val builder = fillPrimitiveArrowArrayBuilder(array)
+    val vector = fillPrimitiveVector(array)
+    val vineyardArrayBuilder = ScalaFFIFactory.newVineyardArrayBuilder[T](client,vector)
     val newEdataBuilder = ScalaFFIFactory.newEdgeDataBuilder[T]()
-    newEdataBuilder.init(builder)
+    newEdataBuilder.init(vineyardArrayBuilder)
     newEdataBuilder.seal(client).get()
   }
 

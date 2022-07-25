@@ -15,23 +15,26 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 
 @FFIGen(library = "grape-jni")
 @CXXHead(CppHeaderName.CORE_JAVA_GRAPHX_EDGE_DATA_H)
+@CXXHead(CppHeaderName.VINEYARD_ARRAY_BUILDER_H)
 @FFITypeAlias(CppClassName.GS_EDGE_DATA_BUILDER)
-public interface EdgeDataBuilder<VID,ED> extends FFISerializable {
+public interface EdgeDataBuilder<VID, ED> extends FFISerializable {
 
     @FFINameAlias("Init")
-    void init(@CXXReference ArrowArrayBuilder<ED> newValues);
+    void init(@CXXReference VineyardArrayBuilder<ED> newValues);
 
     @FFINameAlias("MySeal")
-    @CXXValue StdSharedPtr<EdgeData<VID,ED>> seal(@CXXReference VineyardClient client);
+    @CXXValue StdSharedPtr<EdgeData<VID, ED>> seal(@CXXReference VineyardClient client);
 
     @FFIFactory
-    interface Factory<VID,ED>{
-        EdgeDataBuilder<VID,ED> create();
+    interface Factory<VID, ED> {
 
-        default EdgeData<VID,ED> createAndBuild(VineyardClient client, ArrowArrayBuilder<ED> newValues){
-            EdgeDataBuilder<VID,ED> builder = create();
+        EdgeDataBuilder<VID, ED> create();
+
+        default EdgeData<VID, ED> createAndBuild(VineyardClient client,
+            VineyardArrayBuilder<ED> newValues) {
+            EdgeDataBuilder<VID, ED> builder = create();
             builder.init(newValues);
-            StdSharedPtr<EdgeData<VID,ED>> res = builder.seal(client);
+            StdSharedPtr<EdgeData<VID, ED>> res = builder.seal(client);
             return res.get();
         }
     }

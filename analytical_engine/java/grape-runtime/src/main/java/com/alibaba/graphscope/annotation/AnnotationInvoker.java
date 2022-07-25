@@ -414,6 +414,12 @@ import com.alibaba.fastffi.FFIGenBatch;
                     , @CXXTemplate(cxx = {"uint64_t", "int64_t"}, java = {"Long", "Long"}),
                         @CXXTemplate(cxx = {"uint64_t", "double"}, java = {"Long", "Double"})
                   }),
+        @FFIGen(type = "com.alibaba.graphscope.graphx.VineyardArrayBuilder",
+        templates = {
+            @CXXTemplate(cxx = "int64_t", java = "Long"),
+            @CXXTemplate(cxx = "int32_t",java = "Integer"),
+            @CXXTemplate(cxx = "double",java = "Double")
+        }),
         @FFIGen(type = "com.alibaba.graphscope.graphx.EdgeDataBuilder",
             templates =
                 {

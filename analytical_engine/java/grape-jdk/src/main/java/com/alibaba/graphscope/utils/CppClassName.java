@@ -106,4 +106,5 @@ public class CppClassName {
 
   public static final String ARROW_STATUS = "arrow::Status";
   public static final String VINEYARD_STATUS = "vineyard::Status";
+  public static final String VINEYARD_ARRAY_BUILDER = "vineyard::ArrayBuilder";
 }
