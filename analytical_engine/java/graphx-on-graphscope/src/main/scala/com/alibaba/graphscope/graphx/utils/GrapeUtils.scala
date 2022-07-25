@@ -2,7 +2,7 @@ package com.alibaba.graphscope.graphx.utils
 
 import com.alibaba.fastffi.impl.CXXStdString
 import com.alibaba.graphscope.arrow.array.{ArrowArray, ArrowArrayBuilder}
-import com.alibaba.graphscope.graphx.{EdgeData, StringEdgeData, StringEdgeDataBuilder, StringVertexData, VertexData, VineyardClient}
+import com.alibaba.graphscope.graphx.{EdgeData, StringEdgeData, StringEdgeDataBuilder, StringVertexData, VertexData, VineyardArrayBuilder, VineyardClient}
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream
 import com.alibaba.graphscope.stdcxx.{FFIByteVector, FFIIntVector, FFIIntVectorFactory, StdVector}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
@@ -154,6 +154,39 @@ object GrapeUtils extends Logging{
     log.info(s"Building primitive array size ${size} with num thread ${numThread} cost ${(time1 - time0)/1000000}ms")
     vector
   }
+  def fillPrimitiveVineyardArray[T : ClassTag](array: Array[T], vineyardBuilder : VineyardArrayBuilder[T], numThread : Int) : Unit = {
+    val time0 = System.nanoTime()
+    val size = array.length
+    val threadArray = new Array[Thread](numThread)
+    val atomic = new AtomicInteger(0)
+    for (i <- 0 until numThread){
+      threadArray(i) = new Thread(){
+        override def run(): Unit ={
+          var flag = true
+          while (flag){
+            val begin = Math.min(atomic.getAndAdd(BATCH_SIZE), size)
+            val end = Math.min(begin + BATCH_SIZE, size)
+            if (begin >= end){
+              flag = false
+            }
+            else {
+              var i = begin
+              while (i < end){
+                vineyardBuilder.set(i, array(i))
+                i += 1
+              }
+            }
+          }
+        }
+      }
+      threadArray(i).start()
+    }
+    for (i <- 0 until numThread){
+      threadArray(i).join()
+    }
+    val time1 = System.nanoTime()
+    log.info(s"Building primitive array size ${size} with num thread ${numThread} cost ${(time1 - time0)/1000000}ms")
+  }
 
   def fillStringArrowArray[T : ClassTag](array: Array[T]) : (FFIByteVector, FFIIntVector) = {
     val size = array.length
@@ -187,8 +220,12 @@ object GrapeUtils extends Logging{
   }
 
   def array2PrimitiveEdgeData[T: ClassTag](array : Array[T], client : VineyardClient, numThread : Int) : EdgeData[Long,T] = {
-    val vector = fillPrimitiveVector(array, numThread)
-    val newEdataBuilder = ScalaFFIFactory.newEdgeDataBuilder[T](client,vector)
+//    val vector = fillPrimitiveVector(array, numThread)
+//    val newEdataBuilder = ScalaFFIFactory.newEdgeDataBuilder[T](client,vector)
+//    newEdataBuilder.seal(client).get()
+    val vineyardArrayBuilder = ScalaFFIFactory.newVineyardArrayBuilder[T](client,array.length)
+    fillPrimitiveVineyardArray(array,vineyardArrayBuilder,numThread)
+    val newEdataBuilder = ScalaFFIFactory.newEdgeDataBuilder[T](client,vineyardArrayBuilder)
     newEdataBuilder.seal(client).get()
   }
 

@@ -31,6 +31,8 @@ public interface EdgeDataBuilder<VID, ED> extends FFISerializable {
 
         EdgeDataBuilder<VID, ED> create(@CXXReference VineyardClient client,@CXXReference StdVector<ED> arrayBuilder);
 
+        EdgeDataBuilder<VID, ED> create(@CXXReference VineyardClient client,@CXXReference VineyardArrayBuilder<ED> arrayBuilder);
+
         default EdgeData<VID, ED> createAndBuild(VineyardClient client,
             StdVector<ED> newValues) {
             EdgeDataBuilder<VID, ED> builder = create(client,newValues);

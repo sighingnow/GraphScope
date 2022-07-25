@@ -144,10 +144,19 @@ class EdgeDataBuilder : public vineyard::ObjectBuilder {
   using edata_array_t = vineyard::Array<edata_t>;
 
  public:
-  EdgeDataBuilder(vineyard::Client& client, std::vector<ED_T>& edata_array): edata_builder_(client,edata_array) {
+  EdgeDataBuilder(vineyard::Client& client, std::vector<ED_T>& edata_array)
+      : edata_builder_(client, edata_array) {
     edge_num_ = edata_array.size();
     LOG(INFO) << "edge num: " << edge_num_;
   }
+  EdgeDataBuilder(vineyard::Client& client,
+                  vineyard::ArrayBuilder<ED_T>& edata_array_builder)
+      : {
+    edata_builder_ = edata_array_builder;
+    edge_num_ = edata_builder_.size();
+    LOG(INFO) << "edge num: " << edge_num_;
+  }
+
   ~EdgeDataBuilder() {}
 
   std::shared_ptr<EdgeData<vid_t, edata_t>> MySeal(vineyard::Client& client) {
