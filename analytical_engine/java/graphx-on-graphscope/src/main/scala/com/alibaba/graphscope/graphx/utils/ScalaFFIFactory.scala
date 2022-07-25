@@ -92,10 +92,10 @@ object ScalaFFIFactory extends Logging{
       "gs::VertexDataBuilder<uint64_t," + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[VD]) +">").asInstanceOf[VertexDataBuilder.Factory[Long,VD]]
     factory.create()
   }
-  def newEdgeDataBuilder[VD: ClassTag]() : EdgeDataBuilder[Long,VD] = synchronized{
+  def newEdgeDataBuilder[VD: ClassTag](client : VineyardClient, arrayBuilder : VineyardArrayBuilder[VD]) : EdgeDataBuilder[Long,VD] = synchronized{
     val factory = FFITypeFactory.getFactory(classOf[EdgeDataBuilder[Long,VD]],
       "gs::EdgeDataBuilder<uint64_t," + GrapeUtils.classToStr(GrapeUtils.getRuntimeClass[VD]) +">").asInstanceOf[EdgeDataBuilder.Factory[Long,VD]]
-    factory.create()
+    factory.create(client,arrayBuilder)
   }
   def newVineyardArrayBuilder[T : ClassTag](client : VineyardClient, vector : StdVector[T]) : VineyardArrayBuilder[T] = {
     val factory = FFITypeFactory.getFactory(classOf[VineyardArrayBuilder[T]],

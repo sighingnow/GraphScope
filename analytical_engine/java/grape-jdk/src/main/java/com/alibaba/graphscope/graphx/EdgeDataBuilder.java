@@ -19,8 +19,8 @@ import com.alibaba.graphscope.utils.CppHeaderName;
 @FFITypeAlias(CppClassName.GS_EDGE_DATA_BUILDER)
 public interface EdgeDataBuilder<VID, ED> extends FFISerializable {
 
-    @FFINameAlias("Init")
-    void init(@CXXReference VineyardArrayBuilder<ED> newValues);
+//    @FFINameAlias("Init")
+//    void init(@CXXReference VineyardArrayBuilder<ED> newValues);
 
     @FFINameAlias("MySeal")
     @CXXValue StdSharedPtr<EdgeData<VID, ED>> seal(@CXXReference VineyardClient client);
@@ -28,12 +28,11 @@ public interface EdgeDataBuilder<VID, ED> extends FFISerializable {
     @FFIFactory
     interface Factory<VID, ED> {
 
-        EdgeDataBuilder<VID, ED> create();
+        EdgeDataBuilder<VID, ED> create(@CXXReference VineyardClient client,@CXXReference VineyardArrayBuilder<ED> arrayBuilder);
 
         default EdgeData<VID, ED> createAndBuild(VineyardClient client,
             VineyardArrayBuilder<ED> newValues) {
-            EdgeDataBuilder<VID, ED> builder = create();
-            builder.init(newValues);
+            EdgeDataBuilder<VID, ED> builder = create(client,newValues);
             StdSharedPtr<EdgeData<VID, ED>> res = builder.seal(client);
             return res.get();
         }
