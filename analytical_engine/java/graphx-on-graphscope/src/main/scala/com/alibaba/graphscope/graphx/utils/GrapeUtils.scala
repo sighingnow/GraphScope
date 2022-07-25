@@ -162,8 +162,7 @@ object GrapeUtils extends Logging{
 
   def array2PrimitiveEdgeData[T: ClassTag](array : Array[T], client : VineyardClient) : EdgeData[Long,T] = {
     val vector = fillPrimitiveVector(array)
-    val vineyardArrayBuilder = ScalaFFIFactory.newVineyardArrayBuilder[T](client,vector)
-    val newEdataBuilder = ScalaFFIFactory.newEdgeDataBuilder[T](client,vineyardArrayBuilder)
+    val newEdataBuilder = ScalaFFIFactory.newEdgeDataBuilder[T](client,vector)
     newEdataBuilder.seal(client).get()
   }
 

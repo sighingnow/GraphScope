@@ -10,6 +10,7 @@ import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
 import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder;
 import com.alibaba.graphscope.stdcxx.StdSharedPtr;
+import com.alibaba.graphscope.stdcxx.StdVector;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
 
@@ -28,10 +29,10 @@ public interface EdgeDataBuilder<VID, ED> extends FFISerializable {
     @FFIFactory
     interface Factory<VID, ED> {
 
-        EdgeDataBuilder<VID, ED> create(@CXXReference VineyardClient client,@CXXReference VineyardArrayBuilder<ED> arrayBuilder);
+        EdgeDataBuilder<VID, ED> create(@CXXReference VineyardClient client,@CXXReference StdVector<ED> arrayBuilder);
 
         default EdgeData<VID, ED> createAndBuild(VineyardClient client,
-            VineyardArrayBuilder<ED> newValues) {
+            StdVector<ED> newValues) {
             EdgeDataBuilder<VID, ED> builder = create(client,newValues);
             StdSharedPtr<EdgeData<VID, ED>> res = builder.seal(client);
             return res.get();
