@@ -223,9 +223,8 @@ object GrapeUtils extends Logging{
 //    val vector = fillPrimitiveVector(array, numThread)
 //    val newEdataBuilder = ScalaFFIFactory.newEdgeDataBuilder[T](client,vector)
 //    newEdataBuilder.seal(client).get()
-    val vineyardArrayBuilder = ScalaFFIFactory.newVineyardArrayBuilder[T](client,array.length)
-    fillPrimitiveVineyardArray(array,vineyardArrayBuilder,numThread)
-    val newEdataBuilder = ScalaFFIFactory.newEdgeDataBuilder[T](client,vineyardArrayBuilder)
+    val newEdataBuilder = ScalaFFIFactory.newEdgeDataBuilder[T](client,array.size)
+    fillPrimitiveVineyardArray(array,newEdataBuilder.getArrayBuilder,numThread)
     newEdataBuilder.seal(client).get()
   }
 

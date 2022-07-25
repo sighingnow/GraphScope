@@ -149,15 +149,15 @@ class EdgeDataBuilder : public vineyard::ObjectBuilder {
     edge_num_ = edata_array.size();
     LOG(INFO) << "edge num: " << edge_num_;
   }
-  EdgeDataBuilder(vineyard::Client& client,
-                  vineyard::ArrayBuilder<ED_T>& edata_array_builder)
-      : {
-    edata_builder_ = edata_array_builder;
+  EdgeDataBuilder(vineyard::Client& client, size_t size)
+      : edata_builder_(client, size) {
     edge_num_ = edata_builder_.size();
     LOG(INFO) << "edge num: " << edge_num_;
   }
 
   ~EdgeDataBuilder() {}
+
+  edata_array_builder_t& GetArrayBuilder() { return edata_builder_; }
 
   std::shared_ptr<EdgeData<vid_t, edata_t>> MySeal(vineyard::Client& client) {
     return std::dynamic_pointer_cast<EdgeData<vid_t, edata_t>>(
@@ -197,7 +197,7 @@ class EdgeDataBuilder : public vineyard::ObjectBuilder {
   eid_t edge_num_;
   edata_array_builder_t edata_builder_;
   std::shared_ptr<edata_array_t> edata_array_;
-};
+};  // namespace gs
 
 template <typename VID_T>
 class EdgeDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {

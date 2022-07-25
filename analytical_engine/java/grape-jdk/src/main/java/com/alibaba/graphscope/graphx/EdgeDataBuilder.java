@@ -22,6 +22,8 @@ public interface EdgeDataBuilder<VID, ED> extends FFISerializable {
 
 //    @FFINameAlias("Init")
 //    void init(@CXXReference VineyardArrayBuilder<ED> newValues);
+    @FFINameAlias("GetArrayBuilder")
+    @CXXReference VineyardArrayBuilder<ED> getArrayBuilder();
 
     @FFINameAlias("MySeal")
     @CXXValue StdSharedPtr<EdgeData<VID, ED>> seal(@CXXReference VineyardClient client);
@@ -31,7 +33,7 @@ public interface EdgeDataBuilder<VID, ED> extends FFISerializable {
 
         EdgeDataBuilder<VID, ED> create(@CXXReference VineyardClient client,@CXXReference StdVector<ED> arrayBuilder);
 
-        EdgeDataBuilder<VID, ED> create(@CXXReference VineyardClient client,@CXXReference VineyardArrayBuilder<ED> arrayBuilder);
+        EdgeDataBuilder<VID, ED> create(@CXXReference VineyardClient client, long size);
 
         default EdgeData<VID, ED> createAndBuild(VineyardClient client,
             StdVector<ED> newValues) {
