@@ -8,7 +8,7 @@ import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.graphx.rdd.FragmentPartition.getHost
 import com.alibaba.graphscope.graphx.rdd.impl.GrapeEdgePartition
-import com.alibaba.graphscope.graphx.store.{EdgeDataStore, InHeapDataStore}
+import com.alibaba.graphscope.graphx.store.{InHeapEdgeDataStore, InHeapDataStore}
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, ScalaFFIFactory}
 import org.apache.spark.graphx.PartitionID
 import org.apache.spark.graphx.grape.{GrapeEdgeRDD, GrapeVertexRDD, PartitionAwareZippedBaseRDD}
@@ -135,7 +135,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
             }
           }
           val time1 = System.nanoTime()
-          val edgeStore = new EdgeDataStore[ED](newEdata.length,client,1, newEdata,structure.eids)
+          val edgeStore = new InHeapEdgeDataStore[ED](newEdata.length,client,1, newEdata,structure.eids)
           log.info(s"got edata array cost ${(time1 - time0)/ 1000000}ms")
           Iterator(new GrapeEdgePartition[VD,ED](pid,0,1,0,frag.getInnerVerticesNum, structure.getOutEdgesNum.toInt, structure, client, edgeStore))
         }

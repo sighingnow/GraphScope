@@ -2,6 +2,7 @@ package com.alibaba.graphscope.graphx.utils
 
 import com.alibaba.fastffi.impl.CXXStdString
 import com.alibaba.graphscope.arrow.array.{ArrowArray, ArrowArrayBuilder}
+import com.alibaba.graphscope.graphx.store.{AbstractDataStore, OffHeapEdgeDataStore}
 import com.alibaba.graphscope.graphx.{EdgeData, StringEdgeData, StringEdgeDataBuilder, StringVertexData, VertexData, VineyardArrayBuilder, VineyardClient}
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream
 import com.alibaba.graphscope.stdcxx.{FFIByteVector, FFIIntVector, FFIIntVectorFactory, StdVector}
@@ -240,5 +241,9 @@ object GrapeUtils extends Logging{
     val newEdataBuilder = ScalaFFIFactory.newStringEdgeDataBuilder()
     newEdataBuilder.init(array.length, ffiByteVector, ffiIntVector)
     newEdataBuilder.seal(client).get()
+  }
+
+  def buildPrimitiveEdgeData[T : ClassTag](edgeStore : OffHeapEdgeDataStore[T], client : VineyardClient, localNum : Int): EdgeData[Long,T]  = {
+    edgeStore.edataBuilder.seal(client).get()
   }
 }

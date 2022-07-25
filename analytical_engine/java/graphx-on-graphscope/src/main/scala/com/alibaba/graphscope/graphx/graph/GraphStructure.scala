@@ -2,8 +2,8 @@ package com.alibaba.graphscope.graphx.graph
 
 import com.alibaba.graphscope.ds.Vertex
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
-import com.alibaba.graphscope.graphx.store.{DataStore, EdgeDataStore, InHeapDataStore}
-import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, BitSetWithOffset}
+import com.alibaba.graphscope.graphx.store.{AbstractDataStore, DataStore}
+import com.alibaba.graphscope.graphx.utils.BitSetWithOffset
 import org.apache.spark.graphx.{Edge, EdgeTriplet}
 import org.apache.spark.util.collection.BitSet
 
@@ -30,15 +30,15 @@ trait GraphStructure extends Serializable {
 
   def iterator[ED : ClassTag](startLid : Long, endLid : Long, edatas : DataStore[ED], activeSet: BitSetWithOffset, reversed : Boolean = false) : Iterator[Edge[ED]]
 
-  def tripletIterator[VD: ClassTag,ED : ClassTag](startLid : Long, endLid : Long, vertexDataStore: DataStore[VD], edatas : EdgeDataStore[ED], activeSet: BitSetWithOffset, edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false): Iterator[EdgeTriplet[VD, ED]]
+  def tripletIterator[VD: ClassTag,ED : ClassTag](startLid : Long, endLid : Long, vertexDataStore: DataStore[VD], edatas : AbstractDataStore[ED], activeSet: BitSetWithOffset, edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false): Iterator[EdgeTriplet[VD, ED]]
 
-  def iterateEdges[ED : ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long, f: Edge[ED] => ED2, edatas : EdgeDataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, newArray : EdgeDataStore[ED2]) : Unit
+  def iterateEdges[ED : ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long, f: Edge[ED] => ED2, edatas : AbstractDataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, newArray : AbstractDataStore[ED2]) : Unit
 
-  def emptyIterateEdges[ED: ClassTag](startLid : Long, endLid : Long, edatas : EdgeDataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false,newEdata : EdgeDataStore[ED]) : Unit
+  def emptyIterateEdges[ED: ClassTag](startLid : Long, endLid : Long, edatas : AbstractDataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, newEdata : AbstractDataStore[ED]) : Unit
 
-  def iterateTriplets[VD : ClassTag, ED : ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long, f : EdgeTriplet[VD,ED] => ED2, innerVertexDataStore: DataStore[VD], edatas : EdgeDataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, includeSrc : Boolean = true, includeDst : Boolean = true, newArray : EdgeDataStore[ED2]) : Unit
+  def iterateTriplets[VD : ClassTag, ED : ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long, f : EdgeTriplet[VD,ED] => ED2, innerVertexDataStore: DataStore[VD], edatas : AbstractDataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, includeSrc : Boolean = true, includeDst : Boolean = true, newArray : AbstractDataStore[ED2]) : Unit
 
-  def emptyIterateTriplets[VD: ClassTag,ED: ClassTag](startLid : Long, endLid : Long, innerVertexDataStore: DataStore[VD], edatas : EdgeDataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, includeSrc : Boolean = true, includeDst : Boolean = true,newArray : EdgeDataStore[ED]) : Unit
+  def emptyIterateTriplets[VD: ClassTag,ED: ClassTag](startLid : Long, endLid : Long, innerVertexDataStore: DataStore[VD], edatas : AbstractDataStore[ED], activeSet : BitSetWithOffset, edgeReversed : Boolean = false, includeSrc : Boolean = true, includeDst : Boolean = true, newArray : AbstractDataStore[ED]) : Unit
 
   def getInDegree(vid: Int): Long
 

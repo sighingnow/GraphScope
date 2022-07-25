@@ -5,7 +5,7 @@ import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, FragmentType, IFragment}
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{ArrowProjectedStructure, GraphStructureType}
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTripletImpl, GraphStructure, ReusableEdgeImpl}
-import com.alibaba.graphscope.graphx.store.{DataStore, EdgeDataStore}
+import com.alibaba.graphscope.graphx.store.{DataStore, AbstractDataStore}
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, BitSetWithOffset}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.graphx._
@@ -283,7 +283,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     }
   }
 
-  override def tripletIterator[VD: ClassTag, ED: ClassTag](startLid : Long, endLid : Long, innerVertexDataStore: DataStore[VD], edatas: EdgeDataStore[ED], activeSet: BitSetWithOffset, edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false): Iterator[EdgeTriplet[VD, ED]] = {
+  override def tripletIterator[VD: ClassTag, ED: ClassTag](startLid : Long, endLid : Long, innerVertexDataStore: DataStore[VD], edatas: AbstractDataStore[ED], activeSet: BitSetWithOffset, edgeReversed : Boolean = false, includeSrc: Boolean = true, includeDst: Boolean = true, reuseTriplet : Boolean = false, includeLid : Boolean = false): Iterator[EdgeTriplet[VD, ED]] = {
     if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)){
       val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,VD,ED]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,VD,ED]]
       log.info(s"creating triplet iterator v2 with java edata, with inner vd store ${innerVertexDataStore}")
@@ -520,11 +520,11 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
   }
 
   //FIXME: implement this.
-  override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2: ClassTag](startLid : Long, endLid : Long, f: EdgeTriplet[VD,ED] => ED2, innerVertexDataStore: DataStore[VD], edatas: EdgeDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, newArray : EdgeDataStore[ED2]): Unit = {
+  override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2: ClassTag](startLid : Long, endLid : Long, f: EdgeTriplet[VD,ED] => ED2, innerVertexDataStore: DataStore[VD], edatas: AbstractDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, newArray : AbstractDataStore[ED2]): Unit = {
     throw new IllegalStateException("Not implemented")
   }
 
-  override def iterateEdges[ED: ClassTag, ED2: ClassTag](startLid : Long, endLid : Long,f: Edge[ED] => ED2, edatas: EdgeDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, newArray: EdgeDataStore[ED2]): Unit = {
+  override def iterateEdges[ED: ClassTag, ED2: ClassTag](startLid : Long, endLid : Long, f: Edge[ED] => ED2, edatas: AbstractDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, newArray: AbstractDataStore[ED2]): Unit = {
     throw new IllegalStateException("Not implemented")
   }
 
@@ -532,9 +532,9 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     (oeOffsetBeginArray.get(startLid), oeOffsetEndArray.get(endLid - 1))
   }
 
-  override def emptyIterateEdges[ED: ClassTag](startLid: VertexId, endLid: VertexId, edatas: EdgeDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, newArray : EdgeDataStore[ED]): Unit = ???
+  override def emptyIterateEdges[ED: ClassTag](startLid: VertexId, endLid: VertexId, edatas: AbstractDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, newArray : AbstractDataStore[ED]): Unit = ???
 
-  override def emptyIterateTriplets[VD: ClassTag, ED: ClassTag](startLid: VertexId, endLid: VertexId, innerVertexDataStore: DataStore[VD], edatas: EdgeDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, newArray : EdgeDataStore[ED]): Unit = ???
+  override def emptyIterateTriplets[VD: ClassTag, ED: ClassTag](startLid: VertexId, endLid: VertexId, innerVertexDataStore: DataStore[VD], edatas: AbstractDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, newArray : AbstractDataStore[ED]): Unit = ???
 }
 
 object FragmentStructure{

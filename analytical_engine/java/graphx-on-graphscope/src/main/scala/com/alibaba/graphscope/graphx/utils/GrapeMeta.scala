@@ -2,6 +2,7 @@ package com.alibaba.graphscope.graphx.utils
 
 import com.alibaba.graphscope.graphx.rdd.RoutingTable
 import com.alibaba.graphscope.graphx.rdd.impl.GrapeEdgePartitionBuilder
+import com.alibaba.graphscope.graphx.store.{AbstractDataStore, DataStore}
 import com.alibaba.graphscope.graphx.{GraphXCSR, GraphXVertexMap, LocalVertexMap, VineyardClient}
 import org.apache.spark.internal.Logging
 
@@ -15,7 +16,7 @@ class GrapeMeta[VD: ClassTag, ED: ClassTag](val partitionID: Int, val partitionN
   var globalVM : GraphXVertexMap[Long,Long] = null.asInstanceOf[GraphXVertexMap[Long,Long]]
   var graphxCSR :GraphXCSR[Long] = null.asInstanceOf[GraphXCSR[Long]]
   var routingTable : RoutingTable = null.asInstanceOf[RoutingTable]
-  var edataArray : Array[ED] = null.asInstanceOf[Array[ED]]
+  var edataStore : AbstractDataStore[ED] = null.asInstanceOf[AbstractDataStore[ED]]
   var eids : Array[Long] = null.asInstanceOf[Array[Long]]
   def setLocalVertexMap(in : LocalVertexMap[Long,Long]): Unit ={
     this.localVertexMap = in
@@ -25,8 +26,8 @@ class GrapeMeta[VD: ClassTag, ED: ClassTag](val partitionID: Int, val partitionN
     this.edgePartitionBuilder = edgePartitionBuilder
   }
 
-  def setEdataArray(ed : Array[ED]) : Unit = {
-    this.edataArray = ed
+  def setEdataStore(ed : AbstractDataStore[ED]) : Unit = {
+    this.edataStore = ed
   }
 
   def setGlobalVM(globalVMId : Long) : Unit = {

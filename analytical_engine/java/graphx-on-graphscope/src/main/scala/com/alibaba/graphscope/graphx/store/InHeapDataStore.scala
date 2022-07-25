@@ -7,20 +7,13 @@ import org.apache.spark.internal.Logging
 import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.ClassTag
 
-class InHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val length : Int, val client : VineyardClient, var numSplit : Int, val array : Array[VD]) extends DataStore [VD] with Logging {
+class InHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val length : Int, val client : VineyardClient, numSplit : Int, val array : Array[VD]) extends AbstractDataStore[VD](numSplit) with Logging {
 
   def this(length : Int, client : VineyardClient, numSplit : Int) = {
     this(length,client, numSplit,new Array[VD](length))
   }
-  var v6dId: Long = 0L
-  var resultArray : InHeapDataStore[_] = null.asInstanceOf[InHeapDataStore[_]]
-  override def size: Int = array.length
-  val count = new AtomicInteger(numSplit)
 
-  def setNumSplit(split : Int) : Unit = {
-    this.numSplit = split
-    count.set(split)
-  }
+  override def size: Int = array.length
 
   @inline
   override def getData(lid: Int): VD = array(lid)
@@ -28,26 +21,11 @@ class InHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val length : I
   @inline
   override def setData(lid: Int, vd: VD): Unit = array(lid) = vd
 
-  /** create a new store from current, all the same except for vertex data type */
-//  override def create[VD2: ClassTag]: VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset, length, client)
-
-  override def getOrCreate[VD2: ClassTag]: DataStore[VD2] = synchronized{
-    if (resultArray == null || count.get() == 0){
-      synchronized {
-//        log.info(s"creating result array of type ${GrapeUtils.getRuntimeClass[VD2].getSimpleName}")
-        resultArray = new InHeapDataStore[VD2](length, client, numSplit).asInstanceOf[InHeapDataStore[_]]
-        count.set(numSplit)
-      }
-    }
-//  log.info(s"using already exiting res array ${resultArray}")
-  count.decrementAndGet()
-  resultArray.asInstanceOf[DataStore[VD2]]
-  }
-
-//  override def create[VD2: ClassTag](newArr: Array[VD2]): VertexDataStore[VD2] = new InHeapVertexDataStore[VD2](offset,length,client,newArr)
 
   override def toString: String = {
     "InHeapDataStore@(length=" + length + ",type=" + GrapeUtils.getRuntimeClass[VD].getSimpleName + ")"
   }
+
+  override def mapToNew[T2 : ClassTag]: DataStore[T2] = new InHeapDataStore[T2](length,client,numSplit,new Array[T2](length))
 }
 
