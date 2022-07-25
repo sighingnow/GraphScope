@@ -148,7 +148,6 @@ class ImmutableTypedArray {
               ->raw_values();
       buffer_ = const_cast<T*>(const_buffer_);
       length = array->length();
-      initVector();
     }
   }
 
@@ -167,16 +166,10 @@ class ImmutableTypedArray {
     }
   }
 
-  void Init(std::shared_ptr<vineyard::Array<T>> array) {
-    if (array == nullptr) {
-      buffer_ = NULL;
-      length = 0;
-    } else {
+  void Init(vineyard::Array<T>& array) {
       auto const_buffer_ = array.data();
       buffer_ = const_cast<T*>(const_buffer_);
-      length = array->size();
-      // initVector();
-    }
+      length = array.size();
   }
 
   value_type& operator[](size_t loc) const { return buffer_[loc]; }

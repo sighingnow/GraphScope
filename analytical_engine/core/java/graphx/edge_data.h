@@ -59,9 +59,9 @@ class EdgeData : public vineyard::Registered<EdgeData<VID_T, ED_T>> {
     this->meta_ = meta;
     this->id_ = meta.GetId();
     this->edge_num_ = meta.GetKeyValue<eid_t>("edge_num");
-    edatas_->Construct(meta.GetMemberMeta("edatas"));
+    edatas_.Construct(meta.GetMemberMeta("edatas"));
 
-    CHECK_EQ(edatas_->length(), edge_num_);
+    CHECK_EQ(edatas_.size(), edge_num_);
 
     edatas_accessor_.Init(edatas_);
     VLOG(10) << "Finish construct edge data, edge num: " << edge_num_;
@@ -77,7 +77,7 @@ class EdgeData : public vineyard::Registered<EdgeData<VID_T, ED_T>> {
 
  private:
   eid_t edge_num_;
-  std::shared_ptr<edata_array_t> edatas_;
+  edata_array_t edatas_;
   graphx::ImmutableTypedArray<edata_t> edatas_accessor_;
 
   template <typename _VID_T, typename _ED_T>
@@ -140,18 +140,15 @@ class EdgeDataBuilder : public vineyard::ObjectBuilder {
   using vid_t = VID_T;
   using edata_t = ED_T;
   using eid_t = uint64_t;
-  using edata_array_builder_t = typename vineyard::ArrayBuilder<edata_t>;
-  using edata_array_t = typename vineyard::Array<edata_t>;
+  using edata_array_builder_t = vineyard::ArrayBuilder<edata_t>;
+  using edata_array_t = vineyard::Array<edata_t>;
 
  public:
-  EdgeDataBuilder() {}
-  ~EdgeDataBuilder() {}
-
-  void Init(edata_array_builder_t& edata_builder) {
-    edge_num_ = edata_builder.size();
-    this->edata_builder_ = edata_builder;
+  EdgeDataBuilder(vineyard::Client& client, std::vector<ED_T>& edata_array): edata_builder_(client,edata_array) {
+    edge_num_ = edata_array.size();
     LOG(INFO) << "edge num: " << edge_num_;
   }
+  ~EdgeDataBuilder() {}
 
   std::shared_ptr<EdgeData<vid_t, edata_t>> MySeal(vineyard::Client& client) {
     return std::dynamic_pointer_cast<EdgeData<vid_t, edata_t>>(
@@ -166,9 +163,9 @@ class EdgeDataBuilder : public vineyard::ObjectBuilder {
     edge_data->meta_.SetTypeName(type_name<EdgeData<vid_t, edata_t>>());
 
     size_t nBytes = 0;
-    edge_data->edatas_ = edata_array_;
+    edge_data->edatas_ = *edata_array_.get();
     edge_data->edge_num_ = edge_num_;
-    edge_data->edatas_accessor_.Init(edata_array_);
+    edge_data->edatas_accessor_.Init(edge_data->edatas_);
     edge_data->meta_.AddKeyValue("edge_num", edge_num_);
     edge_data->meta_.AddMember("edatas", edata_array_->meta());
     nBytes += edata_array_->nbytes();
@@ -189,7 +186,7 @@ class EdgeDataBuilder : public vineyard::ObjectBuilder {
 
  private:
   eid_t edge_num_;
-  edata_builder_t edata_builder_;
+  edata_array_builder_t edata_builder_;
   std::shared_ptr<edata_array_t> edata_array_;
 };
 

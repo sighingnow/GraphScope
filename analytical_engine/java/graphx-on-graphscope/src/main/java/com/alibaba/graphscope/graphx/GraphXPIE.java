@@ -48,7 +48,7 @@ import scala.collection.Iterator;
 public class GraphXPIE<VD, ED, MSG_T> {
 
     private static Logger logger = LoggerFactory.getLogger(GraphXPIE.class.getName());
-    private static int BATCH_SIZE = 4096;
+    private static int BATCH_SIZE = 8192;
     /**
      * User vertex program: vprog: (VertexId, VD, A) => VD
      */
@@ -247,7 +247,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        nextSet.clear((int) innerVerticesNum, (int) verticesNum);
+//        nextSet.clear((int) innerVerticesNum, (int) verticesNum);
         flushTime += System.nanoTime();
         round = 1;
     }

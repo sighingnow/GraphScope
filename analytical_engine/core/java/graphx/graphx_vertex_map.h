@@ -124,7 +124,7 @@ class GraphXVertexMap
       vineyard_vid_array_t array;
       array.Construct(meta.GetMemberMeta("outerLid2Gids"));
       outer_lid2Gids_ = array.GetArray();
-      outer_lid2Gids_accessor_ = outer_lid2Gids->raw_values();
+      outer_lid2Gids_accessor_ = outer_lid2Gids_->raw_values();
     }
     outer_gid2Lids_.Construct(meta.GetMemberMeta("outerGid2Lids"));
 
@@ -511,7 +511,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
   int graphx_pid_;
 
  private:
-  void initOuterGids(
+  size_t initOuterGids(
       std::shared_ptr<GraphXVertexMap<oid_t, vid_t>>& vertex_map) {
     vid_array_builder_t gid_builder;
     size_t nbytes = 0;
@@ -528,16 +528,16 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     {
       // build and seal.
       typename vineyard::InternalType<vid_t>::vineyard_builder_type
-          array_builder(client, vertex_map->outer_lid2Gids_);
+          array_builder(client_, vertex_map->outer_lid2Gids_);
       auto vineyard_array =
           *std::dynamic_pointer_cast<vineyard::NumericArray<vid_t>>(
-              array_builder.Seal(client));
+              array_builder.Seal(client_));
       vertex_map->meta_.AddMember("outerLid2Gids", vineyard_array.meta());
       nbytes += vineyard_array.meta().GetNBytes();
     }
 
-    vineyard::HashmapBuilder<vid_t, vid_t> builder(client);
-    vid_t lid = lid2Oids_[fid_]->length();
+    vineyard::HashmapBuilder<vid_t, vid_t> builder(client_);
+    vid_t lid = vertex_map->lid2Oids_[fid_]->length();
     for (int64_t i = 0; i < ovnum; ++i) {
       builder.emplace(vertex_map->outer_lid2Gids_->Value(i), lid);
       lid++;
@@ -546,9 +546,9 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     {
       vertex_map->outer_gid2Lids_ =
           *std::dynamic_pointer_cast<vineyard::Hashmap<vid_t, vid_t>>(
-              builder.Seal(client));
-      vertex_map->meta_.AddMember("outerGid2Lids", map.meta());
-      nbytes += map.GetNBytes();
+              builder.Seal(client_));
+      vertex_map->meta_.AddMember("outerGid2Lids", vertex_map->outer_gid2Lids_.meta());
+      nbytes += vertex_map->outer_gid2Lids_.meta().GetNBytes();
     }
     return nbytes;
   }
@@ -643,7 +643,7 @@ class BasicGraphXVertexMapBuilder
             grape::fid_t cur_fid;
             while (true) {
               cur_fid = current_fid.fetch_add(1, std::memory_order_relaxed);
-              if (cur_fid >= comm_spec_.worker_num()) {
+              if (cur_fid >= comm_spec_.fnum()) {
                 break;
               }
               if (cur_fid == curFid) {
