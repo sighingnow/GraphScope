@@ -21,6 +21,7 @@ object SSSPTest extends Logging{
     val partNum = args(1).toInt
     val sourceId = args(2).toLong
     val engine = args(3)
+    val time0 = System.nanoTime()
     val graph: Graph[Int, Double] = {
       if (engine.equals("gs")) {
         //      GraphLoader.edgeListFile(sc, efile,canonicalOrientation = false, partNum).mapEdges(e => e.attr.toDouble)
@@ -37,7 +38,7 @@ object SSSPTest extends Logging{
     val initialGraph = graph.mapVertices((id, _) =>
       if (id == sourceId) 0.0 else Double.PositiveInfinity).cache()
     log.info(s"initial graph count ${initialGraph.numVertices}, ${initialGraph.numEdges}")
-    val time0 = System.nanoTime()
+    val time1 = System.nanoTime()
 
     val sssp = initialGraph.pregel(Double.PositiveInfinity)(
       (id, dist, newDist) =>{
@@ -55,8 +56,8 @@ object SSSPTest extends Logging{
       (a, b) => math.min(a, b) // Merge Message
     )
     log.info(s"initial graph count ${sssp.numVertices}, ${sssp.numEdges}")
-    val time1 = System.nanoTime()
-    log.info(s"Pregel took ${(time1 - time0)/1000000}ms")
+    val time2 = System.nanoTime()
+    log.info(s"Pregel took ${(time2 - time1)/1000000}ms, load graph ${(time1 - time0)/1000000}ms")
 //    println(sssp.vertices.collect.mkString("\n"))
 //    sssp.vertices.saveAsTextFile(s"/tmp/sssp-test-${java.time.LocalDateTime.now()}")
     // $example off$
