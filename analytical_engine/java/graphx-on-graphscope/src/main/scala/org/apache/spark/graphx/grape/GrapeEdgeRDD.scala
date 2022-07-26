@@ -181,6 +181,7 @@ object GrapeEdgeRDD extends Logging{
           var i = 0;
           val limit = vm.getVertexSize.toInt
           while (i < limit){
+            //FIXME: speed up.
             res(i) = vm.getId(i)
             i += 1
           }
