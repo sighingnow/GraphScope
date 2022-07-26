@@ -185,7 +185,7 @@ vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
 }
 
 vineyard::ObjectID TestGraphXEdgeData(
-    vineyard::Client& client, vineyard::ArrayBuilder<int64_t>& edata_builder) {
+    vineyard::Client& client, std::vector<int64_t>& edata_builder) {
   vineyard::ObjectID id;
   {
     gs::EdgeDataBuilder<uint64_t, int64_t> builder(client, edata_builder);
@@ -216,13 +216,14 @@ void TestGraphXFragment(vineyard::Client& client, vineyard::ObjectID vm_id,
 
 boost::leaf::result<void> generateData(
     arrow::Int64Builder& srcBuilder, arrow::Int64Builder& dstBuilder,
-    vineyard::ArrayBuilder<int64_t>& edataBuilder) {
+    std::vector<int64_t>& edataBuilder) {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
 
   // if (comm_spec.worker_id() == 0) {
   ARROW_OK_OR_RAISE(srcBuilder.Reserve(6));
   ARROW_OK_OR_RAISE(dstBuilder.Reserve(6));
+  edataBuilder.resize(6);
   srcBuilder.UnsafeAppend(1);
   srcBuilder.UnsafeAppend(1);
   srcBuilder.UnsafeAppend(2);
@@ -277,7 +278,7 @@ int main(int argc, char* argv[]) {
   Init();
 
   arrow::Int64Builder srcBuilder, dstBuilder;
-  vineyard::ArrayBuilder<int64_t> edataBuilder(client, 6);
+  std::vector<int64_t> edataBuilder;
   generateData(srcBuilder, dstBuilder, edataBuilder);
 
   // TestLocalVertexMap(client);

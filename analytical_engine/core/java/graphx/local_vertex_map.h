@@ -86,7 +86,7 @@ class LocalVertexMap
 
     outer_lid2Oid_.Construct(meta.GetMemberMeta("outer_lid2Oid"));
 
-    CHECK_EQ(inner_oid2Lid_.size(), inner_lid2Oid_.GetArray()->length());
+//    CHECK_EQ(inner_oid2Lid_.size(), inner_lid2Oid_.GetArray()->length());
     // CHECK_EQ(outer_oid2Lid_.size(), outer_lid2Oid_->length());
 
     // inner_oidArray_accessor.Init(inner_lid2Oid_);
@@ -162,7 +162,7 @@ class LocalVertexMapBuilder : public vineyard::ObjectBuilder {
 
     auto vertex_map = std::make_shared<LocalVertexMap<oid_t, vid_t>>();
     vertex_map->meta_.SetTypeName(type_name<LocalVertexMap<oid_t, vid_t>>());
-    vertex_map->inner_oid2Lid_ = inner_oid2Lid_;
+//    vertex_map->inner_oid2Lid_ = inner_oid2Lid_;
     // vertex_map->outer_oid2Lid_ = outer_oid2Lid_;
 
     {

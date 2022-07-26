@@ -40,13 +40,13 @@ class_path=${class_path}:${spark_jars}
 
 export GRAPE_JVM_OPTS="-Dcom.alibaba.fastffi.rvBuffer=2147483648 -XX:+StartAttachListener -XX:+PreserveFramePointer \
 -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps \
--XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1 -XX:+PrintInlining -XX:-TieredCompilation \
+-XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1 -XX:-TieredCompilation \
 -XX:CompileCommandFile=${GRAPHSCOPE_HOME}/conf/compile-commands.txt \
 -Djava.library.path=${GRAPHSCOPE_HOME}/lib \
 -Djava.class.path=${class_path}"
 #-XX:+PrintInlining
 #-XX:+TraceClassLoading \
 #-XX:+PrintInlining 
-# -XX:+TraceClassLoading \-XX:LoopUnrollLimit=1
+# -XX:+TraceClassLoading \-XX:LoopUnrollLimit=1-XX:+PrintInlining 
 #-XX:+PrintInlining \-XX:LoopUnrollLimit=1
 #sudo docker run --shm-size 100960m --name graphx -it  --privileged=true --network=host -v /apsara/xiaolei.zl/:/home/graphscope/data registry.cn-hongkong.aliyuncs.com/graphscope/graphscope-vineyard:v0.3.21 /bin/bash
