@@ -437,22 +437,19 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     var curLid = startLid.toInt
     val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
     var curOffset = activeSet.nextSetBit(activeSet.startBit)
-//    val oldEDataArray = edatas.asInstanceOf[InHeapDataStore[ED]].array
-//    val newEdataArray = newArray.asInstanceOf[InHeapDataStore[ED]].array
     val vDataArray = vertexDataStore.asInstanceOf[InHeapDataStore[VD]].array
     if (curOffset < 0) return
     if (!edgeReversed){
-      while (curLid < endLid){
+      while (curLid < endLid && curOffset >= 0){
+        val curEndOffset = getOEEndOffset(curLid)
         edgeTriplet.srcId = lid2Oid(curLid)
         edgeTriplet.srcAttr = vDataArray(curLid)
-        
-        val curEndOffset = getOEEndOffset(curLid)
-        while (curOffset < curEndOffset){
+        while (curOffset < curEndOffset && curOffset >= 0){
           edgeTriplet.dstId = dstOids(curOffset)
           val dstLid = dstLids(curOffset)
           edgeTriplet.dstAttr = vDataArray(dstLid)
           edgeTriplet.attr = edatas.getData(curOffset)
-          curOffset = curOffset + 1
+          curOffset = activeSet.nextSetBit(curOffset + 1)
         }
         curLid += 1
       }
@@ -495,8 +492,6 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
           edgeTriplet.dstAttr = vDataArray(dstLid)
           edgeTriplet.attr = edatas.getData(curOffset)
           resArray.setData(curOffset, f(edgeTriplet))
-//          edgeTriplet.attr = oldEDataArray(curOffset)
-//          newEdataArray(curOffset) = f(edgeTriplet)
           curOffset = activeSet.nextSetBit(curOffset + 1)
         }
         curLid += 1
@@ -529,16 +524,16 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
 //    val newEdataArray = newArray.asInstanceOf[InHeapDataStore[ED]].array
     if (curOffset < 0) return
     if (!edgeReversed){
-      while (curLid < endLid){
-        edge.srcId = lid2Oid(curLid)
-        
+      while (curLid < endLid && curOffset >= 0){
         val curEndOffset = getOEEndOffset(curLid)
-        while (curOffset < curEndOffset){
+        edge.srcId = lid2Oid(curLid)
+        while (curOffset < curEndOffset && curOffset >= 0){
           edge.dstId = dstOids(curOffset)
           edge.attr = edatas.getData(curOffset)
-          curOffset = curOffset + 1
+//          newArray.setData(curOffset,f(edge))
+          curOffset = activeSet.nextSetBit(curOffset + 1)
         }
-       curLid += 1
+        curLid += 1
       }
     }
     else {
@@ -563,8 +558,6 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
     var curLid = startLid.toInt
     val edge = new ReusableEdgeImpl[ED]
     var curOffset = activeSet.nextSetBit(activeSet.startBit)
-//    val oldEdataArray = edatas.asInstanceOf[InHeapDataStore[ED]].array
-//    val newEdataArray = newArray.asInstanceOf[InHeapDataStore[ED2]].array
     if (!edgeReversed){
       while (curLid < endLid && curOffset >= 0){
         val curEndOffset = getOEEndOffset(curLid)
@@ -572,7 +565,6 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val lid2Oid : Ar
         while (curOffset < curEndOffset && curOffset >= 0){
           edge.dstId = dstOids(curOffset)
           edge.attr = edatas.getData(curOffset)
-//          newEdataArray(curOffset) = f(edge)
           newArray.setData(curOffset,f(edge))
           curOffset = activeSet.nextSetBit(curOffset + 1)
         }

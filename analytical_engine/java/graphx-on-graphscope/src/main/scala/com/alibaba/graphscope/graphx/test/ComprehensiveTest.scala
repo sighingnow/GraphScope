@@ -79,9 +79,9 @@ object ComprehensiveTest extends Logging{
           var i = 0
           while (i < 5){
             val partIter = part.iterator
-//            while (partIter.hasNext){
-//              partIter.next()
-//            }
+            while (partIter.hasNext){
+              partIter.next()
+            }
             i += 1
           }
         }
@@ -98,9 +98,9 @@ object ComprehensiveTest extends Logging{
           var i = 0
           while (i < 5) {
             val partIter = part.tripletIterator(true, true)
-//            while (partIter.hasNext) {
-//              partIter.next()
-//            }
+            while (partIter.hasNext) {
+              partIter.next()
+            }
             i += 1
           }
         }
