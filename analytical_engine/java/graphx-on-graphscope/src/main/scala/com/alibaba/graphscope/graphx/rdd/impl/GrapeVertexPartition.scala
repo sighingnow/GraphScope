@@ -44,7 +44,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     new Iterator[(VertexId,VD)]{
       var lid = bitSet.nextSetBit(startLid)
       override def hasNext: Boolean = {
-        lid >= 0
+        lid >= 0 && lid < endLid
       }
 
       override def next(): (VertexId, VD) = {
@@ -73,7 +73,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   def collectNbrIds(edgeDirection: EdgeDirection) : GrapeVertexPartition[Array[VertexId]] = {
     var lid = bitSet.nextSetBit(startLid)
     val newValues = vertexData.getOrCreate[Array[Long]]
-    while (lid >= 0){
+    while (lid >= 0 && lid < endLid){
       newValues.setData(lid,getNbrIds(lid, edgeDirection))
       lid = bitSet.nextSetBit(lid + 1);
     }
@@ -135,7 +135,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     val time0 = System.nanoTime()
     val newValues = vertexData.getOrCreate[VD2]
     var i = bitSet.nextSetBit(startLid)
-    while (i >= 0) {
+    while (i >= 0 && i < endLid) {
       newValues.setData(i,f(graphStructure.getId(i), getData(i)))
       i = bitSet.nextSetBit(i + 1)
     }
@@ -199,7 +199,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     } else {
       val newMask = this.bitSet & other.bitSet
       var i = newMask.nextSetBit(startLid)
-      while (i >= 0) {
+      while (i >= 0 && i < endLid) {
         if (getData(i) == other.getData(i)) {
           newMask.unset(i)
         }
@@ -221,7 +221,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       log.info(s"${GrapeUtils.getRuntimeClass[VD3].getSimpleName}")
       val newValues = vertexData.getOrCreate[VD3]
       var i = this.bitSet.nextSetBit(startLid)
-      while (i >= 0) {
+      while (i >= 0 && i < endLid) {
         val otherV: Option[VD2] = if (other.bitSet.get(i)) Some(other.getData(i)) else None
         val t = f(this.graphStructure.getId(i), this.getData(i), otherV)
         newValues.setData(i, t)
@@ -265,7 +265,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 //      val newValues = innerVertexData.create[VD2]
       val newView = vertexData.getOrCreate[VD2]
       var i = newMask.nextSetBit(startLid)
-      while (i >= 0) {
+      while (i >= 0 && i < endLid) {
         newView.setData(i, f(this.graphStructure.getId(i), this.getData(i), other.getData(i)))
         i = newMask.nextSetBit(i + 1)
       }
