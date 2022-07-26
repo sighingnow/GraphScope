@@ -357,8 +357,7 @@ class GraphXVertexMap
 
   inline bool GetGid(const OID_T& oid, VID_T& gid) const {
     // judge the fid from partition.
-    int32_t graphx_pid = static_cast<uint64_t>(oid) % fnum_;
-    fid_t fid = pid2Fid_->Value(graphx_pid);
+    int32_t fid = static_cast<uint64_t>(oid) % fnum_;
     return GetGid(fid, oid, gid);
   }
 
@@ -584,8 +583,8 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
 
  private:
   inline bool getGid(const oid_t& oid, vid_t& gid) const {
-    int32_t graphx_pid = static_cast<uint64_t>(oid) % fnum_;
-    fid_t fid = pid2Fid_->Value(graphx_pid);
+    int32_t fid = static_cast<uint64_t>(oid) % fnum_;
+    // fid_t fid = pid2Fid_->Value(graphx_pid);
     return GetGid(fid, oid, gid);
   }
 
