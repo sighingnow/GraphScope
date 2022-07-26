@@ -251,7 +251,7 @@ class GraphXVertexMap
   }
   inline OID_T GetOuterVertexId(const vertex_t& v) const {
     assert(v.GetValue() >= ivnum_);
-    return OuterVertexLid2Oid(v);
+    return OuterVertexLid2Oid(v.GetValue());
   }
 
   inline bool IsInnerVertex(const vertex_t& v) { return v.GetValue() < ivnum_; }
@@ -283,7 +283,7 @@ class GraphXVertexMap
 
   inline bool GetOid(const VID_T& gid, OID_T& oid) const {
     fid_t fid = GetFidFromGid(gid);
-    VID_T lid = GetLidFromGid(gid);
+    VID_T lid = id_parser_.get_local_id(gid);
     return GetOid(fid, lid, oid);
   }
 
