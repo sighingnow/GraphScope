@@ -321,7 +321,7 @@ class GraphXVertexMap
     return lid2Oids_accessor_[fid_][lid];
   }
   inline OID_T OuterVertexLid2Oid(const VID_T& lid) const {
-    auto gid = outer_lid2Gids_accessor_[lid];
+    auto gid = outer_lid2Gids_accessor_[lid - ivnum_];
     oid_t oid;
     CHECK(GetOid(gid, oid));
     return oid;
