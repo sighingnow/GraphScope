@@ -37,7 +37,7 @@ vineyard::ObjectID getLocalVM(vineyard::Client& client,
   vineyard::ObjectID vmap_id;
   {
     arrow::Int64Builder inner, outer;
-    if (comm_spec.worker_id() == 0) {
+    if (comm_spec.worker_id() == 1) {
       CHECK(inner.Reserve(3).ok());
       CHECK(outer.Reserve(3).ok());
       inner.UnsafeAppend(2);
@@ -93,7 +93,7 @@ gs::GraphXVertexMap<int64_t, uint64_t> TestGraphXVertexMap(
     LOG(INFO) << "Worker: " << comm_spec.worker_id()
               << " local vm: " << partial_map;
     gs::BasicGraphXVertexMapBuilder<int64_t, uint64_t> builder(
-        client, comm_spec, 0, partial_map);
+        client, comm_spec, comm_spec.worker_num() - comm_spec.worker_id() - 1, partial_map);
     auto graphx_vm =
         std::dynamic_pointer_cast<gs::GraphXVertexMap<int64_t, uint64_t>>(
             builder.Seal(client));

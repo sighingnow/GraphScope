@@ -425,6 +425,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
 
   void SetGraphXPid2Fid(const vineyard::NumericArray<int32_t>& pid2Fid) {
     this->pid2Fid_ = pid2Fid;
+    this->pid2Fid_accessor_ = pid2Fid_.GetArray();
   }
 
   void SetOidArray(grape::fid_t fid, const vineyard_oid_array_t& oid_arrays) {
@@ -585,8 +586,8 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
  private:
   inline bool getGid(const oid_t& oid, vid_t& gid) const {
     int32_t graphx_pid = static_cast<uint64_t>(oid) % fnum_;
-    fid_t fid = pid2Fid_->Value(graphx_pid);
-    return GetGid(fid, oid, gid);
+    fid_t fid = pid2Fid_accessor_->Value(graphx_pid);
+    return getGid(fid, oid, gid);
   }
 
   inline bool getGid(fid_t fid, const oid_t& oid, vid_t& gid) const {
@@ -611,6 +612,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
   std::vector<vineyard::Hashmap<oid_t, vid_t>> oid2Lids_;
   std::shared_ptr<oid_array_t> outer_oid_array_;
   vineyard::NumericArray<int32_t> fid2Pid_, pid2Fid_;
+  std::shared_ptr<arrow::Int32Array> pid2Fid_accessor_;
   // vineyard_vid_array_t outer_gid_array_;
 };
 
