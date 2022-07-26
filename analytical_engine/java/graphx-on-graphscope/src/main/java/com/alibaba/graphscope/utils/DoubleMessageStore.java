@@ -22,8 +22,8 @@ import scala.Tuple2;
 public class DoubleMessageStore implements MessageStore<Double> {
     private Logger logger = LoggerFactory.getLogger(DoubleMessageStore.class.getName());
 
-    private double[] values;
-//    private AtomicDoubleArrayWrapper values;
+//    private double[] values;
+    private AtomicDoubleArrayWrapper values;
     private Function2<Double,Double,Double> mergeMessage;
     private Vertex<Long> tmpVertex[];
     private FFIByteVectorOutputStream[] outputStream;
@@ -33,7 +33,8 @@ public class DoubleMessageStore implements MessageStore<Double> {
     private BitSet nextSet;
 
     public DoubleMessageStore(int len, int fnum,int numCores, Function2<Double,Double,Double> function2,BitSet nextSet) {
-        values = new double[len];
+//        values = new double[len];
+        values = new AtomicDoubleArrayWrapper(len);
         mergeMessage = function2;
         tmpVertex = new Vertex[numCores];
         for (int i = 0; i < numCores; ++i){
@@ -72,17 +73,20 @@ public class DoubleMessageStore implements MessageStore<Double> {
 
     @Override
     public Double get(int index) {
-        return values[index];
+//        return values[index];
+        return values.get(index);
     }
 
     @Override
     public void set(int index, Double value) {
-        values[index] =  value;
+//        values[index] =  value;
+        values.set(index,value);
     }
 
     @Override
     public int size() {
-        return values.length;
+//        return values.length;
+        return values.getSize();
     }
 
 
@@ -102,14 +106,18 @@ public class DoubleMessageStore implements MessageStore<Double> {
                 lid = srcLid;
             }
             if (nextSet.get(lid)){
-                double original = values[lid];
+//                double original = values[lid];
+                double original = values.get(lid);
                 double newMsg = msg._2();
                 if (original != newMsg){
-                    values[lid] =  mergeMessage.apply(original, msg._2());
+//                    values[lid] =  mergeMessage.apply(original, msg._2());
+                    double newValue = mergeMessage.apply(original,msg._2());
+                    values.compareAndSet(lid, newValue);
                 }
             }
             else {
-                values[lid] = msg._2();
+//                values[lid] = msg._2();
+                values.compareAndSet(lid, msg._2());
                 nextSet.set(lid);
             }
         }
@@ -126,7 +134,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
             vertex.SetValue((long) i);
             int dstFid = fragment.getFragId(vertex);
             outputStream[dstFid].writeLong(fragment.getOuterVertexGid(vertex));
-            outputStream[dstFid].writeDouble(values[i]);
+            outputStream[dstFid].writeDouble(values.get(i));
             cnt += 1;
         }
         logger.debug("Frag [{}] try to send {} msg to outer vertices", fragment.fid(), cnt);
@@ -167,12 +175,17 @@ public class DoubleMessageStore implements MessageStore<Double> {
                 }
                 int lid = vertex.GetValue().intValue();
                 if (curSet.get(lid)){
-                    values[lid] = mergeMessage.apply(values[lid], msg);
+//                    values[lid] = mergeMessage.apply(values[lid], msg);
+                    values.set(lid, mergeMessage.apply(values.get(lid), msg));
                 }
                 else {
                     //no update in curSet when the message store is not changed, although we receive vertices.
-                    if (values[lid] != msg){
-                        values[lid] =  msg;
+//                    if (values[lid] != msg){
+//                        values[lid] =  msg;
+//                        curSet.set(lid);
+//                    }
+                    if (values.get(lid) != msg){
+                        values.set(lid, msg);
                         curSet.set(lid);
                     }
                 }
