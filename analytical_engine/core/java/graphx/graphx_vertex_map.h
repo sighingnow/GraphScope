@@ -48,6 +48,7 @@
 
 #include "core/error.h"
 #include "core/io/property_parser.h"
+#include "core/java/graphx/local_vertex_map.h"
 #include "core/java/type_alias.h"
 
 /**
@@ -396,8 +397,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
  public:
   explicit GraphXVertexMapBuilder(vineyard::Client& client, grape::fid_t fnum,
                                   grape::fid_t fid, int graphx_pid,
-                                  int32_t local_num,
-                                  oid_array_builder_t& outer_oids_builder)
+                                  int32_t local_num)
       : client_(client) {
     lid2Oids_.resize(fnum);
     oid2Lids_.resize(fnum);
@@ -406,8 +406,11 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     graphx_pid_ = graphx_pid;
     local_num_ = local_num;
     id_parser_.init(fnum);
-    CHECK(outer_oids_builder.Finish(&outer_oids_array_).ok());
   };
+
+  void setOuterLid2Oid(oid_array_t& outer_oids) {
+    this.outer_oid_array_ = outer_oids;
+  }
   void SetGraphXPids(const vineyard::NumericArray<int32_t>& graphx_pids_array) {
     this->graphx_pids_array_ = graphx_pids_array;
   }
@@ -434,7 +437,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     vertex_map->id_parser_.init(fnum_);
     vertex_map->graphx_pid_ = graphx_pid_;
     vertex_map->ivnum_ = lid2Oids_[fid_]->length();
-    vertex_map->ovnum_ = outer_oids_array_->length();
+    vertex_map->ovnum_ = outer_oid_array_.length();
     vertex_map->tvnum_ = vertex_map->ivnum_ + vertex_map->ovnum_;
 
     vertex_map->lid2Oids_.resize(fnum_);
@@ -459,7 +462,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
       std::vector<std::thread> threads(thread_num);
       vid_array_builder_t gid_builder;
       gid_builder.resize(ovnum);
-      const oid_t* outer_lid2Oids_accessor_ = outer_oids_arrays_->raw_values;
+      const oid_t* outer_lid2Oids_accessor_ = outer_oid_array_->raw_values();
       for (int i = 0; i < thread_num; ++i) {
         threads[i] = std::thread(
             [&](int fid) {
@@ -504,8 +507,8 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     }
     {
       vineyard::HashmapBuilder<vid_t, vid_t> builder(client);
-      auto& gid_accessor = vertex_map->outer_lid2Gids_accessor_ auto ivnum =
-          vertex_map->ivnum_;
+      auto& gid_accessor = vertex_map->outer_lid2Gids_accessor_;
+      auto ivnum = vertex_map->ivnum_;
       for (int i = 0; i < ovnum; ++i) {
         builder.emplace(gid_accessor[i], i + ivnum);
       }
@@ -565,48 +568,6 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
   int graphx_pid_;
 
  private:
-  // size_t initOuterGids(
-  //     std::shared_ptr<GraphXVertexMap<oid_t, vid_t>>& vertex_map) {
-  //   vid_array_builder_t gid_builder;
-  //   size_t nbytes = 0;
-  //   auto ovnum = vertex_map->outer_lid2Oids_->length();
-  //   gid_builder.Reserve(ovnum);
-  //   vid_t gid;
-  //   for (auto i = 0; i < ovnum; ++i) {
-  //     CHECK(getGid(vertex_map->outer_lid2Oids_accessor_[i], gid));
-  //     gid_builder.UnsafeAppend(gid);
-  //   }
-  //   gid_builder.Finish(&(vertex_map->outer_lid2Gids_));
-  //   vertex_map->outer_lid2Gids_accessor_ =
-  //       vertex_map->outer_lid2Gids_->raw_values();
-  //   {
-  //     // build and seal.
-  //     typename vineyard::InternalType<vid_t>::vineyard_builder_type
-  //         array_builder(client_, vertex_map->outer_lid2Gids_);
-  //     auto vineyard_array =
-  //         *std::dynamic_pointer_cast<vineyard::NumericArray<vid_t>>(
-  //             array_builder.Seal(client_));
-  //     vertex_map->meta_.AddMember("outerLid2Gids", vineyard_array.meta());
-  //     nbytes += vineyard_array.meta().GetNBytes();
-  //   }
-
-  //   vineyard::HashmapBuilder<vid_t, vid_t> builder(client_);
-  //   vid_t lid = vertex_map->lid2Oids_[fid_]->length();
-  //   for (int64_t i = 0; i < ovnum; ++i) {
-  //     builder.emplace(vertex_map->outer_lid2Gids_->Value(i), lid);
-  //     lid++;
-  //   }
-
-  //   {
-  //     vertex_map->outer_gid2Lids_ =
-  //         *std::dynamic_pointer_cast<vineyard::Hashmap<vid_t, vid_t>>(
-  //             builder.Seal(client_));
-  //     vertex_map->meta_.AddMember("outerGid2Lids",
-  //                                 vertex_map->outer_gid2Lids_.meta());
-  //     nbytes += vertex_map->outer_gid2Lids_.meta().GetNBytes();
-  //   }
-  //   return nbytes;
-  // }
   inline bool getGid(const oid_t& oid, vid_t& gid) const {
     fid_t fid = static_cast<fid_t>(0);
     while (fid < fnum_ && !getGid(fid, oid, gid)) {
@@ -638,7 +599,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
   vineyard::Client& client_;
   std::vector<vineyard_oid_array_t> lid2Oids_;
   std::vector<vineyard::Hashmap<oid_t, vid_t>> oid2Lids_;
-  std::shared_ptr<oid_array_t> outer_oids_array_;
+  vineyard_oid_array_t outer_oid_array_;
   vineyard::NumericArray<int32_t> graphx_pids_array_;
   // vineyard_vid_array_t outer_gid_array_;
 };
@@ -656,18 +617,19 @@ class BasicGraphXVertexMapBuilder
  public:
   BasicGraphXVertexMapBuilder(vineyard::Client& client,
                               grape::CommSpec& comm_spec, int graphx_pid,
-                              oid_array_builder_t& inner_oids_builder,
-                              oid_array_builder_t& outer_oids_builder)
+                              vineyard::ObjectID localVertexMapID)
       : GraphXVertexMapBuilder<oid_t, vid_t>(client, comm_spec.worker_num(),
                                              comm_spec.worker_id(), graphx_pid,
-                                             comm_spec.local_num();
-                                             outer_oids_builder),
+                                             comm_spec.local_num()),
         comm_spec_(comm_spec) {
     comm_spec_.Dup();
-    CHECK(inner_oids_builder.Finish(&inner_oids_).ok());
-    LOG(INFO) << "Worer [" << comm_spec.worker_id()
-              << ", local vnum: " << inner_oids_->length()
+    partial_vmap = std::dynamic_pointer_cast<LocalVertexMap<oid_t, vid_t>>(
+        client.GetObject(localVertexMapID));
+    LOG(INFO) << "Worer [" << comm_spec.worker_id() << " got partial vmap id "
+              << localVertexMapID
+              << ", local vnum: " << partial_vmap->GetInnerVerticesNum()
               << ", graphx pid: " << graphx_pid;
+    setOuterLid2Oid(partial_vmap->GetOuterLid2Oid());
   }
 
   vineyard::Status Build(vineyard::Client& client) override {
@@ -675,8 +637,10 @@ class BasicGraphXVertexMapBuilder
     auto start_ts = grape::GetCurrentTime();
 #endif
     std::vector<std::shared_ptr<oid_array_t>> collected_oids;
+    std::shared_ptr<oid_array_t> our_oids =
+        partial_vmap->GetInnerLid2Oid().GetArray();
 
-    CHECK(vineyard::FragmentAllGatherArray<oid_t>(comm_spec_, inner_oids_,
+    CHECK(vineyard::FragmentAllGatherArray<oid_t>(comm_spec_, our_oids,
                                                   collected_oids)
               .ok());
     CHECK_EQ(collected_oids.size(), comm_spec_.worker_num());
@@ -701,30 +665,36 @@ class BasicGraphXVertexMapBuilder
               if (cur_fid >= comm_spec_.fnum()) {
                 break;
               }
-              vineyard::HashmapBuilder<oid_t, vid_t> builder(client);
-              auto array = collected_oids[cur_fid];
-              {
-                vid_t cur_lid = 0;
-                int64_t vnum = array->length();
-                // builder.reserve(static_cast<size_t>(vnum));
-                for (int64_t k = 0; k < vnum; ++k) {
-                  builder.emplace(array->GetView(k), cur_lid);
-                  ++cur_lid;
+              if (cur_fid == curFid) {
+                this->SetOidArray(cur_fid, partial_vmap->GetInnerLid2Oid());
+                this->SetOid2Lid(cur_fid, partial_vmap->GetInnerOid2Lid());
+                // builder for outer lid 2 gid
+              } else {
+                vineyard::HashmapBuilder<oid_t, vid_t> builder(client);
+                auto array = collected_oids[cur_fid]->raw_values();
+                {
+                  vid_t cur_lid = 0;
+                  int64_t vnum = array->length();
+                  // builder.reserve(static_cast<size_t>(vnum));
+                  for (int64_t k = 0; k < vnum; ++k) {
+                    builder.emplace(array[k], cur_lid);
+                    ++cur_lid;
+                  }
                 }
-              }
-              // may be reuse local vm.
-              {
-                typename vineyard::InternalType<oid_t>::vineyard_builder_type
-                    array_builder(client, array);
-                this->SetOidArray(
-                    cur_fid,
-                    *std::dynamic_pointer_cast<vineyard::NumericArray<oid_t>>(
-                        array_builder.Seal(client)));
+                // may be reuse local vm.
+                {
+                  typename vineyard::InternalType<oid_t>::vineyard_builder_type
+                      array_builder(client, array);
+                  this->SetOidArray(
+                      cur_fid,
+                      *std::dynamic_pointer_cast<vineyard::NumericArray<oid_t>>(
+                          array_builder.Seal(client)));
 
-                this->SetOid2Lid(
-                    cur_fid,
-                    *std::dynamic_pointer_cast<vineyard::Hashmap<oid_t, vid_t>>(
-                        builder.Seal(client)));
+                  this->SetOid2Lid(cur_fid,
+                                   *std::dynamic_pointer_cast<
+                                       vineyard::Hashmap<oid_t, vid_t>>(
+                                       builder.Seal(client)));
+                }
               }
             }
           },
@@ -763,7 +733,7 @@ class BasicGraphXVertexMapBuilder
 
  private:
   grape::CommSpec comm_spec_;
-  std::shared_ptr<oid_array_t> inner_oids_;  // outer_oids;
+  std::shared_ptr<LocalVertexMap<OID_T, VID_T>> partial_vmap;
   //   grape::IdParser id_parser_;
 };
 
