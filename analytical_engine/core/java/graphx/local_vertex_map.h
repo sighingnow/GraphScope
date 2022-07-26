@@ -212,11 +212,11 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
 
  public:
   BasicLocalVertexMapBuilder(vineyard::Client& client,
-                             oid_array_builder_t& inner_oids_builder,
-                             oid_array_builder_t& outer_oids_builder)
+                             oid_array_builder_t& inner_oids_builder)
+      // oid_array_builder_t& outer_oids_builder
       : LocalVertexMapBuilder<oid_t, vid_t>(client) {
     CHECK(inner_oids_builder.Finish(&inner_oids).ok());
-    CHECK(outer_oids_builder.Finish(&outer_oids).ok());
+    // CHECK(outer_oids_builder.Finish(&outer_oids).ok());
   }
 
   vineyard::Status Build(vineyard::Client& client) override {
@@ -259,11 +259,11 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
     this->SetInnerOidArray(
         *std::dynamic_pointer_cast<vineyard::NumericArray<oid_t>>(
             inner_array_builder.Seal(client)));
-    typename vineyard::InternalType<oid_t>::vineyard_builder_type
-        outer_array_builder(client, outer_oids);
-    this->SetOuterOidArray(
-        *std::dynamic_pointer_cast<vineyard::NumericArray<oid_t>>(
-            outer_array_builder.Seal(client)));
+    // typename vineyard::InternalType<oid_t>::vineyard_builder_type
+    //     outer_array_builder(client, outer_oids);
+    // this->SetOuterOidArray(
+    //     *std::dynamic_pointer_cast<vineyard::NumericArray<oid_t>>(
+    //         outer_array_builder.Seal(client)));
     LOG(INFO) << "Finish setting inner and outer oids";
 
 #if defined(WITH_PROFILING)
@@ -280,7 +280,7 @@ class BasicLocalVertexMapBuilder : public LocalVertexMapBuilder<OID_T, VID_T> {
   }
 
  private:
-  std::shared_ptr<oid_array_t> inner_oids, outer_oids;
+  std::shared_ptr<oid_array_t> inner_oids;  // outer_oids;
 };
 
 }  // namespace gs

@@ -89,8 +89,8 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     for (i <- 0 until(routingTable.numPartitions)){
       val lids = routingTable.get(i)
       if (lids != null){
-        val gids = new PrimitiveVector[Long]
-        val newData = new PrimitiveVector[VD]
+        val gids = new PrimitiveVector[Long](endLid - startLid)
+        val newData = new PrimitiveVector[VD](endLid - startLid)
         var j = lids.nextSetBit(startLid)
         while (j >= 0 && j < endLid){
           gids.+=(idParser.generateGlobalId(curFid, j))
