@@ -117,12 +117,14 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
             while (vertexDataMessage.hasNext){
               var outerGids = null.asInstanceOf[Array[Long]]
               var outerDatas = null.asInstanceOf[Array[VD]]
-              synchronized{
-                if (vertexDataMessage.hasNext){
-                  val (dstPid, msg) = vertexDataMessage.next()
-                  require(dstPid == pid)
-                  outerGids = msg.gids
-                  outerDatas = msg.newData
+              if (vertexDataMessage.hasNext) {
+                synchronized {
+                  if (vertexDataMessage.hasNext) {
+                    val (dstPid, msg) = vertexDataMessage.next()
+                    require(dstPid == pid)
+                    outerGids = msg.gids
+                    outerDatas = msg.newData
+                  }
                 }
               }
               if (outerDatas != null){
