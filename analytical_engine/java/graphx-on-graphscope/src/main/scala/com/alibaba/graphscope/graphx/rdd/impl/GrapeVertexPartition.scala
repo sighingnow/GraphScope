@@ -4,13 +4,14 @@ import com.alibaba.graphscope.ds.Vertex
 import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.graph.GraphStructure
 import com.alibaba.graphscope.graphx.rdd.RoutingTable
-import com.alibaba.graphscope.graphx.store.{InHeapDataStore, DataStore}
+import com.alibaba.graphscope.graphx.store.{DataStore, InHeapDataStore}
 import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, GrapeUtils, IdParser, PrimitiveVector}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.Partition
 import org.apache.spark.graphx.{EdgeDirection, PartitionID, VertexId}
 import org.apache.spark.internal.Logging
 
+import java.util.concurrent.ArrayBlockingQueue
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -111,33 +112,28 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
       val threads = new ArrayBuffer[Thread]
       var tid = 0
+      val queue = new ArrayBlockingQueue[(Array[Long],Array[VD])](Int.MaxValue)
+      while (vertexDataMessage.hasNext){
+        val tuple = vertexDataMessage.next()
+        require(tuple._1 == pid)
+        queue.offer((tuple._2.gids,tuple._2.newData))
+      }
       while (tid < localNum){
-        val newThread=  (new Thread(){
+        val newThread= new Thread(){
           override def run(): Unit = {
-            while (vertexDataMessage.hasNext){
-              var outerGids = null.asInstanceOf[Array[Long]]
-              var outerDatas = null.asInstanceOf[Array[VD]]
-              if (vertexDataMessage.hasNext) {
-                synchronized {
-                  if (vertexDataMessage.hasNext) {
-                    val (dstPid, msg) = vertexDataMessage.next()
-                    require(dstPid == pid)
-                    outerGids = msg.gids
-                    outerDatas = msg.newData
-                  }
-                }
-              }
-              if (outerDatas != null){
-                var i = 0
-                while (i < outerGids.length) {
-                  require(graphStructure.outerVertexGid2Vertex(outerGids(i), vertex))
-                  vertexData.setData(vertex.GetValue.toInt, outerDatas(i))
-                  i += 1
-                }
+            while (queue.size() > 0) {
+              val res = queue.poll()
+              val outerDatas = res._2
+              val outerGids = res._1
+              var i = 0
+              while (i < outerGids.length) {
+                require(graphStructure.outerVertexGid2Vertex(outerGids(i), vertex))
+                vertexData.setData(vertex.GetValue.toInt, outerDatas(i))
+                i += 1
               }
             }
           }
-        })
+        }
         newThread.start()
         threads.+=(newThread)
         tid += 1
