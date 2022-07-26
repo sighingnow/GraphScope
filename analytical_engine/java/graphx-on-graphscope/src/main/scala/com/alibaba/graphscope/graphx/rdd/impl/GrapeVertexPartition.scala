@@ -21,6 +21,7 @@ class VertexDataMessage[VD: ClassTag](val dstPid : Int, val gids : Array[Long], 
 class GrapeVertexPartition[VD : ClassTag](val pid : Int,
                                           val startLid : Int,
                                           val endLid : Int,
+                                          val localNum : Int,
                                           val graphStructure: GraphStructure,
                                           val vertexData: DataStore[VD],
                                           val client : VineyardClient,
@@ -296,7 +297,7 @@ object GrapeVertexPartition extends Logging{
     log.info(s"storing part ${pid}'s inner vd store ${store.toString}'")
   }
 
-  def buildPrimitiveVertexPartition[VD: ClassTag](value : VD, pid : Int, startLid : Long, endLid : Long, client : VineyardClient, graphStructure: GraphStructure,routingTable: RoutingTable) : GrapeVertexPartition[VD] = {
+  def buildPrimitiveVertexPartition[VD: ClassTag](value : VD, pid : Int, startLid : Long, endLid : Long, localNum : Int, client : VineyardClient, graphStructure: GraphStructure,routingTable: RoutingTable) : GrapeVertexPartition[VD] = {
 //    require(graphStructure.getVertexSize == fragVnums, s"csr inner vertex should equal to vmap ${graphStructure.getInnerVertexSize}, ${fragVnums}")
     //copy to heap
 //    val newVertexData = new InHeapVertexDataStore[VD](offset = startLid.toInt, (endLid - startLid).toInt,client)
@@ -309,6 +310,6 @@ object GrapeVertexPartition extends Logging{
       i += 1
     }
 
-    new GrapeVertexPartition[VD](pid, startLid.toInt, endLid.toInt, graphStructure, vertexStore, client,routingTable)
+    new GrapeVertexPartition[VD](pid, startLid.toInt, endLid.toInt, localNum,graphStructure, vertexStore, client,routingTable)
   }
 }
