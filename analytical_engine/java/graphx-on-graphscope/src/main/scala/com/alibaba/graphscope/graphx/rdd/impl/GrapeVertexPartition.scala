@@ -112,7 +112,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
       val threads = new ArrayBuffer[Thread]
       var tid = 0
-      val queue = new ArrayBlockingQueue[(Array[Long],Array[VD])](Int.MaxValue)
+      val queue = new ArrayBlockingQueue[(Array[Long],Array[VD])](1024)
       while (vertexDataMessage.hasNext){
         val tuple = vertexDataMessage.next()
         require(tuple._1 == pid)
