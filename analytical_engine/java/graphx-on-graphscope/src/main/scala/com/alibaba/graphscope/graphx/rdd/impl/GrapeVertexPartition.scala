@@ -275,11 +275,11 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   }
 
   def withNewValues[VD2 : ClassTag](vds: DataStore[VD2]) : GrapeVertexPartition[VD2] = {
-    new GrapeVertexPartition[VD2](pid, startLid,endLid,graphStructure, vds, client, routingTable, bitSet)
+    new GrapeVertexPartition[VD2](pid, startLid,endLid, localNum,graphStructure, vds, client, routingTable, bitSet)
   }
 
   def withMask(newMask: BitSetWithOffset): GrapeVertexPartition[VD] ={
-    new GrapeVertexPartition[VD](pid, startLid,endLid, graphStructure, vertexData, client,routingTable, newMask)
+    new GrapeVertexPartition[VD](pid, startLid,endLid, localNum,graphStructure, vertexData, client,routingTable, newMask)
   }
 
   override def toString: String = "GrapeVertexPartition{" + "pid=" + pid + ",startLid=" + startLid + ", endLid=" + endLid + ",active=" + bitSet.cardinality() + '}'
