@@ -109,21 +109,42 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     log.info(s"Start updating outer vertex on part ${pid}")
     if (vertexDataMessage.hasNext) {
       val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
-      while (vertexDataMessage.hasNext) {
-        val (dstPid, msg) = vertexDataMessage.next()
-        require(dstPid == pid)
-        val outerGids = msg.gids
-        val outerDatas = msg.newData
-        var i = 0
-        while (i < outerGids.length) {
-          require(graphStructure.outerVertexGid2Vertex(outerGids(i), vertex))
-//          require(vertex.GetValue() >= graphStructure.getInnerVertexSize)
-          vertexData.setData(vertex.GetValue.toInt, outerDatas(i))
-          i += 1
-        }
+      val threads = new ArrayBuffer[Thread]
+      var tid = 0
+      while (tid < localNum){
+        val newThread=  (new Thread(){
+          override def run(): Unit = {
+            while (vertexDataMessage.hasNext){
+              var outerGids = null.asInstanceOf[Array[Long]]
+              var outerDatas = null.asInstanceOf[Array[VD]]
+              synchronized{
+                if (vertexDataMessage.hasNext){
+                  val (dstPid, msg) = vertexDataMessage.next()
+                  require(dstPid == pid)
+                  outerGids = msg.gids
+                  outerDatas = msg.newData
+                }
+              }
+              if (outerDatas != null){
+                var i = 0
+                while (i < outerGids.length) {
+                  require(graphStructure.outerVertexGid2Vertex(outerGids(i), vertex))
+                  vertexData.setData(vertex.GetValue.toInt, outerDatas(i))
+                  i += 1
+                }
+              }
+            }
+          }
+        })
+        newThread.start()
+        threads.+=(newThread)
+        tid += 1
+      }
+      for (i <- 0 until localNum){
+        threads(i).join()
       }
       val time1 = System.nanoTime()
-//      log.info(s"[Perf: ] updating outer vertex data cost ${(time1 - time0) / 1000000}ms, size ${}")
+      log.info(s"[Perf: ] updating outer vertex data cost ${(time1 - time0) / 1000000}ms, size ${}")
     }
     else {
 //      log.info(s"[Perf]: part ${pid} receives no outer vertex data, startLid ${startLid}")

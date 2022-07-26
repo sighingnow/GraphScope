@@ -147,6 +147,7 @@ object GrapeUtils extends Logging{
           }
         }
       }
+      threadArray(i).start()
     }
     for (i <- 0 until numThread){
       threadArray(i).join()
