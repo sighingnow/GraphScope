@@ -31,6 +31,7 @@
 
 #include "flat_hash_map/flat_hash_map.hpp"
 
+#include "grape/fragment/partitioner.h"
 #include "grape/grape.h"
 #include "grape/util.h"
 #include "grape/worker/comm_spec.h"
@@ -107,8 +108,13 @@ class GraphXVertexMap
     }
     {
       vineyard::NumericArray<int32_t> array;
-      array.Construct(meta.GetMemberMeta("graphx_pids_array"));
-      graphx_pids_array_ = array.GetArray();
+      array.Construct(meta.GetMemberMeta("fid2Pid"));
+      fid2Pid_ = array.GetArray();
+    }
+    {
+      vineyard::NumericArray<int32_t> array;
+      array.Construct(meta.GetMemberMeta("pid2Fid"));
+      pid2Fid_ = array.GetArray();
     }
     {
       vineyard_vid_array_t array;
@@ -131,7 +137,12 @@ class GraphXVertexMap
 
   int32_t Fid2GraphxPid(fid_t fid) {
     CHECK_LT(fid, fnum_);
-    return graphx_pids_array_->Value(fid);
+    return fid2Pid_->Value(fid);
+  }
+
+  int32_t GraphXPid2Fid(fid_t pid) {
+    CHECK_LT(fid, fnum_);
+    return pid2Fid_->Value(pid);
   }
 
   inline fid_t GetFragId(const vertex_t& v) const {
@@ -345,14 +356,10 @@ class GraphXVertexMap
   }
 
   inline bool GetGid(const OID_T& oid, VID_T& gid) const {
-    fid_t fid = static_cast<fid_t>(0);
-    while (fid < fnum_ && !GetGid(fid, oid, gid)) {
-      fid++;
-    }
-    if (fid == fnum_) {
-      return false;
-    }
-    return true;
+    // judge the fid from partition.
+    int32_t graphx_pid = static_cast<uint64_t>(oid) % fnum_;
+    fid_t fid = pid2Fid_->Value(graphx_pid);
+    return GetGid(fid, oid, gid);
   }
 
   inline fid_t GetFidFromGid(const VID_T& gid) const {
@@ -373,7 +380,7 @@ class GraphXVertexMap
   const vid_t* outer_lid2Gids_accessor_;
   std::shared_ptr<vid_array_t> outer_lid2Gids_;
   vineyard::Hashmap<vid_t, vid_t> outer_gid2Lids_;
-  std::shared_ptr<arrow::Int32Array> graphx_pids_array_;
+  std::shared_ptr<arrow::Int32Array> fid2Pid_, pid2Fid_;
 
   template <typename _OID_T, typename _VID_T>
   friend class GraphXVertexMapBuilder;
@@ -411,8 +418,13 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
   void setOuterLid2Oid(std::shared_ptr<oid_array_t> outer_oids) {
     this->outer_oid_array_ = outer_oids;
   }
-  void SetGraphXPids(const vineyard::NumericArray<int32_t>& graphx_pids_array) {
-    this->graphx_pids_array_ = graphx_pids_array;
+  void SetFid2GraphXPids(
+      const vineyard::NumericArray<int32_t>& graphx_pids_array) {
+    this->fid2Pid_ = graphx_pids_array;
+  }
+
+  void SetGraphXPid2Fid(const vineyard::NumericArray<int32_t>& pid2Fid) {
+    this->pid2Fid_ = pid2Fid;
   }
 
   void SetOidArray(grape::fid_t fid, const vineyard_oid_array_t& oid_arrays) {
@@ -523,7 +535,8 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     auto time2 = grape::GetCurrentTime();
     LOG(INFO) << "building gid2lid cost" << (time2 - time1) << " seconds";
 #endif
-    vertex_map->graphx_pids_array_ = graphx_pids_array_.GetArray();
+    vertex_map->fid2Pid_ = fid2Pid_.GetArray();
+    vertex_map->pid2Fid_ = pid2Fid_.GetArray();
 
     // sealing outer gid mapping
 
@@ -546,8 +559,10 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
                                   lid2Oids_[i].meta());
       nbytes += lid2Oids_[i].nbytes();
     }
-    vertex_map->meta_.AddMember("graphx_pids_array", graphx_pids_array_.meta());
-    nbytes += graphx_pids_array_.nbytes();
+    vertex_map->meta_.AddMember("fid2Pid", fid2Pid_.meta());
+    nbytes += fid2Pid_.nbytes();
+    vertex_map->meta_.AddMember("pid2Fid", pid2Fid_.meta());
+    nbytes += pid2Fid_.nbytes();
 
     vertex_map->meta_.SetNBytes(nbytes);
 
@@ -569,14 +584,9 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
 
  private:
   inline bool getGid(const oid_t& oid, vid_t& gid) const {
-    fid_t fid = static_cast<fid_t>(0);
-    while (fid < fnum_ && !getGid(fid, oid, gid)) {
-      fid++;
-    }
-    if (fid == fnum_) {
-      return false;
-    }
-    return true;
+    int32_t graphx_pid = static_cast<uint64_t>(oid) % fnum_;
+    fid_t fid = pid2Fid_->Value(graphx_pid);
+    return GetGid(fid, oid, gid);
   }
 
   inline bool getGid(fid_t fid, const oid_t& oid, vid_t& gid) const {
@@ -600,7 +610,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
   std::vector<vineyard_oid_array_t> lid2Oids_;
   std::vector<vineyard::Hashmap<oid_t, vid_t>> oid2Lids_;
   std::shared_ptr<oid_array_t> outer_oid_array_;
-  vineyard::NumericArray<int32_t> graphx_pids_array_;
+  vineyard::NumericArray<int32_t> fid2Pid_, pid2Fid_;
   // vineyard_vid_array_t outer_gid_array_;
 };
 
@@ -704,21 +714,40 @@ class BasicGraphXVertexMapBuilder
 
     {
       // gather grape pid <-> graphx pid matching.
-      std::vector<int32_t> graphx_pids;
-      graphx_pids.resize(comm_spec_.fnum());
+      std::vector<int32_t> fid2graphx_pids;
+      fid2graphx_pids.resize(comm_spec_.fnum());
       int32_t tmp_graphx_pid = base_t::graphx_pid_;
-      MPI_Allgather(&tmp_graphx_pid, 1, MPI_INT, graphx_pids.data(), 1, MPI_INT,
-                    comm_spec_.comm());
+      MPI_Allgather(&tmp_graphx_pid, 1, MPI_INT, fid2graphx_pids.data(), 1,
+                    MPI_INT, comm_spec_.comm());
 
-      arrow::Int32Builder builder;
-      CHECK(builder.AppendValues(graphx_pids).ok());
-      std::shared_ptr<arrow::Int32Array> graphx_pids_array;
-      CHECK(builder.Finish(&graphx_pids_array).ok());
-      vineyard::NumericArrayBuilder<int32_t> v6d_graphx_pids_builder(
-          client, graphx_pids_array);
-      this->SetGraphXPids(
-          *std::dynamic_pointer_cast<vineyard::NumericArray<int32_t>>(
-              v6d_graphx_pids_builder.Seal(client)));
+      {
+        arrow::Int32Builder builder;
+        CHECK(builder.AppendValues(fid2graphx_pids).ok());
+        std::shared_ptr<arrow::Int32Array> graphx_pids_array;
+        CHECK(builder.Finish(&graphx_pids_array).ok());
+        vineyard::NumericArrayBuilder<int32_t> v6d_graphx_pids_builder(
+            client, graphx_pids_array);
+        this->SetFid2GraphXPids(
+            *std::dynamic_pointer_cast<vineyard::NumericArray<int32_t>>(
+                v6d_graphx_pids_builder.Seal(client)));
+      }
+
+      std::vector<int32_t> graphxPid2fid;
+      graphxPid2fid.resize(comm_spec_.fnum());
+      for (int i = 0; i < comm_spec_.fnum(); ++i) {
+        graphxPid2fid[fid2graphx_pids[i]] = i;
+      }
+      {
+        arrow::Int32Builder builder;
+        CHECK(builder.AppendValues(graphxPid2fid).ok());
+        std::shared_ptr<arrow::Int32Array> graphxPid2fid_array;
+        CHECK(builder.Finish(&graphxPid2fid_array).ok());
+        vineyard::NumericArrayBuilder<int32_t> v6d_graphx_pid2fid_builder(
+            client, graphxPid2fid_array);
+        this->SetGraphXPid2Fid(
+            *std::dynamic_pointer_cast<vineyard::NumericArray<int32_t>>(
+                v6d_graphx_pid2fid_builder.Seal(client)));
+      }
     }
 
 #if defined(WITH_PROFILING)
