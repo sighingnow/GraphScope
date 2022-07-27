@@ -82,7 +82,7 @@ object GrapeEdgeRDD extends Logging{
         val hostName = InetAddress.getLocalHost.getHostName
         val (_pid, part) = iter.next()
         require(pid == _pid, s"not possible ${pid}, ${_pid}")
-        EdgeShuffleReceived.push(part)
+        EdgeShuffleReceived.push(pid, part)
         Iterator(hostName)
       }
       else Iterator.empty
@@ -112,7 +112,7 @@ object GrapeEdgeRDD extends Logging{
 
       val grapeMeta = new GrapeMeta[VD,ED](pid, numPartitions, client, ExecutorUtils.getHostName)
       val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions,client)
-      edgePartitionBuilder.addEdges(EdgeShuffleReceived.get.asInstanceOf[EdgeShuffleReceived[ED]])
+      edgePartitionBuilder.addEdges(EdgeShuffleReceived.get(pid).asInstanceOf[EdgeShuffleReceived[ED]])
       val localVertexMap = edgePartitionBuilder.buildLocalVertexMap(pid)
       if (localVertexMap == null){
         Iterator.empty

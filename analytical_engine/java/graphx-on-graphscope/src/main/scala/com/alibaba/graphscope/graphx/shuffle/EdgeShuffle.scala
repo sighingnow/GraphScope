@@ -5,6 +5,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.OpenHashSet
 
 import java.util.concurrent.{ArrayBlockingQueue, PriorityBlockingQueue}
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
@@ -88,12 +89,15 @@ class EdgeShuffleReceived[ED: ClassTag](val selfPid : Int) extends Logging{
 }
 
 object EdgeShuffleReceived{
-  val queue = new ArrayBlockingQueue[EdgeShuffleReceived[_]](1024)
-  def push(in : EdgeShuffleReceived[_]): Unit = {
-    require(queue.offer(in))
+//  val queue = new ArrayBlockingQueue[EdgeShuffleReceived[_]](1024)
+  val map = new mutable.HashMap[Int, EdgeShuffleReceived[_]]()
+  def push(pid : Int, in : EdgeShuffleReceived[_]): Unit = {
+//    require(queue.offer(in))
+    require(!map.contains(pid))
+    map(pid) = in
   }
 
-  def get : EdgeShuffleReceived[_] = {
-    queue.poll()
+  def get(pid : Int) : EdgeShuffleReceived[_] = {
+    map(pid)
   }
 }
