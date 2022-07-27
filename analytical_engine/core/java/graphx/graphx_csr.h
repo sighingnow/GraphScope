@@ -606,13 +606,14 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     nbr_t* ie_mutable_ptr_begin = in_edge_builder_.MutablePointer(0);
     nbr_t* oe_mutable_ptr_begin = out_edge_builder_.MutablePointer(0);
     // use atomic vector for concurrent modification.
-//    std::vector<std::atomic<int64_t>> atomic_oe_offsets, atomic_ie_offsets;
-    std::array<std::atomic<int64_t>,100> atomic_oe_offsets, atomic_ie_offsets;
+    //    std::vector<std::atomic<int64_t>> atomic_oe_offsets,
+    //    atomic_ie_offsets;
+    std::array<std::atomic<int64_t>, vnum> atomic_oe_offsets, atomic_ie_offsets;
     for (int i = 0; i < vnum; ++i) {
-       std::atomic_init(&atomic_oe_offsets[i], oe_offsets_[i]);
-       std::atomic_init(&atomic_ie_offsets[i], ie_offsets_[i]);
-//      atomic_oe_offsets.emplace_back(oe_offsets_[i]);
-//      atomic_ie_offsets.emplace_back(ie_offsets_[i]);
+      std::atomic_init(&atomic_oe_offsets[i], oe_offsets_[i]);
+      std::atomic_init(&atomic_ie_offsets[i], ie_offsets_[i]);
+      //      atomic_oe_offsets.emplace_back(oe_offsets_[i]);
+      //      atomic_ie_offsets.emplace_back(ie_offsets_[i]);
     }
     {
       int thread_num =

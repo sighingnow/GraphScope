@@ -8,7 +8,7 @@ import com.alibaba.graphscope.graphx.rdd.impl.{GrapeEdgePartition, GrapeEdgePart
 import com.alibaba.graphscope.graphx.rdd.{LocationAwareRDD, VineyardRDD}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
 import com.alibaba.graphscope.graphx.store.{InHeapDataStore, InHeapEdgeDataStore}
-import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, ExecutorUtils, GrapeMeta, ScalaFFIFactory}
+import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, EIDAccessor, ExecutorUtils, GrapeMeta, ScalaFFIFactory}
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.grape.impl.GrapeEdgeRDDImpl
 import org.apache.spark.graphx.scheduler.cluster.ExecutorInfoHelper
@@ -167,18 +167,18 @@ object GrapeEdgeRDD extends Logging{
         meta.setGlobalVM(res.toLong)
         val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId,numExecutors)
         val time0 = System.nanoTime()
-        val oeOffsetToEid = meta.edgePartitionBuilder.createEids(csr.getOutEdgesNum.toInt, csr.getOEBegin(0))
-        val time1 = System.nanoTime()
+//        val oeOffsetToEid = meta.edgePartitionBuilder.createEids(csr.getOutEdgesNum.toInt, csr.getOEBegin(0))
+//        val time1 = System.nanoTime()
         //We will build a store which underlying is a simple array with length csr.getTotalEdgesNum,
         //but we can get out edge data from it with oeoffset, with some what conversion.
-        val edatas = meta.edgePartitionBuilder.buildEdataStore(defaultED, csr.getTotalEdgesNum.toInt,meta.vineyardClient,oeOffsetToEid)
-        val time2 = System.nanoTime()
-        log.info(s"create oeoffset to eid cost ${(time1 - time0)/1000000}ms create edata cost ${(time2 - time1)/1000000}ms")
+        val edatas = meta.edgePartitionBuilder.buildEdataStore(defaultED, csr.getTotalEdgesNum.toInt,meta.vineyardClient, new EIDAccessor(csr.getOEBegin(0).getAddress))
+        val time1 = System.nanoTime()
+        log.info(s"Create edata cost ${(time1 - time0)/1000000}ms")
         //require(edatas.length == oeOffsetToEid.length, s"neq ${edatas.length}, ${oeOffsetToEid.length}")
         //raw edatas contains all edge datas, i.e. csr edata array.
         //edatas are out edges edge cache.
         meta.setGlobalVM(vm)
-        meta.setEids(oeOffsetToEid)
+//        meta.setEids(oeOffsetToEid)
         meta.setCSR(csr)
         meta.setEdataStore(edatas)
         Iterator(meta)
@@ -200,7 +200,7 @@ object GrapeEdgeRDD extends Logging{
 //        val innerVertexDataStore = new InHeapVertexDataStore[VD](0, vm.innerVertexSize().toInt, meta.vineyardClient,0)
         //If vertex attr are in edge shuffles, we init the inner vertex Data store.
         val edgeBuilder = meta.edgePartitionBuilder
-        val graphStructure = new GraphXGraphStructure(meta.globalVM,meta.eids, meta.graphxCSR)
+        val graphStructure = new GraphXGraphStructure(meta.globalVM, meta.graphxCSR)
         edgeBuilder.fillVertexData(vertexDataStore,graphStructure)
         val time1 = System.nanoTime()
         log.info(s"[Creating graph structure cost ]: ${(time1 - time0) / 1000000} ms")

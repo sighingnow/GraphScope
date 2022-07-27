@@ -17,7 +17,7 @@ class GrapeMeta[VD: ClassTag, ED: ClassTag](val partitionID: Int, val partitionN
   var graphxCSR :GraphXCSR[Long] = null.asInstanceOf[GraphXCSR[Long]]
   var routingTable : RoutingTable = null.asInstanceOf[RoutingTable]
   var edataStore : AbstractDataStore[ED] = null.asInstanceOf[AbstractDataStore[ED]]
-  var eids : Array[Long] = null.asInstanceOf[Array[Long]]
+//  var eids : Array[Long] = null.asInstanceOf[Array[Long]]
   def setLocalVertexMap(in : LocalVertexMap[Long,Long]): Unit ={
     this.localVertexMap = in
   }
@@ -41,9 +41,9 @@ class GrapeMeta[VD: ClassTag, ED: ClassTag](val partitionID: Int, val partitionN
     this.graphxCSR = csr
   }
 
-  def setEids(eids : Array[Long]) : Unit = {
-    this.eids = eids
-  }
+//  def setEids(eids : Array[Long]) : Unit = {
+//    this.eids = eids
+//  }
   def setRoutingTable(routingTable: RoutingTable) : Unit = {
     this.routingTable = routingTable
   }

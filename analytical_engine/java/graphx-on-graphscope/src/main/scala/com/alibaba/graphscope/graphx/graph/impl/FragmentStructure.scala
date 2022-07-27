@@ -24,7 +24,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
   var oeOffsetBeginArray,ieOffsetBeginArray : TypedArray[Long] = null
   var oeOffsetEndArray,ieOffsetEndArray : TypedArray[Long] = null
   var fragEdgeNum = 0
-  var eids : Array[Long] = null
+//  var eids : Array[Long] = null
   if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
     val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long,Long,_,_]].asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
     oePtr = projectedFragment.getOutEdgesPtr
@@ -35,30 +35,30 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     ieOffsetBeginArray = projectedFragment.getIEOffsetsBeginAccessor.asInstanceOf[TypedArray[Long]]
     oeOffsetEndArray = projectedFragment.getOEOffsetsEndAccessor.asInstanceOf[TypedArray[Long]]
     ieOffsetEndArray = projectedFragment.getIEOffsetsEndAccessor.asInstanceOf[TypedArray[Long]]
-    eids = {
-      val edgeNum = getOutEdgesNum
-      val res = new Array[Long](edgeNum.toInt)
-      val nbr = projectedFragment.getOutEdgesPtr
-      var i = 0
-      while (i < edgeNum){
-        res(i) = nbr.eid()
-        fragEdgeNum = Math.max(res(i).toInt, fragEdgeNum)
-        nbr.addV(16)
-        i += 1
-      }
-      //find largest eid in ie
-      val inEdgeNum = getInEdgesNum
-      val nbr2 = projectedFragment.getInEdgesPtr
-      i = 0
-      while (i < inEdgeNum){
-        val eid = nbr2.eid()
-        fragEdgeNum = Math.max(eid.toInt, fragEdgeNum)
-        nbr.addV(16)
-        i += 1
-      }
-      fragEdgeNum += 1
-      res
-    }
+//    eids = {
+//      val edgeNum = getOutEdgesNum
+//      val res = new Array[Long](edgeNum.toInt)
+//      val nbr = projectedFragment.getOutEdgesPtr
+//      var i = 0
+//      while (i < edgeNum){
+//        res(i) = nbr.eid()
+//        fragEdgeNum = Math.max(res(i).toInt, fragEdgeNum)
+//        nbr.addV(16)
+//        i += 1
+//      }
+//      //find largest eid in ie
+//      val inEdgeNum = getInEdgesNum
+//      val nbr2 = projectedFragment.getInEdgesPtr
+//      i = 0
+//      while (i < inEdgeNum){
+//        val eid = nbr2.eid()
+//        fragEdgeNum = Math.max(eid.toInt, fragEdgeNum)
+//        nbr.addV(16)
+//        i += 1
+//      }
+//      fragEdgeNum += 1
+//      res
+//    }
 
   }
   else {
@@ -467,7 +467,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
 
   override val structureType: GraphStructureType = ArrowProjectedStructure
 
-  override def getEids: Array[VertexId] = eids
+//  override def getEids: Array[VertexId] = eids
 
   override def getOutNbrIds(vid: Int): Array[VertexId] = {
     val size = getOutDegree(vid)

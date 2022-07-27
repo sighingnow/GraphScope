@@ -6,7 +6,7 @@ import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTriplet, GraphStructure, ReusableEdge}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
 import com.alibaba.graphscope.graphx.store.{AbstractDataStore, DataStore, InHeapDataStore, InHeapEdgeDataStore, OffHeapEdgeDataStore}
-import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, ExecutorUtils, GrapeUtils, IdParser, ScalaFFIFactory}
+import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, EIDAccessor, ExecutorUtils, GrapeUtils, IdParser, ScalaFFIFactory}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.Partition
 import org.apache.spark.graphx._
@@ -326,15 +326,15 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
   }
 
   /** The received edata arrays contains both in edges and out edges, but we only need these out edges's edata array */
-  def buildEdataStore(defaultED : ED, totalEdgeNum : Int, client : VineyardClient,oeOffsetToEid : Array[Long], numSplit : Int = 1) : AbstractDataStore[ED] = {
+  def buildEdataStore(defaultED : ED, totalEdgeNum : Int, client : VineyardClient, eidAccessor : EIDAccessor, numSplit : Int = 1) : AbstractDataStore[ED] = {
     if (GrapeUtils.isPrimitive[ED]){
-      val eDataStore = new OffHeapEdgeDataStore[ED](totalEdgeNum,client,numSplit,oeOffsetToEid)
+      val eDataStore = new OffHeapEdgeDataStore[ED](totalEdgeNum,client,numSplit,eidAccessor)
       fillEdataStore(defaultED,totalEdgeNum,eDataStore)
       eDataStore
     }
     else {
       val edataArray = buildArrayStore(defaultED,totalEdgeNum)
-      new InHeapEdgeDataStore[ED](totalEdgeNum, client, numSplit, edataArray,oeOffsetToEid)
+      new InHeapEdgeDataStore[ED](totalEdgeNum, client, numSplit, edataArray,eidAccessor)
     }
   }
 

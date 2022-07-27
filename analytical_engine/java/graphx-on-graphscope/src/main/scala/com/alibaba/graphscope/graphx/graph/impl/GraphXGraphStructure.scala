@@ -13,7 +13,7 @@ import org.apache.spark.util.collection.BitSet
 import scala.reflect.ClassTag
 
 /** the edge array only contains out edges, we use in edge as a comparison  */
-class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val eids : Array[Long], val csr : GraphXCSR[Long]) extends GraphStructure with Logging{
+class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphXCSR[Long]) extends GraphStructure with Logging{
   val oeBeginNbr = csr.getOEBegin(0)
   val oeBeginAddr = csr.getOEBegin(0).getAddress
   val ivnum = vm.innerVertexSize()
@@ -409,8 +409,6 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val eids : Array
   }
 
   override val structureType: GraphStructureType = GraphXFragmentStructure
-
-  override def getEids: Array[VertexId] = eids
 
   override def getOutNbrIds(vid: Int): Array[VertexId] = {
     val res = new Array[VertexId](getOutDegree(vid.toInt).toInt)

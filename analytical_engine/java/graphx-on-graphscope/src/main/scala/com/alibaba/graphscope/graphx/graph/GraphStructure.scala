@@ -103,7 +103,7 @@ trait GraphStructure extends Serializable {
 
    def outerVertexGid2Vertex(gid: Long, vertex: Vertex[Long]): Boolean
 
-  def getEids : Array[Long]
+//  def getEids : Array[Long]
 
   def getOEOffsetRange(startLid : Long, endLid : Long) : (Long,Long)
 }
