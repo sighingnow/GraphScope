@@ -25,7 +25,7 @@ class LocationAwareRDD(sc : SparkContext, val locations : Array[String], val hos
 
   override protected def getPreferredLocations(split: Partition): Seq[String] = {
     val casted = split.asInstanceOf[EmptyPartition]
-    log.info(s"get pref location for ${casted.ind}, ${casted.loc}")
+//    log.info(s"get pref location for ${casted.ind}, ${casted.loc}")
     Array(casted.loc)
   }
 }

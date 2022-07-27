@@ -7,6 +7,7 @@ import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
+import com.alibaba.graphscope.ds.ImmutableTypedArray;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.utils.CppClassName;
 import com.alibaba.graphscope.utils.CppHeaderName;
@@ -70,4 +71,10 @@ public interface GraphXVertexMap<OID_T,VID_T> extends FFISerializable, Serializa
     default long innerVertexSize(){
         return getInnerVertexSize(fid());
     }
+
+    @FFINameAlias("GetLid2OidsAccessor")
+    @CXXReference ImmutableTypedArray<OID_T> getLid2OidAccessor(int fid);
+
+    @FFINameAlias("GetOuterLid2GidsAccessor")
+    @CXXReference ImmutableTypedArray<VID_T> getOuterLid2GidAccessor();
 }
