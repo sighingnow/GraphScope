@@ -98,6 +98,7 @@ object GrapeEdgeRDD extends Logging{
     val sc = SparkContext.getOrCreate()
 //    log.info(s"hosts ${collectHosts.mkString(",")}, locations ${locations.mkString(",")}")
 //    val vineyardRDD = new VineyardRDD(sc, locations,collectHosts)
+    val parallelism = userNumPartitions / numPartitions
 
     val metaPartitions = edgesShuffles.mapPartitionsWithIndex((pid,iter) => {
 //      val client = iter.next()
@@ -113,7 +114,7 @@ object GrapeEdgeRDD extends Logging{
       val grapeMeta = new GrapeMeta[VD,ED](pid, numPartitions, client, ExecutorUtils.getHostName)
       val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions,client)
       edgePartitionBuilder.addEdges(EdgeShuffleReceived.get(pid).asInstanceOf[EdgeShuffleReceived[ED]])
-      val localVertexMap = edgePartitionBuilder.buildLocalVertexMap(pid)
+      val localVertexMap = edgePartitionBuilder.buildLocalVertexMap(pid, parallelism)
       if (localVertexMap == null){
         Iterator.empty
       }

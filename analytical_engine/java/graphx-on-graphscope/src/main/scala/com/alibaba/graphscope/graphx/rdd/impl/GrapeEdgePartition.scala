@@ -6,7 +6,7 @@ import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTriplet, GraphStructure, ReusableEdge}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
 import com.alibaba.graphscope.graphx.store.{AbstractDataStore, DataStore, InHeapDataStore, InHeapEdgeDataStore, OffHeapEdgeDataStore}
-import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, EIDAccessor, ExecutorUtils, GrapeUtils, IdParser, ScalaFFIFactory}
+import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, EIDAccessor, ExecutorUtils, GrapeUtils, IdParser, ScalaFFIFactory, ThreadSafeOpenHashSet}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.Partition
 import org.apache.spark.graphx._
@@ -14,6 +14,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.{BitSet, OpenHashSet}
 
 import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -271,34 +272,79 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     lists.+=(edges)
   }
 
-  /**
-   * @return the built local vertex map id.
-   */
-  def buildLocalVertexMap(pid : Int) : LocalVertexMap[Long,Long] = {
-    //We need to get oid->lid mappings in this executor.
-    val innerHashSet = new OpenHashSet[Long]
-    val outerHashSet = new OpenHashSet[Long]
+  def collectOids(inner: ThreadSafeOpenHashSet[Long], outer: ThreadSafeOpenHashSet[Long], shuffles: ArrayBuffer[EdgeShuffle[_, _]], cores: Int) : Unit = {
     val time0 = System.nanoTime()
-    for (edgeShuffleReceive <- lists){
-      if (edgeShuffleReceive != null){
-        for (edgeShuffle <- edgeShuffleReceive.fromPid2Shuffle){
-          if (edgeShuffle != null){
-            val receivedOids = edgeShuffle.oids
-            val receivedOuterIds = edgeShuffle.outerOids
-            var i = 0
-            while (i < receivedOids.length){
-              innerHashSet.add(receivedOids(i))
-              i += 1
+    val atomicInt = new AtomicInteger()
+    val threads = new Array[Thread](cores)
+    val numShuffles = shuffles.length
+    var tid = 0
+    while (tid < cores) {
+      val newThread = new Thread() {
+        override def run(): Unit = {
+          var flag = true
+          while (flag) {
+            val got = atomicInt.getAndAdd(1);
+            if (got >= numShuffles) {
+              flag = false
             }
-            i = 0
-            while (i < receivedOuterIds.length){
-              outerHashSet.add(receivedOuterIds(i))
-              i += 1
+            else {
+              val edgeShuffle = shuffles(got)
+              if (edgeShuffle.oids != null && edgeShuffle.outerOids != null) {
+                val receivedOids = edgeShuffle.oids
+                val receivedOuterIds = edgeShuffle.outerOids
+                var i = 0
+                while (i < receivedOids.length) {
+                  inner.add(receivedOids(i))
+                  i += 1
+                }
+                i = 0
+                while (i < receivedOuterIds.length) {
+                  outer.add(receivedOuterIds(i))
+                  i += 1
+                }
+              }
             }
           }
         }
       }
+      newThread.start()
+      threads(tid) = newThread
+      tid += 1
     }
+    for (i <- 0 until cores) {
+      threads(i).join()
+    }
+
+    val time1 = System.nanoTime()
+    log.info(s"[Collect oids cost ${(time1 - time0)/1000000}ms]")
+  }
+
+  /**
+   * @return the built local vertex map id.
+   */
+  def buildLocalVertexMap(pid : Int, parallelism : Int) : LocalVertexMap[Long,Long] = {
+    //We need to get oid->lid mappings in this executor.
+    val time0 = System.nanoTime()
+    val edgeShuffles = new ArrayBuffer[EdgeShuffle[_,_]]()
+    var innerOidSize = 0
+    var outerOidSize = 0
+    for (edgeShuffleReceive <- lists){
+      if (edgeShuffleReceive != null){
+        for (edgeShuffle <- edgeShuffleReceive.fromPid2Shuffle){
+          if (edgeShuffle != null){
+            edgeShuffles.+=(edgeShuffle)
+            innerOidSize +=  edgeShuffle.oids.length
+            outerOidSize +=  edgeShuffle.outerOids.length
+          }
+        }
+      }
+    }
+    log.info(s"all oids length ${innerOidSize}, all outer oids length ${outerOidSize}")
+    val innerHashSet = new ThreadSafeOpenHashSet[Long](innerOidSize / 8)
+    val outerHashSet = new ThreadSafeOpenHashSet[Long](outerOidSize / 8)
+    collectOids(innerHashSet, outerHashSet, edgeShuffles, parallelism)
+    log.info(s"after iteration, actual cpacity ${innerHashSet.capacity} ${outerHashSet.capacity}")
+
     log.info(s"Found totally ${innerHashSet.size} in ${ExecutorUtils.getHostName}:${pid}")
     if (innerHashSet.size == 0 && outerHashSet.size == 0){
       log.info(s"partition ${pid} empty")
@@ -327,15 +373,15 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
 
   /** The received edata arrays contains both in edges and out edges, but we only need these out edges's edata array */
   def buildEdataStore(defaultED : ED, totalEdgeNum : Int, client : VineyardClient, eidAccessor : EIDAccessor, numSplit : Int = 1) : AbstractDataStore[ED] = {
-    if (GrapeUtils.isPrimitive[ED]){
-      val eDataStore = new OffHeapEdgeDataStore[ED](totalEdgeNum,client,numSplit,eidAccessor)
-      fillEdataStore(defaultED,totalEdgeNum,eDataStore)
-      eDataStore
+    val eDataStore = if (GrapeUtils.isPrimitive[ED]){
+      new OffHeapEdgeDataStore[ED](totalEdgeNum,client,numSplit,eidAccessor)
     }
     else {
       val edataArray = buildArrayStore(defaultED,totalEdgeNum)
       new InHeapEdgeDataStore[ED](totalEdgeNum, client, numSplit, edataArray,eidAccessor)
     }
+    fillEdataStore(defaultED,totalEdgeNum,eDataStore)
+    eDataStore
   }
 
   def buildArrayStore(defaultED : ED, totalEdgeNum : Long) : Array[ED] = {

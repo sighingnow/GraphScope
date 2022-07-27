@@ -34,28 +34,9 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   //FIXME: bitset for long
   override val mirrorVertices: Array[BitSet] = getMirrorVertices
 
-  val oeOffsetsArray: Array[Long] = {
-    val tmp : ImmutableTypedArray[Long] = csr.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
-    val res = new Array[Long](tmp.getLength.toInt)
-    require(res.length == ivnum + 1)
-    var i = 0
-    while (i < res.length){
-      res(i) = tmp.get(i)
-      i += 1
-    }
-    res
-  }
-  val ieOffsetsArray : Array[Long] = {
-    val tmp : ImmutableTypedArray[Long] = csr.getIEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
-    val res = new Array[Long](tmp.getLength.toInt)
-    require(res.length == ivnum + 1)
-    var i = 0
-    while (i < res.length){
-      res(i) = tmp.get(i)
-      i += 1
-    }
-    res
-  }
+  val oeOffsetsArray: ImmutableTypedArray[Long] = csr.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
+
+  val ieOffsetsArray : ImmutableTypedArray[Long] = csr.getIEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
 
   val dstOids : Array[Long] = new Array[Long](csr.getOutEdgesNum.toInt)
   val dstLids : Array[Int] = new Array[Int](csr.getOutEdgesNum.toInt)
@@ -76,32 +57,32 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   @inline
   override def getOEBeginOffset(lid : Int) : Long = {
-    oeOffsetsArray(lid)
+    oeOffsetsArray.get(lid)
   }
 
   @inline
   override def getIEBeginOffset(lid : Int) : Long = {
-    ieOffsetsArray(lid)
+    ieOffsetsArray.get(lid)
   }
 
   @inline
   override def getOEEndOffset(lid : Int) : Long = {
-    oeOffsetsArray(lid + 1)
+    oeOffsetsArray.get(lid + 1)
   }
 
   @inline
   override def getIEEndOffset(lid : Int) : Long = {
-    ieOffsetsArray(lid + 1)
+    ieOffsetsArray.get(lid + 1)
   }
 
   @inline
   def getOutDegree(l: Int) : Long = {
-    oeOffsetsArray(l + 1) - oeOffsetsArray(l)
+    oeOffsetsArray.get(l + 1) - oeOffsetsArray.get(l)
   }
 
   @inline
   def getInDegree(l: Int) : Long = {
-    ieOffsetsArray(l + 1) - ieOffsetsArray(l)
+    ieOffsetsArray.get(l + 1) - ieOffsetsArray.get(l)
   }
 
   def outDegreeArray(startLid : Long, endLid : Long) : Array[Int] = {

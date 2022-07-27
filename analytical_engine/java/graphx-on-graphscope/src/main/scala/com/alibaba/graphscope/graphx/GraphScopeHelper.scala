@@ -109,7 +109,7 @@ object GraphScopeHelper extends Logging{
         val res = new ArrayBuffer[(PartitionID,EdgeShuffle[Int,Int])]
         var ind = 0
         while (ind < numFrag){
-          res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind),pid2OuterIds(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array)))
+          res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind) ,pid2OuterIds(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array)))
           ind += 1
         }
         res.toIterator

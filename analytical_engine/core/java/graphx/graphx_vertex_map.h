@@ -337,7 +337,7 @@ class GraphXVertexMap
     return oid;
   }
 
-  bool GetGid(fid_t fid, const OID_T& oid, VID_T& gid) const {
+  inline bool GetGid(fid_t fid, const OID_T& oid, VID_T& gid) const {
     auto& rm = oid2Lids_[fid];
     auto iter = rm.find(oid);
     if (iter == rm.end()) {
