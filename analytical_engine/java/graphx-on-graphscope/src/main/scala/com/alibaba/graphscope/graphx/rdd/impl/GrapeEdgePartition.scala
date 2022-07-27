@@ -274,7 +274,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
 
   def collectOids(inner: ThreadSafeOpenHashSet[Long], outer: ThreadSafeOpenHashSet[Long], shuffles: ArrayBuffer[EdgeShuffle[_, _]], cores: Int) : Unit = {
     val time0 = System.nanoTime()
-    val atomicInt = new AtomicInteger()
+    val atomicInt = new AtomicInteger(0)
     val threads = new Array[Thread](cores)
     val numShuffles = shuffles.length
     var tid = 0
@@ -282,6 +282,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
       val newThread = new Thread() {
         override def run(): Unit = {
           var flag = true
+          val threadId=  tid
           while (flag) {
             val got = atomicInt.getAndAdd(1);
             if (got >= numShuffles) {
@@ -290,6 +291,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
             else {
               val edgeShuffle = shuffles(got)
               if (edgeShuffle.oids != null && edgeShuffle.outerOids != null) {
+                log.info(s"Thread ${threadId} got shuffle id ${got} ${edgeShuffle}")
                 val receivedOids = edgeShuffle.oids
                 val receivedOuterIds = edgeShuffle.outerOids
                 var i = 0
@@ -340,8 +342,8 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
       }
     }
     log.info(s"all oids length ${innerOidSize}, all outer oids length ${outerOidSize}")
-    val innerHashSet = new ThreadSafeOpenHashSet[Long](innerOidSize / 8)
-    val outerHashSet = new ThreadSafeOpenHashSet[Long](outerOidSize / 8)
+    val innerHashSet = new ThreadSafeOpenHashSet[Long](innerOidSize / 32)
+    val outerHashSet = new ThreadSafeOpenHashSet[Long](outerOidSize / 32)
     collectOids(innerHashSet, outerHashSet, edgeShuffles, parallelism)
     log.info(s"after iteration, actual cpacity ${innerHashSet.capacity} ${outerHashSet.capacity}")
 
