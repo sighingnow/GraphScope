@@ -601,15 +601,18 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     auto start_ts = grape::GetCurrentTime();
 #endif
     // edata_array_builder_t edata_builder_;
-    auto edges_num_ = src_accessor.size();
+    auto edges_num_ = (int64_t) src_accessor.size();
 
     nbr_t* ie_mutable_ptr_begin = in_edge_builder_.MutablePointer(0);
     nbr_t* oe_mutable_ptr_begin = out_edge_builder_.MutablePointer(0);
     // use atomic vector for concurrent modification.
-    std::vector<std::atomic<int64_t>> atomic_oe_offsets, atomic_ie_offsets;
+//    std::vector<std::atomic<int64_t>> atomic_oe_offsets, atomic_ie_offsets;
+    std::array<std::atomic<int64_t>,100> atomic_oe_offsets, atomic_ie_offsets;
     for (int i = 0; i < vnum; ++i) {
-      atomic_oe_offsets.emplace_back(oe_offsets_[i]);
-      atomic_ie_offsets.emplace_back(ie_offsets_[i]);
+       std::atomic_init(&atomic_oe_offsets[i], oe_offsets_[i]);
+       std::atomic_init(&atomic_ie_offsets[i], ie_offsets_[i]);
+//      atomic_oe_offsets.emplace_back(oe_offsets_[i]);
+//      atomic_ie_offsets.emplace_back(ie_offsets_[i]);
     }
     {
       int thread_num =
@@ -633,22 +636,22 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
                 }
                 begin = std::min(edges_num_, got * chunkSize);
                 end = std::min(edges_num_, begin + chunkSize);
-                for (size_t i = begin; i < end; ++i) {
-                  vid_t srcLid = src_accessor[i];
-                  vid_t dstLid = dst_accessor[i];
-                  if (out_edge_active.get_bit(i)) {
-                    int dstPos = atomic_oe_offsets[srcLids].fetch_add(
+                for (int64_t j = begin; j < end; ++j) {
+                  vid_t srcLid = src_accessor[j];
+                  vid_t dstLid = dst_accessor[j];
+                  if (out_edge_active.get_bit(j)) {
+                    int dstPos = atomic_oe_offsets[srcLid].fetch_add(
                         1, std::memory_order_relaxed);
                     nbr_t* ptr = oe_mutable_ptr_begin + dstPos;
                     ptr->vid = dstLid;
-                    ptr->eid = static_cast<eid_t>(i);
+                    ptr->eid = static_cast<eid_t>(j);
                   }
-                  if (in_edge_active.get_bit(i)) {
-                    int dstPos = atomic_ie_offsets[srcLid].fetch_add(
+                  if (in_edge_active.get_bit(j)) {
+                    int dstPos = atomic_ie_offsets[dstLid].fetch_add(
                         1, std::memory_order_relaxed);
                     nbr_t* ptr = ie_mutable_ptr_begin + dstPos;
                     ptr->vid = srcLid;
-                    ptr->eid = static_cast<eid_t>(i);
+                    ptr->eid = static_cast<eid_t>(j);
                   }
                 }
               }

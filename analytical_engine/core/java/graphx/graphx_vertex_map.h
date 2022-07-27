@@ -100,7 +100,7 @@ class GraphXVertexMap
       vineyard_array_t array;
       array.Construct(meta.GetMemberMeta("lid2Oids_" + std::to_string(i)));
       lid2Oids_[i] = array.GetArray();
-      lid2Oids_accessor_[i] = lid2Oids_[i]->raw_values();
+      lid2Oids_accessor_[i].Init(lid2Oids_[i]);
 
       oid2Lids_[i].Construct(
           meta.GetMemberMeta("oid2Lids_" + std::to_string(i)));
@@ -369,8 +369,8 @@ class GraphXVertexMap
   }
 
   inline gs::graphx::ImmutableTypedArray<oid_t>& GetLid2OidsAccessor(
-      fid_t fid) const {
-    return lid2Oids_accessor[fid];
+      fid_t fid) {
+    return lid2Oids_accessor_[fid];
   }
 
   inline gs::graphx::ImmutableTypedArray<vid_t>& GetOuterLid2GidsAccessor() {

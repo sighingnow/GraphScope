@@ -70,7 +70,8 @@ import com.alibaba.fastffi.FFIGenBatch;
           @FFIGen(type = "com.alibaba.graphscope.ds.ImmutableTypedArray",
                   templates =
                   {
-                    @CXXTemplate(cxx = "int64_t", java = "Long")
+                    @CXXTemplate(cxx = "int64_t", java = "Long"),
+                    @CXXTemplate(cxx = "uint64_t", java = "Long")
                     , @CXXTemplate(cxx = "int32_t", java = "Integer"),
                         @CXXTemplate(cxx = "double", java = "Double"),
                   }),
