@@ -129,21 +129,21 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
         String filePath = prefix + "_frag_" + frag.fid();
         PrimitiveArray<VDATA_T> vdArray = graphXProxy.getNewVdataArray();
 
-        try {
-            FileWriter fileWritter = new FileWriter(filePath);
-            BufferedWriter bufferedWriter = new BufferedWriter(fileWritter);
-
-            Vertex<Long> cur = FFITypeFactoryhelper.newVertexLong();
-            for (long index = 0; index < frag.getInnerVerticesNum(); ++index) {
-                cur.SetValue(index);
-                Long oid = frag.getId(cur);
-                bufferedWriter.write(
-                    cur.GetValue() + "\t" + oid + "\t" + vdArray.get(index) + "\n");
-            }
-            bufferedWriter.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            FileWriter fileWritter = new FileWriter(filePath);
+//            BufferedWriter bufferedWriter = new BufferedWriter(fileWritter);
+//
+//            Vertex<Long> cur = FFITypeFactoryhelper.newVertexLong();
+//            for (long index = 0; index < frag.getInnerVerticesNum(); ++index) {
+//                cur.SetValue(index);
+//                Long oid = frag.getId(cur);
+//                bufferedWriter.write(
+//                    cur.GetValue() + "\t" + oid + "\t" + vdArray.get(index) + "\n");
+//            }
+//            bufferedWriter.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
     int calcMyParallelism(int limit, int splitSize, int fid){
