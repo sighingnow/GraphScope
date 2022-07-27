@@ -120,7 +120,7 @@ class GraphXVertexMap
       vineyard_vid_array_t array;
       array.Construct(meta.GetMemberMeta("outerLid2Gids"));
       outer_lid2Gids_ = array.GetArray();
-      outer_lid2Gids_accessor_ = outer_lid2Gids_->raw_values();
+      outer_lid2Gids_accessor_.Init(outer_lid2Gids_);
     }
 
     this->ivnum_ = lid2Oids_[fid_]->length();
@@ -368,6 +368,15 @@ class GraphXVertexMap
     return id_parser_.generate_global_id(fid, lid);
   }
 
+  inline gs::graphx::ImmutableTypedArray<oid_t>& GetLid2OidsAccessor(
+      fid_t fid) const {
+    return lid2Oids_accessor[fid];
+  }
+
+  inline gs::graphx::ImmutableTypedArray<vid_t>& GetOuterLid2GidsAccessor() {
+    return outer_lid2Gids_accessor_;
+  }
+
  private:
   grape::fid_t fnum_, fid_;
   int graphx_pid_;
@@ -375,8 +384,8 @@ class GraphXVertexMap
   grape::IdParser<vid_t> id_parser_;
   std::vector<vineyard::Hashmap<oid_t, vid_t>> oid2Lids_;
   std::vector<std::shared_ptr<oid_array_t>> lid2Oids_;
-  std::vector<const oid_t*> lid2Oids_accessor_;
-  const vid_t* outer_lid2Gids_accessor_;
+  std::vector<gs::graphx::ImmutableTypedArray<oid_t>> lid2Oids_accessor_;
+  gs::graphx::ImmutableTypedArray<vid_t> outer_lid2Gids_accessor_;
   std::shared_ptr<vid_array_t> outer_lid2Gids_;
   vineyard::Hashmap<vid_t, vid_t> outer_gid2Lids_;
   std::shared_ptr<arrow::Int32Array> fid2Pid_, pid2Fid_;
@@ -456,7 +465,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
     for (grape::fid_t i = 0; i < fnum_; ++i) {
       auto& array = vertex_map->lid2Oids_[i];
       array = lid2Oids_[i].GetArray();
-      vertex_map->lid2Oids_accessor_[i] = array->raw_values();
+      vertex_map->lid2Oids_accessor_[i].Init(array);
     }
 
     vertex_map->oid2Lids_ = oid2Lids_;
@@ -498,8 +507,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
       }
       gid_builder.Advance(ovnum);
       gid_builder.Finish(&vertex_map->outer_lid2Gids_);
-      vertex_map->outer_lid2Gids_accessor_ =
-          vertex_map->outer_lid2Gids_->raw_values();
+      vertex_map->outer_lid2Gids_accessor_.Init(vertex_map->outer_lid2Gids_);
     }
 #if defined(WITH_PROFILING)
     auto time1 = grape::GetCurrentTime();
@@ -653,11 +661,11 @@ class BasicGraphXVertexMapBuilder
                                                   collected_oids)
               .ok());
     CHECK_EQ(collected_oids.size(), comm_spec_.worker_num());
-    // for (auto i = 0; i < comm_spec_.worker_num(); ++i) {
-    //   auto array = collected_oids[i];
-    //   LOG(INFO) << "Worker [" << comm_spec_.worker_id() << " Receives "
-    //             << array->length() << "from worker: " << i;
-    // }
+#if defined(WITH_PROFILING)
+    auto shuffle_ts = grape::GetCurrentTime();
+    LOG(INFO) << "Shuffle inner oids cost " << (shuffle_ts - start_ts)
+              << " seconds";
+#endif
 
     grape::fid_t curFid = comm_spec_.fid();
     std::atomic<grape::fid_t> current_fid(0);

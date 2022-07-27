@@ -166,10 +166,14 @@ object GrapeEdgeRDD extends Logging{
         require(res != null, s"after iterate over received global ids, no suitable found for ${hostName}, ${meta.partitionID} : ${globalVMIDs}")
         meta.setGlobalVM(res.toLong)
         val (vm, csr) = meta.edgePartitionBuilder.buildCSR(meta.globalVMId,numExecutors)
+        val time0 = System.nanoTime()
         val oeOffsetToEid = meta.edgePartitionBuilder.createEids(csr.getOutEdgesNum.toInt, csr.getOEBegin(0))
+        val time1 = System.nanoTime()
         //We will build a store which underlying is a simple array with length csr.getTotalEdgesNum,
         //but we can get out edge data from it with oeoffset, with some what conversion.
         val edatas = meta.edgePartitionBuilder.buildEdataStore(defaultED, csr.getTotalEdgesNum.toInt,meta.vineyardClient,oeOffsetToEid)
+        val time2 = System.nanoTime()
+        log.info(s"create oeoffset to eid cost ${(time1 - time0)/1000000}ms create edata cost ${(time2 - time1)/1000000}ms")
         //require(edatas.length == oeOffsetToEid.length, s"neq ${edatas.length}, ${oeOffsetToEid.length}")
         //raw edatas contains all edge datas, i.e. csr edata array.
         //edatas are out edges edge cache.
@@ -190,24 +194,13 @@ object GrapeEdgeRDD extends Logging{
         val meta = iter.next()
         val time0 = System.nanoTime()
         val vm = meta.globalVM
-        val lid2Oid : Array[Long] = {
-          val res = new Array[Long](vm.getVertexSize.toInt)
-          var i = 0;
-          val limit = vm.getVertexSize.toInt
-          while (i < limit){
-            //FIXME: speed up.
-            res(i) = vm.getId(i)
-            i += 1
-          }
-          res
-        }
         //set numSplit later
         val vertexDataStore = new InHeapDataStore[VD](vm.getVertexSize.toInt, meta.vineyardClient, 0)
 //        val outerVertexDataStore = new InHeapVertexDataStore[VD](vm.innerVertexSize().toInt, vm.getOuterVertexSize.toInt, meta.vineyardClient,1, outer = true)
 //        val innerVertexDataStore = new InHeapVertexDataStore[VD](0, vm.innerVertexSize().toInt, meta.vineyardClient,0)
         //If vertex attr are in edge shuffles, we init the inner vertex Data store.
         val edgeBuilder = meta.edgePartitionBuilder
-        val graphStructure = new GraphXGraphStructure(meta.globalVM,lid2Oid,meta.eids, meta.graphxCSR)
+        val graphStructure = new GraphXGraphStructure(meta.globalVM,meta.eids, meta.graphxCSR)
         edgeBuilder.fillVertexData(vertexDataStore,graphStructure)
         val time1 = System.nanoTime()
         log.info(s"[Creating graph structure cost ]: ${(time1 - time0) / 1000000} ms")
