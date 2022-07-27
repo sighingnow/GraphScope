@@ -66,7 +66,7 @@ object GrapeEdgeRDD extends Logging{
       else {
         Iterator.empty
       }
-    },preservesPartitioning = true)
+    },preservesPartitioning = true).cache()
     fromEdgeShuffleReceived(edgeShuffleReceived,defaultED, userNumPartitions)
   }
 
