@@ -8,8 +8,8 @@ import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.graphx.rdd.FragmentPartition.getHost
 import com.alibaba.graphscope.graphx.rdd.impl.GrapeEdgePartition
-import com.alibaba.graphscope.graphx.store.{InHeapEdgeDataStore, InHeapDataStore}
-import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, ScalaFFIFactory}
+import com.alibaba.graphscope.graphx.store.{InHeapDataStore, InHeapEdgeDataStore}
+import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, EIDAccessor, ScalaFFIFactory}
 import org.apache.spark.graphx.PartitionID
 import org.apache.spark.graphx.grape.{GrapeEdgeRDD, GrapeVertexRDD, PartitionAwareZippedBaseRDD}
 import org.apache.spark.internal.Logging
@@ -124,6 +124,7 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
           val time0 = System.nanoTime()
           val newEdata = new Array[ED](structure.getTotalEdgesNum.toInt)
 //          val eids = structure.eids
+          val eidAccessor = new EIDAccessor(0)
           if (frag.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
             val projectedFragment = frag.asInstanceOf[ArrowProjectedAdaptor[Long, Long, _, _]].getArrowProjectedFragment.asInstanceOf[ArrowProjectedFragment[Long,Long,_,_]]
             val edataAccessor = projectedFragment.getEdataArrayAccessor.asInstanceOf[TypedArray[ED]]
@@ -133,9 +134,10 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
               newEdata(i) = edataAccessor.get(i)
               i += 1
             }
+            eidAccessor.address = projectedFragment.getOutEdgesPtr.getAddress
           }
           val time1 = System.nanoTime()
-          val edgeStore = new InHeapEdgeDataStore[ED](newEdata.length,client,1, newEdata,structure.eids)
+          val edgeStore = new InHeapEdgeDataStore[ED](newEdata.length,client,1, newEdata, eidAccessor)
           log.info(s"got edata array cost ${(time1 - time0)/ 1000000}ms")
           Iterator(new GrapeEdgePartition[VD,ED](pid,0,1,0,frag.getInnerVerticesNum, structure.getOutEdgesNum.toInt, structure, client, edgeStore))
         }
