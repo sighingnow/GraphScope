@@ -125,7 +125,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
 
     @Override
     public void Output(IFragment<Long, Long, VDATA_T, EDATA_T> frag) {
-        String prefix = "/tmp/graphx_" + appName + "_" + LocalDateTime.now();
+        String prefix = "/home/graphscope/spark-res/" + appName + "_" + LocalDateTime.now();
         String filePath = prefix + "_frag_" + frag.fid();
         PrimitiveArray<VDATA_T> vdArray = graphXProxy.getNewVdataArray();
 
