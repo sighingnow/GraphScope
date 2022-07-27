@@ -1,6 +1,7 @@
 package com.alibaba.graphscope.graphx.test
 
-import com.alibaba.graphscope.graphx.GraphScopeHelper
+import com.alibaba.graphscope.graphx.rdd.impl.VertexDataMessage
+import com.alibaba.graphscope.graphx.{GraphScopeHelper, VertexData}
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
 import org.apache.spark.graphx.{Graph, GraphLoader, VertexId}
 import org.apache.spark.internal.Logging
@@ -15,7 +16,7 @@ object SSSPTest extends Logging{
       .getOrCreate()
     val sc = spark.sparkContext
     sc.getConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-    sc.getConf.registerKryoClasses(Array(classOf[EdgeShuffle[_,_]], classOf[Array[Long]], classOf[Array[Int]]))
+    sc.getConf.registerKryoClasses(Array(classOf[EdgeShuffle[_,_]], classOf[Array[Long]], classOf[Array[Int]], classOf[VertexDataMessage[_]]))
     if (args.length < 4) {
       println("Expect 4 args")
       return 0;

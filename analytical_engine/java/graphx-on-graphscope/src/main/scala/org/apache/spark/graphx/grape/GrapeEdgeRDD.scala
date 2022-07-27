@@ -1,11 +1,14 @@
 package org.apache.spark.graphx.grape
 
+import com.alibaba.fastffi.{FFIByteString, FFITypeFactory}
+import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
+import com.alibaba.graphscope.graphx.rdd.VineyardPartition.socket
 import com.alibaba.graphscope.graphx.rdd.impl.{GrapeEdgePartition, GrapeEdgePartitionBuilder}
 import com.alibaba.graphscope.graphx.rdd.{LocationAwareRDD, VineyardRDD}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
-import com.alibaba.graphscope.graphx.store.{InHeapEdgeDataStore, InHeapDataStore}
-import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, ExecutorUtils, GrapeMeta}
+import com.alibaba.graphscope.graphx.store.{InHeapDataStore, InHeapEdgeDataStore}
+import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, ExecutorUtils, GrapeMeta, ScalaFFIFactory}
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.grape.impl.GrapeEdgeRDDImpl
 import org.apache.spark.graphx.scheduler.cluster.ExecutorInfoHelper
@@ -93,11 +96,20 @@ object GrapeEdgeRDD extends Logging{
     })
     val numExecutors = executorInfo.size
     val sc = SparkContext.getOrCreate()
-    log.info(s"hosts ${collectHosts.mkString(",")}, locations ${locations.mkString(",")}")
-    val vineyardRDD = new VineyardRDD(sc, locations,collectHosts)
+//    log.info(s"hosts ${collectHosts.mkString(",")}, locations ${locations.mkString(",")}")
+//    val vineyardRDD = new VineyardRDD(sc, locations,collectHosts)
 
-    val metaPartitions = vineyardRDD.mapPartitionsWithIndex((pid,iter) => {
-      val client = iter.next()
+    val metaPartitions = edgesShuffles.mapPartitionsWithIndex((pid,iter) => {
+//      val client = iter.next()
+      val client : VineyardClient = {
+        val res = ScalaFFIFactory.newVineyardClient()
+        val ffiByteString: FFIByteString = FFITypeFactory.newByteString()
+        ffiByteString.copyFrom(socket)
+        res.connect(ffiByteString)
+        log.info(s"successfully connect to ${socket}")
+        res
+      }
+
       val grapeMeta = new GrapeMeta[VD,ED](pid, numPartitions, client, ExecutorUtils.getHostName)
       val edgePartitionBuilder = new GrapeEdgePartitionBuilder[VD,ED](numPartitions,client)
       edgePartitionBuilder.addEdges(EdgeShuffleReceived.get.asInstanceOf[EdgeShuffleReceived[ED]])
