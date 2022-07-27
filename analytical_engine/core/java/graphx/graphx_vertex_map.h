@@ -31,7 +31,6 @@
 
 #include "flat_hash_map/flat_hash_map.hpp"
 
-#include "grape/fragment/partitioner.h"
 #include "grape/grape.h"
 #include "grape/util.h"
 #include "grape/worker/comm_spec.h"
@@ -141,7 +140,7 @@ class GraphXVertexMap
   }
 
   int32_t GraphXPid2Fid(fid_t pid) {
-    CHECK_LT(fid, fnum_);
+    CHECK_LT(pid, fnum_);
     return pid2Fid_->Value(pid);
   }
 
@@ -357,8 +356,8 @@ class GraphXVertexMap
 
   inline bool GetGid(const OID_T& oid, VID_T& gid) const {
     // judge the fid from partition.
-    int32_t graphx_pid = static_cast<uint64_t>(oid) % fnum_;
-    fid_t fid = pid2Fid_->Value(graphx_pid);
+    int32_t pid = static_cast<uint64_t>(oid) % fnum_;
+    fid_t fid = pid2Fid_->Value(pid);
     return GetGid(fid, oid, gid);
   }
 

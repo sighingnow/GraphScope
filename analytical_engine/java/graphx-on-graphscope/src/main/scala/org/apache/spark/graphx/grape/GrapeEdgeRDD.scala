@@ -122,10 +122,12 @@ object GrapeEdgeRDD extends Logging{
 
     log.info(s"[GrapeEdgeRDD]: got distinct local vm ids ${localVertexMapIds.mkString("Array(", ", ", ")")}")
     require(localVertexMapIds.length == numPartitions, s"${localVertexMapIds.length} neq to num partitoins ${numPartitions}")
+    val sortedLocalVMIds = sortLocalVertexMapIds(localVertexMapIds)
+    //pid should match with fid.
 
     log.info("[GrapeEdgeRDD]: Start constructing global vm")
     val time0 = System.nanoTime()
-    val globalVMIDs = MPIUtils.constructGlobalVM(localVertexMapIds, ExecutorUtils.vineyardEndpoint, "int64_t", "uint64_t")
+    val globalVMIDs = MPIUtils.constructGlobalVM(sortedLocalVMIds, ExecutorUtils.vineyardEndpoint, "int64_t", "uint64_t")
     log.info(s"[GrapeEdgeRDD]: Finish constructing global vm ${globalVMIDs}, cost ${(System.nanoTime() - time0)/1000000} ms")
     require(globalVMIDs.size() == numPartitions)
     log.info(s"meta partition size ${metaPartitions.count}")
@@ -270,5 +272,17 @@ object GrapeEdgeRDD extends Logging{
     log.info(s"expanded partitions,locations ${locations.mkString("Array(", ", ", ")")}")
     log.info(s"expanded partitions,partitionIds ${partitionIds.mkString("Array(", ", ", ")")}")
     (hostNames, locations, partitionIds)
+  }
+
+  def sortLocalVertexMapIds(localVMIds : Array[String]) : Array[String] = {
+    val pids = localVMIds.map(str => str.split(":")(1))
+    val (pidsSorted, indices) = pids.zipWithIndex.sorted.unzip
+    val res = new Array[String](localVMIds.length)
+    var i = 0
+    while (i < pids.length){
+      res(i) = localVMIds(indices(i))
+      i += 1
+    }
+    res
   }
 }
