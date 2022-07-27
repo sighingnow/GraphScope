@@ -484,7 +484,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     }
 
     build_offsets();
-    add_edges(srcLids, dstLids, in_edge_active, out_edge_active);
+    add_edges(vnum_, local_num, srcLids, dstLids, in_edge_active,
+              out_edge_active);
     sort();
     return {};
   }
@@ -591,7 +592,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     return {};
   }
 
-  void add_edges(const std::vector<vid_t>& src_accessor,
+  void add_edges(int vnum, int local_num,
+                 const std::vector<vid_t>& src_accessor,
                  const std::vector<vid_t>& dst_accessor,
                  const grape::Bitset& in_edge_active,
                  const grape::Bitset& out_edge_active) {
@@ -599,63 +601,69 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     auto start_ts = grape::GetCurrentTime();
 #endif
     // edata_array_builder_t edata_builder_;
-    auto len = src_accessor.size();
-    // edata_builder_.Reserve(len);
-    // const edata_t* edata_accessor = edatas->raw_values();
+    auto edges_num_ = src_accessor.size();
 
-    // for (auto i = 0; i < len; ++i) {
-    // edata_builder_.UnsafeAppend(edata_accessor[i]);
-    // }
-    // edata_builder_.Finish(&edata_array_);
-
-    // const vid_t* src_accessor = srcLids->raw_values();
-    // const vid_t* dst_accessor = dstLids->raw_values();
     nbr_t* ie_mutable_ptr_begin = in_edge_builder_.MutablePointer(0);
     nbr_t* oe_mutable_ptr_begin = out_edge_builder_.MutablePointer(0);
+    // use atomic vector for concurrent modification.
+    std::vector<std::atomic<int64_t>> atomic_oe_offsets, atomic_ie_offsets;
+    for (int i = 0; i < vnum; ++i) {
+      atomic_oe_offsets.emplace_back(oe_offsets_[i]);
+      atomic_ie_offsets.emplace_back(ie_offsets_[i]);
+    }
     {
-      // int thread_num = 16;
-      // std::atomic<int> current_chunk(0);
-      // int64_t chunkSize = 4096;
-      // int64_t num_chunks = (len + chunkSize - 1) / chunkSize;
-      // LOG(INFO) << "thread num 4, chunk size: " << chunkSize << "num chunks "
-      //           << num_chunks;
-      std::vector<std::thread> work_threads(2);
-      // std::vector<int> cnt(thread_num);
-      work_threads[0] = std::thread([&] {
-        for (size_t i = 0; i < len; ++i) {
-          vid_t srcLid = src_accessor[i];
-          vid_t dstLid = dst_accessor[i];
-          if (out_edge_active.get_bit(i)) {
-            int dstPos = oe_offsets_[srcLid]++;
-            nbr_t* ptr = oe_mutable_ptr_begin + dstPos;
-            ptr->vid = dstLid;
-            ptr->eid = static_cast<eid_t>(i);
-          }
-        }
-      });
-      work_threads[1] = std::thread([&] {
-        for (size_t i = 0; i < len; ++i) {
-          vid_t srcLid = src_accessor[i];
-          vid_t dstLid = dst_accessor[i];
-          if (in_edge_active.get_bit(i)) {
-            int dstPos = ie_offsets_[dstLid]++;
-            nbr_t* ptr = ie_mutable_ptr_begin + dstPos;
-            ptr->vid = srcLid;
-            ptr->eid = static_cast<eid_t>(i);
-          }
-        }
-      });
+      int thread_num =
+          (std::thread::hardware_concurrency() + local_num - 1) / local_num;
+      // int thread_num = 1;
+      std::atomic<int> current_chunk(0);
+      int64_t chunkSize = 8192;
+      int64_t num_chunks = (edges_num_ + chunkSize - 1) / chunkSize;
+      LOG(INFO) << "thread num " << thread_num << ", chunk size: " << chunkSize
+                << "num chunks " << num_chunks;
+      std::vector<std::thread> work_threads(thread_num);
+      for (int i = 0; i < thread_num; ++i) {
+        work_threads[i] = std::thread(
+            [&](int tid) {
+              int got;
+              int64_t begin, end;
+              while (true) {
+                got = current_chunk.fetch_add(1, std::memory_order_relaxed);
+                if (got >= num_chunks) {
+                  break;
+                }
+                begin = std::min(edges_num_, got * chunkSize);
+                end = std::min(edges_num_, begin + chunkSize);
+                for (size_t i = begin; i < end; ++i) {
+                  vid_t srcLid = src_accessor[i];
+                  vid_t dstLid = dst_accessor[i];
+                  if (out_edge_active.get_bit(i)) {
+                    int dstPos = atomic_oe_offsets[srcLids].fetch_add(
+                        1, std::memory_order_relaxed);
+                    nbr_t* ptr = oe_mutable_ptr_begin + dstPos;
+                    ptr->vid = dstLid;
+                    ptr->eid = static_cast<eid_t>(i);
+                  }
+                  if (in_edge_active.get_bit(i)) {
+                    int dstPos = atomic_ie_offsets[srcLid].fetch_add(
+                        1, std::memory_order_relaxed);
+                    nbr_t* ptr = ie_mutable_ptr_begin + dstPos;
+                    ptr->vid = srcLid;
+                    ptr->eid = static_cast<eid_t>(i);
+                  }
+                }
+              }
+            },
+            i);
+      }
       for (auto& thrd : work_threads) {
         thrd.join();
       }
     }
 
-    LOG(INFO) << "Finish adding " << len << "edges";
-
 #if defined(WITH_PROFILING)
     auto finish_seal_ts = grape::GetCurrentTime();
-    LOG(INFO) << "adding edges cost" << (finish_seal_ts - start_ts)
-              << " seconds";
+    LOG(INFO) << "Finish adding " << edges_num_ << "edges cost"
+              << (finish_seal_ts - start_ts) << " seconds";
 #endif
   }
 

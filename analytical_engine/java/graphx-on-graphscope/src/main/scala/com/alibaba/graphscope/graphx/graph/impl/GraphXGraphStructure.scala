@@ -224,7 +224,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val eids : Array
   }
 
   override def outerVertexLid2Oid(vertex: Long): Long = {
-    val gid = outerLid2Gid.get(vertex)
+    val gid = outerLid2Gid.get(vertex - ivnum)
     val lid = idParser.getLocalId(gid)
     val fid = idParser.getFragId(gid)
     require(fid != myFid)
