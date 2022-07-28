@@ -23,6 +23,7 @@ import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
 import com.alibaba.graphscope.stdcxx.FFIByteVector;
 import com.alibaba.graphscope.stdcxx.FFIByteVectorFactory;
 import com.alibaba.graphscope.stdcxx.StdVector;
+import com.alibaba.graphscope.utils.DoubleMessageStore;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
 import com.alibaba.graphscope.utils.MessageStore;
 import com.alibaba.graphscope.utils.TriConsumer;
@@ -142,6 +143,9 @@ public class GraphXPIE<VD, ED, MSG_T> {
         nextSet = new BitSet((int) verticesNum);
         this.messageStore = MessageStore.create((int) verticesNum, fragment.fnum(), numCores,
             conf.getMsgClass(), mergeMsg,nextSet);
+        if (this.messageStore instanceof DoubleMessageStore){
+            ((DoubleMessageStore) this.messageStore).startConsumer();
+        }
         logger.debug("ivnum {}, tvnum {}", innerVerticesNum, verticesNum);
 
         round = 0;

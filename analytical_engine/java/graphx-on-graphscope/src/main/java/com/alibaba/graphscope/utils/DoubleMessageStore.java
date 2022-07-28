@@ -57,6 +57,8 @@ public class DoubleMessageStore implements MessageStore<Double> {
         idParser = new IdParser(fnum);
         this.nextSet = nextSet;
         msgQueue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
+    }
+    public void startConsumer(){
         consumer = new Thread(){
             @Override
             public void run(){
