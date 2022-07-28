@@ -1,5 +1,6 @@
 package com.alibaba.graphscope.graphx;
 
+import com.alibaba.fastffi.llvm4jni.runtime.JavaRuntime;
 import com.alibaba.graphscope.ds.ImmutableTypedArray;
 import com.alibaba.graphscope.ds.PropertyNbrUnit;
 import com.alibaba.graphscope.ds.StringTypedArray;
@@ -16,6 +17,7 @@ import com.alibaba.graphscope.fragment.adaptor.GraphXStringEDFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringVDFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringVEDFragmentAdaptor;
 import com.alibaba.graphscope.graphx.graph.GSEdgeTripletImpl;
+import com.alibaba.graphscope.graphx.utils.IdParser;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
 import com.alibaba.graphscope.stdcxx.FFIByteVector;
@@ -73,6 +75,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
     //FIXME: for primitive ones, can we avoid copying?
     private PrimitiveArray<VD> newVdataArray;
     private PrimitiveArray<ED> newEdataArray;
+    private int fid;
+    private IdParser idParser;
     /**
      * The messageStore stores the result messages after query. 1) Before PEval or IncEval,
      * messageStore should be clear. 2) After iterateOnEdges, we need to flush messages a. For
@@ -83,7 +87,9 @@ public class GraphXPIE<VD, ED, MSG_T> {
     private int innerVerticesNum, verticesNum;
     private BitSet curSet, nextSet;
     private EdgeDirection direction;
-    private long[] lid2Oid;
+//    private long[] lid2Oid;
+    private ImmutableTypedArray<Long>[] lid2Oid;
+    private ImmutableTypedArray<Long> outerLid2Gid;
     private PropertyNbrUnit<Long>[] nbrs;
     private long oeBeginAddress, ieBeginAddress;
     private ImmutableTypedArray<Long> oeOffsetArray, ieOffsetArray;
@@ -109,6 +115,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
         int maxIterations, int parallelism, String workerIdToFid) throws IOException, ClassNotFoundException {
         long time0 = System.nanoTime();
         this.iFragment = fragment;
+        fid = fragment.fid();
+        idParser = new IdParser(fragment.fnum());
         this.numCores = parallelism;
         if (!(iFragment.fragmentType().equals(FragmentType.GraphXFragment)
             || iFragment.fragmentType().equals(FragmentType.GraphXStringVDFragment)
@@ -137,12 +145,15 @@ public class GraphXPIE<VD, ED, MSG_T> {
         logger.debug("ivnum {}, tvnum {}", innerVerticesNum, verticesNum);
 
         round = 0;
-        lid2Oid = new long[(int) verticesNum];
-        Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
-        for (int i = 0; i < verticesNum; ++i) {
-            vertex.SetValue((long) i);
-            lid2Oid[i] = graphXFragment.getId(vertex);
+        lid2Oid = new ImmutableTypedArray[graphXFragment.fnum()];
+        GraphXVertexMap<Long,Long> vm = graphXFragment.getVM();
+        for (int i = 0; i < vm.fnum(); ++i) {
+            lid2Oid[i] = vm.getLid2OidAccessor(i);
         }
+        outerLid2Gid = vm.getOuterLid2GidAccessor();
+
+
+        Vertex<Long> vertex = FFITypeFactoryhelper.newVertexLong();
         vertex.SetValue(0L);
         oeOffsetArray = graphXFragment.getCSR().getOEOffsetsArray();
         ieOffsetArray = graphXFragment.getCSR().getIEOffsetsArray();
@@ -163,10 +174,22 @@ public class GraphXPIE<VD, ED, MSG_T> {
         logger.info("[Perf:] init cost {}ms, copy array cost {}ms", (time1 - time0)/ 1000000, (time01 - time00) / 1000000);
     }
 
+    long getId(int lid) {
+        if (lid < innerVerticesNum){
+            return lid2Oid[fid].get(lid);
+        }
+        else {
+            long gid = outerLid2Gid.get(lid - innerVerticesNum);
+            long outerLid = idParser.getLocalId(gid);
+            int fid = idParser.getFragId(gid);
+            return lid2Oid[fid].get(outerLid);
+        }
+    }
+
     private void runVProg(int startLid, int endLid, boolean firstRound) {
         for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid;
             lid = curSet.nextSetBit(lid + 1)) {
-            long oid = lid2Oid[lid];
+            long oid = lid2Oid[fid].get(lid);
             VD originalVD = newVdataArray.get(lid);
             if (firstRound) {
                 newVdataArray.set(lid, vprog.apply(oid, originalVD, initialMessage));
@@ -178,22 +201,26 @@ public class GraphXPIE<VD, ED, MSG_T> {
 
     private void iterateEdge(int startLid, int endLid, int threadId) throws InterruptedException {
         GSEdgeTripletImpl<VD, ED> edgeTriplet = new GSEdgeTripletImpl<>();
-        PropertyNbrUnit<Long> nbr = nbrs[threadId];
+//        PropertyNbrUnit<Long> nbr = nbrs[threadId];
         long beginOffset, endOffset;
         for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid;
             lid = curSet.nextSetBit(lid + 1)) {
-            edgeTriplet.setSrcOid(lid2Oid[lid], newVdataArray.get(lid));
+            edgeTriplet.setSrcOid(lid2Oid[fid].get(lid), newVdataArray.get(lid));
 
             beginOffset = oeOffsetArray.get(lid);
             endOffset = oeOffsetArray.get(lid + 1);
-            nbr.setAddress(beginOffset * 16 + oeBeginAddress);
+            long address = oeBeginAddress + (beginOffset << 4);
+//            nbr.setAddress(beginOffset * 16 + oeBeginAddress);
             while (beginOffset < endOffset) {
-                int nbrVid = nbr.vid().intValue();
-                edgeTriplet.setDstOid(lid2Oid[nbrVid], newVdataArray.get(nbrVid));
-                edgeTriplet.setAttr(newEdataArray.get(nbr.eid()));
+                int nbrVid = (int) JavaRuntime.getLong(address);
+                int eid = (int) JavaRuntime.getLong(address + 8);
+                edgeTriplet.setDstOid(getId(nbrVid), newVdataArray.get(nbrVid));
+                edgeTriplet.setAttr(newEdataArray.get(eid));
                 Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
-                messageStore.addMessages(msgs, graphXFragment, threadId, edgeTriplet,lid,nbrVid);
-                nbr.addV(16);
+                if (!msgs.equals(Iterator.empty())){
+                    messageStore.addMessages(msgs, graphXFragment, threadId, edgeTriplet,lid,nbrVid);
+                }
+                address += 16;
                 beginOffset += 1;
             }
         }
@@ -231,6 +258,9 @@ public class GraphXPIE<VD, ED, MSG_T> {
     }
 
     public void ParallelPEval() {
+        if (fid == 0) {
+            logger.info("[Start PEval]");
+        }
         vprogTime -= System.nanoTime();
             //We need to update outer vertex message to vd array, otherwise, we will send out message
             //infinitely.

@@ -119,6 +119,8 @@ class GraphXFragment
 
   csr_t& GetCSR() { return csr_; }
 
+  vm_t& GetVM() { return vm_; }
+
   inline int64_t GetEdgeNum() const { return csr_.GetTotalEdgesNum(); }
   inline int64_t GetInEdgeNum() const { return csr_.GetInEdgesNum(); }
   inline int64_t GetOutEdgeNum() const { return csr_.GetOutEdgesNum(); }
