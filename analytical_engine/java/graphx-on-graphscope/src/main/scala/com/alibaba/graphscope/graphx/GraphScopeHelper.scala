@@ -114,7 +114,7 @@ object GraphScopeHelper extends Logging{
         }
         res.toIterator
       }
-    ).partitionBy(partitioner).setName("GraphScopeHelper.edgeListFile - edges (%s)".format(path))
+    ).partitionBy(partitioner).setName("GraphScopeHelper.edgeListFile - edges (%s)".format(path)).cache()
 //    val edgeShufflesNum = edgesShuffled.count()
 
 //    logInfo(s"It took ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - linesTime)} ms" +
