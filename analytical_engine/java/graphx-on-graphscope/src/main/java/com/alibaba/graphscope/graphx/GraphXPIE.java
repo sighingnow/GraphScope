@@ -141,8 +141,10 @@ public class GraphXPIE<VD, ED, MSG_T> {
         //initially activate all vertices
         curSet.set(0, verticesNum);
         nextSet = new BitSet((int) verticesNum);
+        logger.info("before create store");
         this.messageStore = MessageStore.create((int) verticesNum, fragment.fnum(), numCores,
             conf.getMsgClass(), mergeMsg,nextSet);
+        logger.info("after create store");
         if (this.messageStore instanceof DoubleMessageStore){
             ((DoubleMessageStore) this.messageStore).startConsumer();
         }
@@ -225,7 +227,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
                     messageStore.addMessages(msgs, graphXFragment, threadId, edgeTriplet,lid,nbrVid);
                 }
                 else {
-                    logger.info("no msg produced");
                 }
                 address += 16;
                 beginOffset += 1;

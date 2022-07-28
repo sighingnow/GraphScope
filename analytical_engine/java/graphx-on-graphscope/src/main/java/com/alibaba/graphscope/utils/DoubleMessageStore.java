@@ -99,7 +99,8 @@ public class DoubleMessageStore implements MessageStore<Double> {
                 }
             }
         };
-        consumer.run();
+//        consumer.setDaemon(true);
+        consumer.start();
     }
 
     @Override
