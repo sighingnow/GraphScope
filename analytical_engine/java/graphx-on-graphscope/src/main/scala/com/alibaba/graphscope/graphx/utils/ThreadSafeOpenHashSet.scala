@@ -34,7 +34,7 @@ class ThreadSafeOpenHashSet[@specialized(Long, Int, Double, Float) T: ClassTag](
   require(loadFactor < 1.0, "Load factor must be less than 1.0")
   require(loadFactor > 0.0, "Load factor must be greater than 0.0")
 
-  import ThreadSafeOpenHashSet._
+  import ThreadSafeOpenHashSet._x
 
   def this(initialCapacity: Int) = this(initialCapacity, 0.7)
 

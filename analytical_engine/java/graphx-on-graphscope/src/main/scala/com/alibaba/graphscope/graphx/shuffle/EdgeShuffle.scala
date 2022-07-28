@@ -11,17 +11,18 @@ import scala.reflect.ClassTag
 
 class EdgeShuffle[VD : ClassTag,ED : ClassTag](val fromPid : Int,
                                  val dstPid: Int,
+                                 val maxOid : Long,
                                  val oids : Array[Long], // all oids belong to dstPid
-                                  val outerOids : Array[Long],
+                                val outerOids : Array[Long],
                                  val srcs : Array[Long],
                                  val dsts : Array[Long], val attrs: Array[ED] = null,
                                  val innerVertexAttrs : Array[VD] = null,
                                  val outerVertexAttrs : Array[VD] = null) extends Serializable {
-  def this(fromPid : Int, dstPid : Int, oids : OpenHashSet[Long], outerOids: OpenHashSet[Long], srcs : Array[Long], dsts : Array[Long]) = {
-    this(fromPid,dstPid,openHashSetToArray(oids), openHashSetToArray(outerOids), srcs, dsts)
+  def this(fromPid : Int, dstPid : Int, maxOid : Long,oids : OpenHashSet[Long], outerOids: OpenHashSet[Long], srcs : Array[Long], dsts : Array[Long]) = {
+    this(fromPid,dstPid,maxOid,openHashSetToArray(oids), openHashSetToArray(outerOids), srcs, dsts)
   }
-  def this(fromPid : Int, dstPid : Int, oids : Array[Long], outerOids: OpenHashSet[Long], srcs : Array[Long], dsts : Array[Long], attrs : Array[ED], vertexAttrs : Array[VD]) = {
-    this(fromPid,dstPid,oids, openHashSetToArray(outerOids), srcs, dsts,attrs,vertexAttrs)
+  def this(fromPid : Int, dstPid : Int, maxOid : Long,oids : Array[Long], outerOids: OpenHashSet[Long], srcs : Array[Long], dsts : Array[Long], attrs : Array[ED], vertexAttrs : Array[VD]) = {
+    this(fromPid,dstPid,maxOid,oids, openHashSetToArray(outerOids), srcs, dsts,attrs,vertexAttrs)
   }
   require(srcs.length == dsts.length)
 
