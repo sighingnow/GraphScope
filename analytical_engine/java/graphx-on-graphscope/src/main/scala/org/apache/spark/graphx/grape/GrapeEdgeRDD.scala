@@ -201,7 +201,7 @@ object GrapeEdgeRDD extends Logging{
 //        val innerVertexDataStore = new InHeapVertexDataStore[VD](0, vm.innerVertexSize().toInt, meta.vineyardClient,0)
         //If vertex attr are in edge shuffles, we init the inner vertex Data store.
         val edgeBuilder = meta.edgePartitionBuilder
-        val graphStructure = new GraphXGraphStructure(meta.globalVM, meta.graphxCSR)
+        val graphStructure = new GraphXGraphStructure(meta.globalVM, meta.graphxCSR, parallelism)
         edgeBuilder.fillVertexData(vertexDataStore,graphStructure)
         val time1 = System.nanoTime()
         log.info(s"[Creating graph structure cost ]: ${(time1 - time0) / 1000000} ms")
