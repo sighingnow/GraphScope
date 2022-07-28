@@ -59,6 +59,15 @@
  *
  */
 namespace gs {
+struct int64_atomic{
+   std::atomic<int64_t> atomic_{0};
+   int64_atomic():atomic_{0} {};
+   int64_atomic(const int64_atomic& other) : atomic_(other.atomic_.load()) {}
+   int64_atomic &operator = (const int64_atomic& other) {
+      atomic_.store(other.atomic_.load());
+      return *this;
+   }
+};
 
 template <typename VID_T>
 class GraphXCSR : public vineyard::Registered<GraphXCSR<VID_T>> {
@@ -608,10 +617,12 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     // use atomic vector for concurrent modification.
     //    std::vector<std::atomic<int64_t>> atomic_oe_offsets,
     //    atomic_ie_offsets;
-    std::array<std::atomic<int64_t>, vnum> atomic_oe_offsets, atomic_ie_offsets;
+    std::vector<int64_atomic> atomic_oe_offsets, atomic_ie_offsets;
+    atomic_oe_offsets.resize(vnum);
+    atomic_ie_offsets.resize(vnum);
     for (int i = 0; i < vnum; ++i) {
-      std::atomic_init(&atomic_oe_offsets[i], oe_offsets_[i]);
-      std::atomic_init(&atomic_ie_offsets[i], ie_offsets_[i]);
+      atomic_oe_offsets[i].atomic_ = oe_offsets_[i];
+      atomic_ie_offsets[i].atomic_ = ie_offsets_[i];
       //      atomic_oe_offsets.emplace_back(oe_offsets_[i]);
       //      atomic_ie_offsets.emplace_back(ie_offsets_[i]);
     }
@@ -641,14 +652,14 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
                   vid_t srcLid = src_accessor[j];
                   vid_t dstLid = dst_accessor[j];
                   if (out_edge_active.get_bit(j)) {
-                    int dstPos = atomic_oe_offsets[srcLid].fetch_add(
+                    int dstPos = atomic_oe_offsets[srcLid].atomic_.fetch_add(
                         1, std::memory_order_relaxed);
                     nbr_t* ptr = oe_mutable_ptr_begin + dstPos;
                     ptr->vid = dstLid;
                     ptr->eid = static_cast<eid_t>(j);
                   }
                   if (in_edge_active.get_bit(j)) {
-                    int dstPos = atomic_ie_offsets[dstLid].fetch_add(
+                    int dstPos = atomic_ie_offsets[dstLid].atomic_.fetch_add(
                         1, std::memory_order_relaxed);
                     nbr_t* ptr = ie_mutable_ptr_begin + dstPos;
                     ptr->vid = srcLid;

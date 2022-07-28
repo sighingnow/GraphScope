@@ -279,7 +279,6 @@ class ThreadSafeOpenHashSet[@specialized(Long, Int, Double, Float) T: ClassTag](
 }
 
 
-private[spark]
 object ThreadSafeOpenHashSet {
 
   val MAX_CAPACITY = 1 << 30
