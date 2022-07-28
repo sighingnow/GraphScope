@@ -29,7 +29,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
             u = b;
         }
     }
-    private Logger logger = LoggerFactory.getLogger(DoubleMessageStore.class.getName());
+    private final Logger logger = LoggerFactory.getLogger(DoubleMessageStore.class.getName());
 
     private static int QUEUE_CAPACITY = 10000000;
     private double[] values;
@@ -38,7 +38,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
     private Vertex<Long> tmpVertex[];
     private FFIByteVectorOutputStream[] outputStream;
     private IdParser idParser;
-    private BlockingQueue<LongDouble> msgQueue;
+    private final BlockingQueue<LongDouble> msgQueue;
     private Thread consumer;
     private BitSet nextSet;
 
@@ -64,8 +64,12 @@ public class DoubleMessageStore implements MessageStore<Double> {
                     LongDouble tuple = msgQueue.poll(1, TimeUnit.MICROSECONDS);;
                     while (tuple == null){
                         if (msgQueue.size() <= 0){
-                            logger.notify();
-                            msgQueue.wait();
+                            synchronized (logger) {
+                                logger.notify();
+                            }
+                            synchronized (msgQueue) {
+                                msgQueue.wait();
+                            }
                         }
                         if (msgQueue.size() > 0){
                             tuple = msgQueue.poll(1, TimeUnit.MICROSECONDS);
@@ -130,7 +134,9 @@ public class DoubleMessageStore implements MessageStore<Double> {
                 throw new IllegalStateException("msg not accepted");
             }
         }
-        msgQueue.notify();
+        synchronized (msgQueue) {
+            msgQueue.notify();
+        }
     }
 
     @Override
@@ -141,7 +147,9 @@ public class DoubleMessageStore implements MessageStore<Double> {
             msgQueue.notify();
         }
         try {
-            logger.wait();
+            synchronized (logger) {
+                logger.wait();
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
