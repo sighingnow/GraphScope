@@ -121,10 +121,10 @@ object GraphScopeHelper extends Logging{
         res.toIterator
       }
     ).partitionBy(partitioner).setName("GraphScopeHelper.edgeListFile - edges (%s)".format(path)).cache()
-//    val edgeShufflesNum = edgesShuffled.count()
+    val edgeShufflesNum = edgesShuffled.count()
 
-//    logInfo(s"It took ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - linesTime)} ms" +
-//      s" to load the edges size ${edgeShufflesNum}")
+    logInfo(s"It took ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - linesTime)} ms" +
+      s" to load the edges size ${edgeShufflesNum}")
 
     val time0 = System.nanoTime()
     val edgeRDD = GrapeEdgeRDD.fromEdgeShuffle[Int,Int](edgesShuffled,defaultED = 1,numPartitions).cache()

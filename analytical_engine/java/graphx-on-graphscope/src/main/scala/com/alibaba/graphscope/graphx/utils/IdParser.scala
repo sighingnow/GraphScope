@@ -27,6 +27,7 @@ class IdParser(val fnum : Int)extends Logging{
     gid & id_mask
   }
 
+  @inline
   def getFragId(gid : Long) : Int = {
     (gid >>> fid_offset).toInt
   }
