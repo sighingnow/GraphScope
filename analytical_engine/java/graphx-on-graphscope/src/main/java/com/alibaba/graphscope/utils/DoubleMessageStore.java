@@ -12,145 +12,120 @@ import java.io.IOException;
 import java.util.BitSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.collection.Iterator;
 import scala.Function2;
 import scala.Tuple2;
-import scala.collection.Iterator;
 
 public class DoubleMessageStore implements MessageStore<Double> {
+    private Logger logger = LoggerFactory.getLogger(DoubleMessageStore.class.getName());
 
-    public class LongDouble {
-
-        public long v;
-        public double u;
-
-        public LongDouble(long a, double b) {
-            v = a;
-            u = b;
-        }
-    }
-
-    public class MSGConsumer implements Runnable {
-
-        @Override
-        public void run() {
-            try {
-                while (true) {
-                    LongDouble tuple = msgQueue.take();
-                    int lid = (int) tuple.v;
-                    double newMsg = tuple.u;
-                    if (nextSet.get(lid)) {
-                        double original = values[lid];
-                        if (original != newMsg) {
-                            values[lid] = mergeMessage.apply(original, newMsg);
-                        }
-                    } else {
-                        values[lid] = newMsg;
-                        nextSet.set(lid);
-                    }
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private final Logger logger = LoggerFactory.getLogger(DoubleMessageStore.class.getName());
-
-    private static int QUEUE_CAPACITY = 50000000;
-    private double[] values;
-    //    private AtomicDoubleArrayWrapper values;
-    private Function2<Double, Double, Double> mergeMessage;
+    //    private double[] values;
+    private AtomicDoubleArrayWrapper values;
+    private Function2<Double,Double,Double> mergeMessage;
     private Vertex<Long> tmpVertex[];
     private FFIByteVectorOutputStream[] outputStream;
     private IdParser idParser;
-    private final BlockingQueue<LongDouble> msgQueue;
-    private Thread[] consumers;
+    private BlockingQueue<Tuple2<Long,Double>> msgQueue;
+    private Thread consumer;
     private BitSet nextSet;
 
-    public DoubleMessageStore(int len, int fnum, int numCores,
-        Function2<Double, Double, Double> function2, BitSet nextSet) {
-        values = new double[len];
-//        values = new AtomicDoubleArrayWrapper(len);
+    public DoubleMessageStore(int len, int fnum,int numCores, Function2<Double,Double,Double> function2,BitSet nextSet) {
+//        values = new double[len];
+        values = new AtomicDoubleArrayWrapper(len);
         mergeMessage = function2;
         tmpVertex = new Vertex[numCores];
-        for (int i = 0; i < numCores; ++i) {
-            tmpVertex[i] = FFITypeFactoryhelper.newVertexLong();
+        for (int i = 0; i < numCores; ++i){
+            tmpVertex[i]= FFITypeFactoryhelper.newVertexLong();
         }
         outputStream = new FFIByteVectorOutputStream[fnum];
-        for (int i = 0; i < fnum; ++i) {
+        for (int i = 0; i < fnum; ++i){
             outputStream[i] = new FFIByteVectorOutputStream();
         }
         idParser = new IdParser(fnum);
         this.nextSet = nextSet;
-        msgQueue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
-    }
-
-    public void startConsumer() {
-        consumers = new Thread[tmpVertex.length];
-        for (int i = 0; i < tmpVertex.length; ++i) {
-            Thread consumer = new Thread(new MSGConsumer());
-            consumer.start();
-            consumers[i] = consumer;
-        }
+//        msgQueue = new ArrayBlockingQueue<>(Integer.MAX_VALUE);
+//        consumer = new Thread(){
+//            @Override
+//            public void run(){
+//                try {
+//                    Tuple2<Long, Double> tuple = msgQueue.take();
+//                    int lid = tuple._1.intValue();
+//                    double newMsg = tuple._2;
+//                    if (nextSet.get(lid)){
+//                        double original = values[lid];
+//                        if (original != newMsg){
+//                            values[lid] = mergeMessage.apply(original, newMsg);
+//                        }
+//                    }
+//                    else {
+//                        values[lid] =  newMsg;
+//                        nextSet.set(lid);
+//                    }
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        };
     }
 
     @Override
     public Double get(int index) {
-        return values[index];
-//        return values.get(index);
+//        return values[index];
+        return values.get(index);
     }
 
     @Override
     public void set(int index, Double value) {
-        values[index] = value;
-//        values.set(index,value);
+//        values[index] =  value;
+        values.set(index,value);
     }
 
     @Override
     public int size() {
-        return values.length;
-//        return values.getSize();
+//        return values.length;
+        return values.getSize();
     }
 
 
     @Override
     public void addMessages(
-        Iterator<Tuple2<Long, Double>> msgs, BaseGraphXFragment<Long, Long, ?, ?> fragment,
-        int threadId, GSEdgeTripletImpl edgeTriplet, int srcLid, int dstLid)
+        Iterator<Tuple2<Long, Double>> msgs, BaseGraphXFragment<Long,Long,?,?> fragment, int threadId, GSEdgeTripletImpl edgeTriplet, int srcLid, int dstLid)
         throws InterruptedException {
         while (msgs.hasNext()) {
             Tuple2<Long, Double> msg = msgs.next();
             //the oid must from src or dst, we first find with lid.
             long oid = msg._1();
             int lid;
-            if (oid == edgeTriplet.dstId()) {
+            if (oid == edgeTriplet.dstId()){
                 lid = dstLid;
-            } else {
+            }
+            else {
                 lid = srcLid;
             }
-            LongDouble newMsg = new LongDouble(lid, msg._2());
-            msgQueue.put(newMsg);
-            //    if (!msgQueue.offer(newMsg)) {
-            //       throw new IllegalStateException("msg not accepted");
-            //   }
+            if (nextSet.get(lid)){
+//                double original = values[lid];
+                double original = values.get(lid);
+                double newMsg = msg._2();
+                if (original != newMsg){
+//                    values[lid] =  mergeMessage.apply(original, msg._2());
+                    double newValue = mergeMessage.apply(original,msg._2());
+                    values.compareAndSet(lid, newValue);
+                }
+            }
+            else {
+//                values[lid] = msg._2();
+                values.compareAndSet(lid, msg._2());
+                nextSet.set(lid);
+            }
         }
     }
 
     @Override
     public void flushMessages(BitSet nextSet, DefaultMessageManager messageManager,
         BaseGraphXFragment<Long, Long, ?, ?> fragment, int[] fid2WorkerId) throws IOException {
-        while (msgQueue.size() > 0) {
-            logger.info("still {} msg in queue ", msgQueue.size());
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        logger.info("all message are processed");
-
         int ivnum = (int) fragment.getInnerVerticesNum();
         int cnt = 0;
         Vertex<Long> vertex = tmpVertex[0];
@@ -159,15 +134,15 @@ public class DoubleMessageStore implements MessageStore<Double> {
             vertex.SetValue((long) i);
             int dstFid = fragment.getFragId(vertex);
             outputStream[dstFid].writeLong(fragment.getOuterVertexGid(vertex));
-            outputStream[dstFid].writeDouble(values[i]);
+            outputStream[dstFid].writeDouble(values.get(i));
             cnt += 1;
         }
         logger.debug("Frag [{}] try to send {} msg to outer vertices", fragment.fid(), cnt);
         //finish stream
-        for (int i = 0; i < fragment.fnum(); ++i) {
-            if (i != fragment.fid()) {
+        for (int i = 0; i < fragment.fnum(); ++i){
+            if (i != fragment.fid()){
                 outputStream[i].finishSetting();
-                if (outputStream[i].getVector().size() > 0) {
+                if (outputStream[i].getVector().size() > 0){
                     int workerId = fid2WorkerId[i];
                     messageManager.sendToFragment(workerId, outputStream[i].getVector());
 //                    logger.info("fragment [{}] send {} bytes to [{}]", fragment.fid(), outputStream[i].getVector().size(), i);
@@ -178,8 +153,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
     }
 
     @Override
-    public void digest(FFIByteVector vector, BaseGraphXFragment<Long, Long, ?, ?> fragment,
-        BitSet curSet) {
+    public void digest(FFIByteVector vector, BaseGraphXFragment<Long,Long,?,?> fragment, BitSet curSet) {
         FFIByteVectorInputStream inputStream = new FFIByteVectorInputStream(vector);
         int size = (int) vector.size();
         if (size <= 0) {
@@ -193,26 +167,25 @@ public class DoubleMessageStore implements MessageStore<Double> {
                 long gid = inputStream.readLong();
                 double msg = inputStream.readDouble();
                 int fid = idParser.getFragId(gid);
-                if (fid != fragment.fid()) {
-                    throw new IllegalStateException(
-                        "receive a non inner vertex gid: " + gid + ", parsed fid: " + fid
-                            + ", our fid: " + fragment.fid());
+                if (fid != fragment.fid()){
+                    throw new IllegalStateException("receive a non inner vertex gid: "+ gid + ", parsed fid: " + fid + ", our fid: " + fragment.fid());
                 }
-                if (!fragment.innerVertexGid2Vertex(gid, vertex)) {
+                if (!fragment.innerVertexGid2Vertex(gid, vertex)){
                     throw new IllegalStateException("inner vertex gid 2 vertex failed");
                 }
                 int lid = vertex.GetValue().intValue();
-                if (curSet.get(lid)) {
+                if (curSet.get(lid)){
 //                    values[lid] = mergeMessage.apply(values[lid], msg);
-                    values[lid] = mergeMessage.apply(values[lid], msg);
-                } else {
+                    values.set(lid, mergeMessage.apply(values.get(lid), msg));
+                }
+                else {
                     //no update in curSet when the message store is not changed, although we receive vertices.
 //                    if (values[lid] != msg){
 //                        values[lid] =  msg;
 //                        curSet.set(lid);
 //                    }
-                    if (values[lid] != msg) {
-                        values[lid] = msg;
+                    if (values.get(lid) != msg){
+                        values.set(lid, msg);
                         curSet.set(lid);
                     }
                 }
