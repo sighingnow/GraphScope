@@ -63,36 +63,37 @@ public class DoubleMessageStore implements MessageStore<Double> {
             @Override
             public void run(){
                 try {
-                    LongDouble tuple = msgQueue.poll(1, TimeUnit.MICROSECONDS);;
-                    while (tuple == null){
-                        if (msgQueue.size() <= 0){
-                            logger.info("before notify logger");
-                            synchronized (logger) {
-                                logger.notify();
-                            }
-                            logger.info("after notify logger");
+                    while (true) {
+                        LongDouble tuple = msgQueue.poll(1, TimeUnit.MICROSECONDS);
+                        while (tuple == null) {
+                            if (msgQueue.size() <= 0) {
+                                logger.info("before notify logger");
+                                synchronized (logger) {
+                                    logger.notify();
+                                }
+                                logger.info("after notify logger");
 
-                            synchronized (msgQueue) {
-                                msgQueue.wait();
+                                synchronized (msgQueue) {
+                                    msgQueue.wait();
+                                }
+                                logger.info("after wait msgQueue");
                             }
-                            logger.info("after wait msgQueue");
+                            if (msgQueue.size() > 0) {
+                                tuple = msgQueue.poll(1, TimeUnit.MICROSECONDS);
+                            }
                         }
-                        if (msgQueue.size() > 0){
-                            tuple = msgQueue.poll(1, TimeUnit.MICROSECONDS);
-                        }
-                    }
 
-                    int lid = (int) tuple.v;
-                    double newMsg = tuple.u;
-                    if (nextSet.get(lid)){
-                        double original = values[lid];
-                        if (original != newMsg){
-                            values[lid] = mergeMessage.apply(original, newMsg);
+                        int lid = (int) tuple.v;
+                        double newMsg = tuple.u;
+                        if (nextSet.get(lid)) {
+                            double original = values[lid];
+                            if (original != newMsg) {
+                                values[lid] = mergeMessage.apply(original, newMsg);
+                            }
+                        } else {
+                            values[lid] = newMsg;
+                            nextSet.set(lid);
                         }
-                    }
-                    else {
-                        values[lid] =  newMsg;
-                        nextSet.set(lid);
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -153,7 +154,9 @@ public class DoubleMessageStore implements MessageStore<Double> {
         BaseGraphXFragment<Long, Long, ?, ?> fragment, int[] fid2WorkerId) throws IOException {
         if (msgQueue.size() > 0){
             logger.info("still {} msg in queue ",msgQueue.size());
-            msgQueue.notify();
+            synchronized (msgQueue) {
+                msgQueue.notify();
+            }
         }
         try {
             synchronized (logger) {
