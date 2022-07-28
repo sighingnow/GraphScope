@@ -7,7 +7,7 @@ import com.alibaba.graphscope.graphx.graph.{GSEdgeTriplet, GraphStructure, Reusa
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
 import com.alibaba.graphscope.graphx.store.{AbstractDataStore, DataStore, InHeapDataStore, InHeapEdgeDataStore, OffHeapEdgeDataStore}
 import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, EIDAccessor, ExecutorUtils, GrapeUtils, IdParser, ScalaFFIFactory, ThreadSafeOpenHashSet}
-import com.alibaba.graphscope.utils.FFITypeFactoryhelper
+import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, ThreadSafeBitSet}
 import org.apache.spark.Partition
 import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
@@ -272,17 +272,17 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     lists.+=(edges)
   }
 
-  def collectOids(inner: BitSet, outer: BitSet, shuffles: ArrayBuffer[EdgeShuffle[_, _]], cores: Int) : Unit = {
+  def collectOids(inner: ThreadSafeBitSet, outer: ThreadSafeBitSet, shuffles: ArrayBuffer[EdgeShuffle[_, _]], cores: Int) : Unit = {
     val time0 = System.nanoTime()
     val atomicInt = new AtomicInteger(0)
     val threads = new Array[Thread](cores)
     val numShuffles = shuffles.length
     var tid = 0
     while (tid < cores) {
+      val threadId= tid
       val newThread = new Thread() {
         override def run(): Unit = {
           var flag = true
-          val threadId=  tid
           while (flag) {
             val got = atomicInt.getAndAdd(1);
             if (got >= numShuffles) {
@@ -344,8 +344,8 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
 //    val outerHashSet = new ThreadSafeOpenHashSet[Long](outerOidSize / 32)
 //    val innerHashSet = new OpenHashSet[Long](innerOidSize / 20)
 //    val outerHashSet = new OpenHashSet[Long](outerOidSize / 20)
-    val innerBitSet = new BitSet(maxOid.toInt + 1)
-    val outerBitSet = new BitSet(maxOid.toInt + 1)
+    val innerBitSet = new ThreadSafeBitSet()
+    val outerBitSet = new ThreadSafeBitSet()
     collectOids(innerBitSet, outerBitSet, edgeShuffles, parallelism)
 
     log.info(s"Found totally inner ${innerBitSet.cardinality()}, outer ${outerBitSet.cardinality()} in ${ExecutorUtils.getHostName}:${pid}")
@@ -355,14 +355,16 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     }
     val time01 = System.nanoTime()
     innerOidBuilder.reserve(innerBitSet.cardinality())
-    val iter = innerBitSet.iterator
-    while (iter.hasNext){
-      innerOidBuilder.unsafeAppend(iter.next());
+    var cur = innerBitSet.nextSetBit(0)
+    while (cur >= 0){
+      innerOidBuilder.unsafeAppend(cur)
+      cur = innerBitSet.nextSetBit(cur + 1)
     }
     outerOidBuilder.reserve(outerBitSet.cardinality())
-    val outerIter = outerBitSet.iterator
-    while (outerIter.hasNext){
-      outerOidBuilder.unsafeAppend(outerIter.next())
+    cur = outerBitSet.nextSetBit(0)
+    while (cur >= 0){
+      outerOidBuilder.unsafeAppend(cur)
+      cur = outerBitSet.nextSetBit(cur + 1)
     }
     val time1 = System.nanoTime()
     val localVertexMapBuilder = ScalaFFIFactory.newLocalVertexMapBuilder(client, innerOidBuilder, outerOidBuilder)
