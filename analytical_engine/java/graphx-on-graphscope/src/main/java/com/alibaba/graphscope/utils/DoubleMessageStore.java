@@ -31,6 +31,30 @@ public class DoubleMessageStore implements MessageStore<Double> {
         }
     }
 
+    public class MSGConsumer implements Runnable{
+        @Override
+        public void run() {
+            try {
+                while (true) {
+                    LongDouble tuple = msgQueue.take();
+                    int lid = (int) tuple.v;
+                    double newMsg = tuple.u;
+                    if (nextSet.get(lid)) {
+                        double original = values[lid];
+                        if (original != newMsg) {
+                            values[lid] = mergeMessage.apply(original, newMsg);
+                        }
+                    } else {
+                        values[lid] = newMsg;
+                        nextSet.set(lid);
+                    }
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private final Logger logger = LoggerFactory.getLogger(DoubleMessageStore.class.getName());
 
     private static int QUEUE_CAPACITY = 50000000;
@@ -41,7 +65,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
     private FFIByteVectorOutputStream[] outputStream;
     private IdParser idParser;
     private final BlockingQueue<LongDouble> msgQueue;
-    private Thread consumer;
+    private Thread[] consumers;
     private BitSet nextSet;
 
     public DoubleMessageStore(int len, int fnum, int numCores,
@@ -63,31 +87,11 @@ public class DoubleMessageStore implements MessageStore<Double> {
     }
 
     public void startConsumer() {
-        consumer = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    while (true) {
-                        LongDouble tuple = msgQueue.take();
-                        int lid = (int) tuple.v;
-                        double newMsg = tuple.u;
-                        if (nextSet.get(lid)) {
-                            double original = values[lid];
-                            if (original != newMsg) {
-                                values[lid] = mergeMessage.apply(original, newMsg);
-                            }
-                        } else {
-                            values[lid] = newMsg;
-                            nextSet.set(lid);
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-//        consumer.setDaemon(true);
-        consumer.start();
+        for (int i = 0 ; i < tmpVertex.length; ++i) {
+            Thread consumer = new Thread(new MSGConsumer());
+            consumer.start();
+            consumers[i] = consumer;
+        }
     }
 
     @Override
