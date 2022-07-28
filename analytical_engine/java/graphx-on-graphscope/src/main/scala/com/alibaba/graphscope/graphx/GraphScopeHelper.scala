@@ -82,6 +82,7 @@ object GraphScopeHelper extends Logging{
         val pid2Dst = Array.fill(numFrag)(new PrimitiveVector[VertexId])
         val pid2Oids = Array.fill(numFrag)(new OpenHashSet[VertexId])
         val pid2OuterIds = Array.fill(numFrag)(new OpenHashSet[VertexId])
+        val pid2MaxOid = Array.fill(numFrag)(0L)
         val time0 = System.nanoTime();
         while (iter.hasNext) {
           val line = iter.next()
@@ -91,9 +92,12 @@ object GraphScopeHelper extends Logging{
           val dstPid = partitioner.getPartition(dstId)
           pid2Oids(srcPid).add(srcId)
           pid2Oids(dstPid).add(dstId)
+          val v = Math.max(srcId,dstId)
+          pid2MaxOid(dstPid) = Math.max(pid2MaxOid(dstPid), v)
           if (srcPid == dstPid){
             pid2src(srcPid).+=(srcId)
             pid2Dst(srcPid).+=(dstId)
+            pid2MaxOid(srcPid) = Math.max(pid2MaxOid(srcPid), v)
           }
           else {
             pid2src(srcPid).+=(srcId)
@@ -102,6 +106,8 @@ object GraphScopeHelper extends Logging{
             pid2src(dstPid).+=(srcId)
             pid2Dst(dstPid).+=(dstId)
             pid2OuterIds(dstPid).add(srcId)
+            pid2MaxOid(srcPid) = Math.max(pid2MaxOid(srcPid), v)
+            pid2MaxOid(dstPid) = Math.max(pid2MaxOid(dstPid), v)
           }
         }
         val time1 = System.nanoTime()
@@ -109,7 +115,7 @@ object GraphScopeHelper extends Logging{
         val res = new ArrayBuffer[(PartitionID,EdgeShuffle[Int,Int])]
         var ind = 0
         while (ind < numFrag){
-          res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind) ,pid2OuterIds(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array)))
+          res.+=((ind, new EdgeShuffle(fromPid, ind, pid2MaxOid(ind), pid2Oids(ind) ,pid2OuterIds(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array)))
           ind += 1
         }
         res.toIterator

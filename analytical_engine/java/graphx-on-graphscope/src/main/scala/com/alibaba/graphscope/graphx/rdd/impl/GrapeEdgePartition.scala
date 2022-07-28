@@ -272,7 +272,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     lists.+=(edges)
   }
 
-  def collectOids(inner: OpenHashSet[Long], outer: OpenHashSet[Long], shuffles: ArrayBuffer[EdgeShuffle[_, _]], cores: Int) : Unit = {
+  def collectOids(inner: BitSet, outer: BitSet, shuffles: ArrayBuffer[EdgeShuffle[_, _]], cores: Int) : Unit = {
     val time0 = System.nanoTime()
     val atomicInt = new AtomicInteger(0)
     val threads = new Array[Thread](cores)
@@ -296,12 +296,12 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
                 val receivedOuterIds = edgeShuffle.outerOids
                 var i = 0
                 while (i < receivedOids.length) {
-                  inner.add(receivedOids(i))
+                  inner.set(receivedOids(i).toInt)
                   i += 1
                 }
                 i = 0
                 while (i < receivedOuterIds.length) {
-                  outer.add(receivedOuterIds(i))
+                  outer.set(receivedOuterIds(i).toInt)
                   i += 1
                 }
               }
@@ -328,40 +328,39 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     //We need to get oid->lid mappings in this executor.
     val time0 = System.nanoTime()
     val edgeShuffles = new ArrayBuffer[EdgeShuffle[_,_]]()
-    var innerOidSize = 0
-    var outerOidSize = 0
+    var maxOid = 0L
     for (edgeShuffleReceive <- lists){
       if (edgeShuffleReceive != null){
         for (edgeShuffle <- edgeShuffleReceive.fromPid2Shuffle){
           if (edgeShuffle != null){
             edgeShuffles.+=(edgeShuffle)
-            innerOidSize +=  edgeShuffle.oids.length
-            outerOidSize +=  edgeShuffle.outerOids.length
+            maxOid = Math.max(maxOid, edgeShuffle.maxOid)
           }
         }
       }
     }
-    log.info(s"all oids length ${innerOidSize}, all outer oids length ${outerOidSize}")
+    log.info(s"part ${pid} max oid ${maxOid}, parallelism ${parallelism}")
 //    val innerHashSet = new ThreadSafeOpenHashSet[Long](innerOidSize / 32)
 //    val outerHashSet = new ThreadSafeOpenHashSet[Long](outerOidSize / 32)
-    val innerHashSet = new OpenHashSet[Long](innerOidSize / 10)
-    val outerHashSet = new OpenHashSet[Long](outerOidSize / 10)
-    collectOids(innerHashSet, outerHashSet, edgeShuffles, 1)
-    log.info(s"after iteration, actual cpacity ${innerHashSet.capacity} ${outerHashSet.capacity}")
+//    val innerHashSet = new OpenHashSet[Long](innerOidSize / 20)
+//    val outerHashSet = new OpenHashSet[Long](outerOidSize / 20)
+    val innerBitSet = new BitSet(maxOid.toInt)
+    val outerBitSet = new BitSet(maxOid.toInt)
+    collectOids(innerBitSet, outerBitSet, edgeShuffles, parallelism)
 
-    log.info(s"Found totally ${innerHashSet.size} in ${ExecutorUtils.getHostName}:${pid}")
-    if (innerHashSet.size == 0 && outerHashSet.size == 0){
+    log.info(s"Found totally inner ${innerBitSet.cardinality()}, outer ${outerBitSet.cardinality()} in ${ExecutorUtils.getHostName}:${pid}")
+    if (innerBitSet.cardinality() == 0 && outerBitSet.cardinality() == 0){
       log.info(s"partition ${pid} empty")
       return null
     }
     val time01 = System.nanoTime()
-    innerOidBuilder.reserve(innerHashSet.size)
-    val iter = innerHashSet.iterator
+    innerOidBuilder.reserve(innerBitSet.cardinality())
+    val iter = innerBitSet.iterator
     while (iter.hasNext){
       innerOidBuilder.unsafeAppend(iter.next());
     }
-    outerOidBuilder.reserve(outerHashSet.size)
-    val outerIter = outerHashSet.iterator
+    outerOidBuilder.reserve(outerBitSet.cardinality())
+    val outerIter = outerBitSet.iterator
     while (outerIter.hasNext){
       outerOidBuilder.unsafeAppend(outerIter.next())
     }
