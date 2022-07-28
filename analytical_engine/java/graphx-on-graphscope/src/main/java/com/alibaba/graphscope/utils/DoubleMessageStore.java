@@ -64,6 +64,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
                     LongDouble tuple = msgQueue.poll(1, TimeUnit.MICROSECONDS);;
                     while (tuple == null){
                         if (msgQueue.size() <= 0){
+                            logger.notify();
                             msgQueue.wait();
                         }
                         if (msgQueue.size() > 0){
@@ -88,6 +89,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
                 }
             }
         };
+        consumer.run();
     }
 
     @Override
@@ -134,6 +136,20 @@ public class DoubleMessageStore implements MessageStore<Double> {
     @Override
     public void flushMessages(BitSet nextSet, DefaultMessageManager messageManager,
         BaseGraphXFragment<Long, Long, ?, ?> fragment, int[] fid2WorkerId) throws IOException {
+        if (msgQueue.size() > 0){
+            logger.info("still {} msg in queue ",msgQueue.size());
+            msgQueue.notify();
+        }
+        try {
+            logger.wait();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        if (msgQueue.size() > 0){
+            throw new IllegalStateException("not possible");
+        }
+        logger.info("all message are processed");
+
         int ivnum = (int) fragment.getInnerVerticesNum();
         int cnt = 0;
         Vertex<Long> vertex = tmpVertex[0];
