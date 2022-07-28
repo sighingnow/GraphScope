@@ -226,8 +226,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
                 if (!msgs.equals(Iterator.empty())){
                     messageStore.addMessages(msgs, graphXFragment, threadId, edgeTriplet,lid,nbrVid);
                 }
-                else {
-                }
                 address += 16;
                 beginOffset += 1;
             }
