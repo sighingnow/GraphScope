@@ -291,7 +291,7 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
             else {
               val edgeShuffle = shuffles(got)
               if (edgeShuffle.oids != null && edgeShuffle.outerOids != null) {
-                log.info(s"Thread ${threadId} got shuffle id ${got} ${edgeShuffle}")
+//                log.info(s"Thread ${threadId} got shuffle id ${got} ${edgeShuffle}")
                 val receivedOids = edgeShuffle.oids
                 val receivedOuterIds = edgeShuffle.outerOids
                 var i = 0
