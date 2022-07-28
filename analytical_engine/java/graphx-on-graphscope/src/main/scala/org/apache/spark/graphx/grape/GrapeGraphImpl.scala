@@ -441,13 +441,16 @@ object GrapeGraphImpl extends Logging{
       val pid2Oids = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
       val pid2OuterLids = Array.fill(numPartitions)(new OpenHashSet[Int])
       val pid2OuterOids = Array.fill(numPartitions)(new PrimitiveVector[VertexId])
+      val pid2MaxOId = Array.fill(numPartitions)(0L)
       val pid2VertexAttr = Array.fill(numPartitions)(new PrimitiveVector[VD])
       val pid2OuterVertexAttr = Array.fill(numPartitions)(new PrimitiveVector[VD])
       //shatter vertices
       var i = 0
       while (i < verticesNum){
         val dstPid = partitioner.getPartition(lid2Oid(i))
-        pid2Oids(dstPid).+=(lid2Oid(i))
+        val oid = lid2Oid(i)
+        pid2Oids(dstPid).+=(oid)
+        pid2MaxOId(dstPid) = Math.max(pid2MaxOId(dstPid), oid)
         pid2VertexAttr(dstPid).+=(vertexAttr(i))
         i += 1
       }
@@ -480,7 +483,9 @@ object GrapeGraphImpl extends Logging{
         val outerLidIter = pid2OuterLids(i).iterator
         while (outerLidIter.hasNext){
           val outerLid = outerLidIter.next()
-          pid2OuterOids(i).+=(lid2Oid(outerLid))
+          val outerOid = lid2Oid(outerLid)
+          pid2OuterOids(i).+=(outerOid)
+          pid2MaxOId(i) = Math.max(pid2MaxOId(i), outerOid)
           pid2OuterVertexAttr(i).+=(vertexAttr(outerLid))
         }
       }
@@ -489,7 +494,7 @@ object GrapeGraphImpl extends Logging{
       var ind = 0
       while (ind < numPartitions){
 //        log.info(s"partition ${fromPid} send msg to ${ind}")
-        res.+=((ind, new EdgeShuffle(fromPid, ind, pid2Oids(ind).trim().array, pid2OuterOids(ind).trim().array, pid2src(ind).trim().array, pid2Dst(ind).trim().array, pid2EdgeAttr(ind).trim().array,pid2VertexAttr(ind).trim().array, pid2OuterVertexAttr(ind).trim().array)))
+        res.+=((ind, new EdgeShuffle(fromPid, ind, pid2MaxOId(ind), pid2Oids(ind).trim().array, pid2OuterOids(ind).trim().array, pid2src(ind).trim().array, pid2Dst(ind).trim().array, pid2EdgeAttr(ind).trim().array,pid2VertexAttr(ind).trim().array, pid2OuterVertexAttr(ind).trim().array)))
         ind += 1
       }
       res.toIterator
