@@ -41,6 +41,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   val dstOids : Array[Long] = new Array[Long](csr.getOutEdgesNum.toInt)
   val dstLids : Array[Int] = new Array[Int](csr.getOutEdgesNum.toInt)
   def init() = {
+    val time0 = System.nanoTime()
     val nbr = csr.getOEBegin(0)
     var offset = 0
     val limit = csr.getOEOffset(ivnum)
@@ -51,6 +52,8 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
       offset += 1
       nbr.addV(16)
     }
+    val time1 = System.nanoTime()
+    log.info(s"[Init cost ${(time1 - time0)/1000000} ms]")
   }
   init()
 
@@ -126,6 +129,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   }
 
   private def getMirrorVertices : Array[BitSet] = {
+    val time0 = System.nanoTime()
     val res = new Array[BitSet](fnum())
     val ivnum = vm.innerVertexSize().toInt
     for (i <- res.indices){
@@ -151,8 +155,10 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
       val end = csr.getIEEnd(lid)
       while (begin.getAddress < end.getAddress){
         val dstLid = begin.vid()
-        val dstFid = vm.getFragId(dstLid)
-        flags(dstFid) = true
+        if (dstLid >= ivnum) {
+          val dstFid = getOuterVertexFid(dstLid)
+          flags(dstFid) = true
+        }
         begin.addV(16)
       }
       for (i <- flags.indices){
@@ -162,7 +168,14 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
       }
       lid += 1
     }
+    val time1 = System.nanoTime()
+    log.info(s"[Got mirror vertices cost ${(time1 - time0)/1000000} ms]")
     res
+  }
+
+  def getOuterVertexFid(lid: Long) : Int = {
+    val gid = outerLid2Gid.get(lid)
+    idParser.getFragId(gid)
   }
 
 //  override def getInDegree(vid: Long): Long = csr.getInDegree(vid)
