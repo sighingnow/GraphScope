@@ -277,6 +277,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
             return true;
         }
         //set nextSet(0, ivnum) to curSet(0, ivnum).
+
         curSet.clear();
         curSet.or(nextSet);
         nextSet.clear();

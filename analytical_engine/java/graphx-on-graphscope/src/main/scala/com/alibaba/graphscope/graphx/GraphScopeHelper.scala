@@ -78,10 +78,10 @@ object GraphScopeHelper extends Logging{
     val edgesShuffled = lines.mapPartitionsWithIndex (
       (fromPid, iter) => {
         //        iter.toArray
-        val pid2src = Array.fill(numFrag)(new PrimitiveVector[VertexId])
-        val pid2Dst = Array.fill(numFrag)(new PrimitiveVector[VertexId])
-        val pid2Oids = Array.fill(numFrag)(new OpenHashSet[VertexId])
-        val pid2OuterIds = Array.fill(numFrag)(new OpenHashSet[VertexId])
+        val pid2src = Array.fill(numFrag)(new PrimitiveVector[VertexId](120000))
+        val pid2Dst = Array.fill(numFrag)(new PrimitiveVector[VertexId](120000))
+        val pid2Oids = Array.fill(numFrag)(new OpenHashSet[VertexId](60000))
+        val pid2OuterIds = Array.fill(numFrag)(new OpenHashSet[VertexId](600000))
         val pid2MaxOid = Array.fill(numFrag)(0L)
         val time0 = System.nanoTime();
         while (iter.hasNext) {
@@ -118,7 +118,10 @@ object GraphScopeHelper extends Logging{
           res.+=((ind, new EdgeShuffle(fromPid, ind, pid2MaxOid(ind), pid2Oids(ind) ,pid2OuterIds(ind), pid2src(ind).trim().array, pid2Dst(ind).trim().array)))
           ind += 1
         }
-        res.toIterator
+        val resIter = res.toIterator
+        val time2 = System.nanoTime()
+        log.info("[edgeListFile: ] convert to iterator cost " + (time2 - time1) / 1000000 + "ms")
+        resIter
       }
     ).partitionBy(partitioner).setName("GraphScopeHelper.edgeListFile - edges (%s)".format(path)).cache()
     val edgeShufflesNum = edgesShuffled.count()
