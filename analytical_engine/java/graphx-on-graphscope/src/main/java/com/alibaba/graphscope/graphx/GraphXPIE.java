@@ -69,7 +69,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
     private MSG_T initialMessage;
     private ExecutorService executorService;
     private int numCores, maxIterations, round;
-    private long vprogTime, msgSendTime, receiveTime, flushTime;
+    private long vprogTime, msgSendTime, receiveTime, flushTime, bitsetTime;
     private GraphXConf<VD, ED, MSG_T> conf;
     //    private GSEdgeTripletImpl<VD, ED> edgeTriplet;
     DefaultMessageManager messageManager;
@@ -145,9 +145,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
         this.messageStore = MessageStore.create((int) verticesNum, fragment.fnum(), numCores,
             conf.getMsgClass(), mergeMsg,nextSet);
         logger.info("after create store");
-        if (this.messageStore instanceof DoubleMessageStore){
-            ((DoubleMessageStore) this.messageStore).startConsumer();
-        }
         logger.debug("ivnum {}, tvnum {}", innerVerticesNum, verticesNum);
 
         round = 0;
@@ -175,7 +172,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         logger.info("Parallelism for frag {} is {}", graphXFragment.fid(), numCores);
         fid2WorkerId = new int[graphXFragment.fnum()];
         fillFid2WorkerId(workerIdToFid);
-        msgSendTime = vprogTime = receiveTime = flushTime = 0;
+        msgSendTime = vprogTime = receiveTime = flushTime = bitsetTime = 0;
         long time1 = System.nanoTime();
         logger.info("[Perf:] init cost {}ms, copy array cost {}ms", (time1 - time0)/ 1000000, (time01 - time00) / 1000000);
     }
@@ -314,9 +311,11 @@ public class GraphXPIE<VD, ED, MSG_T> {
         }
         //set nextSet(0, ivnum) to curSet(0, ivnum).
 
+        bitsetTime -= System.nanoTime();
         curSet.clear();
         curSet.or(nextSet);
         nextSet.clear();
+        bitsetTime += System.nanoTime();
 
         receiveTime -= System.nanoTime();
         /////////////////////////////////////Receive message////////////////////
@@ -349,8 +348,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
             return true;
         }
         round += 1;
-        logger.info("Round [{}] vprog {}, msgSend {} flushMsg {}, receive time {}", round, vprogTime / 1000000,
-            msgSendTime / 1000000, flushTime / 1000000, receiveTime/ 1000000);
+        logger.info("Round [{}] vprog {}, msgSend {} flushMsg {}, receive time {}, bitset time {}", round, vprogTime / 1000000,
+            msgSendTime / 1000000, flushTime / 1000000, receiveTime/ 1000000, bitsetTime / 1000000);
         return false;
     }
 
