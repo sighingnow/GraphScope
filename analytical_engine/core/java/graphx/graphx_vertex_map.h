@@ -529,6 +529,7 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
       vineyard::HashmapBuilder<vid_t, vid_t> builder(client);
       auto& gid_accessor = vertex_map->outer_lid2Gids_accessor_;
       auto ivnum = vertex_map->ivnum_;
+      builder.reserve(static_cast<size_t>(ovnum));
       for (int i = 0; i < ovnum; ++i) {
         builder.emplace(gid_accessor[i], i + ivnum);
       }
@@ -700,7 +701,7 @@ class BasicGraphXVertexMapBuilder
               {
                 vid_t cur_lid = 0;
                 int64_t vnum = collected_oids[cur_fid]->length();
-                // builder.reserve(static_cast<size_t>(vnum));
+                builder.reserve(static_cast<size_t>(vnum));
                 for (int64_t k = 0; k < vnum; ++k) {
                   builder.emplace(array[k], cur_lid);
                   ++cur_lid;
