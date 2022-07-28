@@ -174,7 +174,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   }
 
   def getOuterVertexFid(lid: Long) : Int = {
-    val gid = outerLid2Gid.get(lid)
+    val gid = outerLid2Gid.get(lid - ivnum)
     idParser.getFragId(gid)
   }
 
