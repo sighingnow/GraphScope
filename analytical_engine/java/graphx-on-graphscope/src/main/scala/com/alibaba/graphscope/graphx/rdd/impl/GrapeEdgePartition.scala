@@ -344,8 +344,8 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
 //    val outerHashSet = new ThreadSafeOpenHashSet[Long](outerOidSize / 32)
 //    val innerHashSet = new OpenHashSet[Long](innerOidSize / 20)
 //    val outerHashSet = new OpenHashSet[Long](outerOidSize / 20)
-    val innerBitSet = new BitSet(maxOid.toInt)
-    val outerBitSet = new BitSet(maxOid.toInt)
+    val innerBitSet = new BitSet(maxOid.toInt + 1)
+    val outerBitSet = new BitSet(maxOid.toInt + 1)
     collectOids(innerBitSet, outerBitSet, edgeShuffles, parallelism)
 
     log.info(s"Found totally inner ${innerBitSet.cardinality()}, outer ${outerBitSet.cardinality()} in ${ExecutorUtils.getHostName}:${pid}")
