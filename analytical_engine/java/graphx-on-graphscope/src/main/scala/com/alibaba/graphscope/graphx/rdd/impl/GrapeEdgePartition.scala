@@ -344,8 +344,8 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
     log.info(s"all oids length ${innerOidSize}, all outer oids length ${outerOidSize}")
 //    val innerHashSet = new ThreadSafeOpenHashSet[Long](innerOidSize / 32)
 //    val outerHashSet = new ThreadSafeOpenHashSet[Long](outerOidSize / 32)
-    val innerHashSet = new OpenHashSet[Long]()
-    val outerHashSet = new OpenHashSet[Long]()
+    val innerHashSet = new OpenHashSet[Long](innerOidSize / 10)
+    val outerHashSet = new OpenHashSet[Long](outerOidSize / 10)
     collectOids(innerHashSet, outerHashSet, edgeShuffles, 1)
     log.info(s"after iteration, actual cpacity ${innerHashSet.capacity} ${outerHashSet.capacity}")
 
