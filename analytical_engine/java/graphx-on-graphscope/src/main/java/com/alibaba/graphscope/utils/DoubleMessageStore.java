@@ -31,7 +31,8 @@ public class DoubleMessageStore implements MessageStore<Double> {
         }
     }
 
-    public class MSGConsumer implements Runnable{
+    public class MSGConsumer implements Runnable {
+
         @Override
         public void run() {
             try {
@@ -87,7 +88,8 @@ public class DoubleMessageStore implements MessageStore<Double> {
     }
 
     public void startConsumer() {
-        for (int i = 0 ; i < tmpVertex.length; ++i) {
+        consumers = new Thread[tmpVertex.length];
+        for (int i = 0; i < tmpVertex.length; ++i) {
             Thread consumer = new Thread(new MSGConsumer());
             consumer.start();
             consumers[i] = consumer;
@@ -130,9 +132,9 @@ public class DoubleMessageStore implements MessageStore<Double> {
             }
             LongDouble newMsg = new LongDouble(lid, msg._2());
             msgQueue.put(newMsg);
-        //    if (!msgQueue.offer(newMsg)) {
-         //       throw new IllegalStateException("msg not accepted");
-         //   }
+            //    if (!msgQueue.offer(newMsg)) {
+            //       throw new IllegalStateException("msg not accepted");
+            //   }
         }
     }
 
