@@ -67,12 +67,6 @@ public class DoubleMessageStore implements MessageStore<Double> {
                         LongDouble tuple = msgQueue.poll(1, TimeUnit.MICROSECONDS);
                         while (tuple == null) {
                             if (msgQueue.size() <= 0) {
-                                logger.info("before notify logger");
-                                synchronized (logger) {
-                                    logger.notify();
-                                }
-                                logger.info("after notify logger");
-
                                 synchronized (msgQueue) {
                                     msgQueue.wait();
                                 }
@@ -151,18 +145,16 @@ public class DoubleMessageStore implements MessageStore<Double> {
     @Override
     public void flushMessages(BitSet nextSet, DefaultMessageManager messageManager,
         BaseGraphXFragment<Long, Long, ?, ?> fragment, int[] fid2WorkerId) throws IOException {
-        if (msgQueue.size() > 0){
+        while (msgQueue.size() > 0){
             logger.info("still {} msg in queue ",msgQueue.size());
             synchronized (msgQueue) {
                 msgQueue.notify();
             }
-        }
-        try {
-            synchronized (logger) {
-                logger.wait();
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
         if (msgQueue.size() > 0){
             throw new IllegalStateException("not possible");
