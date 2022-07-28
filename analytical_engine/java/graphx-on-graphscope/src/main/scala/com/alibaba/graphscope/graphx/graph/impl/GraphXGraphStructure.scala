@@ -36,12 +36,13 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 //  lazy val outDegreeArray: Array[Int] = getOutDegreeArray
 //  lazy val inOutDegreeArray: Array[Int] = getInOutDegreeArray
   //FIXME: bitset for long
-  override val mirrorVertices: Array[BitSet] = getMirrorVertices
+
 
   val oeOffsetsArray: ImmutableTypedArray[Long] = csr.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
 
   val ieOffsetsArray : ImmutableTypedArray[Long] = csr.getIEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
 
+  override val mirrorVertices: Array[BitSet] = getMirrorVertices
 //  val dstOids : Array[Long] = new Array[Long](csr.getOutEdgesNum.toInt)
 //  val dstLids : Array[Int] = new Array[Int](csr.getOutEdgesNum.toInt)
 //  def init() = {
