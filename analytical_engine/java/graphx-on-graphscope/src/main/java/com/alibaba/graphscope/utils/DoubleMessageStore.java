@@ -33,7 +33,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
 
     private final Logger logger = LoggerFactory.getLogger(DoubleMessageStore.class.getName());
 
-    private static int QUEUE_CAPACITY = 10000000;
+    private static int QUEUE_CAPACITY = 50000000;
     private double[] values;
     //    private AtomicDoubleArrayWrapper values;
     private Function2<Double, Double, Double> mergeMessage;
@@ -125,9 +125,10 @@ public class DoubleMessageStore implements MessageStore<Double> {
                 lid = srcLid;
             }
             LongDouble newMsg = new LongDouble(lid, msg._2());
-            if (!msgQueue.offer(newMsg)) {
-                throw new IllegalStateException("msg not accepted");
-            }
+            msgQueue.put(newMsg);
+        //    if (!msgQueue.offer(newMsg)) {
+         //       throw new IllegalStateException("msg not accepted");
+         //   }
         }
     }
 
