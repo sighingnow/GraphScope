@@ -70,7 +70,6 @@ public class DoubleMessageStore implements MessageStore<Double> {
                                 synchronized (msgQueue) {
                                     msgQueue.wait();
                                 }
-                                logger.info("after wait msgQueue");
                             }
                             if (msgQueue.size() > 0) {
                                 tuple = msgQueue.poll(1, TimeUnit.MICROSECONDS);
@@ -133,7 +132,6 @@ public class DoubleMessageStore implements MessageStore<Double> {
                 lid = srcLid;
             }
             LongDouble newMsg =new LongDouble(lid,msg._2());
-            logger.info("adding msg {}{} to queue ", newMsg.v, newMsg.u);
             if (!msgQueue.offer(newMsg)){
                 throw new IllegalStateException("msg not accepted");
             }
