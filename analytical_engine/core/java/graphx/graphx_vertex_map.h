@@ -127,6 +127,7 @@ class GraphXVertexMap
     this->ovnum_ = outer_lid2Gids_->length();
     this->tvnum_ = this->ivnum_ + this->ovnum_;
 
+    outer_gid2Lids_.resize(thread_num);
     for (int i = 0; i < thread_num; ++i) {
       outer_gid2Lids_[i].Construct(meta.GetMemberMeta("outerGid2Lids_" + i));
     }
