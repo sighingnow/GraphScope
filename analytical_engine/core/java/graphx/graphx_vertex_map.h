@@ -199,7 +199,7 @@ class GraphXVertexMap
   }
 
   bool GetOuterVertex(const oid_t& oid, vertex_t& v) {
-    vid_t gid,lid;
+    vid_t gid, lid;
     assert(GetGid(oid, gid));
     assert(OuterVertexGid2Lid(gid, lid));
     v.SetValue(lid);
@@ -492,10 +492,13 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
                 begin = std::min(ovnum, current_ind.fetch_add(
                                             4096, std::memory_order_relaxed));
                 end = std::min(begin + 4096, ovnum);
+                LOG(INFO) << "begin " << being << ", end" << end;
                 if (begin >= end) {
                   break;
                 }
                 for (int64_t j = begin; j < end; ++j) {
+                  LOG(INFO)
+                      << "j " << j << ", oid " << outer_lid2Oids_accessor_[j];
                   CHECK(getGid(outer_lid2Oids_accessor_[j], gid_builder[j]));
                 }
               }
