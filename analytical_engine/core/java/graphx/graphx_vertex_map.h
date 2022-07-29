@@ -492,13 +492,12 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
                 begin = std::min(ovnum, current_ind.fetch_add(
                                             4096, std::memory_order_relaxed));
                 end = std::min(begin + 4096, ovnum);
-                LOG(INFO) << "begin " << begin << ", end" << end;
                 if (begin >= end) {
                   break;
                 }
                 for (int64_t j = begin; j < end; ++j) {
-                  LOG(INFO)
-                      << "j " << j << ", oid " << outer_lid2Oids_accessor_[j];
+                  // LOG(INFO)
+                  // << "j " << j << ", oid " << outer_lid2Oids_accessor_[j];
                   CHECK(getGid(outer_lid2Oids_accessor_[j], gid_builder[j]));
                 }
               }
@@ -690,11 +689,12 @@ class BasicGraphXVertexMapBuilder
 #endif
 
     grape::fid_t curFid = comm_spec_.fid();
-    std::atomic<grape::fid_t> current_fid(0);
+
     int thread_num =
         (std::thread::hardware_concurrency() + comm_spec_.local_num() - 1) /
         comm_spec_.local_num();
     {
+      std::atomic<grape::fid_t> current_fid(0);
       std::vector<std::thread> threads(thread_num);
       for (int i = 0; i < thread_num; ++i) {
         threads[i] = std::thread(
@@ -730,6 +730,7 @@ class BasicGraphXVertexMapBuilder
               << (oidArrayTime - start_ts) << " seconds";
 #endif
     {
+      std::atomic<grape::fid_t> current_fid(0);
       std::vector<std::thread> threads(thread_num);
       for (int i = 0; i < thread_num; ++i) {
         threads[i] = std::thread(
