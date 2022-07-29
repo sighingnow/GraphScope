@@ -535,9 +535,9 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
         threads[i] = std::thread(
             [&](int fid) {
               vineyard::HashmapBuilder<vid_t, vid_t> builder(client);
-              builder.reserve(static_cast<size_t>(ovnum));
-              int64_t begin = std::min(chunk_size * fid, ivnum);
-              int64_t end = std::min(begin + chunk_size, ivnum);
+              builder.reserve(static_cast<size_t>(chunk_size));
+              int64_t begin = std::min(chunk_size * fid, ovnum);
+              int64_t end = std::min(begin + chunk_size, ovnum);
               for (int j = begin; j < end; ++j) {
                 builder.emplace(gid_accessor[j], j + ivnum);
               }
