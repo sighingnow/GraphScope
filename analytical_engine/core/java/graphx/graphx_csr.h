@@ -59,14 +59,14 @@
  *
  */
 namespace gs {
-struct int64_atomic{
-   std::atomic<int64_t> atomic_{0};
-   int64_atomic():atomic_{0} {};
-   int64_atomic(const int64_atomic& other) : atomic_(other.atomic_.load()) {}
-   int64_atomic &operator = (const int64_atomic& other) {
-      atomic_.store(other.atomic_.load());
-      return *this;
-   }
+struct int64_atomic {
+  std::atomic<int64_t> atomic_{0};
+  int64_atomic() : atomic_{0} {};
+  int64_atomic(const int64_atomic& other) : atomic_(other.atomic_.load()) {}
+  int64_atomic& operator=(const int64_atomic& other) {
+    atomic_.store(other.atomic_.load());
+    return *this;
+  }
 };
 
 template <typename VID_T>
@@ -423,15 +423,18 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     std::vector<vid_t> srcLids, dstLids;
     srcLids.resize(edges_num_);
     dstLids.resize(edges_num_);
+    int thread_num =
+        (std::thread::hardware_concurrency() + local_num - 1) / local_num;
+    int64_t chunkSize = 8192;
+    int64_t num_chunks = (edges_num_ + chunkSize - 1) / chunkSize;
+    LOG(INFO) << "thread num " << thread_num << ", chunk size: " << chunkSize
+              << "num chunks " << num_chunks;
+#if defined(WITH_PROFILING)
+    auto start_ts = grape::GetCurrentTime();
+#endif
     {
-      int thread_num =
-          (std::thread::hardware_concurrency() + local_num - 1) / local_num;
       // int thread_num = 1;
       std::atomic<int> current_chunk(0);
-      int64_t chunkSize = 8192;
-      int64_t num_chunks = (edges_num_ + chunkSize - 1) / chunkSize;
-      LOG(INFO) << "thread num " << thread_num << ", chunk size: " << chunkSize
-                << "num chunks " << num_chunks;
       std::vector<std::thread> work_threads(thread_num);
       for (int i = 0; i < thread_num; ++i) {
         work_threads[i] = std::thread(
@@ -465,38 +468,75 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
         thrd.join();
       }
     }
-    LOG(INFO) << "Finish building lid array";
+#if defined(WITH_PROFILING)
+    auto build_lid_time = grape::GetCurrentTime();
+    LOG(INFO) << "Finish building lid arra edges cost"
+              << (build_lid_time - start_ts) << " seconds";
+#endif
 
     ie_degree_.clear();
     oe_degree_.clear();
     ie_degree_.resize(vnum_, 0);
     oe_degree_.resize(vnum_, 0);
 
+    grape::Bitset in_edge_active, out_edge_active;
+    build_degree_and_active(in_edge_active, out_edge_active, srcLids, dstLids,
+                            edges_num_, chunkSize, num_chunks, thread_num);
+#if defined(WITH_PROFILING)
+    auto degree_time = grape::GetCurrentTime();
+    LOG(INFO) << "Finish building degree time cost"
+              << (degree_time - build_lid_time) << " seconds";
+#endif
     LOG(INFO) << "Loading edges size " << edges_num_
               << "vertices num: " << vnum_;
-    grape::Bitset in_edge_active, out_edge_active;
-    in_edge_active.init(edges_num_);
-    out_edge_active.init(edges_num_);
-    for (auto i = 0; i < edges_num_; ++i) {
-      auto src_lid = srcLids[i];
-      if (src_lid < vnum_) {
-        ++oe_degree_[src_lid];
-        out_edge_active.set_bit(i);
-      }
-    }
-    for (auto i = 0; i < edges_num_; ++i) {
-      auto dst_lid = dstLids[i];
-      if (dst_lid < vnum_) {
-        ++ie_degree_[dst_lid];
-        in_edge_active.set_bit(i);
-      }
-    }
-
     build_offsets();
     add_edges(vnum_, local_num, srcLids, dstLids, in_edge_active,
-              out_edge_active);
-    sort();
+              out_edge_active, edges_num_, chunkSize, num_chunks, thread_num);
+    sort(thread_num);
     return {};
+  }
+
+  void build_degree_and_active(grape::Bitset& in_edge_active,
+                               grape::Bitset& out_edge_active,
+                               std::vector<vid_t>& srcLids,
+                               std::vector<vid_t>& dstLids, int64_t edges_num_,
+                               int64_t chunkSize, int64_t num_chunks,
+                               int64_t thread_num) {
+    in_edge_active.init(edges_num_);
+    out_edge_active.init(edges_num_);
+    std::atomic<int> current_edge(0);
+    std::vector<std::thread> work_threads(thread_num);
+    for (int i = 0; i < thread_num; ++i) {
+      work_threads[i] = std::thread(
+          [&](int tid) {
+            int got;
+            int64_t begin, end;
+            while (true) {
+              got = current_edge.fetch_add(1, std::memory_order_relaxed);
+              if (got >= num_chunks) {
+                break;
+              }
+              begin = std::min(edges_num_, got * chunkSize);
+              end = std::min(edges_num_, begin + chunkSize);
+              for (auto j = begin; j < end; ++j) {
+                auto src_lid = srcLids[j];
+                if (src_lid < vnum_) {
+                  ++oe_degree_[src_lid];
+                  out_edge_active.set_bit(j);
+                }
+                auto dst_lid = dstLids[j];
+                if (dst_lid < vnum_) {
+                  ++ie_degree_[dst_lid];
+                  in_edge_active.set_bit(j);
+                }
+              }
+            }
+          },
+          i);
+    }
+    for (auto& thrd : work_threads) {
+      thrd.join();
+    }
   }
 
   vineyard::Status Build(vineyard::Client& client) override {
@@ -605,12 +645,11 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
                  const std::vector<vid_t>& src_accessor,
                  const std::vector<vid_t>& dst_accessor,
                  const grape::Bitset& in_edge_active,
-                 const grape::Bitset& out_edge_active) {
+                 const grape::Bitset& out_edge_active, int64_t edges_num_,
+                 int64_t chunkSize, int64_t num_chunks, int64_t thread_num) {
 #if defined(WITH_PROFILING)
     auto start_ts = grape::GetCurrentTime();
 #endif
-    // edata_array_builder_t edata_builder_;
-    auto edges_num_ = (int64_t) src_accessor.size();
 
     nbr_t* ie_mutable_ptr_begin = in_edge_builder_.MutablePointer(0);
     nbr_t* oe_mutable_ptr_begin = out_edge_builder_.MutablePointer(0);
@@ -627,12 +666,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
       //      atomic_ie_offsets.emplace_back(ie_offsets_[i]);
     }
     {
-      int thread_num =
-          (std::thread::hardware_concurrency() + local_num - 1) / local_num;
-      // int thread_num = 1;
       std::atomic<int> current_chunk(0);
-      int64_t chunkSize = 8192;
-      int64_t num_chunks = (edges_num_ + chunkSize - 1) / chunkSize;
       LOG(INFO) << "thread num " << thread_num << ", chunk size: " << chunkSize
                 << "num chunks " << num_chunks;
       std::vector<std::thread> work_threads(thread_num);
@@ -682,30 +716,50 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
 #endif
   }
 
-  void sort() {
+  void sort(int64_t thread_num) {
 #if defined(WITH_PROFILING)
     auto start_ts = grape::GetCurrentTime();
 #endif
-    {
-      const int64_t* offsets_ptr = ie_offset_array_->raw_values();
-      for (VID_T i = 0; i < vnum_; ++i) {
-        nbr_t* begin = in_edge_builder_.MutablePointer(offsets_ptr[i]);
-        nbr_t* end = in_edge_builder_.MutablePointer(offsets_ptr[i + 1]);
-        std::sort(begin, end, [](const nbr_t& lhs, const nbr_t& rhs) {
-          return lhs.vid < rhs.vid;
-        });
-      }
+    int64_t chunkSize = 8192;
+    int64_t num_chunks = (vnum_ + chunkSize - 1) / chunkSize;
+    std::atomic<int> current_chunk(0);
+    LOG(INFO) << "thread num " << thread_num << ", chunk size: " << chunkSize
+              << "num chunks " << num_chunks;
+    std::vector<std::thread> work_threads(thread_num);
+    for (int i = 0; i < thread_num; ++i) {
+      work_threads[i] = std::thread(
+          [&](int tid) {
+            int got;
+            int64_t begin, end;
+            while (true) {
+              got = current_chunk.fetch_add(1, std::memory_order_relaxed);
+              if (got >= num_chunks) {
+                break;
+              }
+              begin = std::min(vnum_, got * chunkSize);
+              end = std::min(vnum_, begin + chunkSize);
+              for (int64_t j = begin; j < end; ++j) {
+                nbr_t* begin = in_edge_builder_.MutablePointer(offsets_ptr[j]);
+                nbr_t* end =
+                    in_edge_builder_.MutablePointer(offsets_ptr[j + 1]);
+                std::sort(begin, end, [](const nbr_t& lhs, const nbr_t& rhs) {
+                  return lhs.vid < rhs.vid;
+                });
+                nbr_t* begin = out_edge_builder_.MutablePointer(offsets_ptr[j]);
+                nbr_t* end =
+                    out_edge_builder_.MutablePointer(offsets_ptr[j + 1]);
+                std::sort(begin, end, [](const nbr_t& lhs, const nbr_t& rhs) {
+                  return lhs.vid < rhs.vid;
+                });
+              }
+            }
+          },
+          i);
     }
-    {
-      const int64_t* offsets_ptr = oe_offset_array_->raw_values();
-      for (VID_T i = 0; i < vnum_; ++i) {
-        nbr_t* begin = out_edge_builder_.MutablePointer(offsets_ptr[i]);
-        nbr_t* end = out_edge_builder_.MutablePointer(offsets_ptr[i + 1]);
-        std::sort(begin, end, [](const nbr_t& lhs, const nbr_t& rhs) {
-          return lhs.vid < rhs.vid;
-        });
-      }
+    for (auto& thrd : work_threads) {
+      thrd.join();
     }
+
 #if defined(WITH_PROFILING)
     auto finish_seal_ts = grape::GetCurrentTime();
     LOG(INFO) << "Sort edges cost" << (finish_seal_ts - start_ts) << " seconds";

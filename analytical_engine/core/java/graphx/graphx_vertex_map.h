@@ -61,6 +61,7 @@ template <typename OID_T, typename VID_T>
 class GraphXVertexMap
     : public vineyard::Registered<GraphXVertexMap<OID_T, VID_T>> {
  public:
+  static constexpr int thread_num = 4;
   using oid_t = OID_T;
   using vid_t = VID_T;
   using oid_array_t = typename vineyard::ConvertToArrowType<oid_t>::ArrayType;
@@ -126,7 +127,9 @@ class GraphXVertexMap
     this->ovnum_ = outer_lid2Gids_->length();
     this->tvnum_ = this->ivnum_ + this->ovnum_;
 
-    outer_gid2Lids_.Construct(meta.GetMemberMeta("outerGid2Lids"));
+    for (int i = 0; i < thread_num; ++i) {
+      outer_gid2Lids_[i].Construct(meta.GetMemberMeta("outerGid2Lids_" + i));
+    }
 
     LOG(INFO) << "Finish constructing global vertex map, ivnum: " << ivnum_
               << "ovnum: " << ovnum_ << " tvnum: " << tvnum_;
@@ -196,15 +199,10 @@ class GraphXVertexMap
   }
 
   bool GetOuterVertex(const oid_t& oid, vertex_t& v) {
-    vid_t gid;
+    vid_t gid.lid;
     assert(GetGid(oid, gid));
-    auto iter = outer_gid2Lids_.find(gid);
-    if (iter == outer_gid2Lids_.end()) {
-      LOG(ERROR) << "No outer vertex with oid: " << oid << "found in frag "
-                 << fid_;
-      return false;
-    }
-    v.SetValue(iter->second);
+    assert(OuterVertexGid2Lid(gid, lid));
+    v.SetValue(lid);
     return true;
   }
 
@@ -231,13 +229,17 @@ class GraphXVertexMap
   }
 
   inline bool OuterVertexGid2Lid(const VID_T gid, VID_T& lid) const {
-    auto iter = outer_gid2Lids_.find(gid);
-    if (iter == outer_gid2Lids_.end()) {
-      LOG(ERROR) << "worker [" << fid_ << "find no lid for outer gid" << gid;
-      return false;
+    int fid = 0;
+    while (fid < thread_num) {
+      auto iter = outer_gid2Lids_[fid].find(gid);
+      if (iter != outer_gid2Lids_[fid].end()) {
+        lid = iter->second;
+        return true;
+      }
+      fid += 1;
     }
-    lid = iter->second;
-    return true;
+    LOG(ERROR) << "worker [" << fid_ << "find no lid for outer gid" << gid;
+    return false;
   }
 
   inline VID_T Vertex2Gid(const vertex_t& v) {
@@ -317,12 +319,9 @@ class GraphXVertexMap
     if (GetFidFromGid(gid) == fid_) {
       return id_parser_.get_local_id(gid);
     } else {
-      auto iter = outer_gid2Lids_.find(gid);
-      if (iter == outer_gid2Lids_.end()) {
-        LOG(ERROR) << "worker [" << fid_ << "find no lid for outer gid" << gid;
-        return -1;
-      }
-      return iter->second;
+      vid_t vid;
+      CHECK(OuterVertexGid2Lid(gid, vid));
+      return vid;
     }
   }
 
@@ -387,7 +386,7 @@ class GraphXVertexMap
   std::vector<gs::graphx::ImmutableTypedArray<oid_t>> lid2Oids_accessor_;
   gs::graphx::ImmutableTypedArray<vid_t> outer_lid2Gids_accessor_;
   std::shared_ptr<vid_array_t> outer_lid2Gids_;
-  vineyard::Hashmap<vid_t, vid_t> outer_gid2Lids_;
+  std::vector<vineyard::Hashmap<vid_t, vid_t>> outer_gid2Lids_;
   std::shared_ptr<arrow::Int32Array> fid2Pid_, pid2Fid_;
 
   template <typename _OID_T, typename _VID_T>
@@ -526,19 +525,36 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
       vertex_map->meta_.AddMember("outerLid2Gids", vineyard_gid_array.meta());
     }
     {
-      vineyard::HashmapBuilder<vid_t, vid_t> builder(client);
+      int thread_num = GraphxVertexMap<oid_t, vid_t>::thread_num;
+      vertex_map->outer_gid2Lids_.resize(thread_num);
+      std::vector<std::thread> threads(thread_num);
       auto& gid_accessor = vertex_map->outer_lid2Gids_accessor_;
+      int64_t chunk_size = (ovnum + thread_num - 1) / thread_num;
       auto ivnum = vertex_map->ivnum_;
-      builder.reserve(static_cast<size_t>(ovnum));
-      for (int i = 0; i < ovnum; ++i) {
-        builder.emplace(gid_accessor[i], i + ivnum);
+      for (int i = 0; i < thread_num; ++i) {
+        threads[i] = std::thread(
+            [&](int fid) {
+              vineyard::HashmapBuilder<vid_t, vid_t> builder(client);
+              builder.reserve(static_cast<size_t>(ovnum));
+              int64_t begin = std::min(chunk_size * fid, ivnum);
+              int64_t end = std::min(begin + chunk_size, ivnum);
+              for (int j = begin; j < end; ++j) {
+                builder.emplace(gid_accessor[j], j + ivnum);
+              }
+              vertex_map->outer_gid2Lids_[fid] =
+                  *std::dynamic_pointer_cast<vineyard::Hashmap<vid_t, vid_t>>(
+                      builder.Seal(client));
+            },
+            i);
       }
-      vertex_map->outer_gid2Lids_ =
-          *std::dynamic_pointer_cast<vineyard::Hashmap<vid_t, vid_t>>(
-              builder.Seal(client));
-      nbytes += vertex_map->outer_gid2Lids_.nbytes();
-      vertex_map->meta_.AddMember("outerGid2Lids",
-                                  vertex_map->outer_gid2Lids_.meta());
+      for (int i = 0; i < thread_num; ++i) {
+        threads[i].join();
+      }
+      for (int i = 0; i < thread_num; ++i) {
+        nbytes += vertex_map->outer_gid2Lids_[i].nbytes();
+        vertex_map->meta_.AddMember("outerGid2Lids_" + i,
+                                    vertex_map->outer_gid2Lids_[i].meta());
+      }
     }
 #if defined(WITH_PROFILING)
     auto time2 = grape::GetCurrentTime();
