@@ -114,7 +114,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
         val vec = projectedFragment.mirrorVertices(i)
         val size = vec.size().toInt
         log.info(s"frag ${fid()} has ${size} mirror vertices on frag-${i}")
-        val curArray = new ThreadSafeBitSet(size)
+        val curArray = new ThreadSafeBitSet()
         var j =0
         while (j < size){
           curArray.set(vec.get(j).GetValue().toInt)
