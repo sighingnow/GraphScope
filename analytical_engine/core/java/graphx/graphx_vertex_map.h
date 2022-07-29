@@ -199,7 +199,7 @@ class GraphXVertexMap
   }
 
   bool GetOuterVertex(const oid_t& oid, vertex_t& v) {
-    vid_t gid.lid;
+    vid_t gid,lid;
     assert(GetGid(oid, gid));
     assert(OuterVertexGid2Lid(gid, lid));
     v.SetValue(lid);
@@ -525,12 +525,12 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
       vertex_map->meta_.AddMember("outerLid2Gids", vineyard_gid_array.meta());
     }
     {
-      int thread_num = GraphxVertexMap<oid_t, vid_t>::thread_num;
+      int thread_num = GraphXVertexMap<oid_t, vid_t>::thread_num;
       vertex_map->outer_gid2Lids_.resize(thread_num);
       std::vector<std::thread> threads(thread_num);
       auto& gid_accessor = vertex_map->outer_lid2Gids_accessor_;
       int64_t chunk_size = (ovnum + thread_num - 1) / thread_num;
-      auto ivnum = vertex_map->ivnum_;
+      int64_t ivnum = static_cast<int64_t>(vertex_map->ivnum_);
       for (int i = 0; i < thread_num; ++i) {
         threads[i] = std::thread(
             [&](int fid) {

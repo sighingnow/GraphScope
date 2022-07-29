@@ -726,28 +726,31 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     LOG(INFO) << "thread num " << thread_num << ", chunk size: " << chunkSize
               << "num chunks " << num_chunks;
     std::vector<std::thread> work_threads(thread_num);
+    const int64_t* ie_offsets_ptr = ie_offset_array_->raw_values();
+    const int64_t* oe_offsets_ptr = oe_offset_array_->raw_values();
     for (int i = 0; i < thread_num; ++i) {
       work_threads[i] = std::thread(
           [&](int tid) {
             int got;
-            int64_t begin, end;
+            int64_t start, limit;
+            nbr_t* begin, *end;
             while (true) {
               got = current_chunk.fetch_add(1, std::memory_order_relaxed);
               if (got >= num_chunks) {
                 break;
               }
-              begin = std::min(vnum_, got * chunkSize);
-              end = std::min(vnum_, begin + chunkSize);
-              for (int64_t j = begin; j < end; ++j) {
-                nbr_t* begin = in_edge_builder_.MutablePointer(offsets_ptr[j]);
-                nbr_t* end =
-                    in_edge_builder_.MutablePointer(offsets_ptr[j + 1]);
+              start = std::min(static_cast<int64_t>(vnum_), got * chunkSize);
+              limit = std::min(static_cast<int64_t>(vnum_), start + chunkSize);
+              for (int64_t j = start; j < limit; ++j) {
+                begin = in_edge_builder_.MutablePointer(ie_offsets_ptr[j]);
+                end =
+                    in_edge_builder_.MutablePointer(ie_offsets_ptr[j + 1]);
                 std::sort(begin, end, [](const nbr_t& lhs, const nbr_t& rhs) {
                   return lhs.vid < rhs.vid;
                 });
-                nbr_t* begin = out_edge_builder_.MutablePointer(offsets_ptr[j]);
-                nbr_t* end =
-                    out_edge_builder_.MutablePointer(offsets_ptr[j + 1]);
+                begin = out_edge_builder_.MutablePointer(oe_offsets_ptr[j]);
+                end =
+                    out_edge_builder_.MutablePointer(oe_offsets_ptr[j + 1]);
                 std::sort(begin, end, [](const nbr_t& lhs, const nbr_t& rhs) {
                   return lhs.vid < rhs.vid;
                 });
