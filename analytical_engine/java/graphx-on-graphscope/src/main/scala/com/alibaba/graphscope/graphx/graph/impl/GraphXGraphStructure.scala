@@ -140,7 +140,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     val res = new Array[ThreadSafeBitSet](fnum())
     val ivnum = vm.innerVertexSize().toInt
     for (i <- res.indices){
-      res(i) = new ThreadSafeBitSet(ivnum)
+      res(i) = new ThreadSafeBitSet()
     }
     var lid = 0;
     val curFid = fid()
