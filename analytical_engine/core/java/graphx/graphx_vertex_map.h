@@ -492,13 +492,13 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
                 begin = std::min(ovnum, current_ind.fetch_add(
                                             4096, std::memory_order_relaxed));
                 end = std::min(begin + 4096, ovnum);
-                LOG(INFO) << "begin " << being << ", end" << end;
+                // LOG(INFO) << "begin " << being << ", end" << end;
                 if (begin >= end) {
                   break;
                 }
                 for (int64_t j = begin; j < end; ++j) {
-                  LOG(INFO)
-                      << "j " << j << ", oid " << outer_lid2Oids_accessor_[j];
+                  // LOG(INFO)
+                  // << "j " << j << ", oid " << outer_lid2Oids_accessor_[j];
                   CHECK(getGid(outer_lid2Oids_accessor_[j], gid_builder[j]));
                 }
               }
