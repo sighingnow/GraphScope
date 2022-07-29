@@ -690,11 +690,12 @@ class BasicGraphXVertexMapBuilder
 #endif
 
     grape::fid_t curFid = comm_spec_.fid();
-    std::atomic<grape::fid_t> current_fid(0);
+
     int thread_num =
         (std::thread::hardware_concurrency() + comm_spec_.local_num() - 1) /
         comm_spec_.local_num();
     {
+      std::atomic<grape::fid_t> current_fid(0);
       std::vector<std::thread> threads(thread_num);
       for (int i = 0; i < thread_num; ++i) {
         threads[i] = std::thread(
@@ -730,6 +731,7 @@ class BasicGraphXVertexMapBuilder
               << (oidArrayTime - start_ts) << " seconds";
 #endif
     {
+      std::atomic<grape::fid_t> current_fid(0);
       std::vector<std::thread> threads(thread_num);
       for (int i = 0; i < thread_num; ++i) {
         threads[i] = std::thread(
