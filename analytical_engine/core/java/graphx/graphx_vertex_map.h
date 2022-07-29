@@ -675,50 +675,81 @@ class BasicGraphXVertexMapBuilder
     int thread_num =
         (std::thread::hardware_concurrency() + comm_spec_.local_num() - 1) /
         comm_spec_.local_num();
-    std::vector<std::thread> threads(thread_num);
-    for (int i = 0; i < thread_num; ++i) {
-      threads[i] = std::thread(
-          [&](int fid) {
-            grape::fid_t cur_fid;
-            while (true) {
-              cur_fid = current_fid.fetch_add(1, std::memory_order_relaxed);
-              if (cur_fid >= comm_spec_.fnum()) {
-                break;
-              }
-              if (cur_fid == curFid) {
-                this->SetOidArray(cur_fid, partial_vmap->GetInnerLid2Oid());
-                // builder for outer lid 2 gid
-              } else {
-                typename vineyard::InternalType<oid_t>::vineyard_builder_type
-                    array_builder(client, collected_oids[cur_fid]);
-                this->SetOidArray(
-                    cur_fid,
-                    *std::dynamic_pointer_cast<vineyard::NumericArray<oid_t>>(
-                        array_builder.Seal(client)));
-              }
-              vineyard::HashmapBuilder<oid_t, vid_t> builder(client);
-              auto array = collected_oids[cur_fid]->raw_values();
-              {
-                int64_t vnum = collected_oids[cur_fid]->length();
-                builder.reserve(static_cast<size_t>(vnum));
-                for (int64_t k = 0; k < vnum; ++k) {
-                  builder.emplace(array[k], k);
+    {
+      std::vector<std::thread> threads(thread_num);
+      for (int i = 0; i < thread_num; ++i) {
+        threads[i] = std::thread(
+            [&](int fid) {
+              grape::fid_t cur_fid;
+              while (true) {
+                cur_fid = current_fid.fetch_add(1, std::memory_order_relaxed);
+                if (cur_fid >= comm_spec_.fnum()) {
+                  break;
+                }
+                if (cur_fid == curFid) {
+                  this->SetOidArray(cur_fid, partial_vmap->GetInnerLid2Oid());
+                  // builder for outer lid 2 gid
+                } else {
+                  typename vineyard::InternalType<oid_t>::vineyard_builder_type
+                      array_builder(client, collected_oids[cur_fid]);
+                  this->SetOidArray(
+                      cur_fid,
+                      *std::dynamic_pointer_cast<vineyard::NumericArray<oid_t>>(
+                          array_builder.Seal(client)));
                 }
               }
-              // may be reuse local vm.
-              {
-                this->SetOid2Lid(
-                    cur_fid,
-                    *std::dynamic_pointer_cast<vineyard::Hashmap<oid_t, vid_t>>(
-                        builder.Seal(client)));
+            },
+            i);
+      }
+      for (auto& thrd : threads) {
+        thrd.join();
+      }
+    }
+#if defined(WITH_PROFILING)
+    auto oidArrayTime = grape::GetCurrentTime();
+    LOG(INFO) << "Buillding GraphX vertex map oid array"
+              << (oidArrayTime - start_ts) << " seconds";
+#endif
+    {
+      std::vector<std::thread> threads(thread_num);
+      for (int i = 0; i < thread_num; ++i) {
+        threads[i] = std::thread(
+            [&](int fid) {
+              grape::fid_t cur_fid;
+              while (true) {
+                cur_fid = current_fid.fetch_add(1, std::memory_order_relaxed);
+                if (cur_fid >= comm_spec_.fnum()) {
+                  break;
+                }
+                vineyard::HashmapBuilder<oid_t, vid_t> builder(client);
+                auto array = collected_oids[cur_fid]->raw_values();
+                {
+                  int64_t vnum = collected_oids[cur_fid]->length();
+                  builder.reserve(static_cast<size_t>(vnum));
+                  for (int64_t k = 0; k < vnum; ++k) {
+                    builder.emplace(array[k], k);
+                  }
+                }
+                // may be reuse local vm.
+                {
+                  this->SetOid2Lid(cur_fid,
+                                   *std::dynamic_pointer_cast<
+                                       vineyard::Hashmap<oid_t, vid_t>>(
+                                       builder.Seal(client)));
+                }
               }
-            }
-          },
-          i);
+            },
+            i);
+      }
+      for (auto& thrd : threads) {
+        thrd.join();
+      }
     }
-    for (auto& thrd : threads) {
-      thrd.join();
-    }
+#if defined(WITH_PROFILING)
+    auto oid2LidTime = grape::GetCurrentTime();
+    LOG(INFO) << "Buillding oid2Lid cost" << (oid2LidTime - oidArrayTime)
+              << " seconds";
+#endif
 
     {
       // gather grape pid <-> graphx pid matching.

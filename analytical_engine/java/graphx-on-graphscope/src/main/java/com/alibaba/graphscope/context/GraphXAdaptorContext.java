@@ -104,6 +104,7 @@ public class GraphXAdaptorContext<VDATA_T, EDATA_T, MSG>
         int fnum = frag.fnum();
         int splitSize = (numPart + fnum - 1) / fnum;
         int myParallelism = calcMyParallelism(numPart,splitSize, frag.fid());
+        logger.info("frag {} parallelism {}", frag.fid(), myParallelism);
         String workerIdToFidStr = jsonObject.getString("worker_id_to_fid");
         if (workerIdToFidStr == null || workerIdToFidStr.isEmpty()){
             throw new IllegalStateException("expect worker id to fid mapping");
