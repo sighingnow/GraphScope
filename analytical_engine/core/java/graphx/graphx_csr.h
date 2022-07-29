@@ -481,7 +481,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
 
     grape::Bitset in_edge_active, out_edge_active;
     build_degree_and_active(in_edge_active, out_edge_active, srcLids, dstLids,
-                            edges_num_, chunkSize, num_chunks, thread_num);
+                            edges_num_);
 #if defined(WITH_PROFILING)
     auto degree_time = grape::GetCurrentTime();
     LOG(INFO) << "Finish building degree time cost"
@@ -499,41 +499,34 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
   void build_degree_and_active(grape::Bitset& in_edge_active,
                                grape::Bitset& out_edge_active,
                                std::vector<vid_t>& srcLids,
-                               std::vector<vid_t>& dstLids, int64_t edges_num_,
-                               int64_t chunkSize, int64_t num_chunks,
-                               int64_t thread_num) {
+                               std::vector<vid_t>& dstLids,
+                               int64_t edges_num_) {
     in_edge_active.init(edges_num_);
     out_edge_active.init(edges_num_);
-    std::atomic<int> current_edge(0);
-    std::vector<std::thread> work_threads(thread_num);
-    for (int i = 0; i < thread_num; ++i) {
-      work_threads[i] = std::thread(
-          [&](int tid) {
-            int got;
-            int64_t begin, end;
-            while (true) {
-              got = current_edge.fetch_add(1, std::memory_order_relaxed);
-              if (got >= num_chunks) {
-                break;
-              }
-              begin = std::min(edges_num_, got * chunkSize);
-              end = std::min(edges_num_, begin + chunkSize);
-              for (auto j = begin; j < end; ++j) {
-                auto src_lid = srcLids[j];
-                if (src_lid < vnum_) {
-                  ++oe_degree_[src_lid];
-                  out_edge_active.set_bit(j);
-                }
-                auto dst_lid = dstLids[j];
-                if (dst_lid < vnum_) {
-                  ++ie_degree_[dst_lid];
-                  in_edge_active.set_bit(j);
-                }
-              }
+    std::vector<std::thread> work_threads(2);
+    work_threads[0] = std::thread(
+        [&](int tid) {
+          for (auto j = 0; j < edges_num_; ++j) {
+            auto src_lid = srcLids[j];
+            if (src_lid < vnum_) {
+              ++oe_degree_[src_lid];
+              out_edge_active.set_bit(j);
             }
-          },
-          i);
-    }
+          }
+        },
+        i);
+    work_threads[1] = std::thread(
+        [&](int tid) {
+          for (auto j = 0; j < edges_num_; ++j) {
+            auto dst_lid = dstLids[j];
+            if (dst_lid < vnum_) {
+              ++ie_degree_[dst_lid];
+              in_edge_active.set_bit(j);
+            }
+          }
+        },
+        i);
+
     for (auto& thrd : work_threads) {
       thrd.join();
     }
@@ -733,7 +726,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
           [&](int tid) {
             int got;
             int64_t start, limit;
-            nbr_t* begin, *end;
+            nbr_t *begin, *end;
             while (true) {
               got = current_chunk.fetch_add(1, std::memory_order_relaxed);
               if (got >= num_chunks) {
@@ -743,14 +736,12 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
               limit = std::min(static_cast<int64_t>(vnum_), start + chunkSize);
               for (int64_t j = start; j < limit; ++j) {
                 begin = in_edge_builder_.MutablePointer(ie_offsets_ptr[j]);
-                end =
-                    in_edge_builder_.MutablePointer(ie_offsets_ptr[j + 1]);
+                end = in_edge_builder_.MutablePointer(ie_offsets_ptr[j + 1]);
                 std::sort(begin, end, [](const nbr_t& lhs, const nbr_t& rhs) {
                   return lhs.vid < rhs.vid;
                 });
                 begin = out_edge_builder_.MutablePointer(oe_offsets_ptr[j]);
-                end =
-                    out_edge_builder_.MutablePointer(oe_offsets_ptr[j + 1]);
+                end = out_edge_builder_.MutablePointer(oe_offsets_ptr[j + 1]);
                 std::sort(begin, end, [](const nbr_t& lhs, const nbr_t& rhs) {
                   return lhs.vid < rhs.vid;
                 });

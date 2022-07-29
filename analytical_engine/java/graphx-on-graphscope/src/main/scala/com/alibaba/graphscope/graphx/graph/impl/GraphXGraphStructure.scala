@@ -142,7 +142,6 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     for (i <- res.indices){
       res(i) = new ThreadSafeBitSet()
     }
-    var lid = 0;
     val curFid = fid()
     val threads = new Array[Thread](parallelism)
     val atomicInt = new AtomicInteger(0)
