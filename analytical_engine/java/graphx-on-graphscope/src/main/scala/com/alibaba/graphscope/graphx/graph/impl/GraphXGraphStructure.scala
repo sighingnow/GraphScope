@@ -7,15 +7,17 @@ import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{GraphStructureTy
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTripletImpl, GraphStructure, ReusableEdgeImpl}
 import com.alibaba.graphscope.graphx.store.{AbstractDataStore, DataStore, InHeapDataStore}
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, BitSetWithOffset, IdParser, PrimitiveVector}
+import com.alibaba.graphscope.utils.ThreadSafeBitSet
 import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 /** the edge array only contains out edges, we use in edge as a comparison  */
-class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphXCSR[Long], val localNum : Int) extends GraphStructure with Logging{
+class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphXCSR[Long], val parallelism : Int) extends GraphStructure with Logging{
   val oeBeginNbr = csr.getOEBegin(0)
   val oeBeginAddr = oeBeginNbr.getAddress
   val ieBeginNbr = csr.getIEBegin(0)
@@ -42,7 +44,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   val ieOffsetsArray : ImmutableTypedArray[Long] = csr.getIEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
 
-  override val mirrorVertices: Array[BitSet] = getMirrorVertices
+  override val mirrorVertices: Array[ThreadSafeBitSet] = getMirrorVertices
 //  val dstOids : Array[Long] = new Array[Long](csr.getOutEdgesNum.toInt)
 //  val dstLids : Array[Int] = new Array[Int](csr.getOutEdgesNum.toInt)
 //  def init() = {
@@ -133,54 +135,68 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     res
   }
 
-  private def getMirrorVertices : Array[BitSet] = {
+  private def getMirrorVertices : Array[ThreadSafeBitSet] = {
     val time0 = System.nanoTime()
-    val res = new Array[BitSet](fnum())
+    val res = new Array[ThreadSafeBitSet](fnum())
     val ivnum = vm.innerVertexSize().toInt
     for (i <- res.indices){
-      res(i) = new BitSet(ivnum)
+      res(i) = new ThreadSafeBitSet(ivnum)
     }
     var lid = 0;
     val curFid = fid()
-//    val threads = new Array[Thread](localNum)
-//    var tid = 0
-//    while (tid < localNum){
-//      val newThread= new Thread(){
-//        override def run(): Unit = {
-//        }
-//      }
-//      newThread.start()
-//      threads(tid) = newThread
-//      tid += 1
-//    }
-//    for (i <- 0 until localNum){
-//      threads(i).join()
-//    }
-    val flags = new Array[Boolean](fnum())
-    while (lid < ivnum){
-      for (i <- flags.indices){
-        flags(i) = false
-      }
-      //only in edges are enough
-      var beginOffset = getIEBeginOffset(lid)
-      val endOffset = getIEEndOffset(lid)
-      var address = ieBeginAddr + (beginOffset << 4)
-      while (beginOffset < endOffset){
-        val dstLid = JavaRuntime.getLong(address)
-        if (dstLid >= ivnum) {
-          val dstFid = getOuterVertexFid(dstLid)
-          flags(dstFid) = true
+    val threads = new Array[Thread](parallelism)
+    val atomicInt = new AtomicInteger(0)
+    val batchSize = 4096
+    var tid = 0
+    while (tid < parallelism){
+      val newThread= new Thread() {
+        override def run(): Unit = {
+          var flag = true
+          val flags = new Array[Boolean](fnum())
+          while (flag) {
+            val begin = Math.min(atomicInt.getAndAdd(batchSize), ivnum)
+            val end = Math.min(begin + batchSize, ivnum)
+            if (begin >= end) {
+              flag = false
+            }
+            else {
+              var lid = begin
+              while (lid < end) {
+                for (i <- flags.indices) {
+                  flags(i) = false
+                }
+                //only in edges are enough
+                var beginOffset = getIEBeginOffset(lid)
+                val endOffset = getIEEndOffset(lid)
+                var address = ieBeginAddr + (beginOffset << 4)
+                while (beginOffset < endOffset) {
+                  val dstLid = JavaRuntime.getLong(address)
+                  if (dstLid >= ivnum) {
+                    val dstFid = getOuterVertexFid(dstLid)
+                    flags(dstFid) = true
+                  }
+                  address += 16
+                  beginOffset += 1
+                }
+                for (i <- flags.indices) {
+                  if (flags(i) && i != curFid) {
+                    res(i).set(lid)
+                  }
+                }
+                lid += 1
+              }
+            }
+          }
         }
-        address += 16
-        beginOffset += 1
       }
-      for (i <- flags.indices){
-        if (flags(i) && i != curFid){
-          res(i).set(lid)
-        }
-      }
-      lid += 1
+      newThread.start()
+      threads(tid) = newThread
+      tid += 1
     }
+    for (i <- 0 until parallelism){
+      threads(i).join()
+    }
+
     val time1 = System.nanoTime()
     log.info(s"[Got mirror vertices cost ${(time1 - time0)/1000000} ms]")
     res

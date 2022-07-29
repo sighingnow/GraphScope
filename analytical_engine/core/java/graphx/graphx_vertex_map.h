@@ -699,12 +699,10 @@ class BasicGraphXVertexMapBuilder
               vineyard::HashmapBuilder<oid_t, vid_t> builder(client);
               auto array = collected_oids[cur_fid]->raw_values();
               {
-                vid_t cur_lid = 0;
                 int64_t vnum = collected_oids[cur_fid]->length();
                 builder.reserve(static_cast<size_t>(vnum));
                 for (int64_t k = 0; k < vnum; ++k) {
-                  builder.emplace(array[k], cur_lid);
-                  ++cur_lid;
+                  builder.emplace(array[k], k);
                 }
               }
               // may be reuse local vm.

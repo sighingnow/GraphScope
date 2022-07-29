@@ -4,6 +4,7 @@ import com.alibaba.graphscope.ds.Vertex
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.graphx.store.{AbstractDataStore, DataStore}
 import com.alibaba.graphscope.graphx.utils.BitSetWithOffset
+import com.alibaba.graphscope.utils.ThreadSafeBitSet
 import org.apache.spark.graphx.{Edge, EdgeTriplet}
 import org.apache.spark.util.collection.BitSet
 
@@ -26,7 +27,7 @@ trait GraphStructure extends Serializable {
   def inOutDegreeArray(startLid : Long, endLid : Long) : Array[Int]
 
   //of size (fnum, number of inner vertices which are outer vertices in frag i)
-  val mirrorVertices : Array[BitSet]
+  val mirrorVertices : Array[ThreadSafeBitSet]
 
   def iterator[ED : ClassTag](startLid : Long, endLid : Long, edatas : DataStore[ED], activeSet: BitSetWithOffset, reversed : Boolean = false) : Iterator[Edge[ED]]
 

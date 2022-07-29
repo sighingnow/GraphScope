@@ -32,7 +32,7 @@ public class LongLongRecordReader implements RecordReader<LongWritable, LongLong
         if (!res) {
             return false;
         }
-        Iterator<String> iter = Splitter.on(CharMatcher.breakingWhitespace()).split(text.toString())
+        Iterator<String> iter = Splitter.on(CharMatcher.whitespace()).split(text.toString())
             .iterator();
         longLong.first = Long.parseLong(iter.next());
         longLong.second = Long.parseLong(iter.next());

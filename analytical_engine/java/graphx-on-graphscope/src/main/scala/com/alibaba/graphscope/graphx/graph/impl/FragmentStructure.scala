@@ -5,9 +5,9 @@ import com.alibaba.graphscope.fragment.adaptor.ArrowProjectedAdaptor
 import com.alibaba.graphscope.fragment.{ArrowProjectedFragment, FragmentType, IFragment}
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{ArrowProjectedStructure, GraphStructureType}
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTripletImpl, GraphStructure, ReusableEdgeImpl}
-import com.alibaba.graphscope.graphx.store.{DataStore, AbstractDataStore}
+import com.alibaba.graphscope.graphx.store.{AbstractDataStore, DataStore}
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, BitSetWithOffset}
-import com.alibaba.graphscope.utils.FFITypeFactoryhelper
+import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, ThreadSafeBitSet}
 import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
@@ -83,7 +83,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
 //  override val inDegreeArray: Array[Int] = getInDegreeArray
 //  override val outDegreeArray: Array[Int] = getOutDegreeArray
 //  override val inOutDegreeArray: Array[Int] = getInOutDegreeArray
-  override val mirrorVertices: Array[BitSet] = getMirrorVertices
+  override val mirrorVertices: Array[ThreadSafeBitSet] = getMirrorVertices
 
   @inline
   override def getOEBeginOffset(lid : Int) : Long = {
@@ -105,16 +105,16 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
     ieOffsetEndArray.get(lid + 1)
   }
 
-  private def getMirrorVertices : Array[BitSet] = {
+  private def getMirrorVertices : Array[ThreadSafeBitSet] = {
     if (fragment.fragmentType().equals(FragmentType.ArrowProjectedFragment)) {
       val projectedFragment = fragment.asInstanceOf[ArrowProjectedAdaptor[Long, Long, _, _]].asInstanceOf[ArrowProjectedFragment[Long, Long, _, _]]
 
-      val res = new Array[BitSet](fnum())
+      val res = new Array[ThreadSafeBitSet](fnum())
       for (i <- 0 until fnum()) {
         val vec = projectedFragment.mirrorVertices(i)
         val size = vec.size().toInt
         log.info(s"frag ${fid()} has ${size} mirror vertices on frag-${i}")
-        val curArray = new BitSet(size)
+        val curArray = new ThreadSafeBitSet(size)
         var j =0
         while (j < size){
           curArray.set(vec.get(j).GetValue().toInt)

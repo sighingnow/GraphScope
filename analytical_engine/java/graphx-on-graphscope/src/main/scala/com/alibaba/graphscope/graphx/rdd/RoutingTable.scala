@@ -2,16 +2,17 @@ package com.alibaba.graphscope.graphx.rdd
 
 import com.alibaba.graphscope.graphx.graph.GraphStructure
 import com.alibaba.graphscope.graphx.utils.IdParser
+import com.alibaba.graphscope.utils.ThreadSafeBitSet
 import org.apache.spark.graphx.PartitionID
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.collection.BitSet
 
 import scala.collection.mutable.ArrayBuffer
 
-class RoutingTable(val pid2Lids : Array[BitSet]) extends Serializable {
+class RoutingTable(val pid2Lids : Array[ThreadSafeBitSet]) extends Serializable {
   val numPartitions = pid2Lids.length
 
-  def get(ind : Int) : BitSet = {
+  def get(ind : Int) : ThreadSafeBitSet = {
     pid2Lids(ind)
   }
 }
@@ -19,7 +20,7 @@ class RoutingTable(val pid2Lids : Array[BitSet]) extends Serializable {
 object RoutingTable extends Logging{
 
   def fromGraphStructure(graphStructure: GraphStructure) : RoutingTable = {
-    val res = new Array[BitSet](graphStructure.fnum())
+    val res = new Array[ThreadSafeBitSet](graphStructure.fnum())
     val mirrorVertices = graphStructure.mirrorVertices
     for (fid <- 0 until graphStructure.fnum()){
       val pid = graphStructure.fid2GraphxPid(fid)
