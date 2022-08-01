@@ -212,6 +212,10 @@ public class GraphXPIE<VD, ED, MSG_T> {
             lid = curSet.nextSetBit(lid + 1)) {
             long oid = lid2Oid[fid].get(lid);
             VD originalVD = newVdataArray.get(lid);
+            if (originalVD == null){
+                //null indicate the vertex is inactive.
+                continue ;
+            }
             if (firstRound) {
                 newVdataArray.set(lid, vprog.apply(oid, originalVD, initialMessage));
             } else {
