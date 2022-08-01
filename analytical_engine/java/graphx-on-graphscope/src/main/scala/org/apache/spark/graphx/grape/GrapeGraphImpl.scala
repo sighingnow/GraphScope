@@ -4,7 +4,7 @@ import com.alibaba.graphscope.graphx.GraphScopeHelper
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
-import com.alibaba.graphscope.graphx.store.{InHeapDataStore, OffHeapEdgeDataStore}
+import com.alibaba.graphscope.graphx.store.{AbstractInHeapDataStore, InHeapVertexDataStore, OffHeapEdgeDataStore}
 import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, ExecutorUtils, GrapeUtils, ScalaFFIFactory}
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.grape.impl.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
@@ -66,6 +66,13 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   lazy val fragmentIds : RDD[String] = {
     val syncedGrapeVertices = grapeVertices.syncOuterVertex
 
+    syncedGrapeVertices.grapePartitionsRDD.foreachPartition(iter => {
+      if (iter.hasNext){
+        val part = iter.next()
+        part.vertexData.updateActiveSet(part.bitSet)
+      }
+    })
+
     //we only use numFrags partitions, each with number of `numThread` for parallelization.
     PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),
       edges.grapePartitionsRDD,
@@ -85,7 +92,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
             var fragId = null.asInstanceOf[Long]
             if (GrapeUtils.isPrimitive[VD] && GrapeUtils.isPrimitive[ED]) {
-              val vertexData = GrapeUtils.array2PrimitiveVertexData(vPart.vertexData.asInstanceOf[InHeapDataStore[VD]].array, ePart.client)
+              val vertexData = GrapeUtils.array2PrimitiveVertexData(vPart.vertexData.asInstanceOf[AbstractInHeapDataStore[VD]].array,vPart.vertexData.globalActive, ePart.client)
               val edataStore = ePart.edatas
               require(edataStore.size == ePart.totalFragEdgeNum)
 //              val edgeData = GrapeUtils.array2PrimitiveEdgeData(edataArray.asInstanceOf[InHeapDataStore[ED]].array, ePart.client,localNum)
@@ -94,15 +101,15 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
               fragId = fragBuilder.seal(ePart.client).get().id()
             }
             else if (GrapeUtils.isPrimitive[VD]) {
-              val vertexData = GrapeUtils.array2PrimitiveVertexData(vPart.vertexData.asInstanceOf[InHeapDataStore[VD]].array, ePart.client)
+              val vertexData = GrapeUtils.array2PrimitiveVertexData(vPart.vertexData.asInstanceOf[AbstractInHeapDataStore[VD]].array,vPart.vertexData.globalActive, ePart.client)
               val edataArray = ePart.edatas
               require(edataArray.size == ePart.totalFragEdgeNum)
-              val edgeData = GrapeUtils.array2StringEdgeData(edataArray.asInstanceOf[InHeapDataStore[ED]].array, ePart.client)
+              val edgeData = GrapeUtils.array2StringEdgeData(edataArray.asInstanceOf[AbstractInHeapDataStore[ED]].array, ePart.client)
               val fragBuilder = ScalaFFIFactory.newGraphXStringEDFragmentBuilder[VD](ePart.client, vm, csr, vertexData, edgeData)
               fragId = fragBuilder.seal(ePart.client).get().id()
             }
             else if (GrapeUtils.isPrimitive[ED]) {
-              val vertexData = GrapeUtils.array2StringVertexData(vPart.vertexData.asInstanceOf[InHeapDataStore[VD]].array, ePart.client)
+              val vertexData = GrapeUtils.array2StringVertexData(vPart.vertexData.asInstanceOf[AbstractInHeapDataStore[VD]].array,vPart.vertexData.globalActive, ePart.client)
               val edataStore = ePart.edatas
               require(edataStore.size == ePart.totalFragEdgeNum)
               val edgeData = GrapeUtils.buildPrimitiveEdgeData(edataStore.asInstanceOf[OffHeapEdgeDataStore[ED]], ePart.client, localNum)
@@ -110,10 +117,10 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
               fragId = fragBuilder.seal(ePart.client).get().id()
             }
             else {
-              val vertexData = GrapeUtils.array2StringVertexData(vPart.vertexData.asInstanceOf[InHeapDataStore[VD]].array, ePart.client)
+              val vertexData = GrapeUtils.array2StringVertexData(vPart.vertexData.asInstanceOf[AbstractInHeapDataStore[VD]].array,vPart.vertexData.globalActive, ePart.client)
               val edataArray = ePart.edatas
               require(edataArray.size == ePart.totalFragEdgeNum)
-              val edgeData = GrapeUtils.array2StringEdgeData(edataArray.asInstanceOf[InHeapDataStore[ED]].array, ePart.client)
+              val edgeData = GrapeUtils.array2StringEdgeData(edataArray.asInstanceOf[AbstractInHeapDataStore[ED]].array, ePart.client)
               val fragBuilder = ScalaFFIFactory.newGraphXStringVEDFragmentBuilder(ePart.client, vm, csr, vertexData, edgeData)
               fragId = fragBuilder.seal(ePart.client).get().id()
             }
@@ -250,7 +257,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         if (vIter.hasNext){
           val vPart = vIter.next()
           val epart = eIter.next()
-          Iterator(epart.mapTriplets(map, vPart.vertexData, tripletFields))
+          Iterator(epart.mapTriplets(map,vPart.bitSet, vPart.vertexData, tripletFields))
         }
         else Iterator.empty
       }
@@ -364,7 +371,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
           //VertexPartition id range should be same with edge partition
           val newVdArray = ePart.getDegreeArray(edgeDirection)
 //          val newValues = otherVPart.innerVertexData.create[Int](newVdArray)
-          val newValues = otherVPart.vertexData.getOrCreate[Int]
+          val newValues = otherVPart.vertexData.getOrCreate[Int].asInstanceOf[InHeapVertexDataStore[Int]]
           require((otherVPart.endLid - otherVPart.startLid) == newVdArray.length)
           //IN native graphx impl, the vertex with degree 0 is not returned. But we return them as well.
           //to make the result same, we set all vertices with zero degree to inactive.

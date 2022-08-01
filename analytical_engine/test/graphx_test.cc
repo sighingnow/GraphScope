@@ -93,7 +93,8 @@ gs::GraphXVertexMap<int64_t, uint64_t> TestGraphXVertexMap(
     LOG(INFO) << "Worker: " << comm_spec.worker_id()
               << " local vm: " << partial_map;
     gs::BasicGraphXVertexMapBuilder<int64_t, uint64_t> builder(
-        client, comm_spec, comm_spec.worker_num() - comm_spec.worker_id() - 1, partial_map);
+        client, comm_spec, comm_spec.worker_num() - comm_spec.worker_id() - 1,
+        partial_map);
     auto graphx_vm =
         std::dynamic_pointer_cast<gs::GraphXVertexMap<int64_t, uint64_t>>(
             builder.Seal(client));
@@ -169,7 +170,18 @@ vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
   vineyard::ObjectID id;
   {
     gs::VertexDataBuilder<uint64_t, int64_t> builder;
-    builder.Init(6, 2);
+    arrow::Int64Builder arrowBuilder;
+    arrowBuilder.Reserve(6);
+    for (int i = 0; i < 6; ++i) {
+      arrowBuilder.UnsafeAppend(i);
+    }
+    builder.Init(arrowBuilder);
+    arrow::Int64Builder wordsBuilder;
+    wordsBuilder.Reserve(3);
+    for (int i = 0; i < 3; ++i) {
+      wordsBuilder.UnsafeAppend(i);
+    }
+    builder.SetBitsetWords(wordsBuilder);
     auto vd = builder.MySeal(client);
     id = vd->id();
   }
@@ -184,8 +196,8 @@ vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
   return vd->id();
 }
 
-vineyard::ObjectID TestGraphXEdgeData(
-    vineyard::Client& client, std::vector<int64_t>& edata_builder) {
+vineyard::ObjectID TestGraphXEdgeData(vineyard::Client& client,
+                                      std::vector<int64_t>& edata_builder) {
   vineyard::ObjectID id;
   {
     gs::EdgeDataBuilder<uint64_t, int64_t> builder(client, edata_builder);
@@ -214,9 +226,9 @@ void TestGraphXFragment(vineyard::Client& client, vineyard::ObjectID vm_id,
   LOG(INFO) << "Succesfully construct fragment: " << res->id();
 }
 
-boost::leaf::result<void> generateData(
-    arrow::Int64Builder& srcBuilder, arrow::Int64Builder& dstBuilder,
-    std::vector<int64_t>& edataBuilder) {
+boost::leaf::result<void> generateData(arrow::Int64Builder& srcBuilder,
+                                       arrow::Int64Builder& dstBuilder,
+                                       std::vector<int64_t>& edataBuilder) {
   grape::CommSpec comm_spec;
   comm_spec.Init(MPI_COMM_WORLD);
 

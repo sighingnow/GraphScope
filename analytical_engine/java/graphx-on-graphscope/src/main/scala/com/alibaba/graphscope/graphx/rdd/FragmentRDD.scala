@@ -8,7 +8,7 @@ import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.graph.impl.FragmentStructure
 import com.alibaba.graphscope.graphx.rdd.FragmentPartition.getHost
 import com.alibaba.graphscope.graphx.rdd.impl.GrapeEdgePartition
-import com.alibaba.graphscope.graphx.store.{InHeapDataStore, InHeapEdgeDataStore}
+import com.alibaba.graphscope.graphx.store.{AbstractInHeapDataStore, InHeapEdgeDataStore}
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, EIDAccessor, ScalaFFIFactory}
 import org.apache.spark.graphx.PartitionID
 import org.apache.spark.graphx.grape.{GrapeEdgeRDD, GrapeVertexRDD, PartitionAwareZippedBaseRDD}

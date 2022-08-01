@@ -8,6 +8,7 @@ import com.alibaba.fastffi.FFIGen;
 import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.fastffi.FFISerializable;
 import com.alibaba.fastffi.FFITypeAlias;
+import com.alibaba.graphscope.arrow.array.ArrowArrayBuilder;
 import com.alibaba.graphscope.stdcxx.StdSharedPtr;
 import com.alibaba.graphscope.stdcxx.StdVector;
 import com.alibaba.graphscope.utils.CppClassName;
@@ -21,6 +22,9 @@ public interface StringVertexDataBuilder<VID,T> extends FFISerializable {
     @FFINameAlias("Init")
     void init(long frag_vnums, @CXXReference @FFITypeAlias("std::vector<char>") StdVector<Byte> vector,
         @CXXReference @FFITypeAlias("std::vector<int32_t>") StdVector<Integer> length);
+
+    @FFINameAlias("SetBitsetWords")
+    void setBitsetWords(@CXXReference @FFITypeAlias("arrow::Int64Builder") ArrowArrayBuilder<Long> words);
 
     @FFINameAlias("MySeal")
     @CXXValue StdSharedPtr<StringVertexData<VID,T>> seal(@CXXReference VineyardClient client);

@@ -5,7 +5,7 @@ import com.alibaba.graphscope.ds.{ImmutableTypedArray, Vertex}
 import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{GraphStructureType, GraphXFragmentStructure}
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTripletImpl, GraphStructure, ReusableEdgeImpl}
-import com.alibaba.graphscope.graphx.store.{AbstractDataStore, DataStore, InHeapDataStore}
+import com.alibaba.graphscope.graphx.store.{AbstractDataStore, DataStore, AbstractInHeapDataStore}
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, BitSetWithOffset, IdParser, PrimitiveVector}
 import com.alibaba.graphscope.utils.ThreadSafeBitSet
 import org.apache.spark.graphx._
@@ -479,7 +479,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     var curLid = startLid.toInt
     val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
     var curOffset = activeSet.nextSetBit(activeSet.startBit)
-    val vDataArray = vertexDataStore.asInstanceOf[InHeapDataStore[VD]].array
+    val vDataArray = vertexDataStore.asInstanceOf[AbstractInHeapDataStore[VD]].array
     if (curOffset < 0) return
     if (!edgeReversed){
       while (curLid < endLid && curOffset >= 0){
@@ -518,15 +518,15 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     log.info(s"Empty iterate triplets from ${startLid} to ${endLid} cost ${(time1 - time0) / 1000000} ms")
   }
 
-  override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long, f: EdgeTriplet[VD,ED] => ED2, vertexDataStore: DataStore[VD], edatas: AbstractDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, resArray : AbstractDataStore[ED2]): Unit = {
-    var curLid = startLid.toInt
+  override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long, f: EdgeTriplet[VD,ED] => ED2, activeVertices : BitSetWithOffset, vertexDataStore: DataStore[VD], edatas: AbstractDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, resArray : AbstractDataStore[ED2]): Unit = {
+    var curLid = activeVertices.nextSetBit(startLid.toInt)
     val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
     var curOffset = activeSet.nextSetBit(activeSet.startBit)
 //    val oldEDataArray = edatas.asInstanceOf[InHeapDataStore[ED]].array
 //    val newEdataArray = resArray.asInstanceOf[InHeapDataStore[ED2]].array
-    val vDataArray = vertexDataStore.asInstanceOf[InHeapDataStore[VD]].array
+    val vDataArray = vertexDataStore.asInstanceOf[AbstractInHeapDataStore[VD]].array
     if (!edgeReversed){
-      while (curLid < endLid && curOffset >= 0){
+      while (curLid < endLid && curLid >= 0 && curOffset >= 0){
         val curEndOffset = getOEEndOffset(curLid)
         edgeTriplet.srcId = innerVertexLid2Oid(curLid)
         edgeTriplet.srcAttr = vDataArray(curLid)
@@ -539,11 +539,11 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
           resArray.setData(curOffset, f(edgeTriplet))
           curOffset = activeSet.nextSetBit(curOffset + 1)
         }
-        curLid += 1
+        curLid = activeVertices.nextSetBit(curLid + 1)
       }
     }
     else {
-      while (curLid < endLid && curOffset >= 0){
+      while (curLid < endLid && curLid >= 0 && curOffset >= 0){
         val curEndOffset = getOEEndOffset(curLid)
         edgeTriplet.dstId = innerVertexLid2Oid(curLid)
         edgeTriplet.dstAttr = vDataArray(curLid)
@@ -556,7 +556,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
           resArray.setData(curOffset, f(edgeTriplet))
           curOffset = activeSet.nextSetBit(curOffset + 1)
         }
-        curLid += 1
+        curLid = activeVertices.nextSetBit(curLid + 1)
       }
     }
   }
@@ -603,11 +603,11 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   }
 
 
-  override def iterateEdges[ED: ClassTag, ED2: ClassTag](startLid : Long, endLid : Long, f: Edge[ED] => ED2, edatas : AbstractDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, newArray: AbstractDataStore[ED2]): Unit = {
+  override def iterateEdges[ED: ClassTag, ED2: ClassTag](startLid : Long, endLid : Long, f: Edge[ED] => ED2, edatas : AbstractDataStore[ED], activeEdgeSet: BitSetWithOffset, edgeReversed: Boolean, newArray: AbstractDataStore[ED2]): Unit = {
     val time0 = System.nanoTime()
     var curLid = startLid.toInt
     val edge = new ReusableEdgeImpl[ED]
-    var curOffset = activeSet.nextSetBit(activeSet.startBit)
+    var curOffset = activeEdgeSet.nextSetBit(activeEdgeSet.startBit)
     if (!edgeReversed){
       while (curLid < endLid && curOffset >= 0){
         val curEndOffset = getOEEndOffset(curLid)
@@ -618,7 +618,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
           edge.dstId = getId(dstLid)
           edge.attr = edatas.getData(curOffset)
           newArray.setData(curOffset,f(edge))
-          curOffset = activeSet.nextSetBit(curOffset + 1)
+          curOffset = activeEdgeSet.nextSetBit(curOffset + 1)
         }
         curLid += 1
       }
@@ -632,7 +632,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
           val srcLid = JavaRuntime.getLong(oeBeginAddr + shift).toInt
           edge.srcId = getId(srcLid)
           edge.attr = edatas.getData(curOffset)
-          curOffset = activeSet.nextSetBit(curOffset + 1)
+          curOffset = activeEdgeSet.nextSetBit(curOffset + 1)
         }
         curLid += 1
       }

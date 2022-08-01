@@ -520,7 +520,7 @@ class FragmentStructure(val fragment : IFragment[Long,Long,_,_]) extends GraphSt
   }
 
   //FIXME: implement this.
-  override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2: ClassTag](startLid : Long, endLid : Long, f: EdgeTriplet[VD,ED] => ED2, innerVertexDataStore: DataStore[VD], edatas: AbstractDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, newArray : AbstractDataStore[ED2]): Unit = {
+  override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2: ClassTag](startLid : Long, endLid : Long, f: EdgeTriplet[VD,ED] => ED2,activeVertices : BitSetWithOffset, innerVertexDataStore: DataStore[VD], edatas: AbstractDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, newArray : AbstractDataStore[ED2]): Unit = {
     throw new IllegalStateException("Not implemented")
   }
 

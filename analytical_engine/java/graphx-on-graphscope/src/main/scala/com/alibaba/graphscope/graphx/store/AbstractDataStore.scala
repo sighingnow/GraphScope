@@ -1,5 +1,7 @@
 package com.alibaba.graphscope.graphx.store
 
+import com.alibaba.graphscope.graphx.utils.BitSetWithOffset
+
 import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.ClassTag
 

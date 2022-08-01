@@ -27,6 +27,9 @@ public interface VertexDataBuilder<VID,VD> extends FFISerializable {
     @FFINameAlias("Init")
     void init(@CXXReference ArrowArrayBuilder<VD> newValues);
 
+    @FFINameAlias("SetBitsetWords")
+    void setBitsetWords(@CXXReference @FFITypeAlias("arrow::Int64Builder") ArrowArrayBuilder<Long> words);
+
     @FFINameAlias("MySeal")
     @CXXValue StdSharedPtr<VertexData<VID,VD>> seal(@CXXReference VineyardClient client);
 

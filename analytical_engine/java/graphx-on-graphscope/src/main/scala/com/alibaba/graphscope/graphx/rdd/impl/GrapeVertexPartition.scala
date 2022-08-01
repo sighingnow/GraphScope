@@ -4,7 +4,7 @@ import com.alibaba.graphscope.ds.Vertex
 import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.graph.GraphStructure
 import com.alibaba.graphscope.graphx.rdd.RoutingTable
-import com.alibaba.graphscope.graphx.store.{DataStore, InHeapDataStore}
+import com.alibaba.graphscope.graphx.store.{AbstractInHeapDataStore, DataStore, InHeapVertexDataStore}
 import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, GrapeUtils, IdParser, PrimitiveVector}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
 import org.apache.spark.Partition
@@ -24,7 +24,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
                                           val endLid : Int,
                                           val localNum : Int,
                                           val graphStructure: GraphStructure,
-                                          val vertexData: DataStore[VD],
+                                          val vertexData: InHeapVertexDataStore[VD],
                                           val client : VineyardClient,
                                           val routingTable: RoutingTable,
                                           var bitSet: BitSetWithOffset = null) extends Logging with Partition {
@@ -74,7 +74,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
   def collectNbrIds(edgeDirection: EdgeDirection) : GrapeVertexPartition[Array[VertexId]] = {
     var lid = bitSet.nextSetBit(startLid)
-    val newValues = vertexData.getOrCreate[Array[Long]]
+    val newValues = vertexData.getOrCreate[Array[Long]].asInstanceOf[InHeapVertexDataStore[Array[Long]]]
     while (lid >= 0 && lid < endLid){
       newValues.setData(lid,getNbrIds(lid, edgeDirection))
       lid = bitSet.nextSetBit(lid + 1);
@@ -153,7 +153,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   def map[VD2: ClassTag](f: (VertexId, VD) => VD2): GrapeVertexPartition[VD2] = {
     // Construct a view of the map transformation
     val time0 = System.nanoTime()
-    val newValues = vertexData.getOrCreate[VD2]
+    val newValues = vertexData.getOrCreate[VD2].asInstanceOf[InHeapVertexDataStore[VD2]]
     var i = bitSet.nextSetBit(startLid)
     while (i >= 0 && i < endLid) {
       newValues.setData(i,f(graphStructure.getId(i), getData(i)))
@@ -183,7 +183,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
                                           iter: Iterator[Product2[VertexId, VD2]],
                                           reduceFunc: (VD2, VD2) => VD2): GrapeVertexPartition[VD2] = {
     val newMask = new BitSetWithOffset(startLid,endLid)
-    val newValues = vertexData.getOrCreate[VD2]
+    val newValues = vertexData.getOrCreate[VD2].asInstanceOf[InHeapVertexDataStore[VD2]]
 
     iter.foreach { product =>
       val oid = product._1
@@ -239,7 +239,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       /** for vertex not represented in other, we use original vertex */
       val time0 = System.nanoTime()
       log.info(s"${GrapeUtils.getRuntimeClass[VD3].getSimpleName}")
-      val newValues = vertexData.getOrCreate[VD3]
+      val newValues = vertexData.getOrCreate[VD3].asInstanceOf[InHeapVertexDataStore[VD3]]
       var i = this.bitSet.nextSetBit(startLid)
       while (i >= 0 && i < endLid) {
         val otherV: Option[VD2] = if (other.bitSet.get(i)) Some(other.getData(i)) else None
@@ -260,7 +260,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   : GrapeVertexPartition[VD2] = {
     val newMask = new BitSetWithOffset(startLid,endLid)
 //    val newValues = innerVertexData.create[VD2]
-    val newValues = vertexData.getOrCreate[VD2]
+    val newValues = vertexData.getOrCreate[VD2].asInstanceOf[InHeapVertexDataStore[VD2]]
     iter.foreach { pair =>
 //      val pos = self.index.getPos(pair._1)
       val vertexFound = graphStructure.getVertex(pair._1,vertex)
@@ -283,7 +283,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     } else {
       val newMask = this.bitSet & other.bitSet
 //      val newValues = innerVertexData.create[VD2]
-      val newView = vertexData.getOrCreate[VD2]
+      val newView = vertexData.getOrCreate[VD2].asInstanceOf[InHeapVertexDataStore[VD2]]
       var i = newMask.nextSetBit(startLid)
       while (i >= 0 && i < endLid) {
         newView.setData(i, f(this.graphStructure.getId(i), this.getData(i), other.getData(i)))
@@ -293,7 +293,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     }
   }
 
-  def withNewValues[VD2 : ClassTag](vds: DataStore[VD2]) : GrapeVertexPartition[VD2] = {
+  def withNewValues[VD2 : ClassTag](vds: InHeapVertexDataStore[VD2]) : GrapeVertexPartition[VD2] = {
     new GrapeVertexPartition[VD2](pid, startLid,endLid, localNum,graphStructure, vds, client, routingTable, bitSet)
   }
 
@@ -308,9 +308,9 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
 object GrapeVertexPartition extends Logging{
 //  val pid2OuterVertexStore : mutable.HashMap[Int,InHeapVertexDataStore[_]] = new mutable.HashMap[Int,InHeapVertexDataStore[_]]
-  val pid2VertexStore : mutable.HashMap[Int,InHeapDataStore[_]] = new mutable.HashMap[Int,InHeapDataStore[_]]
+  val pid2VertexStore : mutable.HashMap[Int,InHeapVertexDataStore[_]] = new mutable.HashMap[Int,InHeapVertexDataStore[_]]
 
-  def setVertexStore(pid : Int, store:InHeapDataStore[_]) : Unit = {
+  def setVertexStore(pid : Int, store:InHeapVertexDataStore[_]) : Unit = {
     require(!pid2VertexStore.contains(pid))
     pid2VertexStore(pid) = store
     log.info(s"storing part ${pid}'s inner vd store ${store.toString}'")
@@ -320,7 +320,7 @@ object GrapeVertexPartition extends Logging{
 //    require(graphStructure.getVertexSize == fragVnums, s"csr inner vertex should equal to vmap ${graphStructure.getInnerVertexSize}, ${fragVnums}")
     //copy to heap
 //    val newVertexData = new InHeapVertexDataStore[VD](offset = startLid.toInt, (endLid - startLid).toInt,client)
-    val vertexStore = pid2VertexStore(pid).asInstanceOf[InHeapDataStore[VD]]
+    val vertexStore = pid2VertexStore(pid).asInstanceOf[InHeapVertexDataStore[VD]]
 //    val innerStoreView = new VertexDataStoreView[VD](vertexStore, startLid.toInt, endLid.toInt)
     var i = startLid.toInt
     val limit = endLid

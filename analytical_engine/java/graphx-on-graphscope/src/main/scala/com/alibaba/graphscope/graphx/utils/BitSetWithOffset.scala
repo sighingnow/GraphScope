@@ -1,10 +1,8 @@
 package com.alibaba.graphscope.graphx.utils
 
-import org.apache.spark.util.collection.BitSet
-
-class BitSetWithOffset(val startBit : Int, val endBit : Int, val bitset : BitSet) {
+class BitSetWithOffset(val startBit : Int, val endBit : Int, val bitset : FixedBitSet) {
   def this(startBit: Int, endBit : Int)  = {
-    this(startBit,endBit,new BitSet(endBit - startBit))
+    this(startBit,endBit,new FixedBitSet(endBit - startBit))
   }
   require(endBit > startBit)
   val size = endBit - startBit

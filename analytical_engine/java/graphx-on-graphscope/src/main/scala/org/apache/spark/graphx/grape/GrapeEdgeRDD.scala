@@ -7,7 +7,7 @@ import com.alibaba.graphscope.graphx.rdd.VineyardPartition.socket
 import com.alibaba.graphscope.graphx.rdd.impl.{GrapeEdgePartition, GrapeEdgePartitionBuilder}
 import com.alibaba.graphscope.graphx.rdd.{LocationAwareRDD, VineyardRDD}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
-import com.alibaba.graphscope.graphx.store.{InHeapDataStore, InHeapEdgeDataStore}
+import com.alibaba.graphscope.graphx.store.{AbstractInHeapDataStore, InHeapEdgeDataStore, InHeapVertexDataStore}
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, EIDAccessor, ExecutorUtils, GrapeMeta, ScalaFFIFactory}
 import com.alibaba.graphscope.utils.MPIUtils
 import org.apache.spark.graphx.grape.impl.GrapeEdgeRDDImpl
@@ -196,7 +196,7 @@ object GrapeEdgeRDD extends Logging{
         val time0 = System.nanoTime()
         val vm = meta.globalVM
         //set numSplit later
-        val vertexDataStore = new InHeapDataStore[VD](vm.getVertexSize.toInt, meta.vineyardClient, 0)
+        val vertexDataStore = new InHeapVertexDataStore[VD](vm.innerVertexSize().toInt,vm.getVertexSize.toInt, meta.vineyardClient, 0)
 //        val outerVertexDataStore = new InHeapVertexDataStore[VD](vm.innerVertexSize().toInt, vm.getOuterVertexSize.toInt, meta.vineyardClient,1, outer = true)
 //        val innerVertexDataStore = new InHeapVertexDataStore[VD](0, vm.innerVertexSize().toInt, meta.vineyardClient,0)
         //If vertex attr are in edge shuffles, we init the inner vertex Data store.

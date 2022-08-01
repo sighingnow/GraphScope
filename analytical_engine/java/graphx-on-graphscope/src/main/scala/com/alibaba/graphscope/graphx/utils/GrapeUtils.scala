@@ -214,10 +214,12 @@ object GrapeUtils extends Logging{
     (ffiByteVectorOutput.getVector,ffiOffset)
   }
 
-  def array2PrimitiveVertexData[T: ClassTag](array : Array[T], client : VineyardClient) : VertexData[Long,T] = {
+  def array2PrimitiveVertexData[T: ClassTag](array : Array[T], activeVertices : BitSetWithOffset, client : VineyardClient) : VertexData[Long,T] = {
     val builder = fillPrimitiveArrowArrayBuilder(array)
+    val activeSetLongs = bitSet2longs(activeVertices)
     val newVdataBuilder = ScalaFFIFactory.newVertexDataBuilder[T]()
     newVdataBuilder.init(builder)
+    newVdataBuilder.setBitsetWords(activeSetLongs.asInstanceOf[ArrowArrayBuilder[java.lang.Long]])
     newVdataBuilder.seal(client).get()
   }
 
@@ -230,11 +232,25 @@ object GrapeUtils extends Logging{
     newEdataBuilder.seal(client).get()
   }
 
-  def array2StringVertexData[T : ClassTag](array: Array[T],client: VineyardClient) : StringVertexData[Long,CXXStdString] = {
+  def array2StringVertexData[T : ClassTag](array: Array[T],activeVertices : BitSetWithOffset,client: VineyardClient) : StringVertexData[Long,CXXStdString] = {
     val (ffiByteVector,ffiIntVector) = fillStringArrowArray(array)
+    val activeSetLongs = bitSet2longs(activeVertices)
     val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder()
     newVdataBuilder.init(array.length, ffiByteVector, ffiIntVector)
+    newVdataBuilder.setBitsetWords(activeSetLongs.asInstanceOf[ArrowArrayBuilder[java.lang.Long]])
     newVdataBuilder.seal(client).get()
+  }
+
+  def bitSet2longs(bitSetWithOffset: BitSetWithOffset) : ArrowArrayBuilder[Long] = {
+    val longVector = ScalaFFIFactory.newSignedLongArrayBuilder()
+    val words = bitSetWithOffset.bitset.words
+    longVector.reserve(words.length)
+    var i = 0
+    while (i < words.length){
+      longVector.unsafeAppend(words(i))
+      i += 1
+    }
+    longVector
   }
 
   def array2StringEdgeData[T : ClassTag](array: Array[T],client: VineyardClient) : StringEdgeData[Long,CXXStdString] = {
