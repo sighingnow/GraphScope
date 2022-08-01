@@ -531,9 +531,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
         PrimitiveArray<T> newArray = PrimitiveArray.create(clz, (int) len);
         for (int i = 0; i < len; ++i) {
             T obj = (T) objectInputStream.readObject();
-            if (i < 200) {
-                logger.info("vd at {} is {}", i, obj);
-            }
             newArray.set(i, obj);
         }
         return newArray;
