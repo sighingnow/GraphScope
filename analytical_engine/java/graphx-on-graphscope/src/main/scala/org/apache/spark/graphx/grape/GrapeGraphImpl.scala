@@ -66,12 +66,15 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   lazy val fragmentIds : RDD[String] = {
     val syncedGrapeVertices = grapeVertices.syncOuterVertex
 
+    val time0 = System.nanoTime()
     syncedGrapeVertices.grapePartitionsRDD.foreachPartition(iter => {
       if (iter.hasNext){
         val part = iter.next()
         part.vertexData.updateActiveSet(part.bitSet)
       }
     })
+    val time1 = System.nanoTime()
+    logger.info(s"update active vertices cost ${(time1 - time0)/1000000} ms")
 
     //we only use numFrags partitions, each with number of `numThread` for parallelization.
     PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(),

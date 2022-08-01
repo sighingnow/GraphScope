@@ -6,7 +6,7 @@ import com.alibaba.graphscope.graphx.store.{AbstractDataStore, OffHeapEdgeDataSt
 import com.alibaba.graphscope.graphx.{EdgeData, StringEdgeData, StringEdgeDataBuilder, StringVertexData, VertexData, VineyardArrayBuilder, VineyardClient}
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream
 import com.alibaba.graphscope.stdcxx.{FFIByteVector, FFIIntVector, FFIIntVectorFactory, StdVector}
-import com.alibaba.graphscope.utils.FFITypeFactoryhelper
+import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, ThreadSafeBitSet}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import org.apache.spark.internal.Logging
 
