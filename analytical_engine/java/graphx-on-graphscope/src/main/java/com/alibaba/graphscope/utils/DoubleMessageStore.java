@@ -3,6 +3,7 @@ package com.alibaba.graphscope.utils;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.BaseGraphXFragment;
 import com.alibaba.graphscope.graphx.graph.GSEdgeTripletImpl;
+import com.alibaba.graphscope.graphx.utils.FixedBitSet;
 import com.alibaba.graphscope.graphx.utils.IdParser;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
@@ -30,9 +31,10 @@ public class DoubleMessageStore implements MessageStore<Double> {
     private IdParser idParser;
     private BlockingQueue<Tuple2<Long,Double>> msgQueue;
     private Thread consumer;
-    private BitSet nextSet;
+    private FixedBitSet nextSet;
 
-    public DoubleMessageStore(int len, int fnum,int numCores, Function2<Double,Double,Double> function2,BitSet nextSet) {
+    public DoubleMessageStore(int len, int fnum,int numCores, Function2<Double,Double,Double> function2,
+        FixedBitSet nextSet) {
 //        values = new double[len];
         values = new AtomicDoubleArrayWrapper(len);
         mergeMessage = function2;
@@ -124,7 +126,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
     }
 
     @Override
-    public void flushMessages(BitSet nextSet, DefaultMessageManager messageManager,
+    public void flushMessages(FixedBitSet nextSet, DefaultMessageManager messageManager,
         BaseGraphXFragment<Long, Long, ?, ?> fragment, int[] fid2WorkerId) throws IOException {
         int ivnum = (int) fragment.getInnerVerticesNum();
         int cnt = 0;
@@ -153,7 +155,7 @@ public class DoubleMessageStore implements MessageStore<Double> {
     }
 
     @Override
-    public void digest(FFIByteVector vector, BaseGraphXFragment<Long,Long,?,?> fragment, BitSet curSet) {
+    public void digest(FFIByteVector vector, BaseGraphXFragment<Long,Long,?,?> fragment, FixedBitSet curSet) {
         FFIByteVectorInputStream inputStream = new FFIByteVectorInputStream(vector);
         int size = (int) vector.size();
         if (size <= 0) {

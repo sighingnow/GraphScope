@@ -17,6 +17,7 @@ import com.alibaba.graphscope.fragment.adaptor.GraphXStringEDFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringVDFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringVEDFragmentAdaptor;
 import com.alibaba.graphscope.graphx.graph.GSEdgeTripletImpl;
+import com.alibaba.graphscope.graphx.utils.FixedBitSet;
 import com.alibaba.graphscope.graphx.utils.IdParser;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
@@ -86,7 +87,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
      */
     private MessageStore<MSG_T> messageStore;
     private int innerVerticesNum, verticesNum;
-    private BitSet curSet, nextSet;
+    private FixedBitSet curSet,nextSet;
     private EdgeDirection direction;
 //    private long[] lid2Oid;
     private ImmutableTypedArray<Long>[] lid2Oid;
@@ -143,7 +144,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         innerVerticesNum = (int) graphXFragment.getInnerVerticesNum();
         verticesNum = graphXFragment.getVerticesNum().intValue();
 
-        nextSet = new BitSet((int) verticesNum);
+        nextSet = new FixedBitSet((int) verticesNum);
         logger.info("before create store");
         this.messageStore = MessageStore.create((int) verticesNum, fragment.fnum(), numCores,
             conf.getMsgClass(), mergeMsg,nextSet);
@@ -189,6 +190,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
             words[i] = offHeapWords.get(i);
         }
         long time1 = System.nanoTime();
+        curSet = new FixedBitSet(words);
         logger.info("Init cur set cost {}ms", (time1 -time0)/1000000);
     }
 
@@ -398,7 +400,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            nextSet.clear((int) innerVerticesNum, (int) verticesNum);
+//            nextSet.clear((int) innerVerticesNum, (int) verticesNum);
+
             flushTime += System.nanoTime();
             logger.info("[IncEval {}] Finish flush outer vertices of frag {}, active inner vertices [{}]", round, graphXFragment.fid(), nextSet.cardinality());
         } else {
