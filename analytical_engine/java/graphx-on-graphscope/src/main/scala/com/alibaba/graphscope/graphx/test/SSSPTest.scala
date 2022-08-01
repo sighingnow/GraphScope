@@ -62,9 +62,6 @@ object SSSPTest extends Logging{
     log.info(s"initial graph count ${sssp.numVertices}, ${sssp.numEdges}")
     val time2 = System.nanoTime()
     log.info(s"Pregel took ${(time2 - time1)/1000000}ms, load graph ${(time1 - time0)/1000000}ms")
-//    println(sssp.vertices.collect.mkString("\n"))
-//    sssp.vertices.saveAsTextFile(s"/tmp/sssp-test-${java.time.LocalDateTime.now()}")
-    // $example off$
 
   }
 }
