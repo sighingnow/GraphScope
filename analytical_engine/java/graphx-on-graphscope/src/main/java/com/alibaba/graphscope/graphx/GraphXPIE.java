@@ -132,7 +132,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         long time01 = System.nanoTime();
         newVdataArray = tuple._1();
         newEdataArray = tuple._2();
-        initCurSet(graphXFragment.getVdata().getWords());
+        initCurSet(graphXFragment.getVdataWords());
 //        curSet = new BitSet((int) verticesNum);
 //        //initially activate all vertices
 //        curSet.set(0, verticesNum);
