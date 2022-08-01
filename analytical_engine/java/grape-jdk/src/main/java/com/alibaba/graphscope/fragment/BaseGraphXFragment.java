@@ -4,8 +4,10 @@ import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFINameAlias;
 import com.alibaba.graphscope.ds.PropertyNbrUnit;
 import com.alibaba.graphscope.ds.Vertex;
+import com.alibaba.graphscope.graphx.EdgeData;
 import com.alibaba.graphscope.graphx.GraphXCSR;
 import com.alibaba.graphscope.graphx.GraphXVertexMap;
+import com.alibaba.graphscope.graphx.VertexData;
 
 public interface BaseGraphXFragment<OID_T, VID_T, VD_T, ED_T>
     extends EdgecutFragment<OID_T, VID_T, VD_T, ED_T>  {
@@ -28,6 +30,12 @@ public interface BaseGraphXFragment<OID_T, VID_T, VD_T, ED_T>
 
     @FFINameAlias("GetVM")
     @CXXReference GraphXVertexMap<OID_T,VID_T> getVM();
+
+    @FFINameAlias("GetVdata")
+    @CXXReference VertexData<VID_T,VD_T> getVdata();
+
+    @FFINameAlias("GetEdata")
+    @CXXReference EdgeData<VID_T,ED_T> getEdata();
 
     @FFINameAlias("GetInEdgeNum")
     long getInEdgeNum();

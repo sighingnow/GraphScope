@@ -132,14 +132,17 @@ public class GraphXPIE<VD, ED, MSG_T> {
         long time01 = System.nanoTime();
         newVdataArray = tuple._1();
         newEdataArray = tuple._2();
+        initCurSet(graphXFragment.getVdata().getWords());
+//        curSet = new BitSet((int) verticesNum);
+//        //initially activate all vertices
+//        curSet.set(0, verticesNum);
+
 
         this.messageManager = messageManager;
         this.maxIterations = maxIterations;
         innerVerticesNum = (int) graphXFragment.getInnerVerticesNum();
         verticesNum = graphXFragment.getVerticesNum().intValue();
-        curSet = new BitSet((int) verticesNum);
-        //initially activate all vertices
-        curSet.set(0, verticesNum);
+
         nextSet = new BitSet((int) verticesNum);
         logger.info("before create store");
         this.messageStore = MessageStore.create((int) verticesNum, fragment.fnum(), numCores,
@@ -175,6 +178,18 @@ public class GraphXPIE<VD, ED, MSG_T> {
         msgSendTime = vprogTime = receiveTime = flushTime = bitsetTime = 0;
         long time1 = System.nanoTime();
         logger.info("[Perf:] init cost {}ms, copy array cost {}ms", (time1 - time0)/ 1000000, (time01 - time00) / 1000000);
+    }
+
+    void initCurSet(ImmutableTypedArray<Long> offHeapWords){
+        long time0 = System.nanoTime();
+        int wordsLen = (int) offHeapWords.getLength();
+        logger.info("words len {}, iv num {}, numBits {}", wordsLen, innerVerticesNum, (((wordsLen - 1) << 6)) + 1);
+        long[] words = new long[wordsLen];
+        for (int i =0 ; i < wordsLen; ++i){
+            words[i] = offHeapWords.get(i);
+        }
+        long time1 = System.nanoTime();
+        logger.info("Init cur set cost {}ms", (time1 -time0)/1000000);
     }
 
     long getId(int lid) {

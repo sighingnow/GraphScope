@@ -121,6 +121,10 @@ class GraphXFragment
 
   vm_t& GetVM() { return vm_; }
 
+  graphx_vdata_t GetVdata() { return vdata_; }
+
+  graphx_edata_t GetEdata() { return edata_; }
+
   inline int64_t GetEdgeNum() const { return csr_.GetTotalEdgesNum(); }
   inline int64_t GetInEdgeNum() const { return csr_.GetInEdgesNum(); }
   inline int64_t GetOutEdgeNum() const { return csr_.GetOutEdgesNum(); }
