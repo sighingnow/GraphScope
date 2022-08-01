@@ -230,6 +230,9 @@ public class GraphXPIE<VD, ED, MSG_T> {
         long beginOffset, endOffset;
         for (int lid = curSet.nextSetBit(startLid); lid >= 0 && lid < endLid;
             lid = curSet.nextSetBit(lid + 1)) {
+            if (newVdataArray.get(lid) == null){
+                continue ;
+            }
             edgeTriplet.setSrcOid(lid2Oid[fid].get(lid), newVdataArray.get(lid));
 
             beginOffset = oeOffsetArray.get(lid);
@@ -239,11 +242,15 @@ public class GraphXPIE<VD, ED, MSG_T> {
             while (beginOffset < endOffset) {
                 int nbrVid = (int) JavaRuntime.getLong(address);
                 int eid = (int) JavaRuntime.getLong(address + 8);
-                edgeTriplet.setDstOid(getId(nbrVid), newVdataArray.get(nbrVid));
-                edgeTriplet.setAttr(newEdataArray.get(eid));
-                Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
-                if (!msgs.equals(Iterator.empty())){
-                    messageStore.addMessages(msgs, graphXFragment, threadId, edgeTriplet,lid,nbrVid);
+                VD dstAttr = newVdataArray.get(nbrVid);
+                if (dstAttr != null) {
+                    edgeTriplet.setDstOid(getId(nbrVid), dstAttr);
+                    edgeTriplet.setAttr(newEdataArray.get(eid));
+                    Iterator<Tuple2<Long, MSG_T>> msgs = sendMsg.apply(edgeTriplet);
+                    if (!msgs.equals(Iterator.empty())) {
+                        messageStore.addMessages(msgs, graphXFragment, threadId, edgeTriplet, lid,
+                            nbrVid);
+                    }
                 }
                 address += 16;
                 beginOffset += 1;
