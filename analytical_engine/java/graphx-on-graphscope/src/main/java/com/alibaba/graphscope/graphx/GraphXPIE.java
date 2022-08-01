@@ -194,6 +194,9 @@ public class GraphXPIE<VD, ED, MSG_T> {
             lid = curSet.nextSetBit(lid + 1)) {
             long oid = lid2Oid[fid].get(lid);
             VD originalVD = newVdataArray.get(lid);
+            if (originalVD == null){
+               throw new IllegalStateException("null vd for " + lid + " in range " + startLid + "," + endLid);
+            }
             if (firstRound) {
                 newVdataArray.set(lid, vprog.apply(oid, originalVD, initialMessage));
             } else {
