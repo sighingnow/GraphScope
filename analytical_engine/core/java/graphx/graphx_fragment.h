@@ -222,6 +222,10 @@ class GraphXFragment
     return vdata_.GetVdataArray();
   }
 
+  inline graphx::ImmutableTypedArray<int64_t>& GetVdataWords() {
+    return vdata_.GetWords();
+  }
+
  private:
   grape::fid_t fnum_, fid_;
   vertices_t inner_vertices_, outer_vertices_, vertices_;
