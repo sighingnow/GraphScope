@@ -2,6 +2,7 @@ package com.alibaba.graphscope.graphx.store
 
 import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.utils.BitSetWithOffset
+import com.alibaba.graphscope.utils.ThreadSafeBitSet
 
 import scala.reflect.ClassTag
 
@@ -19,10 +20,16 @@ class InHeapVertexDataStore [@specialized(Long,Double,Int) VD: ClassTag](val ivn
         }
       }
     }
-    globalActive.synchronized{
+    globalActive.synchronized {
       log.info(s"before union ${globalActive.cardinality()}")
-      globalActive.union(partActive)
+      var cur = partActive.nextSetBit(partActive.startBit)
+      val endBit = partActive.endBit
+      while (cur < endBit && cur >= 0) {
+        globalActive.set(cur)
+        cur = partActive.nextSetBit(cur + 1)
+      }
       log.info(s"after union ${globalActive.cardinality()}")
     }
+
   }
 }
