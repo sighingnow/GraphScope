@@ -474,7 +474,7 @@ object PageRank extends Logging {
         //System.out.println(s"visiting edge ${edge}, sending msg to dst ${edge.dstId} msg ${edge.srcAttr._2 * edge.attr}")
         Iterator((edge.dstId, edge.srcAttr._2 * edge.attr))
       } else {
-        System.out.println(s"visiting edge ${edge}, no msg to send")
+      //  System.out.println(s"visiting edge ${edge}, no msg to send")
         Iterator.empty
       }
     }
