@@ -25,5 +25,5 @@ public interface VertexData<VID, VD> extends FFISerializable {
 
   @FFINameAlias("GetVdataArray") @CXXReference ImmutableTypedArray<VD> getVdataArray();
 
-  @FFINameAlias("GetWords") @CXXReference ImmutableTypedArray<Long> getWords();
+  @FFINameAlias("GetWords") @CXXReference @FFITypeAlias("gs::graphx::ImmutableTypedArray<int64_t>") ImmutableTypedArray<Long> getWords();
 }
