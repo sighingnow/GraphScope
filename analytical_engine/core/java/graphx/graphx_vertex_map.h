@@ -493,7 +493,6 @@ class GraphXVertexMapBuilder : public vineyard::ObjectBuilder {
                 begin = std::min(ovnum, current_ind.fetch_add(
                                             4096, std::memory_order_relaxed));
                 end = std::min(begin + 4096, ovnum);
-                // LOG(INFO) << "begin " << being << ", end" << end;
                 if (begin >= end) {
                   break;
                 }
