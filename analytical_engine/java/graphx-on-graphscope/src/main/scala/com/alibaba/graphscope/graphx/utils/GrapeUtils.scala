@@ -204,7 +204,7 @@ object GrapeUtils extends Logging{
       objectOutputStream.writeObject(array(i))
       ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
       prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
-      //        log.info(s"Writing element ${i}: ${array.get(i).toString} cost ${ffiOffset.get(i)} bytes")
+      log.info(s"Writing element ${i}: ${array(i).toString} cost ${ffiOffset.get(i)} bytes")
       i += 1
     }
     objectOutputStream.flush()
