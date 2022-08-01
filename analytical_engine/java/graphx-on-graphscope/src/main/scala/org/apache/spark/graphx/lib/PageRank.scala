@@ -454,6 +454,7 @@ object PageRank extends Logging {
     def vertexProgram(id: VertexId, attr: (Double, Double), msgSum: Double): (Double, Double) = {
       val (oldPR, lastDelta) = attr
       val newPR = oldPR + (1.0 - resetProb) * msgSum
+      log.info(s"vertex [${id}] old attr ${attr}, new pr ${newPR}")
       (newPR, newPR - oldPR)
     }
 
@@ -470,8 +471,10 @@ object PageRank extends Logging {
 
     def sendMessage(edge: EdgeTriplet[(Double, Double), Double]) = {
       if (edge.srcAttr._2 > tol) {
+        log.info(s"visiting edge ${edge}, sending msg to dst ${edge.dstId} msg ${edge.srcAttr._2 * edge.attr}")
         Iterator((edge.dstId, edge.srcAttr._2 * edge.attr))
       } else {
+        log.info(s"visiting edge ${edge}, no msg to send")
         Iterator.empty
       }
     }
