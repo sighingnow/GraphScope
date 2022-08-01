@@ -190,23 +190,28 @@ object GrapeUtils extends Logging{
     log.info(s"Building primitive array size ${size} with num thread ${numThread} cost ${(time1 - time0)/1000000}ms")
   }
 
-  def fillStringArrowArray[T : ClassTag](array: Array[T]) : (FFIByteVector, FFIIntVector) = {
+  def fillStringArrowArray[T : ClassTag](array: Array[T],activeVertices : BitSetWithOffset) : (FFIByteVector, FFIIntVector) = {
     val size = array.length
     val ffiByteVectorOutput = new FFIByteVectorOutputStream()
     val ffiOffset = FFIIntVectorFactory.INSTANCE.create().asInstanceOf[FFIIntVector]
     ffiOffset.resize(size)
     ffiOffset.touch()
     val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
-    var i = 0
+    var i = activeVertices.nextSetBit(0)
     val limit = size
     var prevBytesWritten = 0
-    while (i < limit){
+    var nullCount = 0
+    while (i < limit && i >= 0){
+      if (array(i) == null){
+        nullCount +=1
+      }
       objectOutputStream.writeObject(array(i))
       ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
       prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
-      log.info(s"Writing element ${i}: ${array(i).toString} cost ${ffiOffset.get(i)} bytes")
       i += 1
     }
+    log.info(s"total size ${size} null count ${nullCount}, active ${activeVertices.cardinality()}")
+    require(size == (nullCount + activeVertices.cardinality()))
     objectOutputStream.flush()
     ffiByteVectorOutput.finishSetting()
     val writenBytes = ffiByteVectorOutput.bytesWriten()
@@ -233,8 +238,8 @@ object GrapeUtils extends Logging{
   }
 
   def array2StringVertexData[T : ClassTag](array: Array[T],activeVertices : BitSetWithOffset,client: VineyardClient) : StringVertexData[Long,CXXStdString] = {
-    val (ffiByteVector,ffiIntVector) = fillStringArrowArray(array)
     val activeSetLongs = bitSet2longs(activeVertices)
+    val (ffiByteVector,ffiIntVector) = fillStringArrowArray(array,activeVertices)
     val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder()
     newVdataBuilder.init(array.length, ffiByteVector, ffiIntVector)
     newVdataBuilder.setBitsetWords(activeSetLongs.asInstanceOf[ArrowArrayBuilder[java.lang.Long]])
