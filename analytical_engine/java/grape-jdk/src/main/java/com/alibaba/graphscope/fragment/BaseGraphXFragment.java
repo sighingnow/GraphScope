@@ -2,6 +2,8 @@ package com.alibaba.graphscope.fragment;
 
 import com.alibaba.fastffi.CXXReference;
 import com.alibaba.fastffi.FFINameAlias;
+import com.alibaba.fastffi.FFITypeAlias;
+import com.alibaba.graphscope.ds.ImmutableTypedArray;
 import com.alibaba.graphscope.ds.PropertyNbrUnit;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.graphx.EdgeData;
@@ -31,11 +33,8 @@ public interface BaseGraphXFragment<OID_T, VID_T, VD_T, ED_T>
     @FFINameAlias("GetVM")
     @CXXReference GraphXVertexMap<OID_T,VID_T> getVM();
 
-    @FFINameAlias("GetVdata")
-    @CXXReference VertexData<VID_T,VD_T> getVdata();
-
-    @FFINameAlias("GetEdata")
-    @CXXReference EdgeData<VID_T,ED_T> getEdata();
+    @FFINameAlias("GetVdataWords")
+    @CXXReference @FFITypeAlias("gs::graphx::ImmutableTypedArray<int64_t>") ImmutableTypedArray<Long> getVdataWords();
 
     @FFINameAlias("GetInEdgeNum")
     long getInEdgeNum();
