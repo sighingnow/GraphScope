@@ -127,6 +127,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
             throw new IllegalStateException("Only support graphx fragment");
         }
         this.graphXFragment = getBaseGraphXFragment(iFragment);
+        innerVerticesNum = (int) graphXFragment.getInnerVerticesNum();
         long time00 = System.nanoTime();
         Tuple2<PrimitiveArray<VD>, PrimitiveArray<ED>> tuple = initOldAndNewArrays(graphXFragment,
             conf);
@@ -141,7 +142,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
 
         this.messageManager = messageManager;
         this.maxIterations = maxIterations;
-        innerVerticesNum = (int) graphXFragment.getInnerVerticesNum();
+
         verticesNum = graphXFragment.getVerticesNum().intValue();
 
         nextSet = new FixedBitSet((int) verticesNum);
@@ -191,7 +192,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         }
         long time1 = System.nanoTime();
         curSet = new FixedBitSet(words);
-        logger.info("Init cur set cost {}ms", (time1 -time0)/1000000);
+        logger.info("Init cur set cost {}ms ,active vertices {} ", (time1 -time0)/1000000, curSet.cardinality());
     }
 
     long getId(int lid) {
