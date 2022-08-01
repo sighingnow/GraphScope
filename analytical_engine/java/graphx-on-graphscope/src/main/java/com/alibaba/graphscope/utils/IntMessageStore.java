@@ -3,6 +3,7 @@ package com.alibaba.graphscope.utils;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.BaseGraphXFragment;
 import com.alibaba.graphscope.graphx.graph.GSEdgeTripletImpl;
+import com.alibaba.graphscope.graphx.utils.FixedBitSet;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream;
@@ -23,9 +24,9 @@ public class IntMessageStore implements MessageStore<Integer> {
     private Function2<Integer, Integer, Integer> mergeMessage;
     private Vertex<Long>[] tmpVertex;
     private FFIByteVectorOutputStream[] outputStream;
-    private BitSet nextSet;
+    private FixedBitSet nextSet;
 
-    public IntMessageStore(int len, int fnum, int numCores, Function2<Integer, Integer, Integer> function2, BitSet nextSet) {
+    public IntMessageStore(int len, int fnum, int numCores, Function2<Integer, Integer, Integer> function2, FixedBitSet nextSet) {
         values = new int[len];
         mergeMessage = function2;
         tmpVertex = new Vertex[numCores];
@@ -78,7 +79,7 @@ public class IntMessageStore implements MessageStore<Integer> {
     }
 
     @Override
-    public void flushMessages(BitSet nextSet, DefaultMessageManager messageManager,
+    public void flushMessages(FixedBitSet nextSet, DefaultMessageManager messageManager,
         BaseGraphXFragment<Long, Long, ?, ?> fragment, int[] fid2WorkerId) throws IOException {
         int ivnum = (int) fragment.getInnerVerticesNum();
         int cnt = 0;
@@ -107,7 +108,7 @@ public class IntMessageStore implements MessageStore<Integer> {
     }
 
     @Override
-    public void digest(FFIByteVector vector, BaseGraphXFragment<Long, Long, ?, ?> fragment, BitSet curSet) {
+    public void digest(FFIByteVector vector, BaseGraphXFragment<Long, Long, ?, ?> fragment, FixedBitSet curSet) {
         FFIByteVectorInputStream inputStream = new FFIByteVectorInputStream(vector);
         int size = (int) vector.size();
         if (size <= 0) {

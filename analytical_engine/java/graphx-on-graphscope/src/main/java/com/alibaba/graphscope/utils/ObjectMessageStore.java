@@ -3,6 +3,7 @@ package com.alibaba.graphscope.utils;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.BaseGraphXFragment;
 import com.alibaba.graphscope.graphx.graph.GSEdgeTripletImpl;
+import com.alibaba.graphscope.graphx.utils.FixedBitSet;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream;
@@ -27,9 +28,9 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
     private Vertex<Long>[] tmpVertex;
     private FFIByteVectorOutputStream[] ffiOutStream;
     private ObjectOutputStream[] outputStream;
-    private BitSet nextSet;
+    private FixedBitSet nextSet;
 
-    public ObjectMessageStore(int len,int fnum, int numCores, Class<? extends T>clz, Function2<T,T,T> function2, BitSet nextSet)
+    public ObjectMessageStore(int len,int fnum, int numCores, Class<? extends T>clz, Function2<T,T,T> function2, FixedBitSet nextSet)
     {
         this.clz = clz;
         values = (T[]) new Object[len];
@@ -91,7 +92,7 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
         }
     }
     @Override
-    public void flushMessages(BitSet nextSet, DefaultMessageManager messageManager,
+    public void flushMessages(FixedBitSet nextSet, DefaultMessageManager messageManager,
         BaseGraphXFragment<Long, Long, ?, ?> fragment, int[] fid2WorkerId) throws IOException {
         int ivnum = (int) fragment.getInnerVerticesNum();
         int cnt = 0;
@@ -123,7 +124,7 @@ public class ObjectMessageStore<T> implements MessageStore<T> {
     }
 
     @Override
-    public void digest(FFIByteVector vector, BaseGraphXFragment<Long,Long,?,?> fragment, BitSet curSet) {
+    public void digest(FFIByteVector vector, BaseGraphXFragment<Long,Long,?,?> fragment, FixedBitSet curSet) {
         ObjectInputStream inputStream = null;
         try {
             inputStream = new ObjectInputStream(new FFIByteVectorInputStream(vector));

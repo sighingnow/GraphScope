@@ -26,6 +26,16 @@ class FixedBitSet(val words: Array[Long]) extends Serializable {
    */
   def clear(): Unit = Arrays.fill(words, 0)
 
+  def wordIndex(ind : Int) : Int = {
+    (ind >> 6)
+  }
+
+  def checkRange(l: Int, r: Int) : Unit = {
+    if (l < 0) throw new IndexOutOfBoundsException("fromIndex < 0: " + l)
+    if (r < 0) throw new IndexOutOfBoundsException("toIndex < 0: " + r)
+    if (l > r) throw new IndexOutOfBoundsException("fromIndex: " + l + " > toIndex: " + r)
+  }
+
   /**
    * Set all the bits up to a given index
    */
@@ -67,6 +77,10 @@ class FixedBitSet(val words: Array[Long]) extends Serializable {
       ind += 1
     }
     newBS
+  }
+
+  def or(other : FixedBitSet) : FixedBitSet = {
+    this.|(other)
   }
 
   /**

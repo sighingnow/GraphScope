@@ -3,6 +3,7 @@ package com.alibaba.graphscope.utils;
 import com.alibaba.graphscope.ds.Vertex;
 import com.alibaba.graphscope.fragment.BaseGraphXFragment;
 import com.alibaba.graphscope.graphx.graph.GSEdgeTripletImpl;
+import com.alibaba.graphscope.graphx.utils.FixedBitSet;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
 import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream;
@@ -23,9 +24,9 @@ public class LongMessageStore implements MessageStore<Long>{
     private Function2<Long,Long,Long> mergeMessage;
     private Vertex<Long>[] tmpVertex;
     private FFIByteVectorOutputStream[] outputStream;
-    private BitSet nextSet;
+    private FixedBitSet nextSet;
 
-    public LongMessageStore(int len,int fnum, int numCores, Function2<Long,Long,Long> mergeMessage, BitSet nextSet){
+    public LongMessageStore(int len,int fnum, int numCores, Function2<Long,Long,Long> mergeMessage, FixedBitSet nextSet){
         values = new AtomicLongArrayWrapper(len);
         this.mergeMessage = mergeMessage;
         tmpVertex = new Vertex[numCores];
@@ -79,7 +80,7 @@ public class LongMessageStore implements MessageStore<Long>{
         }
     }
     @Override
-    public void flushMessages(BitSet nextSet, DefaultMessageManager messageManager,
+    public void flushMessages(FixedBitSet nextSet, DefaultMessageManager messageManager,
         BaseGraphXFragment<Long, Long, ?, ?> fragment,int [] fid2WorkerId) throws IOException {
         int ivnum = (int) fragment.getInnerVerticesNum();
         int cnt = 0;
@@ -108,7 +109,7 @@ public class LongMessageStore implements MessageStore<Long>{
     }
 
     @Override
-    public void digest(FFIByteVector vector, BaseGraphXFragment<Long, Long, ?, ?> fragment, BitSet curSet) {
+    public void digest(FFIByteVector vector, BaseGraphXFragment<Long, Long, ?, ?> fragment, FixedBitSet curSet) {
         FFIByteVectorInputStream inputStream = new FFIByteVectorInputStream(vector);
         int size = (int) vector.size();
         if (size <= 0) {
