@@ -374,15 +374,16 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
           activeSet.setRange(startLid, endLid)
           var i = startLid
           while (i < endLid) {
-            if (newVdArray(i) == 0) {
+            if (newVdArray(i - startLid) == 0) {
               activeSet.unset(i)
             }
             else {
-              newValues.setData(i, newVdArray(i))
+              newValues.setData(i, newVdArray(i - startLid))
             }
             i += 1
           }
           if (ePart.localNum==0) {
+            i = otherVPart.ivnum
             while (i < newValues.size) {
               newValues.setData(i, 0) // for outer data, set 0.
               i += 1
