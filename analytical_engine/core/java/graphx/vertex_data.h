@@ -98,7 +98,7 @@ class VertexData : public vineyard::Registered<VertexData<VID_T, VD_T>> {
     return vdatas_accessor_;
   }
 
-  graphx::ImmutableTypedArray<int64_t> GetWords() { return words_accessor_; }
+  graphx::ImmutableTypedArray<int64_t>& GetWords() { return words_accessor_; }
 
  private:
   vid_t frag_vnums_;
@@ -170,7 +170,7 @@ class VertexData<VID_T, std::string>
   graphx::ImmutableTypedArray<vdata_t>& GetVdataArray() {
     return vdatas_accessor_;
   }
-  graphx::ImmutableTypedArray<int64_t> GetWords() { return words_accessor_; }
+  graphx::ImmutableTypedArray<int64_t>& GetWords() { return words_accessor_; }
 
  private:
   vid_t frag_vnums_;

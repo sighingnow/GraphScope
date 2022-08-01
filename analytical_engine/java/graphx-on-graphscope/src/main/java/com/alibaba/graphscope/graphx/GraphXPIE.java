@@ -334,7 +334,9 @@ public class GraphXPIE<VD, ED, MSG_T> {
 
         bitsetTime -= System.nanoTime();
         curSet.clear();
+        logger.info("next set size {}", nextSet.cardinality());
         curSet.or(nextSet);
+        logger.info("after or {}", curSet.cardinality());
         nextSet.clear();
         bitsetTime += System.nanoTime();
 
