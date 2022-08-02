@@ -200,7 +200,6 @@ object GrapeUtils extends Logging{
     val ffiOffset = FFIIntVectorFactory.INSTANCE.create().asInstanceOf[FFIIntVector]
     ffiOffset.resize(size)
     ffiOffset.touch()
-    val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
 //    var i = activeVertices.nextSetBit(0)
     var i = 0
     val limit = size
@@ -223,6 +222,7 @@ object GrapeUtils extends Logging{
       }
     }
     else {
+      val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
       while (i < limit && i >= 0) {
         if (array(i) == null) {
           nullCount += 1
@@ -232,10 +232,11 @@ object GrapeUtils extends Logging{
         prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
         i += 1
       }
+      objectOutputStream.flush()
     }
 //    log.info(s"total size ${size} null count ${nullCount}, active ${activeVertices.cardinality()}")
     //require(size == (nullCount + activeVertices.cardinality()))
-    objectOutputStream.flush()
+
     ffiByteVectorOutput.finishSetting()
     val writenBytes = ffiByteVectorOutput.bytesWriten()
     log.info(s"write data array ${limit} of type ${GrapeUtils.getRuntimeClass[T].getName}, writen bytes ${writenBytes}")

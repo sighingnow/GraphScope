@@ -547,8 +547,8 @@ public class GraphXPIE<VD, ED, MSG_T> {
         PrimitiveArray<T> newArray = PrimitiveArray.create(clz, (int) len);
         if (clz.equals(DoubleDouble.class)){
             for (int i = 0; i < len; ++i){
-                double a = objectInputStream.readDouble();
-                double b = objectInputStream.readDouble();
+                double a = ffiInput.readDouble();
+                double b = ffiInput.readDouble();
                 newArray.set(i, (T) new DoubleDouble(a,b));
             }
         }
