@@ -536,7 +536,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
         StdVector<Byte> data = oldArray.getRawBytes();
         FFIByteVector ffiByteVector = new FFIByteVector(data.getAddress());
         FFIByteVectorInputStream ffiInput = new FFIByteVectorInputStream(ffiByteVector);
-        ObjectInputStream objectInputStream = new ObjectInputStream(ffiInput);
 //        Input input = new Input(ffiInput);
 //        Kryo kryo = new Kryo();
 //        kryo.register(scala.Tuple2.class);
@@ -553,6 +552,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
             }
         }
         else {
+            ObjectInputStream objectInputStream = new ObjectInputStream(ffiInput);
             for (int i = 0; i < len; ++i) {
                 T obj = (T) objectInputStream.readObject();
 //            T obj = (T) kryo.readClassAndObject(input);
