@@ -18,9 +18,8 @@
 package org.apache.spark.graphx.lib
 
 import scala.reflect.ClassTag
-
 import breeze.linalg.{Vector => BV}
-
+import com.alibaba.graphscope.graphx.utils.DoubleDouble
 import org.apache.spark.graphx._
 import org.apache.spark.internal.Logging
 import org.apache.spark.ml.linalg.{Vector, Vectors}
@@ -436,7 +435,7 @@ object PageRank extends Logging {
 
     // Initialize the pagerankGraph with each edge attribute
     // having weight 1/outDegree and each vertex with attribute 0.
-    val pagerankGraph: Graph[(Double, Double), Double] = graph
+    val pagerankGraph: Graph[DoubleDouble, Double] = graph
       // Associate the degree with each vertex
       .outerJoinVertices(graph.outDegrees) {
         (vid, vdata, deg) => deg.getOrElse(0)
@@ -445,34 +444,34 @@ object PageRank extends Logging {
       .mapTriplets( e => 1.0 / e.srcAttr )
       // Set the vertex attributes to (initialPR, delta = 0)
       .mapVertices { (id, attr) =>
-        if (id == src) (0.0, Double.NegativeInfinity) else (0.0, 0.0)
+        if (id == src) new DoubleDouble(0.0, Double.NegativeInfinity) else new DoubleDouble()
       }
       .cache()
 
     // Define the three functions needed to implement PageRank in the GraphX
     // version of Pregel
-    def vertexProgram(id: VertexId, attr: (Double, Double), msgSum: Double): (Double, Double) = {
-      val (oldPR, lastDelta) = attr
+    def vertexProgram(id: VertexId, attr: DoubleDouble, msgSum: Double): DoubleDouble = {
+      val (oldPR, lastDelta) = (attr.a,attr.b)
       val newPR = oldPR + (1.0 - resetProb) * msgSum
       //System.out.print(s"vertex [${id}] old attr ${attr}, new pr ${newPR}, msg ${msgSum}")
-      (newPR, newPR - oldPR)
+      new DoubleDouble(newPR, newPR - oldPR)
     }
 
-    def personalizedVertexProgram(id: VertexId, attr: (Double, Double),
-                                  msgSum: Double): (Double, Double) = {
-      val (oldPR, lastDelta) = attr
+    def personalizedVertexProgram(id: VertexId, attr: DoubleDouble,
+                                  msgSum: Double): DoubleDouble = {
+      val (oldPR, lastDelta) = (attr.a,attr.b)
       val newPR = if (lastDelta == Double.NegativeInfinity) {
         1.0
       } else {
         oldPR + (1.0 - resetProb) * msgSum
       }
-      (newPR, newPR - oldPR)
+      new DoubleDouble(newPR, newPR - oldPR)
     }
 
-    def sendMessage(edge: EdgeTriplet[(Double, Double), Double]) = {
-      if (edge.srcAttr._2 > tol) {
+    def sendMessage(edge: EdgeTriplet[DoubleDouble, Double]) = {
+      if (edge.srcAttr.b > tol) {
         //System.out.println(s"visiting edge ${edge}, sending msg to dst ${edge.dstId} msg ${edge.srcAttr._2 * edge.attr}")
-        Iterator((edge.dstId, edge.srcAttr._2 * edge.attr))
+        Iterator((edge.dstId, edge.srcAttr.b * edge.attr))
       } else {
       //  System.out.println(s"visiting edge ${edge}, no msg to send")
         Iterator.empty
@@ -486,16 +485,16 @@ object PageRank extends Logging {
 
     // Execute a dynamic version of Pregel.
     val vp = if (personalized) {
-      (id: VertexId, attr: (Double, Double), msgSum: Double) =>
+      (id: VertexId, attr: DoubleDouble, msgSum: Double) =>
         personalizedVertexProgram(id, attr, msgSum)
     } else {
-      (id: VertexId, attr: (Double, Double), msgSum: Double) =>
+      (id: VertexId, attr: DoubleDouble, msgSum: Double) =>
         vertexProgram(id, attr, msgSum)
     }
 
     val rankGraph = Pregel(pagerankGraph, initialMessage, activeDirection = EdgeDirection.Out)(
       vp, sendMessage, messageCombiner)
-      .mapVertices((vid, attr) => attr._1)
+      .mapVertices((vid, attr) => attr.a)
 
     // SPARK-18847 If the graph has sinks (vertices with no outgoing edges) correct the sum of ranks
     normalizeRankSum(rankGraph, personalized)
