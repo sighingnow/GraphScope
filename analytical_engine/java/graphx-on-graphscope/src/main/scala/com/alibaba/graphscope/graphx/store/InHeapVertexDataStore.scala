@@ -6,10 +6,10 @@ import com.alibaba.graphscope.utils.ThreadSafeBitSet
 
 import scala.reflect.ClassTag
 
-class InHeapVertexDataStore [@specialized(Long,Double,Int) VD: ClassTag](val ivnum : Int, length : Int, client : VineyardClient, numSplit : Int) extends AbstractInHeapDataStore [VD](length,client,numSplit){
+class InHeapVertexDataStore [@specialized(Long,Double,Int) VD: ClassTag](val ivnum : Int, length : Int, numSplit : Int) extends AbstractInHeapDataStore [VD](length,numSplit){
   var globalActive : ThreadSafeBitSet = null.asInstanceOf[ThreadSafeBitSet]
   override def mapToNew[T2: ClassTag]: DataStore[T2] = {
-    new InHeapVertexDataStore[T2](ivnum,length,client,numSplit)
+    new InHeapVertexDataStore[T2](ivnum,length,numSplit)
   }
 
   def updateActiveSet(partActive : BitSetWithOffset) : Unit = {

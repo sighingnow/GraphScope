@@ -7,10 +7,10 @@ import org.apache.spark.internal.Logging
 import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.ClassTag
 
-abstract class AbstractInHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val length : Int, val client : VineyardClient, numSplit : Int, val array : Array[VD]) extends AbstractDataStore[VD](numSplit) with Logging {
+abstract class AbstractInHeapDataStore[@specialized(Long,Double,Int) VD: ClassTag](val length : Int, numSplit : Int, val array : Array[VD]) extends AbstractDataStore[VD](numSplit) with Logging {
 
-  def this(length : Int, client : VineyardClient, numSplit : Int) = {
-    this(length,client, numSplit,new Array[VD](length))
+  def this(length : Int,  numSplit : Int) = {
+    this(length, numSplit,new Array[VD](length))
   }
 
   override def size: Int = array.length

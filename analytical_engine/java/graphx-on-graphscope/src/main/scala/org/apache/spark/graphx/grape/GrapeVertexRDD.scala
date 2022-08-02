@@ -110,7 +110,7 @@ object GrapeVertexRDD extends Logging{
     val grapeVertexPartitions = edgeRDD.grapePartitionsRDD.mapPartitions(iter =>{
       val ePart = iter.next()
 //      val array = new Array[VD](ePart.graphStructure.getVertexSize.toInt)
-      val vertexDataStore = new InHeapVertexDataStore[VD](ePart.graphStructure.getInnerVertexSize.toInt,ePart.graphStructure.getVertexSize.toInt, ePart.client, 1)
+      val vertexDataStore = new InHeapVertexDataStore[VD](ePart.graphStructure.getInnerVertexSize.toInt,ePart.graphStructure.getVertexSize.toInt, 1)
 //      val innerVertexDataStore = new InHeapVertexDataStore[VD](ePart.graphStructure.getInnerVertexSize.toInt, ePart.graphStructure.getOuterVertexSize.toInt, ePart.client, 1)
       val actualStructure = ePart.graphStructure.asInstanceOf[FragmentStructure]
         val frag = actualStructure.fragment.asInstanceOf[IFragment[Long,Long,VD,_]]

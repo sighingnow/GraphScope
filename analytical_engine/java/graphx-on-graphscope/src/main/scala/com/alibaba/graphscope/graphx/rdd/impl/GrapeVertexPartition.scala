@@ -244,6 +244,10 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       while (i >= 0 && i < endLid) {
         val otherV: Option[VD2] = if (other.bitSet.get(i)) Some(other.getData(i)) else None
         val t = f(this.graphStructure.getId(i), this.getData(i), otherV)
+        if (t == null) {
+          log.info(s"when join ${this} and ${other} at pos ${i} result is null")
+          throw new IllegalStateException("null......")
+        }
         newValues.setData(i, t)
         i = this.bitSet.nextSetBit(i + 1)
       }
