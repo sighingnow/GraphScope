@@ -213,8 +213,10 @@ object GrapeUtils extends Logging{
       while (i < limit){
         val dd = castedArray(i)
         require(dd != null, s"pos ${i}/${limit} is null")
-        objectOutputStream.writeDouble(dd.a)
-        objectOutputStream.writeDouble(dd.b)
+        ffiByteVectorOutput.writeDouble(dd.a)
+        ffiByteVectorOutput.writeDouble(dd.b)
+//        objectOutputStream.writeDouble(dd.a)
+//        objectOutputStream.writeDouble(dd.b)
         ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
         prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
         i += 1
