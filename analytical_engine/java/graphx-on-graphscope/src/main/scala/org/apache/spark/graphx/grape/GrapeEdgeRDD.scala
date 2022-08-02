@@ -196,7 +196,7 @@ object GrapeEdgeRDD extends Logging{
         val time0 = System.nanoTime()
         val vm = meta.globalVM
         //set numSplit later
-        val vertexDataStore = new InHeapVertexDataStore[VD](vm.innerVertexSize().toInt,vm.getVertexSize.toInt, meta.vineyardClient, 0)
+        val vertexDataStore = new InHeapVertexDataStore[VD](vm.innerVertexSize().toInt,vm.getVertexSize.toInt, 0)
 //        val outerVertexDataStore = new InHeapVertexDataStore[VD](vm.innerVertexSize().toInt, vm.getOuterVertexSize.toInt, meta.vineyardClient,1, outer = true)
 //        val innerVertexDataStore = new InHeapVertexDataStore[VD](0, vm.innerVertexSize().toInt, meta.vineyardClient,0)
         //If vertex attr are in edge shuffles, we init the inner vertex Data store.
