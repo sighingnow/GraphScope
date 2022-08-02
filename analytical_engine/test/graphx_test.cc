@@ -181,7 +181,6 @@ vineyard::ObjectID TestGraphXVertexData(vineyard::Client& client) {
     for (int i = 0; i < 3; ++i) {
       wordsBuilder.UnsafeAppend(i);
     }
-    builder.SetBitsetWords(wordsBuilder);
     auto vd = builder.MySeal(client);
     id = vd->id();
   }

@@ -132,6 +132,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         }
         this.graphXFragment = getBaseGraphXFragment(iFragment);
         innerVerticesNum = (int) graphXFragment.getInnerVerticesNum();
+        verticesNum = graphXFragment.getVerticesNum().intValue();
         long time00 = System.nanoTime();
         Tuple2<PrimitiveArray<VD>, PrimitiveArray<ED>> tuple = initOldAndNewArrays(graphXFragment,
             conf);
@@ -146,7 +147,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
         this.messageManager = messageManager;
         this.maxIterations = maxIterations;
 
-        verticesNum = graphXFragment.getVerticesNum().intValue();
 
         nextSet = new FixedBitSet((int) verticesNum);
         logger.info("before create store");
@@ -215,10 +215,10 @@ public class GraphXPIE<VD, ED, MSG_T> {
             lid = curSet.nextSetBit(lid + 1)) {
             long oid = lid2Oid[fid].get(lid);
             VD originalVD = newVdataArray.get(lid);
-            if (originalVD == null){
+            //if (originalVD == null){
                 //null indicate the vertex is inactive.
-                continue ;
-            }
+              //  continue ;
+            //}
             if (firstRound) {
                 newVdataArray.set(lid, vprog.apply(oid, originalVD, initialMessage));
             } else {
