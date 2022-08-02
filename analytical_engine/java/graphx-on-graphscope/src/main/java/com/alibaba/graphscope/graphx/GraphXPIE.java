@@ -31,6 +31,9 @@ import com.alibaba.graphscope.utils.TriConsumer;
 import com.alibaba.graphscope.utils.TriConsumerV2;
 import com.alibaba.graphscope.utils.array.PrimitiveArray;
 import com.alibaba.graphscope.utils.array.impl.TypedBackendPrimitiveArray;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.io.Input;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.BitSet;
@@ -533,12 +536,18 @@ public class GraphXPIE<VD, ED, MSG_T> {
         StdVector<Byte> data = oldArray.getRawBytes();
         FFIByteVector ffiByteVector = new FFIByteVector(data.getAddress());
         FFIByteVectorInputStream ffiInput = new FFIByteVectorInputStream(ffiByteVector);
-        ObjectInputStream objectInputStream = new ObjectInputStream(ffiInput);
+//        ObjectInputStream objectInputStream = new ObjectInputStream(ffiInput);
+        Input input = new Input(ffiInput);
+        Kryo kryo = new Kryo();
+        kryo.register(scala.Tuple2.class);
+        Serializer serializer = kryo.getSerializer(scala.Tuple2.class);
+        logger.info("serializer {}", serializer.getClass().getName());
         long len = oldArray.getLength();
         logger.info("reading {} objects from array of bytes {}", len, data.size());
         PrimitiveArray<T> newArray = PrimitiveArray.create(clz, (int) len);
         for (int i = 0; i < len; ++i) {
-            T obj = (T) objectInputStream.readObject();
+//            T obj = (T) objectInputStream.readObject();
+            T obj = (T) kryo.readObjectOrNull(input, scala.Tuple2.class);
             newArray.set(i, obj);
         }
         return newArray;

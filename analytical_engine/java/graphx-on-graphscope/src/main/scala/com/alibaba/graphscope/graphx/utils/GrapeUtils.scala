@@ -201,6 +201,9 @@ object GrapeUtils extends Logging{
     ffiOffset.touch()
 //    val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
     val kryo = new Kryo()
+    kryo.register(classOf[T])
+    val serializer = kryo.getSerializer(classOf[T])
+    log.info(s"using serializer ${serializer.getClass.getSimpleName}")
     var i = activeVertices.nextSetBit(0)
     val limit = size
     var prevBytesWritten = 0
@@ -210,7 +213,7 @@ object GrapeUtils extends Logging{
         nullCount +=1
       }
 //      objectOutputStream.writeObject(array(i))
-      kryo.writeObject(output, array(i))
+      kryo.writeObjectOrNull(output, array(i),serializer)
       ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
       prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
       i += 1
