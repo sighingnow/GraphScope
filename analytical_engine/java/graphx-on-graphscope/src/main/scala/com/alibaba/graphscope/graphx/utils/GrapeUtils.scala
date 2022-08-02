@@ -192,7 +192,7 @@ object GrapeUtils extends Logging{
     log.info(s"Building primitive array size ${size} with num thread ${numThread} cost ${(time1 - time0)/1000000}ms")
   }
 
-  def fillVertexStringArrowArray[T : ClassTag](array: Array[T],activeVertices : BitSetWithOffset) : (FFIByteVector, FFIIntVector) = {
+  def fillVertexStringArrowArray[T : ClassTag](array: Array[T],activeVertices : ThreadSafeBitSet) : (FFIByteVector, FFIIntVector) = {
     val size = array.length
     val ffiByteVectorOutput = new FFIByteVectorOutputStream()
     val output = new Output(ffiByteVectorOutput)
@@ -270,7 +270,7 @@ object GrapeUtils extends Logging{
     newEdataBuilder.seal(client).get()
   }
 
-  def array2StringVertexData[T : ClassTag](array: Array[T],activeVertices : BitSetWithOffset,client: VineyardClient) : StringVertexData[Long,CXXStdString] = {
+  def array2StringVertexData[T : ClassTag](array: Array[T],activeVertices : ThreadSafeBitSet,client: VineyardClient) : StringVertexData[Long,CXXStdString] = {
     val activeSetLongs = bitSet2longs(activeVertices)
     val (ffiByteVector,ffiIntVector) = fillVertexStringArrowArray(array,activeVertices)
     val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder()
