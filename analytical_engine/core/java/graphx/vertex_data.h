@@ -68,16 +68,16 @@ class VertexData : public vineyard::Registered<VertexData<VID_T, VD_T>> {
       vdatas_ = vineyard_array.GetArray();
     }
 
-    {
-      vineyard::NumericArray<int64_t> vineyard_array;
-      vineyard_array.Construct(meta.GetMemberMeta("words"));
-      words_ = vineyard_array.GetArray();
-    }
+    // {
+    //   vineyard::NumericArray<int64_t> vineyard_array;
+    //   vineyard_array.Construct(meta.GetMemberMeta("words"));
+    //   words_ = vineyard_array.GetArray();
+    // }
 
     CHECK_EQ(vdatas_->length(), frag_vnums_);
 
     vdatas_accessor_.Init(vdatas_);
-    words_accessor_.Init(words_);
+    // words_accessor_.Init(words_);
     LOG(INFO) << "Finish construct vertex data, frag vnums: " << frag_vnums_;
   }
 
@@ -98,14 +98,15 @@ class VertexData : public vineyard::Registered<VertexData<VID_T, VD_T>> {
     return vdatas_accessor_;
   }
 
-  graphx::ImmutableTypedArray<int64_t>& GetWords() { return words_accessor_; }
+  // graphx::ImmutableTypedArray<int64_t>& GetWords() { return words_accessor_;
+  // }
 
  private:
   vid_t frag_vnums_;
   std::shared_ptr<vdata_array_t> vdatas_;
-  std::shared_ptr<arrow::Int64Array> words_;
+  // std::shared_ptr<arrow::Int64Array> words_;
   graphx::ImmutableTypedArray<vdata_t> vdatas_accessor_;
-  graphx::ImmutableTypedArray<int64_t> words_accessor_;
+  // graphx::ImmutableTypedArray<int64_t> words_accessor_;
 
   template <typename _VID_T, typename _VD_T>
   friend class VertexDataBuilder;
@@ -140,16 +141,16 @@ class VertexData<VID_T, std::string>
       vineyard_array.Construct(meta.GetMemberMeta("vdatas"));
       vdatas_ = vineyard_array.GetArray();
     }
-    {
-      vineyard::NumericArray<int64_t> vineyard_array;
-      vineyard_array.Construct(meta.GetMemberMeta("words"));
-      words_ = vineyard_array.GetArray();
-    }
+    // {
+    //   vineyard::NumericArray<int64_t> vineyard_array;
+    //   vineyard_array.Construct(meta.GetMemberMeta("words"));
+    //   words_ = vineyard_array.GetArray();
+    // }
 
     CHECK_EQ(vdatas_->length(), frag_vnums_);
 
     vdatas_accessor_.Init(vdatas_);
-    words_accessor_.Init(words_);
+    // words_accessor_.Init(words_);
     LOG(INFO) << "Finish construct vertex data, frag vnums: " << frag_vnums_;
   }
 
@@ -170,14 +171,15 @@ class VertexData<VID_T, std::string>
   graphx::ImmutableTypedArray<vdata_t>& GetVdataArray() {
     return vdatas_accessor_;
   }
-  graphx::ImmutableTypedArray<int64_t>& GetWords() { return words_accessor_; }
+  // graphx::ImmutableTypedArray<int64_t>& GetWords() { return words_accessor_;
+  // }
 
  private:
   vid_t frag_vnums_;
   std::shared_ptr<vdata_array_t> vdatas_;
-  std::shared_ptr<arrow::Int64Array> words_;
+  // std::shared_ptr<arrow::Int64Array> words_;
   graphx::ImmutableTypedArray<std::string> vdatas_accessor_;
-  graphx::ImmutableTypedArray<int64_t> words_accessor_;
+  // graphx::ImmutableTypedArray<int64_t> words_accessor_;
 
   template <typename _VID_T, typename _VD_T>
   friend class VertexDataBuilder;
@@ -220,9 +222,9 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
     return {};
   }
 
-  void SetBitsetWords(bitset_words_builder_t& words_builder) {
-    words_builder.Finish(&bitset_words_array_);
-  }
+  // void SetBitsetWords(bitset_words_builder_t& words_builder) {
+  //   words_builder.Finish(&bitset_words_array_);
+  // }
 
   void Init(vid_t frag_vnums, std::vector<char>& vdata_builder,
             std::vector<int32_t>& offset) {
@@ -244,15 +246,15 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
 
     size_t nBytes = 0;
     vertex_data->vdatas_ = vineyard_array.GetArray();
-    vertex_data->words_ = vineyard_words_array.GetArray();
+    // vertex_data->words_ = vineyard_words_array.GetArray();
     vertex_data->frag_vnums_ = frag_vnums_;
     vertex_data->vdatas_accessor_.Init(vertex_data->vdatas_);
-    vertex_data->words_accessor_.Init(vertex_data->words_);
+    // vertex_data->words_accessor_.Init(vertex_data->words_);
     vertex_data->meta_.AddKeyValue("frag_vnums", frag_vnums_);
     vertex_data->meta_.AddMember("vdatas", vineyard_array.meta());
-    vertex_data->meta_.AddMember("words", vineyard_words_array.meta());
+    // vertex_data->meta_.AddMember("words", vineyard_words_array.meta());
     nBytes += vineyard_array.nbytes();
-    nBytes += vineyard_words_array.nbytes();
+    // nBytes += vineyard_words_array.nbytes();
     LOG(INFO) << "total bytes: " << nBytes;
     vertex_data->meta_.SetNBytes(nBytes);
     VINEYARD_CHECK_OK(
@@ -268,12 +270,13 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
     vineyard_array =
         *std::dynamic_pointer_cast<vineyard::NumericArray<vdata_t>>(
             vdata_builder.Seal(client));
-    {
-      typename vineyard::InternalType<int64_t>::vineyard_builder_type
-          words_builder(client, this->bitset_words_array_);
-      vineyard_words_array = *std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
-          words_builder.Seal(client));
-    }
+    // {
+    //   typename vineyard::InternalType<int64_t>::vineyard_builder_type
+    //       words_builder(client, this->bitset_words_array_);
+    //   vineyard_words_array =
+    //       *std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
+    //           words_builder.Seal(client));
+    // }
     LOG(INFO) << "Finish building vertex data;";
     return vineyard::Status::OK();
   }
@@ -282,8 +285,8 @@ class VertexDataBuilder : public vineyard::ObjectBuilder {
   vid_t frag_vnums_;
   std::shared_ptr<vdata_array_t> vdata_array_;
   vineyard::NumericArray<vdata_t> vineyard_array;
-  std::shared_ptr<bitset_words_t> bitset_words_array_;
-  vineyard::NumericArray<int64_t> vineyard_words_array;
+  // std::shared_ptr<bitset_words_t> bitset_words_array_;
+  // vineyard::NumericArray<int64_t> vineyard_words_array;
 };
 
 template <typename VID_T>
@@ -325,9 +328,9 @@ class VertexDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
     LOG(INFO) << "Init vertex data with " << frag_vnums_;
   }
 
-  void SetBitsetWords(bitset_words_builder_t& words_builder) {
-    words_builder.Finish(&bitset_words_array_);
-  }
+  // void SetBitsetWords(bitset_words_builder_t& words_builder) {
+  //   words_builder.Finish(&bitset_words_array_);
+  // }
 
   std::shared_ptr<VertexData<vid_t, std::string>> MySeal(
       vineyard::Client& client) {
@@ -344,15 +347,15 @@ class VertexDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
 
     size_t nBytes = 0;
     vertex_data->vdatas_ = vineyard_array.GetArray();
-    vertex_data->words_ = vineyard_words_array.GetArray();
+    // vertex_data->words_ = vineyard_words_array.GetArray();
     vertex_data->frag_vnums_ = frag_vnums_;
     vertex_data->vdatas_accessor_.Init(vertex_data->vdatas_);
-    vertex_data->words_accessor_.Init(vertex_data->words_);
+    // vertex_data->words_accessor_.Init(vertex_data->words_);
     vertex_data->meta_.AddKeyValue("frag_vnums", frag_vnums_);
     vertex_data->meta_.AddMember("vdatas", vineyard_array.meta());
-    vertex_data->meta_.AddMember("words", vineyard_words_array.meta());
+    // vertex_data->meta_.AddMember("words", vineyard_words_array.meta());
     nBytes += vineyard_array.nbytes();
-    nBytes += vineyard_words_array.nbytes();
+    // nBytes += vineyard_words_array.nbytes();
     LOG(INFO) << "total bytes: " << nBytes;
     vertex_data->meta_.SetNBytes(nBytes);
     VINEYARD_CHECK_OK(
@@ -366,12 +369,13 @@ class VertexDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
     vineyard::LargeStringArrayBuilder vdata_builder(client, this->vdata_array_);
     vineyard_array = *std::dynamic_pointer_cast<vineyard::LargeStringArray>(
         vdata_builder.Seal(client));
-    {
-      typename vineyard::InternalType<int64_t>::vineyard_builder_type
-          words_builder(client, this->bitset_words_array_);
-      vineyard_words_array = *std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
-          words_builder.Seal(client));
-    }
+    // {
+    //   typename vineyard::InternalType<int64_t>::vineyard_builder_type
+    //       words_builder(client, this->bitset_words_array_);
+    //   vineyard_words_array =
+    //   *std::dynamic_pointer_cast<vineyard::NumericArray<int64_t>>(
+    //       words_builder.Seal(client));
+    // }
     LOG(INFO) << "Finish building vertex data;";
     return vineyard::Status::OK();
   }
@@ -379,9 +383,9 @@ class VertexDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
  private:
   vid_t frag_vnums_;
   std::shared_ptr<vdata_array_t> vdata_array_;
-  std::shared_ptr<bitset_words_t> bitset_words_array_;
+  // std::shared_ptr<bitset_words_t> bitset_words_array_;
   vineyard::LargeStringArray vineyard_array;
-  vineyard::NumericArray<int64_t> vineyard_words_array;
+  // vineyard::NumericArray<int64_t> vineyard_words_array;
 };
 }  // namespace gs
 #endif  // ANALYTICAL_ENGINE_CORE_JAVA_GRAPHX_VERTEX_DATA_H

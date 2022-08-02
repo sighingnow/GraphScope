@@ -24,7 +24,7 @@ public interface StringVertexData<VID,T> extends FFISerializable {
      */
     @FFINameAlias("VerticesNum") VID verticesNum();
 
-    @FFINameAlias("GetWords") @CXXReference @FFITypeAlias("gs::graphx::ImmutableTypedArray<int64_t>") ImmutableTypedArray<Long> getWords();
+//    @FFINameAlias("GetWords") @CXXReference @FFITypeAlias("gs::graphx::ImmutableTypedArray<int64_t>") ImmutableTypedArray<Long> getWords();
 
     @FFINameAlias("GetVdataArray") @CXXReference @FFITypeAlias("gs::graphx::ImmutableTypedArray<std::string>") StringTypedArray getVdataArray();
 
