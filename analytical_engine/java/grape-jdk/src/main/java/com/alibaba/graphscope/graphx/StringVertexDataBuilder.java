@@ -23,8 +23,8 @@ public interface StringVertexDataBuilder<VID,T> extends FFISerializable {
     void init(long frag_vnums, @CXXReference @FFITypeAlias("std::vector<char>") StdVector<Byte> vector,
         @CXXReference @FFITypeAlias("std::vector<int32_t>") StdVector<Integer> length);
 
-    @FFINameAlias("SetBitsetWords")
-    void setBitsetWords(@CXXReference @FFITypeAlias("arrow::Int64Builder") ArrowArrayBuilder<Long> words);
+//    @FFINameAlias("SetBitsetWords")
+//    void setBitsetWords(@CXXReference @FFITypeAlias("arrow::Int64Builder") ArrowArrayBuilder<Long> words);
 
     @FFINameAlias("MySeal")
     @CXXValue StdSharedPtr<StringVertexData<VID,T>> seal(@CXXReference VineyardClient client);

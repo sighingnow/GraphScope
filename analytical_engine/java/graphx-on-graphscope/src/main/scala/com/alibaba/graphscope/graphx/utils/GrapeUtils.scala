@@ -85,7 +85,7 @@ object GrapeUtils extends Logging{
 
   def isPrimitive[T : ClassTag] : Boolean = {
     val clz = getRuntimeClass[T]
-    clz.equals(classOf[Double]) || clz.equals(classOf[Long]) || clz.equals(classOf[Int]) || clz.equals(classOf[Float]))
+    clz.equals(classOf[Double]) || clz.equals(classOf[Long]) || clz.equals(classOf[Int]) || clz.equals(classOf[Float])
   }
 
   @throws[UnknownHostException]
