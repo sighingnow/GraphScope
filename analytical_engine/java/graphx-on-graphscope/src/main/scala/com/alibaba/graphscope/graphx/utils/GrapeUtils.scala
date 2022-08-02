@@ -213,7 +213,7 @@ object GrapeUtils extends Logging{
         nullCount +=1
       }
 //      objectOutputStream.writeObject(array(i))
-      kryo.writeObjectOrNull(output, array(i),serializer)
+      kryo.writeClassAndObject(output, array(i))
       ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
       prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
       i += 1
