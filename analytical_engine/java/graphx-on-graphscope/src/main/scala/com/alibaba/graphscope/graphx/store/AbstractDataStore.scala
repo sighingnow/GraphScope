@@ -16,10 +16,12 @@ abstract class AbstractDataStore[T : ClassTag](var numSplit : Int) extends DataS
 
   override def getOrCreate[T2: ClassTag]: AbstractDataStore[T2] = {
     if (resultArray == null || count.get() == 0){
-      synchronized {
-        //        log.info(s"creating result array of type ${GrapeUtils.getRuntimeClass[VD2].getSimpleName}")
-        resultArray = mapToNew[T2]
-        count.set(numSplit)
+      count.synchronized {
+        if (resultArray == null || count.get() == 0) {
+          //        log.info(s"creating result array of type ${GrapeUtils.getRuntimeClass[VD2].getSimpleName}")
+          resultArray = mapToNew[T2]
+          count.set(numSplit)
+        }
       }
     }
     count.decrementAndGet()
