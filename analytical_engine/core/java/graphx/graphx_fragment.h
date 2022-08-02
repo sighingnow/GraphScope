@@ -222,9 +222,9 @@ class GraphXFragment
     return vdata_.GetVdataArray();
   }
 
-  inline graphx::ImmutableTypedArray<int64_t>& GetVdataWords() {
-    return vdata_.GetWords();
-  }
+  // inline graphx::ImmutableTypedArray<int64_t>& GetVdataWords() {
+  //   return vdata_.GetWords();
+  // }
 
  private:
   grape::fid_t fnum_, fid_;
