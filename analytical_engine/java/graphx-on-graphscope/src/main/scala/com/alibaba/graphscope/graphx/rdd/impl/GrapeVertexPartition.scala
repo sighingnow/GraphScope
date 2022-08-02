@@ -109,6 +109,9 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     val time0 = System.nanoTime()
     log.info(s"Start updating outer vertex on part ${pid}")
     if (vertexDataMessage.hasNext) {
+      for (i <- 0 until vertexData.length){
+        require(vertexData.getData(i) != null, s"before updating, pos ${i} is null, ivnum ${ivnum}")
+      }
       val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
       val threads = new ArrayBuffer[Thread]
       var tid = 0
