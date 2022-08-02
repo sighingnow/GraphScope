@@ -141,6 +141,9 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       for (i <- 0 until localNum){
         threads(i).join()
       }
+      for (i <- 0 until vertexData.length){
+        require(vertexData.getData(i) != null, s"pos ${i} is null, ivnum ${ivnum}")
+      }
       val time1 = System.nanoTime()
       log.info(s"[Perf: ] updating outer vertex data cost ${(time1 - time0) / 1000000}ms, size ${}")
     }
