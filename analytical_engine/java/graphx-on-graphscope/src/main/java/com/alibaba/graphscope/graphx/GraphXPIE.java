@@ -17,6 +17,7 @@ import com.alibaba.graphscope.fragment.adaptor.GraphXStringEDFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringVDFragmentAdaptor;
 import com.alibaba.graphscope.fragment.adaptor.GraphXStringVEDFragmentAdaptor;
 import com.alibaba.graphscope.graphx.graph.GSEdgeTripletImpl;
+import com.alibaba.graphscope.graphx.utils.DoubleDouble;
 import com.alibaba.graphscope.graphx.utils.FixedBitSet;
 import com.alibaba.graphscope.graphx.utils.IdParser;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
@@ -137,11 +138,10 @@ public class GraphXPIE<VD, ED, MSG_T> {
         long time01 = System.nanoTime();
         newVdataArray = tuple._1();
         newEdataArray = tuple._2();
-        initCurSet(graphXFragment.getVdataWords());
-//        curSet = new BitSet((int) verticesNum);
-//        //initially activate all vertices
-//        curSet.set(0, verticesNum);
-
+//        initCurSet(graphXFragment.getVdataWords());
+        curSet = new FixedBitSet((int) verticesNum);
+        //initially activate all vertices
+        curSet.setUntil(verticesNum);
 
         this.messageManager = messageManager;
         this.maxIterations = maxIterations;
@@ -545,10 +545,19 @@ public class GraphXPIE<VD, ED, MSG_T> {
         long len = oldArray.getLength();
         logger.info("reading {} objects from array of bytes {}", len, data.size());
         PrimitiveArray<T> newArray = PrimitiveArray.create(clz, (int) len);
-        for (int i = 0; i < len; ++i) {
-            T obj = (T) objectInputStream.readObject();
+        if (clz.equals(DoubleDouble.class)){
+            for (int i = 0; i < len; ++i){
+                double a = objectInputStream.readDouble();
+                double b = objectInputStream.readDouble();
+                newArray.set(i, (T) new DoubleDouble(a,b));
+            }
+        }
+        else {
+            for (int i = 0; i < len; ++i) {
+                T obj = (T) objectInputStream.readObject();
 //            T obj = (T) kryo.readClassAndObject(input);
-            newArray.set(i, obj);
+                newArray.set(i, obj);
+            }
         }
         return newArray;
     }

@@ -95,7 +95,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
 
             var fragId = null.asInstanceOf[Long]
             if (GrapeUtils.isPrimitive[VD] && GrapeUtils.isPrimitive[ED]) {
-              val vertexData = GrapeUtils.array2PrimitiveVertexData(vPart.vertexData.asInstanceOf[AbstractInHeapDataStore[VD]].array,vPart.vertexData.globalActive, ePart.client)
+              val vertexData = GrapeUtils.array2PrimitiveVertexData(vPart.vertexData.asInstanceOf[AbstractInHeapDataStore[VD]].array, ePart.client)
               val edataStore = ePart.edatas
               require(edataStore.size == ePart.totalFragEdgeNum)
 //              val edgeData = GrapeUtils.array2PrimitiveEdgeData(edataArray.asInstanceOf[InHeapDataStore[ED]].array, ePart.client,localNum)
@@ -104,7 +104,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
               fragId = fragBuilder.seal(ePart.client).get().id()
             }
             else if (GrapeUtils.isPrimitive[VD]) {
-              val vertexData = GrapeUtils.array2PrimitiveVertexData(vPart.vertexData.asInstanceOf[AbstractInHeapDataStore[VD]].array,vPart.vertexData.globalActive, ePart.client)
+              val vertexData = GrapeUtils.array2PrimitiveVertexData(vPart.vertexData.asInstanceOf[AbstractInHeapDataStore[VD]].array, ePart.client)
               val edataArray = ePart.edatas
               require(edataArray.size == ePart.totalFragEdgeNum)
               val edgeData = GrapeUtils.array2StringEdgeData(edataArray.asInstanceOf[AbstractInHeapDataStore[ED]].array, ePart.client)
@@ -112,7 +112,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
               fragId = fragBuilder.seal(ePart.client).get().id()
             }
             else if (GrapeUtils.isPrimitive[ED]) {
-              val vertexData = GrapeUtils.array2StringVertexData(vPart.vertexData.asInstanceOf[AbstractInHeapDataStore[VD]].array,vPart.vertexData.globalActive, ePart.client)
+              val vertexData = GrapeUtils.array2StringVertexData(vPart.vertexData.asInstanceOf[AbstractInHeapDataStore[VD]].array, ePart.client)
               val edataStore = ePart.edatas
               require(edataStore.size == ePart.totalFragEdgeNum)
               val edgeData = GrapeUtils.buildPrimitiveEdgeData(edataStore.asInstanceOf[OffHeapEdgeDataStore[ED]], ePart.client, localNum)
@@ -120,7 +120,7 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
               fragId = fragBuilder.seal(ePart.client).get().id()
             }
             else {
-              val vertexData = GrapeUtils.array2StringVertexData(vPart.vertexData.asInstanceOf[AbstractInHeapDataStore[VD]].array,vPart.vertexData.globalActive, ePart.client)
+              val vertexData = GrapeUtils.array2StringVertexData(vPart.vertexData.asInstanceOf[AbstractInHeapDataStore[VD]].array, ePart.client)
               val edataArray = ePart.edatas
               require(edataArray.size == ePart.totalFragEdgeNum)
               val edgeData = GrapeUtils.array2StringEdgeData(edataArray.asInstanceOf[AbstractInHeapDataStore[ED]].array, ePart.client)
@@ -384,12 +384,12 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
           activeSet.setRange(startLid, endLid)
           var i = startLid
           while (i < endLid) {
-            if (newVdArray(i - startLid) == 0) {
-              activeSet.unset(i)
-            }
-            else {
-              newValues.setData(i, newVdArray(i - startLid))
-            }
+//            if (newVdArray(i - startLid) == 0) {
+//              activeSet.unset(i)
+//            }
+//            else {
+            newValues.setData(i, newVdArray(i - startLid))
+//            }
             i += 1
           }
           if (ePart.localNum==0) {

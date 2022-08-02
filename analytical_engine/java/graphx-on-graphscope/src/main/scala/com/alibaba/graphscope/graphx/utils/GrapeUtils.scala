@@ -9,6 +9,7 @@ import com.alibaba.graphscope.stdcxx.{FFIByteVector, FFIIntVector, FFIIntVectorF
 import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, ThreadSafeBitSet}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
 import com.esotericsoftware.kryo.io.Output
+import com.sun.org.apache.xerces.internal.impl.dv.xs.DoubleDV
 import com.twitter.chill.Kryo
 import org.apache.spark.internal.Logging
 
@@ -84,7 +85,7 @@ object GrapeUtils extends Logging{
 
   def isPrimitive[T : ClassTag] : Boolean = {
     val clz = getRuntimeClass[T]
-    clz.equals(classOf[Double]) || clz.equals(classOf[Long]) || clz.equals(classOf[Int]) || clz.equals(classOf[Float])
+    clz.equals(classOf[Double]) || clz.equals(classOf[Long]) || clz.equals(classOf[Int]) || clz.equals(classOf[Float]) || clz.equals(classOf[DoubleDouble])
   }
 
   @throws[UnknownHostException]
@@ -113,9 +114,9 @@ object GrapeUtils extends Logging{
 
   def fillPrimitiveArrowArrayBuilder[T : ClassTag](array: Array[T]) : ArrowArrayBuilder[T] = {
     val size = array.length
+    var i = 0
     val arrowArrayBuilder = ScalaFFIFactory.newArrowArrayBuilder[T](GrapeUtils.getRuntimeClass[T].asInstanceOf[Class[T]])
     arrowArrayBuilder.reserve(size)
-    var i = 0
     while (i < size) {
       arrowArrayBuilder.unsafeAppend(array(i))
       i += 1
@@ -192,7 +193,7 @@ object GrapeUtils extends Logging{
     log.info(s"Building primitive array size ${size} with num thread ${numThread} cost ${(time1 - time0)/1000000}ms")
   }
 
-  def fillVertexStringArrowArray[T : ClassTag](array: Array[T],activeVertices : ThreadSafeBitSet) : (FFIByteVector, FFIIntVector) = {
+  def fillVertexStringArrowArray[T : ClassTag](array: Array[T]) : (FFIByteVector, FFIIntVector) = {//,activeVertices : ThreadSafeBitSet
     val size = array.length
     val ffiByteVectorOutput = new FFIByteVectorOutputStream()
 //    val output = new Output(ffiByteVectorOutput)
@@ -200,20 +201,37 @@ object GrapeUtils extends Logging{
     ffiOffset.resize(size)
     ffiOffset.touch()
     val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
-    var i = activeVertices.nextSetBit(0)
+//    var i = activeVertices.nextSetBit(0)
+    var i = 0
     val limit = size
     var prevBytesWritten = 0
     var nullCount = 0
-    while (i < limit && i >= 0){
-      if (array(i) == null){
-        nullCount +=1
+    if (getRuntimeClass[T] == classOf[DoubleDouble]){
+      ffiByteVectorOutput.getVector.resize(size * 16)
+      ffiByteVectorOutput.getVector.touch()
+      val castedArray = array.asInstanceOf[Array[DoubleDouble]]
+      while (i < limit){
+        val dd = castedArray(i)
+        require(dd != null, s"pos ${i}/${limit} is null")
+        objectOutputStream.writeDouble(dd.a)
+        objectOutputStream.writeDouble(dd.b)
+        ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
+        prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
+        i += 1
       }
-      objectOutputStream.writeObject(array(i))
-      ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
-      prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
-      i += 1
     }
-    log.info(s"total size ${size} null count ${nullCount}, active ${activeVertices.cardinality()}")
+    else {
+      while (i < limit && i >= 0) {
+        if (array(i) == null) {
+          nullCount += 1
+        }
+        objectOutputStream.writeObject(array(i))
+        ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
+        prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
+        i += 1
+      }
+    }
+//    log.info(s"total size ${size} null count ${nullCount}, active ${activeVertices.cardinality()}")
     //require(size == (nullCount + activeVertices.cardinality()))
     objectOutputStream.flush()
     ffiByteVectorOutput.finishSetting()
@@ -237,7 +255,6 @@ object GrapeUtils extends Logging{
       if (array(i) == null){
         nullCount +=1
       }
-      val tuple = (array(i)).asInstanceOf[Tuple2]
       objectOutputStream.writeObject(array(i))
       ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
       prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
@@ -280,12 +297,12 @@ object GrapeUtils extends Logging{
   }
 
 
-  def array2PrimitiveVertexData[T: ClassTag](array : Array[T], activeVertices : ThreadSafeBitSet, client : VineyardClient) : VertexData[Long,T] = {
+  def array2PrimitiveVertexData[T: ClassTag](array : Array[T], client : VineyardClient) : VertexData[Long,T] = {
     val builder = fillPrimitiveArrowArrayBuilder(array)
-    val activeSetLongs = bitSet2longs(activeVertices)
+//    val activeSetLongs = bitSet2longs(activeVertices)
     val newVdataBuilder = ScalaFFIFactory.newVertexDataBuilder[T]()
     newVdataBuilder.init(builder)
-    newVdataBuilder.setBitsetWords(activeSetLongs.asInstanceOf[ArrowArrayBuilder[java.lang.Long]])
+//    newVdataBuilder.setBitsetWords(activeSetLongs.asInstanceOf[ArrowArrayBuilder[java.lang.Long]])
     newVdataBuilder.seal(client).get()
   }
 
@@ -298,15 +315,14 @@ object GrapeUtils extends Logging{
     newEdataBuilder.seal(client).get()
   }
 
-  def array2StringVertexData[T : ClassTag](array: Array[T],activeVertices : ThreadSafeBitSet,client: VineyardClient) : StringVertexData[Long,CXXStdString] = {
-    val activeSetLongs = bitSet2longs(activeVertices)
-    val (ffiByteVector,ffiIntVector) = if (getRuntimeClass[T].isInstance(Tuple2)){
-      fillVertexTupleArrowArray(array,activeVertices)
-    }
-    else fillVertexStringArrowArray(array,activeVertices)
+  def array2StringVertexData[T : ClassTag](array: Array[T],
+//                                           activeVertices : ThreadSafeBitSet,
+                                           client: VineyardClient) : StringVertexData[Long,CXXStdString] = {
+//    val activeSetLongs = bitSet2longs(activeVertices)
+    val (ffiByteVector,ffiIntVector) = fillVertexStringArrowArray(array)
     val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder()
     newVdataBuilder.init(array.length, ffiByteVector, ffiIntVector)
-    newVdataBuilder.setBitsetWords(activeSetLongs.asInstanceOf[ArrowArrayBuilder[java.lang.Long]])
+//    newVdataBuilder.setBitsetWords(activeSetLongs.asInstanceOf[ArrowArrayBuilder[java.lang.Long]])
     newVdataBuilder.seal(client).get()
   }
 
