@@ -201,8 +201,8 @@ object GrapeUtils extends Logging{
     ffiOffset.touch()
 //    val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
     val kryo = new Kryo()
-    kryo.register(classOf[T])
-    val serializer = kryo.getSerializer(classOf[T])
+    kryo.register(getRuntimeClass[T])
+    val serializer = kryo.getSerializer(getRuntimeClass[T])
     log.info(s"using serializer ${serializer.getClass.getSimpleName}")
     var i = activeVertices.nextSetBit(0)
     val limit = size
