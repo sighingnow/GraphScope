@@ -26,7 +26,6 @@ object PageRank extends Logging{
     val ranks = graph.pageRank(0.0001).vertices
     // Join the ranks with the usernames
     // Print the result
-    println(ranks.collect().mkString("\n"))
 
     log.info(s"Finish query, graph vertices: ${graph.numVertices}  and edges: ${graph.numEdges}")
 
