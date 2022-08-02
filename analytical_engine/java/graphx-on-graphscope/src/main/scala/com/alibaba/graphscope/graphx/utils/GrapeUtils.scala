@@ -237,7 +237,6 @@ object GrapeUtils extends Logging{
       if (array(i) == null){
         nullCount +=1
       }
-      val tuple = (array(i)).asInstanceOf[Tuple2]
       objectOutputStream.writeObject(array(i))
       ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
       prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
