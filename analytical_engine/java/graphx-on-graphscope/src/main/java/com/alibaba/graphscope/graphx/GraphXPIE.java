@@ -547,7 +547,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         PrimitiveArray<T> newArray = PrimitiveArray.create(clz, (int) len);
         for (int i = 0; i < len; ++i) {
 //            T obj = (T) objectInputStream.readObject();
-            T obj = (T) kryo.readObjectOrNull(input, scala.Tuple2.class);
+            T obj = (T) kryo.readObjectOrNull(input, clz);
             newArray.set(i, obj);
         }
         return newArray;
