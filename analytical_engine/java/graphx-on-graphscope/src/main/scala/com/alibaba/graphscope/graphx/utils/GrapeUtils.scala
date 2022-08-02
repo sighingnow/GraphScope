@@ -8,6 +8,8 @@ import com.alibaba.graphscope.serialization.FFIByteVectorOutputStream
 import com.alibaba.graphscope.stdcxx.{FFIByteVector, FFIIntVector, FFIIntVectorFactory, StdVector}
 import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, ThreadSafeBitSet}
 import com.alibaba.graphscope.utils.array.PrimitiveArray
+import com.esotericsoftware.kryo.io.Output
+import com.twitter.chill.Kryo
 import org.apache.spark.internal.Logging
 
 import java.io.ObjectOutputStream
@@ -193,10 +195,12 @@ object GrapeUtils extends Logging{
   def fillVertexStringArrowArray[T : ClassTag](array: Array[T],activeVertices : BitSetWithOffset) : (FFIByteVector, FFIIntVector) = {
     val size = array.length
     val ffiByteVectorOutput = new FFIByteVectorOutputStream()
+    val output = new Output(ffiByteVectorOutput)
     val ffiOffset = FFIIntVectorFactory.INSTANCE.create().asInstanceOf[FFIIntVector]
     ffiOffset.resize(size)
     ffiOffset.touch()
-    val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
+//    val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
+    val kryo = new Kryo()
     var i = activeVertices.nextSetBit(0)
     val limit = size
     var prevBytesWritten = 0
@@ -205,14 +209,16 @@ object GrapeUtils extends Logging{
       if (array(i) == null){
         nullCount +=1
       }
-      objectOutputStream.writeObject(array(i))
+//      objectOutputStream.writeObject(array(i))
+      kryo.writeObject(output, array(i))
       ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
       prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
       i += 1
     }
     log.info(s"total size ${size} null count ${nullCount}, active ${activeVertices.cardinality()}")
     //require(size == (nullCount + activeVertices.cardinality()))
-    objectOutputStream.flush()
+//    objectOutputStream.flush()
+    output.flush()
     ffiByteVectorOutput.finishSetting()
     val writenBytes = ffiByteVectorOutput.bytesWriten()
     log.info(s"write data array ${limit} of type ${GrapeUtils.getRuntimeClass[T].getName}, writen bytes ${writenBytes}")
@@ -246,7 +252,7 @@ object GrapeUtils extends Logging{
   }
 
 
-  def array2PrimitiveVertexData[T: ClassTag](array : Array[T], activeVertices : BitSetWithOffset, client : VineyardClient) : VertexData[Long,T] = {
+  def array2PrimitiveVertexData[T: ClassTag](array : Array[T], activeVertices : ThreadSafeBitSet, client : VineyardClient) : VertexData[Long,T] = {
     val builder = fillPrimitiveArrowArrayBuilder(array)
     val activeSetLongs = bitSet2longs(activeVertices)
     val newVdataBuilder = ScalaFFIFactory.newVertexDataBuilder[T]()
@@ -276,6 +282,17 @@ object GrapeUtils extends Logging{
   def bitSet2longs(bitSetWithOffset: BitSetWithOffset) : ArrowArrayBuilder[Long] = {
     val longVector = ScalaFFIFactory.newSignedLongArrayBuilder()
     val words = bitSetWithOffset.bitset.words
+    longVector.reserve(words.length)
+    var i = 0
+    while (i < words.length){
+      longVector.unsafeAppend(words(i))
+      i += 1
+    }
+    longVector
+  }
+  def bitSet2longs(bitSetWithOffset: ThreadSafeBitSet) : ArrowArrayBuilder[Long] = {
+    val longVector = ScalaFFIFactory.newSignedLongArrayBuilder()
+    val words = bitSetWithOffset.getWords
     longVector.reserve(words.length)
     var i = 0
     while (i < words.length){

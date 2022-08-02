@@ -186,6 +186,25 @@ public class ThreadSafeBitSet {
         return numSetBits;
     }
 
+    public long[] getWords() {
+        int len = 0;
+        ThreadSafeBitSetSegments segments = this.segments.get();
+        for (int i = 0; i < segments.numSegments(); ++i){
+            AtomicLongArray segment = segments.getSegment(i);
+            len += segment.length();
+        }
+        long[] res = new long[len];
+        int ind = 0;
+        for (int i = 0; i < segments.numSegments(); ++i){
+            AtomicLongArray segment = segments.getSegment(i);
+            for (int j = 0; j < segment.length(); ++j){
+                res[ind] = segment.get(j);
+                ind += 1;
+            }
+        }
+        return res;
+    }
+
     /**
      * @return the number of bits which are current specified by this bit set.  This is the maximum value
      * to which you might need to iterate, if you were to iterate over all bits in this set.
