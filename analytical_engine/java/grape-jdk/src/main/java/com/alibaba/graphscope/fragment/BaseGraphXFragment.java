@@ -33,8 +33,8 @@ public interface BaseGraphXFragment<OID_T, VID_T, VD_T, ED_T>
     @FFINameAlias("GetVM")
     @CXXReference GraphXVertexMap<OID_T,VID_T> getVM();
 
-    @FFINameAlias("GetVdataWords")
-    @CXXReference @FFITypeAlias("gs::graphx::ImmutableTypedArray<int64_t>") ImmutableTypedArray<Long> getVdataWords();
+//    @FFINameAlias("GetVdataWords")
+//    @CXXReference @FFITypeAlias("gs::graphx::ImmutableTypedArray<int64_t>") ImmutableTypedArray<Long> getVdataWords();
 
     @FFINameAlias("GetInEdgeNum")
     long getInEdgeNum();
