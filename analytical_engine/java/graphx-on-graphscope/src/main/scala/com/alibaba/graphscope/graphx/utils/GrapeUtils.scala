@@ -195,15 +195,11 @@ object GrapeUtils extends Logging{
   def fillVertexStringArrowArray[T : ClassTag](array: Array[T],activeVertices : ThreadSafeBitSet) : (FFIByteVector, FFIIntVector) = {
     val size = array.length
     val ffiByteVectorOutput = new FFIByteVectorOutputStream()
-    val output = new Output(ffiByteVectorOutput)
+//    val output = new Output(ffiByteVectorOutput)
     val ffiOffset = FFIIntVectorFactory.INSTANCE.create().asInstanceOf[FFIIntVector]
     ffiOffset.resize(size)
     ffiOffset.touch()
-//    val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
-    val kryo = new Kryo()
-    kryo.register(getRuntimeClass[T])
-    val serializer = kryo.getSerializer(getRuntimeClass[T])
-    log.info(s"using serializer ${serializer.getClass.getSimpleName}")
+    val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
     var i = activeVertices.nextSetBit(0)
     val limit = size
     var prevBytesWritten = 0
@@ -212,21 +208,50 @@ object GrapeUtils extends Logging{
       if (array(i) == null){
         nullCount +=1
       }
-//      objectOutputStream.writeObject(array(i))
-      kryo.writeClassAndObject(output, array(i))
+      objectOutputStream.writeObject(array(i))
       ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
       prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
       i += 1
     }
     log.info(s"total size ${size} null count ${nullCount}, active ${activeVertices.cardinality()}")
     //require(size == (nullCount + activeVertices.cardinality()))
-//    objectOutputStream.flush()
-    output.flush()
+    objectOutputStream.flush()
     ffiByteVectorOutput.finishSetting()
     val writenBytes = ffiByteVectorOutput.bytesWriten()
     log.info(s"write data array ${limit} of type ${GrapeUtils.getRuntimeClass[T].getName}, writen bytes ${writenBytes}")
     (ffiByteVectorOutput.getVector,ffiOffset)
   }
+  def fillVertexTupleArrowArray[T : ClassTag](array: Array[T],activeVertices : ThreadSafeBitSet) : (FFIByteVector, FFIIntVector) = {
+    val size = array.length
+    val ffiByteVectorOutput = new FFIByteVectorOutputStream()
+    //    val output = new Output(ffiByteVectorOutput)
+    val ffiOffset = FFIIntVectorFactory.INSTANCE.create().asInstanceOf[FFIIntVector]
+    ffiOffset.resize(size)
+    ffiOffset.touch()
+    val objectOutputStream = new ObjectOutputStream(ffiByteVectorOutput)
+    var i = activeVertices.nextSetBit(0)
+    val limit = size
+    var prevBytesWritten = 0
+    var nullCount = 0
+    while (i < limit && i >= 0){
+      if (array(i) == null){
+        nullCount +=1
+      }
+      val tuple = (array(i)).asInstanceOf[Tuple2]
+      objectOutputStream.writeObject(array(i))
+      ffiOffset.set(i, ffiByteVectorOutput.bytesWriten().toInt - prevBytesWritten)
+      prevBytesWritten = ffiByteVectorOutput.bytesWriten().toInt
+      i += 1
+    }
+    log.info(s"total size ${size} null count ${nullCount}, active ${activeVertices.cardinality()}")
+    //require(size == (nullCount + activeVertices.cardinality()))
+    objectOutputStream.flush()
+    ffiByteVectorOutput.finishSetting()
+    val writenBytes = ffiByteVectorOutput.bytesWriten()
+    log.info(s"write data array ${limit} of type ${GrapeUtils.getRuntimeClass[T].getName}, writen bytes ${writenBytes}")
+    (ffiByteVectorOutput.getVector,ffiOffset)
+  }
+
   def fillEdgeStringArrowArray[T : ClassTag](array: Array[T]) : (FFIByteVector, FFIIntVector) = {
     val size = array.length
     val ffiByteVectorOutput = new FFIByteVectorOutputStream()
@@ -275,7 +300,10 @@ object GrapeUtils extends Logging{
 
   def array2StringVertexData[T : ClassTag](array: Array[T],activeVertices : ThreadSafeBitSet,client: VineyardClient) : StringVertexData[Long,CXXStdString] = {
     val activeSetLongs = bitSet2longs(activeVertices)
-    val (ffiByteVector,ffiIntVector) = fillVertexStringArrowArray(array,activeVertices)
+    val (ffiByteVector,ffiIntVector) = if (getRuntimeClass[T].isInstance(Tuple2)){
+      fillVertexTupleArrowArray(array,activeVertices)
+    }
+    else fillVertexStringArrowArray(array,activeVertices)
     val newVdataBuilder = ScalaFFIFactory.newStringVertexDataBuilder()
     newVdataBuilder.init(array.length, ffiByteVector, ffiIntVector)
     newVdataBuilder.setBitsetWords(activeSetLongs.asInstanceOf[ArrowArrayBuilder[java.lang.Long]])
