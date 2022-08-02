@@ -3,6 +3,7 @@ package com.alibaba.graphscope.graphx.test
 import com.alibaba.graphscope.graphx.rdd.impl.VertexDataMessage
 import com.alibaba.graphscope.graphx.{GraphScopeHelper, VertexData}
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
+import com.alibaba.graphscope.graphx.utils.DoubleDouble
 import org.apache.spark.graphx.{Graph, GraphLoader, VertexId}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
@@ -16,7 +17,7 @@ object PageRankTest extends Logging{
       .getOrCreate()
     val sc = spark.sparkContext
     sc.getConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-    sc.getConf.registerKryoClasses(Array(classOf[EdgeShuffle[_,_]], classOf[Array[Long]], classOf[Array[Int]], classOf[VertexDataMessage[_]]))
+    sc.getConf.registerKryoClasses(Array(classOf[EdgeShuffle[_,_]], classOf[Array[Long]], classOf[Array[Int]], classOf[VertexDataMessage[_]], classOf[DoubleDouble]))
     if (args.length < 3) {
       println("Expect 4 args")
       return 0;
