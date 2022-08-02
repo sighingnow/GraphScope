@@ -435,9 +435,11 @@ object PageRank extends Logging {
 
     // Initialize the pagerankGraph with each edge attribute
     // having weight 1/outDegree and each vertex with attribute 0.
+    val outDegreeRDD = graph.outDegrees.cache()
+    log.info(s"${outDegreeRDD.collect().mkString("Array(", ", ", ")")}")
     val pagerankGraph: Graph[DoubleDouble, Double] = graph
       // Associate the degree with each vertex
-      .outerJoinVertices(graph.outDegrees) {
+      .outerJoinVertices(outDegreeRDD) {
         (vid, vdata, deg) => deg.getOrElse(0)
       }
       // Set the weight on the edges based on the degree
@@ -447,6 +449,8 @@ object PageRank extends Logging {
         if (id == src) new DoubleDouble(0.0, Double.NegativeInfinity) else new DoubleDouble()
       }
       .cache()
+
+    log.info(s"${pagerankGraph.vertices.collect().mkString("Array(", ", ", ")")}")
 
     // Define the three functions needed to implement PageRank in the GraphX
     // version of Pregel
