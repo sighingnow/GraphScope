@@ -1,7 +1,7 @@
 package com.alibaba.graphscope.graphx.store
 
 import com.alibaba.graphscope.graphx.VineyardClient
-import com.alibaba.graphscope.graphx.utils.{EIDAccessor, GrapeUtils}
+import com.alibaba.graphscope.graphx.utils.{EIDAccessor, GrapeUtils, ScalaFFIFactory}
 
 import scala.reflect.ClassTag
 
@@ -22,7 +22,7 @@ class InHeapEdgeDataStore[ED: ClassTag](length : Int, client : VineyardClient, n
       new InHeapEdgeDataStore[T2](length, client, numSplit, new Array[T2](length), eidAccessor)
     }
     else {
-      new OffHeapEdgeDataStore[T2](length,client,numSplit,eidAccessor)
+      new OffHeapEdgeDataStore[T2](length,client,numSplit,eidAccessor,ScalaFFIFactory.newEdgeDataBuilder[T2](client,length))
     }
   }
 }
