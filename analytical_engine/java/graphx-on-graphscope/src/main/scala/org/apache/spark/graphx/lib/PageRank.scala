@@ -450,6 +450,7 @@ object PageRank extends Logging {
     val pagerankGraph2 : Graph[DoubleDouble,Double] = pagerankGraph.mapVertices { (id, attr) =>
       if (id == src) new DoubleDouble(0.0, Double.NegativeInfinity) else new DoubleDouble()
     }.cache()
+    log.info(s"pagerank graph2 ${pagerankGraph2.numVertices}, edges ${pagerankGraph2.numEdges}")
 
 //    log.info(s"${pagerankGraph.vertices.collect().mkString("Array(", ", ", ")")}")
 
