@@ -379,7 +379,8 @@ class GrapeEdgePartitionBuilder[VD: ClassTag, ED: ClassTag](val numPartitions : 
   /** The received edata arrays contains both in edges and out edges, but we only need these out edges's edata array */
   def buildEdataStore(defaultED : ED, totalEdgeNum : Int, client : VineyardClient, eidAccessor : EIDAccessor, numSplit : Int = 1) : AbstractDataStore[ED] = {
     val eDataStore = if (GrapeUtils.isPrimitive[ED]){
-      new OffHeapEdgeDataStore[ED](totalEdgeNum,client,numSplit,eidAccessor)
+      val edataBuilder = ScalaFFIFactory.newEdgeDataBuilder[ED](client,totalEdgeNum)
+      new OffHeapEdgeDataStore[ED](totalEdgeNum,client,numSplit,eidAccessor, edataBuilder)
     }
     else {
       val edataArray = buildArrayStore(defaultED,totalEdgeNum)
