@@ -166,7 +166,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       i = bitSet.nextSetBit(i + 1)
     }
     val time1 = System.nanoTime()
-    log.info(s"map vertex partition cost ${(time1 - time0) / 1000000} ms")
+    log.info(s"part ${pid} from ${startLid} to ${endLid} map vertex partition cost ${(time1 - time0) / 1000000} ms")
     this.withNewValues(newValues)
   }
 

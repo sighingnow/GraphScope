@@ -5,9 +5,8 @@ import com.alibaba.graphscope.graphx.utils.{EIDAccessor, GrapeUtils, ScalaFFIFac
 
 import scala.reflect.ClassTag
 
-class OffHeapEdgeDataStore[ED: ClassTag](val length : Int, val client : VineyardClient, numSplit : Int, val eidAccessor: EIDAccessor) extends AbstractDataStore[ED](numSplit){
+class OffHeapEdgeDataStore[ED: ClassTag](val length : Int, val client : VineyardClient, numSplit : Int, val eidAccessor: EIDAccessor,val edataBuilder: EdgeDataBuilder[Long, ED]) extends AbstractDataStore[ED](numSplit){
   require(GrapeUtils.isPrimitive[ED])
-  val edataBuilder: EdgeDataBuilder[Long, ED] = ScalaFFIFactory.newEdgeDataBuilder[ED](client,length)
   val arrayBuilder: VineyardArrayBuilder[ED] = edataBuilder.getArrayBuilder
 
   override def size: Int = length
@@ -27,7 +26,7 @@ class OffHeapEdgeDataStore[ED: ClassTag](val length : Int, val client : Vineyard
       new InHeapEdgeDataStore[T2](length, client, numSplit, new Array[T2](length), eidAccessor)
     }
     else {
-      new OffHeapEdgeDataStore[T2](length,client,numSplit,eidAccessor)
+      new OffHeapEdgeDataStore[T2](length,client,numSplit,eidAccessor,ScalaFFIFactory.newEdgeDataBuilder[T2](client,length))
     }
   }
 }
