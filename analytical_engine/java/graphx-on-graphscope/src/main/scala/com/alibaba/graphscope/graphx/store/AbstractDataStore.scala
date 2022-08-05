@@ -35,7 +35,7 @@ abstract class AbstractDataStore[T : ClassTag](var numSplit : Int) extends DataS
     try {
       if (count.get() == 0){
         resultArray = mapToNew[T2]
-        count.set(numSplit)
+        count.set(numSplit - 1)
         clzObj = GrapeUtils.getRuntimeClass[T2]
         log.info(s"pid ${pid} creating new result array ${resultArray} num split ${numSplit}, count ${count.get()}, clz ${clzObj.getName}")
       }
