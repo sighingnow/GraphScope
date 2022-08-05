@@ -139,7 +139,9 @@ class FragmentRDD[VD : ClassTag,ED : ClassTag](sc : SparkContext, executorId2Hos
           val time1 = System.nanoTime()
           val edgeStore = new InHeapEdgeDataStore[ED](newEdata.length,client,1, newEdata, eidAccessor)
           log.info(s"got edata array cost ${(time1 - time0)/ 1000000}ms")
-          Iterator(new GrapeEdgePartition[VD,ED](pid,0,1,0,frag.getInnerVerticesNum, structure.getOutEdgesNum.toInt, structure, client, edgeStore))
+          val siblingPids = new Array[Int](1)
+          siblingPids(0) = pid
+          Iterator(new GrapeEdgePartition[VD,ED](pid,0,1, siblingPids,0,frag.getInnerVerticesNum, structure.getOutEdgesNum.toInt, structure, client, edgeStore))
         }
         else Iterator.empty
       }
