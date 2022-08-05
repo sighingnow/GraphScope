@@ -5,7 +5,7 @@ import com.alibaba.graphscope.ds.{PropertyNbrUnit, Vertex}
 import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTriplet, GraphStructure, ReusableEdge}
 import com.alibaba.graphscope.graphx.shuffle.{EdgeShuffle, EdgeShuffleReceived}
-import com.alibaba.graphscope.graphx.store.{AbstractDataStore, AbstractInHeapDataStore, DataStore, InHeapEdgeDataStore, InHeapVertexDataStore, OffHeapEdgeDataStore}
+import com.alibaba.graphscope.graphx.store.{AbstractDataStore, AbstractInHeapDataStore, DataStore, EdgeStore, InHeapEdgeDataStore, InHeapVertexDataStore, OffHeapEdgeDataStore}
 import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, EIDAccessor, ExecutorUtils, GrapeUtils, IdParser, ScalaFFIFactory, ThreadSafeOpenHashSet}
 import com.alibaba.graphscope.utils.{FFITypeFactoryhelper, ThreadSafeBitSet}
 import org.apache.spark.Partition
@@ -98,19 +98,14 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   }
 
   def createNewValues[ED2 : ClassTag] :AbstractDataStore[ED2] = {
-    edatas.synchronized {
-      if (!AbstractDataStore.map.contains(edatas)) {
-        log.info(s"part ${pid} localid ${localId} found no mapping of ${edatas} is empty, creating")
-        val newValues = edatas.mapToNew[ED2]
-        AbstractDataStore.set(edatas, newValues, localNum)
-        AbstractDataStore.get(edatas)
+    if (localId == 0){
+      val newValues = edatas.mapToNew[ED2].asInstanceOf[AbstractDataStore[ED2]]
+      log.info(s"pid ${pid} create new values for part ${siblingPid.mkString(",")}, new class ${GrapeUtils.getRuntimeClass[ED2].getSimpleName}")
+      for (dstPid <- siblingPid){
+        EdgeStore.enqueue(dstPid, newValues)
       }
-      else {
-        val res = AbstractDataStore.get(edatas)
-        log.info(s"part ${pid} localid ${localId} found mapping of ${edatas} no-empty, get res ${res}")
-        res
-      }
-    }.asInstanceOf[AbstractDataStore[ED2]]
+    }
+    EdgeStore.dequeue(pid).asInstanceOf[AbstractDataStore[ED2]]
   }
 
   def groupEdges(merge: (ED, ED) => ED): GrapeEdgePartition[VD, ED] = {
