@@ -66,6 +66,19 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
   lazy val fragmentIds : RDD[String] = {
     val syncedGrapeVertices = grapeVertices.syncOuterVertex.cache()
     logger.info(s"sync grape vertices ${syncedGrapeVertices.count()}")
+    syncedGrapeVertices.grapePartitionsRDD.foreachPartition(iter => {
+      if (iter.hasNext) {
+        val part = iter.next()
+        val vd = part.vertexData
+        if (part.localId == 0){
+          var i = 0
+          while (i < vd.length){
+            require(vd.getData(i) != null, s"${i}/${vd.length} is null")
+            i += 1
+          }
+        }
+      }
+    })
 
 //    val time0 = System.nanoTime()
 //    syncedGrapeVertices.grapePartitionsRDD.foreachPartition(iter => {
