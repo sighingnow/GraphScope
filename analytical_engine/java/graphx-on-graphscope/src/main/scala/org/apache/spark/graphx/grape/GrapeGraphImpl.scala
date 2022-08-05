@@ -4,7 +4,7 @@ import com.alibaba.graphscope.graphx.GraphScopeHelper
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.GraphStructureType
 import com.alibaba.graphscope.graphx.graph.impl.GraphXGraphStructure
 import com.alibaba.graphscope.graphx.shuffle.EdgeShuffle
-import com.alibaba.graphscope.graphx.store.{AbstractInHeapDataStore, InHeapVertexDataStore, OffHeapEdgeDataStore}
+import com.alibaba.graphscope.graphx.store.{AbstractDataStore, AbstractInHeapDataStore, InHeapVertexDataStore, OffHeapEdgeDataStore}
 import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, ExecutorUtils, GrapeUtils, ScalaFFIFactory}
 import org.apache.spark.graphx._
 import org.apache.spark.graphx.grape.impl.{GrapeEdgeRDDImpl, GrapeVertexRDDImpl}
@@ -374,7 +374,15 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
           //VertexPartition id range should be same with edge partition
           val newVdArray = ePart.getDegreeArray(edgeDirection)
 //          val newValues = otherVPart.innerVertexData.create[Int](newVdArray)
-          val newValues = otherVPart.vertexData.getOrCreate[Int](ePart.pid).asInstanceOf[InHeapVertexDataStore[Int]]
+//          val newValues = otherVPart.vertexData.getOrCreate[Int](ePart.pid).asInstanceOf[InHeapVertexDataStore[Int]]
+          val vertexData = otherVPart.vertexData
+          if (otherVPart.localId == 0){
+            val newValues = vertexData.mapToNew[Int].asInstanceOf[InHeapVertexDataStore[Int]]
+            for (dstPid <- otherVPart.siblingPid){
+              InHeapVertexDataStore.enqueue(dstPid, newValues)
+            }
+          }
+          val newValues = InHeapVertexDataStore.dequeue(otherVPart.pid).asInstanceOf[InHeapVertexDataStore[Int]]
           require((otherVPart.endLid - otherVPart.startLid) == newVdArray.length)
           //IN native graphx impl, the vertex with degree 0 is not returned. But we return them as well.
           //to make the result same, we set all vertices with zero degree to inactive.

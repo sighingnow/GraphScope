@@ -6,7 +6,7 @@ trait DataStore[T] extends Serializable {
   def size : Int
   def getData(lid: Int) : T
   def setData(lid : Int, vd : T) : Unit
-  def getOrCreate[T2: ClassTag](pid : Int) : DataStore[T2]
+//  def getOrCreate[T2: ClassTag](pid : Int) : DataStore[T2]
   //create a new object from myself.
   def mapToNew[T2 : ClassTag] : DataStore[T2]
 }
