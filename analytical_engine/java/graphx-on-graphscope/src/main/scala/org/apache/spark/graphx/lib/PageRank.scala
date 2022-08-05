@@ -437,7 +437,7 @@ object PageRank extends Logging {
     // having weight 1/outDegree and each vertex with attribute 0.
     val outDegreeRDD = graph.outDegrees.cache()
 //    log.info(s"${outDegreeRDD.collect().mkString("Array(", ", ", ")")}")
-    val pagerankGraph: Graph[Int, Double] = graph
+    val pagerankGraph: Graph[DoubleDouble, Double] = graph
       // Associate the degree with each vertex
       .outerJoinVertices(outDegreeRDD) {
         (vid, vdata, deg) => deg.getOrElse(0)
@@ -445,13 +445,9 @@ object PageRank extends Logging {
       // Set the weight on the edges based on the degree
       .mapTriplets( e => 1.0 / e.srcAttr )
       // Set the vertex attributes to (initialPR, delta = 0)
-      .cache()
-    log.info(s"pagerank graph ${pagerankGraph.numVertices}, ${pagerankGraph.numEdges}")
-    val pagerankGraph2 : Graph[DoubleDouble,Double] = pagerankGraph.mapVertices { (id, attr) =>
+      .mapVertices { (id, attr) =>
       if (id == src) new DoubleDouble(0.0, Double.NegativeInfinity) else new DoubleDouble()
     }.cache()
-    log.info(s"pagerank graph2 ${pagerankGraph2.numVertices}, edges ${pagerankGraph2.numEdges}")
-    val pagerankGraph3 = pagerankGraph2.mapTriplets(triplet => triplet.attr)
 
 //    log.info(s"${pagerankGraph.vertices.collect().mkString("Array(", ", ", ")")}")
 
@@ -499,7 +495,7 @@ object PageRank extends Logging {
         vertexProgram(id, attr, msgSum)
     }
 
-    val pregelRes = Pregel(pagerankGraph3, initialMessage, activeDirection = EdgeDirection.Out)(
+    val pregelRes = Pregel(pagerankGraph, initialMessage, activeDirection = EdgeDirection.Out)(
       vp, sendMessage, messageCombiner).cache()
     //FIXME: remove this line and above line
     pregelRes.vertices.saveAsTextFile("/home/graphscope/data/spark-res/pagerank")
