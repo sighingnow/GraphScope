@@ -498,10 +498,8 @@ object PageRank extends Logging {
     val pregelRes = Pregel(pagerankGraph, initialMessage, activeDirection = EdgeDirection.Out)(
       vp, sendMessage, messageCombiner).cache()
     //FIXME: remove this line and above line
-    pregelRes.vertices.saveAsTextFile("/home/graphscope/data/spark-res/pagerank")
 
     val rankGraph = pregelRes.mapVertices((vid, attr) => attr.a)
-
 
     // SPARK-18847 If the graph has sinks (vertices with no outgoing edges) correct the sum of ranks
     normalizeRankSum(rankGraph, personalized)
