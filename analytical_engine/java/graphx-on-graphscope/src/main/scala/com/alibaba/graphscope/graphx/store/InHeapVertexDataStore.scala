@@ -6,7 +6,7 @@ import com.alibaba.graphscope.graphx.utils.BitSetWithOffset
 import com.alibaba.graphscope.utils.ThreadSafeBitSet
 import org.apache.spark.internal.Logging
 
-import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.{ConcurrentHashMap, LinkedBlockingQueue}
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
@@ -37,7 +37,7 @@ class InHeapVertexDataStore [@specialized(Long,Double,Int) VD: ClassTag](val ivn
 }
 
 object InHeapVertexDataStore extends Logging{
-  val map = new java.util.HashMap[Int,LinkedBlockingQueue[InHeapVertexDataStore[_]]]
+  val map = new ConcurrentHashMap[Int,LinkedBlockingQueue[InHeapVertexDataStore[_]]]
 
   def enqueue(pid : Int, inHeapVertexDataStore: InHeapVertexDataStore[_]) : Unit = {
     createQueue(pid)

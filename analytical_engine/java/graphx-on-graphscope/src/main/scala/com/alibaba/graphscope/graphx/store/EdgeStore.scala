@@ -3,10 +3,10 @@ package com.alibaba.graphscope.graphx.store
 import com.alibaba.graphscope.graphx.store.InHeapVertexDataStore.log
 import org.apache.spark.internal.Logging
 
-import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.{ConcurrentHashMap, LinkedBlockingQueue}
 
 object EdgeStore extends Logging {
-  val map = new java.util.HashMap[Int,LinkedBlockingQueue[AbstractDataStore[_]]]
+  val map = new ConcurrentHashMap[Int,LinkedBlockingQueue[AbstractDataStore[_]]]
 
   def enqueue(pid : Int, inHeapVertexDataStore: AbstractDataStore[_]) : Unit = {
     createQueue(pid)
@@ -28,5 +28,4 @@ object EdgeStore extends Logging {
       map.put(pid, new LinkedBlockingQueue)
     }
   }
-
 }
