@@ -12,6 +12,7 @@ import org.apache.spark.graphx.{EdgeDirection, PartitionID, VertexId}
 import org.apache.spark.internal.Logging
 
 import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -143,12 +144,13 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
       val threads = new ArrayBuffer[Thread]
       var tid = 0
-      val queue = new ArrayBlockingQueue[(Array[Long],Array[VD])](1024)
+      val queue = new ArrayBlockingQueue[(Array[Long],Array[VD])](10240)
       while (vertexDataMessage.hasNext){
         val tuple = vertexDataMessage.next()
         require(tuple._1 == pid)
         queue.offer((tuple._2.gids,tuple._2.newData))
       }
+      val atomicCnt = new AtomicInteger(0)
       while (tid < localNum){
         val newThread= new Thread(){
           override def run(): Unit = {
@@ -156,6 +158,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
               val res = queue.poll()
               val outerDatas = res._2
               val outerGids = res._1
+              atomicCnt.getAndAdd(outerGids.length)
               var i = 0
               while (i < outerGids.length) {
                 require(graphStructure.outerVertexGid2Vertex(outerGids(i), vertex))
@@ -173,7 +176,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         threads(i).join()
       }
       val time1 = System.nanoTime()
-      log.info(s"[Perf: ] updating outer vertex data cost ${(time1 - time0) / 1000000}ms, size ${}")
+      log.info(s"[Perf: ] updating outer vertex data cost ${(time1 - time0) / 1000000}ms, size ${atomicCnt.get()}, ovnum ${graphStructure.getOuterVertexSize}")
     }
     else {
 //      log.info(s"[Perf]: part ${pid} receives no outer vertex data, startLid ${startLid}")
