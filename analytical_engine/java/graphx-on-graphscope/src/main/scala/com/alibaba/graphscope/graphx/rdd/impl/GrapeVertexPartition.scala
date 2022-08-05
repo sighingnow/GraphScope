@@ -196,9 +196,9 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     }
     val time1 = System.nanoTime()
     log.info(s"part ${pid} from ${startLid} to ${endLid} map vertex partition from ${GrapeUtils.getRuntimeClass[VD].getSimpleName} to ${GrapeUtils.getRuntimeClass[VD2].getSimpleName}, active ${bitSet.cardinality()} cost ${(time1 - time0) / 1000000} ms")
-    for (i <- 0 until vertexData.ivnum){
-      require(newValues.getData(i) != null)
-    }
+//    for (i <- 0 until vertexData.ivnum){
+//      require(newValues.getData(i) != null)
+//    }
     this.withNewValues(newValues)
   }
 
