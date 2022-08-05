@@ -139,9 +139,9 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     val time0 = System.nanoTime()
     log.info(s"Start updating outer vertex on part ${pid}")
     if (vertexDataMessage.hasNext) {
-      for (i <- 0 until ivnum){
-        require(vertexData.getData(i) != null, s"before updating, pos ${i} is null, ivnum ${ivnum}")
-      }
+//      for (i <- 0 until ivnum){
+//        require(vertexData.getData(i) != null, s"before updating, pos ${i} is null, ivnum ${ivnum}")
+//      }
       val threads = new ArrayBuffer[Thread]
       var tid = 0
       val queue = new ArrayBlockingQueue[(Array[Long],Array[VD])](10240)
