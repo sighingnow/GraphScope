@@ -212,7 +212,8 @@ class GrapeVertexRDDImpl[VD] private[graphx](
       else {
         Iterator.empty
       }
-    }).partitionBy(new HashPartitioner(this.grapePartitionsRDD.getNumPartitions))
+    }).partitionBy(new HashPartitioner(this.grapePartitionsRDD.getNumPartitions)).cache()
+    log.info(s"sync vd message size ${updateMessage.count()}")
 
     val updatedVertexPartition = PartitionAwareZippedBaseRDD.zipPartitions(SparkContext.getOrCreate(), grapePartitionsRDD, updateMessage){
     (vIter, msgIter) => {
