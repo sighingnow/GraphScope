@@ -405,7 +405,10 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         else Iterator.empty
       }
     }
-    grapeVertices.withGrapePartitionsRDD(newVertexPartitionRDD)
+    val degreeRDD = grapeVertices.withGrapePartitionsRDD(newVertexPartitionRDD).cache()
+    logger.info(s"degree rdd size ${degreeRDD.count()}") // invoke calculation here to make sure the
+    //getOrCreate works ok. other wise the count will fail.
+    degreeRDD
   }
 }
 
