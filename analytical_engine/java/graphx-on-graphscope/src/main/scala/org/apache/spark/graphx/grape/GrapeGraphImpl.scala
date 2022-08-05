@@ -71,9 +71,9 @@ class GrapeGraphImpl[VD: ClassTag, ED: ClassTag] protected(
         val part = iter.next()
         val vd = part.vertexData
         if (part.localId == 0){
-          var i = 0
-          while (i < vd.length){
-            require(vd.getData(i) != null, s"${i}/${vd.length} is null")
+          var i = part.startLid
+          while (i < part.endLid){
+            require(vd.getData(i) != null, s"part ${part.pid} ${i}/${vd.length} is null")
             i += 1
           }
         }
