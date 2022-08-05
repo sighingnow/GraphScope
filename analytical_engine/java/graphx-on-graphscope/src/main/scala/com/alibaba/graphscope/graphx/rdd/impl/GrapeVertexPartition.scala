@@ -124,6 +124,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         while (j >= 0 && j < endLid){
           gids.+=(idParser.generateGlobalId(curFid, j))
           newData.+=(getData(j))
+          require(getData(j) != null, s"generating vd msg encounter null at pos ${j}")
           j = lids.nextSetBit(j + 1)
         }
         val msg = new VertexDataMessage[VD](i, gids.trim().array,newData.trim().array)
@@ -150,6 +151,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         require(tuple._1 == pid)
         queue.offer((tuple._2.gids,tuple._2.newData))
       }
+      log.info(s"totally ${queue.size()} received vd msg")
       val atomicCnt = new AtomicInteger(0)
       while (tid < localNum){
         val newThread= new Thread(){
@@ -162,6 +164,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
               var i = 0
               while (i < outerGids.length) {
                 require(graphStructure.outerVertexGid2Vertex(outerGids(i), vertex))
+                require(outerDatas(i) != null, s"received null msg in ${res}, pos ${i}")
                 vertexData.setData(vertex.GetValue.toInt, outerDatas(i))
                 i += 1
               }
