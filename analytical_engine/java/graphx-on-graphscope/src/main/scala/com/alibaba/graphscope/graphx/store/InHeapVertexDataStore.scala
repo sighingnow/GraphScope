@@ -1,6 +1,7 @@
 package com.alibaba.graphscope.graphx.store
 
 import com.alibaba.graphscope.graphx.VineyardClient
+import com.alibaba.graphscope.graphx.store.EdgeStore.map
 import com.alibaba.graphscope.graphx.utils.BitSetWithOffset
 import com.alibaba.graphscope.utils.ThreadSafeBitSet
 import org.apache.spark.internal.Logging
@@ -39,18 +40,23 @@ object InHeapVertexDataStore extends Logging{
   val map = new java.util.HashMap[Int,LinkedBlockingQueue[InHeapVertexDataStore[_]]]
 
   def enqueue(pid : Int, inHeapVertexDataStore: InHeapVertexDataStore[_]) : Unit = {
-    if (!map.containsKey(pid)){
-      map.put(pid, new LinkedBlockingQueue)
-    }
+    createQueue(pid)
     val q = map.get(pid)
     q.offer(inHeapVertexDataStore)
     log.info(s"offering ${inHeapVertexDataStore} to part ${pid}")
   }
 
   def dequeue(pid : Int) : InHeapVertexDataStore[_] = {
+    createQueue(pid)
     require(map.containsKey(pid), s"no queue available for ${pid}")
     val res = map.get(pid).take()
     log.info(s"pid ${pid} got res ${res}")
     res
+  }
+
+  def createQueue(pid : Int) : Unit = synchronized{
+    if (!map.containsKey(pid)){
+      map.put(pid, new LinkedBlockingQueue)
+    }
   }
 }
