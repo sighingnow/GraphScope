@@ -142,7 +142,6 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       for (i <- 0 until ivnum){
         require(vertexData.getData(i) != null, s"before updating, pos ${i} is null, ivnum ${ivnum}")
       }
-      val vertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
       val threads = new ArrayBuffer[Thread]
       var tid = 0
       val queue = new ArrayBlockingQueue[(Array[Long],Array[VD])](10240)
@@ -156,6 +155,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       while (tid < localNum){
         val newThread= new Thread(){
           override def run(): Unit = {
+            val tmpVertex = FFITypeFactoryhelper.newVertexLong().asInstanceOf[Vertex[Long]]
             while (queue.size() > 0) {
               val res = queue.poll()
               val outerDatas = res._2
@@ -163,9 +163,9 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
               atomicCnt.getAndAdd(outerGids.length)
               var i = 0
               while (i < outerGids.length) {
-                require(graphStructure.outerVertexGid2Vertex(outerGids(i), vertex))
+                require(graphStructure.outerVertexGid2Vertex(outerGids(i), tmpVertex))
                 require(outerDatas(i) != null, s"received null msg in ${res}, pos ${i}")
-                vertexData.setData(vertex.GetValue.toInt, outerDatas(i))
+                vertexData.setData(tmpVertex.GetValue.toInt, outerDatas(i))
                 i += 1
               }
             }
