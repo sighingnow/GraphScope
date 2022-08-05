@@ -105,7 +105,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     val newMask = new BitSetWithOffset(activeEdgeSet.startBit,activeEdgeSet.endBit)
     newMask.union(activeEdgeSet)
 //    val newEdata = new ArrayWithOffset[ED](activeEdgeSet.startBit,activeEdgeSet.size)// new Array[ED](allEdgesNum.toInt)
-    val newEdata = edatas.getOrCreate[ED]
+    val newEdata = edatas.getOrCreate[ED](pid)
     while (iter.hasNext){
       val edge = iter.next()
       val curIndex = edge.offset
@@ -134,7 +134,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 
   def map[ED2: ClassTag](f: Edge[ED] => ED2): GrapeEdgePartition[VD, ED2] = {
 //    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)// new Array[ED2](allEdgesNum.toInt)
-    val newData = edatas.getOrCreate[ED2]
+    val newData = edatas.getOrCreate[ED2](pid)
     graphStructure.iterateEdges(startLid, endLid,f, edatas, activeEdgeSet, edgeReversed, newData)
     this.withNewEdata(newData)
   }
@@ -151,7 +151,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   def map[ED2: ClassTag](f: (PartitionID, Iterator[Edge[ED]]) => Iterator[ED2]): GrapeEdgePartition[VD, ED2] = {
     val time0 = System.nanoTime()
 //    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
-    val newData = edatas.getOrCreate[ED2]
+    val newData = edatas.getOrCreate[ED2](pid)
     val iter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     val resultEdata = f(pid, iter)
     val time1 = System.nanoTime()
@@ -171,7 +171,8 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
   def mapTriplets[ED2: ClassTag](f: EdgeTriplet[VD,ED] => ED2,activeVertices: BitSetWithOffset, innerVertexDataStore: DataStore[VD], tripletFields: TripletFields): GrapeEdgePartition[VD, ED2] = {
     val time0 = System.nanoTime()
 //    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
-    val newData = edatas.getOrCreate[ED2]
+    val newData = edatas.getOrCreate[ED2](pid)
+    log.info(s"${this.toString} got new edata ${newData}")
     val time01 = System.nanoTime()
     graphStructure.iterateTriplets(startLid, endLid, f, activeVertices,innerVertexDataStore, edatas, activeEdgeSet, edgeReversed,tripletFields.useSrc, tripletFields.useDst, newData)
     val time1 = System.nanoTime()
@@ -181,7 +182,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 
   def mapTriplets[ED2: ClassTag](f: (PartitionID, Iterator[EdgeTriplet[VD, ED]]) => Iterator[ED2], innerVertexDataStore: DataStore[VD], includeSrc  : Boolean = true, includeDst : Boolean = true): GrapeEdgePartition[VD, ED2] = {
 //    val newData = new ArrayWithOffset[ED2](activeEdgeSet.startBit, activeEdgeSet.size)
-    val newData = edatas.getOrCreate[ED2]
+    val newData = edatas.getOrCreate[ED2](pid)
     val time0 = System.nanoTime()
     val iter = tripletIterator(innerVertexDataStore,includeSrc,includeDst,reuseTriplet = true).asInstanceOf[Iterator[GSEdgeTriplet[VD,ED]]]
     val resultEdata = f(pid, iter)
@@ -240,7 +241,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     log.info(s"Inner join edgePartition 0 has ${this.activeEdgeSet.cardinality()} actives edges, the other has ${other.activeEdgeSet} active edges")
     log.info(s"after join ${newMask.cardinality()} active edges")
 //    val newEData = new ArrayWithOffset[ED3](activeEdgeSet.startBit, activeEdgeSet.size)
-    val newEData = edatas.getOrCreate[ED3]
+    val newEData = edatas.getOrCreate[ED3](pid)
     val oldIter = iterator.asInstanceOf[Iterator[ReusableEdge[ED]]]
     while (oldIter.hasNext){
       val oldEdge = oldIter.next()
@@ -256,7 +257,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
 
   override def toString: String =  super.toString + "(pid=" + pid + ",local id" + localId +
     ", start lid" + startLid + ", end lid " + endLid + ",graph structure" + graphStructure +
-    ",out edges num" + partOutEdgeNum + ", in edges num" + partInEdgeNum +")"
+    ",out edges num" + partOutEdgeNum + ", in edges num" + partInEdgeNum  + ", data store: " + edatas +")"
 
   override def index: PartitionID = pid
 }

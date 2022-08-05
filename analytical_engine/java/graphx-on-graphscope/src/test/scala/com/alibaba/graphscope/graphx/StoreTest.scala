@@ -11,7 +11,7 @@ class MyRunnable(val tid : Int,val tnum : Int, val store : InHeapVertexDataStore
     val len = store.length
     val chunk = len / tnum
     val begin = chunk * tid
-    val newStore = store.getOrCreate[Int].getOrCreate[Int].getOrCreate[Int]
+    val newStore = store.getOrCreate[Int](tid).getOrCreate[Int](tid).getOrCreate[Int](tid)
     val end = Math.min(begin + chunk, len)
     for (i <- begin until end){
       newStore.setData(i, tid)

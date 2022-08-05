@@ -15,17 +15,17 @@ abstract class AbstractDataStore[T : ClassTag](var numSplit : Int) extends DataS
     count.set(split)
   }
 
-  override def getOrCreate[T2: ClassTag]: AbstractDataStore[T2] = {
+  override def getOrCreate[T2: ClassTag](pid : Int): AbstractDataStore[T2] = {
     if (resultArray == null || count.get() == 0){
       count.synchronized {
         if (resultArray == null || count.get() == 0) {
           resultArray = mapToNew[T2]
-//          log.info(s"creating new result array ${resultArray} num split ${numSplit}")
+          log.info(s"pid ${pid} creating new result array ${resultArray} num split ${numSplit}, count ${count.get()}")
           count.set(numSplit)
         }
       }
     }
-//    log.info(s"cur count is ${count.get()}, dec and get")
+    log.info(s"pid ${pid} cur count is ${count.get()}, dec and get")
     count.decrementAndGet()
     resultArray.asInstanceOf[AbstractDataStore[T2]]
   }

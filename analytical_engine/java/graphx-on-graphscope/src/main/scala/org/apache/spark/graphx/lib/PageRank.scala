@@ -451,6 +451,7 @@ object PageRank extends Logging {
       if (id == src) new DoubleDouble(0.0, Double.NegativeInfinity) else new DoubleDouble()
     }.cache()
     log.info(s"pagerank graph2 ${pagerankGraph2.numVertices}, edges ${pagerankGraph2.numEdges}")
+    val pagerankGraph3 = pagerankGraph2.mapTriplets(triplet => triplet.attr)
 
 //    log.info(s"${pagerankGraph.vertices.collect().mkString("Array(", ", ", ")")}")
 
@@ -498,7 +499,7 @@ object PageRank extends Logging {
         vertexProgram(id, attr, msgSum)
     }
 
-    val pregelRes = Pregel(pagerankGraph2, initialMessage, activeDirection = EdgeDirection.Out)(
+    val pregelRes = Pregel(pagerankGraph3, initialMessage, activeDirection = EdgeDirection.Out)(
       vp, sendMessage, messageCombiner).cache()
     //FIXME: remove this line and above line
     pregelRes.vertices.saveAsTextFile("/home/graphscope/data/spark-res/pagerank")

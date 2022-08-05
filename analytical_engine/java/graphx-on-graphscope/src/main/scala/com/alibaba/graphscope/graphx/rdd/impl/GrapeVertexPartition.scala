@@ -74,7 +74,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
   def collectNbrIds(edgeDirection: EdgeDirection) : GrapeVertexPartition[Array[VertexId]] = {
     var lid = bitSet.nextSetBit(startLid)
-    val newValues = vertexData.getOrCreate[Array[Long]].asInstanceOf[InHeapVertexDataStore[Array[Long]]]
+    val newValues = vertexData.getOrCreate[Array[Long]](pid).asInstanceOf[InHeapVertexDataStore[Array[Long]]]
     while (lid >= 0 && lid < endLid){
       newValues.setData(lid,getNbrIds(lid, edgeDirection))
       lid = bitSet.nextSetBit(lid + 1);
@@ -159,7 +159,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   def map[VD2: ClassTag](f: (VertexId, VD) => VD2): GrapeVertexPartition[VD2] = {
     // Construct a view of the map transformation
     val time0 = System.nanoTime()
-    val newValues = vertexData.getOrCreate[VD2].asInstanceOf[InHeapVertexDataStore[VD2]]
+    val newValues = vertexData.getOrCreate[VD2](pid).asInstanceOf[InHeapVertexDataStore[VD2]]
     var i = bitSet.nextSetBit(startLid)
     while (i >= 0 && i < endLid) {
       newValues.setData(i,f(graphStructure.getId(i), getData(i)))
@@ -168,7 +168,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     val time1 = System.nanoTime()
     log.info(s"part ${pid} from ${startLid} to ${endLid} map vertex partition from ${GrapeUtils.getRuntimeClass[VD].getSimpleName} to ${GrapeUtils.getRuntimeClass[VD2].getSimpleName}, active ${bitSet.cardinality()} cost ${(time1 - time0) / 1000000} ms")
     for (i <- 0 until vertexData.ivnum){
-      require(vertexData.getData(i) != null)
+      require(newValues.getData(i) != null)
     }
     this.withNewValues(newValues)
   }
@@ -192,7 +192,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
                                           iter: Iterator[Product2[VertexId, VD2]],
                                           reduceFunc: (VD2, VD2) => VD2): GrapeVertexPartition[VD2] = {
     val newMask = new BitSetWithOffset(startLid,endLid)
-    val newValues = vertexData.getOrCreate[VD2].asInstanceOf[InHeapVertexDataStore[VD2]]
+    val newValues = vertexData.getOrCreate[VD2](pid).asInstanceOf[InHeapVertexDataStore[VD2]]
 
     iter.foreach { product =>
       val oid = product._1
@@ -248,7 +248,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       /** for vertex not represented in other, we use original vertex */
       val time0 = System.nanoTime()
       log.info(s"${GrapeUtils.getRuntimeClass[VD3].getSimpleName}")
-      val newValues = vertexData.getOrCreate[VD3].asInstanceOf[InHeapVertexDataStore[VD3]]
+      val newValues = vertexData.getOrCreate[VD3](pid).asInstanceOf[InHeapVertexDataStore[VD3]]
       var i = this.bitSet.nextSetBit(startLid)
       while (i >= 0 && i < endLid) {
         val otherV: Option[VD2] = if (other.bitSet.get(i)) Some(other.getData(i)) else None
@@ -273,7 +273,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
   : GrapeVertexPartition[VD2] = {
     val newMask = new BitSetWithOffset(startLid,endLid)
 //    val newValues = innerVertexData.create[VD2]
-    val newValues = vertexData.getOrCreate[VD2].asInstanceOf[InHeapVertexDataStore[VD2]]
+    val newValues = vertexData.getOrCreate[VD2](pid).asInstanceOf[InHeapVertexDataStore[VD2]]
     iter.foreach { pair =>
 //      val pos = self.index.getPos(pair._1)
       val vertexFound = graphStructure.getVertex(pair._1,vertex)
@@ -296,7 +296,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     } else {
       val newMask = this.bitSet & other.bitSet
 //      val newValues = innerVertexData.create[VD2]
-      val newView = vertexData.getOrCreate[VD2].asInstanceOf[InHeapVertexDataStore[VD2]]
+      val newView = vertexData.getOrCreate[VD2](pid).asInstanceOf[InHeapVertexDataStore[VD2]]
       var i = newMask.nextSetBit(startLid)
       while (i >= 0 && i < endLid) {
         newView.setData(i, f(this.graphStructure.getId(i), this.getData(i), other.getData(i)))
