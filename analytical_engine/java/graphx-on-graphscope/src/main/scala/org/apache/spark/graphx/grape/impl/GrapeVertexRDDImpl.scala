@@ -219,10 +219,10 @@ class GrapeVertexRDDImpl[VD] private[graphx](
     (vIter, msgIter) => {
       if (vIter.hasNext) {
         val vpart = vIter.next()
-        if (msgIter.hasNext){
+//        if (msgIter.hasNext){
            Iterator(vpart.updateOuterVertexData(msgIter))
-        }
-        else Iterator(vpart) // no msg received, then we return current vpart.
+//        }
+//        else Iterator(vpart) // no msg received, then we return current vpart.
       }else Iterator.empty
     }
     }.cache()
