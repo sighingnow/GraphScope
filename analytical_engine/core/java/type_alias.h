@@ -229,6 +229,10 @@ struct ImmutableTypedArray<std::string> {
   char* GetRawData() {
     return reinterpret_cast<char*>(const_cast<uint8_t*>(array_->raw_data()));
   }
+  size_t GetRawDataLength() {
+    int64_t arr_length = array_->length();
+    return array_->value_offset(arr_length);
+  }
 
  private:
   // void initVector() {

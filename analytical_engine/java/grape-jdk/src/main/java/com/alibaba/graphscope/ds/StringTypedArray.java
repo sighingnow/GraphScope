@@ -23,5 +23,8 @@ public interface StringTypedArray extends FFISerializable {
     @FFINameAlias("GetRawData")
     long getRawData();
 
+    @FFINameAlias("GetRawDataLength")
+    long getRawDataLength();
+
     @FFINameAlias("GetLength") long getLength();
 }

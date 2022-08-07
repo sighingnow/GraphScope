@@ -538,7 +538,7 @@ public class GraphXPIE<VD, ED, MSG_T> {
         Class<? extends T> clz)
         throws IOException, ClassNotFoundException {
 //        StdVector<Byte> data = oldArray.getRawBytes();
-        FakeFFIByteVector vector = new FakeFFIByteVector(oldArray.getRawData(), oldArray.getLength());
+        FakeFFIByteVector vector = new FakeFFIByteVector(oldArray.getRawData(), oldArray.getRawDataLength());
         FakeFFIByteVectorInputStream ffiInput = new FakeFFIByteVectorInputStream(vector);
 //        Input input = new Input(ffiInput);
 //        Kryo kryo = new Kryo();
