@@ -81,7 +81,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   @inline
   override def getOEEndOffset(lid : Int) : Long = {
-    require(lid < oeOffsetsLen, s"index out of range ${lid}, ${oeOffsetsLen}")
+    require(lid + 1 < oeOffsetsLen, s"index out of range ${lid}, ${oeOffsetsLen}")
     oeOffsetsArray.get(lid + 1)
   }
 
@@ -270,6 +270,9 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     val lid = idParser.getLocalId(gid)
     val fid = idParser.getFragId(gid)
     require(fid != myFid, s"outer fid can not equal to me ${fid}, ${myFid}, gid ${gid}")
+    require(fid < fnum(), s"fid greater than fnum ${fid}, ${fnum()}")
+    val len = lid2Oid(fid).getLength
+    require(lid < len, s"lid should less than ivnum of frag ${fid}, lid ${lid}, len ${len}")
     lid2Oid(fid).get(lid)
   }
 
