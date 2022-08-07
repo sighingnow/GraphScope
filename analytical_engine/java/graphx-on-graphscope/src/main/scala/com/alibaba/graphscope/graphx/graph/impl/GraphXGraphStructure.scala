@@ -23,6 +23,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   val ieBeginNbr = csr.getIEBegin(0)
   val ieBeginAddr = ieBeginNbr.getAddress
   val ivnum = vm.innerVertexSize()
+  val tvnum = vm.getVertexSize.toInt
   val lid2Oid: Array[ImmutableTypedArray[VertexId]] = {
     val res = new Array[ImmutableTypedArray[Long]](vm.fnum())
     for (i <- 0 until fnum()){
@@ -32,6 +33,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   }
   val idParser = new IdParser(fnum())
   val outerLid2Gid: ImmutableTypedArray[VertexId] = vm.getOuterLid2GidAccessor
+  require(outerLid2Gid.getLength == (tvnum - ivnum), s"ovnum neq ${outerLid2Gid.getLength} vs ${tvnum - ivnum}")
   val myFid: Int = vm.fid()
 
 //  lazy val inDegreeArray: Array[Int] = getInDegreeArray
@@ -41,6 +43,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
 
   val oeOffsetsArray: ImmutableTypedArray[Long] = csr.getOEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
+  val oeOffsetsLen : Long = oeOffsetsArray.getLength
 
   val ieOffsetsArray : ImmutableTypedArray[Long] = csr.getIEOffsetsArray.asInstanceOf[ImmutableTypedArray[Long]]
 
@@ -67,6 +70,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   @inline
   override def getOEBeginOffset(lid : Int) : Long = {
+    require(lid < oeOffsetsLen, s"index out of range ${lid}, ${oeOffsetsLen}")
     oeOffsetsArray.get(lid)
   }
 
@@ -77,6 +81,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   @inline
   override def getOEEndOffset(lid : Int) : Long = {
+    require(lid < oeOffsetsLen, s"index out of range ${lid}, ${oeOffsetsLen}")
     oeOffsetsArray.get(lid + 1)
   }
 
@@ -255,10 +260,12 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   override def getInnerVertexSize: Long = vm.innerVertexSize()
 
   override def innerVertexLid2Oid(lid: Long): Long = {
+    require(lid < ivnum, s"index out of range ${lid}, ${ivnum}")
     lid2Oid(myFid).get(lid)
   }
 
   override def outerVertexLid2Oid(vertex: Long): Long = {
+    require(vertex >= ivnum && vertex < tvnum, s"index out of range ${vertex}, ${ivnum} ~ ${tvnum}")
     val gid = outerLid2Gid.get(vertex - ivnum)
     val lid = idParser.getLocalId(gid)
     val fid = idParser.getFragId(gid)
