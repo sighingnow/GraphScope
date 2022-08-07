@@ -262,7 +262,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     val gid = outerLid2Gid.get(vertex - ivnum)
     val lid = idParser.getLocalId(gid)
     val fid = idParser.getFragId(gid)
-    require(fid != myFid)
+    require(fid != myFid, s"outer fid can not equal to me ${fid}, ${myFid}, gid ${gid}")
     lid2Oid(fid).get(lid)
   }
 

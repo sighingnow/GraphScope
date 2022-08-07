@@ -258,7 +258,7 @@ class EdgeDataBuilder<VID_T, std::string> : public vineyard::ObjectBuilder {
     vineyard::LargeStringArrayBuilder edata_builder(client, this->edata_array_);
     vineyard_array = *std::dynamic_pointer_cast<vineyard::LargeStringArray>(
         edata_builder.Seal(client));
-    LOG(INFO) << "Finish building vertex data;";
+    LOG(INFO) << "Finish building edge data;";
     return vineyard::Status::OK();
   }
 
