@@ -167,9 +167,9 @@ class ImmutableTypedArray {
   }
 
   void Init(vineyard::Array<T>& array) {
-      auto const_buffer_ = array.data();
-      buffer_ = const_cast<T*>(const_buffer_);
-      length = array.size();
+    auto const_buffer_ = array.data();
+    buffer_ = const_cast<T*>(const_buffer_);
+    length = array.size();
   }
 
   value_type& operator[](size_t loc) const { return buffer_[loc]; }
@@ -205,7 +205,7 @@ struct ImmutableTypedArray<std::string> {
     } else {
       array_ = std::dynamic_pointer_cast<arrow::LargeStringArray>(array).get();
       length_ = array_->length();
-      initVector();
+      // initVector();
     }
   }
 
@@ -216,7 +216,7 @@ struct ImmutableTypedArray<std::string> {
     } else {
       array_ = std::dynamic_pointer_cast<arrow::LargeStringArray>(array).get();
       length_ = array_->length();
-      initVector();
+      // initVector();
     }
   }
 
@@ -226,22 +226,25 @@ struct ImmutableTypedArray<std::string> {
   std::vector<char>& GetRawBytes() { return raw_bytes_; }
   // void Set(size_t loc, value_type newValue) { buffer_[loc] = newValue; }
   size_t GetLength() const { return length_; }
+  char* GetRawData() {
+    return reinterpret_cast<char*>(const_cast<uint8_t*>(array_->raw_data()));
+  }
 
  private:
-  void initVector() {
-    char* tmp_ptr = reinterpret_cast<char*>(
-        const_cast<uint8_t*>(array_->raw_data()));  // uint8_t
-    int64_t arr_length = array_->length();
-    LOG(INFO) << "array length: " << arr_length;
-    int64_t bytes_in_array = array_->value_offset(arr_length);
+  // void initVector() {
+  //   char* tmp_ptr = reinterpret_cast<char*>(
+  //       const_cast<uint8_t*>(array_->raw_data()));  // uint8_t
+  //   int64_t arr_length = array_->length();
+  //   LOG(INFO) << "array length: " << arr_length;
+  //   int64_t bytes_in_array = array_->value_offset(arr_length);
 
-    LOG(INFO) << "bytes in array: " << bytes_in_array;
-    raw_bytes_.resize(sizeof(char) * bytes_in_array);
-    // LOG(INFO) << "Raw bytes of immutable array "
-    //           << (sizeof(char) * bytes_in_array) << "bytes";
-    memcpy(raw_bytes_.data(), tmp_ptr, sizeof(char) * bytes_in_array);
-    LOG(INFO) << "after copy" << raw_bytes_.size();
-  }
+  //   LOG(INFO) << "bytes in array: " << bytes_in_array;
+  //   raw_bytes_.resize(sizeof(char) * bytes_in_array);
+  //   // LOG(INFO) << "Raw bytes of immutable array "
+  //   //           << (sizeof(char) * bytes_in_array) << "bytes";
+  //   memcpy(raw_bytes_.data(), tmp_ptr, sizeof(char) * bytes_in_array);
+  //   LOG(INFO) << "after copy" << raw_bytes_.size();
+  // }
   arrow::LargeStringArray* array_;
   std::vector<char> raw_bytes_;
   size_t length_;

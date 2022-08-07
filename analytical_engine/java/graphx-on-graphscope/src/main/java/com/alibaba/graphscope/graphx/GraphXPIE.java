@@ -22,8 +22,10 @@ import com.alibaba.graphscope.graphx.utils.FixedBitSet;
 import com.alibaba.graphscope.graphx.utils.IdParser;
 import com.alibaba.graphscope.parallel.DefaultMessageManager;
 import com.alibaba.graphscope.serialization.FFIByteVectorInputStream;
+import com.alibaba.graphscope.serialization.FakeFFIByteVectorInputStream;
 import com.alibaba.graphscope.stdcxx.FFIByteVector;
 import com.alibaba.graphscope.stdcxx.FFIByteVectorFactory;
+import com.alibaba.graphscope.stdcxx.FakeFFIByteVector;
 import com.alibaba.graphscope.stdcxx.StdVector;
 import com.alibaba.graphscope.utils.DoubleMessageStore;
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper;
@@ -535,16 +537,16 @@ public class GraphXPIE<VD, ED, MSG_T> {
     private static <T> PrimitiveArray<T> processComplexArray(StringTypedArray oldArray,
         Class<? extends T> clz)
         throws IOException, ClassNotFoundException {
-        StdVector<Byte> data = oldArray.getRawBytes();
-        FFIByteVector ffiByteVector = new FFIByteVector(data.getAddress());
-        FFIByteVectorInputStream ffiInput = new FFIByteVectorInputStream(ffiByteVector);
+//        StdVector<Byte> data = oldArray.getRawBytes();
+        FakeFFIByteVector vector = new FakeFFIByteVector(oldArray.getRawData(), oldArray.getLength());
+        FakeFFIByteVectorInputStream ffiInput = new FakeFFIByteVectorInputStream(vector);
 //        Input input = new Input(ffiInput);
 //        Kryo kryo = new Kryo();
 //        kryo.register(scala.Tuple2.class);
 //        Serializer serializer = kryo.getSerializer(scala.Tuple2.class);
 //        logger.info("serializer {}", serializer.getClass().getName());
         long len = oldArray.getLength();
-        logger.info("reading {} objects from array of bytes {}", len, data.size());
+        logger.info("reading {} objects from array of bytes {}", len, oldArray.getLength());
         PrimitiveArray<T> newArray = PrimitiveArray.create(clz, (int) len);
         if (clz.equals(DoubleDouble.class)){
             for (int i = 0; i < len; ++i){
@@ -557,7 +559,6 @@ public class GraphXPIE<VD, ED, MSG_T> {
             ObjectInputStream objectInputStream = new ObjectInputStream(ffiInput);
             for (int i = 0; i < len; ++i) {
                 T obj = (T) objectInputStream.readObject();
-//            T obj = (T) kryo.readClassAndObject(input);
                 newArray.set(i, obj);
             }
         }

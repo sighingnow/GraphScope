@@ -3,8 +3,8 @@ package com.alibaba.graphscope.graphx.test
 import com.alibaba.fastffi.FFITypeFactory
 import com.alibaba.graphscope.graphx.VineyardClient
 import com.alibaba.graphscope.graphx.utils.ScalaFFIFactory
-import com.alibaba.graphscope.serialization.{FFIByteVectorInputStream, FFIByteVectorOutputStream}
-import com.alibaba.graphscope.stdcxx.{FFIByteVector, FFIIntVector, FFIIntVectorFactory}
+import com.alibaba.graphscope.serialization.{FFIByteVectorInputStream, FFIByteVectorOutputStream, FakeFFIByteVectorInputStream}
+import com.alibaba.graphscope.stdcxx.{FFIByteVector, FFIIntVector, FFIIntVectorFactory, FakeFFIByteVector}
 import org.apache.spark.internal.Logging
 
 import java.io.{ObjectInputStream, ObjectOutputStream}
@@ -42,10 +42,8 @@ object ComplexTypeTest extends Logging{
     newVdataBuilder.init(array.length, ffiByteVectorOutput.getVector, ffiOffset)
     val vertexData = newVdataBuilder.seal(client).get()
     log.info(s"Got vertexdata id ${vertexData.id()}")
-    val vector = vertexData.getVdataArray.getRawBytes
-    val address = vector.getAddress
-    val ffiByteVector = new FFIByteVector(address)
-    val ffiInput = new FFIByteVectorInputStream(ffiByteVector)
+    val fakeVector = new FakeFFIByteVector(vertexData.getVdataArray.getRawData, vertexData.getVdataArray.getLength)
+    val ffiInput = new FakeFFIByteVectorInputStream(fakeVector)
     val objectInputStream = new ObjectInputStream(ffiInput)
     val len = objectInputStream.readLong()
     for (i <- 0 until len.toInt){
