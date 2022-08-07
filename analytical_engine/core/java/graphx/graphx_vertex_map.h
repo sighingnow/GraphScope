@@ -322,6 +322,7 @@ class GraphXVertexMap
     } else {
       vid_t vid;
       CHECK(OuterVertexGid2Lid(gid, vid));
+      CHECK(vid < tvnum_);
       return vid;
     }
   }

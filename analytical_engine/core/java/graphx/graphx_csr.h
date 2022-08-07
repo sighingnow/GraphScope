@@ -504,26 +504,24 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     in_edge_active.init(edges_num_);
     out_edge_active.init(edges_num_);
     std::vector<std::thread> work_threads(2);
-    work_threads[0] = std::thread(
-        [&]() {
-          for (auto j = 0; j < edges_num_; ++j) {
-            auto src_lid = srcLids[j];
-            if (src_lid < vnum_) {
-              ++oe_degree_[src_lid];
-              out_edge_active.set_bit(j);
-            }
-          }
-        });
-    work_threads[1] = std::thread(
-        [&]() {
-          for (auto j = 0; j < edges_num_; ++j) {
-            auto dst_lid = dstLids[j];
-            if (dst_lid < vnum_) {
-              ++ie_degree_[dst_lid];
-              in_edge_active.set_bit(j);
-            }
-          }
-        });
+    work_threads[0] = std::thread([&]() {
+      for (auto j = 0; j < edges_num_; ++j) {
+        auto src_lid = srcLids[j];
+        if (src_lid < vnum_) {
+          ++oe_degree_[src_lid];
+          out_edge_active.set_bit(j);
+        }
+      }
+    });
+    work_threads[1] = std::thread([&]() {
+      for (auto j = 0; j < edges_num_; ++j) {
+        auto dst_lid = dstLids[j];
+        if (dst_lid < vnum_) {
+          ++ie_degree_[dst_lid];
+          in_edge_active.set_bit(j);
+        }
+      }
+    });
 
     for (auto& thrd : work_threads) {
       thrd.join();
@@ -698,6 +696,11 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
       for (auto& thrd : work_threads) {
         thrd.join();
       }
+    }
+    // check
+    for (int i = 0; i < vnum; ++i) {
+      CHECK_EQ(atomic_oe_offsets[i].atomic_.load(), oe_offsets_[i + 1]);
+      CHECK_EQ(atomic_ie_offsets[i].atomic_.load(), ie_offsets_[i + 1]);
     }
 
 #if defined(WITH_PROFILING)
