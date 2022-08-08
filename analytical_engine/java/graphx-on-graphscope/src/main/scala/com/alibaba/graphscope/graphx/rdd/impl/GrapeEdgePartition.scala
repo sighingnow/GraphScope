@@ -51,6 +51,7 @@ class GrapeEdgePartition[VD: ClassTag, ED: ClassTag](val pid : Int,
     activeEdgeSet = new BitSetWithOffset(startBit = startOffset.toInt,endBit = endOffset.toInt)
     activeEdgeSet.setRange(startOffset.toInt, endOffset.toInt)
     activeEdgeNum = endOffset.toInt - startOffset.toInt
+    log.info(s"part ${pid} local id ${localId}/${localNum} edges range ${startOffset} to ${endOffset}, cardinality ${activeEdgeSet.cardinality()}, ${activeEdgeSet}")
   }
   val NBR_SIZE = 16L
   //to avoid the difficult to get srcLid in iterating over edges.

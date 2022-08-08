@@ -59,7 +59,7 @@ class BitSetWithOffset(val startBit : Int, val endBit : Int, val bitset : FixedB
 //    check(bit)
     val res = bitset.nextSetBit(bit - startBit)
     if (res < 0) res
-    else bitset.nextSetBit(bit - startBit) + startBit
+    else res + startBit
   }
 
   def andNot(other: BitSetWithOffset) : BitSetWithOffset = {

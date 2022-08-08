@@ -638,14 +638,14 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     var curLid = startLid.toInt
     val edge = new ReusableEdgeImpl[ED]
 
-    var curOffset = activeEdgeSet.nextSetBit(activeEdgeSet.startBit)
+//    var curOffset = activeEdgeSet.nextSetBit(activeEdgeSet.startBit)
     log.info(s"start iterating edges, from ${startLid} to ${endLid}, ivnum ${vm.innerVertexSize()}, tvnum ${vm.getVertexSize}, oe offset len ${oeOffsetsArray.getLength}, oe offset end ${oeOffsetsArray.get(oeOffsetsLen-1)}")
     if (!edgeReversed){
       while (curLid < endLid){
         val curEndOffset = getOEEndOffset(curLid)
         val curBeginOffset = getOEBeginOffset(curLid)
         edge.srcId = innerVertexLid2Oid(curLid)
-        var curOffset0 = curBeginOffset;
+        var curOffset0 = curBeginOffset.toInt;
         while (curOffset0 < curEndOffset){
           val shift = curOffset0 * 16;
           val curAddr = oeBeginAddr + shift
@@ -653,58 +653,31 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
           if (dstLid >= tvnum){
             throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + ", cur address" + curAddr + "range, " + curBeginOffset + "," + curEndOffset)
           }
+          edge.dstId = getId(dstLid)
+          edge.attr = edatas.getData(curOffset0)
+          newArray.setData(curOffset0,f(edge))
           curOffset0 += 1
-        }
-        curLid += 1
-      }
-      curLid = startLid.toInt
-      while (curLid < endLid && curOffset >= 0){
-        val curEndOffset = getOEEndOffset(curLid)
-        edge.srcId = innerVertexLid2Oid(curLid)
-        while (curOffset < curEndOffset && curOffset >= 0){
-          val shift = curOffset * 16;
-          val curAddr = oeBeginAddr + shift
-          require(curAddr < oeEndAddr, s"cur addr ${curAddr}, oe end ${oeEndAddr}")
-          val dstLid = JavaRuntime.getLong(curAddr).toInt
-          if (dstLid >= tvnum){
-            throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum)
-          }
-//          edge.dstId = getId(dstLid)
-          if (dstLid < ivnum){
-            require(dstLid < ivnum, s"index out of range ${dstLid}, ${ivnum}")
-            edge.dstId = lid2Oid(myFid).get(dstLid)
-          }
-          else if (dstLid < tvnum) {
-            require(dstLid >= ivnum && dstLid < tvnum, s"index out of range ${dstLid}, ${ivnum} ~ ${tvnum}")
-            val gid = outerLid2Gid.get(dstLid - ivnum)
-            val lid = idParser.getLocalId(gid)
-            val fid = idParser.getFragId(gid)
-            require(fid != myFid, s"outer fid can not equal to me ${fid}, ${myFid}, gid ${gid}")
-            require(fid < fnum(), s"fid greater than fnum ${fid}, ${fnum()}")
-            val len = lid2Oid(fid).getLength
-            require(lid < len, s"lid should less than ivnum of frag ${fid}, lid ${lid}, len ${len}")
-            edge.dstId = lid2Oid(fid).get(lid)
-          }
-          else {
-            throw new IllegalStateException("not possible" + dstLid + ",tvnum" + tvnum)
-          }
-          edge.attr = edatas.getData(curOffset)
-          newArray.setData(curOffset,f(edge))
-          curOffset = activeEdgeSet.nextSetBit(curOffset + 1)
         }
         curLid += 1
       }
     }
     else {
-      while (curLid < endLid && curOffset >= 0){
+      while (curLid < endLid){
         val curEndOffset = getOEEndOffset(curLid)
+        val curBeginOffset = getOEBeginOffset(curLid)
         edge.dstId = innerVertexLid2Oid(curLid)
-        while (curOffset < curEndOffset && curOffset >= 0){
-          val shift = curOffset << 4;
-          val srcLid = JavaRuntime.getLong(oeBeginAddr + shift).toInt
-          edge.srcId = getId(srcLid)
-          edge.attr = edatas.getData(curOffset)
-          curOffset = activeEdgeSet.nextSetBit(curOffset + 1)
+        var curOffset0 = curBeginOffset.toInt;
+        while (curOffset0 < curEndOffset){
+          val shift = curOffset0 * 16;
+          val curAddr = oeBeginAddr + shift
+          val dstLid = JavaRuntime.getLong(curAddr).toInt
+          if (dstLid >= tvnum){
+            throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + ", cur address" + curAddr + "range, " + curBeginOffset + "," + curEndOffset)
+          }
+          edge.srcId = getId(dstLid)
+          edge.attr = edatas.getData(curOffset0)
+          newArray.setData(curOffset0,f(edge))
+          curOffset0 += 1
         }
         curLid += 1
       }
