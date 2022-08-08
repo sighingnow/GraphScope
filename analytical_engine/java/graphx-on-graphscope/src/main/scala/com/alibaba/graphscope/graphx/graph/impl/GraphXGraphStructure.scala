@@ -184,6 +184,18 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
                   address += 16
                   beginOffset += 1
                 }
+                var beginOEOffset = getOEBeginOffset(lid)
+                val endOEOffset = getOEEndOffset(lid)
+                address = oeBeginAddr + (beginOEOffset << 4)
+                while (beginOEOffset < endOEOffset) {
+                  val dstLid = JavaRuntime.getLong(address)
+                  if (dstLid >= ivnum) {
+                    val dstFid = getOuterVertexFid(dstLid)
+                    flags(dstFid) = true
+                  }
+                  address += 16
+                  beginOEOffset += 1
+                }
                 for (i <- flags.indices) {
                   if (flags(i) && i != curFid) {
                     res(i).set(lid)
