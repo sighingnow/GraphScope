@@ -637,10 +637,13 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
         val curEndOffset = getOEEndOffset(curLid)
         edge.srcId = innerVertexLid2Oid(curLid)
         while (curOffset < curEndOffset && curOffset >= 0){
-          val shift = curOffset << 4;
+          val shift = curOffset * 16;
           val curAddr = oeBeginAddr + shift
           require(curAddr < oeEndAddr, s"cur addr ${curAddr}, oe end ${oeEndAddr}")
           val dstLid = JavaRuntime.getLong(curAddr).toInt
+          if (dstLid >= tvnum){
+            throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum)
+          }
           edge.dstId = getId(dstLid)
           edge.attr = edatas.getData(curOffset)
           newArray.setData(curOffset,f(edge))
