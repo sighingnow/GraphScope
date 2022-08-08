@@ -243,12 +243,16 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   override def fnum(): Int = vm.fnum()
 
+  @noinline
   override def getId(vertex: Long): Long = {
     if (vertex < ivnum){
       innerVertexLid2Oid(vertex)
     }
-    else {
+    else if (vertex < tvnum){
       outerVertexLid2Oid(vertex)
+    }
+    else {
+      throw new IllegalStateException(s"not possible ${vertex}")
     }
   }
 
@@ -260,11 +264,13 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   override def getInnerVertexSize: Long = vm.innerVertexSize()
 
+  @noinline
   override def innerVertexLid2Oid(lid: Long): Long = {
     require(lid < ivnum, s"index out of range ${lid}, ${ivnum}")
     lid2Oid(myFid).get(lid)
   }
 
+  @noinline
   override def outerVertexLid2Oid(vertex: Long): Long = {
     require(vertex >= ivnum && vertex < tvnum, s"index out of range ${vertex}, ${ivnum} ~ ${tvnum}")
     val gid = outerLid2Gid.get(vertex - ivnum)
