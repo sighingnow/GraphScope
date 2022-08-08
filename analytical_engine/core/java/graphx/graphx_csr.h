@@ -423,9 +423,10 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     std::vector<vid_t> srcLids, dstLids;
     srcLids.resize(edges_num_);
     dstLids.resize(edges_num_);
-    int thread_num =
-        (std::thread::hardware_concurrency() + local_num - 1) / local_num;
-    int64_t chunkSize = 8192;
+    // int thread_num =
+    //     (std::thread::hardware_concurrency() + local_num - 1) / local_num;
+    int thread_num = 1;
+    int64_t chunkSize = 8192000;
     int64_t num_chunks = (edges_num_ + chunkSize - 1) / chunkSize;
     LOG(INFO) << "thread num " << thread_num << ", chunk size: " << chunkSize
               << "num chunks " << num_chunks;
