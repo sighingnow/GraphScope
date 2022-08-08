@@ -20,6 +20,7 @@ import scala.reflect.ClassTag
 class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphXCSR[Long], val parallelism : Int) extends GraphStructure with Logging{
   val oeBeginNbr = csr.getOEBegin(0)
   val oeBeginAddr = oeBeginNbr.getAddress
+  val oeEndAddr = csr.getOEEnd(vm.innerVertexSize() - 1).getAddress
   val ieBeginNbr = csr.getIEBegin(0)
   val ieBeginAddr = ieBeginNbr.getAddress
   val ivnum = vm.innerVertexSize()
@@ -630,13 +631,16 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     var curLid = startLid.toInt
     val edge = new ReusableEdgeImpl[ED]
     var curOffset = activeEdgeSet.nextSetBit(activeEdgeSet.startBit)
+    log.info(s"start iterating edges, from ${startLid} to ${endLid}, ivnum ${vm.innerVertexSize()}, tvnum ${vm.getVertexSize}, oe offset len ${oeOffsetsArray.getLength}, oe offset end ${oeOffsetsArray.get(oeOffsetsLen-1)}")
     if (!edgeReversed){
       while (curLid < endLid && curOffset >= 0){
         val curEndOffset = getOEEndOffset(curLid)
         edge.srcId = innerVertexLid2Oid(curLid)
         while (curOffset < curEndOffset && curOffset >= 0){
           val shift = curOffset << 4;
-          val dstLid = JavaRuntime.getLong(oeBeginAddr + shift).toInt
+          val curAddr = oeBeginAddr + shift
+          require(curAddr < oeEndAddr, s"cur addr ${curAddr}, oe end ${oeEndAddr}")
+          val dstLid = JavaRuntime.getLong(curAddr).toInt
           edge.dstId = getId(dstLid)
           edge.attr = edatas.getData(curOffset)
           newArray.setData(curOffset,f(edge))
