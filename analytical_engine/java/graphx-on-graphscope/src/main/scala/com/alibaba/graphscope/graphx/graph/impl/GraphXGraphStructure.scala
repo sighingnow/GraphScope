@@ -659,7 +659,25 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
           if (dstLid >= tvnum){
             throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum)
           }
-          edge.dstId = getId(dstLid)
+//          edge.dstId = getId(dstLid)
+          if (dstLid < ivnum){
+            require(dstLid < ivnum, s"index out of range ${dstLid}, ${ivnum}")
+            edge.dstId = lid2Oid(myFid).get(dstLid)
+          }
+          else if (dstLid < tvnum) {
+            require(dstLid >= ivnum && dstLid < tvnum, s"index out of range ${dstLid}, ${ivnum} ~ ${tvnum}")
+            val gid = outerLid2Gid.get(dstLid - ivnum)
+            val lid = idParser.getLocalId(gid)
+            val fid = idParser.getFragId(gid)
+            require(fid != myFid, s"outer fid can not equal to me ${fid}, ${myFid}, gid ${gid}")
+            require(fid < fnum(), s"fid greater than fnum ${fid}, ${fnum()}")
+            val len = lid2Oid(fid).getLength
+            require(lid < len, s"lid should less than ivnum of frag ${fid}, lid ${lid}, len ${len}")
+            edge.dstId = lid2Oid(fid).get(lid)
+          }
+          else {
+            throw new IllegalStateException("not possible" + dstLid + ",tvnum" + tvnum)
+          }
           edge.attr = edatas.getData(curOffset)
           newArray.setData(curOffset,f(edge))
           curOffset = activeEdgeSet.nextSetBit(curOffset + 1)
