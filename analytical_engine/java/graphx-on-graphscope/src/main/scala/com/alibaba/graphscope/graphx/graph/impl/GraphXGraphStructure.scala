@@ -68,14 +68,6 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 //    log.info(s"[Init cost ${(time1 - time0)/1000000} ms]")
 //  }
 //  init()
-  var tmp = 0
-  while (tmp < tvnum){
-    val id = getId(tmp)
-    if (tmp % 5 == 0) {
-      log.info(s"lid ${tmp}, id ${getId(tmp)}")
-    }
-    tmp += 1
-  }
 
 
   @inline
