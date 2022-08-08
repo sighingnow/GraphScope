@@ -637,9 +637,27 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     val time0 = System.nanoTime()
     var curLid = startLid.toInt
     val edge = new ReusableEdgeImpl[ED]
-    var curOffset = activeEdgeSet.nextSetBit(activeEdgeSet.startBit)
+
     log.info(s"start iterating edges, from ${startLid} to ${endLid}, ivnum ${vm.innerVertexSize()}, tvnum ${vm.getVertexSize}, oe offset len ${oeOffsetsArray.getLength}, oe offset end ${oeOffsetsArray.get(oeOffsetsLen-1)}")
     if (!edgeReversed){
+      while (curLid < endLid){
+        val curEndOffset = getOEEndOffset(curLid)
+        val curBeginOffset = getOEBeginOffset(curLid)
+        edge.srcId = innerVertexLid2Oid(curLid)
+        var curOffset = curBeginOffset;
+        while (curOffset < curEndOffset){
+          val shift = curOffset * 16;
+          val curAddr = oeBeginAddr + shift
+          val dstLid = JavaRuntime.getLong(curAddr).toInt
+          if (dstLid >= tvnum){
+            throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + ", cur address" + curAddr + "range, " + curBeginOffset + "," + curEndOffset)
+          }
+          curOffset += 1
+        }
+        curLid += 1
+      }
+      var curOffset = activeEdgeSet.nextSetBit(activeEdgeSet.startBit)
+      curLid = startLid.toInt
       while (curLid < endLid && curOffset >= 0){
         val curEndOffset = getOEEndOffset(curLid)
         edge.srcId = innerVertexLid2Oid(curLid)
