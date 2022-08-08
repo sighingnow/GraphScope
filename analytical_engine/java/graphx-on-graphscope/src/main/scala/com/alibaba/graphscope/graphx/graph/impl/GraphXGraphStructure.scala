@@ -70,7 +70,11 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 //  init()
   var tmp = 0
   while (tmp < tvnum){
-    log.info(s"lid ${tmp}, id ${getId(tmp)}")
+    val id = getId(tmp)
+    if (tmp % 5 == 0) {
+      log.info(s"lid ${tmp}, id ${getId(tmp)}")
+    }
+    tmp += 1
   }
 
 
