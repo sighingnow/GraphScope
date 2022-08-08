@@ -35,6 +35,11 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   val idParser = new IdParser(fnum())
   val outerLid2Gid: ImmutableTypedArray[VertexId] = vm.getOuterLid2GidAccessor
   require(outerLid2Gid.getLength == (tvnum - ivnum), s"ovnum neq ${outerLid2Gid.getLength} vs ${tvnum - ivnum}")
+  var tmp = 0
+  while (tmp < outerLid2Gid.getLength){
+    log.info(s"outer lid ${tmp}, gid ${outerLid2Gid.get(tmp)}")
+    tmp += 1
+  }
   val myFid: Int = vm.fid()
 
 //  lazy val inDegreeArray: Array[Int] = getInDegreeArray
