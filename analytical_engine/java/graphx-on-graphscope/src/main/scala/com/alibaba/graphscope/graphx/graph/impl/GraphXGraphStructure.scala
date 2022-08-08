@@ -232,7 +232,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   override def fnum(): Int = vm.fnum()
 
-  @noinline
+  @inline
   override def getId(vertex: Long): Long = {
     if (vertex < ivnum){
       innerVertexLid2Oid(vertex)
@@ -253,22 +253,18 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
 
   override def getInnerVertexSize: Long = vm.innerVertexSize()
 
-  @noinline
+  @inline
   override def innerVertexLid2Oid(lid: Long): Long = {
-    require(lid < ivnum, s"index out of range ${lid}, ${ivnum}")
     lid2Oid(myFid).get(lid)
   }
 
-  @noinline
+  @inline
   override def outerVertexLid2Oid(vertex: Long): Long = {
     require(vertex >= ivnum && vertex < tvnum, s"index out of range ${vertex}, ${ivnum} ~ ${tvnum}")
     val gid = outerLid2Gid.get(vertex - ivnum)
     val lid = idParser.getLocalId(gid)
     val fid = idParser.getFragId(gid)
     require(fid != myFid, s"outer fid can not equal to me ${fid}, ${myFid}, gid ${gid}")
-    require(fid < fnum(), s"fid greater than fnum ${fid}, ${fnum()}")
-    val len = lid2Oid(fid).getLength
-    require(lid < len, s"lid should less than ivnum of frag ${fid}, lid ${lid}, len ${len}")
     lid2Oid(fid).get(lid)
   }
 
@@ -667,7 +663,6 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     var curLid = startLid.toInt
     val edge = new ReusableEdgeImpl[ED]
 
-//    var curOffset = activeEdgeSet.nextSetBit(activeEdgeSet.startBit)
     log.info(s"start iterating edges, from ${startLid} to ${endLid}, ivnum ${vm.innerVertexSize()}, tvnum ${vm.getVertexSize}, oe offset len ${oeOffsetsArray.getLength}, oe offset end ${oeOffsetsArray.get(oeOffsetsLen-1)}")
     if (!edgeReversed){
       while (curLid < endLid){

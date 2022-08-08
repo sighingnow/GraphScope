@@ -490,8 +490,9 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     LOG(INFO) << "Loading edges size " << edges_num_
               << "vertices num: " << vnum_;
     build_offsets();
-    add_edges(vnum_, local_num, srcLids, dstLids, in_edge_active,
-              out_edge_active, edges_num_, chunkSize, num_chunks, thread_num);
+    add_edges(vnum_, graphx_vertex_map.GetVertexSize(), local_num, srcLids,
+              dstLids, in_edge_active, out_edge_active, edges_num_, chunkSize,
+              num_chunks, thread_num);
     sort(thread_num);
     return {};
   }
@@ -630,7 +631,7 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
     return {};
   }
 
-  void add_edges(int vnum, int local_num,
+  void add_edges(int vnum, int tvnum, int local_num,
                  const std::vector<vid_t>& src_accessor,
                  const std::vector<vid_t>& dst_accessor,
                  const grape::Bitset& in_edge_active,
@@ -674,6 +675,8 @@ class BasicGraphXCSRBuilder : public GraphXCSRBuilder<VID_T> {
                 for (int64_t j = begin; j < end; ++j) {
                   vid_t srcLid = src_accessor[j];
                   vid_t dstLid = dst_accessor[j];
+                  CHECK_LT(srcLid, tvnum);
+                  CHECK_LT(dstLid, tvnum);
                   if (out_edge_active.get_bit(j)) {
                     int dstPos = atomic_oe_offsets[srcLid].atomic_.fetch_add(
                         1, std::memory_order_relaxed);
