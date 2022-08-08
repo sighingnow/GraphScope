@@ -226,6 +226,18 @@ class GrapeVertexRDDImpl[VD] private[graphx](
       }else Iterator.empty
     }
     }.cache()
+
+    val test = updatedVertexPartition.barrier().mapPartitions(iter => {
+      if (iter.hasNext){
+        val part = iter.next()
+        log.info("inside barrier execution")
+        Iterator(1)
+      }
+      else {
+        Iterator.empty
+      }
+    }).collect()
+    log.info(s"collect from barrier stage: ${test.mkString(",")}")
     this.withGrapePartitionsRDD(updatedVertexPartition, true)
   }
 

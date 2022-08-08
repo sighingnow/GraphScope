@@ -137,7 +137,6 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
   def updateOuterVertexData(vertexDataMessage: Iterator[(PartitionID,VertexDataMessage[VD])]): GrapeVertexPartition[VD] = {
     val time0 = System.nanoTime()
-    val context = BarrierTaskContext.get()
     log.info(s"Start updating outer vertex on part ${pid}")
     if (vertexDataMessage.hasNext) {
 //      for (i <- 0 until ivnum){
@@ -185,7 +184,6 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
     else {
       log.info(s"[Perf]: part ${pid} receives no outer vertex data, startLid ${startLid}")
     }
-    context.barrier()
     this
   }
 
