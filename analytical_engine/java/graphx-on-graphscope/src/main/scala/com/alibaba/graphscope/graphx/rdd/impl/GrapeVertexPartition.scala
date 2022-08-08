@@ -7,7 +7,7 @@ import com.alibaba.graphscope.graphx.rdd.RoutingTable
 import com.alibaba.graphscope.graphx.store.{AbstractDataStore, AbstractInHeapDataStore, DataStore, InHeapVertexDataStore}
 import com.alibaba.graphscope.graphx.utils.{BitSetWithOffset, GrapeUtils, IdParser, PrimitiveVector}
 import com.alibaba.graphscope.utils.FFITypeFactoryhelper
-import org.apache.spark.Partition
+import org.apache.spark.{BarrierTaskContext, Partition}
 import org.apache.spark.graphx.{EdgeDirection, PartitionID, VertexId}
 import org.apache.spark.internal.Logging
 
@@ -137,6 +137,7 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
 
   def updateOuterVertexData(vertexDataMessage: Iterator[(PartitionID,VertexDataMessage[VD])]): GrapeVertexPartition[VD] = {
     val time0 = System.nanoTime()
+    val context = BarrierTaskContext.get()
     log.info(s"Start updating outer vertex on part ${pid}")
     if (vertexDataMessage.hasNext) {
 //      for (i <- 0 until ivnum){
@@ -182,8 +183,9 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
       log.info(s"[Perf: ] updating outer vertex data cost ${(time1 - time0) / 1000000}ms, size ${atomicCnt.get()}, ovnum ${graphStructure.getOuterVertexSize}")
     }
     else {
-//      log.info(s"[Perf]: part ${pid} receives no outer vertex data, startLid ${startLid}")
+      log.info(s"[Perf]: part ${pid} receives no outer vertex data, startLid ${startLid}")
     }
+    context.barrier()
     this
   }
 

@@ -13,7 +13,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.collection.{OpenHashSet, PrimitiveVector}
-import org.apache.spark.{HashPartitioner, SparkContext}
+import org.apache.spark.{BarrierTaskContext, HashPartitioner, SparkContext}
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.net.InetAddress
