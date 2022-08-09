@@ -569,6 +569,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
         val end = csr.getOEEnd(curLid)
         edgeTriplet.srcId = innerVertexLid2Oid(curLid)
         edgeTriplet.srcAttr = vertexDataStore.getData(curLid)
+        log.info(s"visiting src id ${edgeTriplet.srcLid}(${edgeTriplet.srcId})")
         while (begin.getAddress < end.getAddress){
           val dstLid = begin.vid().toInt
           val eid = begin.eid().toInt
@@ -578,6 +579,7 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
           edgeTriplet.dstId = getId(dstLid)
           edgeTriplet.dstAttr = vertexDataStore.getData(dstLid)
           edgeTriplet.attr = prevStore.getWithEID(eid)
+          log.info(s"visiting edge ${edgeTriplet}, addr ${begin.getAddress}, end addr ${end.getAddress}")
           nextStore.setWithEID(eid, f(edgeTriplet))
           begin.addV(16)
           }
