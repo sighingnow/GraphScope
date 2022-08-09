@@ -295,7 +295,9 @@ class GrapeVertexPartition[VD : ClassTag](val pid : Int,
         i = this.bitSet.nextSetBit(i + 1)
       }
       val time1 = System.nanoTime()
-      log.info(s"Left join between ${this} and ${other} cost ${(time1 - time0) / 1000000} ms")
+      if (localId == 0) {
+        log.info(s"Left join between ${this} and ${other} cost ${(time1 - time0) / 1000000} ms")
+      }
       this.withNewValues(newValues)
     }
   }

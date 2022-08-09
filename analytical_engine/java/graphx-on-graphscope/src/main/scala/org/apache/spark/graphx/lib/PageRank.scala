@@ -435,11 +435,11 @@ object PageRank extends Logging {
 
     // Initialize the pagerankGraph with each edge attribute
     // having weight 1/outDegree and each vertex with attribute 0.
-    val outDegreeRDD = graph.outDegrees.cache()
+//    val outDegreeRDD = graph.outDegrees.cache()
 //    log.info(s"${outDegreeRDD.collect().mkString("Array(", ", ", ")")}")
     val pagerankGraph: Graph[DoubleDouble, Double] = graph
       // Associate the degree with each vertex
-      .outerJoinVertices(outDegreeRDD) {
+      .outerJoinVertices(graph.outDegrees) {
         (vid, vdata, deg) => deg.getOrElse(0)
       }
       // Set the weight on the edges based on the degree

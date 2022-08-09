@@ -561,6 +561,8 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
     val prevStore = edatas.asInstanceOf[EdgeDataStore[ED]]
     val nextStore = resArray.asInstanceOf[EdgeDataStore[ED2]]
+    log.info(s"start iterating triplets, from ${startLid} to ${endLid}, ivnum ${vm.innerVertexSize()}, tvnum ${vm.getVertexSize}, oe offset len ${oeOffsetsArray.getLength}, oe offset end ${oeOffsetsArray.get(oeOffsetsLen-1)}")
+
     if (!edgeReversed){
       while (curLid < endLid && curLid >= 0){
         val begin = csr.getOEBegin(curLid)
