@@ -39,7 +39,7 @@ spark_jars=`cat ${SCRIPT_DIR}/graphx-on-graphscope/cp.txt`
 class_path=${class_path}:${spark_jars}
 
 export GRAPE_JVM_OPTS="-Dcom.alibaba.fastffi.rvBuffer=2147483648 -XX:+StartAttachListener -XX:+PreserveFramePointer \
--XX:+UseParallelGC -XX:+UseParallelOldGC \
+-XX:+UseG1GC -XX:G1HeapRegionSize=32M \
 -XX:+PrintGCDetails -XX:+PrintGCDateStamps \
 -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=1 -XX:-TieredCompilation \
 -XX:CompileCommandFile=${GRAPHSCOPE_HOME}/conf/compile-commands.txt \
