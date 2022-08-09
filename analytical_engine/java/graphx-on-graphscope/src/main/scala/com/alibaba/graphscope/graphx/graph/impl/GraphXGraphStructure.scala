@@ -563,18 +563,18 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     val nextStore = resArray.asInstanceOf[EdgeDataStore[ED2]]
     log.info(s"start iterating triplets, from ${startLid} to ${endLid}, ivnum ${vm.innerVertexSize()}, tvnum ${vm.getVertexSize}, oe offset len ${oeOffsetsArray.getLength}, oe offset end ${oeOffsetsArray.get(oeOffsetsLen-1)}")
 
-    if (!edgeReversed){
-      while (curLid < endLid && curLid >= 0){
+    if (!edgeReversed) {
+      while (curLid < endLid && curLid >= 0) {
         val begin = csr.getOEBegin(curLid)
         val end = csr.getOEEnd(curLid)
         edgeTriplet.srcId = innerVertexLid2Oid(curLid)
         edgeTriplet.srcAttr = vertexDataStore.getData(curLid)
         log.info(s"visiting src id ${edgeTriplet.srcLid}(${edgeTriplet.srcId})")
-        while (begin.getAddress < end.getAddress){
+        while (begin.getAddress < end.getAddress) {
           val dstLid = begin.vid().toInt
           val eid = begin.eid().toInt
           if (dstLid >= tvnum) {
-            throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + "cur addr " + begin.getAddress + " offset : " + (begin.getAddress - oeBeginAddr)/16)
+            throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + "cur addr " + begin.getAddress + " offset : " + (begin.getAddress - oeBeginAddr) / 16)
           }
           edgeTriplet.dstId = getId(dstLid)
           edgeTriplet.dstAttr = vertexDataStore.getData(dstLid)
@@ -582,9 +582,9 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
           log.info(s"visiting edge ${edgeTriplet}, addr ${begin.getAddress}, end addr ${end.getAddress}")
           nextStore.setWithEID(eid, f(edgeTriplet))
           begin.addV(16)
-          }
         }
         curLid = activeVertices.nextSetBit(curLid + 1)
+      }
     }
     else {
       while (curLid < endLid && curLid >= 0){
