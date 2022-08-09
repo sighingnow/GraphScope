@@ -10,3 +10,8 @@ trait DataStore[T] extends Serializable {
   //create a new object from myself.
   def mapToNew[T2 : ClassTag] : DataStore[T2]
 }
+
+trait EdgeDataStore[T] {
+  def getWithEID(eid : Int) : T
+  def setWithEID(ind : Int, ed : T) : Unit
+}

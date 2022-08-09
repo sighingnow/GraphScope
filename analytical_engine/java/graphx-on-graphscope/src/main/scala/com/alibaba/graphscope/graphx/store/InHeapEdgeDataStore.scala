@@ -5,7 +5,7 @@ import com.alibaba.graphscope.graphx.utils.{EIDAccessor, GrapeUtils, ScalaFFIFac
 
 import scala.reflect.ClassTag
 
-class InHeapEdgeDataStore[ED: ClassTag](length : Int, client : VineyardClient, numSplit : Int, val edataArry : Array[ED], eidAccessor : EIDAccessor) extends AbstractInHeapDataStore[ED](length,numSplit,edataArry){
+class InHeapEdgeDataStore[ED: ClassTag](length : Int, client : VineyardClient, numSplit : Int, val edataArry : Array[ED], eidAccessor : EIDAccessor) extends AbstractInHeapDataStore[ED](length,numSplit,edataArry) with EdgeDataStore[ED]{
 
   override def getData(offset : Int) : ED = {
     val eid = eidAccessor.getEid(offset).toInt
@@ -24,5 +24,13 @@ class InHeapEdgeDataStore[ED: ClassTag](length : Int, client : VineyardClient, n
     else {
       new OffHeapEdgeDataStore[T2](length,client,numSplit,eidAccessor,ScalaFFIFactory.newEdgeDataBuilder[T2](client,length))
     }
+  }
+
+  override def getWithEID(eid: Int): ED = {
+    array(eid)
+  }
+
+  override def setWithEID(ind: Int, ed: ED): Unit = {
+    array(ind) = ed
   }
 }

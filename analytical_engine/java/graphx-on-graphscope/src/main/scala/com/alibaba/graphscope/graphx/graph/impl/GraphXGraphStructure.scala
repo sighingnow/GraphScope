@@ -5,7 +5,7 @@ import com.alibaba.graphscope.ds.{ImmutableTypedArray, Vertex}
 import com.alibaba.graphscope.graphx._
 import com.alibaba.graphscope.graphx.graph.GraphStructureTypes.{GraphStructureType, GraphXFragmentStructure}
 import com.alibaba.graphscope.graphx.graph.{GSEdgeTripletImpl, GraphStructure, ReusableEdgeImpl}
-import com.alibaba.graphscope.graphx.store.{AbstractDataStore, DataStore, AbstractInHeapDataStore}
+import com.alibaba.graphscope.graphx.store.{AbstractDataStore, AbstractInHeapDataStore, DataStore, EdgeDataStore, InHeapEdgeDataStore}
 import com.alibaba.graphscope.graphx.utils.{ArrayWithOffset, BitSetWithOffset, IdParser, PrimitiveVector}
 import com.alibaba.graphscope.utils.ThreadSafeBitSet
 import org.apache.spark.graphx._
@@ -559,9 +559,8 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
   override def iterateTriplets[VD: ClassTag, ED: ClassTag,ED2 : ClassTag](startLid : Long, endLid : Long, f: EdgeTriplet[VD,ED] => ED2, activeVertices : BitSetWithOffset, vertexDataStore: DataStore[VD], edatas: AbstractDataStore[ED], activeSet: BitSetWithOffset, edgeReversed: Boolean, includeSrc: Boolean, includeDst: Boolean, resArray : AbstractDataStore[ED2]): Unit = {
     var curLid = activeVertices.nextSetBit(startLid.toInt)
     val edgeTriplet = new GSEdgeTripletImpl[VD, ED]
-//    val oldEDataArray = edatas.asInstanceOf[InHeapDataStore[ED]].array
-//    val newEdataArray = resArray.asInstanceOf[InHeapDataStore[ED2]].array
-    val vDataArray = vertexDataStore.asInstanceOf[AbstractInHeapDataStore[VD]].array
+    val prevStore = edatas.asInstanceOf[EdgeDataStore[ED]]
+    val nextStore = resArray.asInstanceOf[EdgeDataStore[ED2]]
     if (!edgeReversed){
       while (curLid < endLid && curLid >= 0){
         val begin = csr.getOEBegin(curLid)
@@ -570,13 +569,14 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
         edgeTriplet.srcAttr = vertexDataStore.getData(curLid)
         while (begin.getAddress < end.getAddress){
           val dstLid = begin.vid().toInt
+          val eid = begin.eid().toInt
           if (dstLid >= tvnum) {
             throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + "cur addr " + begin.getAddress + " offset : " + (begin.getAddress - oeBeginAddr)/16)
           }
           edgeTriplet.dstId = getId(dstLid)
           edgeTriplet.dstAttr = vertexDataStore.getData(dstLid)
-//          edgeTriplet.attr = edatas.getData(curOffset0)
-//          resArray.setData(curOffset0, f(edgeTriplet))
+          edgeTriplet.attr = prevStore.getWithEID(eid)
+          nextStore.setWithEID(eid, f(edgeTriplet))
           begin.addV(16)
           }
         }
@@ -590,13 +590,14 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
         edgeTriplet.dstAttr = vertexDataStore.getData(curLid)
         while (begin.getAddress < end.getAddress){
           val dstLid = begin.vid().toInt
+          val eid = begin.eid().toInt
           if (dstLid >= tvnum) {
             throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + "cur addr " + begin.getAddress + " offset : " + (begin.getAddress - oeBeginAddr)/16)
           }
           edgeTriplet.srcId = getId(dstLid)
           edgeTriplet.srcAttr = vertexDataStore.getData(dstLid)
-          //          edgeTriplet.attr = edatas.getData(curOffset0)
-          //          resArray.setData(curOffset0, f(edgeTriplet))
+          edgeTriplet.attr = prevStore.getWithEID(eid)
+          nextStore.setWithEID(eid, f(edgeTriplet))
           begin.addV(16)
         }
       }
@@ -664,30 +665,24 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     val time0 = System.nanoTime()
     var curLid = startLid.toInt
     val edge = new ReusableEdgeImpl[ED]
+    val prevStore = edatas.asInstanceOf[EdgeDataStore[ED]]
+    val nextStore = newArray.asInstanceOf[EdgeDataStore[ED2]]
 
     log.info(s"start iterating edges, from ${startLid} to ${endLid}, ivnum ${vm.innerVertexSize()}, tvnum ${vm.getVertexSize}, oe offset len ${oeOffsetsArray.getLength}, oe offset end ${oeOffsetsArray.get(oeOffsetsLen-1)}")
     if (!edgeReversed){
       while (curLid < endLid){
-//        val curEndOffset = getOEEndOffset(curLid)
-//        val curBeginOffset = getOEBeginOffset(curLid)
         edge.srcId = innerVertexLid2Oid(curLid)
-//        var curOffset0 = curBeginOffset.toInt;
         val begin = csr.getOEBegin(curLid)
         val end = csr.getOEEnd(curLid)
         while (begin.getAddress < end.getAddress){
-//          if (activeEdgeSet.get(curOffset0)) {
-//            val shift = curOffset0 * 16;
-//            val curAddr = oeBeginAddr + shift
-//            val dstLid = JavaRuntime.getLong(curAddr).toInt
           val dstLid = begin.vid()
+          val eid = begin.eid().toInt
           if (dstLid >= tvnum) {
             throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + "cur addr " + begin.getAddress + " offset : " + (begin.getAddress - oeBeginAddr)/16)
           }
           edge.dstId = getId(dstLid)
-//          edge.attr = edatas
-//            newArray.setData(curOffset0, f(edge))
-//          }
-//          curOffset0 += 1
+          edge.attr = prevStore.getWithEID(eid)
+          nextStore.setWithEID(eid, f(edge))
           begin.addV(16)
         }
         curLid += 1
@@ -695,23 +690,19 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     }
     else {
       while (curLid < endLid){
-        val curEndOffset = getOEEndOffset(curLid)
-        val curBeginOffset = getOEBeginOffset(curLid)
         edge.dstId = innerVertexLid2Oid(curLid)
-        var curOffset0 = curBeginOffset.toInt;
-        while (curOffset0 < curEndOffset){
-          if (activeEdgeSet.get(curOffset0)) {
-            val shift = curOffset0 * 16;
-            val curAddr = oeBeginAddr + shift
-            val dstLid = JavaRuntime.getLong(curAddr).toInt
-            if (dstLid >= tvnum) {
-              throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + ", cur address" + curAddr + "range, " + curBeginOffset + "," + curEndOffset)
-            }
-            edge.srcId = getId(dstLid)
-            edge.attr = edatas.getData(curOffset0)
-            newArray.setData(curOffset0, f(edge))
+        val begin = csr.getOEBegin(curLid)
+        val end = csr.getOEEnd(curLid)
+        while (begin.getAddress < end.getAddress){
+          val dstLid = begin.vid()
+          val eid = begin.eid().toInt
+          if (dstLid >= tvnum) {
+            throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + "cur addr " + begin.getAddress + " offset : " + (begin.getAddress - oeBeginAddr)/16)
           }
-          curOffset0 += 1
+          edge.srcId = getId(dstLid)
+          edge.attr = prevStore.getWithEID(eid)
+          nextStore.setWithEID(eid, f(edge))
+          begin.addV(16)
         }
         curLid += 1
       }
