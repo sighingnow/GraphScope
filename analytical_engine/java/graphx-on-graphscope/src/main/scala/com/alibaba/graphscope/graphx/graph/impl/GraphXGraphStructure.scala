@@ -564,53 +564,43 @@ class GraphXGraphStructure(val vm : GraphXVertexMap[Long,Long], val csr : GraphX
     val vDataArray = vertexDataStore.asInstanceOf[AbstractInHeapDataStore[VD]].array
     if (!edgeReversed){
       while (curLid < endLid && curLid >= 0){
-        val curEndOffset = getOEEndOffset(curLid)
-        val curBeginOffset = getOEBeginOffset(curLid)
+        val begin = csr.getOEBegin(curLid)
+        val end = csr.getOEEnd(curLid)
         edgeTriplet.srcId = innerVertexLid2Oid(curLid)
         edgeTriplet.srcAttr = vertexDataStore.getData(curLid)
-        var curOffset0 = curBeginOffset.toInt;
-        while (curOffset0 < curEndOffset){
-          if (activeSet.get(curOffset0)) {
-            val shift = curOffset0 * 16;
-            val curAddr = oeBeginAddr + shift
-            val dstLid = JavaRuntime.getLong(curAddr).toInt
-            if (dstLid >= tvnum) {
-              throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + ", cur address" + curAddr + "range, " + curBeginOffset + "," + curEndOffset)
-            }
-            edgeTriplet.dstId = getId(dstLid)
-            edgeTriplet.dstAttr = vertexDataStore.getData(dstLid)
-            edgeTriplet.attr = edatas.getData(curOffset0)
-            resArray.setData(curOffset0, f(edgeTriplet))
+        while (begin.getAddress < end.getAddress){
+          val dstLid = begin.vid().toInt
+          if (dstLid >= tvnum) {
+            throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + "cur addr " + begin.getAddress + " offset : " + (begin.getAddress - oeBeginAddr)/16)
           }
-          curOffset0 += 1
+          edgeTriplet.dstId = getId(dstLid)
+          edgeTriplet.dstAttr = vertexDataStore.getData(dstLid)
+//          edgeTriplet.attr = edatas.getData(curOffset0)
+//          resArray.setData(curOffset0, f(edgeTriplet))
+          begin.addV(16)
+          }
         }
         curLid = activeVertices.nextSetBit(curLid + 1)
-      }
     }
     else {
       while (curLid < endLid && curLid >= 0){
-        val curEndOffset = getOEEndOffset(curLid)
-        val curBeginOffset = getOEBeginOffset(curLid)
+        val begin = csr.getOEBegin(curLid)
+        val end = csr.getOEEnd(curLid)
         edgeTriplet.dstId = innerVertexLid2Oid(curLid)
         edgeTriplet.dstAttr = vertexDataStore.getData(curLid)
-        var curOffset0 = curBeginOffset.toInt;
-        while (curOffset0 < curEndOffset){
-          if (activeSet.get(curOffset0)) {
-            val shift = curOffset0 * 16;
-            val curAddr = oeBeginAddr + shift
-            val dstLid = JavaRuntime.getLong(curAddr).toInt
-            if (dstLid >= tvnum) {
-              throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + ", cur address" + curAddr + "range, " + curBeginOffset + "," + curEndOffset)
-            }
-            edgeTriplet.srcId = getId(dstLid)
-            edgeTriplet.srcAttr = vertexDataStore.getData(dstLid)
-            edgeTriplet.attr = edatas.getData(curOffset0)
-            resArray.setData(curOffset0, f(edgeTriplet))
+        while (begin.getAddress < end.getAddress){
+          val dstLid = begin.vid().toInt
+          if (dstLid >= tvnum) {
+            throw new IllegalStateException("not possible lid" + dstLid + ",tvnum" + tvnum + ",curlid " + curLid + "oeBegin" + oeBeginAddr + "cur addr " + begin.getAddress + " offset : " + (begin.getAddress - oeBeginAddr)/16)
           }
-          curOffset0 += 1
+          edgeTriplet.srcId = getId(dstLid)
+          edgeTriplet.srcAttr = vertexDataStore.getData(dstLid)
+          //          edgeTriplet.attr = edatas.getData(curOffset0)
+          //          resArray.setData(curOffset0, f(edgeTriplet))
+          begin.addV(16)
         }
-        curLid = activeVertices.nextSetBit(curLid + 1)
       }
+      curLid = activeVertices.nextSetBit(curLid + 1)
     }
   }
 
