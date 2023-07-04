@@ -39,6 +39,12 @@ jobs:
         ./gs install-deps dev
         echo "export PATH=/usr/local/opt/coreutils/libexec/gnubin:\$PATH" >> ~/.graphscope_env
 
+    - name: Install JDK 11
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu' # See 'Supported distributions' for available options
+        java-version: '11'
+
     - name: Reinstall glog
       run: |
         # Essential cause glog installed by brew is broken and produce corrupted messages
